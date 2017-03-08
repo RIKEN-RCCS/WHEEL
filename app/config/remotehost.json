@@ -1,0 +1,27 @@
+[
+	{
+		"name": "local",
+		"host": "localhost",
+		"path": "/",
+		"username": "",
+		"description": "",
+		"job_scheduler": ""
+	},
+    {
+        "name": "password",
+        "host": "10.113.42.234",
+        "path": "test",
+        "username": "hsim",
+        "description": "",
+        "job_scheduler": "TORQUE"
+    },
+    {
+        "name": "key",
+        "host": "10.113.42.234",
+        "path": "test",
+        "username": "hsim",
+        "description": "",
+        "job_scheduler": "TCS",
+        "privateKey": "C:\\\\Users\\\\fj3107ft\\\\Desktop\\\\WorkFlow\\\\id_rsa"
+    }
+]

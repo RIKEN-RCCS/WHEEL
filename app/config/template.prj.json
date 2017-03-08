@@ -1,0 +1,16 @@
+{
+    "name": "NewProject",
+    "description": "This is new project.",
+    "state": "Planning",
+    "path": "./define.prj.json",
+    "path_workflow": "./define.wf.json",
+    "log": {
+        "name": "",
+        "description": "",
+        "state": "Planning",
+        "path": "",
+        "execution_start_date": "",
+        "execution_end_date": "",
+        "children": []
+    }
+}

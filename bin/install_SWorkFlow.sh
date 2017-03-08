@@ -1,0 +1,2 @@
+cd ../app
+npm install

@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="/css/style.css" />
+    <script type="text/javascript" src="/third_party/jquery/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript" src="/third_party/socket.io/socket.io-1.4.5.js"></script>
+    <script type="text/javascript" src="/third_party/svg/svg.min.js"></script>
+    <script type="text/javascript" src="/js/clientUtility.js"></script>
+    <script type="text/javascript" src="/js/getFileStatSocket.js"></script>
+    <script type="text/javascript" src="/js/openProjectJsonSocket.js"></script>
+    <script type="text/javascript" src="/js/jqueryExtends.js"></script>
+    <script type="text/javascript" src="/js/swfObject.js"></script>
+    <script type="text/javascript" src="/js/runProjectSocket.js"></script>
+    <script type="text/javascript" src="/js/jsonFileType.js"></script>
+    <script type="text/javascript" src="/js/commonParam.js"></script>
+    <script type="text/javascript" src="/js/projectManager.js"></script>
+    <title>Scientific Workflow</title>
+</head>
+
+<body>
+    <header>
+        <a href="/swf/home.html">Scientific Workflow</a>
+    </header>
+    <div class="subtitle">Project Manager</div>
+
+    <div class="menu_area">
+        <figure class="menu_container">
+            <img src="/image/icon_run.png" class="icon" id="run_button" />
+            <figcaption>RUN</figcaption>
+        </figure>
+    </div>
+
+    <div class="address_bar_area">
+        <img src="/image/icon_file.png" class="file_icon">
+        <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly">
+    </div>
+
+    <table class="selected_workflow">
+        <tr>
+            <th>Name</th>
+            <th>Progress</th>
+            <th>Create Date</th>
+            <th>Update Date</th>
+        </tr>
+        <tr>
+            <td id="workflow_name"></td>
+            <td>
+                <progress value="0" max="100" id="workflow_progress"></progress>
+            </td>
+            <td id="workflow_birthday"></td>
+            <td id="workflow_update"></td>
+        </tr>
+    </table>
+
+    <div class="project_manage_area sub_content_area" onMouseDown="return false;">
+        <div id="workflow_tree_svg"></div>
+        <div style="width: 100%">
+            <table id="workflow_table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>State</th>
+                        <th>Plan Date</th>
+                        <th>Execution Date</th>
+                        <th>Finish Date</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody id="workflow_table_body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

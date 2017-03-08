@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="/css/style.css" />
+    <link type="text/css" rel="stylesheet" href="/css/jquery.contextMenu.css" />
+    <script type="text/javascript" src="/third_party/jquery/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript" src="/third_party/jquery/jquery.ui.position.min.js"></script>
+    <script type="text/javascript" src="/third_party/jquery/jquery.contextMenu.js"></script>
+    <script type="text/javascript" src="/third_party/socket.io/socket.io-1.4.5.js"></script>
+    <script type="text/javascript" src="/third_party/svg/svg.min.js"></script>
+    <script type="text/javascript" src="/third_party/svg/svg.draggable.min.js"></script>
+
+    <script type="text/javascript" src="/js/clientUtility.js"></script>
+    <script type="text/javascript" src="/js/svgNodeUI.js"></script>
+    <script type="text/javascript" src="/js/svgPlugBase.js"></script>
+    <script type="text/javascript" src="/js/jqueryExtends.js"></script>
+    <script type="text/javascript" src="/js/swfObject.js"></script>
+    <script type="text/javascript" src="/js/swfTree.js"></script>
+    <script type="text/javascript" src="/js/jsonProperty.js"></script>
+    <script type="text/javascript" src="/js/jsonFileType.js"></script>
+    <script type="text/javascript" src="/js/inputTextDialog.js"></script>
+    <script type="text/javascript" src="/js/yesNoDialog.js"></script>
+    <script type="text/javascript" src="/js/commonParam.js"></script>
+
+    <script type="text/javascript" src="/js/getFileStatSocket.js"></script>
+    <script type="text/javascript" src="/js/readTreeJsonSocket.js"></script>
+    <script type="text/javascript" src="/js/writeTreeJsonSocket.js"></script>
+    <script type="text/javascript" src="/js/getTemplateJsonFileSocket.js"></script>
+    <script type="text/javascript" src="/js/getRemoteHostListSocket.js"></script>
+
+    <script type="text/javascript" src="/js/workflowManager.js"></script>
+    <title>Scientific Workflow</title>
+</head>
+
+<body>
+    <header>
+        <a href="/swf/home.html">Scientific Workflow</a>
+    </header>
+    <div class="subtitle">Workflow Manager</div>
+
+    <div class="address_bar_area">
+        <img src="/image/icon_workflow.png" class="icon" id="root_workflow">
+        <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly">
+    </div>
+
+    <table class="selected_workflow">
+        <tr>
+            <th>Name</th>
+            <th>Create Date</th>
+            <th>Update Date</th>
+            <th>Description</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td><input type="text" id="workflow_name" class="text_box"></td>
+            <td id="workflow_birthday"></td>
+            <td id="workflow_update"></td>
+            <td><input type="text" id="workflow_desc" class="text_box"></td>
+            <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
+            <td style="width: 90px"><button type="button" class="button" id="reset_button">Reset</button></td>
+        </tr>
+    </table>
+
+    <div class="workflow_manage_area sub_content_area" id="workflow_manage_area">
+        <div id="workflow_tree_svg" class="workflow_tree_svg" onMouseDown="return false;"></div>
+        <div id="node_svg" class="node_tree"> </div>
+        <div id="property" class="property"></div>
+    </div>
+
+    <div class="gray_panel" id="gray_panel"></div>
+
+    <div class="text_dialog_area dialog_area" id="dialog_area_input">
+        <p class="dialog_title" id="dialog_title_input"></p>
+        <div class="address_bar_area">
+            <span id="label_input"></span>
+            <input type="text" id="input_text_input" class="dialog_text_box text_box">
+        </div>
+        <div class="dialog_button_container">
+            <button type="button" class="dialog_button button" id="dialog_ok_button_input">OK</button>
+            <button type="button" class="dialog_button button" id="dialog_cancel_button_input">Cancel</button>
+        </div>
+    </div>
+
+    <div class="yesno_dialog_area dialog_area" id="dialog_area_yesno">
+        <p class="dialog_title" id="dialog_title_yesno"></p>
+        <div style="display: flex; flex-direction: row;">
+            <button type="button" class="button" id="dialog_ok_button_yesno">OK</button>
+            <button type="button" class="button" id="dialog_cancel_button_yesno">Cancel</button>
+        </div>
+    </div>
+</body>
+
+</html>

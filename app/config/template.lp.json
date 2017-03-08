@@ -1,0 +1,22 @@
+{
+    "name": "NewLoop",
+    "description": "This is new loop.",
+    "path": "",
+    "type": "Loop",
+    "script": {},
+    "input_files": [],
+    "output_files": [],
+    "send_files": [],
+    "receive_files": [],
+    "clean_up": true,
+    "max_size_recieve_file": 17179869184,
+    "children_file": [],
+    "relations": [],
+    "relation_files": [],
+    "positions": [],
+    "forParam": {
+        "start": 0,
+        "end": 1,
+        "step": 1
+    }
+}

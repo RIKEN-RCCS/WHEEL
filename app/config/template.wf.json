@@ -1,0 +1,17 @@
+{
+    "name": "NewWorkFlow",
+    "description": "This is new workflow.",
+    "path": "",
+    "type": "Workflow",
+    "script": {},
+    "input_files": [],
+    "output_files": [],
+    "send_files": [],
+    "receive_files": [],
+    "clean_up": true,
+    "max_size_recieve_file": 17179869184,
+    "children_file": [],
+    "relations": [],
+    "file_relations": [],
+    "positions": []
+}

@@ -1,0 +1,17 @@
+{
+    "name": "NewIf",
+    "description": "This is new if.",
+    "path": "",
+    "type": "If",
+    "script": {},
+    "input_files": [],
+    "output_files": [],
+    "send_files": [],
+    "receive_files": [],
+    "clean_up": true,
+    "max_size_recieve_file": 17179869184,
+    "children_file": [],
+    "relations": [],
+    "relation_files": [],
+    "positions": []
+}

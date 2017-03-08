@@ -1,0 +1,19 @@
+{
+    "name": "NewTask",
+    "description": "This is new task.",
+    "path": "",
+    "type": "Task",
+    "script": {
+        "name": "NewScript",
+        "description": "This is new script.",
+        "path": "",
+        "type": "File",
+        "required": true
+    },
+    "input_files": [],
+    "output_files": [],
+    "send_files": [],
+    "receive_files": [],
+    "clean_up": true,
+    "max_size_recieve_file": 17179869184
+}

@@ -1,0 +1,28 @@
+{
+    "name": "NewRemoteTask",
+    "description": "This is new remote task.",
+    "path": "",
+    "type": "RemoteTask",
+    "script": {
+        "name": "NewScript",
+        "description": "This is new script.",
+        "path": "",
+        "type": "File",
+        "required": true
+    },
+    "host": {
+        "name": "",
+        "description": "",
+        "path": "",
+        "host": "",
+        "job_scheduler": "",
+        "username": "",
+        "privateKey": ""
+    },
+    "input_files": [],
+    "output_files": [],
+    "send_files": [],
+    "receive_files": [],
+    "clean_up": true,
+    "max_size_recieve_file": 17179869184
+}

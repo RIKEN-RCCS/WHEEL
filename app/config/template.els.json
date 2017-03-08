@@ -1,0 +1,17 @@
+{
+    "name": "NewElse",
+    "description": "This is new else.",
+    "path": "",
+    "type": "Else",
+    "script": {},
+    "input_files": [],
+    "output_files": [],
+    "send_files": [],
+    "receive_files": [],
+    "clean_up": true,
+    "max_size_recieve_file": 17179869184,
+    "children_file": [],
+    "relations": [],
+    "relation_files": [],
+    "positions": []
+}
