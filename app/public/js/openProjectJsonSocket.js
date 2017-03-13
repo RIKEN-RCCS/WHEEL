@@ -13,9 +13,10 @@ var OpenProjectJsonSocket = (function () {
      */
     OpenProjectJsonSocket.prototype.onConnect = function (filename, callback) {
         var _this = this;
+        this.callback = callback;
         this.socket
             .on('connect', function () {
-            _this.emit(filename, callback);
+            _this.emit(filename);
         });
     };
     /**
@@ -23,6 +24,9 @@ var OpenProjectJsonSocket = (function () {
      * @param callback
      */
     OpenProjectJsonSocket.prototype.onEvent = function (callback) {
+        if (callback == null) {
+            callback = this.callback;
+        }
         this.socket.once(OpenProjectJsonSocket.eventName, callback);
     };
     /**

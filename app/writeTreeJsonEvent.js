@@ -12,10 +12,6 @@ var WriteTreeJsonEvent = (function () {
          *
          */
         this.queue = [];
-        /**
-         *
-         */
-        this.lastFlag = false;
     }
     /**
      *
@@ -25,7 +21,6 @@ var WriteTreeJsonEvent = (function () {
         var _this = this;
         socket.on(WriteTreeJsonEvent.eventName, function (projectDirectory, json) {
             _this.error = false;
-            _this.lastFlag = false;
             _this.queue.length = 0;
             _this.setQueue(projectDirectory, json);
             _this.saveTreeJson(function () {
@@ -41,7 +36,7 @@ var WriteTreeJsonEvent = (function () {
         var _this = this;
         var data = this.queue.shift();
         if (!data) {
-            this.lastFlag = true;
+            callback();
             return;
         }
         var copy = JSON.parse(JSON.stringify(data.tree));
@@ -51,13 +46,10 @@ var WriteTreeJsonEvent = (function () {
         var filepath = path.join(newDirectory, filename);
         delete copy.children;
         delete copy.oldPath;
-        var next = function () {
-            if (_this.lastFlag) {
-                callback();
-            }
-            else {
-                _this.saveTreeJson(callback);
-            }
+        var error = function (err) {
+            logger.error(err);
+            _this.error = true;
+            _this.saveTreeJson(callback);
         };
         var update = function () {
             fs.writeFile(filepath, JSON.stringify(copy, null, '\t'), function (err) {
@@ -66,43 +58,43 @@ var WriteTreeJsonEvent = (function () {
                     _this.error = true;
                 }
                 logger.info("update file=" + filepath);
-                next();
+                _this.saveTreeJson(callback);
             });
         };
         var add = function () {
             fs.mkdir(newDirectory, function (err) {
                 if (err) {
-                    logger.error(err);
-                    _this.error = true;
-                    next();
+                    error(err);
                 }
                 else {
-                    logger.info("add    file=" + filepath);
+                    logger.info("make    dir=" + newDirectory);
+                    update();
+                }
+            });
+        };
+        var rename = function () {
+            fs.rename(oldDirectory, newDirectory, function (err) {
+                if (err) {
+                    error(err);
+                }
+                else {
+                    logger.info("rename  dir=" + oldDirectory + " to " + newDirectory);
                     update();
                 }
             });
         };
         if (data.tree.path === undefined) {
         }
+        else if (!data.tree.oldPath) {
+            add();
+        }
         else if (data.tree.path !== data.tree.oldPath) {
             fs.stat(oldDirectory, function (err, stat) {
                 if (err) {
-                    logger.error(err);
-                    _this.error = true;
-                    next();
+                    error(err);
                 }
                 else if (stat.isDirectory()) {
-                    fs.rename(oldDirectory, newDirectory, function (err) {
-                        if (err) {
-                            logger.error(err);
-                            _this.error = true;
-                            next();
-                        }
-                        else {
-                            logger.info("rename  dir=" + oldDirectory + " to " + newDirectory);
-                            update();
-                        }
-                    });
+                    rename();
                 }
                 else {
                     add();
@@ -112,9 +104,7 @@ var WriteTreeJsonEvent = (function () {
         else {
             fs.stat(filepath, function (err, stat) {
                 if (err) {
-                    logger.error(err);
-                    _this.error = true;
-                    next();
+                    add();
                 }
                 else if (stat.isFile()) {
                     update();

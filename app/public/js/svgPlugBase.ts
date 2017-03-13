@@ -14,6 +14,7 @@ interface PlugConfig {
     color: string;
     taskIndex: number;
     file?: SwfFile;
+    tree?: SwfTree;
 }
 
 class SvgPlugBase {
@@ -35,7 +36,7 @@ class SvgPlugBase {
         this.index = SvgPlugBase.counter++;
     }
 
-    public getName(): string {
+    public name(): string {
         if (this.plugConfig.file) {
             return `${this.index}_${this.plugConfig.taskIndex}_${this.plugConfig.file.path}`;
         }
@@ -44,42 +45,65 @@ class SvgPlugBase {
         }
     }
 
-    public getFileType(): string {
+    public fileType(): string {
         return this.plugConfig.file.type;
     }
 
-    public getFilepath(): string {
+    public filepath(): string {
         if (this.plugConfig.file) {
             return this.plugConfig.file.path;
         }
         return '';
     }
 
-    public getTaskIndex(): number {
+    public filepathFromTree(): string {
+        if (this.plugConfig.file) {
+            if (this.plugConfig.tree) {
+                return `./${ClientUtility.normalize(`${this.plugConfig.tree.path}/${this.plugConfig.file.path}`)}`;
+            }
+            else {
+                return this.plugConfig.file.path;
+            }
+        }
+        return '';
+    }
+
+    public parentDirname(): string {
+        if (this.plugConfig.tree) {
+            return this.plugConfig.tree.path;
+        }
+        return '';
+    }
+
+    public taskIndex(): number {
         return this.plugConfig.taskIndex;
     }
 
-    public getTaskFileIndex(): string {
-        return `${this.plugConfig.taskIndex}_${this.plugConfig.file.path}`;
-    }
-
     public move(x: number, y: number): SvgPlugBase {
-        this.plug.move(x, y);
+        if (this.plug != null) {
+            this.plug.move(x, y);
+        }
         return this;
     }
 
     public front(): SvgPlugBase {
-        this.plug.front();
+        if (this.plug != null) {
+            this.plug.front();
+        }
         return this;
     }
 
     public back(): SvgPlugBase {
-        this.plug.back();
+        if (this.plug != null) {
+            this.plug.back();
+        }
         return this;
     }
 
     public translate(x: number, y: number): SvgPlugBase {
-        this.plug.translate(x, y);
+        if (this.plug != null) {
+            this.plug.translate(x, y);
+        }
         return this;
     }
 
@@ -100,8 +124,10 @@ class SvgPlugBase {
         return this.plug.transform();
     }
 
-    public remove(): SvgPlugBase {
+    public delete(): SvgPlugBase {
+        this.plugConfig.svg = null;
         this.plug.remove();
+        this.plug = null;
         return this;
     }
 
@@ -114,7 +140,7 @@ class SvgPlugBase {
 
     public static createPlug(svg: svgjs.Element, isStream: boolean): svgjs.Element {
         if (isStream) {
-            return svg.polygon([[0, 0], [16, 0], [16, 8], [8, 16], [0, 8]]);
+            return svg.polygon([[0, 0], [20, 0], [20, 5], [10, 10], [0, 5]]);
         }
         else {
             return svg.polygon([[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]]);
@@ -166,7 +192,7 @@ class SvgConnector extends SvgPlugBase {
         this.plug.on('mousedown', () => {
             const receptor = this.receptor;
             if (this.isConnect()) {
-                console.log(`disconnect index=${this.getName()} to index=${this.receptor.getName()}`);
+                console.log(`disconnect index=${this.name()} to index=${this.receptor.name()}`);
                 this.receptor.deleteConnect();
                 this.receptor = null;
             }
@@ -201,7 +227,7 @@ class SvgConnector extends SvgPlugBase {
 
     public connect(receptor: SvgReceptor): boolean {
         if (receptor != null && receptor.connect(this)) {
-            console.log(`connect index=${this.getName()} to index=${receptor.getName()}`);
+            console.log(`connect index=${this.name()} to index=${receptor.name()}`);
 
             this.receptor = receptor;
             this.calcConnectPotision(this.receptor, (x: number, y: number) => {
@@ -228,7 +254,7 @@ class SvgConnector extends SvgPlugBase {
 
     public moveIfDisconnect(x: number, y: number): SvgConnector {
         if (!this.isConnect()) {
-            this.plug.move(x, y);
+            this.move(x, y);
         }
         else {
             this.cable.plotStart(x, y);
@@ -242,6 +268,22 @@ class SvgConnector extends SvgPlugBase {
                 this.cable.plotEnd(x, y);
             });
         }
+        return this;
+    }
+
+    public delete(): SvgPlugBase {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mousedown', null);
+            this.plug.off('dragstart', null);
+            this.plug.off('dragmove', null);
+            this.plug.off('dragend', null);
+            this.plug.remove();
+            this.plug = null;
+        }
+        this.cable.remove();
         return this;
     }
 }
@@ -271,8 +313,8 @@ class SvgReceptor extends SvgPlugBase {
     }
 
     public connect(connector: SvgConnector): boolean {
-        const receptorFiletype = this.getFileType();
-        const connectorFiletype = connector.getFileType();
+        const receptorFiletype = this.fileType();
+        const connectorFiletype = connector.fileType();
 
         if (!this.isMatchType(receptorFiletype) || !this.isMatchType(connectorFiletype)) {
             return false;
@@ -311,6 +353,18 @@ class SvgReceptor extends SvgPlugBase {
         this.connector = null;
         return this;
     }
+
+    public delete(): SvgPlugBase {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mouseup', null);
+            this.plug.remove();
+            this.plug = null;
+        }
+        return this;
+    }
 }
 
 class SvgUpper extends SvgPlugBase {
@@ -327,7 +381,7 @@ class SvgUpper extends SvgPlugBase {
     }
 
     public connect(lower: SvgLower): boolean {
-        const taskIndex = lower.getTaskIndex();
+        const taskIndex = lower.taskIndex();
         if (!this.lowers[taskIndex]) {
             this.lowers[taskIndex] = lower;
             return true;
@@ -366,7 +420,20 @@ class SvgUpper extends SvgPlugBase {
     }
 
     public deleteConnect(lower: SvgLower): SvgUpper {
-        delete this.lowers[lower.getTaskIndex()];
+        delete this.lowers[lower.taskIndex()];
+        return this;
+    }
+
+    public delete(): SvgPlugBase {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mouseup', null);
+            this.plug.remove();
+            this.plug = null;
+        }
+
         return this;
     }
 }
@@ -421,7 +488,7 @@ class SvgLower extends SvgPlugBase {
 
             const upper = this.upper;
             if (this.isConnect()) {
-                console.log(`disconnect ${this.getName()} to ${this.upper.getName()}`);
+                console.log(`disconnect ${this.name()} to ${this.upper.name()}`);
                 this.upper.deleteConnect(this);
                 this.upper = null;
             }
@@ -457,7 +524,7 @@ class SvgLower extends SvgPlugBase {
 
     public connect(upper: SvgUpper): boolean {
         if (upper != null && upper.connect(this)) {
-            console.log(`connect lower=${this.getName()} to upper=${upper.getName()}`);
+            console.log(`connect lower=${this.name()} to upper=${upper.name()}`);
             this.upper = upper;
             this.calcConnectPotision(this.upper, (x: number, y: number) => {
                 this.move(x, y).front();
@@ -473,7 +540,7 @@ class SvgLower extends SvgPlugBase {
 
     public moveIfDisconnect(x: number, y: number): SvgLower {
         if (!this.isConnect()) {
-            this.plug.move(x, y);
+            this.move(x, y);
         }
         else {
             this.cable.plotStart(x, y);
@@ -497,6 +564,23 @@ class SvgLower extends SvgPlugBase {
                 this.cable.plotEnd(x, y);
             });
         }
+        return this;
+    }
+
+    public delete(): SvgPlugBase {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mousedown', null);
+            this.plug.off('dragstart', null);
+            this.plug.off('dragmove', null);
+            this.plug.off('dragend', null);
+            this.plug.draggable(false);
+            this.plug.remove();
+            this.plug = null;
+        }
+        this.cable.remove();
         return this;
     }
 }
@@ -571,7 +655,7 @@ class SvgCable {
      *
      */
     private plotCable(): void {
-        if (this.endX && this.endY) {
+        if (this.endX !== undefined && this.endY !== undefined) {
             const plot: string = this.plotCallback(this.startX, this.startY, this.endX, this.endY);
             this.cable.plot(plot).back();
         }
@@ -584,5 +668,15 @@ class SvgCable {
         this.cable.plot('');
         this.endX = undefined;
         this.endY = undefined;
+    }
+
+    /**
+     *
+     */
+    public remove(): void {
+        if (this.cable != null) {
+            this.cable.remove();
+            this.cable = null;
+        }
     }
 }

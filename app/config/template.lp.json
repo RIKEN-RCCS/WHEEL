@@ -9,7 +9,7 @@
     "send_files": [],
     "receive_files": [],
     "clean_up": true,
-    "max_size_recieve_file": 17179869184,
+    "max_size_receive_file": 17179869184,
     "children_file": [],
     "relations": [],
     "relation_files": [],

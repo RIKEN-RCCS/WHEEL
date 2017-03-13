@@ -15,7 +15,7 @@ var SshConnectionEvent = (function () {
      */
     SshConnectionEvent.prototype.onEvent = function (socket) {
         var _this = this;
-        socket.on(SshConnectionEvent.eventName, function (name, password, isTest) {
+        socket.on(SshConnectionEvent.eventName, function (name, password) {
             serverUtility.getHostInfo(function (hostList) {
                 var host = hostList.filter(function (host) { return host.name === name; })[0];
                 if (!host) {

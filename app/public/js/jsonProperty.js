@@ -64,7 +64,7 @@ var JsonProperty = (function () {
                 }
                 object[key] = newData;
                 if (prop.isUpdateUI) {
-                    $(document).trigger('updateProperty');
+                    $(document).trigger('updateDisplay');
                 }
                 element.borderValid();
             }
@@ -110,41 +110,62 @@ var JsonProperty = (function () {
                 return;
             }
             object[key] = newData;
-            $(document).trigger('updateProperty');
+            $(document).trigger('updateDisplay');
         });
         this.events["#" + id] = 'change';
     };
     /**
      *
-     * @param object
+     * @param host
      * @param key
      * @param id
      * @param prop
      */
-    JsonProperty.prototype.createHostChangedEvent = function (object, key, id, prop) {
+    JsonProperty.prototype.createHostChangedEvent = function (host, id) {
         var _this = this;
         $(document).on('change', "#" + id, function (eventObject) {
             var newData = $(eventObject.target).val();
-            var oldData = object[key];
+            var oldData = host.name;
             if (oldData === newData) {
                 return;
             }
             var newHost = _this.hostInfos.filter(function (host) { return host.name === newData; })[0];
-            Object.keys(newHost).forEach(function (key) {
-                object[key] = newHost[key];
-            });
+            host.name = newHost.name;
+            host.description = newHost.description;
+            host.path = newHost.path;
+            host.host = newHost.host;
+            host.username = newHost.username;
+            host.privateKey = newHost.privateKey;
+        });
+        this.events["#" + id] = 'change';
+    };
+    /**
+     *
+     * @param host
+     * @param key
+     * @param id
+     * @param prop
+     */
+    JsonProperty.prototype.createSchedulerChangedEvent = function (host, id) {
+        $(document).on('change', "#" + id, function (eventObject) {
+            var newData = $(eventObject.target).val();
+            var oldData = host.job_scheduler;
+            if (oldData === newData) {
+                return;
+            }
+            host.job_scheduler = newData;
         });
         this.events["#" + id] = 'change';
     };
     /**
      *
      * @param object
-     * @param key
      * @param prop
      */
-    JsonProperty.prototype.getContents = function (object, key, prop) {
+    JsonProperty.prototype.getContents = function (object, prop) {
         var content = '';
         var id = "property_" + JsonProperty.counter++;
+        var key = prop.key;
         if (prop.readonly) {
             content = "<input type=\"text\" value=\"" + object[key] + "\" class=\"text_box text_readonly property_text\" disabled>";
         }
@@ -167,10 +188,19 @@ var JsonProperty = (function () {
                 case 'host':
                     var hosts = this.hostInfos.map(function (host) {
                         var isSelected = host.name === object.name ? 'selected' : '';
-                        return "<option value=\"" + host.name + "\" " + isSelected + ">" + host.username + "@" + host.host + "</option>";
+                        return "<option value=\"" + host.name + "\" " + isSelected + ">" + host.name + "</option>";
                     });
                     content = "\n                    <select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">\n                        " + hosts.join('') + "\n                    </select>";
-                    this.createHostChangedEvent(object, key, id, prop);
+                    this.createHostChangedEvent(object, id);
+                    break;
+                case 'scheduler':
+                    var schedulers = Object.keys(config.scheduler).map(function (key) {
+                        var value = config.scheduler[key];
+                        var isSelected = value === object.job_scheduler ? 'selected' : '';
+                        return "<option value=\"" + value + "\" " + isSelected + ">" + value + "</option>";
+                    });
+                    content = "\n                    <select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">\n                        " + schedulers.join('') + "\n                    </select>";
+                    this.createSchedulerChangedEvent(object, id);
                     break;
                 default:
                     break;
@@ -179,98 +209,40 @@ var JsonProperty = (function () {
         return "\n            <tr>\n                <td style=\"width:150px; padding-left: 10px\">" + this.createItemName(key) + "</td>\n                <td style=\"height: 29px\">" + content + "</td>\n            <tr>";
     };
     /**
-     * set up click event for file delete button
-     * @param tree
-     * @param key
-     * @param index
-     */
-    JsonProperty.prototype.setupFileDeleteButtonEvent = function (tree, key, index) {
-        var _this = this;
-        var id = "delete_property_" + JsonProperty.counter++;
-        $(document).on('click', "#" + id, function () {
-            _this.deleteFile(tree, key, index);
-            _this.updateProperty();
-            $(document).trigger('updateProperty');
-        });
-        this.events["#" + id] = 'click';
-        return this.createDeleteButtonHtml(key, id);
-    };
-    /**
-     * set up click event for file add button
-     * @param tree
-     * @param key
-     */
-    JsonProperty.prototype.setupFileAddButtonEvent = function (tree, key) {
-        var _this = this;
-        var id = "add_property_" + JsonProperty.counter++;
-        $(document).on('click', "#" + id, function () {
-            _this.addFile(tree, key);
-            _this.updateProperty();
-            $(document).trigger('updateProperty');
-        });
-        this.events["#" + id] = 'click';
-        return this.createAddButtonHtml(key, id);
-    };
-    /**
      * update property infomation
      */
-    JsonProperty.prototype.updateProperty = function () {
+    JsonProperty.prototype.updateDisplay = function () {
+        this.property.empty();
         this.property.html(this.createPropertyHtml(this.child));
     };
     /**
-     * create delete button html
+     *
+     * @param object
      * @param key
-     * @param id
+     * @param prop
      */
-    JsonProperty.prototype.createDeleteButtonHtml = function (key, id) {
-        return "\n            <hr>\n            <div>" + this.createItemName(key).replace(/s$/, '') + "\n                <div><input type=\"button\" value=\"Delete\" class=\"button\" style=\"width:50px;\" id=" + id + "></div>\n            </div>";
-    };
-    /**
-     * create add button html
-     * @param key
-     * @param id
-     */
-    JsonProperty.prototype.createAddButtonHtml = function (key, id) {
-        return "\n            <hr>\n            <div>" + this.createItemName(key) + "\n                <div><input type=\"button\" value=\"Add\" class=\"button\" style=\"width:50px;\" id=" + id + "></div>\n            </div>";
-    };
-    /**
-     * add IO file relation
-     * @param tree
-     * @param key
-     */
-    JsonProperty.prototype.addFile = function (tree, key) {
-        var file = new SwfFile({
-            name: 'name',
-            description: '',
-            path: "./file" + Date.now(),
-            type: 'file',
-            required: true
+    JsonProperty.prototype.setupButtonEvent = function (object, key, prop) {
+        var _this = this;
+        var id = "button_property_" + JsonProperty.counter++;
+        $(document).on('click', "#" + id, function () {
+            if (prop.callback) {
+                prop.callback(_this.child, object);
+            }
+            if (prop.isUpdateUI) {
+                _this.updateDisplay();
+                $(document).trigger('updateDisplay');
+            }
         });
-        tree[key].push(file);
-        var parent = this.child.getParent();
-        if (key === 'input_files') {
-            parent.addInputFileToParent(this.child, file.path);
-        }
-        else if (key === 'output_files') {
-            parent.addOutputFileToParent(this.child, file.path);
-        }
+        this.events["#" + id] = 'click';
+        return this.createButtonHtml(prop, id);
     };
     /**
-     * delete IO file relation
-     * @param tree
-     * @param key
-     * @param index
+     *
+     * @param prop
+     * @param buttonName
      */
-    JsonProperty.prototype.deleteFile = function (tree, key, index) {
-        var filepath = tree[key][index].path;
-        var parent = this.child.getParent();
-        if (key === 'input_files') {
-            parent.deleteInputFileFromParent(this.child, filepath);
-        }
-        else if (key === 'output_files') {
-            parent.deleteOutputFileFromParent(this.child, filepath);
-        }
-        tree[key].splice(index, 1);
+    JsonProperty.prototype.createButtonHtml = function (prop, id) {
+        return "\n            <hr>\n            <div>" + this.createItemName(prop.title) + "\n                <div><input type=\"button\" value=\"" + prop.key + "\" class=\"button\" id=" + id + "></div>\n            </div>";
     };
     /**
      * create property item name
@@ -288,47 +260,63 @@ var JsonProperty = (function () {
         this.clearEvents();
         JsonProperty.counter = 0;
         this.child = tree;
-        var html = ['<div>propety</div>'];
+        var html = ['<div>property</div>'];
         var parentHtml = [];
-        var prop = ClientUtility.getPropertyInfo(tree);
+        var property = ClientUtility.getPropertyInfo(tree);
         var createTableHtml = function (data) {
             var html = "<table>" + data.join('') + "</table>";
             data.length = 0;
             return html;
         };
-        Object.keys(prop).forEach(function (key) {
-            if (Array.isArray(prop[key])) {
+        var createSubTitle = function (object, prop) {
+            if (prop.button) {
+                return _this.setupButtonEvent(object, prop.key, prop.button);
+            }
+            else if (prop.title) {
+                return "<hr><div>" + prop.title + "</div>";
+            }
+            else {
+                return "<hr><div>" + _this.createItemName(prop.key) + "</div>";
+            }
+        };
+        property.forEach(function (prop) {
+            var key = prop.key;
+            if (prop.isarray) {
                 if (html[0]) {
                     parentHtml.push(createTableHtml(html));
                 }
-                parentHtml.push(_this.setupFileAddButtonEvent(tree, key));
                 tree[key].forEach(function (value, index) {
-                    Object.keys(prop[key][0]).forEach(function (secondKey) {
-                        html.push(_this.getContents(value, secondKey, prop[key][0][secondKey]));
+                    prop.item.forEach(function (item) {
+                        html.push(_this.getContents(value, item));
                     });
-                    parentHtml.push(_this.setupFileDeleteButtonEvent(tree, key, index));
+                    parentHtml.push(createSubTitle(tree[key][index], prop));
                     parentHtml.push(createTableHtml(html));
                 });
                 html.length = 0;
             }
-            else if (prop[key].ishash) {
+            else if (prop.ishash) {
                 if (html[0]) {
                     parentHtml.push(createTableHtml(html));
                 }
-                Object.keys(prop[key]).forEach(function (secondKey) {
-                    if (secondKey === 'ishash') {
-                        return;
-                    }
-                    html.push(_this.getContents(tree[key], secondKey, prop[key][secondKey]));
-                });
-                parentHtml.push("<hr><div>" + _this.createItemName(key) + "</div>");
-                parentHtml.push(createTableHtml(html));
+                if (prop.item) {
+                    prop.item.forEach(function (item) {
+                        html.push(_this.getContents(tree[key], item));
+                    });
+                    parentHtml.push(createSubTitle(tree[key], prop));
+                    parentHtml.push(createTableHtml(html));
+                }
+                else {
+                    parentHtml.push(createSubTitle(tree[key], prop));
+                }
             }
             else {
-                if (!html[0]) {
+                if (prop.title) {
+                    html.push(createSubTitle(tree[key], prop));
+                }
+                else if (!html[0]) {
                     html.push('<hr>');
                 }
-                html.push(_this.getContents(tree, key, prop[key]));
+                html.push(_this.getContents(tree, prop));
             }
         });
         if (html.length) {

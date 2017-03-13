@@ -20,7 +20,7 @@ class SshConnectionEvent implements SocketListener {
      * @return none
      */
     public onEvent(socket: SocketIO.Socket): void {
-        socket.on(SshConnectionEvent.eventName, (name: string, password: string, isTest: boolean) => {
+        socket.on(SshConnectionEvent.eventName, (name: string, password: string) => {
             serverUtility.getHostInfo(
                 (hostList: SwfHostJson[]): void => {
                     const host = hostList.filter(host => host.name === name)[0];

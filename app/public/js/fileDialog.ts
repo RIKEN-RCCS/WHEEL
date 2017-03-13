@@ -227,6 +227,7 @@ class FileDialog implements DialogBase<FileDialog> {
      */
     public onChangeAddress(callback?: Function): FileDialog {
         this.addressBar.change(() => {
+            this.lastSelectDirectory = this.addressBar.val();
             this.updateDialog();
             if (callback) {
                 callback();
@@ -246,8 +247,10 @@ class FileDialog implements DialogBase<FileDialog> {
                 this.addressBar.borderInvalid();
                 return;
             }
+
             const directoryIconHtml = this.createHtml4DirIcon(fileTypes);
             const fileIconHtml = this.createHtml4FileIcon(fileTypes);
+            this.fileDialog.empty();
             this.fileDialog.html(directoryIconHtml + fileIconHtml);
             this.addressBar.val(fileTypes.directory);
             this.addressBar.borderValid();

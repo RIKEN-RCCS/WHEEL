@@ -11,7 +11,7 @@ class SvgContainer {
      * @param plug
      */
     public add(plug: SvgPlugBase): void {
-        const name = plug.getName();
+        const name = plug.name();
         if (this.container[name]) {
             throw new Error('index is duplicated');
         }
@@ -21,27 +21,29 @@ class SvgContainer {
      *
      * @param name
      */
-    public delete(name: string): void;
+    public remove(name: string): void;
     /**
      *
      * @param plug
      */
-    public delete(plug: SvgPlugBase): void;
+    public remove(plug: SvgPlugBase): void;
     /**
      *
      * @param object
      */
-    public delete(object: (string | SvgPlugBase)): void {
+    public remove(object: (string | SvgPlugBase)): void {
         let name: string;
         if (typeof object === 'string') {
             name = object;
         }
         else {
-            name = object.getName();
+            name = object.name();
         }
-        this.container[name].remove();
-        this.container[name] = null;
-        delete this.container[name];
+        if (this.container[name]) {
+            this.container[name].delete();
+            this.container[name] = null;
+            delete this.container[name];
+        }
     }
     /**
      *
@@ -63,7 +65,7 @@ class SvgContainer {
             name = object;
         }
         else {
-            name = object.getName();
+            name = object.name();
         }
         return this.container[name] != null;
     }
@@ -106,7 +108,7 @@ class SvgContainer {
      */
     public clear(): void {
         Object.keys(this.container).forEach(key => {
-            this.delete(key);
+            this.remove(key);
         });
     }
     /**
@@ -116,12 +118,12 @@ class SvgContainer {
      */
     public findFromIndex(taskIndex: number, filepath?: string): SvgPlugBase[] {
         return Object.keys(this.container).filter(key => {
-            const task = this.container[key].getTaskIndex();
+            const task = this.container[key].taskIndex();
             if (filepath === undefined) {
                 return task == taskIndex;
             }
             else {
-                const file = this.container[key].getFilepath();
+                const file = this.container[key].filepathFromTree();
                 return (task == taskIndex && file == filepath);
             }
         }).map(key => this.container[key]);
@@ -145,24 +147,26 @@ class SvgFileRelations {
     /**
      *
      */
-    private relationFiles: SwfRelationFile[];
+    private fileRelations: SwfRelationFile[];
 
     /**
      *
-     * @param relationFiles
+     * @param fileRelations
      */
-    public constructor(relationFiles: SwfRelationFile[]) {
-        this.relationFiles = relationFiles;
+    public constructor(fileRelations: SwfRelationFile[]) {
+        this.fileRelations = fileRelations;
     }
 
     /**
      *
      * @param taskIndex
      * @param filepath
+     * @param dirname
      */
-    public count(taskIndex: number, filepath: string): number {
-        return this.relationFiles
-            .filter(relation => relation.getOutputFileName() === `${taskIndex}_${filepath}`)
+    public count(taskIndex: number, filepath: string, dirname: string): number {
+        const filename = `${taskIndex}_${dirname}/${ClientUtility.normalize(filepath)}`;
+        return this.fileRelations
+            .filter(relation => relation.getOutputFileName() === filename)
             .length;
     }
 
@@ -170,11 +174,11 @@ class SvgFileRelations {
      *
      */
     public setFileRelation(allConnectors: SvgContainer, allReceptors: SvgContainer) {
-        if (this.relationFiles == null) {
+        if (this.fileRelations == null) {
             return;
         }
 
-        const relaltions: SwfRelationFile[] = JSON.parse(JSON.stringify(this.relationFiles));
+        const relaltions: SwfRelationFile[] = JSON.parse(JSON.stringify(this.fileRelations));
         this.clear();
         relaltions.forEach(relation => {
             const connectors = <SvgConnector[]>allConnectors.findFromIndex(relation.index_before_task, relation.path_output_file);
@@ -211,11 +215,15 @@ class SvgFileRelations {
         if (connector == null || receptor == null) {
             return null;
         }
+
+        const outputPath = ClientUtility.normalize(`${connector.parentDirname()}/${connector.filepath()}`);
+        const inputPath = ClientUtility.normalize(`${receptor.parentDirname()}/${receptor.filepath()}`);
+
         const relation: SwfFileRelationJson = {
-            index_before_task: connector.getTaskIndex(),
-            path_output_file: connector.getFilepath(),
-            index_after_task: receptor.getTaskIndex(),
-            path_input_file: receptor.getFilepath()
+            index_before_task: connector.taskIndex(),
+            path_output_file: `./${outputPath}`,
+            index_after_task: receptor.taskIndex(),
+            path_input_file: `./${inputPath}`,
         };
         return new SwfRelationFile(relation);
     }
@@ -231,7 +239,7 @@ class SvgFileRelations {
             return;
         }
         this.deleteFileRelation(connector, receptor);
-        this.relationFiles.push(relation);
+        this.fileRelations.push(relation);
     }
 
     /**
@@ -244,18 +252,18 @@ class SvgFileRelations {
         if (fileRelation == null) {
             return;
         }
-        this.relationFiles.forEach((relation, index) => {
-            if (relation.toString() === fileRelation.toString()) {
-                this.relationFiles.splice(index, 1);
+        for (let index = this.fileRelations.length - 1; index >= 0; index--) {
+            if (this.fileRelations[index].toString() === fileRelation.toString()) {
+                this.fileRelations.splice(index, 1);
             }
-        });
+        }
     }
 
     /**
      *
      */
     public clear() {
-        this.relationFiles.length = 0;
+        this.fileRelations.splice(0, this.fileRelations.length);
     }
 }
 
@@ -323,8 +331,8 @@ class SvgRelations {
             return null;
         }
         return new SwfRelation({
-            index_before_task: lower.getTaskIndex(),
-            index_after_task: upper.getTaskIndex()
+            index_before_task: lower.taskIndex(),
+            index_after_task: upper.taskIndex()
         });
     }
 
@@ -352,11 +360,11 @@ class SvgRelations {
         if (taskRelation == null) {
             return;
         }
-        this.relations.forEach((relation, index) => {
-            if (relation.toString() === taskRelation.toString()) {
+        for (let index = this.relations.length - 1; index >= 0; index--) {
+            if (this.relations[index].toString() === taskRelation.toString()) {
                 this.relations.splice(index, 1);
             }
-        });
+        }
     }
 
     /**
@@ -369,17 +377,20 @@ class SvgRelations {
 
 class SvgBox {
     private draw: svgjs.Doc;
+
     private group: svgjs.Element;
     private outerFrame: svgjs.Element;
     private innerFrame: svgjs.Element;
     private title: svgjs.Element;
+    private inputGroup: svgjs.Element;
+    private outputGroup: svgjs.Element;
+
     private tree: SwfTree;
     private position: Position2D;
     private startX: number;
     private startY: number;
     private width: number;
     private height: number;
-    private dblclickCallback: (() => void);
 
     private static opacity = 0.6;
     private static stroke = 2;
@@ -394,14 +405,17 @@ class SvgBox {
     public constructor(draw: svgjs.Doc, tree: SwfTree, position: Position2D) {
         this.draw = draw;
         this.group = this.draw.group();
+        this.inputGroup = this.draw.group();
+        this.outputGroup = this.draw.group();
         this.tree = tree;
         this.position = position;
+        this.create();
     }
 
     /**
      *
      */
-    public create(): SvgBox {
+    private create(): SvgBox {
         const input = this.createInput();
         const output = this.createOutput();
         const outputBBox = output.bbox();
@@ -421,9 +435,9 @@ class SvgBox {
             .add(this.createOuterFrame())
             .add(this.createInnerFrame())
             .add(title)
-            .move(this.position.x, this.position.y)
             .add(input)
             .add(output)
+            .move(this.position.x, this.position.y)
             .style('cursor', 'default')
             .opacity(SvgBox.opacity)
             .draggable();
@@ -437,11 +451,11 @@ class SvgBox {
      *
      * @param mousedown
      */
-    public onMousedown(callback: (() => void)): SvgBox {
+    public onMousedown(callback: ((tree: SwfTree) => void)): SvgBox {
         this.group.on('mousedown', (e: Event) => {
             e.preventDefault();
             this.group.style('cursor', 'move');
-            callback();
+            callback(this.tree);
         });
         return this;
     }
@@ -450,8 +464,12 @@ class SvgBox {
      *
      * @param dblclick
      */
-    public onDblclick(callback: (() => void)): SvgBox {
-        this.dblclickCallback = callback;
+    public onDblclick(callback: ((tree: SwfTree) => void)): SvgBox {
+        this.group.on('dblclick', (e: Event) => {
+            e.stopPropagation();
+            e.preventDefault();
+            callback(this.tree);
+        });
         return this;
     }
 
@@ -487,35 +505,16 @@ class SvgBox {
      * @param callback
      */
     public onDragend(callback: ((x: number, y: number) => void)): SvgBox {
-        let clicked = false;
         this.group.on('dragend', e => {
             e.preventDefault();
             this.group.style('cursor', 'default');
-            this.position.x = Math.max(this.group.x(), 0);
-            this.position.y = Math.max(this.group.y(), 0);
+            // this.position.x = Math.max(this.group.x(), 0);
+            // this.position.y = Math.max(this.group.y(), 0);
+            this.position.x = this.group.x();
+            this.position.y = this.group.y();
             this.group.move(this.position.x, this.position.y);
             callback(this.position.x, this.position.y);
-
-            if (!clicked) {
-                clicked = true;
-                setTimeout(() => clicked = false, 500);
-            }
-            else {
-                clicked = false;
-                if (this.dblclickCallback) {
-                    this.dblclickCallback();
-                }
-            }
         });
-        return this;
-    }
-
-    /**
-     *
-     * @param element
-     */
-    public add(element: svgjs.Element): SvgBox {
-        this.group.add(element);
         return this;
     }
 
@@ -539,6 +538,18 @@ class SvgBox {
      */
     public y(): number {
         return this.position.y;
+    }
+
+    /**
+     *
+     * @param x
+     * @param y
+     */
+    public move(x: number, y: number): SvgBox {
+        this.position.x = x;
+        this.position.y = y;
+        this.group.move(x, y);
+        return this;
     }
 
     /**
@@ -618,7 +629,6 @@ class SvgBox {
      *
      */
     private createOutput(): svgjs.Element {
-        const group = this.draw.group();
         this.tree.output_files.forEach((output, index) => {
             const y = SvgBox.caclPlugPosY(index);
             const text = this.draw
@@ -626,25 +636,24 @@ class SvgBox {
                 .fill('white')
                 .y(y);
             text.x(-text.bbox().width);
-            group.add(text);
+            this.outputGroup.add(text);
         });
-        return group;
+        return this.outputGroup;
     }
 
     /**
      *
      */
     private createInput(): svgjs.Element {
-        const group = this.draw.group();
         this.tree.input_files.forEach((input, index) => {
             const y = SvgBox.caclPlugPosY(index);
             const text = this.draw
                 .text(input.name)
                 .fill('white')
                 .move(12, y);
-            group.add(text);
+            this.inputGroup.add(text);
         });
-        return group;
+        return this.inputGroup;
     }
 
     /**
@@ -665,6 +674,28 @@ class SvgBox {
         }
     }
 
+    public delete() {
+        this.draw = null;
+        this.group.off('mousedown', null);
+        this.group.off('dblclick', null);
+        this.group.off('dragstart', null);
+        this.group.off('dragmove', null);
+        this.group.off('dragend', null);
+        this.group.draggable(false);
+        this.inputGroup.each((i, children) => {
+            children[i].remove();
+        });
+        this.outputGroup.each((i, children) => {
+            children[i].remove();
+        });
+        this.group.each((i, children) => {
+            children[i].remove();
+        });
+        this.inputGroup.remove();
+        this.outputGroup.remove();
+        this.group.remove();
+    }
+
     /**
      *
      * @param index
@@ -675,9 +706,8 @@ class SvgBox {
 }
 
 class SvgNodeUI {
-    private draw: svgjs.Doc;
-    private box: SvgBox;
 
+    private box: SvgBox;
     private hasConnectors: SvgContainer = new SvgContainer();
     private hasReceptors: SvgContainer = new SvgContainer();
     private hasUpper: SvgUpper;
@@ -686,6 +716,8 @@ class SvgNodeUI {
     private tree: SwfTree;
     private parent: SwfTree;
 
+    private static draw: svgjs.Doc;
+    private static allNodeUI: SvgNodeUI[] = [];
     private static allReceptors: SvgContainer = new SvgContainer();
     private static allConnectors: SvgContainer = new SvgContainer();
     private static allUppers: SvgContainer = new SvgContainer();
@@ -697,8 +729,8 @@ class SvgNodeUI {
     private static selectedLower: SvgLower;
     private static selectedNodeUI: SvgNodeUI;
 
-    private static relationFiles: SvgFileRelations;
-    private static relations: SvgRelations;
+    private static fileRelations: SvgFileRelations = new SvgFileRelations([]);
+    private static relations: SvgRelations = new SvgRelations([]);
 
     /**
      *
@@ -706,88 +738,13 @@ class SvgNodeUI {
      * @param tree
      */
     private constructor(svg: svgjs.Doc, tree: SwfTree, position: Position2D) {
-        this.draw = svg;
         this.box = new SvgBox(svg, tree, position);
+
         this.tree = tree;
         this.parent = tree.getParent();
-        this.create();
-    }
 
-    /**
-     *
-     */
-    private static initNodeUI() {
-        this.allConnectors.clear();
-        this.allReceptors.clear();
-        this.allLowers.clear();
-        this.allUppers.clear();
-    }
-
-    /**
-     *
-     * @param svg
-     * @param tree
-     * @param mousedown
-     * @param dblclick
-     * @param isHighlight
-     */
-    public static create(svg: svgjs.Doc, tree: SwfTree, highLightTree: SwfTree, mousedown: ((child: SwfTree) => void), dblclick: ((child: SwfTree) => void)) {
-
-        this.initNodeUI();
-
-        this.relationFiles = new SvgFileRelations(tree.file_relations);
-        this.relations = new SvgRelations(tree.relations);
-
-        tree.children.forEach((child, index) => {
-            const node = new SvgNodeUI(svg, child, tree.positions[index]);
-            node.box.onMousedown(() => {
-                mousedown(child);
-            });
-            node.box.onDblclick(() => {
-                dblclick(child);
-            });
-            if (highLightTree === child) {
-                node.box.select();
-                this.selectedNodeUI = node;
-            }
-        });
-
-        this.relationFiles.setFileRelation(this.allConnectors, this.allReceptors);
-        this.relations.setRelation(this.allLowers, this.allUppers);
-
-        svg.off('mousedown', null);
-        svg.off('dblclick', null);
-        svg.on('mousedown', () => {
-            this.unselect();
-            mousedown(null);
-        });
-        svg.on('dblclick', () => {
-            const grand = tree.getParent();
-            dblclick(grand);
-        });
-
-        return this;
-    }
-
-    /**
-     *
-     */
-    private static unselect() {
-        if (this.selectedNodeUI != null) {
-            this.selectedNodeUI.box.unselect();
-        }
-        this.selectedNodeUI = null;
-    }
-
-    /**
-     *
-     */
-    private create() {
-
-        this.box
-            .create()
-            .add(this.createConnector())
-            .add(this.createReceptor());
+        this.createConnector();
+        this.createReceptor();
 
         this.createUpper();
         this.createLower();
@@ -800,13 +757,88 @@ class SvgNodeUI {
     /**
      *
      */
+    private static init(id: string, mousedown: ((child: SwfTree) => void), dblclick: ((child: SwfTree) => void)) {
+        this.allConnectors.clear();
+        this.allReceptors.clear();
+        this.allLowers.clear();
+        this.allUppers.clear();
+
+        this.allNodeUI.forEach((node, index) => {
+            node.box.delete();
+            node.hasConnectors.clear();
+            node.hasReceptors.clear();
+            node.hasLowers.clear();
+            if (node.hasUpper) {
+                node.hasUpper.delete();
+            }
+
+            node.box = null;
+        });
+        this.allNodeUI = [];
+
+        if (this.draw == null) {
+            this.draw = SVG(id);
+            this.draw.on('mousedown', () => {
+                this.unselect();
+                mousedown(null);
+            });
+            this.draw.on('dblclick', () => {
+                dblclick(null);
+            });
+        }
+    }
+
+    /**
+     *
+     * @param tree
+     * @param mousedown
+     * @param dblclick
+     * @param isHighlight
+     */
+    public static create(tree: SwfTree, selectTree: SwfTree, id: string, mousedown: ((child: SwfTree) => void), dblclick: ((child: SwfTree) => void)) {
+
+        this.init(id, mousedown, dblclick);
+
+        this.fileRelations = new SvgFileRelations(tree.file_relations);
+        this.relations = new SvgRelations(tree.relations);
+
+        tree.children.forEach((child, index) => {
+            const node = new SvgNodeUI(SvgNodeUI.draw, child, tree.positions[index]);
+            this.allNodeUI.push(node);
+
+            node.box.onMousedown(mousedown);
+            node.box.onDblclick(dblclick);
+
+            if (child === selectTree) {
+                node.box.select();
+                this.selectedNodeUI = node;
+            }
+        });
+
+        this.fileRelations.setFileRelation(this.allConnectors, this.allReceptors);
+        this.relations.setRelation(this.allLowers, this.allUppers);
+    }
+
+    /**
+     *
+     */
+    private static unselect() {
+        if (this.selectedNodeUI != null && this.selectedNodeUI.box != null) {
+            this.selectedNodeUI.box.unselect();
+        }
+        this.selectedNodeUI = null;
+    }
+
+    /**
+     *
+     */
     private createUpper() {
         const plugConfig: PlugConfig = {
-            svg: this.draw,
+            svg: SvgNodeUI.draw,
             originX: this.box.x(),
             originY: this.box.y(),
             offsetX: this.box.getWidth() / 2,
-            offsetY: -2,
+            offsetY: 0,
             color: config.plug_color.flow,
             taskIndex: this.tree.getTaskIndex()
         };
@@ -848,11 +880,11 @@ class SvgNodeUI {
     private generateLower(): SvgLower {
 
         const plugConfig: PlugConfig = {
-            svg: this.draw,
+            svg: SvgNodeUI.draw,
             originX: this.box.x(),
             originY: this.box.y(),
             offsetX: this.box.getWidth() / 2,
-            offsetY: this.box.getHeight(),
+            offsetY: this.box.getHeight() + 2,
             color: config.plug_color.flow,
             taskIndex: this.tree.getTaskIndex()
         };
@@ -861,11 +893,11 @@ class SvgNodeUI {
             .onDragstart(() => {
                 if (!lower.isConnect()) {
                     const newer = this.generateLower();
-                    console.log(`create new lower index=${newer.getName()} `);
+                    console.log(`create new lower index=${newer.name()} `);
                 }
             })
             .onMousedown((upper: SvgUpper) => {
-                const index = lower.getName();
+                const index = lower.name();
                 console.log(`has index= ${index} `);
                 this.front();
                 SvgNodeUI.selectedUpper = null;
@@ -886,9 +918,9 @@ class SvgNodeUI {
                     SvgNodeUI.relations.addRelation(upper, lower);
                 }
                 else {
-                    SvgNodeUI.allLowers.delete(lower);
-                    this.hasLowers.delete(lower);
-                    console.log(`delete lower index=${lower.getName()} `);
+                    SvgNodeUI.allLowers.remove(lower);
+                    this.hasLowers.remove(lower);
+                    console.log(`delete lower index=${lower.name()} `);
                 }
 
                 SvgNodeUI.allUppers.forEach((upper: SvgUpper) => {
@@ -909,12 +941,12 @@ class SvgNodeUI {
      *
      */
     private createConnector(): svgjs.Element {
-        const group = this.draw.group();
+        const group = SvgNodeUI.draw.group();
         this.tree.output_files.forEach((output, index) => {
             const y = SvgBox.caclPlugPosY(index);
             this.generateConnector(output, index);
 
-            const count = SvgNodeUI.relationFiles.count(this.tree.getTaskIndex(), output.path);
+            const count = SvgNodeUI.fileRelations.count(this.tree.getTaskIndex(), output.path, this.tree.path);
             for (let c = 0; c < count; c++) {
                 this.generateConnector(output, index);
             }
@@ -930,13 +962,14 @@ class SvgNodeUI {
     private generateConnector(output: SwfFile, index: number) {
 
         const plugConfig: PlugConfig = {
-            svg: this.draw,
+            svg: SvgNodeUI.draw,
             originX: this.box.x(),
             originY: this.box.y(),
             offsetX: this.box.getWidth() - 8,
             offsetY: SvgBox.caclPlugPosY(index),
             color: config.plug_color[output.type],
             file: output,
+            tree: this.tree,
             taskIndex: this.tree.getTaskIndex()
         };
 
@@ -944,11 +977,11 @@ class SvgNodeUI {
             .onDragstart(() => {
                 if (!connector.isConnect()) {
                     const newer = this.generateConnector(output, index);
-                    console.log(`create new connecotr index=${newer.getName()} `);
+                    console.log(`create new connecotr index=${newer.name()} `);
                 }
             })
             .onMousedown((receptor: SvgReceptor) => {
-                const index = connector.getName();
+                const index = connector.name();
                 console.log(`has index= ${index} `);
                 SvgNodeUI.selectedReceptor = null;
                 SvgNodeUI.selectedConnector = connector;
@@ -956,7 +989,7 @@ class SvgNodeUI {
                 SvgNodeUI.allReceptors.forEach((receptor: SvgReceptor) => {
                     receptor.frontIfConnectedPlug();
                 });
-                SvgNodeUI.relationFiles.deleteFileRelation(connector, receptor);
+                SvgNodeUI.fileRelations.deleteFileRelation(connector, receptor);
                 this.addParentFile(connector, receptor);
             })
             .onDragmove(() => {
@@ -969,13 +1002,13 @@ class SvgNodeUI {
                 this.front();
 
                 if (connector.connect(receptor)) {
-                    SvgNodeUI.relationFiles.addFileRelation(connector, receptor);
+                    SvgNodeUI.fileRelations.addFileRelation(connector, receptor);
                     this.deleteParentFile(connector, receptor);
                 }
                 else {
-                    SvgNodeUI.allConnectors.delete(connector);
-                    this.hasConnectors.delete(connector);
-                    console.log(`delete connector index=${connector.getName()}`);
+                    SvgNodeUI.allConnectors.remove(connector);
+                    this.hasConnectors.remove(connector);
+                    console.log(`delete connector index=${connector.name()}`);
                 }
 
                 this.hasReceptors.forEach((receptor: SvgReceptor) => {
@@ -992,17 +1025,18 @@ class SvgNodeUI {
      *
      */
     private createReceptor(): svgjs.Element {
-        const group = this.draw.group();
+        const group = SvgNodeUI.draw.group();
         this.tree.input_files.forEach((input, fileIndex) => {
 
             const plugConfig: PlugConfig = {
-                svg: this.draw,
+                svg: SvgNodeUI.draw,
                 originX: this.box.x(),
                 originY: this.box.y(),
                 offsetX: -8,
                 offsetY: SvgBox.caclPlugPosY(fileIndex),
                 color: config.plug_color[input.type],
                 file: input,
+                tree: this.tree,
                 taskIndex: this.tree.getTaskIndex()
             };
 
@@ -1037,14 +1071,14 @@ class SvgNodeUI {
         if (receptor == null) {
             return;
         }
-        const filepath = connector.getFilepath();
+        const filepath = connector.filepathFromTree();
         const count = this.hasConnectors.count((plug: SvgConnector) => {
-            return filepath === plug.getFilepath() && plug.isConnect();
+            return filepath === plug.filepathFromTree() && plug.isConnect();
         });
         if (count === 0) {
-            this.parent.addOutputFileToParent(connector.getTaskIndex(), connector.getFilepath());
+            this.parent.addOutputFileToParent(connector.taskIndex(), connector.filepathFromTree());
         }
-        this.parent.addInputFileToParent(receptor.getTaskIndex(), receptor.getFilepath());
+        this.parent.addInputFileToParent(receptor.taskIndex(), receptor.filepathFromTree());
     }
 
     /**
@@ -1054,18 +1088,18 @@ class SvgNodeUI {
      */
     private deleteParentFile(connector: SvgConnector, receptor: SvgReceptor) {
         if (connector != null) {
-            const taskIndex = connector.getTaskIndex();
-            const filepath = connector.getFilepath();
+            const taskIndex = connector.taskIndex();
+            const filepath = connector.filepathFromTree();
             const count = this.hasConnectors.count((plug: SvgConnector) => {
-                return filepath === plug.getFilepath() && plug.isConnect();
+                return filepath === plug.filepathFromTree() && plug.isConnect();
             });
             if (count !== 0) {
                 this.parent.deleteOutputFileFromParent(taskIndex, filepath);
             }
         }
         if (receptor != null) {
-            const taskIndex = receptor.getTaskIndex();
-            const filepath = receptor.getFilepath();
+            const taskIndex = receptor.taskIndex();
+            const filepath = receptor.filepathFromTree();
             this.parent.deleteInputFileFromParent(taskIndex, filepath);
         }
     }
@@ -1111,7 +1145,7 @@ class SvgNodeUI {
      */
     private onDragend(): void {
         this.box.onDragend((x: number, y: number) => {
-            this.movePlug(x, y);
+            this.fit(x, y);
         });
     }
 
@@ -1130,6 +1164,163 @@ class SvgNodeUI {
         this.hasLowers.forEach((lower: SvgLower) => {
             lower.moveIfDisconnect(x, y);
         });
-        this.hasUpper.moveIfConnectedPlug(x, y);
+        if (this.hasUpper) {
+            this.hasUpper.moveIfConnectedPlug(x, y);
+        }
+    }
+
+    /**
+     *
+     * @param x
+     * @param y
+     */
+    public fit(x: number, y: number) {
+        const element = $('#node_svg');
+        SvgNodeUI.allNodeUI.forEach(node => {
+            const nodeX = node.box.x();
+            const nodeY = node.box.y();
+            const maxX = element.width() - this.box.getWidth();
+            const maxY = element.height() - this.box.getHeight();
+            x = Math.max(Math.min(maxX, x), 0);
+            y = Math.max(Math.min(maxY, y), 0);
+            this.box.move(x, y);
+            this.movePlug(x, y);
+        });
+    }
+}
+
+
+class SvgNodePain {
+    private static draw: svgjs.Doc;
+    private static svgHeight: number = 0;
+    private static svgWidth: number = 0;
+    private static pains: SvgNodePain[] = [];
+    private static taskIndex: string;
+    private static callback: ((tree: SwfTree) => void);
+    private triangle: svgjs.Element;
+    private text: svgjs.Element;
+    private tree: SwfTree;
+
+    /**
+     *
+     * @param draw
+     * @param tree
+     */
+    private constructor(tree: SwfTree) {
+        this.tree = tree;
+        this.create();
+        this.setEvents();
+    }
+
+    /**
+     *
+     */
+    private create() {
+
+        const x = 10 * this.tree.getHierarchy() + 12;
+        const y = 20 * this.tree.getAbsoluteIndex() + 15;
+
+        const NORMAL_COLOR = 'white';
+        const HIGHLIGHT_COLOR = 'orange';
+        const color: string = SvgNodePain.taskIndex === this.tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
+
+        this.triangle = SvgNodePain.draw
+            .polygon([[x - 5, y - 5], [x - 5, y + 5], [x + 2, y]])
+            .attr({ fill: color, stroke: 'black' })
+            .center(x, y);
+
+        this.text = SvgNodePain.draw
+            .text(this.tree.name)
+            .font({
+                size: 12,
+                leading: '1'
+            })
+            .fill(NORMAL_COLOR)
+            .x(x + 10)
+            .cy(y);
+
+        SvgNodePain.svgHeight = Math.max(SvgNodePain.svgHeight, y);
+        SvgNodePain.svgWidth = Math.max(SvgNodePain.svgWidth, this.text.bbox().width + this.text.x());
+    }
+
+    /**
+     *
+     */
+    private setEvents() {
+        if (!ClientUtility.isImplimentsWorkflow(this.tree.type)) {
+            return;
+        }
+        this.text.style('cursor', 'pointer');
+        this.text.on('mouseover', () => {
+            this.text.attr({ 'text-decoration': 'underline' });
+        });
+        this.text.on('mouseout', () => {
+            this.text.attr({ 'text-decoration': 'none' });
+        });
+        this.text.on('click', () => {
+            SvgNodePain.callback(this.tree);
+        });
+    }
+
+    /**
+     *
+     */
+    private delete() {
+        this.text.off('mouseover', null);
+        this.text.off('mouseout', null);
+        this.text.off('click', null);
+        this.text.remove();
+        this.triangle.remove();
+        this.text = null;
+        this.triangle = null;
+    }
+
+    /**
+     *
+     * @param taskIndex
+     * @param id
+     * @param clicked
+     */
+    private static init(taskIndex: string, id: string, clicked: ((tree: SwfTree) => void)) {
+        this.pains.forEach(pain => {
+            pain.delete();
+            pain = null;
+        });
+        this.callback = null;
+
+        if (this.draw == null) {
+            this.draw = SVG(id);
+        }
+
+        this.pains = [];
+        this.svgHeight = 0;
+        this.svgWidth = 0;
+        this.taskIndex = taskIndex;
+        this.callback = clicked;
+    }
+
+    /**
+     *
+     * @param tree
+     * @param taskIndex
+     * @param id
+     * @param clicked
+     */
+    public static create(tree: SwfTree, taskIndex: string, id: string, clicked: ((tree: SwfTree) => void)) {
+        this.init(taskIndex, id, clicked);
+        this.createPain(tree);
+        this.draw.size(this.svgWidth + 5, this.svgHeight + 10);
+    }
+
+    /**
+     *
+     * @param draw
+     * @param tree
+     */
+    private static createPain(tree: SwfTree) {
+        this.pains.push(new SvgNodePain(tree));
+        tree.children.forEach(child => {
+            this.createPain(child);
+        });
     }
 }

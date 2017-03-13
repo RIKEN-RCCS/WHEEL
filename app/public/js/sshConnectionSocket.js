@@ -17,12 +17,11 @@ var SshConnectionSocket = (function () {
      *
      * @param label
      * @param password
-     * @param isTest
      * @param callback
      */
-    SshConnectionSocket.prototype.emit = function (label, password, isTest, callback) {
+    SshConnectionSocket.prototype.emit = function (label, password, callback) {
         this.onEvent(callback);
-        this.socket.json.emit(SshConnectionSocket.eventName, label, password, isTest);
+        this.socket.json.emit(SshConnectionSocket.eventName, label, password);
     };
     return SshConnectionSocket;
 }());

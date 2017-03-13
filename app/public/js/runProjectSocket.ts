@@ -1,3 +1,6 @@
+/**
+ *
+ */
 class RunProjectSocket {
 
     /**
@@ -12,18 +15,27 @@ class RunProjectSocket {
 
     /**
      * construct new socket
-     * @param nsp: namespace of socket
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
-    public onEvent(callback: ((state: string) => void)): void {
+    /**
+     *
+     * @param callback
+     */
+    public onEvent(callback: ((isSucceed: boolean) => void)): void {
         this.socket.once(RunProjectSocket.eventName, callback);
     }
 
-    public emit(swfFilePath: string, callback: ((state: string) => void)): void {
+    /**
+     *
+     * @param swfFilePath
+     * @param passInfo
+     * @param callback
+     */
+    public emit(swfFilePath: string, passInfo: { [name: string]: string }, callback: ((isSucceed: boolean) => void)): void {
         this.onEvent(callback);
-        this.socket.emit(RunProjectSocket.eventName, swfFilePath);
+        this.socket.emit(RunProjectSocket.eventName, swfFilePath, passInfo);
     }
 }

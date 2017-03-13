@@ -23,6 +23,27 @@ class SwfFile implements SwfFileJson {
     public getPath(): string {
         return ClientUtility.normalize(this.path);
     }
+    public clone(): SwfFile {
+        return new SwfFile(this);
+    }
+    public set(file: SwfFile): void {
+        this.name = file.name;
+        this.description = file.description;
+        this.path = file.path;
+        this.type = file.type;
+        this.required = file.required;
+    }
+    public static getDefault(): SwfFile {
+        const rand = Math.floor(Date.now() / 100) % 100000;
+        const filename = `File${`00000${rand}`.slice(-5)}`;
+        return new SwfFile({
+            name: 'name',
+            description: '',
+            path: `./${filename}`,
+            type: 'file',
+            required: true
+        });
+    }
 }
 
 /**
@@ -34,7 +55,7 @@ class SwfTask implements SwfTaskJson {
     public path: string;
     public type: string;
     public clean_up: boolean;
-    public max_size_recieve_file: number;
+    public max_size_receive_file: number;
     public script: SwfFile;
     public input_files: SwfFile[];
     public output_files: SwfFile[];
@@ -51,7 +72,7 @@ class SwfTask implements SwfTaskJson {
         this.send_files = JSON.parse(JSON.stringify(swfTask.send_files)).map(file => new SwfFile(file));
         this.receive_files = JSON.parse(JSON.stringify(swfTask.receive_files)).map(file => new SwfFile(file));
         this.clean_up = swfTask.clean_up;
-        this.max_size_recieve_file = swfTask.max_size_recieve_file;
+        this.max_size_receive_file = swfTask.max_size_receive_file;
     }
 
     public getInputFile(path: string): SwfFile {
@@ -100,10 +121,10 @@ class SwfRelationFile implements SwfFileRelationJson {
         this.path_input_file = swfRelation.path_input_file;
     }
     public getOutputFileName(): string {
-        return `${this.index_before_task}_${this.path_output_file}`;
+        return `${this.index_before_task}_${ClientUtility.normalize(this.path_output_file)}`;
     }
     public getInputFileName(): string {
-        return `${this.index_after_task}_${this.path_input_file}`;
+        return `${this.index_after_task}_${ClientUtility.normalize(this.path_input_file)}`;
     }
     public toString(): string {
         return `${this.getOutputFileName()}_${this.getInputFileName()}`;
@@ -142,6 +163,34 @@ class SwfWorkflow extends SwfTask implements SwfWorkflowJson {
         if (swfWorkflow.positions) {
             this.positions = JSON.parse(JSON.stringify(swfWorkflow.positions));
         }
+    }
+    public inputFilePathCount(path: string): number {
+        path = ClientUtility.normalize(path);
+        let counter = 0;
+        this.file_relations.forEach(relation => {
+            if (ClientUtility.normalize(relation.path_input_file) === path) {
+                counter++;
+            }
+        });
+        return counter;
+    }
+    public outputFilePathCount(path: string): number {
+        path = ClientUtility.normalize(path);
+        let counter = 0;
+        this.file_relations.forEach(relation => {
+            if (ClientUtility.normalize(relation.path_output_file) === path) {
+                counter++;
+            }
+        });
+        return counter;
+    }
+    public isExistDuplicateInputFilePath(path: string): boolean {
+        const counter = this.inputFilePathCount(path);
+        return counter > 1;
+    }
+    public isExistDuplicateOutputFilePath(path: string): boolean {
+        const counter = this.outputFilePathCount(path);
+        return counter > 1;
     }
 }
 
@@ -224,6 +273,10 @@ class SwfLog implements SwfLogJson {
      *
      */
     public execution_end_date: string;
+    /**
+     *
+     */
+    public host?: SwfHostJson;
 
 
     private static root: SwfLog;
@@ -249,6 +302,10 @@ class SwfLog implements SwfLogJson {
         if (logJson.children) {
             const children = JSON.parse(JSON.stringify(logJson.children));
             this.children = children.map(child => new SwfLog(child));
+        }
+
+        if (logJson.host) {
+            this.host = JSON.parse(JSON.stringify(logJson.host));
         }
     }
 
@@ -330,6 +387,27 @@ class SwfLog implements SwfLogJson {
      */
     public getHierarchy(): number {
         return this.indexes.length - 1;
+    }
+
+    /**
+     *
+     */
+    public static getHostList(): SwfHostJson[] {
+        const hash = {};
+        const notSeachedList: SwfLog[] = [this.root];
+        while (true) {
+            const log = notSeachedList.shift();
+            if (!log) {
+                break;
+            }
+            if (log.host && !ClientUtility.isLocalHost(log.host.host)) {
+                hash[log.host.name] = log.host;
+            }
+            log.children.forEach(child => {
+                notSeachedList.push(child);
+            });
+        }
+        return Object.keys(hash).map(key => hash[key]);
     }
 }
 

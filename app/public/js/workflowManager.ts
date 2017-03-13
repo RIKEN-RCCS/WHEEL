@@ -5,6 +5,7 @@ $(() => {
     const getFileStatSocket = new GetFileStatSocket(socket);
     const getTemplateJsonFileSocket = new GetTemplateJsonFileSocket(socket);
     const getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
+    const fileUploadSocket = new UploadFileSocket(socket);
 
     const jsonProperty = new JsonProperty();
 
@@ -18,11 +19,9 @@ $(() => {
     const workflowUpdate = $('#workflow_update');
     const workflowDesc = $('#workflow_desc');
 
-    const treeSvg = $('#workflow_tree_svg');
-    const nodeSvg = $('#node_svg');
-
     const saveButton = $('#save_button');
     const resetButton = $('#reset_button');
+    const fileSelect = $('#file_select');
 
     const cookies = ClientUtility.getCookies();
     const projectFilePath = cookies['project'];
@@ -30,17 +29,36 @@ $(() => {
     const rootFilePath = cookies['root'];
 
     let taskIndex: string = cookies['index'];
+    let hostInfos: SwfHostJson[];
     let rootTree: SwfTree;
     let parentTree: SwfTree;
     let childTree: SwfTree;
-    let svgHeight = 0;
-    let svgWidth = 0;
 
     /**
      *
      */
-    $(document).on('updateProperty', () => {
-        updateDisplay(taskIndex);
+    $(document).on('updateDisplay', () => {
+        display(taskIndex);
+    });
+
+    /**
+     *
+     */
+    $(document).on('selectFile', (eventObject, value: { isMultiple: boolean, callback: Function }) => {
+        if (value.isMultiple) {
+            fileSelect.prop('multiple', 'multiple');
+        }
+        else {
+            fileSelect.removeProp('multiple');
+        }
+        fileSelect.click();
+        fileSelect.off('change');
+        fileSelect.one('change', (eventObject) => {
+            const target: any = eventObject.target;
+            const files: FileList = target.files;
+            value.callback(files);
+            showProperty(childTree);
+        });
     });
 
     /**
@@ -55,9 +73,7 @@ $(() => {
      */
     workflowName.change(() => {
         if (parentTree.name = workflowName.val().trim()) {
-            jsonProperty.hide();
-            childTree = null;
-            updateDisplay(taskIndex);
+            display(taskIndex);
         }
         else {
             workflowName.borderInvalid();
@@ -88,7 +104,9 @@ $(() => {
         .onClickCancel()
         .onClickOK(() => {
             writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
-                readTreeJsonSocket.emit(rootFilePath);
+                uploadFiles(() => {
+                    readTreeJsonSocket.emit(rootFilePath);
+                });
             });
         });
 
@@ -115,7 +133,7 @@ $(() => {
         rootTree = SwfTree.create(treeJson);
         jsonProperty.hide();
         childTree = null;
-        updateDisplay(taskIndex);
+        display(taskIndex);
     });
 
     /**
@@ -180,6 +198,13 @@ $(() => {
                         disabled: () => {
                             return !ClientUtility.checkFileType(parentTree, JsonFileType.Loop);
                         }
+                    },
+                    sep8: '---------',
+                    pstudy: {
+                        name: 'PStudy',
+                        callback: () => {
+                            createChildTree(JsonFileType.PStudy);
+                        },
                     }
                 }
             }
@@ -188,59 +213,32 @@ $(() => {
 
     /**
      *
-     * @param index
+     * @param object
      */
-    function updateDisplay(index: string): void {
-        svgHeight = 0;
-        svgWidth = 0;
-        taskIndex = index;
-        treeSvg.html('');
-        nodeSvg.html('');
-        const tree = SVG('workflow_tree_svg');
-        createIndexTree(tree, rootTree);
-        tree.size(svgWidth + 5, svgHeight + 10);
+    function display(object: (string | SwfTree)): void {
+        if (typeof object === 'string') {
+            taskIndex = object;
+        }
+        else {
+            taskIndex = object.getIndexString();
+        }
+
+        SvgNodePain.create(rootTree, taskIndex, 'tree_svg', display);
+        createNode();
     }
 
     /**
      *
-     * @param taskName
      */
-    function canUseName(taskName: string) {
+    function createNode(): void {
         const tree = SwfTree.getSwfTree(taskIndex);
-
-        if (!ClientUtility.isValidDirectoryName(taskName)) {
-            return false;
-        }
-        else if (tree.isDirnameDuplicate(taskName)) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     *
-     * @param draw drowing element
-     * @param tree tree json file
-     */
-    function createIndexTree(draw: svgjs.Doc, tree: SwfTree): void {
-        drawTreeNode(draw, tree);
-        tree.children.forEach(child => createIndexTree(draw, child));
-
-        if (taskIndex !== tree.getIndexString()) {
-            return;
-        }
-
         parentTree = tree;
         const filepath = getFullpath(tree);
         addressBar.val(filepath);
         workflowName.val(tree.name);
         workflowDesc.val(tree.description);
         getFileStat(filepath);
-
-        const canvas = SVG('node_svg');
-        canvas.size(4000, 4000);
-
-        SvgNodeUI.create(canvas, tree, childTree,
+        SvgNodeUI.create(tree, childTree, 'node_svg',
             (child: SwfTree) => {
                 if (child == null) {
                     jsonProperty.hide();
@@ -250,14 +248,16 @@ $(() => {
                 childTree = child;
                 showProperty(child);
             },
-            (child: SwfTree) => {
-                if (child == null) {
+            (parent: SwfTree) => {
+                parent = parent || parentTree.getParent();
+                if (parent == null) {
                     return;
                 }
-                if (ClientUtility.isImplimentsWorkflow(child.type)) {
+
+                if (ClientUtility.isImplimentsWorkflow(parent.type)) {
                     jsonProperty.hide();
                     childTree = null;
-                    updateDisplay(child.getIndexString());
+                    display(parent);
                 }
             });
     }
@@ -267,7 +267,6 @@ $(() => {
      * @param child
      */
     function showProperty(child: SwfTree) {
-        let hostInfos: SwfHostJson[];
         if (hostInfos == null) {
             getRemoteHostListSocket.emit((hosts: SwfHostJson[]) => {
                 hostInfos = hosts;
@@ -281,53 +280,6 @@ $(() => {
 
     /**
      *
-     * @param draw
-     * @param tree
-     */
-    function drawTreeNode(draw: svgjs.Element, tree: SwfTree) {
-
-        const x = 10 * tree.getHierarchy() + 12;
-        const y = 20 * tree.getAbsoluteIndex() + 15;
-
-        const NORMAL_COLOR = 'white';
-        const HIGHLIGHT_COLOR = 'orange';
-        const color: string = taskIndex === tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
-
-        draw.polygon([[x - 5, y - 5], [x - 5, y + 5], [x + 2, y]])
-            .attr({ fill: color, stroke: 'black' })
-            .center(x, y);
-
-        const text = draw
-            .text(tree.name)
-            .font({
-                size: 12,
-                leading: '1'
-            })
-            .fill(NORMAL_COLOR)
-            .x(x + 10)
-            .cy(y);
-
-        svgHeight = Math.max(svgHeight, y);
-        svgWidth = Math.max(svgWidth, text.bbox().width + text.x());
-
-        if (ClientUtility.isImplimentsWorkflow(tree.type)) {
-            text.style('cursor', 'pointer');
-            text.on('mouseover', () => {
-                text.attr({ 'text-decoration': 'underline' })
-            });
-            text.on('mouseout', () => {
-                text.attr({ 'text-decoration': 'none' })
-            });
-            text.on('click', () => {
-                jsonProperty.hide();
-                childTree = null;
-                updateDisplay(tree.getIndexString());
-            });
-        }
-    }
-
-    /**
-     *
      * @param fileType
      * @param tree
      */
@@ -335,22 +287,23 @@ $(() => {
         if (tree == null) {
             tree = SwfTree.getSwfTree(taskIndex);
         }
-        // const filepath: string = `./${name}/${ClientUtility.getDefaultName(fileType)}`;
-        const dirname = `dir${Date.now()}`;
+
         getTemplateJsonFileSocket.emit(fileType, (json: SwfTreeJson) => {
+            const rand = Math.floor(Date.now() / 100) % 100000;
+            const dirname = `${json.type}Dir${`00000${rand}`.slice(-5)}`;
             const child = tree.addChild(json, dirname, fileType);
 
-            // if (fileType === JsonFileType.If) {
-            //     createChildTree(`condition`, JsonFileType.Condition, child);
-            // }
-            // else if (fileType === JsonFileType.Condition) {
-            //     createChildTree(`else`, JsonFileType.Else);
-            // }
-            // else {
-            jsonProperty.hide();
-            childTree = null;
-            updateDisplay(taskIndex);
-            // }
+            if (fileType === JsonFileType.If) {
+                createChildTree(JsonFileType.Condition, child);
+            }
+            else if (fileType === JsonFileType.Condition) {
+                createChildTree(JsonFileType.Else);
+            }
+            else {
+                jsonProperty.hide();
+                childTree = null;
+                display(taskIndex);
+            }
         });
     }
 
@@ -379,5 +332,25 @@ $(() => {
         const filename = ClientUtility.getDefaultName(tree);
         const currentDirectory = tree.getCurrentDirectory();
         return ClientUtility.normalize(`${projectDirectory}/${currentDirectory}/${filename}`);
+    }
+
+    /**
+     *
+     * @param callback
+     */
+    function uploadFiles(callback: Function) {
+        const files = SwfTree.getUploadFiles(projectDirectory);
+        const loop = () => {
+            const data = files.shift();
+            if (!data) {
+                callback();
+                return;
+            }
+
+            fileUploadSocket.emit(data, (isUpload: boolean) => {
+                loop();
+            });
+        }
+        loop();
     }
 });

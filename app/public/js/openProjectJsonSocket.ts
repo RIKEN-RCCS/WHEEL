@@ -12,6 +12,11 @@ class OpenProjectJsonSocket {
     private socket: SocketIO.Socket;
 
     /**
+     * callback function
+     */
+    private callback: ((projectJson: SwfProjectJson) => void);
+
+    /**
      * create new instance
      * @param socket
      */
@@ -25,9 +30,10 @@ class OpenProjectJsonSocket {
      * @param callback
      */
     public onConnect(filename: string, callback: ((projectJson: SwfProjectJson) => void)): void {
+        this.callback = callback;
         this.socket
             .on('connect', () => {
-                this.emit(filename, callback);
+                this.emit(filename);
             });
     }
 
@@ -35,7 +41,10 @@ class OpenProjectJsonSocket {
      *
      * @param callback
      */
-    public onEvent(callback: ((projectJson: SwfProjectJson) => void)): void {
+    public onEvent(callback?: ((projectJson: SwfProjectJson) => void)): void {
+        if (callback == null) {
+            callback = this.callback;
+        }
         this.socket.once(OpenProjectJsonSocket.eventName, callback);
     }
 
@@ -44,7 +53,7 @@ class OpenProjectJsonSocket {
      * @param filename
      * @param callback
      */
-    public emit(filename: string, callback: ((projectJson: SwfProjectJson) => void)) {
+    public emit(filename: string, callback?: ((projectJson: SwfProjectJson) => void)) {
         this.onEvent(callback);
         this.socket.emit(OpenProjectJsonSocket.eventName, filename);
     }

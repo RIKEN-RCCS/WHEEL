@@ -61,6 +61,7 @@
     <Content Include="config\template.rtsk.json" />
     <Content Include="config\template.tsk.json" />
     <Content Include="config\template.wf.json" />
+    <Content Include="lua.exe" />
     <Content Include="obj\Debug\SWorkFlow.njsproj.FileListAbsolute.txt" />
     <Content Include="package.json" />
     <Content Include="public\css\style.css" />
@@ -82,9 +83,9 @@
     <Content Include="public\swf\select.html" />
     <Content Include="public\swf\workflow_manager.html" />
     <Content Include="README.md" />
+    <Content Include="tar.exe" />
     <TypeScriptCompile Include="addHostEvent.ts" />
     <TypeScriptCompile Include="createDirectoryEvent.ts" />
-    <TypeScriptCompile Include="createFileEvent.ts" />
     <TypeScriptCompile Include="createNewProjectEvent.ts" />
     <TypeScriptCompile Include="deleteHostEvent.ts" />
     <TypeScriptCompile Include="getFileListEvent.ts" />
@@ -93,7 +94,6 @@
     <TypeScriptCompile Include="getTemplateJsonFileEvent.ts" />
     <TypeScriptCompile Include="logger.ts" />
     <TypeScriptCompile Include="openProjectJsonEvent.ts" />
-    <TypeScriptCompile Include="openTaskJsonEvent.ts" />
     <TypeScriptCompile Include="public\js\commonParam.ts" />
     <TypeScriptCompile Include="public\js\createNewProjectSocket.ts" />
     <TypeScriptCompile Include="public\js\getTemplateJsonFileSocket.ts" />
@@ -104,6 +104,7 @@
     <TypeScriptCompile Include="public\js\readTreeJsonSocket.ts" />
     <TypeScriptCompile Include="public\js\svgPlugBase.ts" />
     <TypeScriptCompile Include="public\js\swfTree.ts" />
+    <TypeScriptCompile Include="public\js\uploadFileSocket.ts" />
     <TypeScriptCompile Include="public\js\writeTreeJsonSocket.ts" />
     <TypeScriptCompile Include="public\js\yesNoDialog.ts" />
     <TypeScriptCompile Include="readTreeJsonEvent.ts" />
@@ -111,8 +112,7 @@
     <TypeScriptCompile Include="public\js\addHostSocket.ts" />
     <TypeScriptCompile Include="public\js\clientUtility.ts" />
     <TypeScriptCompile Include="public\js\createDirectorySocket.ts" />
-    <TypeScriptCompile Include="public\js\createFileSocket.ts" />
-    <TypeScriptCompile Include="public\js\DeleteHostSocket.ts" />
+    <TypeScriptCompile Include="public\js\deleteHostSocket.ts" />
     <TypeScriptCompile Include="public\js\fileDialog.ts" />
     <TypeScriptCompile Include="public\js\getFileListSocket.ts" />
     <TypeScriptCompile Include="public\js\getFileStatSocket.ts" />
@@ -145,6 +145,7 @@
     <TypeScriptCompile Include="typings\ssh2\ssh2.d.ts" />
     <TypeScriptCompile Include="typings\svg.js.draggable\svg.js.draggable.d.ts" />
     <TypeScriptCompile Include="typings\svg.js\svg.js.d.ts" />
+    <TypeScriptCompile Include="uploadFileEvent.ts" />
     <TypeScriptCompile Include="writeTreeJsonEvent.ts" />
   </ItemGroup>
   <ItemGroup>

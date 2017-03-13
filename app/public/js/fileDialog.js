@@ -192,6 +192,7 @@ var FileDialog = (function () {
     FileDialog.prototype.onChangeAddress = function (callback) {
         var _this = this;
         this.addressBar.change(function () {
+            _this.lastSelectDirectory = _this.addressBar.val();
             _this.updateDialog();
             if (callback) {
                 callback();
@@ -213,6 +214,7 @@ var FileDialog = (function () {
             }
             var directoryIconHtml = _this.createHtml4DirIcon(fileTypes);
             var fileIconHtml = _this.createHtml4FileIcon(fileTypes);
+            _this.fileDialog.empty();
             _this.fileDialog.html(directoryIconHtml + fileIconHtml);
             _this.addressBar.val(fileTypes.directory);
             _this.addressBar.borderValid();

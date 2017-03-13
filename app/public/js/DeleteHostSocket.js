@@ -31,4 +31,4 @@ var DeleteHostSocket = (function () {
  * event name
  */
 DeleteHostSocket.eventName = 'onDeleteHost';
-//# sourceMappingURL=DeleteHostSocket.js.map
+//# sourceMappingURL=deleteHostSocket.js.map

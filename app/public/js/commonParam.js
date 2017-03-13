@@ -10,7 +10,8 @@ var config = {
         if: '.if.json',
         else: '.els.json',
         condition: '.cnd.json',
-        break: '.brk.json'
+        break: '.brk.json',
+        pstudy: '.ps.json'
     },
     default_filename: 'define',
     file_types: {
@@ -31,15 +32,16 @@ var config = {
         pstudy: 'PStudy'
     },
     node_color: {
-        task: 'orangered',
-        remotetask: 'coral',
-        job: 'gold',
-        workflow: 'royalblue',
-        loop: 'skyblue',
-        break: 'pink',
+        task: '#FF0000',
+        remotetask: '#FF6600',
+        job: '#FFCC00',
+        workflow: '#0066FF',
+        loop: '#0000FF',
+        break: '#00FFCC',
         condition: 'violet',
-        if: 'springgreen',
-        else: 'forestgreen'
+        if: '#00FF66',
+        else: '#00FF00',
+        pstudy: '#6600FF'
     },
     state_color: {
         planning: 'white',
@@ -54,6 +56,18 @@ var config = {
         files: 'magenta',
         directory: 'yellow',
         flow: 'orange'
+    },
+    scheduler: {
+        TSC: 'TCS',
+        TORQUE: 'TORQUE'
+    },
+    state: {
+        planning: 'Planning',
+        running: 'Running',
+        rerunning: 'ReRunning',
+        waiting: 'Waiting',
+        completed: 'Completed',
+        failed: 'Failed'
     }
 };
 //# sourceMappingURL=commonParam.js.map

@@ -3,13 +3,13 @@ var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
 var ServerUtility = require("./serverUtility");
-var serverConfig = require("./serverConfig");
+var ServerConfig = require("./serverConfig");
 var OpenProjectJsonEvent = (function () {
     function OpenProjectJsonEvent() {
         /**
          * config parameter
          */
-        this.config = serverConfig.getConfig();
+        this.config = ServerConfig.getConfig();
         /**
          *
          */
@@ -25,22 +25,15 @@ var OpenProjectJsonEvent = (function () {
             fs.readFile(path_project, function (err, data) {
                 try {
                     if (err) {
-                        // logger.error(err);
-                        // TODO TSURUTA create template project.
-                        var createJson = ServerUtility.createProjectJson(path_project);
-                        socket.json.emit(OpenProjectJsonEvent.eventName, createJson);
-                        _this.writeProjectJsonFile(path_project, createJson);
                     }
                     else {
                         var projectJson = ServerUtility.readProjectJson(path_project);
                         if (projectJson.state === 'Planning') {
-                            // update log
-                            var dir_project = path.dirname(path_project);
-                            var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
-                            projectJson.log = ServerUtility.createLogJson(path_workflow);
-                            _this.writeProjectJsonFile(path_project, projectJson);
+                            _this.createProjectJson(path_project, projectJson, socket);
                         }
-                        socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+                        else {
+                            _this.updateProjectJson(path_project, projectJson, socket);
+                        }
                     }
                 }
                 catch (error) {
@@ -51,18 +44,33 @@ var OpenProjectJsonEvent = (function () {
         });
     };
     /**
-     * create project json file
-     * @param workflowJsonFile most parent json file name
-     * @param json created json file
+     *
+     * @param path_project
+     * @param projectJson
+     * @param socket
      */
-    OpenProjectJsonEvent.prototype.writeProjectJsonFile = function (path_project, json) {
-        if (json == null) {
-            return;
-        }
-        fs.writeFile(path_project, JSON.stringify(json, null, '\t'), function (err) {
-            if (err) {
-                logger.error(err);
-            }
+    OpenProjectJsonEvent.prototype.createProjectJson = function (path_project, projectJson, socket) {
+        var dir_project = path.dirname(path_project);
+        var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
+        projectJson.log = ServerUtility.createLogJson(path_workflow);
+        ServerUtility.writeJson(path_project, projectJson, function () {
+            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+        }, function () {
+            socket.json.emit(OpenProjectJsonEvent.eventName);
+        });
+    };
+    /**
+     *
+     * @param path_project
+     * @param projectJson
+     * @param socket
+     */
+    OpenProjectJsonEvent.prototype.updateProjectJson = function (path_project, projectJson, socket) {
+        projectJson.log = ServerUtility.readLogJson(projectJson.log);
+        ServerUtility.writeJson(path_project, projectJson, function () {
+            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+        }, function () {
+            socket.json.emit(OpenProjectJsonEvent.eventName);
         });
     };
     return OpenProjectJsonEvent;

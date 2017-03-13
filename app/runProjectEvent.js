@@ -1,17 +1,25 @@
 "use strict";
+var ServerUtility = require("./serverUtility");
 var ProjectOperator = require("./projectOperator");
+/**
+ *
+ */
 var RunProjectEvent = (function () {
     function RunProjectEvent() {
     }
     /**
-     * @param socket:
-     * @return none
+     * @param socket
      */
     RunProjectEvent.prototype.onEvent = function (socket) {
-        socket.on(RunProjectEvent.eventName, function (swfFilePath) {
+        socket.on(RunProjectEvent.eventName, function (swfFilePath, host_passSet) {
             var projectOperator = new ProjectOperator(swfFilePath);
-            projectOperator.run();
-            socket.emit(RunProjectEvent.eventName, "Running");
+            // TODDO set password and passphrase
+            projectOperator.run(host_passSet);
+            ServerUtility.updateProjectJsonState(swfFilePath, 'Running', function () {
+                socket.emit(RunProjectEvent.eventName, true);
+            }, function () {
+                socket.emit(RunProjectEvent.eventName, false);
+            });
         });
     };
     return RunProjectEvent;

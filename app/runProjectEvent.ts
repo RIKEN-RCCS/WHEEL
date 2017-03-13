@@ -1,6 +1,10 @@
 import logger = require('./logger');
-import ProjectOperator = require('./projectOperator')
+import ServerUtility = require('./serverUtility');
+import ProjectOperator = require('./projectOperator');
 
+/**
+ *
+ */
 class RunProjectEvent implements SocketListener {
 
     /**
@@ -9,14 +13,21 @@ class RunProjectEvent implements SocketListener {
     private static eventName = 'onRunProject';
 
     /**
-     * @param socket:
-     * @return none
+     * @param socket
      */
     public onEvent(socket: SocketIO.Socket): void {
-        socket.on(RunProjectEvent.eventName, (swfFilePath: string) => {
+        socket.on(RunProjectEvent.eventName, (swfFilePath: string, host_passSet: { [name: string]: string }) => {
             const projectOperator = new ProjectOperator(swfFilePath);
-            projectOperator.run();
-            socket.emit(RunProjectEvent.eventName, "Running");
+
+            // TODDO set password and passphrase
+            projectOperator.run(host_passSet);
+            ServerUtility.updateProjectJsonState(swfFilePath, 'Running',
+                () => {
+                    socket.emit(RunProjectEvent.eventName, true);
+                },
+                () => {
+                    socket.emit(RunProjectEvent.eventName, false);
+                });
         });
     }
 }

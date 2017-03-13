@@ -13,7 +13,7 @@ var SvgPlugBase = (function () {
         this.plugHeight = bbox.height;
         this.index = SvgPlugBase.counter++;
     }
-    SvgPlugBase.prototype.getName = function () {
+    SvgPlugBase.prototype.name = function () {
         if (this.plugConfig.file) {
             return this.index + "_" + this.plugConfig.taskIndex + "_" + this.plugConfig.file.path;
         }
@@ -21,35 +21,57 @@ var SvgPlugBase = (function () {
             return this.index + "_" + this.plugConfig.taskIndex;
         }
     };
-    SvgPlugBase.prototype.getFileType = function () {
+    SvgPlugBase.prototype.fileType = function () {
         return this.plugConfig.file.type;
     };
-    SvgPlugBase.prototype.getFilepath = function () {
+    SvgPlugBase.prototype.filepath = function () {
         if (this.plugConfig.file) {
             return this.plugConfig.file.path;
         }
         return '';
     };
-    SvgPlugBase.prototype.getTaskIndex = function () {
+    SvgPlugBase.prototype.filepathFromTree = function () {
+        if (this.plugConfig.file) {
+            if (this.plugConfig.tree) {
+                return "./" + ClientUtility.normalize(this.plugConfig.tree.path + "/" + this.plugConfig.file.path);
+            }
+            else {
+                return this.plugConfig.file.path;
+            }
+        }
+        return '';
+    };
+    SvgPlugBase.prototype.parentDirname = function () {
+        if (this.plugConfig.tree) {
+            return this.plugConfig.tree.path;
+        }
+        return '';
+    };
+    SvgPlugBase.prototype.taskIndex = function () {
         return this.plugConfig.taskIndex;
     };
-    SvgPlugBase.prototype.getTaskFileIndex = function () {
-        return this.plugConfig.taskIndex + "_" + this.plugConfig.file.path;
-    };
     SvgPlugBase.prototype.move = function (x, y) {
-        this.plug.move(x, y);
+        if (this.plug != null) {
+            this.plug.move(x, y);
+        }
         return this;
     };
     SvgPlugBase.prototype.front = function () {
-        this.plug.front();
+        if (this.plug != null) {
+            this.plug.front();
+        }
         return this;
     };
     SvgPlugBase.prototype.back = function () {
-        this.plug.back();
+        if (this.plug != null) {
+            this.plug.back();
+        }
         return this;
     };
     SvgPlugBase.prototype.translate = function (x, y) {
-        this.plug.translate(x, y);
+        if (this.plug != null) {
+            this.plug.translate(x, y);
+        }
         return this;
     };
     SvgPlugBase.prototype.x = function () {
@@ -65,8 +87,10 @@ var SvgPlugBase = (function () {
     SvgPlugBase.prototype.offset = function () {
         return this.plug.transform();
     };
-    SvgPlugBase.prototype.remove = function () {
+    SvgPlugBase.prototype.delete = function () {
+        this.plugConfig.svg = null;
         this.plug.remove();
+        this.plug = null;
         return this;
     };
     SvgPlugBase.prototype.moveDefault = function () {
@@ -77,7 +101,7 @@ var SvgPlugBase = (function () {
     };
     SvgPlugBase.createPlug = function (svg, isStream) {
         if (isStream) {
-            return svg.polygon([[0, 0], [16, 0], [16, 8], [8, 16], [0, 8]]);
+            return svg.polygon([[0, 0], [20, 0], [20, 5], [10, 10], [0, 5]]);
         }
         else {
             return svg.polygon([[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]]);
@@ -126,7 +150,7 @@ var SvgConnector = (function (_super) {
         this.plug.on('mousedown', function () {
             var receptor = _this.receptor;
             if (_this.isConnect()) {
-                console.log("disconnect index=" + _this.getName() + " to index=" + _this.receptor.getName());
+                console.log("disconnect index=" + _this.name() + " to index=" + _this.receptor.name());
                 _this.receptor.deleteConnect();
                 _this.receptor = null;
             }
@@ -160,7 +184,7 @@ var SvgConnector = (function (_super) {
     SvgConnector.prototype.connect = function (receptor) {
         var _this = this;
         if (receptor != null && receptor.connect(this)) {
-            console.log("connect index=" + this.getName() + " to index=" + receptor.getName());
+            console.log("connect index=" + this.name() + " to index=" + receptor.name());
             this.receptor = receptor;
             this.calcConnectPotision(this.receptor, function (x, y) {
                 _this.move(x, y).front();
@@ -184,7 +208,7 @@ var SvgConnector = (function (_super) {
     };
     SvgConnector.prototype.moveIfDisconnect = function (x, y) {
         if (!this.isConnect()) {
-            this.plug.move(x, y);
+            this.move(x, y);
         }
         else {
             this.cable.plotStart(x, y);
@@ -198,6 +222,21 @@ var SvgConnector = (function (_super) {
                 _this.cable.plotEnd(x, y);
             });
         }
+        return this;
+    };
+    SvgConnector.prototype.delete = function () {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mousedown', null);
+            this.plug.off('dragstart', null);
+            this.plug.off('dragmove', null);
+            this.plug.off('dragend', null);
+            this.plug.remove();
+            this.plug = null;
+        }
+        this.cable.remove();
         return this;
     };
     return SvgConnector;
@@ -223,8 +262,8 @@ var SvgReceptor = (function (_super) {
         return filetype.match(fileTypesRegexp) ? true : false;
     };
     SvgReceptor.prototype.connect = function (connector) {
-        var receptorFiletype = this.getFileType();
-        var connectorFiletype = connector.getFileType();
+        var receptorFiletype = this.fileType();
+        var connectorFiletype = connector.fileType();
         if (!this.isMatchType(receptorFiletype) || !this.isMatchType(connectorFiletype)) {
             return false;
         }
@@ -260,6 +299,17 @@ var SvgReceptor = (function (_super) {
         this.connector = null;
         return this;
     };
+    SvgReceptor.prototype.delete = function () {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mouseup', null);
+            this.plug.remove();
+            this.plug = null;
+        }
+        return this;
+    };
     return SvgReceptor;
 }(SvgPlugBase));
 var SvgUpper = (function (_super) {
@@ -276,7 +326,7 @@ var SvgUpper = (function (_super) {
         return Object.keys(this.lowers).length > 0;
     };
     SvgUpper.prototype.connect = function (lower) {
-        var taskIndex = lower.getTaskIndex();
+        var taskIndex = lower.taskIndex();
         if (!this.lowers[taskIndex]) {
             this.lowers[taskIndex] = lower;
             return true;
@@ -313,7 +363,18 @@ var SvgUpper = (function (_super) {
         return this;
     };
     SvgUpper.prototype.deleteConnect = function (lower) {
-        delete this.lowers[lower.getTaskIndex()];
+        delete this.lowers[lower.taskIndex()];
+        return this;
+    };
+    SvgUpper.prototype.delete = function () {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mouseup', null);
+            this.plug.remove();
+            this.plug = null;
+        }
         return this;
     };
     return SvgUpper;
@@ -361,7 +422,7 @@ var SvgLower = (function (_super) {
             e.preventDefault();
             var upper = _this.upper;
             if (_this.isConnect()) {
-                console.log("disconnect " + _this.getName() + " to " + _this.upper.getName());
+                console.log("disconnect " + _this.name() + " to " + _this.upper.name());
                 _this.upper.deleteConnect(_this);
                 _this.upper = null;
             }
@@ -395,7 +456,7 @@ var SvgLower = (function (_super) {
     SvgLower.prototype.connect = function (upper) {
         var _this = this;
         if (upper != null && upper.connect(this)) {
-            console.log("connect lower=" + this.getName() + " to upper=" + upper.getName());
+            console.log("connect lower=" + this.name() + " to upper=" + upper.name());
             this.upper = upper;
             this.calcConnectPotision(this.upper, function (x, y) {
                 _this.move(x, y).front();
@@ -410,7 +471,7 @@ var SvgLower = (function (_super) {
     };
     SvgLower.prototype.moveIfDisconnect = function (x, y) {
         if (!this.isConnect()) {
-            this.plug.move(x, y);
+            this.move(x, y);
         }
         else {
             this.cable.plotStart(x, y);
@@ -433,6 +494,22 @@ var SvgLower = (function (_super) {
                 _this.cable.plotEnd(x, y);
             });
         }
+        return this;
+    };
+    SvgLower.prototype.delete = function () {
+        this.plugConfig.svg = null;
+        this.plugConfig.tree = null;
+        this.plugConfig.file = null;
+        if (this.plug != null) {
+            this.plug.off('mousedown', null);
+            this.plug.off('dragstart', null);
+            this.plug.off('dragmove', null);
+            this.plug.off('dragend', null);
+            this.plug.draggable(false);
+            this.plug.remove();
+            this.plug = null;
+        }
+        this.cable.remove();
         return this;
     };
     return SvgLower;
@@ -478,7 +555,7 @@ var SvgCable = (function () {
      *
      */
     SvgCable.prototype.plotCable = function () {
-        if (this.endX && this.endY) {
+        if (this.endX !== undefined && this.endY !== undefined) {
             var plot = this.plotCallback(this.startX, this.startY, this.endX, this.endY);
             this.cable.plot(plot).back();
         }
@@ -490,6 +567,15 @@ var SvgCable = (function () {
         this.cable.plot('');
         this.endX = undefined;
         this.endY = undefined;
+    };
+    /**
+     *
+     */
+    SvgCable.prototype.remove = function () {
+        if (this.cable != null) {
+            this.cable.remove();
+            this.cable = null;
+        }
     };
     return SvgCable;
 }());

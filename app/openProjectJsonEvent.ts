@@ -3,7 +3,7 @@ import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
 import ServerUtility = require('./serverUtility');
-import serverConfig = require('./serverConfig');
+import ServerConfig = require('./serverConfig');
 
 class OpenProjectJsonEvent implements SocketListener {
 
@@ -15,7 +15,7 @@ class OpenProjectJsonEvent implements SocketListener {
     /**
      * config parameter
      */
-    private config = serverConfig.getConfig();
+    private config = ServerConfig.getConfig();
 
     /**
      *
@@ -34,20 +34,18 @@ class OpenProjectJsonEvent implements SocketListener {
                     if (err) {
                         // logger.error(err);
                         // TODO TSURUTA create template project.
-                        const createJson = ServerUtility.createProjectJson(path_project);
-                        socket.json.emit(OpenProjectJsonEvent.eventName, createJson);
-                        this.writeProjectJsonFile(path_project, createJson);
+                        // const createJson = ServerUtility.createProjectJson(path_project);
+                        // socket.json.emit(OpenProjectJsonEvent.eventName, createJson);
+                        // this.write(path_project, createJson, socket);
                     }
                     else {
                         const projectJson: SwfProjectJson = ServerUtility.readProjectJson(path_project);
                         if (projectJson.state === 'Planning') {
-                            // update log
-                            const dir_project = path.dirname(path_project);
-                            const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
-                            projectJson.log = ServerUtility.createLogJson(path_workflow);
-                            this.writeProjectJsonFile(path_project, projectJson);
+                            this.createProjectJson(path_project, projectJson, socket);
                         }
-                        socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+                        else {
+                            this.updateProjectJson(path_project, projectJson, socket);
+                        }
                     }
                 }
                 catch (error) {
@@ -59,20 +57,39 @@ class OpenProjectJsonEvent implements SocketListener {
     }
 
     /**
-     * create project json file
-     * @param workflowJsonFile most parent json file name
-     * @param json created json file
+     *
+     * @param path_project
+     * @param projectJson
+     * @param socket
      */
-    private writeProjectJsonFile(path_project: string, json: SwfProjectJson): void {
-        if (json == null) {
-            return;
-        }
+    private createProjectJson(path_project: string, projectJson: SwfProjectJson, socket: SocketIO.Socket) {
+        const dir_project = path.dirname(path_project);
+        const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
+        projectJson.log = ServerUtility.createLogJson(path_workflow);
+        ServerUtility.writeJson(path_project, projectJson,
+            () => {
+                socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+            },
+            () => {
+                socket.json.emit(OpenProjectJsonEvent.eventName);
+            });
+    }
 
-        fs.writeFile(path_project, JSON.stringify(json, null, '\t'), (err) => {
-            if (err) {
-                logger.error(err);
-            }
-        });
+    /**
+     *
+     * @param path_project
+     * @param projectJson
+     * @param socket
+     */
+    private updateProjectJson(path_project: string, projectJson: SwfProjectJson, socket: SocketIO.Socket) {
+        projectJson.log = ServerUtility.readLogJson(projectJson.log);
+        ServerUtility.writeJson(path_project, projectJson,
+            () => {
+                socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+            },
+            () => {
+                socket.json.emit(OpenProjectJsonEvent.eventName);
+            });
     }
 }
 

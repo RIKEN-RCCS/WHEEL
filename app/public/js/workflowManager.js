@@ -5,6 +5,7 @@ $(function () {
     var getFileStatSocket = new GetFileStatSocket(socket);
     var getTemplateJsonFileSocket = new GetTemplateJsonFileSocket(socket);
     var getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
+    var fileUploadSocket = new UploadFileSocket(socket);
     var jsonProperty = new JsonProperty();
     var resetDialog = new YesNoDialog('Are you sure you want to reset ?');
     var saveDialog = new YesNoDialog('Are you sure you want to save ?');
@@ -14,25 +15,42 @@ $(function () {
     var workflowBirth = $('#workflow_birthday');
     var workflowUpdate = $('#workflow_update');
     var workflowDesc = $('#workflow_desc');
-    var treeSvg = $('#workflow_tree_svg');
-    var nodeSvg = $('#node_svg');
     var saveButton = $('#save_button');
     var resetButton = $('#reset_button');
+    var fileSelect = $('#file_select');
     var cookies = ClientUtility.getCookies();
     var projectFilePath = cookies['project'];
     var projectDirectory = ClientUtility.dirname(ClientUtility.dirname(projectFilePath));
     var rootFilePath = cookies['root'];
     var taskIndex = cookies['index'];
+    var hostInfos;
     var rootTree;
     var parentTree;
     var childTree;
-    var svgHeight = 0;
-    var svgWidth = 0;
     /**
      *
      */
-    $(document).on('updateProperty', function () {
-        updateDisplay(taskIndex);
+    $(document).on('updateDisplay', function () {
+        display(taskIndex);
+    });
+    /**
+     *
+     */
+    $(document).on('selectFile', function (eventObject, value) {
+        if (value.isMultiple) {
+            fileSelect.prop('multiple', 'multiple');
+        }
+        else {
+            fileSelect.removeProp('multiple');
+        }
+        fileSelect.click();
+        fileSelect.off('change');
+        fileSelect.one('change', function (eventObject) {
+            var target = eventObject.target;
+            var files = target.files;
+            value.callback(files);
+            showProperty(childTree);
+        });
     });
     /**
      * move to workflow manager page
@@ -45,9 +63,7 @@ $(function () {
      */
     workflowName.change(function () {
         if (parentTree.name = workflowName.val().trim()) {
-            jsonProperty.hide();
-            childTree = null;
-            updateDisplay(taskIndex);
+            display(taskIndex);
         }
         else {
             workflowName.borderInvalid();
@@ -75,7 +91,9 @@ $(function () {
         .onClickCancel()
         .onClickOK(function () {
         writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
-            readTreeJsonSocket.emit(rootFilePath);
+            uploadFiles(function () {
+                readTreeJsonSocket.emit(rootFilePath);
+            });
         });
     });
     /**
@@ -99,7 +117,7 @@ $(function () {
         rootTree = SwfTree.create(treeJson);
         jsonProperty.hide();
         childTree = null;
-        updateDisplay(taskIndex);
+        display(taskIndex);
     });
     /**
      * context menu
@@ -163,6 +181,13 @@ $(function () {
                         disabled: function () {
                             return !ClientUtility.checkFileType(parentTree, JsonFileType.Loop);
                         }
+                    },
+                    sep8: '---------',
+                    pstudy: {
+                        name: 'PStudy',
+                        callback: function () {
+                            createChildTree(JsonFileType.PStudy);
+                        },
                     }
                 }
             }
@@ -170,52 +195,30 @@ $(function () {
     });
     /**
      *
-     * @param index
+     * @param object
      */
-    function updateDisplay(index) {
-        svgHeight = 0;
-        svgWidth = 0;
-        taskIndex = index;
-        treeSvg.html('');
-        nodeSvg.html('');
-        var tree = SVG('workflow_tree_svg');
-        createIndexTree(tree, rootTree);
-        tree.size(svgWidth + 5, svgHeight + 10);
+    function display(object) {
+        if (typeof object === 'string') {
+            taskIndex = object;
+        }
+        else {
+            taskIndex = object.getIndexString();
+        }
+        SvgNodePain.create(rootTree, taskIndex, 'tree_svg', display);
+        createNode();
     }
     /**
      *
-     * @param taskName
      */
-    function canUseName(taskName) {
+    function createNode() {
         var tree = SwfTree.getSwfTree(taskIndex);
-        if (!ClientUtility.isValidDirectoryName(taskName)) {
-            return false;
-        }
-        else if (tree.isDirnameDuplicate(taskName)) {
-            return false;
-        }
-        return true;
-    }
-    /**
-     *
-     * @param draw drowing element
-     * @param tree tree json file
-     */
-    function createIndexTree(draw, tree) {
-        drawTreeNode(draw, tree);
-        tree.children.forEach(function (child) { return createIndexTree(draw, child); });
-        if (taskIndex !== tree.getIndexString()) {
-            return;
-        }
         parentTree = tree;
         var filepath = getFullpath(tree);
         addressBar.val(filepath);
         workflowName.val(tree.name);
         workflowDesc.val(tree.description);
         getFileStat(filepath);
-        var canvas = SVG('node_svg');
-        canvas.size(4000, 4000);
-        SvgNodeUI.create(canvas, tree, childTree, function (child) {
+        SvgNodeUI.create(tree, childTree, 'node_svg', function (child) {
             if (child == null) {
                 jsonProperty.hide();
                 childTree = null;
@@ -223,14 +226,15 @@ $(function () {
             }
             childTree = child;
             showProperty(child);
-        }, function (child) {
-            if (child == null) {
+        }, function (parent) {
+            parent = parent || parentTree.getParent();
+            if (parent == null) {
                 return;
             }
-            if (ClientUtility.isImplimentsWorkflow(child.type)) {
+            if (ClientUtility.isImplimentsWorkflow(parent.type)) {
                 jsonProperty.hide();
                 childTree = null;
-                updateDisplay(child.getIndexString());
+                display(parent);
             }
         });
     }
@@ -239,7 +243,6 @@ $(function () {
      * @param child
      */
     function showProperty(child) {
-        var hostInfos;
         if (hostInfos == null) {
             getRemoteHostListSocket.emit(function (hosts) {
                 hostInfos = hosts;
@@ -252,46 +255,6 @@ $(function () {
     }
     /**
      *
-     * @param draw
-     * @param tree
-     */
-    function drawTreeNode(draw, tree) {
-        var x = 10 * tree.getHierarchy() + 12;
-        var y = 20 * tree.getAbsoluteIndex() + 15;
-        var NORMAL_COLOR = 'white';
-        var HIGHLIGHT_COLOR = 'orange';
-        var color = taskIndex === tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
-        draw.polygon([[x - 5, y - 5], [x - 5, y + 5], [x + 2, y]])
-            .attr({ fill: color, stroke: 'black' })
-            .center(x, y);
-        var text = draw
-            .text(tree.name)
-            .font({
-            size: 12,
-            leading: '1'
-        })
-            .fill(NORMAL_COLOR)
-            .x(x + 10)
-            .cy(y);
-        svgHeight = Math.max(svgHeight, y);
-        svgWidth = Math.max(svgWidth, text.bbox().width + text.x());
-        if (ClientUtility.isImplimentsWorkflow(tree.type)) {
-            text.style('cursor', 'pointer');
-            text.on('mouseover', function () {
-                text.attr({ 'text-decoration': 'underline' });
-            });
-            text.on('mouseout', function () {
-                text.attr({ 'text-decoration': 'none' });
-            });
-            text.on('click', function () {
-                jsonProperty.hide();
-                childTree = null;
-                updateDisplay(tree.getIndexString());
-            });
-        }
-    }
-    /**
-     *
      * @param fileType
      * @param tree
      */
@@ -299,21 +262,21 @@ $(function () {
         if (tree == null) {
             tree = SwfTree.getSwfTree(taskIndex);
         }
-        // const filepath: string = `./${name}/${ClientUtility.getDefaultName(fileType)}`;
-        var dirname = "dir" + Date.now();
         getTemplateJsonFileSocket.emit(fileType, function (json) {
+            var rand = Math.floor(Date.now() / 100) % 100000;
+            var dirname = json.type + "Dir" + ("00000" + rand).slice(-5);
             var child = tree.addChild(json, dirname, fileType);
-            // if (fileType === JsonFileType.If) {
-            //     createChildTree(`condition`, JsonFileType.Condition, child);
-            // }
-            // else if (fileType === JsonFileType.Condition) {
-            //     createChildTree(`else`, JsonFileType.Else);
-            // }
-            // else {
-            jsonProperty.hide();
-            childTree = null;
-            updateDisplay(taskIndex);
-            // }
+            if (fileType === JsonFileType.If) {
+                createChildTree(JsonFileType.Condition, child);
+            }
+            else if (fileType === JsonFileType.Condition) {
+                createChildTree(JsonFileType.Else);
+            }
+            else {
+                jsonProperty.hide();
+                childTree = null;
+                display(taskIndex);
+            }
         });
     }
     /**
@@ -340,6 +303,24 @@ $(function () {
         var filename = ClientUtility.getDefaultName(tree);
         var currentDirectory = tree.getCurrentDirectory();
         return ClientUtility.normalize(projectDirectory + "/" + currentDirectory + "/" + filename);
+    }
+    /**
+     *
+     * @param callback
+     */
+    function uploadFiles(callback) {
+        var files = SwfTree.getUploadFiles(projectDirectory);
+        var loop = function () {
+            var data = files.shift();
+            if (!data) {
+                callback();
+                return;
+            }
+            fileUploadSocket.emit(data, function (isUpload) {
+                loop();
+            });
+        };
+        loop();
     }
 });
 //# sourceMappingURL=workflowManager.js.map

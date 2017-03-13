@@ -29,6 +29,7 @@
     <script type="text/javascript" src="/js/writeTreeJsonSocket.js"></script>
     <script type="text/javascript" src="/js/getTemplateJsonFileSocket.js"></script>
     <script type="text/javascript" src="/js/getRemoteHostListSocket.js"></script>
+    <script type="text/javascript" src="/js/uploadFileSocket.js"></script>
 
     <script type="text/javascript" src="/js/workflowManager.js"></script>
     <title>Scientific Workflow</title>
@@ -65,25 +66,13 @@
     </table>
 
     <div class="workflow_manage_area sub_content_area" id="workflow_manage_area">
-        <div id="workflow_tree_svg" class="workflow_tree_svg" onMouseDown="return false;"></div>
+        <div id="tree_svg" class="workflow_tree_svg" onMouseDown="return false;"></div>
         <div id="node_svg" class="node_tree"> </div>
         <div id="property" class="property"></div>
     </div>
 
+    <input type="file" id="file_select" style="display:none">
     <div class="gray_panel" id="gray_panel"></div>
-
-    <div class="text_dialog_area dialog_area" id="dialog_area_input">
-        <p class="dialog_title" id="dialog_title_input"></p>
-        <div class="address_bar_area">
-            <span id="label_input"></span>
-            <input type="text" id="input_text_input" class="dialog_text_box text_box">
-        </div>
-        <div class="dialog_button_container">
-            <button type="button" class="dialog_button button" id="dialog_ok_button_input">OK</button>
-            <button type="button" class="dialog_button button" id="dialog_cancel_button_input">Cancel</button>
-        </div>
-    </div>
-
     <div class="yesno_dialog_area dialog_area" id="dialog_area_yesno">
         <p class="dialog_title" id="dialog_title_yesno"></p>
         <div style="display: flex; flex-direction: row;">

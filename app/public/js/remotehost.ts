@@ -254,7 +254,7 @@ $(() => {
             .prop('disabled', true)
             .class('testing_button button');
 
-        sshConnectionSocket.emit(label, password, true, (isConnect: boolean) => {
+        sshConnectionSocket.emit(label, password, (isConnect: boolean) => {
             if (isConnect) {
                 button
                     .text(TEST_OK)

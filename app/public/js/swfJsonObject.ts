@@ -2,10 +2,25 @@
  * Swf File Json definition
  */
 interface SwfFileJson {
+    /**
+     * file name
+     */
     name: string;
+    /**
+     * file description
+     */
     description: string;
+    /**
+     * file path
+     */
     path: string;
+    /**
+     * file type
+     */
     type: string;
+    /**
+     * file required flag
+     */
     required: boolean;
 }
 
@@ -13,28 +28,64 @@ interface SwfFileJson {
  * Swf Task Json definition
  */
 interface SwfTaskJson {
+    /**
+     * task name
+     */
     name: string;
+    /**
+     * task description
+     */
     description: string;
+    /**
+     * task path
+     */
     path: string;
     /**
      * type of task
      * Task, Workflow, RemoteTask, Job
      */
     type: string;
+    /**
+     * script file
+     */
     script: SwfFileJson;
+    /**
+     * input files
+     */
     input_files: SwfFileJson[];
+    /**
+     * output_files
+     */
     output_files: SwfFileJson[];
+    /**
+     * send files
+     */
     send_files: SwfFileJson[];
+    /**
+     * receive files
+     */
     receive_files: SwfFileJson[];
+    /**
+     * clean up flag
+     */
     clean_up: boolean;
-    max_size_recieve_file: number;
+    /**
+     * max size of rreceive file (kb)
+     */
+    max_size_receive_file: number;
 }
 
 /**
  * Swf Relation Json definition
  */
 interface SwfRelationJson {
+    /**
+     * index of before task
+     */
     index_before_task: number;
+    /**
+     * index of after task
+     */
     index_after_task: number;
 }
 
@@ -42,7 +93,13 @@ interface SwfRelationJson {
  * Swf Relation files Json definition
  */
 interface SwfFileRelationJson extends SwfRelationJson {
+    /**
+     * output file path name
+     */
     path_output_file: string;
+    /**
+     * input file path name
+     */
     path_input_file: string;
 }
 
@@ -57,7 +114,13 @@ interface SwfFileRelationJson extends SwfRelationJson {
  * Swf Position on 2D
  */
 interface Position2D {
+    /**
+     * x coordinate
+     */
     x: number;
+    /**
+     * y coordinate
+     */
     y: number;
 }
 
@@ -72,23 +135,32 @@ interface SwfWorkflowJson extends SwfTaskJson {
 }
 
 /**
- * parameter of loop 
+ * parameter of "for" statement
  */
 interface ForParam {
+    /**
+     * start count
+     */
     start: number;
+    /**
+     * end count
+     */
     end: number;
+    /**
+     * step count
+     */
     step: number;
 }
 
 /**
- * index of loop 
+ * index of loop
  */
 interface ForIndex {
     index: number;
 }
 
 /**
- *
+ * Swf Loop Json definition
  */
 interface SwfLoopJson extends SwfWorkflowJson {
     forParam: ForParam;
@@ -103,16 +175,10 @@ interface SwfHostJson {
     path: string;
     host: string;
     job_scheduler: string;
-    username: string,
-    privateKey?: string
+    username: string;
+    privateKey?: string;
+    pass?: string;
 }
-
-// /**
-//  * json file definition for remote host list
-//  */
-// interface SwfHostJsons {
-//     hosts: SwfHostJson[];
-// }
 
 /**
  * Swf Remote Task Json definition
@@ -136,6 +202,9 @@ interface SwfLogJson {
      * task name
      */
     name: string;
+    /**
+     *
+     */
     description: string;
     /**
      * task state
@@ -159,6 +228,13 @@ interface SwfLogJson {
      *
      */
     execution_end_date: string;
+    /**
+     *
+     */
+    host?: SwfHostJson;
+    /**
+     *
+     */
     children: SwfLogJson[]
 }
 
@@ -174,7 +250,39 @@ interface SwfIfJson extends SwfWorkflowJson {
  * "break" statement
  */
 interface SwfBreakJson extends SwfTaskJson {
-    condition_file: SwfFileJson;
+}
+
+/**
+ * parameter study
+ */
+interface SwfPStudyJson extends SwfWorkflowJson {
+    parameter_file: SwfFileJson;
+}
+
+/**
+ * parameter study define
+ */
+interface SwfPSParameterJson {
+    target_file: string,
+    target_params: Array<SwfPSAxisJson>;
+}
+
+/**
+ * parameter study define target_param
+ */
+interface SwfPSAxisJson {
+    keyword: string;
+    type: string;
+    /**
+     * parameter of "for" statement
+     */
+    min: number | null;
+    max: number | null;
+    step: number | null;
+    /**
+     * list of value
+     */
+    list: Array<string> | null;
 }
 
 /**
@@ -196,8 +304,8 @@ interface SwfTreeJson extends SwfWorkflowJson {
     children: SwfTreeJson[];
     forParam: ForParam;
     condition: SwfFileJson;
-    else_file: SwfFileJson;
     host: SwfHostJson;
     job_script: SwfFile;
+    parameter_file: SwfFile;
     oldPath: string;
 }

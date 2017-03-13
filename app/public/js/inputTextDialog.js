@@ -33,31 +33,48 @@ var InputTextDialog = (function () {
          *
          */
         this.label = $('#label_input');
-        this.grayPanel.click(function () { return _this.hide(); });
-        this.name = name;
+        /**
+         *
+         */
+        this.isEnableEvent = true;
+        this.grayPanel.click(function () {
+            if (_this.isEnableEvent) {
+                _this.hide();
+            }
+        });
+        this.name = name === undefined ? '' : name;
     }
-    InputTextDialog.prototype.show = function () {
+    InputTextDialog.prototype.show = function (title, label) {
         var _this = this;
         this.grayPanel.displayBlock();
         this.dialogArea.displayBlock();
         this.buttonOK.on('click', function () {
-            if (_this.clickOkCallback) {
+            if (_this.isEnableEvent && _this.clickOkCallback) {
                 _this.clickOkCallback(_this.inputText);
             }
         });
         this.buttonCancel.one('click', function () {
-            if (_this.clickCancelCallback) {
-                _this.clickCancelCallback();
+            if (_this.isEnableEvent) {
+                if (_this.clickCancelCallback) {
+                    _this.clickCancelCallback();
+                }
+                _this.hide();
             }
-            _this.hide();
         });
         this.inputText.on('keyup', function (eventObject) {
-            if (eventObject.which === 0x0D && _this.clickOkCallback) {
+            if (_this.isEnableEvent && _this.clickOkCallback && eventObject.which === 0x0D) {
                 _this.clickOkCallback(_this.inputText);
             }
         });
-        this.title.text("Please enter " + this.name + " name");
-        this.label.text(this.name + " :");
+        if (title == null) {
+            title = "Please enter " + this.name + " name";
+        }
+        if (label == null) {
+            label = this.name + ":";
+        }
+        this.offBusy();
+        this.title.text(title);
+        this.label.text(label);
         this.inputText.borderValid();
         this.inputText.val('');
         this.inputText.focus();
@@ -72,22 +89,40 @@ var InputTextDialog = (function () {
         return this;
     };
     InputTextDialog.prototype.onClickOK = function (callback) {
-        if (!this.clickOkCallback) {
-            this.clickOkCallback = callback;
-        }
+        this.clickOkCallback = null;
+        this.clickOkCallback = callback;
         return this;
     };
     InputTextDialog.prototype.onClickCancel = function (callback) {
-        if (!this.clickCancelCallback) {
-            this.clickCancelCallback = callback;
-        }
+        this.clickCancelCallback = null;
+        this.clickCancelCallback = callback;
         return this;
     };
-    InputTextDialog.prototype.onKeyUpEnter = function (callback) {
-        if (!this.keyupEnterCallback) {
-            this.keyupEnterCallback = callback;
-        }
+    InputTextDialog.prototype.enableEvent = function () {
+        this.isEnableEvent = true;
         return this;
+    };
+    InputTextDialog.prototype.disableEvent = function () {
+        this.isEnableEvent = false;
+        return this;
+    };
+    InputTextDialog.prototype.onBusy = function (name) {
+        this.disableEvent();
+        this.inputText
+            .prop('disabled', true);
+        this.buttonOK
+            .text(name)
+            .prop('disabled', true)
+            .class('testing_button button');
+    };
+    InputTextDialog.prototype.offBusy = function () {
+        this.enableEvent();
+        this.inputText
+            .prop('disabled', false);
+        this.buttonOK
+            .text('OK')
+            .prop('disabled', false)
+            .class('dialog_button button');
     };
     return InputTextDialog;
 }());

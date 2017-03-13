@@ -23,6 +23,7 @@ var JsonFileType;
     JsonFileType[JsonFileType["Else"] = 7] = "Else";
     JsonFileType[JsonFileType["Condition"] = 8] = "Condition";
     JsonFileType[JsonFileType["Break"] = 9] = "Break";
+    JsonFileType[JsonFileType["PStudy"] = 10] = "PStudy";
 })(JsonFileType || (JsonFileType = {}));
 /**
  * Utility for server
@@ -42,7 +43,7 @@ var ServerUtility = (function () {
         if (fs.existsSync(path_dst_file)) {
             fs.unlinkSync(path_dst_file);
         }
-        fs.linkSync(path_src, path_dst_file);
+        fs.createReadStream(path_src).pipe(fs.createWriteStream(path_dst_file));
     };
     ServerUtility.copyFolder = function (path_src, path_dst) {
         if (!fs.existsSync(path_src)) {
@@ -64,6 +65,47 @@ var ServerUtility = (function () {
                 }
             });
         }
+    };
+    /**
+     *
+     * @param src_path path of source file
+     * @param dst_path path of destination file
+     * @param values to replace set of key and value
+     * @returns none
+     */
+    ServerUtility.writeFileKeywordReplaced = function (src_path, dst_path, values) {
+        var data = fs.readFileSync(src_path);
+        var text = String(data);
+        for (var key in values) {
+            text = text.replace("" + key, String(values[key]));
+        }
+        fs.writeFileSync(dst_path, text);
+    };
+    /**
+     *
+     * @param src_path
+     * @param dst_path
+     * @param values
+     * @param callback
+     */
+    ServerUtility.writeFileKeywordReplacedAsync = function (src_path, dst_path, values, callback) {
+        fs.readFile(src_path, function (err, data) {
+            if (err) {
+                logger.error(err);
+                return;
+            }
+            var text = data.toString();
+            Object.keys(values).forEach(function (key) {
+                text = text.replace(key, String(values[key]));
+            });
+            fs.writeFile(dst_path, text, function (err) {
+                if (err) {
+                    logger.error(err);
+                    return;
+                }
+                callback();
+            });
+        });
     };
     /**
      * get all host infomation
@@ -151,7 +193,7 @@ var ServerUtility = (function () {
      */
     ServerUtility.readTemplateWorkflowJson = function () {
         var filepath = this.getTemplateFilePath(JsonFileType.WorkFlow);
-        return this.readWorkflowJson(filepath);
+        return this.readJson(filepath);
     };
     /**
      * read .prj.json file tree
@@ -169,18 +211,44 @@ var ServerUtility = (function () {
         return projectJson;
     };
     /**
-     * read .wf.json file tree
-     * @param path_task_file task json file (.wf.json or .tsk.json file or .lp.json)
-     * @return swf task json
+     *
+     * @param filepath
+     * @param state
+     * @param callback
      */
-    ServerUtility.readWorkflowJson = function (filepath) {
+    ServerUtility.updateProjectJsonState = function (filepath, state, isSucceed, ifError) {
+        fs.readFile(filepath, function (err, data) {
+            if (err) {
+                logger.error(err);
+                if (ifError) {
+                    ifError();
+                }
+                return;
+            }
+            var project = JSON.parse(data.toString());
+            project.state = state;
+            fs.writeFile(filepath, JSON.stringify(project, null, '\t'), function (err) {
+                if (err) {
+                    logger.error(err);
+                    if (ifError) {
+                        ifError();
+                    }
+                    return;
+                }
+                if (isSucceed) {
+                    isSucceed(project);
+                }
+            });
+        });
+    };
+    /**
+     * read json file
+     * @param filepath json file path
+     */
+    ServerUtility.readJson = function (filepath) {
         var data = fs.readFileSync(filepath);
         var json = JSON.parse(data.toString());
-        // if (json.type && json.type.match(/^(?:Task|Workflow)$/)) {
         return json;
-        // }
-        // logger.error(`file extension is not type of json`);
-        // return null;
     };
     /**
      * read .wf.json file tree
@@ -189,7 +257,7 @@ var ServerUtility = (function () {
      */
     ServerUtility.createTreeJson = function (workflowJsonFilepath) {
         var _this = this;
-        var parent = this.readWorkflowJson(workflowJsonFilepath);
+        var parent = this.readJson(workflowJsonFilepath);
         var parentDirname = path.dirname(workflowJsonFilepath);
         parent.children = [];
         if (parent.children_file) {
@@ -215,7 +283,7 @@ var ServerUtility = (function () {
      */
     ServerUtility.createLogJson = function (path_taskFile) {
         var _this = this;
-        var workflowJson = this.readWorkflowJson(path_taskFile);
+        var workflowJson = this.readJson(path_taskFile);
         var logJson = {
             name: workflowJson.name,
             path: path.dirname(path_taskFile),
@@ -224,7 +292,8 @@ var ServerUtility = (function () {
             state: 'Planning',
             execution_start_date: '',
             execution_end_date: '',
-            children: []
+            children: [],
+            host: workflowJson.host
         };
         var parentDirname = path.dirname(path_taskFile);
         if (workflowJson.children_file) {
@@ -242,6 +311,37 @@ var ServerUtility = (function () {
             });
         }
         return logJson;
+    };
+    /**
+     *
+     * @param projectJson
+     */
+    ServerUtility.readLogJson = function (logJson) {
+        var _this = this;
+        var read = function (projectLog, log) {
+            try {
+                var logFilePath = path.join(projectLog.path, _this.config.system_name + ".log");
+                var json_1 = _this.readJson(logFilePath);
+                log.children.push(json_1);
+                projectLog.children.forEach(function (child) {
+                    read(child, json_1);
+                });
+            }
+            catch (err) {
+                log.children.push(projectLog);
+            }
+        };
+        try {
+            var logFilePath = path.join(logJson.path, this.config.system_name + ".log");
+            var json_2 = this.readJson(logFilePath);
+            logJson.children.forEach(function (child) {
+                read(child, json_2);
+            });
+            return json_2;
+        }
+        catch (err) {
+            return logJson;
+        }
     };
     /**
      * read .wf.json file tree
@@ -335,6 +435,14 @@ var ServerUtility = (function () {
     };
     /**
      *
+     * @param json
+     */
+    ServerUtility.IsTypeJob = function (json) {
+        var template = this.getTemplate(json.type);
+        return template.getType() === this.config.json_types.job;
+    };
+    /**
+     *
      * @param fileType
      */
     ServerUtility.getDefaultName = function (fileType) {
@@ -367,6 +475,8 @@ var ServerUtility = (function () {
                     return new JobTemplate();
                 case this.config.json_types.condition:
                     return new ConditionTemplate();
+                case this.config.json_types.pstudy:
+                    return new PStudyTemplate();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -393,6 +503,8 @@ var ServerUtility = (function () {
                     return new JobTemplate();
                 case JsonFileType.Condition:
                     return new ConditionTemplate();
+                case JsonFileType.PStudy:
+                    return new PStudyTemplate();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -414,6 +526,9 @@ var TemplateBase = (function () {
     TemplateBase.prototype.getPath = function () {
         return path.normalize(__dirname + "/" + this.path);
     };
+    TemplateBase.prototype.getType = function () {
+        return this.type;
+    };
     return TemplateBase;
 }());
 var ProjectTemplate = (function (_super) {
@@ -432,6 +547,7 @@ var TaskTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.task;
         _this.path = _this.config.template.task;
+        _this.type = _this.config.json_types.task;
         return _this;
     }
     return TaskTemplate;
@@ -442,6 +558,7 @@ var WorkflowTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.workflow;
         _this.path = _this.config.template.workflow;
+        _this.type = _this.config.json_types.workflow;
         return _this;
     }
     return WorkflowTemplate;
@@ -452,6 +569,7 @@ var LoopTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.loop;
         _this.path = _this.config.template.loop;
+        _this.type = _this.config.json_types.loop;
         return _this;
     }
     return LoopTemplate;
@@ -462,6 +580,7 @@ var IfTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.if;
         _this.path = _this.config.template.if;
+        _this.type = _this.config.json_types.if;
         return _this;
     }
     return IfTemplate;
@@ -472,6 +591,7 @@ var ElseTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.else;
         _this.path = _this.config.template.else;
+        _this.type = _this.config.json_types.else;
         return _this;
     }
     return ElseTemplate;
@@ -482,6 +602,7 @@ var BreakTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.break;
         _this.path = _this.config.template.break;
+        _this.type = _this.config.json_types.break;
         return _this;
     }
     return BreakTemplate;
@@ -492,6 +613,7 @@ var RemoteTaskTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.remotetask;
         _this.path = _this.config.template.remotetask;
+        _this.type = _this.config.json_types.remotetask;
         return _this;
     }
     return RemoteTaskTemplate;
@@ -502,6 +624,7 @@ var JobTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.job;
         _this.path = _this.config.template.job;
+        _this.type = _this.config.json_types.job;
         return _this;
     }
     return JobTemplate;
@@ -512,9 +635,21 @@ var ConditionTemplate = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.condition;
         _this.path = _this.config.template.condition;
+        _this.type = _this.config.json_types.condition;
         return _this;
     }
     return ConditionTemplate;
+}(TemplateBase));
+var PStudyTemplate = (function (_super) {
+    __extends(PStudyTemplate, _super);
+    function PStudyTemplate() {
+        var _this = _super.call(this) || this;
+        _this.extension = _this.config.extension.pstudy;
+        _this.path = _this.config.template.pstudy;
+        _this.type = _this.config.json_types.pstudy;
+        return _this;
+    }
+    return PStudyTemplate;
 }(TemplateBase));
 module.exports = ServerUtility;
 //# sourceMappingURL=serverUtility.js.map

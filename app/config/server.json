@@ -11,7 +11,8 @@
         "else": "./config/template.els.json",
         "remotetask": "./config/template.rtsk.json",
         "job": "./config/template.jb.json",
-        "condition": "./config/template.cnd.json"
+        "condition": "./config/template.cnd.json",
+        "pstudy": "./config/template.ps.json"
     },
     "extension": {
         "project": ".prj.json",
@@ -24,7 +25,8 @@
         "if": ".if.json",
         "else": ".els.json",
         "break": ".brk.json",
-        "condition": ".cnd.json"
+        "condition": ".cnd.json",
+        "pstudy": ".ps.json"
     },
     "file_types": {
         "file": "file",

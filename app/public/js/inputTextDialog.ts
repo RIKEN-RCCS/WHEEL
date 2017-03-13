@@ -55,6 +55,11 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
     /**
      *
      */
+    private isEnableEvent: boolean = true;
+
+    /**
+     *
+     */
     private clickOkCallback: ((inputTextElement: JQuery) => void);
 
     /**
@@ -71,32 +76,45 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
      *
      * @param name
      */
-    public constructor(name: string) {
-        this.grayPanel.click(() => this.hide());
-        this.name = name;
+    public constructor(name?: string) {
+        this.grayPanel.click(() => {
+            if (this.isEnableEvent) {
+                this.hide();
+            }
+        });
+        this.name = name === undefined ? '' : name;
     }
 
-    public show(): InputTextDialog {
+    public show(title?: string, label?: string): InputTextDialog {
         this.grayPanel.displayBlock();
         this.dialogArea.displayBlock();
         this.buttonOK.on('click', () => {
-            if (this.clickOkCallback) {
+            if (this.isEnableEvent && this.clickOkCallback) {
                 this.clickOkCallback(this.inputText);
             }
         });
         this.buttonCancel.one('click', () => {
-            if (this.clickCancelCallback) {
-                this.clickCancelCallback();
+            if (this.isEnableEvent) {
+                if (this.clickCancelCallback) {
+                    this.clickCancelCallback();
+                }
+                this.hide();
             }
-            this.hide();
         });
         this.inputText.on('keyup', (eventObject: JQueryEventObject) => {
-            if (eventObject.which === 0x0D && this.clickOkCallback) {
+            if (this.isEnableEvent && this.clickOkCallback && eventObject.which === 0x0D) {
                 this.clickOkCallback(this.inputText);
             }
         });
-        this.title.text(`Please enter ${this.name} name`);
-        this.label.text(`${this.name} :`);
+        if (title == null) {
+            title = `Please enter ${this.name} name`;
+        }
+        if (label == null) {
+            label = `${this.name}:`;
+        }
+        this.offBusy();
+        this.title.text(title);
+        this.label.text(label);
         this.inputText.borderValid();
         this.inputText.val('');
         this.inputText.focus();
@@ -108,28 +126,49 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
         this.dialogArea.displayNone();
         this.buttonOK.off('click');
         this.buttonCancel.off('click');
-        this.inputText.off('keyup')
+        this.inputText.off('keyup');
         return this;
     }
 
     public onClickOK(callback?: ((inputTextElement: JQuery) => void)): InputTextDialog {
-        if (!this.clickOkCallback) {
-            this.clickOkCallback = callback;
-        }
+        this.clickOkCallback = null;
+        this.clickOkCallback = callback;
         return this;
     }
 
     public onClickCancel(callback?: Function): InputTextDialog {
-        if (!this.clickCancelCallback) {
-            this.clickCancelCallback = callback;
-        }
+        this.clickCancelCallback = null;
+        this.clickCancelCallback = callback;
         return this;
     }
 
-    public onKeyUpEnter(callback?: Function): InputTextDialog {
-        if (!this.keyupEnterCallback) {
-            this.keyupEnterCallback = callback;
-        }
+    public enableEvent(): InputTextDialog {
+        this.isEnableEvent = true;
         return this;
+    }
+
+    public disableEvent(): InputTextDialog {
+        this.isEnableEvent = false;
+        return this;
+    }
+
+    public onBusy(name: string) {
+        this.disableEvent();
+        this.inputText
+            .prop('disabled', true);
+        this.buttonOK
+            .text(name)
+            .prop('disabled', true)
+            .class('testing_button button');
+    }
+
+    public offBusy() {
+        this.enableEvent();
+        this.inputText
+            .prop('disabled', false);
+        this.buttonOK
+            .text('OK')
+            .prop('disabled', false)
+            .class('dialog_button button');
     }
 }

@@ -23,6 +23,27 @@ var SwfFile = (function () {
     SwfFile.prototype.getPath = function () {
         return ClientUtility.normalize(this.path);
     };
+    SwfFile.prototype.clone = function () {
+        return new SwfFile(this);
+    };
+    SwfFile.prototype.set = function (file) {
+        this.name = file.name;
+        this.description = file.description;
+        this.path = file.path;
+        this.type = file.type;
+        this.required = file.required;
+    };
+    SwfFile.getDefault = function () {
+        var rand = Math.floor(Date.now() / 100) % 100000;
+        var filename = "File" + ("00000" + rand).slice(-5);
+        return new SwfFile({
+            name: 'name',
+            description: '',
+            path: "./" + filename,
+            type: 'file',
+            required: true
+        });
+    };
     return SwfFile;
 }());
 /**
@@ -40,7 +61,7 @@ var SwfTask = (function () {
         this.send_files = JSON.parse(JSON.stringify(swfTask.send_files)).map(function (file) { return new SwfFile(file); });
         this.receive_files = JSON.parse(JSON.stringify(swfTask.receive_files)).map(function (file) { return new SwfFile(file); });
         this.clean_up = swfTask.clean_up;
-        this.max_size_recieve_file = swfTask.max_size_recieve_file;
+        this.max_size_receive_file = swfTask.max_size_receive_file;
     }
     SwfTask.prototype.getInputFile = function (path) {
         return this.input_files.filter(function (file) { return file.getPath() === ClientUtility.normalize(path); })[0];
@@ -80,10 +101,10 @@ var SwfRelationFile = (function () {
         this.path_input_file = swfRelation.path_input_file;
     }
     SwfRelationFile.prototype.getOutputFileName = function () {
-        return this.index_before_task + "_" + this.path_output_file;
+        return this.index_before_task + "_" + ClientUtility.normalize(this.path_output_file);
     };
     SwfRelationFile.prototype.getInputFileName = function () {
-        return this.index_after_task + "_" + this.path_input_file;
+        return this.index_after_task + "_" + ClientUtility.normalize(this.path_input_file);
     };
     SwfRelationFile.prototype.toString = function () {
         return this.getOutputFileName() + "_" + this.getInputFileName();
@@ -124,6 +145,34 @@ var SwfWorkflow = (function (_super) {
         }
         return _this;
     }
+    SwfWorkflow.prototype.inputFilePathCount = function (path) {
+        path = ClientUtility.normalize(path);
+        var counter = 0;
+        this.file_relations.forEach(function (relation) {
+            if (ClientUtility.normalize(relation.path_input_file) === path) {
+                counter++;
+            }
+        });
+        return counter;
+    };
+    SwfWorkflow.prototype.outputFilePathCount = function (path) {
+        path = ClientUtility.normalize(path);
+        var counter = 0;
+        this.file_relations.forEach(function (relation) {
+            if (ClientUtility.normalize(relation.path_output_file) === path) {
+                counter++;
+            }
+        });
+        return counter;
+    };
+    SwfWorkflow.prototype.isExistDuplicateInputFilePath = function (path) {
+        var counter = this.inputFilePathCount(path);
+        return counter > 1;
+    };
+    SwfWorkflow.prototype.isExistDuplicateOutputFilePath = function (path) {
+        var counter = this.outputFilePathCount(path);
+        return counter > 1;
+    };
     return SwfWorkflow;
 }(SwfTask));
 var SwfLoop = (function (_super) {
@@ -220,6 +269,9 @@ var SwfLog = (function () {
             var children = JSON.parse(JSON.stringify(logJson.children));
             this.children = children.map(function (child) { return new SwfLog(child); });
         }
+        if (logJson.host) {
+            this.host = JSON.parse(JSON.stringify(logJson.host));
+        }
     }
     /**
      *
@@ -293,6 +345,26 @@ var SwfLog = (function () {
      */
     SwfLog.prototype.getHierarchy = function () {
         return this.indexes.length - 1;
+    };
+    /**
+     *
+     */
+    SwfLog.getHostList = function () {
+        var hash = {};
+        var notSeachedList = [this.root];
+        while (true) {
+            var log = notSeachedList.shift();
+            if (!log) {
+                break;
+            }
+            if (log.host && !ClientUtility.isLocalHost(log.host.host)) {
+                hash[log.host.name] = log.host;
+            }
+            log.children.forEach(function (child) {
+                notSeachedList.push(child);
+            });
+        }
+        return Object.keys(hash).map(function (key) { return hash[key]; });
     };
     return SwfLog;
 }());

@@ -10,11 +10,13 @@
     <script type="text/javascript" src="/js/clientUtility.js"></script>
     <script type="text/javascript" src="/js/getFileStatSocket.js"></script>
     <script type="text/javascript" src="/js/openProjectJsonSocket.js"></script>
+    <script type="text/javascript" src="/js/sshConnectionSocket.js"></script>
     <script type="text/javascript" src="/js/jqueryExtends.js"></script>
     <script type="text/javascript" src="/js/swfObject.js"></script>
     <script type="text/javascript" src="/js/runProjectSocket.js"></script>
     <script type="text/javascript" src="/js/jsonFileType.js"></script>
     <script type="text/javascript" src="/js/commonParam.js"></script>
+    <script type="text/javascript" src="/js/inputTextDialog.js"></script>
     <script type="text/javascript" src="/js/projectManager.js"></script>
     <title>Scientific Workflow</title>
 </head>
@@ -28,7 +30,7 @@
     <div class="menu_area">
         <figure class="menu_container">
             <img src="/image/icon_run.png" class="icon" id="run_button" />
-            <figcaption>RUN</figcaption>
+            <figcaption id="run_figcaption">RUN</figcaption>
         </figure>
     </div>
 
@@ -72,6 +74,20 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="gray_panel" id="gray_panel"></div>
+    <div class="text_dialog_area dialog_area" id="dialog_area_input">
+        <p class="dialog_title" id="dialog_title_input"></p>
+        <div class="address_bar_area">
+            <span id="label_input"></span>
+            <input type="password" id="input_text_input" class="dialog_text_box text_box">
+        </div>
+        <div class="dialog_button_container">
+            <button type="button" class="dialog_button button" id="dialog_ok_button_input">OK</button>
+            <!--<button type="button" class="dialog_button button" id="dialog_cancel_button_input">Cancel</button>-->
+        </div>
+        <input type="file" id="file_select" style="display:none">
     </div>
 </body>
 

@@ -7,7 +7,7 @@ import serverConfig = require('./serverConfig');
 import ServerSocketIO = require('./serverSocketIO');
 import GetFileListEvent = require('./getFileListEvent');
 import RunWorkflowEvent = require('./runProjectEvent');
-import CreateFileEvent = require('./createFileEvent');
+import UploadFileEvent = require('./uploadFileEvent');
 import CreateDirectoryEvent = require('./createDirectoryEvent');
 import GetFileStatEvent = require('./getFileStatEvent');
 import ReadTreeJsonEvent = require('./readTreeJsonEvent');
@@ -34,6 +34,7 @@ serverSocket.addEventListener('/swf/select', [
 serverSocket.addEventListener('/swf/project', [
     new OpenProjectJsonEvent(),
     new RunWorkflowEvent(),
+    new SshConnectionEvent(),
     new GetFileStatEvent()
 ]);
 serverSocket.addEventListener('/swf/remotehost', [
@@ -48,6 +49,7 @@ serverSocket.addEventListener('/swf/workflow', [
     new GetFileStatEvent(),
     new WriteTreeJsonEvent(),
     new GetTemplateJsonFileEvent(),
-    new GetRemoteHostListEvent()
+    new GetRemoteHostListEvent(),
+    new UploadFileEvent()
 ]);
 serverSocket.onConnect();

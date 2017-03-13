@@ -15,6 +15,7 @@ var SwfTree = (function (_super) {
     function SwfTree(treeJson) {
         var _this = _super.call(this, treeJson) || this;
         _this.children = [];
+        _this.uploadSendfiles = [];
         _this.indexes = [];
         _this.oldPath = treeJson.oldPath;
         if (treeJson.children) {
@@ -27,14 +28,14 @@ var SwfTree = (function (_super) {
         if (treeJson.condition) {
             _this.condition = new SwfFile(treeJson.condition);
         }
-        if (treeJson.else_file) {
-            _this.else_file = new SwfFile(treeJson.else_file);
-        }
         if (treeJson.host) {
             _this.host = new SwfHost(treeJson.host);
         }
         if (treeJson.job_script) {
             _this.job_script = new SwfFile(treeJson.job_script);
+        }
+        if (treeJson.parameter_file) {
+            _this.parameter_file = new SwfFile(treeJson.parameter_file);
         }
         if (ClientUtility.checkFileType(treeJson.type, JsonFileType.Job)) {
             _this.script_param = {
@@ -113,7 +114,6 @@ var SwfTree = (function (_super) {
     SwfTree.prototype.addChild = function (treeJson, dirname, fileType) {
         var tree = new SwfTree(treeJson);
         tree.path = dirname;
-        tree.oldPath = dirname;
         this.children.push(tree);
         this.children_file.push(new SwfFile({
             name: tree.name,
@@ -124,6 +124,7 @@ var SwfTree = (function (_super) {
         }));
         this.positions.push({ x: 0, y: 0 });
         SwfTree.renumberingIndex(SwfTree.root);
+        tree.oldPath = '';
         return tree;
     };
     /**
@@ -218,6 +219,7 @@ var SwfTree = (function (_super) {
             });
             delete tree.indexes;
             delete tree.script_param;
+            delete tree.uploadScript;
             Object.keys(this).forEach(function (key) {
                 if (_this[key] == null) {
                     delete _this[key];
@@ -225,6 +227,18 @@ var SwfTree = (function (_super) {
             });
         }
         return root;
+    };
+    /**
+     *
+     */
+    SwfTree.prototype.toSwfFile = function () {
+        return new SwfFile({
+            name: this.name,
+            description: this.description,
+            path: this.path,
+            type: 'file',
+            required: true
+        });
     };
     /**
      *
@@ -299,9 +313,9 @@ var SwfTree = (function (_super) {
         else {
             child = task;
         }
-        var file = new SwfFile(child.getInputFile(filepath));
+        var file = child.findInputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
-        SwfTree.addFileToParent(this, new SwfFile(file), fullpath, true);
+        SwfTree.addFileToParent(this, file, fullpath, true);
     };
     /**
      *
@@ -317,9 +331,9 @@ var SwfTree = (function (_super) {
         else {
             child = task;
         }
-        var file = new SwfFile(child.getOutputFile(filepath));
+        var file = child.findOutputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
-        SwfTree.addFileToParent(this, new SwfFile(file), fullpath, false);
+        SwfTree.addFileToParent(this, file, fullpath, false);
     };
     /**
      *
@@ -337,7 +351,7 @@ var SwfTree = (function (_super) {
         files.push(file);
         console.log("add parent path " + file.path);
         var parent = tree.getParent();
-        this.addFileToParent(parent, new SwfFile(file), fullpath, isInput);
+        this.addFileToParent(parent, file.clone(), fullpath, isInput);
     };
     /**
      *
@@ -353,7 +367,7 @@ var SwfTree = (function (_super) {
         else {
             child = task;
         }
-        var file = new SwfFile(child.getInputFile(filepath));
+        var file = child.findInputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
         SwfTree.deleteFileFromParent(this, fullpath, true);
     };
@@ -371,7 +385,7 @@ var SwfTree = (function (_super) {
         else {
             child = task;
         }
-        var file = new SwfFile(child.getOutputFile(filepath));
+        var file = child.findOutputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
         SwfTree.deleteFileFromParent(this, fullpath, false);
     };
@@ -386,29 +400,32 @@ var SwfTree = (function (_super) {
             return;
         }
         var files = isInput ? tree.input_files : tree.output_files;
-        files.forEach(function (file, index) {
-            var relativePath = ClientUtility.normalize("./" + tree.getRelativePath(fullpath));
-            if (relativePath === file.path) {
-                console.log("delete parent path " + file.path);
+        for (var index = files.length - 1; index >= 0; index--) {
+            if (fullpath === tree.getFullpath(files[index].path)) {
+                console.log("delete parent path " + files[index].path);
                 files.splice(index, 1);
             }
-        });
+        }
         var parent = tree.getParent();
-        parent.file_relations.forEach(function (relation, index) {
-            var relativePath = ClientUtility.normalize("./" + tree.getRelativePath(fullpath));
+        for (var index = parent.file_relations.length - 1; index >= 0; index--) {
+            var relation = parent.file_relations[index];
             if (isInput) {
-                if (relativePath === ClientUtility.normalize(relation.path_input_file)) {
+                if (fullpath === parent.getFullpath(relation.path_input_file)) {
                     console.log("delete parent relation " + relation.path_input_file);
+                    if (!parent.isExistDuplicateOutputFilePath(relation.path_output_file)) {
+                        parent.addOutputFileToParent(relation.index_before_task, relation.path_output_file);
+                    }
                     parent.file_relations.splice(index, 1);
                 }
             }
             else {
-                if (relativePath === ClientUtility.normalize(relation.path_output_file)) {
+                if (fullpath === parent.getFullpath(relation.path_output_file)) {
                     console.log("delete parent relation " + relation.path_output_file);
+                    parent.addInputFileToParent(relation.index_after_task, relation.path_input_file);
                     parent.file_relations.splice(index, 1);
                 }
             }
-        });
+        }
         this.deleteFileFromParent(parent, fullpath, isInput);
     };
     /**
@@ -417,7 +434,7 @@ var SwfTree = (function (_super) {
      * @param newFile
      */
     SwfTree.prototype.updateInputFile = function (oldFile, newFile) {
-        var file = new SwfFile(this.getInputFile(oldFile.path));
+        var file = this.findInputFile(oldFile.path).clone();
         var oldFullpath = this.getFullpath(file.path);
         var newFullpath = this.getFullpath(newFile.path);
         SwfTree.updateChildFile(this, oldFile, newFile, oldFullpath, newFullpath, true);
@@ -428,7 +445,7 @@ var SwfTree = (function (_super) {
      * @param newFile
      */
     SwfTree.prototype.updateOutputFile = function (oldFile, newFile) {
-        var file = new SwfFile(this.getOutputFile(oldFile.path));
+        var file = this.findOutputFile(oldFile.path).clone();
         var oldFullpath = this.getFullpath(file.path);
         var newFullpath = this.getFullpath(newFile.path);
         SwfTree.updateChildFile(this, oldFile, newFile, oldFullpath, newFullpath, false);
@@ -445,51 +462,51 @@ var SwfTree = (function (_super) {
     SwfTree.updateChildFile = function (tree, oldFile, newFile, oldFullpath, newFullpath, isInput) {
         var _this = this;
         var parent = tree.getParent();
-        parent.file_relations.forEach(function (relation, index) {
-            if (isInput) {
-                if (relation.path_input_file === oldFile.path) {
-                    relation.path_input_file = newFile.path;
-                    if (oldFile.type !== newFile.type) {
-                        parent.file_relations.splice(index, 1);
+        var newPath = "./" + ClientUtility.normalize(tree.path + "/" + newFile.path);
+        if (oldFile.path !== newFile.path) {
+            for (var index = parent.file_relations.length - 1; index >= 0; index--) {
+                var relation = parent.file_relations[index];
+                if (isInput) {
+                    if (oldFullpath === parent.getFullpath(relation.path_input_file)) {
+                        console.log("update relation path " + relation.path_input_file + " to " + newPath);
+                        relation.path_input_file = newPath;
+                        if (oldFile.type !== newFile.type) {
+                            parent.file_relations.splice(index, 1);
+                        }
+                    }
+                }
+                else {
+                    if (oldFullpath === parent.getFullpath(relation.path_output_file)) {
+                        console.log("update relation path " + relation.path_output_file + " to " + newPath);
+                        relation.path_output_file = newPath;
+                        if (oldFile.type !== newFile.type) {
+                            parent.file_relations.splice(index, 1);
+                        }
                     }
                 }
             }
-            else {
-                if (relation.path_output_file === oldFile.path) {
-                    relation.path_output_file = newFile.path;
-                    if (oldFile.type !== newFile.type) {
-                        parent.file_relations.splice(index, 1);
-                    }
-                }
-            }
-        });
+        }
         if (parent.isRoot()) {
             return;
         }
         var files = isInput ? parent.input_files : parent.output_files;
         files.forEach(function (input) {
             console.log("oldfull=" + oldFullpath + ", newfull=" + newFullpath);
-            var oldRelative = parent.getRelativePath(oldFullpath);
             var newRelative = parent.getRelativePath(newFullpath);
-            console.log("old=" + oldRelative + ", new=" + newRelative);
-            if (input.path === oldRelative) {
-                var regexp = new RegExp(oldFile.getPath() + "$");
+            if (oldFullpath === parent.getFullpath(input.path)) {
+                console.log("convert " + input.path + " to " + newRelative);
                 var old = new SwfFile(input);
                 input.path = newRelative;
                 input.name = newFile.name;
                 input.description = newFile.description;
                 input.required = newFile.required;
                 input.type = newFile.type;
-                // console.log(`convert ${oldRelative} to ${newRelative}`);
                 _this.updateChildFile(parent, old, new SwfFile(input), oldFullpath, newFullpath, isInput);
             }
         });
     };
-    /**
-     *
-     * @param dirname
-     */
-    SwfTree.prototype.updateChildren = function (file) {
+    SwfTree.prototype.updatePath = function (file) {
+        // const oldFile :SwfFile =
         var oldFullpath = this.getFullpath("" + ClientUtility.getDefaultName(this));
         this.path = file.path;
         var newFullpath = this.getFullpath("" + ClientUtility.getDefaultName(this));
@@ -501,13 +518,128 @@ var SwfTree = (function (_super) {
         parent.children_file.forEach(function (child) {
             var fullpath = parent.getFullpath(child);
             if (fullpath === oldFullpath) {
-                child.name = file.name;
-                child.description = file.description;
+                child.set(file);
                 child.path = parent.getRelativePath(newFullpath);
-                child.type = file.type;
-                child.required = file.required;
             }
         });
+        // this.input_files.forEach(input => {
+        //     // console.log(input.path);
+        // });
+    };
+    SwfTree.prototype.findInputFile = function (path) {
+        var _this = this;
+        var file = this.getInputFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.input_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+        }
+    };
+    SwfTree.prototype.findOutputFile = function (path) {
+        var _this = this;
+        var file = this.getOutputFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.output_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+        }
+    };
+    SwfTree.prototype.findSendFile = function (path) {
+        var _this = this;
+        var file = this.getSendFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.send_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+        }
+    };
+    SwfTree.prototype.findReceiveFile = function (path) {
+        var _this = this;
+        var file = this.getReceiveFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.receive_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+        }
+    };
+    SwfTree.prototype.setScriptPath = function (file) {
+        this.uploadScript = file;
+        this.script.path = file.name;
+    };
+    SwfTree.prototype.setParameterFile = function (file) {
+        this.uploadParamFile = file;
+        this.parameter_file.path = file.name;
+    };
+    SwfTree.prototype.setSendFilepath = function (files) {
+        this.uploadSendfiles = [];
+        this.send_files = [];
+        for (var index = 0; index < files.length; index++) {
+            this.uploadSendfiles.push(files[index]);
+            this.send_files.push(new SwfFile({
+                name: 'name',
+                description: '',
+                path: files[index].name,
+                type: 'file',
+                required: true
+            }));
+        }
+    };
+    SwfTree.prototype.deleteSendfile = function (file) {
+        var _this = this;
+        var index = this.send_files.indexOf(file);
+        this.send_files.splice(index, 1);
+        var _loop_1 = function (index_1) {
+            this_1.uploadSendfiles.forEach(function (send) {
+                if (send.name === file.path) {
+                    _this.uploadSendfiles.splice(index_1, 1);
+                }
+            });
+        };
+        var this_1 = this;
+        for (var index_1 = this.uploadSendfiles.length - 1; index_1 >= 0; index_1--) {
+            _loop_1(index_1);
+        }
+    };
+    SwfTree.getUploadFiles = function (projectDirectory) {
+        var files = [];
+        var notSeachedList = [this.root];
+        var _loop_2 = function () {
+            var tree = notSeachedList.shift();
+            if (!tree) {
+                return "break";
+            }
+            if (tree.uploadScript) {
+                files.push({
+                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(tree.uploadScript.name)),
+                    file: tree.uploadScript
+                });
+            }
+            if (tree.uploadParamFile) {
+                files.push({
+                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(tree.uploadParamFile.name)),
+                    file: tree.uploadParamFile
+                });
+            }
+            tree.uploadSendfiles.forEach(function (file) {
+                files.push({
+                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(file.name)),
+                    file: file
+                });
+            });
+            tree.children.forEach(function (child) {
+                notSeachedList.push(child);
+            });
+        };
+        while (true) {
+            var state_1 = _loop_2();
+            if (state_1 === "break")
+                break;
+        }
+        return files;
     };
     return SwfTree;
 }(SwfWorkflow));

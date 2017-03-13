@@ -24,7 +24,8 @@ enum JsonFileType {
     If,
     Else,
     Condition,
-    Break
+    Break,
+    PStudy
 }
 
 /**
@@ -45,7 +46,7 @@ class ServerUtility {
         if (fs.existsSync(path_dst_file)) {
             fs.unlinkSync(path_dst_file);
         }
-        fs.linkSync(path_src, path_dst_file);
+        fs.createReadStream(path_src).pipe(fs.createWriteStream(path_dst_file));
     }
 
     public static copyFolder(path_src, path_dst) {
@@ -69,6 +70,51 @@ class ServerUtility {
                 }
             });
         }
+    }
+
+    /**
+     *
+     * @param src_path path of source file
+     * @param dst_path path of destination file
+     * @param values to replace set of key and value
+     * @returns none
+     */
+    public static writeFileKeywordReplaced(src_path: string, dst_path: string, values: Object) {
+        const data: Buffer = fs.readFileSync(src_path);
+        let text: string = String(data);
+        for (const key in values) {
+            text = text.replace(`${key}`, String(values[key]));
+        }
+        fs.writeFileSync(dst_path, text);
+    }
+
+    /**
+     *
+     * @param src_path
+     * @param dst_path
+     * @param values
+     * @param callback
+     */
+    public static writeFileKeywordReplacedAsync(src_path: string, dst_path: string, values: { [key: string]: string }, callback: Function) {
+        fs.readFile(src_path, (err, data) => {
+            if (err) {
+                logger.error(err);
+                return;
+            }
+
+            let text: string = data.toString();
+            Object.keys(values).forEach(key => {
+                text = text.replace(key, String(values[key]));
+            });
+
+            fs.writeFile(dst_path, text, (err) => {
+                if (err) {
+                    logger.error(err);
+                    return;
+                }
+                callback();
+            });
+        });
     }
 
     /**
@@ -173,7 +219,7 @@ class ServerUtility {
      */
     public static readTemplateWorkflowJson(): SwfWorkflowJson {
         const filepath = this.getTemplateFilePath(JsonFileType.WorkFlow);
-        return this.readWorkflowJson(filepath);
+        return this.readJson(filepath);
     }
 
     /**
@@ -195,20 +241,45 @@ class ServerUtility {
     }
 
     /**
-     * read .wf.json file tree
-     * @param path_task_file task json file (.wf.json or .tsk.json file or .lp.json)
-     * @return swf task json
+     *
+     * @param filepath
+     * @param state
+     * @param callback
      */
-    public static readWorkflowJson(filepath: string): SwfWorkflowJson {
+    public static updateProjectJsonState(filepath: string, state: string, isSucceed?: Function, ifError?: Function) {
+        fs.readFile(filepath, (err, data) => {
+            if (err) {
+                logger.error(err);
+                if (ifError) {
+                    ifError();
+                }
+                return
+            }
+            const project: SwfProjectJson = JSON.parse(data.toString());
+            project.state = state;
+            fs.writeFile(filepath, JSON.stringify(project, null, '\t'), (err) => {
+                if (err) {
+                    logger.error(err);
+                    if (ifError) {
+                        ifError();
+                    }
+                    return;
+                }
+                if (isSucceed) {
+                    isSucceed(project);
+                }
+            });
+        });
+    }
 
+    /**
+     * read json file
+     * @param filepath json file path
+     */
+    public static readJson(filepath: string): any {
         const data = fs.readFileSync(filepath);
         const json: SwfWorkflowJson = JSON.parse(data.toString());
-        // if (json.type && json.type.match(/^(?:Task|Workflow)$/)) {
         return json;
-        // }
-
-        // logger.error(`file extension is not type of json`);
-        // return null;
     }
 
     /**
@@ -218,7 +289,7 @@ class ServerUtility {
      */
     public static createTreeJson(workflowJsonFilepath: string): SwfTreeJson {
 
-        const parent = <SwfTreeJson>this.readWorkflowJson(workflowJsonFilepath);
+        const parent = <SwfTreeJson>this.readJson(workflowJsonFilepath);
         const parentDirname = path.dirname(workflowJsonFilepath);
         parent.children = [];
         if (parent.children_file) {
@@ -246,7 +317,7 @@ class ServerUtility {
      */
     public static createLogJson(path_taskFile: string): SwfLogJson {
 
-        const workflowJson: SwfWorkflowJson = this.readWorkflowJson(path_taskFile);
+        const workflowJson: any = this.readJson(path_taskFile);
 
         const logJson: SwfLogJson = {
             name: workflowJson.name,
@@ -256,7 +327,8 @@ class ServerUtility {
             state: 'Planning',
             execution_start_date: '',
             execution_end_date: '',
-            children: []
+            children: [],
+            host: workflowJson.host
         };
 
         const parentDirname = path.dirname(path_taskFile);
@@ -274,9 +346,40 @@ class ServerUtility {
                 }
             });
         }
-
-
         return logJson;
+    }
+
+    /**
+     *
+     * @param projectJson
+     */
+    public static readLogJson(logJson: SwfLogJson): SwfLogJson {
+
+        const read = (projectLog: SwfLogJson, log: SwfLogJson) => {
+            try {
+                const logFilePath = path.join(projectLog.path, `${this.config.system_name}.log`);
+                const json: SwfLogJson = this.readJson(logFilePath);
+                log.children.push(json);
+                projectLog.children.forEach(child => {
+                    read(child, json);
+                });
+            }
+            catch (err) {
+                log.children.push(projectLog);
+            }
+        };
+
+        try {
+            const logFilePath = path.join(logJson.path, `${this.config.system_name}.log`);
+            const json: SwfLogJson = this.readJson(logFilePath);
+            logJson.children.forEach(child => {
+                read(child, json);
+            });
+            return json;
+        }
+        catch (err) {
+            return logJson;
+        }
     }
 
     /**
@@ -380,6 +483,15 @@ class ServerUtility {
 
     /**
      *
+     * @param json
+     */
+    public static IsTypeJob(json: SwfTreeJson) {
+        const template = this.getTemplate(json.type);
+        return template.getType() === this.config.json_types.job;
+    }
+
+    /**
+     *
      * @param fileType
      */
     public static getDefaultName(fileType: (string | JsonFileType)): string {
@@ -395,7 +507,7 @@ class ServerUtility {
     private static getTemplate(fileType: (string | JsonFileType)): TemplateBase {
         if (typeof fileType === 'string') {
             switch (fileType) {
-                case  this.config.json_types.workflow:
+                case this.config.json_types.workflow:
                     return new WorkflowTemplate();
                 case this.config.json_types.task:
                     return new TaskTemplate();
@@ -413,6 +525,8 @@ class ServerUtility {
                     return new JobTemplate();
                 case this.config.json_types.condition:
                     return new ConditionTemplate();
+                case this.config.json_types.pstudy:
+                    return new PStudyTemplate();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -439,6 +553,8 @@ class ServerUtility {
                     return new JobTemplate();
                 case JsonFileType.Condition:
                     return new ConditionTemplate();
+                case JsonFileType.PStudy:
+                    return new PStudyTemplate();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -450,11 +566,15 @@ class TemplateBase {
     protected config = serverConfig.getConfig();
     protected extension: string;
     protected path: string;
+    protected type: string;
     public getExtension(): string {
         return this.extension;
     }
     public getPath(): string {
         return path.normalize(`${__dirname}/${this.path}`);
+    }
+    public getType(): string {
+        return this.type;
     }
 }
 class ProjectTemplate extends TemplateBase {
@@ -469,6 +589,7 @@ class TaskTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.task;
         this.path = this.config.template.task;
+        this.type = this.config.json_types.task;
     }
 }
 class WorkflowTemplate extends TemplateBase {
@@ -476,6 +597,7 @@ class WorkflowTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.workflow;
         this.path = this.config.template.workflow;
+        this.type = this.config.json_types.workflow;
     }
 }
 class LoopTemplate extends TemplateBase {
@@ -483,6 +605,7 @@ class LoopTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.loop;
         this.path = this.config.template.loop;
+        this.type = this.config.json_types.loop;
     }
 }
 class IfTemplate extends TemplateBase {
@@ -490,6 +613,7 @@ class IfTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.if;
         this.path = this.config.template.if;
+        this.type = this.config.json_types.if;
     }
 }
 class ElseTemplate extends TemplateBase {
@@ -497,6 +621,7 @@ class ElseTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.else;
         this.path = this.config.template.else;
+        this.type = this.config.json_types.else;
     }
 }
 class BreakTemplate extends TemplateBase {
@@ -504,6 +629,7 @@ class BreakTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.break;
         this.path = this.config.template.break;
+        this.type = this.config.json_types.break;
     }
 }
 class RemoteTaskTemplate extends TemplateBase {
@@ -511,6 +637,7 @@ class RemoteTaskTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.remotetask;
         this.path = this.config.template.remotetask;
+        this.type = this.config.json_types.remotetask;
     }
 }
 class JobTemplate extends TemplateBase {
@@ -518,6 +645,7 @@ class JobTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.job;
         this.path = this.config.template.job;
+        this.type = this.config.json_types.job;
     }
 }
 class ConditionTemplate extends TemplateBase {
@@ -525,6 +653,15 @@ class ConditionTemplate extends TemplateBase {
         super();
         this.extension = this.config.extension.condition;
         this.path = this.config.template.condition;
+        this.type = this.config.json_types.condition;
+    }
+}
+class PStudyTemplate extends TemplateBase {
+    public constructor() {
+        super();
+        this.extension = this.config.extension.pstudy;
+        this.path = this.config.template.pstudy;
+        this.type = this.config.json_types.pstudy;
     }
 }
 export = ServerUtility;

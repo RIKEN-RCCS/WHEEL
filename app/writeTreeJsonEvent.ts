@@ -25,17 +25,11 @@ class WriteTreeJsonEvent implements SocketListener {
 
     /**
      *
-     */
-    private lastFlag: boolean = false;
-
-    /**
-     *
      * @param socket
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(WriteTreeJsonEvent.eventName, (projectDirectory: string, json: SwfTreeJson) => {
             this.error = false;
-            this.lastFlag = false;
             this.queue.length = 0;
             this.setQueue(projectDirectory, json);
             this.saveTreeJson(() => {
@@ -51,7 +45,7 @@ class WriteTreeJsonEvent implements SocketListener {
     private saveTreeJson(callback: Function) {
         const data = this.queue.shift();
         if (!data) {
-            this.lastFlag = true;
+            callback();
             return;
         }
 
@@ -65,13 +59,10 @@ class WriteTreeJsonEvent implements SocketListener {
         delete copy.children;
         delete copy.oldPath;
 
-        const next = () => {
-            if (this.lastFlag) {
-                callback();
-            }
-            else {
-                this.saveTreeJson(callback);
-            }
+        const error = (err) => {
+            logger.error(err);
+            this.error = true;
+            this.saveTreeJson(callback);
         };
 
         const update = () => {
@@ -81,19 +72,29 @@ class WriteTreeJsonEvent implements SocketListener {
                     this.error = true;
                 }
                 logger.info(`update file=${filepath}`);
-                next();
+                this.saveTreeJson(callback);
             });
         }
 
         const add = () => {
             fs.mkdir(newDirectory, (err) => {
                 if (err) {
-                    logger.error(err);
-                    this.error = true;
-                    next();
+                    error(err);
                 }
                 else {
-                    logger.info(`add    file=${filepath}`);
+                    logger.info(`make    dir=${newDirectory}`);
+                    update();
+                }
+            });
+        };
+
+        const rename = () => {
+            fs.rename(oldDirectory, newDirectory, (err) => {
+                if (err) {
+                    error(err);
+                }
+                else {
+                    logger.info(`rename  dir=${oldDirectory} to ${newDirectory}`);
                     update();
                 }
             });
@@ -102,25 +103,16 @@ class WriteTreeJsonEvent implements SocketListener {
         if (data.tree.path === undefined) {
             // delete
         }
+        else if (!data.tree.oldPath) {
+            add();
+        }
         else if (data.tree.path !== data.tree.oldPath) {
             fs.stat(oldDirectory, (err, stat) => {
                 if (err) {
-                    logger.error(err);
-                    this.error = true;
-                    next();
+                    error(err);
                 }
                 else if (stat.isDirectory()) {
-                    fs.rename(oldDirectory, newDirectory, (err) => {
-                        if (err) {
-                            logger.error(err);
-                            this.error = true;
-                            next();
-                        }
-                        else {
-                            logger.info(`rename  dir=${oldDirectory} to ${newDirectory}`);
-                            update();
-                        }
-                    });
+                    rename();
                 }
                 else {
                     add();
@@ -130,9 +122,7 @@ class WriteTreeJsonEvent implements SocketListener {
         else {
             fs.stat(filepath, (err, stat) => {
                 if (err) {
-                    logger.error(err);
-                    this.error = true;
-                    next();
+                    add();
                 }
                 else if (stat.isFile()) {
                     update();

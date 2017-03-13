@@ -8,11 +8,14 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     public children: SwfTree[] = [];
     public forParam: ForParam;
     public condition: SwfFile;
-    public else_file: SwfFile;
     public host: SwfHost;
     public job_script: SwfFile;
+    public parameter_file: SwfFile;
     public oldPath: string;
 
+    private uploadScript: File;
+    private uploadParamFile: File;
+    private uploadSendfiles: File[] = [];
     private indexes: number[] = [];
     private script_param: {
         cores: number;
@@ -37,16 +40,15 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         if (treeJson.condition) {
             this.condition = new SwfFile(treeJson.condition);
         }
-        if (treeJson.else_file) {
-            this.else_file = new SwfFile(treeJson.else_file);
-        }
         if (treeJson.host) {
             this.host = new SwfHost(treeJson.host);
         }
         if (treeJson.job_script) {
             this.job_script = new SwfFile(treeJson.job_script);
         }
-
+        if (treeJson.parameter_file) {
+            this.parameter_file = new SwfFile(treeJson.parameter_file);
+        }
         if (ClientUtility.checkFileType(treeJson.type, JsonFileType.Job)) {
             this.script_param = {
                 cores: 1,
@@ -127,7 +129,6 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     public addChild(treeJson: SwfTreeJson, dirname: string, fileType: JsonFileType): SwfTree {
         const tree = new SwfTree(treeJson);
         tree.path = dirname;
-        tree.oldPath = dirname;
         this.children.push(tree);
         this.children_file.push(new SwfFile({
             name: tree.name,
@@ -138,6 +139,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         }));
         this.positions.push({ x: 0, y: 0 });
         SwfTree.renumberingIndex(SwfTree.root);
+        tree.oldPath = '';
         return tree;
     }
 
@@ -242,13 +244,28 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
 
             delete tree.indexes;
             delete tree.script_param;
+            delete tree.uploadScript;
             Object.keys(this).forEach(key => {
                 if (this[key] == null) {
                     delete this[key];
                 }
             });
         }
+
         return root;
+    }
+
+    /**
+     *
+     */
+    public toSwfFile(): SwfFile {
+        return new SwfFile({
+            name: this.name,
+            description: this.description,
+            path: this.path,
+            type: 'file',
+            required: true
+        });
     }
 
     /**
@@ -329,9 +346,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         else {
             child = task;
         }
-        const file = new SwfFile(child.getInputFile(filepath));
+        const file = child.findInputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
-        SwfTree.addFileToParent(this, new SwfFile(file), fullpath, true);
+        SwfTree.addFileToParent(this, file, fullpath, true);
     }
 
     /**
@@ -348,9 +365,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         else {
             child = task;
         }
-        const file = new SwfFile(child.getOutputFile(filepath));
+        const file = child.findOutputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
-        SwfTree.addFileToParent(this, new SwfFile(file), fullpath, false);
+        SwfTree.addFileToParent(this, file, fullpath, false);
     }
 
     /**
@@ -369,7 +386,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         files.push(file);
         console.log(`add parent path ${file.path}`);
         const parent = tree.getParent();
-        this.addFileToParent(parent, new SwfFile(file), fullpath, isInput);
+        this.addFileToParent(parent, file.clone(), fullpath, isInput);
     }
 
     /**
@@ -386,7 +403,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         else {
             child = task;
         }
-        const file = new SwfFile(child.getInputFile(filepath));
+        const file = child.findInputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
         SwfTree.deleteFileFromParent(this, fullpath, true);
     }
@@ -405,7 +422,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         else {
             child = task;
         }
-        const file = new SwfFile(child.getOutputFile(filepath));
+        const file = child.findOutputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
         SwfTree.deleteFileFromParent(this, fullpath, false);
     }
@@ -423,31 +440,35 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
 
         const files: SwfFile[] = isInput ? tree.input_files : tree.output_files;
 
-        files.forEach((file, index) => {
-            const relativePath = ClientUtility.normalize(`./${tree.getRelativePath(fullpath)}`);
-            if (relativePath === file.path) {
-                console.log(`delete parent path ${file.path}`);
+        for (let index = files.length - 1; index >= 0; index--) {
+            if (fullpath === tree.getFullpath(files[index].path)) {
+                console.log(`delete parent path ${files[index].path}`);
                 files.splice(index, 1);
             }
-        });
+        }
 
         const parent = tree.getParent();
-        parent.file_relations.forEach((relation, index) => {
-            const relativePath = ClientUtility.normalize(`./${tree.getRelativePath(fullpath)}`);
+
+        for (let index = parent.file_relations.length - 1; index >= 0; index--) {
+            const relation = parent.file_relations[index];
 
             if (isInput) {
-                if (relativePath === ClientUtility.normalize(relation.path_input_file)) {
+                if (fullpath === parent.getFullpath(relation.path_input_file)) {
                     console.log(`delete parent relation ${relation.path_input_file}`);
+                    if (!parent.isExistDuplicateOutputFilePath(relation.path_output_file)) {
+                        parent.addOutputFileToParent(relation.index_before_task, relation.path_output_file);
+                    }
                     parent.file_relations.splice(index, 1);
                 }
             }
             else {
-                if (relativePath === ClientUtility.normalize(relation.path_output_file)) {
+                if (fullpath === parent.getFullpath(relation.path_output_file)) {
                     console.log(`delete parent relation ${relation.path_output_file}`);
+                    parent.addInputFileToParent(relation.index_after_task, relation.path_input_file);
                     parent.file_relations.splice(index, 1);
                 }
             }
-        });
+        }
 
         this.deleteFileFromParent(parent, fullpath, isInput);
     }
@@ -458,7 +479,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param newFile
      */
     public updateInputFile(oldFile: SwfFile, newFile: SwfFile) {
-        const file = new SwfFile(this.getInputFile(oldFile.path));
+        const file = this.findInputFile(oldFile.path).clone();
         const oldFullpath = this.getFullpath(file.path);
         const newFullpath = this.getFullpath(newFile.path);
         SwfTree.updateChildFile(this, oldFile, newFile, oldFullpath, newFullpath, true);
@@ -470,7 +491,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param newFile
      */
     public updateOutputFile(oldFile: SwfFile, newFile: SwfFile) {
-        const file = new SwfFile(this.getOutputFile(oldFile.path));
+        const file = this.findOutputFile(oldFile.path).clone();
         const oldFullpath = this.getFullpath(file.path);
         const newFullpath = this.getFullpath(newFile.path);
         SwfTree.updateChildFile(this, oldFile, newFile, oldFullpath, newFullpath, false);
@@ -488,24 +509,31 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     private static updateChildFile(tree: SwfTree, oldFile: SwfFile, newFile: SwfFile, oldFullpath: string, newFullpath: string, isInput: boolean) {
 
         const parent = tree.getParent();
-        parent.file_relations.forEach((relation, index) => {
-            if (isInput) {
-                if (relation.path_input_file === oldFile.path) {
-                    relation.path_input_file = newFile.path;
-                    if (oldFile.type !== newFile.type) {
-                        parent.file_relations.splice(index, 1);
+        const newPath = `./${ClientUtility.normalize(`${tree.path}/${newFile.path}`)}`;
+
+        if (oldFile.path !== newFile.path) {
+            for (let index = parent.file_relations.length - 1; index >= 0; index--) {
+                const relation = parent.file_relations[index];
+                if (isInput) {
+                    if (oldFullpath === parent.getFullpath(relation.path_input_file)) {
+                        console.log(`update relation path ${relation.path_input_file} to ${newPath}`);
+                        relation.path_input_file = newPath;
+                        if (oldFile.type !== newFile.type) {
+                            parent.file_relations.splice(index, 1);
+                        }
+                    }
+                }
+                else {
+                    if (oldFullpath === parent.getFullpath(relation.path_output_file)) {
+                        console.log(`update relation path ${relation.path_output_file} to ${newPath}`);
+                        relation.path_output_file = newPath;
+                        if (oldFile.type !== newFile.type) {
+                            parent.file_relations.splice(index, 1);
+                        }
                     }
                 }
             }
-            else {
-                if (relation.path_output_file === oldFile.path) {
-                    relation.path_output_file = newFile.path;
-                    if (oldFile.type !== newFile.type) {
-                        parent.file_relations.splice(index, 1);
-                    }
-                }
-            }
-        });
+        }
 
         if (parent.isRoot()) {
             return;
@@ -515,32 +543,28 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
 
         files.forEach(input => {
             console.log(`oldfull=${oldFullpath}, newfull=${newFullpath}`);
-            const oldRelative = parent.getRelativePath(oldFullpath);
             const newRelative = parent.getRelativePath(newFullpath);
-            console.log(`old=${oldRelative}, new=${newRelative}`);
 
-            if (input.path === oldRelative) {
-                const regexp = new RegExp(`${oldFile.getPath()}$`);
+            if (oldFullpath === parent.getFullpath(input.path)) {
+                console.log(`convert ${input.path} to ${newRelative}`);
                 const old = new SwfFile(input);
                 input.path = newRelative;
                 input.name = newFile.name;
                 input.description = newFile.description;
                 input.required = newFile.required;
                 input.type = newFile.type;
-                // console.log(`convert ${oldRelative} to ${newRelative}`);
                 this.updateChildFile(parent, old, new SwfFile(input), oldFullpath, newFullpath, isInput);
             }
         });
     }
 
-    /**
-     *
-     * @param dirname
-     */
-    public updateChildren(file: SwfFile) {
+    public updatePath(file: SwfFile) {
+        // const oldFile :SwfFile =
         const oldFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
+
         this.path = file.path;
         const newFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
+
         console.log(`old=${oldFullpath} new=${newFullpath}`);
         const parent = this.getParent();
         if (parent == null) {
@@ -550,12 +574,125 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         parent.children_file.forEach(child => {
             const fullpath = parent.getFullpath(child);
             if (fullpath === oldFullpath) {
-                child.name = file.name;
-                child.description = file.description;
+                child.set(file);
                 child.path = parent.getRelativePath(newFullpath);
-                child.type = file.type;
-                child.required = file.required;
             }
         });
+
+        // this.input_files.forEach(input => {
+        //     // console.log(input.path);
+
+        // });
+    }
+
+    public findInputFile(path: string): SwfFile {
+        const file: SwfFile = this.getInputFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.input_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+        }
+    }
+
+    public findOutputFile(path: string): SwfFile {
+        const file: SwfFile = this.getOutputFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.output_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+        }
+    }
+
+    public findSendFile(path: string): SwfFile {
+        const file: SwfFile = this.getSendFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.send_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+        }
+    }
+
+    public findReceiveFile(path: string): SwfFile {
+        const file: SwfFile = this.getReceiveFile(path);
+        if (file) {
+            return file;
+        }
+        else {
+            return this.receive_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+        }
+    }
+
+    public setScriptPath(file: File) {
+        this.uploadScript = file;
+        this.script.path = file.name;
+    }
+
+    public setParameterFile(file: File) {
+        this.uploadParamFile = file;
+        this.parameter_file.path = file.name;
+    }
+
+    public setSendFilepath(files: FileList) {
+        this.uploadSendfiles = [];
+        this.send_files = [];
+        for (let index = 0; index < files.length; index++) {
+            this.uploadSendfiles.push(files[index]);
+            this.send_files.push(new SwfFile({
+                name: 'name',
+                description: '',
+                path: files[index].name,
+                type: 'file',
+                required: true
+            }));
+        }
+    }
+
+    public deleteSendfile(file: SwfFile) {
+        const index = this.send_files.indexOf(file);
+        this.send_files.splice(index, 1);
+        for (let index = this.uploadSendfiles.length - 1; index >= 0; index--) {
+            this.uploadSendfiles.forEach(send => {
+                if (send.name === file.path) {
+                    this.uploadSendfiles.splice(index, 1);
+                }
+            });
+        }
+    }
+
+    public static getUploadFiles(projectDirectory: string): UploadFileData[] {
+        const files: UploadFileData[] = [];
+        const notSeachedList: SwfTree[] = [this.root];
+        while (true) {
+            const tree = notSeachedList.shift();
+            if (!tree) {
+                break;
+            }
+            if (tree.uploadScript) {
+                files.push({
+                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadScript.name)}`),
+                    file: tree.uploadScript
+                });
+            }
+            if (tree.uploadParamFile) {
+                files.push({
+                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadParamFile.name)}`),
+                    file: tree.uploadParamFile
+                });
+            }
+            tree.uploadSendfiles.forEach(file => {
+                files.push({
+                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
+                    file: file
+                });
+            });
+
+            tree.children.forEach(child => {
+                notSeachedList.push(child);
+            });
+        }
+        return files;
     }
 }

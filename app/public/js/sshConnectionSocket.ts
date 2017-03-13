@@ -40,11 +40,10 @@ class SshConnectionSocket {
      *
      * @param label
      * @param password
-     * @param isTest
      * @param callback
      */
-    public emit(label: string, password: string, isTest: boolean, callback: ((isConnect: boolean) => void)): void {
+    public emit(label: string, password: string, callback: ((isConnect: boolean) => void)): void {
         this.onEvent(callback);
-        this.socket.json.emit(SshConnectionSocket.eventName, label, password, isTest);
+        this.socket.json.emit(SshConnectionSocket.eventName, label, password);
     }
 }

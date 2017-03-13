@@ -210,7 +210,8 @@ class ClientUtility {
         const loopType = this.getJsonFileType(JsonFileType.Loop);
         const ifType = this.getJsonFileType(JsonFileType.If);
         const elseType = this.getJsonFileType(JsonFileType.Else);
-        if (type.match(new RegExp(`^(?:${[workflowType, loopType, ifType, elseType].join('|')})$`))) {
+        const pstudyType = this.getJsonFileType(JsonFileType.PStudy);
+        if (type.match(new RegExp(`^(?:${[workflowType, loopType, ifType, elseType, pstudyType].join('|')})$`))) {
             return true;
         }
         else {
@@ -253,6 +254,8 @@ class ClientUtility {
                     return new TypeRemoteTask();
                 case JsonFileType.Condition:
                     return new TypeCondition();
+                case JsonFileType.PStudy:
+                    return new TypePStudy();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -284,6 +287,9 @@ class ClientUtility {
             }
             else if (this.checkFileType(object, JsonFileType.Condition)) {
                 return new TypeCondition();
+            }
+            else if (this.checkFileType(object, JsonFileType.PStudy)) {
+                return new TypePStudy();
             }
             else {
                 throw new TypeError('file type is undefined');
