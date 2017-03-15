@@ -441,4 +441,11 @@ class SwfProject implements SwfProjectJson {
         const state = config.state;
         return this.state === state.completed || this.state === state.failed;
     }
+
+    /**
+     *
+     */
+    public isRunning(): boolean {
+        return !this.isFinished() && !this.isPlanning();
+    }
 }

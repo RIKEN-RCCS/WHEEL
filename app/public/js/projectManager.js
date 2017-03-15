@@ -4,6 +4,7 @@ $(function () {
     var openProjectJsonSocket = new OpenProjectJsonSocket(socket);
     var getFileStatSocket = new GetFileStatSocket(socket);
     var sshConnectionSocket = new SshConnectionSocket(socket);
+    var cleanProjectSocket = new CleanProjectSocket(socket);
     var passwordInputDialog = new InputTextDialog();
     var run_button = $('#run_button');
     var run_figcaption = $('#run_figcaption');
@@ -38,6 +39,9 @@ $(function () {
         var draw = SVG('project_tree_svg');
         drawWorkflowTree(draw, swfProject.log);
         draw.size((SwfLog.getMaxHierarchy() + 2) * 20, projectTable.height());
+        if (swfProject.isRunning()) {
+            startTimer();
+        }
     });
     /**
      * get project file stat
@@ -50,29 +54,35 @@ $(function () {
      * run project
      */
     run_button.click(function () {
-        // state is planning
         if (swfProject.isPlanning()) {
             inputPasssword(function (passInfo) {
-                updateIcon();
                 runProjectSocket.emit(projectFilePath, passInfo, function (isSucceed) {
                     if (isSucceed) {
                         startTimer();
                     }
+                    else {
+                        console.log('running project is failed');
+                    }
                 });
             });
         }
-        else if (!swfProject.isFinished()) {
-            startTimer();
+        else if (swfProject.isFinished()) {
+            cleanProjectSocket.emit(projectFilePath, function (isSucceed) {
+                stopTimer();
+                openProjectJsonSocket.emit(projectFilePath);
+            });
+        }
+        else {
         }
     });
     /**
      *
      */
     stop_button.click(function () {
-        if (!swfProject.isFinished()) {
-            return;
-        }
-        updateIcon();
+        // if (!swfProject.isFinished()) {
+        //     return;
+        // }
+        // updateIcon();
     });
     /**
      * task name click event
@@ -239,7 +249,7 @@ $(function () {
         openProjectJsonSocket.emit(projectFilePath);
         console.log('start timer');
         timer = setInterval(function () {
-            if (swfProject.isFinished()) {
+            if (!swfProject.isRunning()) {
                 stopTimer();
             }
             else {

@@ -97,7 +97,7 @@ var ClientUtility = (function () {
                 path.push(name);
             }
         });
-        return path.join('/').replace(/^\.?\//, '');
+        return path.join('/').replace(/^\.\//, '');
     };
     /**
      *

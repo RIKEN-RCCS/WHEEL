@@ -12,8 +12,7 @@ $(function () {
      *
      */
     readFile.onConnect(editFilePath, function (data) {
-        var encodedString = String.fromCharCode.apply("", new Uint8Array(data));
-        textArea.val(encodedString);
+        textArea.val(data);
         addressBar.val(editFilePath);
     });
     /**

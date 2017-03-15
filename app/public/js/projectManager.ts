@@ -4,6 +4,7 @@ $(() => {
     const openProjectJsonSocket = new OpenProjectJsonSocket(socket);
     const getFileStatSocket = new GetFileStatSocket(socket);
     const sshConnectionSocket = new SshConnectionSocket(socket);
+    const cleanProjectSocket = new CleanProjectSocket(socket);
 
     const passwordInputDialog = new InputTextDialog();
 
@@ -46,6 +47,10 @@ $(() => {
         const draw = SVG('project_tree_svg');
         drawWorkflowTree(draw, swfProject.log);
         draw.size((SwfLog.getMaxHierarchy() + 2) * 20, projectTable.height());
+
+        if (swfProject.isRunning()) {
+            startTimer();
+        }
     });
 
     /**
@@ -60,20 +65,26 @@ $(() => {
      * run project
      */
     run_button.click(() => {
-        // state is planning
         if (swfProject.isPlanning()) {
             inputPasssword((passInfo: { [name: string]: string }) => {
-                updateIcon();
                 runProjectSocket.emit(projectFilePath, passInfo, (isSucceed: boolean) => {
                     if (isSucceed) {
                         startTimer();
                     }
+                    else {
+                        console.log('running project is failed');
+                    }
                 });
             });
         }
-        // state is not completed or failed
-        else if (!swfProject.isFinished()) {
-            startTimer();
+        else if (swfProject.isFinished()) {
+            cleanProjectSocket.emit(projectFilePath, (isSucceed: boolean) => {
+                stopTimer();
+                openProjectJsonSocket.emit(projectFilePath);
+            });
+        }
+        else {
+
         }
     });
 
@@ -81,10 +92,10 @@ $(() => {
      *
      */
     stop_button.click(() => {
-        if (!swfProject.isFinished()) {
-            return;
-        }
-        updateIcon();
+        // if (!swfProject.isFinished()) {
+        //     return;
+        // }
+        // updateIcon();
     });
 
     /**
@@ -275,7 +286,7 @@ $(() => {
         openProjectJsonSocket.emit(projectFilePath);
         console.log('start timer');
         timer = setInterval(() => {
-            if (swfProject.isFinished()) {
+            if (!swfProject.isRunning()) {
                 stopTimer();
             }
             else {

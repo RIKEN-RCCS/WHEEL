@@ -44,43 +44,47 @@ const SwfJobScheduler = {
  */
 class ProjectOperator {
     private projectJson: SwfProjectJson;
-    private treeJson: SwfTreeJson;
+    private tree: TaskTree;
 
     public constructor(path_project: string) {
         this.projectJson = serverUtility.createProjectJson(path_project);
         const dir_project = path.dirname(path_project);
         const path_workflow = path.resolve(dir_project, this.projectJson.path_workflow);
-        this.treeJson = serverUtility.createTreeJson(path_workflow);
-        ProjectOperator.setPathAbsolute(this.treeJson, this.projectJson.log);
+        let treeJson: SwfTreeJson = serverUtility.createTreeJson(path_workflow);
+        this.tree = ProjectOperator.createTaskTree(treeJson);
+        ProjectOperator.setPathAbsolute(this.tree, this.projectJson.log);
     }
 
     public run(host_passSet: { [name: string]: string }) {
-        let tree: TaskTree = ProjectOperator.createTaskTree(this.treeJson);
-        ProjectOperator.setPassToHost(tree, host_passSet);
-        TaskManager.cleanUp(tree);
-        logger.info(`Run Project : ${this.projectJson.name}`);
+        ProjectOperator.setPassToHost(this.tree, host_passSet);
+        TaskManager.cleanUp(this.tree);
         this.projectJson.state = SwfState.RUNNING;
         try {
-            TaskManager.run(tree);
+            logger.info(`Run Project : ${this.projectJson.name}`);
+            TaskManager.run(this.tree);
         } catch (err) {
             logger.error('Catch exception.');
             logger.error(err);
         }
     }
 
+    public clean() {
+        TaskManager.cleanUp(this.tree);
+   }
+
     /**
      * set absolute path of directory of the task
      */
-    private static setPathAbsolute(treeJson: SwfTreeJson, logJson: SwfLogJson) {
-        treeJson.path = logJson.path;
+    private static setPathAbsolute(tree: TaskTree, logJson: SwfLogJson) {
+        tree.path = logJson.path;
 
-        if (treeJson.children.length != logJson.children.length) {
+        if (tree.children.length != logJson.children.length) {
             logger.error('mismatch children workflow and log.');
             return;
         }
 
-        for (let i = 0; i < treeJson.children.length; i++) {
-            this.setPathAbsolute(treeJson.children[i], logJson.children[i]);
+        for (let i = 0; i < tree.children.length; i++) {
+            this.setPathAbsolute(tree.children[i], logJson.children[i]);
         }
     }
 
@@ -142,11 +146,11 @@ class TaskManager {
                 break;
             case SwfType.IF:
                 // TODO make special
-                TaskOperator.runWorkflow(tree);
+                TaskOperator.runIf(tree);
                 break;
             case SwfType.ELSE:
                 // TODO make special
-                TaskOperator.runWorkflow(tree);
+                TaskOperator.runIf(tree);
                 break;
             case SwfType.BREAK:
                 // TODO make special
@@ -166,7 +170,26 @@ class TaskManager {
     }
 
     public static failed(tree: TaskTree) {
+        if (tree == null) {
+            // finish all or error
+            logger.info('Finish Project');
+            return;
+        }
+
         TaskManager.writeLogFailed(tree);
+        TaskManager.failed(tree.parent);
+    }
+
+    public static failedCondition(tree: TaskTree) {
+        if (tree == null) {
+            logger.info('task is null');
+            return;
+        }
+
+        TaskManager.writeLogFailed(tree);
+        TaskManager.writeLogCompleted(tree.parent);
+        // run parent
+        TaskManager.run(tree.parent.parent);
     }
 
     private static name_logFile: string = 'swf.log';
@@ -174,20 +197,21 @@ class TaskManager {
     public static cleanUp(tree: TaskTree) {
         const path_logFile: string = path.resolve(tree.path, TaskManager.name_logFile);
         const path_index = path.resolve(tree.path, TaskManager.name_indexFile);
-        fs.unlink(path_logFile, unlinkCallback);
-        fs.unlink(path_index, unlinkCallback);
+        if (fs.existsSync(path_logFile)) {
+            fs.unlinkSync(path_logFile);
+        }
+        if (fs.existsSync(path_index)) {
+            fs.unlinkSync(path_index);
+        }
 
         for (let i = 0; i < tree.children.length; i++) {
             TaskManager.cleanUp(<TaskTree>tree.children[i]);
         }
         return;
-
-        function unlinkCallback(err?: NodeJS.ErrnoException) {
-        }
     }
 
     private static writeLogRunning(tree: TaskTree) {
-        if (TaskManager.isRunTask(tree)) {
+        if (TaskManager.isRun(tree)) {
             return;
         }
 
@@ -235,13 +259,13 @@ class TaskManager {
         fs.writeFileSync(path_logFile, JSON.stringify(logJson, null, '\t'));
     }
 
-    public static isRunTask(tree: TaskTree): boolean {
+    public static isRun(tree: TaskTree): boolean {
         const path_logFile: string = path.resolve(tree.path, TaskManager.name_logFile);
         return fs.existsSync(path_logFile);
     }
 
-    public static isCompletedTask(tree: TaskTree): boolean {
-        if (!TaskManager.isRunTask(tree)) {
+    public static isCompleted(tree: TaskTree): boolean {
+        if (!TaskManager.isRun(tree)) {
             return false;
         }
 
@@ -249,8 +273,21 @@ class TaskManager {
         const data = fs.readFileSync(path_logFile);
         const logJson: SwfLogJson = JSON.parse(data.toString());
 
-        const isFinish: boolean = (logJson.state == SwfState.COMPLETED);
-        return isFinish;
+        const isCompleted: boolean = (logJson.state == SwfState.COMPLETED);
+        return isCompleted;
+    }
+
+    public static isFailed(tree: TaskTree): boolean {
+        if (!TaskManager.isRun(tree)) {
+            return false;
+        }
+
+        const path_logFile: string = path.resolve(tree.path, TaskManager.name_logFile);
+        const data = fs.readFileSync(path_logFile);
+        const logJson: SwfLogJson = JSON.parse(data.toString());
+
+        const isCompleted: boolean = (logJson.state == SwfState.FAILED);
+        return isCompleted;
     }
 
     private static name_indexFile = 'loop.idx.json';
@@ -266,6 +303,9 @@ class TaskManager {
 
     public static setIndex(tree: TaskTree, index: number) {
         const path_index = path.resolve(tree.path, TaskManager.name_indexFile);
+        if (fs.existsSync(path_index)) {
+            fs.unlinkSync(path_index);
+        }
         const json: ForIndex = { index: index };
         fs.writeFileSync(path_index, JSON.stringify(json, null, '\t'));
     }
@@ -283,7 +323,7 @@ class TaskOperator {
         let isCompletedList = new Array<boolean>(tree.children.length);
         let isCompletedAll: boolean = true;
         for (let i = 0; i < isCompletedList.length; i++) {
-            isCompletedList[i] = TaskManager.isCompletedTask(tree.children[i]);
+            isCompletedList[i] = TaskManager.isCompleted(tree.children[i]);
             isCompletedAll = isCompletedAll && isCompletedList[i];
         }
 
@@ -303,7 +343,7 @@ class TaskOperator {
 
         for (let index_task = 0; index_task < tree.children.length; index_task++) {
             const child = <TaskTree>tree.children[index_task];
-            if (TaskManager.isRunTask(child)) {
+            if (TaskManager.isRun(child)) {
                 continue;
             }
 
@@ -372,7 +412,17 @@ class TaskOperator {
         TaskOperator.exec(command, task.path, completed, failed);
 
         function completed() {
-            TaskManager.completed(tree);
+            let isCompleted = true;
+            for (let i = 0; i < task.output_files.length; i++) {
+                const file_path = task.output_files[i].path
+                isCompleted = isCompleted && fs.existsSync(path.join(task.path, file_path));
+            }
+
+            if (isCompleted) {
+                TaskManager.completed(tree);
+            } else {
+                TaskManager.failed(tree);
+            }
         }
 
         function failed() {
@@ -661,6 +711,74 @@ class TaskOperator {
         TaskManager.run(child);
     }
 
+    public static runIf(tree: TaskTree) {
+        const conditionTree: TaskTree = tree.children[0]
+        if (!TaskManager.isRun(conditionTree)) {
+            TaskManager.run(conditionTree);
+        } else if (TaskManager.isCompleted(conditionTree)) {
+            if (tree.type == SwfType.ELSE) {
+                // TODO solve other way
+                const index = tree.parent.children.indexOf(tree);
+                const ifTree: TaskTree = tree.parent.children[index - 1];
+                if (TaskManager.isCompleted(ifTree.children[0])) {
+                    TaskManager.completed(tree);
+                    return;
+                }
+            }
+            TaskOperator.runWorkflow(tree);
+        } else if (TaskManager.isFailed(conditionTree)) {
+            TaskManager.completed(tree);
+        }
+    }
+
+    public static runCondition(tree: TaskTree) {
+        const condition = <SwfTaskJson>tree;
+
+        if (!fs.existsSync(path.join(condition.path, condition.script.path))) {
+            TaskManager.completed(tree);
+            return;
+        }
+
+        let command: string;
+        if (serverUtility.isLinux()) {
+            // TODO test Linux
+            if (condition.script.type == SwfScriptType.BASH || path.extname(condition.script.path) == '.sh') {
+                command = `sh ${condition.script.path};\n`;
+            } else if (condition.script.type == SwfScriptType.LUA || path.extname(condition.script.path) == '.lua') {
+                command = `lua ${condition.script.path};\n`;
+            }
+        } else {
+            // Windows
+            if (condition.script.type == SwfScriptType.BATCH || path.extname(condition.script.path) == '.bat') {
+                command = condition.script.path;
+            } else if (condition.script.type == SwfScriptType.LUA || path.extname(condition.script.path) == '.lua') {
+                command = `${path.resolve('lua.exe')} ${condition.script.path};\n`;
+            } else {
+                command = condition.script.path;
+            }
+        }
+
+        TaskOperator.exec(command, condition.path, completed, failed);
+
+        function completed() {
+            let isCompleted = true;
+            for (let i = 0; i < condition.output_files.length; i++) {
+                const file_path = condition.output_files[i].path
+                isCompleted = isCompleted && fs.existsSync(path.join(condition.path, file_path));
+            }
+
+            if (isCompleted) {
+                TaskManager.completed(tree);
+            } else {
+                TaskManager.failed(tree);
+            }
+        }
+
+        function failed() {
+            TaskManager.failed(tree);
+        }
+    }
+
     public static runPStudy(tree: TaskTree) {
         const pstudy = <SwfPStudyJson><SwfTaskJson>tree;
 
@@ -709,10 +827,10 @@ class TaskOperator {
         // copy directory
         serverUtility.copyFolder(pstudy.path, child.path);
         TaskManager.cleanUp(child);
-        TaskManager.setIndex(child, index);
+        //TaskManager.setIndex(child, index);
 
         const src_path = path.join(pstudy.path, parameter.target_file);
-        const dst_path = path.join(child.path, path.basename(parameter.target_file, '.svy'));
+        const dst_path = path.join(child.path, parameter.target_file.replace('.svy', ''));
         const values: Object = TaskOperator.getPSVector(parameter.target_params, index);
         serverUtility.writeFileKeywordReplaced(src_path, dst_path, values);
 

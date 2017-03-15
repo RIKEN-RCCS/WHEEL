@@ -141,7 +141,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'path',
-                    readonly: (tree: SwfTree, sendFile: SwfFile) => { return tree.isExistUploadScript() },
+                    readonly: (tree: SwfTree) => { return tree.isExistUploadScript() },
                     type: 'string',
                 }
             ],

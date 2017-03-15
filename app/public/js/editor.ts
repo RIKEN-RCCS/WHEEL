@@ -15,8 +15,7 @@ $(() => {
      *
      */
     readFile.onConnect(editFilePath, (data) => {
-        var encodedString: string = String.fromCharCode.apply("", new Uint8Array(data));
-        textArea.val(encodedString);
+        textArea.val(data);
         addressBar.val(editFilePath);
     });
 

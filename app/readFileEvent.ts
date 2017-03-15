@@ -21,14 +21,14 @@ class ReadFileEvent implements SocketListener {
      * @param socket
      */
     public onEvent(socket: SocketIO.Socket): void {
-        socket.on(ReadFileEvent.eventName,  (editFilePath: string) => {
+        socket.on(ReadFileEvent.eventName, (editFilePath: string) => {
             fs.readFile(editFilePath, (err, data) => {
                 if (err) {
                     logger.error(err);
                     socket.emit(ReadFileEvent.eventName);
                     return;
                 }
-                socket.emit(ReadFileEvent.eventName, data);
+                socket.emit(ReadFileEvent.eventName, data.toString());
             });
         });
     }

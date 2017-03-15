@@ -42,34 +42,37 @@ var ProjectOperator = (function () {
         this.projectJson = serverUtility.createProjectJson(path_project);
         var dir_project = path.dirname(path_project);
         var path_workflow = path.resolve(dir_project, this.projectJson.path_workflow);
-        this.treeJson = serverUtility.createTreeJson(path_workflow);
-        ProjectOperator.setPathAbsolute(this.treeJson, this.projectJson.log);
+        var treeJson = serverUtility.createTreeJson(path_workflow);
+        this.tree = ProjectOperator.createTaskTree(treeJson);
+        ProjectOperator.setPathAbsolute(this.tree, this.projectJson.log);
     }
     ProjectOperator.prototype.run = function (host_passSet) {
-        var tree = ProjectOperator.createTaskTree(this.treeJson);
-        ProjectOperator.setPassToHost(tree, host_passSet);
-        TaskManager.cleanUp(tree);
-        logger.info("Run Project : " + this.projectJson.name);
+        ProjectOperator.setPassToHost(this.tree, host_passSet);
+        TaskManager.cleanUp(this.tree);
         this.projectJson.state = SwfState.RUNNING;
         try {
-            TaskManager.run(tree);
+            logger.info("Run Project : " + this.projectJson.name);
+            TaskManager.run(this.tree);
         }
         catch (err) {
             logger.error('Catch exception.');
             logger.error(err);
         }
     };
+    ProjectOperator.prototype.clean = function () {
+        TaskManager.cleanUp(this.tree);
+    };
     /**
      * set absolute path of directory of the task
      */
-    ProjectOperator.setPathAbsolute = function (treeJson, logJson) {
-        treeJson.path = logJson.path;
-        if (treeJson.children.length != logJson.children.length) {
+    ProjectOperator.setPathAbsolute = function (tree, logJson) {
+        tree.path = logJson.path;
+        if (tree.children.length != logJson.children.length) {
             logger.error('mismatch children workflow and log.');
             return;
         }
-        for (var i = 0; i < treeJson.children.length; i++) {
-            this.setPathAbsolute(treeJson.children[i], logJson.children[i]);
+        for (var i = 0; i < tree.children.length; i++) {
+            this.setPathAbsolute(tree.children[i], logJson.children[i]);
         }
     };
     /**
@@ -129,11 +132,11 @@ var TaskManager = (function () {
                 break;
             case SwfType.IF:
                 // TODO make special
-                TaskOperator.runWorkflow(tree);
+                TaskOperator.runIf(tree);
                 break;
             case SwfType.ELSE:
                 // TODO make special
-                TaskOperator.runWorkflow(tree);
+                TaskOperator.runIf(tree);
                 break;
             case SwfType.BREAK:
                 // TODO make special
@@ -151,22 +154,40 @@ var TaskManager = (function () {
         TaskManager.run(tree.parent);
     };
     TaskManager.failed = function (tree) {
+        if (tree == null) {
+            // finish all or error
+            logger.info('Finish Project');
+            return;
+        }
         TaskManager.writeLogFailed(tree);
+        TaskManager.failed(tree.parent);
+    };
+    TaskManager.failedCondition = function (tree) {
+        if (tree == null) {
+            logger.info('task is null');
+            return;
+        }
+        TaskManager.writeLogFailed(tree);
+        TaskManager.writeLogCompleted(tree.parent);
+        // run parent
+        TaskManager.run(tree.parent.parent);
     };
     TaskManager.cleanUp = function (tree) {
         var path_logFile = path.resolve(tree.path, TaskManager.name_logFile);
         var path_index = path.resolve(tree.path, TaskManager.name_indexFile);
-        fs.unlink(path_logFile, unlinkCallback);
-        fs.unlink(path_index, unlinkCallback);
+        if (fs.existsSync(path_logFile)) {
+            fs.unlinkSync(path_logFile);
+        }
+        if (fs.existsSync(path_index)) {
+            fs.unlinkSync(path_index);
+        }
         for (var i = 0; i < tree.children.length; i++) {
             TaskManager.cleanUp(tree.children[i]);
         }
         return;
-        function unlinkCallback(err) {
-        }
     };
     TaskManager.writeLogRunning = function (tree) {
-        if (TaskManager.isRunTask(tree)) {
+        if (TaskManager.isRun(tree)) {
             return;
         }
         logger.info("Run " + tree.type + " : " + tree.name);
@@ -205,19 +226,29 @@ var TaskManager = (function () {
         logJson.state = SwfState.FAILED;
         fs.writeFileSync(path_logFile, JSON.stringify(logJson, null, '\t'));
     };
-    TaskManager.isRunTask = function (tree) {
+    TaskManager.isRun = function (tree) {
         var path_logFile = path.resolve(tree.path, TaskManager.name_logFile);
         return fs.existsSync(path_logFile);
     };
-    TaskManager.isCompletedTask = function (tree) {
-        if (!TaskManager.isRunTask(tree)) {
+    TaskManager.isCompleted = function (tree) {
+        if (!TaskManager.isRun(tree)) {
             return false;
         }
         var path_logFile = path.resolve(tree.path, TaskManager.name_logFile);
         var data = fs.readFileSync(path_logFile);
         var logJson = JSON.parse(data.toString());
-        var isFinish = (logJson.state == SwfState.COMPLETED);
-        return isFinish;
+        var isCompleted = (logJson.state == SwfState.COMPLETED);
+        return isCompleted;
+    };
+    TaskManager.isFailed = function (tree) {
+        if (!TaskManager.isRun(tree)) {
+            return false;
+        }
+        var path_logFile = path.resolve(tree.path, TaskManager.name_logFile);
+        var data = fs.readFileSync(path_logFile);
+        var logJson = JSON.parse(data.toString());
+        var isCompleted = (logJson.state == SwfState.FAILED);
+        return isCompleted;
     };
     TaskManager.getIndex = function (tree) {
         var path_index = path.resolve(tree.path, TaskManager.name_indexFile);
@@ -230,6 +261,9 @@ var TaskManager = (function () {
     };
     TaskManager.setIndex = function (tree, index) {
         var path_index = path.resolve(tree.path, TaskManager.name_indexFile);
+        if (fs.existsSync(path_index)) {
+            fs.unlinkSync(path_index);
+        }
         var json = { index: index };
         fs.writeFileSync(path_index, JSON.stringify(json, null, '\t'));
     };
@@ -249,7 +283,7 @@ var TaskOperator = (function () {
         var isCompletedList = new Array(tree.children.length);
         var isCompletedAll = true;
         for (var i = 0; i < isCompletedList.length; i++) {
-            isCompletedList[i] = TaskManager.isCompletedTask(tree.children[i]);
+            isCompletedList[i] = TaskManager.isCompleted(tree.children[i]);
             isCompletedAll = isCompletedAll && isCompletedList[i];
         }
         if (isCompletedAll) {
@@ -265,7 +299,7 @@ var TaskOperator = (function () {
         }
         for (var index_task = 0; index_task < tree.children.length; index_task++) {
             var child = tree.children[index_task];
-            if (TaskManager.isRunTask(child)) {
+            if (TaskManager.isRun(child)) {
                 continue;
             }
             var isFinishPreTask = true;
@@ -329,7 +363,17 @@ var TaskOperator = (function () {
         }
         TaskOperator.exec(command, task.path, completed, failed);
         function completed() {
-            TaskManager.completed(tree);
+            var isCompleted = true;
+            for (var i = 0; i < task.output_files.length; i++) {
+                var file_path = task.output_files[i].path;
+                isCompleted = isCompleted && fs.existsSync(path.join(task.path, file_path));
+            }
+            if (isCompleted) {
+                TaskManager.completed(tree);
+            }
+            else {
+                TaskManager.failed(tree);
+            }
         }
         function failed() {
             TaskManager.failed(tree);
@@ -581,6 +625,73 @@ var TaskOperator = (function () {
         TaskManager.setIndex(child, index);
         TaskManager.run(child);
     };
+    TaskOperator.runIf = function (tree) {
+        var conditionTree = tree.children[0];
+        if (!TaskManager.isRun(conditionTree)) {
+            TaskManager.run(conditionTree);
+        }
+        else if (TaskManager.isCompleted(conditionTree)) {
+            if (tree.type == SwfType.ELSE) {
+                // TODO solve other way
+                var index = tree.parent.children.indexOf(tree);
+                var ifTree = tree.parent.children[index - 1];
+                if (TaskManager.isCompleted(ifTree.children[0])) {
+                    TaskManager.completed(tree);
+                    return;
+                }
+            }
+            TaskOperator.runWorkflow(tree);
+        }
+        else if (TaskManager.isFailed(conditionTree)) {
+            TaskManager.completed(tree);
+        }
+    };
+    TaskOperator.runCondition = function (tree) {
+        var condition = tree;
+        if (!fs.existsSync(path.join(condition.path, condition.script.path))) {
+            TaskManager.completed(tree);
+            return;
+        }
+        var command;
+        if (serverUtility.isLinux()) {
+            // TODO test Linux
+            if (condition.script.type == SwfScriptType.BASH || path.extname(condition.script.path) == '.sh') {
+                command = "sh " + condition.script.path + ";\n";
+            }
+            else if (condition.script.type == SwfScriptType.LUA || path.extname(condition.script.path) == '.lua') {
+                command = "lua " + condition.script.path + ";\n";
+            }
+        }
+        else {
+            // Windows
+            if (condition.script.type == SwfScriptType.BATCH || path.extname(condition.script.path) == '.bat') {
+                command = condition.script.path;
+            }
+            else if (condition.script.type == SwfScriptType.LUA || path.extname(condition.script.path) == '.lua') {
+                command = path.resolve('lua.exe') + " " + condition.script.path + ";\n";
+            }
+            else {
+                command = condition.script.path;
+            }
+        }
+        TaskOperator.exec(command, condition.path, completed, failed);
+        function completed() {
+            var isCompleted = true;
+            for (var i = 0; i < condition.output_files.length; i++) {
+                var file_path = condition.output_files[i].path;
+                isCompleted = isCompleted && fs.existsSync(path.join(condition.path, file_path));
+            }
+            if (isCompleted) {
+                TaskManager.completed(tree);
+            }
+            else {
+                TaskManager.failed(tree);
+            }
+        }
+        function failed() {
+            TaskManager.failed(tree);
+        }
+    };
     TaskOperator.runPStudy = function (tree) {
         var pstudy = tree;
         var index = TaskManager.getIndex(tree);
@@ -624,9 +735,9 @@ var TaskOperator = (function () {
         // copy directory
         serverUtility.copyFolder(pstudy.path, child.path);
         TaskManager.cleanUp(child);
-        TaskManager.setIndex(child, index);
+        //TaskManager.setIndex(child, index);
         var src_path = path.join(pstudy.path, parameter.target_file);
-        var dst_path = path.join(child.path, path.basename(parameter.target_file, '.svy'));
+        var dst_path = path.join(child.path, parameter.target_file.replace('.svy', ''));
         var values = TaskOperator.getPSVector(parameter.target_params, index);
         serverUtility.writeFileKeywordReplaced(src_path, dst_path, values);
         TaskManager.run(child);

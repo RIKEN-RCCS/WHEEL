@@ -85,6 +85,7 @@
     <Content Include="README.md" />
     <Content Include="tar.exe" />
     <TypeScriptCompile Include="addHostEvent.ts" />
+    <TypeScriptCompile Include="cleanProjectEvent.ts" />
     <TypeScriptCompile Include="createDirectoryEvent.ts" />
     <TypeScriptCompile Include="createNewProjectEvent.ts" />
     <TypeScriptCompile Include="deleteHostEvent.ts" />
@@ -94,24 +95,28 @@
     <TypeScriptCompile Include="getTemplateJsonFileEvent.ts" />
     <TypeScriptCompile Include="logger.ts" />
     <TypeScriptCompile Include="openProjectJsonEvent.ts" />
+    <TypeScriptCompile Include="public\js\cleanProjectSocket.ts" />
     <TypeScriptCompile Include="public\js\commonParam.ts" />
     <TypeScriptCompile Include="public\js\createNewProjectSocket.ts" />
+    <TypeScriptCompile Include="public\js\editor.ts" />
     <TypeScriptCompile Include="public\js\getTemplateJsonFileSocket.ts" />
     <TypeScriptCompile Include="public\js\inputTextDialog.ts" />
     <TypeScriptCompile Include="public\js\jsonFileType.ts" />
     <TypeScriptCompile Include="public\js\jsonProperty.ts" />
     <TypeScriptCompile Include="public\js\projectManager.ts" />
+    <TypeScriptCompile Include="public\js\readFileSocket.ts" />
     <TypeScriptCompile Include="public\js\readTreeJsonSocket.ts" />
     <TypeScriptCompile Include="public\js\svgPlugBase.ts" />
     <TypeScriptCompile Include="public\js\swfTree.ts" />
     <TypeScriptCompile Include="public\js\uploadFileSocket.ts" />
+    <TypeScriptCompile Include="public\js\writeFileSocket.ts" />
     <TypeScriptCompile Include="public\js\writeTreeJsonSocket.ts" />
     <TypeScriptCompile Include="public\js\yesNoDialog.ts" />
+    <TypeScriptCompile Include="readFileEvent.ts" />
     <TypeScriptCompile Include="readTreeJsonEvent.ts" />
     <TypeScriptCompile Include="runProjectEvent.ts" />
     <TypeScriptCompile Include="public\js\addHostSocket.ts" />
     <TypeScriptCompile Include="public\js\clientUtility.ts" />
-    <TypeScriptCompile Include="public\js\createDirectorySocket.ts" />
     <TypeScriptCompile Include="public\js\deleteHostSocket.ts" />
     <TypeScriptCompile Include="public\js\fileDialog.ts" />
     <TypeScriptCompile Include="public\js\getFileListSocket.ts" />
@@ -146,6 +151,7 @@
     <TypeScriptCompile Include="typings\svg.js.draggable\svg.js.draggable.d.ts" />
     <TypeScriptCompile Include="typings\svg.js\svg.js.d.ts" />
     <TypeScriptCompile Include="uploadFileEvent.ts" />
+    <TypeScriptCompile Include="writeFileEvent.ts" />
     <TypeScriptCompile Include="writeTreeJsonEvent.ts" />
   </ItemGroup>
   <ItemGroup>

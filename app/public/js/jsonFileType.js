@@ -129,7 +129,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'path',
-                    readonly: function (tree, sendFile) { return tree.isExistUploadScript(); },
+                    readonly: function (tree) { return tree.isExistUploadScript(); },
                     type: 'string',
                 }
             ],

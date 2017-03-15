@@ -17,6 +17,7 @@ var GetTemplateJsonFileEvent = require("./getTemplateJsonFileEvent");
 var CreateNewProjectEvent = require("./createNewProjectEvent");
 var ReadFileEvent = require("./readFileEvent");
 var WriteFileEvent = require("./writeFileEvent");
+var CleanProjectEvent = require("./cleanProjectEvent");
 var config = serverConfig.getConfig();
 var server = httpServer.start(config.port);
 var serverSocket = new ServerSocketIO(server);
@@ -31,7 +32,8 @@ serverSocket.addEventListener('/swf/project', [
     new OpenProjectJsonEvent(),
     new RunWorkflowEvent(),
     new SshConnectionEvent(),
-    new GetFileStatEvent()
+    new GetFileStatEvent(),
+    new CleanProjectEvent()
 ]);
 serverSocket.addEventListener('/swf/remotehost', [
     new GetRemoteHostListEvent(),

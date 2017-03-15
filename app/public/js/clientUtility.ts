@@ -120,7 +120,7 @@ class ClientUtility {
             }
         });
 
-        return path.join('/').replace(/^\.?\//, '');
+        return path.join('/').replace(/^\.\//, '');
     }
 
     /**

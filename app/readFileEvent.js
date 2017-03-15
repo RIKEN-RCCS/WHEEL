@@ -16,7 +16,7 @@ var ReadFileEvent = (function () {
                     socket.emit(ReadFileEvent.eventName);
                     return;
                 }
-                socket.emit(ReadFileEvent.eventName, data);
+                socket.emit(ReadFileEvent.eventName, data.toString());
             });
         });
     };
