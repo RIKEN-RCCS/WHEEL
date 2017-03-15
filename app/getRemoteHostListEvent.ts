@@ -19,13 +19,19 @@ class GetRemoteHostListEvent implements SocketListener {
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(GetRemoteHostListEvent.eventName, () => {
-            swfUtility.getHostInfo(
-                (hostList: SwfHostJson[]): void => {
-                    socket.json.emit(GetRemoteHostListEvent.eventName, hostList);
-                },
-                (): void => {
+            swfUtility.getHostInfo((err, hostList) => {
+                if (err) {
+                    logger.error(err);
                     socket.emit(GetRemoteHostListEvent.eventName);
-                });
+                }
+                else if (!hostList) {
+                    logger.error('host list does not exist');
+                    socket.emit(GetRemoteHostListEvent.eventName);
+                }
+                else {
+                    socket.json.emit(GetRemoteHostListEvent.eventName, hostList);
+                }
+            });
         });
     }
 }

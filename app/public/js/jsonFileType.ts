@@ -159,45 +159,6 @@ class JsonFileTypeBase {
             }]
         });
     }
-    protected addScriptForJob() {
-        this.propertyInfo.push({
-            key: 'script',
-            ishash: true,
-            order: 30,
-            item: [
-                {
-                    key: 'name',
-                    readonly: () => { return false },
-                    type: 'string'
-                },
-                {
-                    key: 'description',
-                    readonly: () => { return false },
-                    type: 'string'
-                },
-                {
-                    key: 'path',
-                    readonly: () => { return true },
-                    type: 'string'
-                }
-            ],
-            button: [{
-                key: 'Edit',
-                title: 'submit_script',
-                validation: (tree: SwfTree) => {
-                    if (tree.job_script.path) {
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
-                },
-                callback: (tree: SwfTree) => {
-                    $(document).trigger('editFile');
-                }
-            }]
-        });
-    }
     protected addJobScript() {
         this.propertyInfo.push({
             key: 'job_script',
@@ -570,6 +531,11 @@ class JsonFileTypeBase {
                     callback: (tree: SwfTree, object: any, path: string) => {
                         object.type = ClientUtility.getIOFileType(path);
                     }
+                },
+                {
+                    key: 'required',
+                    readonly: () => { return false },
+                    type: 'boolean'
                 }
             ],
             button: [{
@@ -577,8 +543,6 @@ class JsonFileTypeBase {
                 title: 'receive_file',
                 isUpdateUI: true,
                 callback: (tree: SwfTree, object: SwfFile, name: string) => {
-                    const filepath = object.path;
-                    const parent = tree.getParent();
                     const index = tree.receive_files.indexOf(object);
                     tree.receive_files.splice(index, 1);
                 }
@@ -656,25 +620,6 @@ class JsonFileTypeBase {
                     key: 'host',
                     readonly: () => { return false },
                     type: 'host'
-                }
-            ]
-        });
-    }
-    protected addHostForJob() {
-        this.propertyInfo.push({
-            key: 'host',
-            ishash: true,
-            order: 200,
-            item: [
-                {
-                    key: 'host',
-                    readonly: () => { return false },
-                    type: 'host'
-                },
-                {
-                    key: 'job_scheduler',
-                    readonly: () => { return false },
-                    type: 'scheduler'
                 }
             ]
         });
@@ -776,14 +721,74 @@ class TypeJob extends JsonFileTypeBase {
         super();
         this.extension = config.extension.job;
         this.type = config.json_types.job;
-        this.addScriptForJob();
+        this.addScrip();
         this.addJobScript();
         this.addInputFile();
         this.addOutputFile();
         this.addSendFile();
         this.addReceiveFile();
         this.addScriptParam();
-        this.addHostForJob();
+        this.addHost();
+    }
+
+    protected addScrip() {
+        this.propertyInfo.push({
+            key: 'script',
+            ishash: true,
+            order: 30,
+            item: [
+                {
+                    key: 'name',
+                    readonly: () => { return false },
+                    type: 'string'
+                },
+                {
+                    key: 'description',
+                    readonly: () => { return false },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: () => { return true },
+                    type: 'string'
+                }
+            ],
+            button: [{
+                key: 'Edit',
+                title: 'submit_script',
+                validation: (tree: SwfTree) => {
+                    if (tree.job_script.path) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                },
+                callback: (tree: SwfTree) => {
+                    $(document).trigger('editFile');
+                }
+            }]
+        });
+    }
+
+    protected addHost() {
+        this.propertyInfo.push({
+            key: 'host',
+            ishash: true,
+            order: 200,
+            item: [
+                {
+                    key: 'host',
+                    readonly: () => { return false },
+                    type: 'host'
+                },
+                {
+                    key: 'job_scheduler',
+                    readonly: () => { return false },
+                    type: 'scheduler'
+                }
+            ]
+        });
     }
 }
 
@@ -851,7 +856,70 @@ class TypeCondition extends JsonFileTypeBase {
         this.type = config.json_types.condition;
         this.addScript();
         this.addInputFile();
+        this.addOutputFile();
         this.addUpload();
+    }
+
+    protected addOutputFile() {
+        this.propertyInfo.push({
+            key: 'output_files',
+            ishash: true,
+            order: 110,
+            button: [{
+                key: 'Add',
+                title: 'output_files',
+                isUpdateUI: true,
+                callback: (tree: SwfTree) => {
+                    const file = SwfFile.getDefault();
+                    tree.output_files.push(file);
+                }
+            }]
+        });
+        this.propertyInfo.push({
+            key: 'output_files',
+            isarray: true,
+            order: 111,
+            item: [
+                {
+                    key: 'name',
+                    readonly: () => { return false },
+                    type: 'string',
+                    validation: (tree: SwfTree, v: string): boolean => {
+                        return v.trim() ? true : false;
+                    }
+                },
+                {
+                    key: 'description',
+                    readonly: () => { return false },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: () => { return false },
+                    type: 'string',
+                    validation: (tree: SwfTree, v: string): boolean => {
+                        return !tree.isEnablePath(v);
+                    },
+                    callback: (tree: SwfTree, object: SwfFile, path: string) => {
+                        object.type = ClientUtility.getIOFileType(path);
+                    }
+                },
+                {
+                    key: 'required',
+                    readonly: () => { return false },
+                    type: 'boolean'
+                }
+            ],
+            button: [{
+                key: 'Delete',
+                title: 'output_file',
+                isUpdateUI: true,
+                callback: (tree: SwfTree, object: SwfFile) => {
+                    const index = tree.output_files.indexOf(object);
+                    tree.output_files.splice(index, 1);
+                }
+            }]
+        });
     }
 }
 

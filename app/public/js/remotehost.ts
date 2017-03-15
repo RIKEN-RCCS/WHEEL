@@ -222,7 +222,7 @@ $(() => {
                 deleteHostSocket.emit(host.name, (result: boolean): void => {
                     getRemoteHostListSocket.emit(getHostListCallback);
                     $(document).off('keyup', `#${host.name}_password`);
-                    $(document).off('click', '.test_connect_button, .ng_test_button');
+                    $(document).off('click', `#${host.name}_test_connect`);
                 });
             });
 

@@ -16,19 +16,27 @@ var SshConnectionEvent = (function () {
     SshConnectionEvent.prototype.onEvent = function (socket) {
         var _this = this;
         socket.on(SshConnectionEvent.eventName, function (name, password) {
-            serverUtility.getHostInfo(function (hostList) {
+            serverUtility.getHostInfo(function (err, hostList) {
+                if (err) {
+                    logger.error(err);
+                    socket.emit(SshConnectionEvent.eventName, false);
+                    return;
+                }
+                if (!hostList) {
+                    logger.error('host list does not exist');
+                    socket.emit(SshConnectionEvent.eventName, false);
+                    return;
+                }
                 var host = hostList.filter(function (host) { return host.name === name; })[0];
                 if (!host) {
-                    _this.emitFailed(socket);
                     logger.error(name + " is not found at host list conf");
+                    socket.emit(SshConnectionEvent.eventName, false);
                 }
                 if (serverUtility.isLocalHost(host.host)) {
-                    _this.emitSucceed(socket);
+                    socket.emit(SshConnectionEvent.eventName, true);
                     return;
                 }
                 _this.sshConnect(host, password, socket);
-            }, function () {
-                _this.emitFailed(socket);
             });
         });
     };

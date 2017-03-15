@@ -147,45 +147,6 @@ var JsonFileTypeBase = (function () {
                 }]
         });
     };
-    JsonFileTypeBase.prototype.addScriptForJob = function () {
-        this.propertyInfo.push({
-            key: 'script',
-            ishash: true,
-            order: 30,
-            item: [
-                {
-                    key: 'name',
-                    readonly: function () { return false; },
-                    type: 'string'
-                },
-                {
-                    key: 'description',
-                    readonly: function () { return false; },
-                    type: 'string'
-                },
-                {
-                    key: 'path',
-                    readonly: function () { return true; },
-                    type: 'string'
-                }
-            ],
-            button: [{
-                    key: 'Edit',
-                    title: 'submit_script',
-                    validation: function (tree) {
-                        if (tree.job_script.path) {
-                            return true;
-                        }
-                        else {
-                            return false;
-                        }
-                    },
-                    callback: function (tree) {
-                        $(document).trigger('editFile');
-                    }
-                }]
-        });
-    };
     JsonFileTypeBase.prototype.addJobScript = function () {
         this.propertyInfo.push({
             key: 'job_script',
@@ -558,6 +519,11 @@ var JsonFileTypeBase = (function () {
                     callback: function (tree, object, path) {
                         object.type = ClientUtility.getIOFileType(path);
                     }
+                },
+                {
+                    key: 'required',
+                    readonly: function () { return false; },
+                    type: 'boolean'
                 }
             ],
             button: [{
@@ -565,8 +531,6 @@ var JsonFileTypeBase = (function () {
                     title: 'receive_file',
                     isUpdateUI: true,
                     callback: function (tree, object, name) {
-                        var filepath = object.path;
-                        var parent = tree.getParent();
                         var index = tree.receive_files.indexOf(object);
                         tree.receive_files.splice(index, 1);
                     }
@@ -644,25 +608,6 @@ var JsonFileTypeBase = (function () {
                     key: 'host',
                     readonly: function () { return false; },
                     type: 'host'
-                }
-            ]
-        });
-    };
-    JsonFileTypeBase.prototype.addHostForJob = function () {
-        this.propertyInfo.push({
-            key: 'host',
-            ishash: true,
-            order: 200,
-            item: [
-                {
-                    key: 'host',
-                    readonly: function () { return false; },
-                    type: 'host'
-                },
-                {
-                    key: 'job_scheduler',
-                    readonly: function () { return false; },
-                    type: 'scheduler'
                 }
             ]
         });
@@ -771,16 +716,74 @@ var TypeJob = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.job;
         _this.type = config.json_types.job;
-        _this.addScriptForJob();
+        _this.addScrip();
         _this.addJobScript();
         _this.addInputFile();
         _this.addOutputFile();
         _this.addSendFile();
         _this.addReceiveFile();
         _this.addScriptParam();
-        _this.addHostForJob();
+        _this.addHost();
         return _this;
     }
+    TypeJob.prototype.addScrip = function () {
+        this.propertyInfo.push({
+            key: 'script',
+            ishash: true,
+            order: 30,
+            item: [
+                {
+                    key: 'name',
+                    readonly: function () { return false; },
+                    type: 'string'
+                },
+                {
+                    key: 'description',
+                    readonly: function () { return false; },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: function () { return true; },
+                    type: 'string'
+                }
+            ],
+            button: [{
+                    key: 'Edit',
+                    title: 'submit_script',
+                    validation: function (tree) {
+                        if (tree.job_script.path) {
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                    },
+                    callback: function (tree) {
+                        $(document).trigger('editFile');
+                    }
+                }]
+        });
+    };
+    TypeJob.prototype.addHost = function () {
+        this.propertyInfo.push({
+            key: 'host',
+            ishash: true,
+            order: 200,
+            item: [
+                {
+                    key: 'host',
+                    readonly: function () { return false; },
+                    type: 'host'
+                },
+                {
+                    key: 'job_scheduler',
+                    readonly: function () { return false; },
+                    type: 'scheduler'
+                }
+            ]
+        });
+    };
     return TypeJob;
 }(JsonFileTypeBase));
 /**
@@ -856,9 +859,71 @@ var TypeCondition = (function (_super) {
         _this.type = config.json_types.condition;
         _this.addScript();
         _this.addInputFile();
+        _this.addOutputFile();
         _this.addUpload();
         return _this;
     }
+    TypeCondition.prototype.addOutputFile = function () {
+        this.propertyInfo.push({
+            key: 'output_files',
+            ishash: true,
+            order: 110,
+            button: [{
+                    key: 'Add',
+                    title: 'output_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        var file = SwfFile.getDefault();
+                        tree.output_files.push(file);
+                    }
+                }]
+        });
+        this.propertyInfo.push({
+            key: 'output_files',
+            isarray: true,
+            order: 111,
+            item: [
+                {
+                    key: 'name',
+                    readonly: function () { return false; },
+                    type: 'string',
+                    validation: function (tree, v) {
+                        return v.trim() ? true : false;
+                    }
+                },
+                {
+                    key: 'description',
+                    readonly: function () { return false; },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: function () { return false; },
+                    type: 'string',
+                    validation: function (tree, v) {
+                        return !tree.isEnablePath(v);
+                    },
+                    callback: function (tree, object, path) {
+                        object.type = ClientUtility.getIOFileType(path);
+                    }
+                },
+                {
+                    key: 'required',
+                    readonly: function () { return false; },
+                    type: 'boolean'
+                }
+            ],
+            button: [{
+                    key: 'Delete',
+                    title: 'output_file',
+                    isUpdateUI: true,
+                    callback: function (tree, object) {
+                        var index = tree.output_files.indexOf(object);
+                        tree.output_files.splice(index, 1);
+                    }
+                }]
+        });
+    };
     return TypeCondition;
 }(JsonFileTypeBase));
 /**

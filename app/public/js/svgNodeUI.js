@@ -549,6 +549,9 @@ var SvgBox = (function () {
      */
     SvgBox.prototype.createOutput = function () {
         var _this = this;
+        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+            return this.outputGroup;
+        }
         this.tree.output_files.forEach(function (output, index) {
             var y = SvgBox.caclPlugPosY(index);
             var text = _this.draw
@@ -814,6 +817,9 @@ var SvgNodeUI = (function () {
     SvgNodeUI.prototype.createConnector = function () {
         var _this = this;
         var group = SvgNodeUI.draw.group();
+        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+            return group;
+        }
         this.tree.output_files.forEach(function (output, index) {
             var y = SvgBox.caclPlugPosY(index);
             _this.generateConnector(output, index);

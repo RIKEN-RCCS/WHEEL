@@ -1,4 +1,5 @@
 "use strict";
+var logger = require("./logger");
 var swfUtility = require("./serverUtility");
 /**
  *
@@ -12,10 +13,18 @@ var GetRemoteHostListEvent = (function () {
      */
     GetRemoteHostListEvent.prototype.onEvent = function (socket) {
         socket.on(GetRemoteHostListEvent.eventName, function () {
-            swfUtility.getHostInfo(function (hostList) {
-                socket.json.emit(GetRemoteHostListEvent.eventName, hostList);
-            }, function () {
-                socket.emit(GetRemoteHostListEvent.eventName);
+            swfUtility.getHostInfo(function (err, hostList) {
+                if (err) {
+                    logger.error(err);
+                    socket.emit(GetRemoteHostListEvent.eventName);
+                }
+                else if (!hostList) {
+                    logger.error('host list does not exist');
+                    socket.emit(GetRemoteHostListEvent.eventName);
+                }
+                else {
+                    socket.json.emit(GetRemoteHostListEvent.eventName, hostList);
+                }
             });
         });
     };

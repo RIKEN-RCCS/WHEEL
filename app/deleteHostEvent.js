@@ -1,5 +1,9 @@
 "use strict";
+var logger = require("./logger");
 var serverUtility = require("./serverUtility");
+/**
+ *
+ */
 var DeleteHostEvent = (function () {
     function DeleteHostEvent() {
     }
@@ -9,10 +13,14 @@ var DeleteHostEvent = (function () {
      */
     DeleteHostEvent.prototype.onEvent = function (socket) {
         socket.on(DeleteHostEvent.eventName, function (label) {
-            serverUtility.deleteHostInfo(label, function (remoteHostList) {
-                socket.emit(DeleteHostEvent.eventName, true);
-            }, function () {
-                socket.emit(DeleteHostEvent.eventName, false);
+            serverUtility.deleteHostInfo(label, function (err) {
+                if (err) {
+                    logger.error(err);
+                    socket.emit(DeleteHostEvent.eventName, false);
+                }
+                else {
+                    socket.emit(DeleteHostEvent.eventName, true);
+                }
             });
         });
     };

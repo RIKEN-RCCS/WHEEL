@@ -1,4 +1,5 @@
 "use strict";
+var logger = require("./logger");
 var serverUtility = require("./serverUtility");
 /**
  *
@@ -12,10 +13,14 @@ var AddHostEvent = (function () {
      */
     AddHostEvent.prototype.onEvent = function (socket) {
         socket.on(AddHostEvent.eventName, function (hostInfo) {
-            serverUtility.addHostInfo(hostInfo, function (remoteHostList) {
-                socket.emit(AddHostEvent.eventName, true);
-            }, function () {
-                socket.emit(AddHostEvent.eventName, false);
+            serverUtility.addHostInfo(hostInfo, function (err) {
+                if (err) {
+                    logger.error(err);
+                    socket.emit(AddHostEvent.eventName, false);
+                }
+                else {
+                    socket.emit(AddHostEvent.eventName, true);
+                }
             });
         });
     };

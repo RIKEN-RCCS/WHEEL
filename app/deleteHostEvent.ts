@@ -2,6 +2,9 @@ import fs = require('fs');
 import logger = require('./logger');
 import serverUtility = require('./serverUtility');
 
+/**
+ *
+ */
 class DeleteHostEvent implements SocketListener {
 
     /**
@@ -15,15 +18,16 @@ class DeleteHostEvent implements SocketListener {
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(DeleteHostEvent.eventName, (label: string) => {
-            serverUtility.deleteHostInfo(label,
-                (remoteHostList: SwfHostJson[]) => {
-                    socket.emit(DeleteHostEvent.eventName, true);
-                },
-                () => {
+            serverUtility.deleteHostInfo(label, (err) => {
+                if (err) {
+                    logger.error(err);
                     socket.emit(DeleteHostEvent.eventName, false);
-                })
+                }
+                else {
+                    socket.emit(DeleteHostEvent.eventName, true);
+                }
+            });
         });
     }
 }
-
 export = DeleteHostEvent;

@@ -629,6 +629,9 @@ class SvgBox {
      *
      */
     private createOutput(): svgjs.Element {
+        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+            return this.outputGroup;
+        }
         this.tree.output_files.forEach((output, index) => {
             const y = SvgBox.caclPlugPosY(index);
             const text = this.draw
@@ -942,6 +945,9 @@ class SvgNodeUI {
      */
     private createConnector(): svgjs.Element {
         const group = SvgNodeUI.draw.group();
+        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+            return group;
+        }
         this.tree.output_files.forEach((output, index) => {
             const y = SvgBox.caclPlugPosY(index);
             this.generateConnector(output, index);

@@ -3,14 +3,6 @@ import path = require('path');
 import logger = require('./logger');
 import serverConfig = require('./serverConfig');
 
-interface SucceedCallback {
-    (hostList: SwfHostJson[]): void;
-}
-
-interface FailedCallback {
-    (): void;
-}
-
 /**
  * json file type
  */
@@ -128,21 +120,18 @@ class ServerUtility {
      * @param ifError exexute callback function when process is failed
      * @returns none
      */
-    public static getHostInfo(ifSucceed: SucceedCallback, ifError: FailedCallback) {
+    public static getHostInfo(callback: ((err?: Error, hosts?: SwfHostJson[]) => void)) {
         fs.readFile(ServerUtility.getHostListPath(), (err, data) => {
             if (err) {
-                logger.error(err);
-                ifError();
+                callback(err);
                 return;
             }
-
             try {
                 const hostListJson: SwfHostJson[] = JSON.parse(data.toString());
-                ifSucceed(hostListJson);
+                callback(undefined, hostListJson);
             }
-            catch (error) {
-                logger.error(error);
-                ifError();
+            catch (err) {
+                callback(err);
             }
         });
     }
@@ -154,22 +143,26 @@ class ServerUtility {
      * @param ifError exexute callback function when process is failed
      * @returns none
      */
-    public static deleteHostInfo(name: string, ifSucceed: SucceedCallback, ifError: FailedCallback) {
-        this.getHostInfo(
-            (remoteHostList: SwfHostJson[]) => {
-                remoteHostList = remoteHostList.filter(host => host.name != name);
-                const writeData = JSON.stringify(remoteHostList, null, '\t');
-                fs.writeFile(ServerUtility.getHostListPath(), writeData, (err) => {
-                    if (err) {
-                        logger.error(err);
-                        ifError();
-                    }
-                    else {
-                        ifSucceed(remoteHostList);
-                    }
-                });
-            },
-            ifError);
+    public static deleteHostInfo(name: string, callback: ((err?: Error) => void)) {
+        this.getHostInfo((err, remoteHostList) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+            if (!remoteHostList) {
+                callback(new Error('host list does not exist'));
+                return;
+            }
+            remoteHostList = remoteHostList.filter(host => host.name != name);
+            fs.writeFile(ServerUtility.getHostListPath(), JSON.stringify(remoteHostList, null, '\t'), (err) => {
+                if (err) {
+                    callback(err);
+                }
+                else {
+                    callback();
+                }
+            });
+        });
     }
 
     /**
@@ -179,24 +172,27 @@ class ServerUtility {
      * @param ifError exexute callback function when process is failed
      * @returns none
      */
-    public static addHostInfo(addHostInfo: SwfHostJson, ifSucceed: SucceedCallback, ifError: FailedCallback) {
-
-        this.getHostInfo(
-            (remoteHostList: SwfHostJson[]) => {
-                remoteHostList = remoteHostList.filter(host => host.name !== addHostInfo.name);
-                remoteHostList.push(addHostInfo);
-                const writeData = JSON.stringify(remoteHostList, null, '\t');
-                fs.writeFile(ServerUtility.getHostListPath(), writeData, (err) => {
-                    if (err) {
-                        logger.error(err);
-                        ifError();
-                    }
-                    else {
-                        ifSucceed(remoteHostList);
-                    }
-                });
-            },
-            ifError);
+    public static addHostInfo(addHostInfo: SwfHostJson, callback: ((err?) => void)) {
+        this.getHostInfo((err, remoteHostList) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+            if (!remoteHostList) {
+                callback(new Error('host list does not exist'));
+                return;
+            }
+            remoteHostList = remoteHostList.filter(host => host.name !== addHostInfo.name);
+            remoteHostList.push(addHostInfo);
+            fs.writeFile(ServerUtility.getHostListPath(), JSON.stringify(remoteHostList, null, '\t'), (err) => {
+                if (err) {
+                    callback(err);
+                }
+                else {
+                    callback();
+                }
+            });
+        });
     }
 
     /**

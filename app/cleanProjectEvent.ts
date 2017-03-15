@@ -30,23 +30,37 @@ class CleanProjectvent implements SocketListener {
             const operator = new ProjectOperator(projectFilePath);
             operator.clean();
 
-            fs.readFile(projectFilePath, (err, data) => {
+            this.cleanupProject(projectFilePath, (err) => {
                 if (err) {
                     logger.error(err);
                     socket.emit(CleanProjectvent.eventName, false);
                     return
                 }
-                const projectJson: SwfProjectJson = JSON.parse(data.toString());
-                projectJson.state = this.state;
-                this.cleanupLogJson(projectJson.log);
-                fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), (err) => {
-                    if (err) {
-                        logger.error(err);
-                        socket.emit(CleanProjectvent.eventName, false);
-                        return;
-                    }
-                    socket.emit(CleanProjectvent.eventName, true);
-                });
+                socket.emit(CleanProjectvent.eventName, true);
+            });
+        });
+    }
+
+    /**
+     *
+     * @param projectFilePath
+     * @param callback
+     */
+    private cleanupProject(projectFilePath, callback: ((err?: Error) => void)) {
+        fs.readFile(projectFilePath, (err, data) => {
+            if (err) {
+                callback(err);
+                return
+            }
+            const projectJson: SwfProjectJson = JSON.parse(data.toString());
+            projectJson.state = this.state;
+            this.cleanupLogJson(projectJson.log);
+            fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), (err) => {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                callback();
             });
         });
     }

@@ -21,24 +21,32 @@ class SshConnectionEvent implements SocketListener {
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(SshConnectionEvent.eventName, (name: string, password: string) => {
-            serverUtility.getHostInfo(
-                (hostList: SwfHostJson[]): void => {
-                    const host = hostList.filter(host => host.name === name)[0];
-                    if (!host) {
-                        this.emitFailed(socket);
-                        logger.error(`${name} is not found at host list conf`);
-                    }
+            serverUtility.getHostInfo((err, hostList) => {
+                if (err) {
+                    logger.error(err);
+                    socket.emit(SshConnectionEvent.eventName, false);
+                    return;
+                }
+                if (!hostList) {
+                    logger.error('host list does not exist');
+                    socket.emit(SshConnectionEvent.eventName, false);
+                    return;
+                }
 
-                    if (serverUtility.isLocalHost(host.host)) {
-                        this.emitSucceed(socket);
-                        return;
-                    }
+                const host = hostList.filter(host => host.name === name)[0];
 
-                    this.sshConnect(host, password, socket);
-                },
-                (): void => {
-                    this.emitFailed(socket);
-                });
+                if (!host) {
+                    logger.error(`${name} is not found at host list conf`);
+                    socket.emit(SshConnectionEvent.eventName, false);
+                }
+
+                if (serverUtility.isLocalHost(host.host)) {
+                    socket.emit(SshConnectionEvent.eventName, true);
+                    return;
+                }
+
+                this.sshConnect(host, password, socket);
+            });
         });
     }
 

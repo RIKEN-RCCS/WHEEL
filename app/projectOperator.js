@@ -870,7 +870,7 @@ var TaskOperator = (function () {
         var tarFile_name = 'send_files.tar.gz';
         function compressFiles() {
             var command = "tar czvf \"" + tarFile_name + "\"";
-            if (serverUtility.isWindows) {
+            if (serverUtility.isWindows()) {
                 // Windows
                 command = path.resolve('tar.exe') + " czvf \"" + tarFile_name + "\"";
             }
@@ -979,7 +979,7 @@ var TaskOperator = (function () {
         }
         function extractFiles() {
             var command = "tar xvf \"" + tarFile_name + "\";";
-            if (serverUtility.isWindows) {
+            if (serverUtility.isWindows()) {
                 // Windows
                 command = "\"" + path.resolve('tar.exe') + "\" xvf \"" + tarFile_name + "\"";
             }

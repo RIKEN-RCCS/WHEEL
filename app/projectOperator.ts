@@ -986,7 +986,7 @@ class TaskOperator {
         let tarFile_name: string = 'send_files.tar.gz';
         function compressFiles() {
             let command: string = `tar czvf "${tarFile_name}"`;
-            if (serverUtility.isWindows) {
+            if (serverUtility.isWindows()) {
                 // Windows
                 command = `${path.resolve('tar.exe')} czvf "${tarFile_name}"`;
             }
@@ -1114,7 +1114,7 @@ class TaskOperator {
 
         function extractFiles() {
             let command: string = `tar xvf "${tarFile_name}";`;
-            if (serverUtility.isWindows) {
+            if (serverUtility.isWindows()) {
                 // Windows
                 command = `"${path.resolve('tar.exe')}" xvf "${tarFile_name}"`;
             }

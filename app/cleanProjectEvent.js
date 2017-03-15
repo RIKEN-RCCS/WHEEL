@@ -22,23 +22,37 @@ var CleanProjectvent = (function () {
         socket.on(CleanProjectvent.eventName, function (projectFilePath) {
             var operator = new ProjectOperator(projectFilePath);
             operator.clean();
-            fs.readFile(projectFilePath, function (err, data) {
+            _this.cleanupProject(projectFilePath, function (err) {
                 if (err) {
                     logger.error(err);
                     socket.emit(CleanProjectvent.eventName, false);
                     return;
                 }
-                var projectJson = JSON.parse(data.toString());
-                projectJson.state = _this.state;
-                _this.cleanupLogJson(projectJson.log);
-                fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), function (err) {
-                    if (err) {
-                        logger.error(err);
-                        socket.emit(CleanProjectvent.eventName, false);
-                        return;
-                    }
-                    socket.emit(CleanProjectvent.eventName, true);
-                });
+                socket.emit(CleanProjectvent.eventName, true);
+            });
+        });
+    };
+    /**
+     *
+     * @param projectFilePath
+     * @param callback
+     */
+    CleanProjectvent.prototype.cleanupProject = function (projectFilePath, callback) {
+        var _this = this;
+        fs.readFile(projectFilePath, function (err, data) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            var projectJson = JSON.parse(data.toString());
+            projectJson.state = _this.state;
+            _this.cleanupLogJson(projectJson.log);
+            fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), function (err) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                callback();
             });
         });
     };

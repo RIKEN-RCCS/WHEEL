@@ -198,7 +198,7 @@ $(function () {
                 deleteHostSocket.emit(host.name, function (result) {
                     getRemoteHostListSocket.emit(getHostListCallback);
                     $(document).off('keyup', "#" + host.name + "_password");
-                    $(document).off('click', '.test_connect_button, .ng_test_button');
+                    $(document).off('click', "#" + host.name + "_test_connect");
                 });
             });
             return "\n                <tr id=\"" + host.name + "\">\n                    <td class=\"hostlabel\">" + host.name + " : " + host.username + "@" + host.host + "</td>\n                    <td>" + passwordHtml + "</td>\n                    <td><button type=\"button\" class=\"test_connect_button button\" id=\"" + host.name + "_test_connect\">Test</button></td>\n                    <td><button type=\"button\" class=\"delete_button button\" id=\"" + host.name + "_delete\">Delete</button></td>\n                </tr>";

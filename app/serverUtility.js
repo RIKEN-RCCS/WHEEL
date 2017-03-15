@@ -113,20 +113,18 @@ var ServerUtility = (function () {
      * @param ifError exexute callback function when process is failed
      * @returns none
      */
-    ServerUtility.getHostInfo = function (ifSucceed, ifError) {
+    ServerUtility.getHostInfo = function (callback) {
         fs.readFile(ServerUtility.getHostListPath(), function (err, data) {
             if (err) {
-                logger.error(err);
-                ifError();
+                callback(err);
                 return;
             }
             try {
                 var hostListJson = JSON.parse(data.toString());
-                ifSucceed(hostListJson);
+                callback(undefined, hostListJson);
             }
-            catch (error) {
-                logger.error(error);
-                ifError();
+            catch (err) {
+                callback(err);
             }
         });
     };
@@ -137,20 +135,26 @@ var ServerUtility = (function () {
      * @param ifError exexute callback function when process is failed
      * @returns none
      */
-    ServerUtility.deleteHostInfo = function (name, ifSucceed, ifError) {
-        this.getHostInfo(function (remoteHostList) {
+    ServerUtility.deleteHostInfo = function (name, callback) {
+        this.getHostInfo(function (err, remoteHostList) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            if (!remoteHostList) {
+                callback(new Error('host list does not exist'));
+                return;
+            }
             remoteHostList = remoteHostList.filter(function (host) { return host.name != name; });
-            var writeData = JSON.stringify(remoteHostList, null, '\t');
-            fs.writeFile(ServerUtility.getHostListPath(), writeData, function (err) {
+            fs.writeFile(ServerUtility.getHostListPath(), JSON.stringify(remoteHostList, null, '\t'), function (err) {
                 if (err) {
-                    logger.error(err);
-                    ifError();
+                    callback(err);
                 }
                 else {
-                    ifSucceed(remoteHostList);
+                    callback();
                 }
             });
-        }, ifError);
+        });
     };
     /**
      * add host information
@@ -159,21 +163,27 @@ var ServerUtility = (function () {
      * @param ifError exexute callback function when process is failed
      * @returns none
      */
-    ServerUtility.addHostInfo = function (addHostInfo, ifSucceed, ifError) {
-        this.getHostInfo(function (remoteHostList) {
+    ServerUtility.addHostInfo = function (addHostInfo, callback) {
+        this.getHostInfo(function (err, remoteHostList) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            if (!remoteHostList) {
+                callback(new Error('host list does not exist'));
+                return;
+            }
             remoteHostList = remoteHostList.filter(function (host) { return host.name !== addHostInfo.name; });
             remoteHostList.push(addHostInfo);
-            var writeData = JSON.stringify(remoteHostList, null, '\t');
-            fs.writeFile(ServerUtility.getHostListPath(), writeData, function (err) {
+            fs.writeFile(ServerUtility.getHostListPath(), JSON.stringify(remoteHostList, null, '\t'), function (err) {
                 if (err) {
-                    logger.error(err);
-                    ifError();
+                    callback(err);
                 }
                 else {
-                    ifSucceed(remoteHostList);
+                    callback();
                 }
             });
-        }, ifError);
+        });
     };
     /**
      *
