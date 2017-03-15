@@ -66,13 +66,19 @@ var ProjectOperator = (function () {
      * set absolute path of directory of the task
      */
     ProjectOperator.setPathAbsolute = function (tree, logJson) {
-        tree.path = logJson.path;
-        if (tree.children.length != logJson.children.length) {
-            logger.error('mismatch children workflow and log.');
-            return;
-        }
-        for (var i = 0; i < tree.children.length; i++) {
-            this.setPathAbsolute(tree.children[i], logJson.children[i]);
+        var date = new Date();
+        var name_dir_time = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getHours() + "-" + date.getMinutes() + "-" + date.getSeconds();
+        var path_to_root = logJson.path;
+        _setPathAbsolute(tree, '');
+        function _setPathAbsolute(_tree, path_from_root) {
+            _tree.path = path.join(path_to_root, path_from_root);
+            if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
+                var remoteTask = _tree;
+                remoteTask.host.path = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root.replace('\\', '/'));
+            }
+            for (var i = 0; i < _tree.children.length; i++) {
+                _setPathAbsolute(_tree.children[i], path.join(path_from_root, _tree.children[i].path));
+            }
         }
     };
     /**
@@ -400,11 +406,10 @@ var TaskOperator = (function () {
         else {
             config.password = remoteTask.host.pass;
         }
-        var dir_remote = TaskOperator.getDirRemote(remoteTask);
         client.connect(config);
         client.on('ready', readyCallback);
         function readyCallback() {
-            TaskOperator.setUpRemote(remoteTask, client, dir_remote, runScript, failed);
+            TaskOperator.setUpRemote(remoteTask, client, runScript, failed);
         }
         function runScript() {
             var command;
@@ -418,10 +423,10 @@ var TaskOperator = (function () {
                 // default
                 command += "./" + remoteTask.script.path + "\n";
             }
-            TaskOperator.execRemote(client, command, dir_remote, execCallback, failed);
+            TaskOperator.execRemote(client, command, remoteTask.host.path, execCallback, failed);
             function execCallback() {
                 // TODO check whether success
-                TaskOperator.cleanUpRemote(remoteTask, client, dir_remote, completed, failed);
+                TaskOperator.cleanUpRemote(remoteTask, client, completed, failed);
             }
         }
         function completed() {
@@ -455,15 +460,14 @@ var TaskOperator = (function () {
         else {
             config.password = job.host.pass;
         }
-        var dir_remote = TaskOperator.getDirRemote(job);
         client.connect(config);
         client.on('ready', readyCallback);
         function readyCallback() {
-            TaskOperator.setUpRemote(job, client, dir_remote, runScript, failed);
+            TaskOperator.setUpRemote(job, client, runScript, failed);
         }
         function runScript() {
             var command = '';
-            command += "cd " + dir_remote + "\n";
+            command += "cd " + job.host.path + "\n";
             if (job.host.job_scheduler == SwfJobScheduler.TCS) {
                 command += "sh " + job.script.path + "\n";
             }
@@ -541,7 +545,7 @@ var TaskOperator = (function () {
                             }
                             if (isFinish) {
                                 clearInterval(intervalId);
-                                TaskOperator.cleanUpRemote(job, client, dir_remote, completed, failed);
+                                TaskOperator.cleanUpRemote(job, client, completed, failed);
                             }
                         }
                     }
@@ -860,9 +864,9 @@ var TaskOperator = (function () {
         var command = "rm " + path + ";";
         TaskOperator.execRemote(client, command, working_dir, callback, callbackErr);
     };
-    TaskOperator.setUpRemote = function (remoteTask, client, dir_remote, callback, callbackErr) {
+    TaskOperator.setUpRemote = function (remoteTask, client, callback, callbackErr) {
         // make working directory
-        TaskOperator.mkdirRemote(client, dir_remote, '', mkdirCallback, callbackErr);
+        TaskOperator.mkdirRemote(client, remoteTask.host.path, '', mkdirCallback, callbackErr);
         function mkdirCallback() {
             // send files
             compressFiles();
@@ -904,7 +908,7 @@ var TaskOperator = (function () {
             }
             // send script file
             var local_path = path.join(remoteTask.path, tarFile_name);
-            var remote_path = path.posix.join(dir_remote, tarFile_name);
+            var remote_path = path.posix.join(remoteTask.host.path, tarFile_name);
             sftp.fastPut(local_path, remote_path, sendFileCallback);
             function sendFileCallback(err) {
                 if (err) {
@@ -920,16 +924,16 @@ var TaskOperator = (function () {
         }
         function extractFilesRemote() {
             var command = "tar xvf \"" + tarFile_name + "\";";
-            TaskOperator.execRemote(client, command, dir_remote, extractCallback, callbackErr);
+            TaskOperator.execRemote(client, command, remoteTask.host.path, extractCallback, callbackErr);
         }
         function extractCallback() {
             // remove compressed files
             fs.unlinkSync(path.join(remoteTask.path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, dir_remote, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.host.path, callback, callback);
         }
     };
-    TaskOperator.cleanUpRemote = function (remoteTask, client, dir_remote, callback, callbackErr) {
+    TaskOperator.cleanUpRemote = function (remoteTask, client, callback, callbackErr) {
         var tarFile_name = 'recieve_files.tar.gz';
         if (remoteTask.receive_files.length + remoteTask.output_files.length < 1) {
             callback();
@@ -948,7 +952,7 @@ var TaskOperator = (function () {
                 var file = remoteTask.output_files[i];
                 command += " \"" + file.path + "\"";
             }
-            TaskOperator.execRemote(client, command, dir_remote, compressCallback, callbackErr);
+            TaskOperator.execRemote(client, command, remoteTask.host.path, compressCallback, callbackErr);
         }
         function compressCallback() {
             // recieve file
@@ -963,7 +967,7 @@ var TaskOperator = (function () {
             }
             // send script file
             var local_path = path.join(remoteTask.path, tarFile_name);
-            var remote_path = path.posix.join(dir_remote, tarFile_name);
+            var remote_path = path.posix.join(remoteTask.host.path, tarFile_name);
             sftp.fastGet(remote_path, local_path, recieveFileCallback);
             function recieveFileCallback(err) {
                 if (err) {
@@ -989,23 +993,7 @@ var TaskOperator = (function () {
             // remove compressed files
             fs.unlinkSync(path.join(remoteTask.path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, dir_remote, callback, callback);
-        }
-    };
-    TaskOperator.getDirRemote = function (remoteTask) {
-        var date = new Date();
-        var name_dir_time = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getHours() + "-" + date.getMinutes() + "-" + date.getSeconds();
-        var path_from_root = getPathFromRoot(remoteTask);
-        var dir_remote = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root);
-        return dir_remote;
-        // set path from root
-        function getPathFromRoot(tree) {
-            var root = tree;
-            while (root.parent != null) {
-                root = root.parent;
-            }
-            // for linux
-            return path.relative(root.path, tree.path).replace('\\', '/');
+            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.host.path, callback, callback);
         }
     };
     return TaskOperator;

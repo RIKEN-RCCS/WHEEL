@@ -40,8 +40,8 @@ class CreateNewProjectEvent implements SocketListener {
 
             workflowJson.path = path.basename(directoryPath);
 
-            const projectFilePath = `${directoryPath}/${projectJson.path}`;
-            const workflowFilePath = `${directoryPath}/${projectJson.path_workflow}`;
+            const projectFilePath = path.join(directoryPath, projectJson.path);
+            const workflowFilePath = path.join(directoryPath, projectJson.path_workflow);
 
             fs.mkdir(directoryPath, (mkdirErr) => {
                 if (mkdirErr) {
@@ -49,19 +49,21 @@ class CreateNewProjectEvent implements SocketListener {
                     socket.emit(CreateNewProjectEvent.eventName);
                     return;
                 }
-                serverUtility.writeJson(projectFilePath, projectJson,
-                    () => {
-                        serverUtility.writeJson(workflowFilePath, workflowJson,
-                            () => {
-                                socket.emit(CreateNewProjectEvent.eventName, projectFilePath);
-                            },
-                            () => {
-                                socket.emit(CreateNewProjectEvent.eventName);
-                            });
-                    },
-                    () => {
+                serverUtility.writeJson(projectFilePath, projectJson, (err) => {
+                    if (err) {
+                        logger.error(err);
                         socket.emit(CreateNewProjectEvent.eventName);
+                        return;
+                    }
+                    serverUtility.writeJson(workflowFilePath, workflowJson, (err) => {
+                        if (err) {
+                            logger.error(err);
+                            socket.emit(CreateNewProjectEvent.eventName);
+                            return;
+                        }
+                        socket.emit(CreateNewProjectEvent.eventName, projectFilePath);
                     });
+                });
             });
         });
     }

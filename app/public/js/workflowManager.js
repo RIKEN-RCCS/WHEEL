@@ -260,7 +260,11 @@ $(function () {
         else {
             taskIndex = object.getIndexString();
         }
-        SvgNodePain.create(rootTree, taskIndex, 'tree_svg', display);
+        SvgNodePane.create(rootTree, taskIndex, 'tree_svg', function (tree) {
+            jsonProperty.hide();
+            childTree = null;
+            display(tree);
+        });
         createNode();
     }
     /**

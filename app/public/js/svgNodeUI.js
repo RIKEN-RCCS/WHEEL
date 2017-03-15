@@ -1058,13 +1058,13 @@ SvgNodeUI.allUppers = new SvgContainer();
 SvgNodeUI.allLowers = new SvgContainer();
 SvgNodeUI.fileRelations = new SvgFileRelations([]);
 SvgNodeUI.relations = new SvgRelations([]);
-var SvgNodePain = (function () {
+var SvgNodePane = (function () {
     /**
      *
      * @param draw
      * @param tree
      */
-    function SvgNodePain(tree) {
+    function SvgNodePane(tree) {
         this.tree = tree;
         this.create();
         this.setEvents();
@@ -1072,17 +1072,17 @@ var SvgNodePain = (function () {
     /**
      *
      */
-    SvgNodePain.prototype.create = function () {
+    SvgNodePane.prototype.create = function () {
         var x = 10 * this.tree.getHierarchy() + 12;
         var y = 20 * this.tree.getAbsoluteIndex() + 15;
         var NORMAL_COLOR = 'white';
         var HIGHLIGHT_COLOR = 'orange';
-        var color = SvgNodePain.taskIndex === this.tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
-        this.triangle = SvgNodePain.draw
+        var color = SvgNodePane.taskIndex === this.tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
+        this.triangle = SvgNodePane.draw
             .polygon([[x - 5, y - 5], [x - 5, y + 5], [x + 2, y]])
             .attr({ fill: color, stroke: 'black' })
             .center(x, y);
-        this.text = SvgNodePain.draw
+        this.text = SvgNodePane.draw
             .text(this.tree.name)
             .font({
             size: 12,
@@ -1091,13 +1091,13 @@ var SvgNodePain = (function () {
             .fill(NORMAL_COLOR)
             .x(x + 10)
             .cy(y);
-        SvgNodePain.svgHeight = Math.max(SvgNodePain.svgHeight, y);
-        SvgNodePain.svgWidth = Math.max(SvgNodePain.svgWidth, this.text.bbox().width + this.text.x());
+        SvgNodePane.svgHeight = Math.max(SvgNodePane.svgHeight, y);
+        SvgNodePane.svgWidth = Math.max(SvgNodePane.svgWidth, this.text.bbox().width + this.text.x());
     };
     /**
      *
      */
-    SvgNodePain.prototype.setEvents = function () {
+    SvgNodePane.prototype.setEvents = function () {
         var _this = this;
         if (!ClientUtility.isImplimentsWorkflow(this.tree.type)) {
             return;
@@ -1110,13 +1110,13 @@ var SvgNodePain = (function () {
             _this.text.attr({ 'text-decoration': 'none' });
         });
         this.text.on('click', function () {
-            SvgNodePain.callback(_this.tree);
+            SvgNodePane.callback(_this.tree);
         });
     };
     /**
      *
      */
-    SvgNodePain.prototype.delete = function () {
+    SvgNodePane.prototype.delete = function () {
         this.text.off('mouseover', null);
         this.text.off('mouseout', null);
         this.text.off('click', null);
@@ -1131,16 +1131,16 @@ var SvgNodePain = (function () {
      * @param id
      * @param clicked
      */
-    SvgNodePain.init = function (taskIndex, id, clicked) {
-        this.pains.forEach(function (pain) {
-            pain.delete();
-            pain = null;
+    SvgNodePane.init = function (taskIndex, id, clicked) {
+        this.panes.forEach(function (pane) {
+            pane.delete();
+            pane = null;
         });
         this.callback = null;
         if (this.draw == null) {
             this.draw = SVG(id);
         }
-        this.pains = [];
+        this.panes = [];
         this.svgHeight = 0;
         this.svgWidth = 0;
         this.taskIndex = taskIndex;
@@ -1153,9 +1153,9 @@ var SvgNodePain = (function () {
      * @param id
      * @param clicked
      */
-    SvgNodePain.create = function (tree, taskIndex, id, clicked) {
+    SvgNodePane.create = function (tree, taskIndex, id, clicked) {
         this.init(taskIndex, id, clicked);
-        this.createPain(tree);
+        this.createPane(tree);
         this.draw.size(this.svgWidth + 5, this.svgHeight + 10);
     };
     /**
@@ -1163,16 +1163,16 @@ var SvgNodePain = (function () {
      * @param draw
      * @param tree
      */
-    SvgNodePain.createPain = function (tree) {
+    SvgNodePane.createPane = function (tree) {
         var _this = this;
-        this.pains.push(new SvgNodePain(tree));
+        this.panes.push(new SvgNodePane(tree));
         tree.children.forEach(function (child) {
-            _this.createPain(child);
+            _this.createPane(child);
         });
     };
-    return SvgNodePain;
+    return SvgNodePane;
 }());
-SvgNodePain.svgHeight = 0;
-SvgNodePain.svgWidth = 0;
-SvgNodePain.pains = [];
+SvgNodePane.svgHeight = 0;
+SvgNodePane.svgWidth = 0;
+SvgNodePane.panes = [];
 //# sourceMappingURL=svgNodeUI.js.map

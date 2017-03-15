@@ -1196,11 +1196,11 @@ class SvgNodeUI {
 }
 
 
-class SvgNodePain {
+class SvgNodePane {
     private static draw: svgjs.Doc;
     private static svgHeight: number = 0;
     private static svgWidth: number = 0;
-    private static pains: SvgNodePain[] = [];
+    private static panes: SvgNodePane[] = [];
     private static taskIndex: string;
     private static callback: ((tree: SwfTree) => void);
     private triangle: svgjs.Element;
@@ -1228,14 +1228,14 @@ class SvgNodePain {
 
         const NORMAL_COLOR = 'white';
         const HIGHLIGHT_COLOR = 'orange';
-        const color: string = SvgNodePain.taskIndex === this.tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
+        const color: string = SvgNodePane.taskIndex === this.tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
 
-        this.triangle = SvgNodePain.draw
+        this.triangle = SvgNodePane.draw
             .polygon([[x - 5, y - 5], [x - 5, y + 5], [x + 2, y]])
             .attr({ fill: color, stroke: 'black' })
             .center(x, y);
 
-        this.text = SvgNodePain.draw
+        this.text = SvgNodePane.draw
             .text(this.tree.name)
             .font({
                 size: 12,
@@ -1245,8 +1245,8 @@ class SvgNodePain {
             .x(x + 10)
             .cy(y);
 
-        SvgNodePain.svgHeight = Math.max(SvgNodePain.svgHeight, y);
-        SvgNodePain.svgWidth = Math.max(SvgNodePain.svgWidth, this.text.bbox().width + this.text.x());
+        SvgNodePane.svgHeight = Math.max(SvgNodePane.svgHeight, y);
+        SvgNodePane.svgWidth = Math.max(SvgNodePane.svgWidth, this.text.bbox().width + this.text.x());
     }
 
     /**
@@ -1264,7 +1264,7 @@ class SvgNodePain {
             this.text.attr({ 'text-decoration': 'none' });
         });
         this.text.on('click', () => {
-            SvgNodePain.callback(this.tree);
+            SvgNodePane.callback(this.tree);
         });
     }
 
@@ -1288,9 +1288,9 @@ class SvgNodePain {
      * @param clicked
      */
     private static init(taskIndex: string, id: string, clicked: ((tree: SwfTree) => void)) {
-        this.pains.forEach(pain => {
-            pain.delete();
-            pain = null;
+        this.panes.forEach(pane => {
+            pane.delete();
+            pane = null;
         });
         this.callback = null;
 
@@ -1298,7 +1298,7 @@ class SvgNodePain {
             this.draw = SVG(id);
         }
 
-        this.pains = [];
+        this.panes = [];
         this.svgHeight = 0;
         this.svgWidth = 0;
         this.taskIndex = taskIndex;
@@ -1314,7 +1314,7 @@ class SvgNodePain {
      */
     public static create(tree: SwfTree, taskIndex: string, id: string, clicked: ((tree: SwfTree) => void)) {
         this.init(taskIndex, id, clicked);
-        this.createPain(tree);
+        this.createPane(tree);
         this.draw.size(this.svgWidth + 5, this.svgHeight + 10);
     }
 
@@ -1323,10 +1323,10 @@ class SvgNodePain {
      * @param draw
      * @param tree
      */
-    private static createPain(tree: SwfTree) {
-        this.pains.push(new SvgNodePain(tree));
+    private static createPane(tree: SwfTree) {
+        this.panes.push(new SvgNodePane(tree));
         tree.children.forEach(child => {
-            this.createPain(child);
+            this.createPane(child);
         });
     }
 }

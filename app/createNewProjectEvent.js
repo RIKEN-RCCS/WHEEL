@@ -31,22 +31,28 @@ var CreateNewProjectEvent = (function () {
             projectJson.log.name = workflowJson.name;
             projectJson.log.description = workflowJson.description;
             workflowJson.path = path.basename(directoryPath);
-            var projectFilePath = directoryPath + "/" + projectJson.path;
-            var workflowFilePath = directoryPath + "/" + projectJson.path_workflow;
+            var projectFilePath = path.join(directoryPath, projectJson.path);
+            var workflowFilePath = path.join(directoryPath, projectJson.path_workflow);
             fs.mkdir(directoryPath, function (mkdirErr) {
                 if (mkdirErr) {
                     logger.error(mkdirErr);
                     socket.emit(CreateNewProjectEvent.eventName);
                     return;
                 }
-                serverUtility.writeJson(projectFilePath, projectJson, function () {
-                    serverUtility.writeJson(workflowFilePath, workflowJson, function () {
-                        socket.emit(CreateNewProjectEvent.eventName, projectFilePath);
-                    }, function () {
+                serverUtility.writeJson(projectFilePath, projectJson, function (err) {
+                    if (err) {
+                        logger.error(err);
                         socket.emit(CreateNewProjectEvent.eventName);
+                        return;
+                    }
+                    serverUtility.writeJson(workflowFilePath, workflowJson, function (err) {
+                        if (err) {
+                            logger.error(err);
+                            socket.emit(CreateNewProjectEvent.eventName);
+                            return;
+                        }
+                        socket.emit(CreateNewProjectEvent.eventName, projectFilePath);
                     });
-                }, function () {
-                    socket.emit(CreateNewProjectEvent.eventName);
                 });
             });
         });

@@ -221,37 +221,6 @@ var ServerUtility = (function () {
         return projectJson;
     };
     /**
-     *
-     * @param filepath
-     * @param state
-     * @param callback
-     */
-    ServerUtility.updateProjectJsonState = function (filepath, state, isSucceed, ifError) {
-        fs.readFile(filepath, function (err, data) {
-            if (err) {
-                logger.error(err);
-                if (ifError) {
-                    ifError();
-                }
-                return;
-            }
-            var project = JSON.parse(data.toString());
-            project.state = state;
-            fs.writeFile(filepath, JSON.stringify(project, null, '\t'), function (err) {
-                if (err) {
-                    logger.error(err);
-                    if (ifError) {
-                        ifError();
-                    }
-                    return;
-                }
-                if (isSucceed) {
-                    isSucceed(project);
-                }
-            });
-        });
-    };
-    /**
      * read json file
      * @param filepath json file path
      */
@@ -299,7 +268,7 @@ var ServerUtility = (function () {
             path: path.dirname(path_taskFile),
             description: workflowJson.description,
             type: workflowJson.type,
-            state: 'Planning',
+            state: this.config.state.planning,
             execution_start_date: '',
             execution_end_date: '',
             children: [],
@@ -338,21 +307,15 @@ var ServerUtility = (function () {
      *
      * @param filepath
      * @param json
-     * @param ifSucceed
-     * @param isError
+     * @param callback
      */
-    ServerUtility.writeJson = function (filepath, json, ifSucceed, isError) {
+    ServerUtility.writeJson = function (filepath, json, callback) {
         fs.writeFile(filepath, JSON.stringify(json, null, '\t'), function (err) {
             if (err) {
-                logger.error(err);
-                if (isError) {
-                    isError();
-                }
+                callback(err);
                 return;
             }
-            if (ifSucceed) {
-                ifSucceed();
-            }
+            callback();
         });
     };
     /**
@@ -419,6 +382,14 @@ var ServerUtility = (function () {
     ServerUtility.IsTypeJob = function (json) {
         var template = this.getTemplate(json.type);
         return template.getType() === this.config.json_types.job;
+    };
+    /**
+     *
+     * @param json
+     */
+    ServerUtility.IsTypeLoop = function (json) {
+        var template = this.getTemplate(json.type);
+        return template.getType() === this.config.json_types.loop;
     };
     /**
      *

@@ -76,15 +76,21 @@ class ProjectOperator {
      * set absolute path of directory of the task
      */
     private static setPathAbsolute(tree: TaskTree, logJson: SwfLogJson) {
-        tree.path = logJson.path;
+        const date = new Date();
+        const name_dir_time: string = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
+        let path_to_root: string = logJson.path;
+        _setPathAbsolute(tree, '');
 
-        if (tree.children.length != logJson.children.length) {
-            logger.error('mismatch children workflow and log.');
-            return;
-        }
+        function _setPathAbsolute(_tree: TaskTree, path_from_root: string) {
+            _tree.path = path.join(path_to_root, path_from_root);
+            if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
+                let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson>_tree;
+                remoteTask.host.path = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root.replace('\\', '/'));
+            }
 
-        for (let i = 0; i < tree.children.length; i++) {
-            this.setPathAbsolute(tree.children[i], logJson.children[i]);
+            for (let i = 0; i < _tree.children.length; i++) {
+                _setPathAbsolute(_tree.children[i], path.join(path_from_root, _tree.children[i].path));
+            }
         }
     }
 
@@ -454,12 +460,11 @@ class TaskOperator {
             config.password = remoteTask.host.pass;
         }
 
-        const dir_remote = TaskOperator.getDirRemote(remoteTask);
         client.connect(config);
         client.on('ready', readyCallback);
 
         function readyCallback() {
-            TaskOperator.setUpRemote(remoteTask, client, dir_remote, runScript, failed);
+            TaskOperator.setUpRemote(remoteTask, client, runScript, failed);
         }
 
 
@@ -474,11 +479,11 @@ class TaskOperator {
                 command += `./${remoteTask.script.path}\n`;
             }
 
-            TaskOperator.execRemote(client, command, dir_remote, execCallback, failed);
+            TaskOperator.execRemote(client, command, remoteTask.host.path, execCallback, failed);
 
             function execCallback() {
                 // TODO check whether success
-                TaskOperator.cleanUpRemote(remoteTask, client, dir_remote, completed, failed);
+                TaskOperator.cleanUpRemote(remoteTask, client, completed, failed);
             }
         }
 
@@ -518,19 +523,17 @@ class TaskOperator {
             config.password = job.host.pass;
         }
 
-        const dir_remote = TaskOperator.getDirRemote(job);
-
         client.connect(config);
         client.on('ready', readyCallback);
 
         function readyCallback() {
-            TaskOperator.setUpRemote(job, client, dir_remote, runScript, failed);
+            TaskOperator.setUpRemote(job, client, runScript, failed);
         }
 
 
         function runScript() {
             let command: string = '';
-            command += `cd ${dir_remote}\n`;
+            command += `cd ${job.host.path}\n`;
             if (job.host.job_scheduler == SwfJobScheduler.TCS) {
                 command += `sh ${job.script.path}\n`;
             } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
@@ -617,7 +620,7 @@ class TaskOperator {
 
                             if (isFinish) {
                                 clearInterval(intervalId);
-                                TaskOperator.cleanUpRemote(job, client, dir_remote, completed, failed);
+                                TaskOperator.cleanUpRemote(job, client, completed, failed);
                             }
                         }
                     }
@@ -974,9 +977,9 @@ class TaskOperator {
         TaskOperator.execRemote(client, command, working_dir, callback, callbackErr);
     }
 
-    private static setUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, dir_remote: string, callback: () => void, callbackErr: () => void) {
+    private static setUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback: () => void, callbackErr: () => void) {
         // make working directory
-        TaskOperator.mkdirRemote(client, dir_remote, '', mkdirCallback, callbackErr);
+        TaskOperator.mkdirRemote(client, remoteTask.host.path, '', mkdirCallback, callbackErr);
 
         function mkdirCallback() {
             // send files
@@ -1024,7 +1027,7 @@ class TaskOperator {
 
             // send script file
             const local_path: string = path.join(remoteTask.path, tarFile_name);
-            const remote_path: string = path.posix.join(dir_remote, tarFile_name)
+            const remote_path: string = path.posix.join(remoteTask.host.path, tarFile_name)
             sftp.fastPut(local_path, remote_path, sendFileCallback);
 
             function sendFileCallback(err: Error) {
@@ -1044,19 +1047,19 @@ class TaskOperator {
         function extractFilesRemote() {
             const command: string = `tar xvf "${tarFile_name}";`;
 
-            TaskOperator.execRemote(client, command, dir_remote, extractCallback, callbackErr);
+            TaskOperator.execRemote(client, command, remoteTask.host.path, extractCallback, callbackErr);
         }
 
         function extractCallback() {
             // remove compressed files
             fs.unlinkSync(path.join(remoteTask.path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, dir_remote, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.host.path, callback, callback);
         }
 
     }
 
-    private static cleanUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, dir_remote: string, callback: () => void, callbackErr: () => void) {
+    private static cleanUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback: () => void, callbackErr: () => void) {
         let tarFile_name: string = 'recieve_files.tar.gz';
         if (remoteTask.receive_files.length + remoteTask.output_files.length < 1) {
             callback();
@@ -1078,7 +1081,7 @@ class TaskOperator {
                 command += ` "${file.path}"`;
             }
 
-            TaskOperator.execRemote(client, command, dir_remote, compressCallback, callbackErr);
+            TaskOperator.execRemote(client, command, remoteTask.host.path, compressCallback, callbackErr);
         }
 
         function compressCallback() {
@@ -1096,7 +1099,7 @@ class TaskOperator {
 
             // send script file
             const local_path: string = path.join(remoteTask.path, tarFile_name);
-            const remote_path: string = path.posix.join(dir_remote, tarFile_name)
+            const remote_path: string = path.posix.join(remoteTask.host.path, tarFile_name)
             sftp.fastGet(remote_path, local_path, recieveFileCallback);
 
             function recieveFileCallback(err: Error) {
@@ -1126,25 +1129,7 @@ class TaskOperator {
             // remove compressed files
             fs.unlinkSync(path.join(remoteTask.path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, dir_remote, callback, callback);
-        }
-    }
-
-    private static getDirRemote(remoteTask: SwfRemoteTaskJson): string {
-        const date = new Date();
-        const name_dir_time: string = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
-        const path_from_root = getPathFromRoot(<TaskTree>remoteTask);
-        const dir_remote: string = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root);
-        return dir_remote;
-
-        // set path from root
-        function getPathFromRoot(tree: TaskTree) {
-            let root = tree;
-            while (root.parent != null) {
-                root = root.parent;
-            }
-            // for linux
-            return path.relative(root.path, tree.path).replace('\\', '/');
+            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.host.path, callback, callback);
         }
     }
 

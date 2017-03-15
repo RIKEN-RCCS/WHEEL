@@ -211,7 +211,7 @@ var SwfHost = (function () {
 var SwfRemoteTask = (function (_super) {
     __extends(SwfRemoteTask, _super);
     function SwfRemoteTask() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return SwfRemoteTask;
 }(SwfTask));
@@ -221,7 +221,7 @@ var SwfRemoteTask = (function (_super) {
 var SwfJob = (function (_super) {
     __extends(SwfJob, _super);
     function SwfJob() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return SwfJob;
 }(SwfRemoteTask));
@@ -231,7 +231,7 @@ var SwfJob = (function (_super) {
 var SwfBashScript = (function (_super) {
     __extends(SwfBashScript, _super);
     function SwfBashScript() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return SwfBashScript;
 }(SwfFile));
@@ -241,7 +241,7 @@ var SwfBashScript = (function (_super) {
 var SwfLuaScript = (function (_super) {
     __extends(SwfLuaScript, _super);
     function SwfLuaScript() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return SwfLuaScript;
 }(SwfFile));

@@ -237,38 +237,6 @@ class ServerUtility {
     }
 
     /**
-     *
-     * @param filepath
-     * @param state
-     * @param callback
-     */
-    public static updateProjectJsonState(filepath: string, state: string, isSucceed?: Function, ifError?: Function) {
-        fs.readFile(filepath, (err, data) => {
-            if (err) {
-                logger.error(err);
-                if (ifError) {
-                    ifError();
-                }
-                return
-            }
-            const project: SwfProjectJson = JSON.parse(data.toString());
-            project.state = state;
-            fs.writeFile(filepath, JSON.stringify(project, null, '\t'), (err) => {
-                if (err) {
-                    logger.error(err);
-                    if (ifError) {
-                        ifError();
-                    }
-                    return;
-                }
-                if (isSucceed) {
-                    isSucceed(project);
-                }
-            });
-        });
-    }
-
-    /**
      * read json file
      * @param filepath json file path
      */
@@ -320,7 +288,7 @@ class ServerUtility {
             path: path.dirname(path_taskFile),
             description: workflowJson.description,
             type: workflowJson.type,
-            state: 'Planning',
+            state: this.config.state.planning,
             execution_start_date: '',
             execution_end_date: '',
             children: [],
@@ -363,21 +331,15 @@ class ServerUtility {
      *
      * @param filepath
      * @param json
-     * @param ifSucceed
-     * @param isError
+     * @param callback
      */
-    public static writeJson(filepath: string, json: any, ifSucceed?: Function, isError?: Function): void {
+    public static writeJson(filepath: string, json: any, callback: ((err?: Error) => void)): void {
         fs.writeFile(filepath, JSON.stringify(json, null, '\t'), (err) => {
             if (err) {
-                logger.error(err);
-                if (isError) {
-                    isError();
-                }
+                callback(err);
                 return;
             }
-            if (ifSucceed) {
-                ifSucceed();
-            }
+            callback();
         });
     }
 
@@ -448,9 +410,18 @@ class ServerUtility {
      *
      * @param json
      */
-    public static IsTypeJob(json: SwfTreeJson) {
+    public static IsTypeJob(json: (SwfLogJson | SwfTreeJson)) {
         const template = this.getTemplate(json.type);
         return template.getType() === this.config.json_types.job;
+    }
+
+    /**
+     *
+     * @param json
+     */
+    public static IsTypeLoop(json: (SwfLogJson | SwfTreeJson)) {
+        const template = this.getTemplate(json.type);
+        return template.getType() === this.config.json_types.loop;
     }
 
     /**
