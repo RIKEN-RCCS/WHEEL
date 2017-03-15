@@ -113,7 +113,8 @@ var InputTextDialog = (function () {
         this.buttonOK
             .text(name)
             .prop('disabled', true)
-            .class('testing_button button');
+            .class('disable_button button');
+        return this;
     };
     InputTextDialog.prototype.offBusy = function () {
         this.enableEvent();
@@ -123,6 +124,7 @@ var InputTextDialog = (function () {
             .text('OK')
             .prop('disabled', false)
             .class('dialog_button button');
+        return this;
     };
     return InputTextDialog;
 }());

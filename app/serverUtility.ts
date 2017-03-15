@@ -350,39 +350,6 @@ class ServerUtility {
     }
 
     /**
-     *
-     * @param projectJson
-     */
-    public static readLogJson(logJson: SwfLogJson): SwfLogJson {
-
-        const read = (projectLog: SwfLogJson, log: SwfLogJson) => {
-            try {
-                const logFilePath = path.join(projectLog.path, `${this.config.system_name}.log`);
-                const json: SwfLogJson = this.readJson(logFilePath);
-                log.children.push(json);
-                projectLog.children.forEach(child => {
-                    read(child, json);
-                });
-            }
-            catch (err) {
-                log.children.push(projectLog);
-            }
-        };
-
-        try {
-            const logFilePath = path.join(logJson.path, `${this.config.system_name}.log`);
-            const json: SwfLogJson = this.readJson(logFilePath);
-            logJson.children.forEach(child => {
-                read(child, json);
-            });
-            return json;
-        }
-        catch (err) {
-            return logJson;
-        }
-    }
-
-    /**
      * read .wf.json file tree
      * @param path_project project json file (.prj.json)
      * @return project json file

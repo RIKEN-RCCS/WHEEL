@@ -218,7 +218,7 @@ $(function () {
         button
             .text(TESTING)
             .prop('disabled', true)
-            .class('testing_button button');
+            .class('disable_button button');
         sshConnectionSocket.emit(label, password, function (isConnect) {
             if (isConnect) {
                 button

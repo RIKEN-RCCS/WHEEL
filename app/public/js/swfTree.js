@@ -16,6 +16,7 @@ var SwfTree = (function (_super) {
         var _this = _super.call(this, treeJson) || this;
         _this.children = [];
         _this.uploadSendfiles = [];
+        _this.upload_files = [];
         _this.indexes = [];
         _this.oldPath = treeJson.oldPath;
         if (treeJson.children) {
@@ -108,10 +109,11 @@ var SwfTree = (function (_super) {
     /**
      *
      * @param treeJson
-     * @param dirname
      * @param fileType
      */
-    SwfTree.prototype.addChild = function (treeJson, dirname, fileType) {
+    SwfTree.prototype.addChild = function (treeJson, fileType) {
+        var rand = Math.floor(Date.now() / 100) % 100000;
+        var dirname = treeJson.type + "Dir" + ("00000" + rand).slice(-5);
         var tree = new SwfTree(treeJson);
         tree.path = dirname;
         this.children.push(tree);
@@ -218,8 +220,10 @@ var SwfTree = (function (_super) {
                 notSeachedList.push(child);
             });
             delete tree.indexes;
-            delete tree.script_param;
             delete tree.uploadScript;
+            delete tree.uploadSendfiles;
+            delete tree.uploadParamFile;
+            delete tree.upload_files;
             Object.keys(this).forEach(function (key) {
                 if (_this[key] == null) {
                     delete _this[key];
@@ -256,16 +260,17 @@ var SwfTree = (function (_super) {
         var output = this.output_files.filter(function (file) {
             return _this.getFullpath(file.path) === fullpath;
         });
-        if (input[0]) {
+        var send = this.send_files.filter(function (file) {
+            return _this.getFullpath(file.path) === fullpath;
+        });
+        var receive = this.receive_files.filter(function (file) {
+            return _this.getFullpath(file.path) === fullpath;
+        });
+        if (input[0] || output[0] || send[0] || receive[0]) {
             return true;
         }
         else {
-            if (output[0]) {
-                return true;
-            }
-            else {
-                return false;
-            }
+            return false;
         }
     };
     /**
@@ -570,14 +575,17 @@ var SwfTree = (function (_super) {
         this.uploadScript = file;
         this.script.path = file.name;
     };
-    SwfTree.prototype.setParameterFile = function (file) {
+    SwfTree.prototype.setJobScriptPath = function (file) {
+        this.uploadScript = file;
+        this.job_script.path = file.name;
+    };
+    SwfTree.prototype.setParameterFilePath = function (file) {
         this.uploadParamFile = file;
         this.parameter_file.path = file.name;
     };
     SwfTree.prototype.setSendFilepath = function (files) {
-        this.uploadSendfiles = [];
-        this.send_files = [];
         for (var index = 0; index < files.length; index++) {
+            this.deleteSendfile(files[index].name);
             this.uploadSendfiles.push(files[index]);
             this.send_files.push(new SwfFile({
                 name: 'name',
@@ -588,26 +596,54 @@ var SwfTree = (function (_super) {
             }));
         }
     };
-    SwfTree.prototype.deleteSendfile = function (file) {
-        var _this = this;
-        var index = this.send_files.indexOf(file);
-        this.send_files.splice(index, 1);
-        var _loop_1 = function (index_1) {
-            this_1.uploadSendfiles.forEach(function (send) {
-                if (send.name === file.path) {
-                    _this.uploadSendfiles.splice(index_1, 1);
-                }
-            });
-        };
-        var this_1 = this;
-        for (var index_1 = this.uploadSendfiles.length - 1; index_1 >= 0; index_1--) {
-            _loop_1(index_1);
+    SwfTree.prototype.deleteSendfile = function (target) {
+        var filepath;
+        if (typeof target === 'string') {
+            filepath = target;
         }
+        else {
+            filepath = target.path;
+        }
+        for (var index = this.send_files.length - 1; index >= 0; index--) {
+            if (this.send_files[index].path === filepath) {
+                this.send_files.splice(index, 1);
+            }
+        }
+        for (var index = this.uploadSendfiles.length - 1; index >= 0; index--) {
+            if (this.uploadSendfiles[index].name === filepath) {
+                this.uploadSendfiles.splice(index, 1);
+            }
+        }
+    };
+    SwfTree.prototype.setUploadFilePath = function (files) {
+        this.upload_files = [];
+        for (var index = 0; index < files.length; index++) {
+            this.upload_files.push(files[index]);
+        }
+    };
+    SwfTree.prototype.deleteUploadfile = function (file) {
+        for (var index = this.upload_files.length - 1; index >= 0; index--) {
+            if (this.upload_files[index].name === file.name) {
+                this.upload_files.splice(index, 1);
+            }
+        }
+    };
+    SwfTree.prototype.isExistSendfile = function (sendFile) {
+        var target = this.uploadSendfiles.filter(function (file) { return file.name === sendFile.path; })[0];
+        if (target) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    SwfTree.prototype.isExistUploadScript = function () {
+        return this.uploadScript != null;
     };
     SwfTree.getUploadFiles = function (projectDirectory) {
         var files = [];
         var notSeachedList = [this.root];
-        var _loop_2 = function () {
+        var _loop_1 = function () {
             var tree = notSeachedList.shift();
             if (!tree) {
                 return "break";
@@ -630,12 +666,18 @@ var SwfTree = (function (_super) {
                     file: file
                 });
             });
+            tree.upload_files.forEach(function (file) {
+                files.push({
+                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(file.name)),
+                    file: file
+                });
+            });
             tree.children.forEach(function (child) {
                 notSeachedList.push(child);
             });
         };
         while (true) {
-            var state_1 = _loop_2();
+            var state_1 = _loop_1();
             if (state_1 === "break")
                 break;
         }

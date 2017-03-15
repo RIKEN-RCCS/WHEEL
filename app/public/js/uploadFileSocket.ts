@@ -30,18 +30,22 @@ class UploadFileSocket {
      *
      * @param callback
      */
-    public onEvent(callback: ((isUpload: boolean) => void)): void {
-        this.socket.once(UploadFileSocket.eventName, callback);
+    public onEvent(callback: ((isUpload: boolean, filename: string) => void)): void {
+        this.socket.on(UploadFileSocket.eventName, callback);
+    }
+
+    /**
+     *
+     */
+    public offEvent(): void {
+        this.socket.removeAllListeners(UploadFileSocket.eventName);
     }
 
     /**
      *
      * @param file
-     * @param filepath
-     * @param callback
      */
-    public emit(data: UploadFileData, callback: ((isUpload: boolean) => void)): void {
-        this.onEvent(callback);
+    public emit(data: UploadFileData): void {
         const fileReader = new FileReader();
         fileReader.readAsBinaryString(data.file);
         fileReader.onload = (eventObject: JQueryEventObject) => {

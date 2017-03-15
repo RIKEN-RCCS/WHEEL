@@ -11,16 +11,14 @@ class OpenProjectJsonEvent implements SocketListener {
      * event name
      */
     private static eventName = 'openProjectJson';
-
     /**
      * config parameter
      */
     private config = ServerConfig.getConfig();
-
     /**
      *
      */
-    private extension = this.config.extension;
+    private queue: SwfLogJson[] = [];
 
     /**
      *
@@ -40,11 +38,22 @@ class OpenProjectJsonEvent implements SocketListener {
                     }
                     else {
                         const projectJson: SwfProjectJson = ServerUtility.readProjectJson(path_project);
-                        if (projectJson.state === 'Planning') {
+                        if (projectJson.state === this.config.state.planning) {
                             this.createProjectJson(path_project, projectJson, socket);
                         }
                         else {
-                            this.updateProjectJson(path_project, projectJson, socket);
+                            this.queue.length = 0;
+                            this.setQueue(projectJson.log);
+                            this.updateLogJson(() => {
+                                projectJson.state = projectJson.log.state;
+                                ServerUtility.writeJson(path_project, projectJson,
+                                    () => {
+                                        socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+                                    },
+                                    () => {
+                                        socket.json.emit(OpenProjectJsonEvent.eventName);
+                                    });
+                            });
                         }
                     }
                 }
@@ -58,21 +67,38 @@ class OpenProjectJsonEvent implements SocketListener {
 
     /**
      *
-     * @param path_project
-     * @param projectJson
-     * @param socket
+     * @param json
      */
-    private createProjectJson(path_project: string, projectJson: SwfProjectJson, socket: SocketIO.Socket) {
-        const dir_project = path.dirname(path_project);
-        const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
-        projectJson.log = ServerUtility.createLogJson(path_workflow);
-        ServerUtility.writeJson(path_project, projectJson,
-            () => {
-                socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
-            },
-            () => {
-                socket.json.emit(OpenProjectJsonEvent.eventName);
+    private setQueue(json: SwfLogJson): void {
+        this.queue.push(json);
+        if (json.children) {
+            json.children.forEach(child => {
+                this.setQueue(child);
             });
+        }
+    }
+
+    /**
+     *
+     * @param callback
+     */
+    private updateLogJson(callback: Function) {
+        const json = this.queue.shift();
+        if (!json) {
+            callback();
+            return;
+        }
+
+        const logFilePath = path.join(json.path, `${this.config.system_name}.log`);
+        fs.readFile(logFilePath, (err, data) => {
+            if (!err) {
+                const readJson: SwfLogJson = JSON.parse(data.toString());
+                json.state = readJson.state;
+                json.execution_start_date = readJson.execution_start_date;
+                json.execution_end_date = readJson.execution_end_date;
+            }
+            this.updateLogJson(callback);
+        });
     }
 
     /**
@@ -81,8 +107,10 @@ class OpenProjectJsonEvent implements SocketListener {
      * @param projectJson
      * @param socket
      */
-    private updateProjectJson(path_project: string, projectJson: SwfProjectJson, socket: SocketIO.Socket) {
-        projectJson.log = ServerUtility.readLogJson(projectJson.log);
+    private createProjectJson(path_project: string, projectJson: SwfProjectJson, socket: SocketIO.Socket) {
+        const dir_project = path.dirname(path_project);
+        const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
+        projectJson.log = ServerUtility.createLogJson(path_workflow);
         ServerUtility.writeJson(path_project, projectJson,
             () => {
                 socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);

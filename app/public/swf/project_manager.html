@@ -32,6 +32,10 @@
             <img src="/image/icon_run.png" class="icon" id="run_button" />
             <figcaption id="run_figcaption">RUN</figcaption>
         </figure>
+        <figure id="stop_menu" class="menu_container" style="display: none">
+            <img src="/image/icon_stop.png" class="icon" id="stop_button"/>
+            <figcaption>STOP</figcaption>
+        </figure>
     </div>
 
     <div class="address_bar_area">
@@ -47,19 +51,19 @@
             <th>Update Date</th>
         </tr>
         <tr>
-            <td id="workflow_name"></td>
+            <td id="project_name"></td>
             <td>
-                <progress value="0" max="100" id="workflow_progress"></progress>
+                <progress value="0" max="100" id="project_progress"></progress>
             </td>
-            <td id="workflow_birthday"></td>
-            <td id="workflow_update"></td>
+            <td id="project_birthday"></td>
+            <td id="project_update"></td>
         </tr>
     </table>
 
     <div class="project_manage_area sub_content_area" onMouseDown="return false;">
-        <div id="workflow_tree_svg"></div>
+        <div id="project_tree_svg"></div>
         <div style="width: 100%">
-            <table id="workflow_table">
+            <table id="project_table">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -70,7 +74,7 @@
                         <th>Description</th>
                     </tr>
                 </thead>
-                <tbody id="workflow_table_body">
+                <tbody id="project_table_body">
                 </tbody>
             </table>
         </div>

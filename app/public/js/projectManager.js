@@ -7,66 +7,72 @@ $(function () {
     var passwordInputDialog = new InputTextDialog();
     var run_button = $('#run_button');
     var run_figcaption = $('#run_figcaption');
+    var stop_button = $('#stop_button');
+    var stop_menu = $('#stop_menu');
     var addressBar = $('#address_bar');
-    // TODO TSURUTA workflow -> project
-    var workflowTable = $('#workflow_table');
-    var workflowTableBody = $('#workflow_table_body');
-    var workflowSvg = $('#workflow_tree_svg');
-    var workflowName = $('#workflow_name');
-    var workflowProg = $('#workflow_progress');
-    var workflowBirth = $('#workflow_birthday');
-    var workflowUpdate = $('#workflow_update');
-    var swfProjectJson;
-    var swfLog;
+    var projectTable = $('#project_table');
+    var projectTableBody = $('#project_table_body');
+    var projectSvg = $('#project_tree_svg');
+    var projectName = $('#project_name');
+    var projectProgress = $('#project_progress');
+    var projectBirth = $('#project_birthday');
+    var projectUpdate = $('#project_update');
+    var swfProject;
+    var timer;
     /**
      *
      */
     var cookies = ClientUtility.getCookies();
     var projectFilePath = cookies['project'];
     /**
-     * open .tree.json or open .wf.json and create .tree.json
+     *
      */
     openProjectJsonSocket.onConnect(projectFilePath, function (projectJson) {
-        swfProjectJson = projectJson;
+        swfProject = new SwfProject(projectJson);
         addressBar.val(ClientUtility.normalize(projectFilePath));
-        workflowName.text(projectJson.name);
-        workflowSvg.empty();
-        if (swfProjectJson.state !== config.state.planning) {
-            setIconStop();
-        }
-        swfLog = SwfLog.create(projectJson.log);
-        var tableDataHtml = createChildWorkflowHtml(swfLog);
-        workflowTableBody.html(tableDataHtml);
-        var draw = SVG('workflow_tree_svg');
-        drawWorkflowTree(draw, swfLog);
-        draw.size((SwfLog.getMaxHierarchy() + 2) * 20, workflowTable.height());
+        projectName.text(projectJson.name);
+        projectSvg.empty();
+        updateIcon();
+        var tableDataHtml = createChildWorkflowHtml(swfProject.log);
+        projectTableBody.html(tableDataHtml);
+        var draw = SVG('project_tree_svg');
+        drawWorkflowTree(draw, swfProject.log);
+        draw.size((SwfLog.getMaxHierarchy() + 2) * 20, projectTable.height());
     });
     /**
-     * get workflow file stat
+     * get project file stat
      */
     getFileStatSocket.onConnect(projectFilePath, function (stat) {
-        workflowUpdate.text(new Date(stat.mtime).toLocaleString());
-        workflowBirth.text(new Date(stat.birthtime).toLocaleString());
+        projectUpdate.text(new Date(stat.mtime).toLocaleString());
+        projectBirth.text(new Date(stat.birthtime).toLocaleString());
     });
     /**
-     * run workflow
+     * run project
      */
     run_button.click(function () {
         // state is planning
-        if (swfProjectJson.state === config.state.planning) {
+        if (swfProject.isPlanning()) {
             inputPasssword(function (passInfo) {
-                setIconRun();
+                updateIcon();
                 runProjectSocket.emit(projectFilePath, passInfo, function (isSucceed) {
                     if (isSucceed) {
-                        openProjectJsonSocket.emit(projectFilePath);
-                    }
-                    else {
+                        startTimer();
                     }
                 });
             });
         }
-        else {
+        else if (!swfProject.isFinished()) {
+            startTimer();
         }
+    });
+    /**
+     *
+     */
+    stop_button.click(function () {
+        if (!swfProject.isFinished()) {
+            return;
+        }
+        updateIcon();
     });
     /**
      * task name click event
@@ -75,8 +81,7 @@ $(function () {
         click: function () {
             var id = $(this).parent().id();
             var target = SwfLog.getSwfLogInstance(id);
-            // TODO convert to variable
-            var rootFilepath = swfLog.path + "/" + ClientUtility.getDefaultName(JsonFileType.WorkFlow);
+            var rootFilepath = swfProject.log.path + "/" + ClientUtility.getDefaultName(JsonFileType.WorkFlow);
             $(document).off('click').off('mouseover').off('mouseout');
             $('<form/>', { action: '/swf/workflow_manager.html', method: 'post' })
                 .append($('<input/>', { type: 'hidden', name: 'root', value: rootFilepath }))
@@ -90,7 +95,7 @@ $(function () {
         mouseout: function () {
             $(this).textDecorateNone();
         }
-    }, '.workflow_name_not_task');
+    }, '.project_name_not_task');
     /**
      *
      * @param swfLog
@@ -108,10 +113,10 @@ $(function () {
     function createHtml4SwfItem(swfLog) {
         var attr;
         if (!ClientUtility.isImplimentsWorkflow(swfLog.type)) {
-            attr = 'class="workflow_name_task" style="cursor: default"';
+            attr = 'class="project_name_task" style="cursor: default"';
         }
         else {
-            attr = 'class="workflow_name_not_task" style="cursor: pointer"';
+            attr = 'class="project_name_not_task" style="cursor: pointer"';
         }
         var start = swfLog.execution_start_date ? new Date(swfLog.execution_start_date).toLocaleString() : '----/--/-- --:--:--';
         var end = swfLog.execution_end_date ? new Date(swfLog.execution_end_date).toLocaleString() : '----/--/-- --:--:--';
@@ -189,16 +194,68 @@ $(function () {
     /**
      *
      */
-    function setIconStop() {
-        run_button.attr('src', '/image/icon_stop.png');
-        run_figcaption.text('STOP');
+    function updateIcon() {
+        if (swfProject.isFinished()) {
+            setIconFinish();
+        }
+        else if (swfProject.isPlanning()) {
+            setIconReady();
+        }
+        else {
+            setIconRunning();
+        }
     }
     /**
      *
      */
-    function setIconRun() {
+    function setIconReady() {
         run_button.attr('src', '/image/icon_run.png');
         run_figcaption.text('RUN');
+        stop_menu.css('display', 'none');
+    }
+    /**
+     *
+     */
+    function setIconRunning() {
+        run_button.attr('src', '/image/icon_pause.png');
+        run_figcaption.text('PAUSE');
+        stop_menu.css('display', 'block');
+    }
+    /**
+     *
+     */
+    function setIconFinish() {
+        run_button.attr('src', '/image/icon_clean.png');
+        run_figcaption.text('CLEAN');
+        stop_menu.css('display', 'none');
+    }
+    /**
+     *
+     */
+    function startTimer() {
+        if (timer != null) {
+            return;
+        }
+        openProjectJsonSocket.emit(projectFilePath);
+        console.log('start timer');
+        timer = setInterval(function () {
+            if (swfProject.isFinished()) {
+                stopTimer();
+            }
+            else {
+                openProjectJsonSocket.emit(projectFilePath);
+            }
+        }, config.reload_project_ms);
+    }
+    /**
+     *
+     */
+    function stopTimer() {
+        if (timer != null) {
+            console.log('stop timer');
+            clearInterval(timer);
+            timer = null;
+        }
     }
 });
 //# sourceMappingURL=projectManager.js.map

@@ -15,6 +15,8 @@ var DeleteHostEvent = require("./deleteHostEvent");
 var WriteTreeJsonEvent = require("./writeTreeJsonEvent");
 var GetTemplateJsonFileEvent = require("./getTemplateJsonFileEvent");
 var CreateNewProjectEvent = require("./createNewProjectEvent");
+var ReadFileEvent = require("./readFileEvent");
+var WriteFileEvent = require("./writeFileEvent");
 var config = serverConfig.getConfig();
 var server = httpServer.start(config.port);
 var serverSocket = new ServerSocketIO(server);
@@ -45,6 +47,10 @@ serverSocket.addEventListener('/swf/workflow', [
     new GetTemplateJsonFileEvent(),
     new GetRemoteHostListEvent(),
     new UploadFileEvent()
+]);
+serverSocket.addEventListener('/swf/editor', [
+    new ReadFileEvent(),
+    new WriteFileEvent()
 ]);
 serverSocket.onConnect();
 //# sourceMappingURL=server.js.map

@@ -211,7 +211,7 @@ var SwfHost = (function () {
 var SwfRemoteTask = (function (_super) {
     __extends(SwfRemoteTask, _super);
     function SwfRemoteTask() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        return _super.apply(this, arguments) || this;
     }
     return SwfRemoteTask;
 }(SwfTask));
@@ -221,7 +221,7 @@ var SwfRemoteTask = (function (_super) {
 var SwfJob = (function (_super) {
     __extends(SwfJob, _super);
     function SwfJob() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        return _super.apply(this, arguments) || this;
     }
     return SwfJob;
 }(SwfRemoteTask));
@@ -231,7 +231,7 @@ var SwfJob = (function (_super) {
 var SwfBashScript = (function (_super) {
     __extends(SwfBashScript, _super);
     function SwfBashScript() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        return _super.apply(this, arguments) || this;
     }
     return SwfBashScript;
 }(SwfFile));
@@ -241,7 +241,7 @@ var SwfBashScript = (function (_super) {
 var SwfLuaScript = (function (_super) {
     __extends(SwfLuaScript, _super);
     function SwfLuaScript() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        return _super.apply(this, arguments) || this;
     }
     return SwfLuaScript;
 }(SwfFile));
@@ -369,8 +369,27 @@ var SwfLog = (function () {
     return SwfLog;
 }());
 var SwfProject = (function () {
-    function SwfProject() {
+    function SwfProject(projectJson) {
+        this.name = projectJson.name;
+        this.description = projectJson.description;
+        this.state = projectJson.state;
+        this.path = projectJson.path;
+        this.path_workflow = projectJson.path_workflow;
+        this.log = SwfLog.create(projectJson.log);
     }
+    /**
+     *
+     */
+    SwfProject.prototype.isPlanning = function () {
+        return this.state === config.state.planning;
+    };
+    /**
+     *
+     */
+    SwfProject.prototype.isFinished = function () {
+        var state = config.state;
+        return this.state === state.completed || this.state === state.failed;
+    };
     return SwfProject;
 }());
 //# sourceMappingURL=swfObject.js.map

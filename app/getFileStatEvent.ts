@@ -20,7 +20,7 @@ class GetFileStatEvent implements SocketListener {
         socket.on(GetFileStatEvent.eventName, (filepath: string) => {
             fs.stat(filepath, (err, stats: fs.Stats) => {
                 if (err) {
-                    logger.error(err);
+                    // logger.error(err);
                     socket.emit(GetFileStatEvent.eventName);
                 }
                 else {

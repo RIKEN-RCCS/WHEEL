@@ -189,7 +189,7 @@ class JsonProperty {
         const id = `property_${JsonProperty.counter++}`;
         const key = prop.key;
 
-        if (prop.readonly) {
+        if (prop.readonly && prop.readonly(this.child, object)) {
             content = `<input type="text" value="${object[key]}" class="text_box text_readonly property_text" disabled>`;
         }
         else {
@@ -217,10 +217,7 @@ class JsonProperty {
                         const isSelected = host.name === object.name ? 'selected' : '';
                         return `<option value="${host.name}" ${isSelected}>${host.name}</option>`
                     });
-                    content = `
-                    <select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">
-                        ${hosts.join('')}
-                    </select>`;
+                    content = `<select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">${hosts.join('')}</select>`;
                     this.createHostChangedEvent(object, id);
                     break;
                 case 'scheduler':
@@ -229,10 +226,7 @@ class JsonProperty {
                         const isSelected = value === object.job_scheduler ? 'selected' : '';
                         return `<option value="${value}" ${isSelected}>${value}</option>`;
                     });
-                    content = `
-                    <select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">
-                        ${schedulers.join('')}
-                    </select>`;
+                    content = `<select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">${schedulers.join('')}</select>`;
                     this.createSchedulerChangedEvent(object, id);
                     break;
                 default:
@@ -261,32 +255,38 @@ class JsonProperty {
      * @param key
      * @param prop
      */
-    private setupButtonEvent(object: any, key: string, prop: PropertyInfo) {
-        const id = `button_property_${JsonProperty.counter++}`;
-        $(document).on('click', `#${id}`, () => {
-            if (prop.callback) {
-                prop.callback(this.child, object);
+    private setupButtonEvent(object: any, key: string, props: PropertyInfo[]) {
+        const html: string[] = [];
+        let title: string;
+        props.forEach(prop => {
+            const id = `button_property_${JsonProperty.counter++}`;
+            if (!prop.validation || prop.validation(this.child)) {
+                $(document).on('click', `#${id}`, (eventObject) => {
+                    const element = $(eventObject.target);
+                    if (prop.callback) {
+                        prop.callback(this.child, object);
+                    }
+                    if (prop.isUpdateUI) {
+                        this.updateDisplay();
+                        $(document).trigger('updateDisplay');
+                    }
+                });
+                this.events[`#${id}`] = 'click';
             }
-            if (prop.isUpdateUI) {
-                this.updateDisplay();
-                $(document).trigger('updateDisplay');
+            else {
+                this.property.ready(() => {
+                    $(`#${id}`).prop('disabled', true).class('disable_button button');
+                });
+                this.events['#property'] = 'ready';
             }
-        });
-        this.events[`#${id}`] = 'click';
-        return this.createButtonHtml(prop, id);
-    }
+            if (title === undefined) {
+                title = this.createItemName(prop.title);
+            }
 
-    /**
-     *
-     * @param prop
-     * @param buttonName
-     */
-    private createButtonHtml(prop: any, id: string) {
-        return `
-            <hr>
-            <div>${this.createItemName(prop.title)}
-                <div><input type="button" value="${prop.key}" class="button" id=${id}></div>
-            </div>`
+            html.push(`<input type="button" value="${prop.key}" class="button" id="${id}">`);
+        });
+
+        return `<hr><div>${title}<div>${html.join('')}</div></div>`;
     }
 
     /**
@@ -376,6 +376,7 @@ class JsonProperty {
             parentHtml.push(createTableHtml(html));
         }
 
+        parentHtml.push('<hr>')
         return parentHtml.join('');
     }
 

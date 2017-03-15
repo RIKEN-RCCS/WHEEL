@@ -166,7 +166,7 @@ var JsonProperty = (function () {
         var content = '';
         var id = "property_" + JsonProperty.counter++;
         var key = prop.key;
-        if (prop.readonly) {
+        if (prop.readonly && prop.readonly(this.child, object)) {
             content = "<input type=\"text\" value=\"" + object[key] + "\" class=\"text_box text_readonly property_text\" disabled>";
         }
         else {
@@ -190,7 +190,7 @@ var JsonProperty = (function () {
                         var isSelected = host.name === object.name ? 'selected' : '';
                         return "<option value=\"" + host.name + "\" " + isSelected + ">" + host.name + "</option>";
                     });
-                    content = "\n                    <select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">\n                        " + hosts.join('') + "\n                    </select>";
+                    content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + hosts.join('') + "</select>";
                     this.createHostChangedEvent(object, id);
                     break;
                 case 'scheduler':
@@ -199,7 +199,7 @@ var JsonProperty = (function () {
                         var isSelected = value === object.job_scheduler ? 'selected' : '';
                         return "<option value=\"" + value + "\" " + isSelected + ">" + value + "</option>";
                     });
-                    content = "\n                    <select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">\n                        " + schedulers.join('') + "\n                    </select>";
+                    content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + schedulers.join('') + "</select>";
                     this.createSchedulerChangedEvent(object, id);
                     break;
                 default:
@@ -221,28 +221,37 @@ var JsonProperty = (function () {
      * @param key
      * @param prop
      */
-    JsonProperty.prototype.setupButtonEvent = function (object, key, prop) {
+    JsonProperty.prototype.setupButtonEvent = function (object, key, props) {
         var _this = this;
-        var id = "button_property_" + JsonProperty.counter++;
-        $(document).on('click', "#" + id, function () {
-            if (prop.callback) {
-                prop.callback(_this.child, object);
+        var html = [];
+        var title;
+        props.forEach(function (prop) {
+            var id = "button_property_" + JsonProperty.counter++;
+            if (!prop.validation || prop.validation(_this.child)) {
+                $(document).on('click', "#" + id, function (eventObject) {
+                    var element = $(eventObject.target);
+                    if (prop.callback) {
+                        prop.callback(_this.child, object);
+                    }
+                    if (prop.isUpdateUI) {
+                        _this.updateDisplay();
+                        $(document).trigger('updateDisplay');
+                    }
+                });
+                _this.events["#" + id] = 'click';
             }
-            if (prop.isUpdateUI) {
-                _this.updateDisplay();
-                $(document).trigger('updateDisplay');
+            else {
+                _this.property.ready(function () {
+                    $("#" + id).prop('disabled', true).class('disable_button button');
+                });
+                _this.events['#property'] = 'ready';
             }
+            if (title === undefined) {
+                title = _this.createItemName(prop.title);
+            }
+            html.push("<input type=\"button\" value=\"" + prop.key + "\" class=\"button\" id=\"" + id + "\">");
         });
-        this.events["#" + id] = 'click';
-        return this.createButtonHtml(prop, id);
-    };
-    /**
-     *
-     * @param prop
-     * @param buttonName
-     */
-    JsonProperty.prototype.createButtonHtml = function (prop, id) {
-        return "\n            <hr>\n            <div>" + this.createItemName(prop.title) + "\n                <div><input type=\"button\" value=\"" + prop.key + "\" class=\"button\" id=" + id + "></div>\n            </div>";
+        return "<hr><div>" + title + "<div>" + html.join('') + "</div></div>";
     };
     /**
      * create property item name
@@ -322,6 +331,7 @@ var JsonProperty = (function () {
         if (html.length) {
             parentHtml.push(createTableHtml(html));
         }
+        parentHtml.push('<hr>');
         return parentHtml.join('');
     };
     /**

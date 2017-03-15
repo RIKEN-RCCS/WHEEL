@@ -28,7 +28,7 @@ var JsonFileTypeBase = (function () {
         this.propertyInfo = [
             {
                 key: 'name',
-                readonly: false,
+                readonly: function () { return false; },
                 type: 'string',
                 isUpdateUI: true,
                 order: 0,
@@ -43,7 +43,7 @@ var JsonFileTypeBase = (function () {
             },
             {
                 key: 'description',
-                readonly: false,
+                readonly: function () { return false; },
                 type: 'string',
                 order: 10,
                 callback: function (tree, object, description) {
@@ -54,7 +54,7 @@ var JsonFileTypeBase = (function () {
             },
             {
                 key: 'path',
-                readonly: false,
+                readonly: function () { return false; },
                 type: 'string',
                 order: 20,
                 validation: function (tree, v) {
@@ -68,14 +68,13 @@ var JsonFileTypeBase = (function () {
             },
             {
                 key: 'clean_up',
-                title: 'property',
-                readonly: false,
+                readonly: function () { return false; },
                 type: 'boolean',
                 order: 300
             },
             {
                 key: 'max_size_receive_file',
-                readonly: false,
+                readonly: function () { return false; },
                 type: 'number',
                 order: 310
             }
@@ -120,32 +119,71 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true,
+                    readonly: function (tree, sendFile) { return tree.isExistUploadScript(); },
                     type: 'string',
                 }
             ],
-            button: {
-                key: 'Browse',
-                title: 'script',
-                callback: function (tree) {
-                    $(document).trigger('selectFile', {
-                        isMultiple: false,
-                        callback: function (files) {
-                            tree.setScriptPath(files[0]);
-                        }
-                    });
+            button: [{
+                    key: 'Browse',
+                    title: 'script',
+                    callback: function (tree) {
+                        $(document).trigger('selectFile', {
+                            isMultiple: false,
+                            callback: function (files) {
+                                tree.setScriptPath(files[0]);
+                            }
+                        });
+                    }
+                }]
+        });
+    };
+    JsonFileTypeBase.prototype.addScriptForJob = function () {
+        this.propertyInfo.push({
+            key: 'script',
+            ishash: true,
+            order: 30,
+            item: [
+                {
+                    key: 'name',
+                    readonly: function () { return false; },
+                    type: 'string'
+                },
+                {
+                    key: 'description',
+                    readonly: function () { return false; },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: function () { return true; },
+                    type: 'string'
                 }
-            }
+            ],
+            button: [{
+                    key: 'Edit',
+                    title: 'submit_script',
+                    validation: function (tree) {
+                        if (tree.job_script.path) {
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                    },
+                    callback: function (tree) {
+                        $(document).trigger('editFile');
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.addJobScript = function () {
@@ -156,17 +194,32 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: true
+                    readonly: function () { return false; },
+                    type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: true
+                    readonly: function () { return false; },
+                    type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true
+                    readonly: function () { return true; },
+                    type: 'string'
                 }
-            ]
+            ],
+            button: [{
+                    key: 'Browse',
+                    title: 'job_script',
+                    callback: function (tree) {
+                        $(document).trigger('selectFile', {
+                            isMultiple: false,
+                            callback: function (files) {
+                                tree.setJobScriptPath(files[0]);
+                            }
+                        });
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.addForParam = function () {
@@ -177,7 +230,7 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'start',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'number',
                     validation: function (tree, v) {
                         var num = parseInt(v);
@@ -189,7 +242,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'end',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'number',
                     validation: function (tree, v) {
                         var num = parseInt(v);
@@ -201,7 +254,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'step',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'number',
                     validation: function (tree, v) {
                         return parseInt(v) > 0;
@@ -215,17 +268,17 @@ var JsonFileTypeBase = (function () {
             key: 'input_files',
             ishash: true,
             order: 100,
-            button: {
-                key: 'Add',
-                title: 'input_files',
-                isUpdateUI: true,
-                callback: function (tree) {
-                    var file = SwfFile.getDefault();
-                    var parent = tree.getParent();
-                    tree.input_files.push(file);
-                    parent.addInputFileToParent(tree, file.path);
-                }
-            }
+            button: [{
+                    key: 'Add',
+                    title: 'input_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        var file = SwfFile.getDefault();
+                        var parent = tree.getParent();
+                        tree.input_files.push(file);
+                        parent.addInputFileToParent(tree, file.path);
+                    }
+                }]
         });
         this.propertyInfo.push({
             key: 'input_files',
@@ -234,7 +287,7 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     isUpdateUI: true,
                     validation: function (tree, v) {
@@ -248,7 +301,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     callback: function (tree, object, description) {
                         var file = new SwfFile(object);
@@ -258,7 +311,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'path',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     isUpdateUI: true,
                     validation: function (tree, newData, oldData) {
@@ -277,7 +330,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'required',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'boolean',
                     callback: function (tree, object, value) {
                         var file = new SwfFile(object);
@@ -286,18 +339,18 @@ var JsonFileTypeBase = (function () {
                     }
                 }
             ],
-            button: {
-                key: 'Delete',
-                title: 'input_file',
-                isUpdateUI: true,
-                callback: function (tree, object) {
-                    var filepath = object.path;
-                    var parent = tree.getParent();
-                    parent.deleteInputFileFromParent(tree, filepath);
-                    var index = tree.input_files.indexOf(object);
-                    tree.input_files.splice(index, 1);
-                }
-            }
+            button: [{
+                    key: 'Delete',
+                    title: 'input_file',
+                    isUpdateUI: true,
+                    callback: function (tree, object) {
+                        var filepath = object.path;
+                        var parent = tree.getParent();
+                        parent.deleteInputFileFromParent(tree, filepath);
+                        var index = tree.input_files.indexOf(object);
+                        tree.input_files.splice(index, 1);
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.addOutputFile = function () {
@@ -305,17 +358,17 @@ var JsonFileTypeBase = (function () {
             key: 'output_files',
             ishash: true,
             order: 110,
-            button: {
-                key: 'Add',
-                title: 'output_files',
-                isUpdateUI: true,
-                callback: function (tree) {
-                    var file = SwfFile.getDefault();
-                    var parent = tree.getParent();
-                    tree.output_files.push(file);
-                    parent.addOutputFileToParent(tree, file.path);
-                }
-            }
+            button: [{
+                    key: 'Add',
+                    title: 'output_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        var file = SwfFile.getDefault();
+                        var parent = tree.getParent();
+                        tree.output_files.push(file);
+                        parent.addOutputFileToParent(tree, file.path);
+                    }
+                }]
         });
         this.propertyInfo.push({
             key: 'output_files',
@@ -324,7 +377,7 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     isUpdateUI: true,
                     validation: function (tree, v) {
@@ -338,7 +391,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     callback: function (tree, object, description) {
                         var file = new SwfFile(object);
@@ -348,7 +401,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'path',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     isUpdateUI: true,
                     validation: function (tree, newData, oldData) {
@@ -367,7 +420,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'required',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'boolean',
                     callback: function (tree, object, value) {
                         var file = new SwfFile(object);
@@ -376,18 +429,18 @@ var JsonFileTypeBase = (function () {
                     }
                 }
             ],
-            button: {
-                key: 'Delete',
-                title: 'output_file',
-                isUpdateUI: true,
-                callback: function (tree, object) {
-                    var filepath = object.path;
-                    var parent = tree.getParent();
-                    parent.deleteOutputFileFromParent(tree, filepath);
-                    var index = tree.output_files.indexOf(object);
-                    tree.output_files.splice(index, 1);
-                }
-            }
+            button: [{
+                    key: 'Delete',
+                    title: 'output_file',
+                    isUpdateUI: true,
+                    callback: function (tree, object) {
+                        var filepath = object.path;
+                        var parent = tree.getParent();
+                        parent.deleteOutputFileFromParent(tree, filepath);
+                        var index = tree.output_files.indexOf(object);
+                        tree.output_files.splice(index, 1);
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.addSendFile = function () {
@@ -395,28 +448,39 @@ var JsonFileTypeBase = (function () {
             key: 'send_files',
             ishash: true,
             order: 120,
-            button: {
-                key: 'Browse',
-                title: 'send_files',
-                isUpdateUI: true,
-                callback: function (tree) {
-                    $(document).trigger('selectFile', {
-                        isMultiple: true,
-                        callback: function (files) {
-                            tree.setSendFilepath(files);
-                        }
-                    });
+            button: [
+                {
+                    key: 'Browse',
+                    title: 'send_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        $(document).trigger('selectFile', {
+                            isMultiple: true,
+                            callback: function (files) {
+                                tree.setSendFilepath(files);
+                            }
+                        });
+                    }
+                },
+                {
+                    key: 'Add',
+                    title: 'send_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        var file = SwfFile.getDefault();
+                        tree.send_files.push(file);
+                    }
                 }
-            }
+            ]
         });
         this.propertyInfo.push({
             key: 'send_files',
             isarray: true,
-            order: 121,
+            order: 122,
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     validation: function (tree, v) {
                         return v.trim() ? true : false;
@@ -424,22 +488,31 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true
+                    type: 'string',
+                    readonly: function (tree, sendFile) {
+                        return tree.isExistSendfile(sendFile);
+                    },
+                    validation: function (tree, v) {
+                        return !tree.isEnablePath(v);
+                    },
+                    callback: function (tree, object, path) {
+                        object.type = ClientUtility.getIOFileType(path);
+                    }
                 }
             ],
-            button: {
-                key: 'Delete',
-                title: 'send_file',
-                isUpdateUI: true,
-                callback: function (tree, object, name) {
-                    tree.deleteSendfile(object);
-                }
-            }
+            button: [{
+                    key: 'Delete',
+                    title: 'send_file',
+                    isUpdateUI: true,
+                    callback: function (tree, object, name) {
+                        tree.deleteSendfile(object);
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.addReceiveFile = function () {
@@ -447,15 +520,15 @@ var JsonFileTypeBase = (function () {
             key: 'receive_files',
             ishash: true,
             order: 130,
-            button: {
-                key: 'Add',
-                title: 'receive_files',
-                isUpdateUI: true,
-                callback: function (tree) {
-                    var file = SwfFile.getDefault();
-                    tree.receive_files.push(file);
-                }
-            }
+            button: [{
+                    key: 'Add',
+                    title: 'receive_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        var file = SwfFile.getDefault();
+                        tree.receive_files.push(file);
+                    }
+                }]
         });
         this.propertyInfo.push({
             key: 'receive_files',
@@ -464,7 +537,7 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string',
                     validation: function (tree, v) {
                         return v.trim() ? true : false;
@@ -472,12 +545,12 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: false,
+                    readonly: function () { return true; },
                     type: 'string',
                     validation: function (tree, v) {
                         return !tree.isEnablePath(v);
@@ -487,17 +560,17 @@ var JsonFileTypeBase = (function () {
                     }
                 }
             ],
-            button: {
-                key: 'Delete',
-                title: 'receive_file',
-                isUpdateUI: true,
-                callback: function (tree, object, name) {
-                    var filepath = object.path;
-                    var parent = tree.getParent();
-                    var index = tree.receive_files.indexOf(object);
-                    tree.receive_files.splice(index, 1);
-                }
-            }
+            button: [{
+                    key: 'Delete',
+                    title: 'receive_file',
+                    isUpdateUI: true,
+                    callback: function (tree, object, name) {
+                        var filepath = object.path;
+                        var parent = tree.getParent();
+                        var index = tree.receive_files.indexOf(object);
+                        tree.receive_files.splice(index, 1);
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.addScriptParam = function () {
@@ -508,7 +581,7 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'cores',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'number',
                     validation: function (tree, v) {
                         return parseInt(v) > 0;
@@ -516,7 +589,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'nodes',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'number',
                     validation: function (tree, v) {
                         return parseInt(v) > 0;
@@ -533,32 +606,32 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true,
+                    readonly: function () { return true; },
                     type: 'string',
                 }
             ],
-            button: {
-                key: 'Browse',
-                title: 'parameter_file',
-                callback: function (tree) {
-                    $(document).trigger('selectFile', {
-                        isMultiple: false,
-                        callback: function (files) {
-                            tree.setParameterFile(files[0]);
-                        }
-                    });
-                }
-            }
+            button: [{
+                    key: 'Browse',
+                    title: 'parameter_file',
+                    callback: function (tree) {
+                        $(document).trigger('selectFile', {
+                            isMultiple: false,
+                            callback: function (files) {
+                                tree.setParameterFilePath(files[0]);
+                            }
+                        });
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.addHost = function () {
@@ -569,15 +642,68 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'host',
-                    readonly: false,
+                    readonly: function () { return false; },
+                    type: 'host'
+                }
+            ]
+        });
+    };
+    JsonFileTypeBase.prototype.addHostForJob = function () {
+        this.propertyInfo.push({
+            key: 'host',
+            ishash: true,
+            order: 200,
+            item: [
+                {
+                    key: 'host',
+                    readonly: function () { return false; },
                     type: 'host'
                 },
                 {
                     key: 'job_scheduler',
-                    readonly: false,
+                    readonly: function () { return false; },
                     type: 'scheduler'
                 }
             ]
+        });
+    };
+    JsonFileTypeBase.prototype.addUpload = function () {
+        this.propertyInfo.push({
+            key: 'upload_files',
+            ishash: true,
+            order: 400,
+            button: [{
+                    key: 'Browse',
+                    title: 'upload_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        $(document).trigger('selectFile', {
+                            isMultiple: true,
+                            callback: function (files) {
+                                tree.setUploadFilePath(files);
+                            }
+                        });
+                    }
+                }]
+        });
+        this.propertyInfo.push({
+            key: 'upload_files',
+            isarray: true,
+            order: 401,
+            item: [
+                {
+                    key: 'name',
+                    readonly: function () { return true; }
+                }
+            ],
+            button: [{
+                    key: 'Delete',
+                    title: 'upload_file',
+                    isUpdateUI: true,
+                    callback: function (tree, object, name) {
+                        tree.deleteUploadfile(object);
+                    }
+                }]
         });
     };
     JsonFileTypeBase.prototype.getPropertyInfo = function () {
@@ -617,6 +743,7 @@ var TypeTask = (function (_super) {
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
+        _this.addUpload();
         return _this;
     }
     return TypeTask;
@@ -630,6 +757,7 @@ var TypeWorkflow = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.workflow;
         _this.type = config.json_types.workflow;
+        _this.addUpload();
         return _this;
     }
     return TypeWorkflow;
@@ -643,14 +771,14 @@ var TypeJob = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.job;
         _this.type = config.json_types.job;
-        _this.addScript();
+        _this.addScriptForJob();
         _this.addJobScript();
         _this.addInputFile();
         _this.addOutputFile();
         _this.addSendFile();
         _this.addReceiveFile();
         _this.addScriptParam();
-        _this.addHost();
+        _this.addHostForJob();
         return _this;
     }
     return TypeJob;
@@ -684,6 +812,7 @@ var TypeLoop = (function (_super) {
         _this.extension = config.extension.loop;
         _this.type = config.json_types.loop;
         _this.addForParam();
+        _this.addUpload();
         return _this;
     }
     return TypeLoop;
@@ -697,6 +826,7 @@ var TypeIf = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.if;
         _this.type = config.json_types.if;
+        _this.addUpload();
         return _this;
     }
     return TypeIf;
@@ -710,6 +840,7 @@ var TypeElse = (function (_super) {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.else;
         _this.type = config.json_types.else;
+        _this.addUpload();
         return _this;
     }
     return TypeElse;
@@ -725,6 +856,7 @@ var TypeCondition = (function (_super) {
         _this.type = config.json_types.condition;
         _this.addScript();
         _this.addInputFile();
+        _this.addUpload();
         return _this;
     }
     return TypeCondition;
@@ -740,6 +872,7 @@ var TypeBreak = (function (_super) {
         _this.type = config.json_types.break;
         _this.addScript();
         _this.addInputFile();
+        _this.addUpload();
         return _this;
     }
     return TypeBreak;
@@ -754,6 +887,7 @@ var TypePStudy = (function (_super) {
         _this.extension = config.extension.pstudy;
         _this.type = config.json_types.pstudy;
         _this.addParameterFile();
+        _this.addUpload();
         return _this;
     }
     return TypePStudy;

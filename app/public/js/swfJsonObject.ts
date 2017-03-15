@@ -308,4 +308,8 @@ interface SwfTreeJson extends SwfWorkflowJson {
     job_script: SwfFile;
     parameter_file: SwfFile;
     oldPath: string;
+    script_param: {
+        cores: number;
+        nodes: number;
+    };
 }

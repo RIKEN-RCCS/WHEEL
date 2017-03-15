@@ -13,7 +13,7 @@ var OpenProjectJsonEvent = (function () {
         /**
          *
          */
-        this.extension = this.config.extension;
+        this.queue = [];
     }
     /**
      *
@@ -27,12 +27,21 @@ var OpenProjectJsonEvent = (function () {
                     if (err) {
                     }
                     else {
-                        var projectJson = ServerUtility.readProjectJson(path_project);
-                        if (projectJson.state === 'Planning') {
-                            _this.createProjectJson(path_project, projectJson, socket);
+                        var projectJson_1 = ServerUtility.readProjectJson(path_project);
+                        if (projectJson_1.state === _this.config.state.planning) {
+                            _this.createProjectJson(path_project, projectJson_1, socket);
                         }
                         else {
-                            _this.updateProjectJson(path_project, projectJson, socket);
+                            _this.queue.length = 0;
+                            _this.setQueue(projectJson_1.log);
+                            _this.updateLogJson(function () {
+                                projectJson_1.state = projectJson_1.log.state;
+                                ServerUtility.writeJson(path_project, projectJson_1, function () {
+                                    socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
+                                }, function () {
+                                    socket.json.emit(OpenProjectJsonEvent.eventName);
+                                });
+                            });
                         }
                     }
                 }
@@ -45,18 +54,37 @@ var OpenProjectJsonEvent = (function () {
     };
     /**
      *
-     * @param path_project
-     * @param projectJson
-     * @param socket
+     * @param json
      */
-    OpenProjectJsonEvent.prototype.createProjectJson = function (path_project, projectJson, socket) {
-        var dir_project = path.dirname(path_project);
-        var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
-        projectJson.log = ServerUtility.createLogJson(path_workflow);
-        ServerUtility.writeJson(path_project, projectJson, function () {
-            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
-        }, function () {
-            socket.json.emit(OpenProjectJsonEvent.eventName);
+    OpenProjectJsonEvent.prototype.setQueue = function (json) {
+        var _this = this;
+        this.queue.push(json);
+        if (json.children) {
+            json.children.forEach(function (child) {
+                _this.setQueue(child);
+            });
+        }
+    };
+    /**
+     *
+     * @param callback
+     */
+    OpenProjectJsonEvent.prototype.updateLogJson = function (callback) {
+        var _this = this;
+        var json = this.queue.shift();
+        if (!json) {
+            callback();
+            return;
+        }
+        var logFilePath = path.join(json.path, this.config.system_name + ".log");
+        fs.readFile(logFilePath, function (err, data) {
+            if (!err) {
+                var readJson = JSON.parse(data.toString());
+                json.state = readJson.state;
+                json.execution_start_date = readJson.execution_start_date;
+                json.execution_end_date = readJson.execution_end_date;
+            }
+            _this.updateLogJson(callback);
         });
     };
     /**
@@ -65,8 +93,10 @@ var OpenProjectJsonEvent = (function () {
      * @param projectJson
      * @param socket
      */
-    OpenProjectJsonEvent.prototype.updateProjectJson = function (path_project, projectJson, socket) {
-        projectJson.log = ServerUtility.readLogJson(projectJson.log);
+    OpenProjectJsonEvent.prototype.createProjectJson = function (path_project, projectJson, socket) {
+        var dir_project = path.dirname(path_project);
+        var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
+        projectJson.log = ServerUtility.createLogJson(path_workflow);
         ServerUtility.writeJson(path_project, projectJson, function () {
             socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
         }, function () {

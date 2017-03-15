@@ -1,12 +1,12 @@
 [
-    {
-        "name": "RIKEN K computer",
-        "host": "localhost",
-        "path": "/",
-        "username": "",
-        "description": "",
-        "job_scheduler": ""
-    },
+	{
+		"name": "local",
+		"host": "localhost",
+		"path": "/",
+		"username": "",
+		"description": "",
+		"job_scheduler": ""
+	},
     {
         "name": "password",
         "host": "10.113.42.234",

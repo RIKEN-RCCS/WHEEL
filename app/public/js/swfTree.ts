@@ -12,15 +12,16 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     public job_script: SwfFile;
     public parameter_file: SwfFile;
     public oldPath: string;
+    public script_param: {
+        cores: number;
+        nodes: number;
+    };
 
     private uploadScript: File;
     private uploadParamFile: File;
     private uploadSendfiles: File[] = [];
+    private upload_files: File[] = [];
     private indexes: number[] = [];
-    private script_param: {
-        cores: number;
-        nodes: number;
-    };
 
     /**
      *
@@ -123,10 +124,11 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     /**
      *
      * @param treeJson
-     * @param dirname
      * @param fileType
      */
-    public addChild(treeJson: SwfTreeJson, dirname: string, fileType: JsonFileType): SwfTree {
+    public addChild(treeJson: SwfTreeJson, fileType: JsonFileType): SwfTree {
+        const rand = Math.floor(Date.now() / 100) % 100000;
+        const dirname = `${treeJson.type}Dir${`00000${rand}`.slice(-5)}`;
         const tree = new SwfTree(treeJson);
         tree.path = dirname;
         this.children.push(tree);
@@ -243,8 +245,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             });
 
             delete tree.indexes;
-            delete tree.script_param;
             delete tree.uploadScript;
+            delete tree.uploadSendfiles;
+            delete tree.uploadParamFile;
+            delete tree.upload_files;
             Object.keys(this).forEach(key => {
                 if (this[key] == null) {
                     delete this[key];
@@ -285,17 +289,18 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         const output = this.output_files.filter(file => {
             return this.getFullpath(file.path) === fullpath;
         });
+        const send = this.send_files.filter(file => {
+            return this.getFullpath(file.path) === fullpath;
+        });
+        const receive = this.receive_files.filter(file => {
+            return this.getFullpath(file.path) === fullpath;
+        });
 
-        if (input[0]) {
+        if (input[0] || output[0] || send[0] || receive[0]) {
             return true;
         }
         else {
-            if (output[0]) {
-                return true;
-            }
-            else {
-                return false;
-            }
+            return false;
         }
     }
 
@@ -630,15 +635,19 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         this.script.path = file.name;
     }
 
-    public setParameterFile(file: File) {
+    public setJobScriptPath(file: File) {
+        this.uploadScript = file;
+        this.job_script.path = file.name;
+    }
+
+    public setParameterFilePath(file: File) {
         this.uploadParamFile = file;
         this.parameter_file.path = file.name;
     }
 
     public setSendFilepath(files: FileList) {
-        this.uploadSendfiles = [];
-        this.send_files = [];
         for (let index = 0; index < files.length; index++) {
+            this.deleteSendfile(files[index].name);
             this.uploadSendfiles.push(files[index]);
             this.send_files.push(new SwfFile({
                 name: 'name',
@@ -650,16 +659,55 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         }
     }
 
-    public deleteSendfile(file: SwfFile) {
-        const index = this.send_files.indexOf(file);
-        this.send_files.splice(index, 1);
-        for (let index = this.uploadSendfiles.length - 1; index >= 0; index--) {
-            this.uploadSendfiles.forEach(send => {
-                if (send.name === file.path) {
-                    this.uploadSendfiles.splice(index, 1);
-                }
-            });
+    public deleteSendfile(target: (SwfFile | string)) {
+        let filepath: string;
+        if (typeof target === 'string') {
+            filepath = target;
         }
+        else {
+            filepath = target.path;
+        }
+
+        for (let index = this.send_files.length - 1; index >= 0; index--) {
+            if (this.send_files[index].path === filepath) {
+                this.send_files.splice(index, 1);
+            }
+        }
+
+        for (let index = this.uploadSendfiles.length - 1; index >= 0; index--) {
+            if (this.uploadSendfiles[index].name === filepath) {
+                this.uploadSendfiles.splice(index, 1);
+            }
+        }
+    }
+
+    public setUploadFilePath(files: FileList) {
+        this.upload_files = [];
+        for (let index = 0; index < files.length; index++) {
+            this.upload_files.push(files[index]);
+        }
+    }
+
+    public deleteUploadfile(file: File) {
+        for (let index = this.upload_files.length - 1; index >= 0; index--) {
+            if (this.upload_files[index].name === file.name) {
+                this.upload_files.splice(index, 1);
+            }
+        }
+    }
+
+    public isExistSendfile(sendFile: SwfFile) {
+        const target = this.uploadSendfiles.filter(file => file.name === sendFile.path)[0];
+        if (target) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public isExistUploadScript() {
+        return this.uploadScript != null;
     }
 
     public static getUploadFiles(projectDirectory: string): UploadFileData[] {
@@ -683,6 +731,12 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
                 });
             }
             tree.uploadSendfiles.forEach(file => {
+                files.push({
+                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
+                    file: file
+                });
+            });
+            tree.upload_files.forEach(file => {
                 files.push({
                     path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
                     file: file

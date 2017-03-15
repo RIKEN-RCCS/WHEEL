@@ -21,13 +21,13 @@ enum JsonFileType {
  */
 interface PropertyInfo {
     key: string;
-    readonly: boolean;
+    title: string;
+    readonly: Function;
     type: string;
-    isUpdateUI: boolean,
+    isUpdateUI: boolean;
     validation: Function;
     callback: Function;
     order: number;
-    title: string;
 }
 
 /**
@@ -40,7 +40,7 @@ class JsonFileTypeBase {
     protected propertyInfo: any = [
         {
             key: 'name',
-            readonly: false,
+            readonly: () => { return false },
             type: 'string',
             isUpdateUI: true,
             order: 0,
@@ -55,7 +55,7 @@ class JsonFileTypeBase {
         },
         {
             key: 'description',
-            readonly: false,
+            readonly: () => { return false },
             type: 'string',
             order: 10,
             callback: (tree: SwfTree, object: any, description: string) => {
@@ -66,7 +66,7 @@ class JsonFileTypeBase {
         },
         {
             key: 'path',
-            readonly: false,
+            readonly: () => { return false },
             type: 'string',
             order: 20,
             validation: (tree: SwfTree, v: string): boolean => {
@@ -80,14 +80,13 @@ class JsonFileTypeBase {
         },
         {
             key: 'clean_up',
-            title: 'property',
-            readonly: false,
+            readonly: () => { return false },
             type: 'boolean',
             order: 300
         },
         {
             key: 'max_size_receive_file',
-            readonly: false,
+            readonly: () => { return false },
             type: 'number',
             order: 310
         }
@@ -132,21 +131,21 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true,
+                    readonly: (tree: SwfTree, sendFile: SwfFile) => { return tree.isExistUploadScript() },
                     type: 'string',
                 }
             ],
-            button: {
+            button: [{
                 key: 'Browse',
                 title: 'script',
                 callback: (tree: SwfTree) => {
@@ -157,7 +156,46 @@ class JsonFileTypeBase {
                         }
                     });
                 }
-            }
+            }]
+        });
+    }
+    protected addScriptForJob() {
+        this.propertyInfo.push({
+            key: 'script',
+            ishash: true,
+            order: 30,
+            item: [
+                {
+                    key: 'name',
+                    readonly: () => { return false },
+                    type: 'string'
+                },
+                {
+                    key: 'description',
+                    readonly: () => { return false },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: () => { return true },
+                    type: 'string'
+                }
+            ],
+            button: [{
+                key: 'Edit',
+                title: 'submit_script',
+                validation: (tree: SwfTree) => {
+                    if (tree.job_script.path) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                },
+                callback: (tree: SwfTree) => {
+                    $(document).trigger('editFile');
+                }
+            }]
         });
     }
     protected addJobScript() {
@@ -168,17 +206,32 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'name',
-                    readonly: true
+                    readonly: () => { return false },
+                    type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: true
+                    readonly: () => { return false },
+                    type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true
+                    readonly: () => { return true },
+                    type: 'string'
                 }
-            ]
+            ],
+            button: [{
+                key: 'Browse',
+                title: 'job_script',
+                callback: (tree: SwfTree) => {
+                    $(document).trigger('selectFile', {
+                        isMultiple: false,
+                        callback: (files: FileList) => {
+                            tree.setJobScriptPath(files[0]);
+                        }
+                    });
+                }
+            }]
         });
     }
     protected addForParam() {
@@ -189,7 +242,7 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'start',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'number',
                     validation: (tree: SwfTree, v: string): boolean => {
                         const num: number = parseInt(v);
@@ -201,7 +254,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'end',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'number',
                     validation: (tree: SwfTree, v: string): boolean => {
                         const num: number = parseInt(v);
@@ -213,7 +266,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'step',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'number',
                     validation: (tree: SwfTree, v: string): boolean => {
                         return parseInt(v) > 0;
@@ -227,7 +280,7 @@ class JsonFileTypeBase {
             key: 'input_files',
             ishash: true,
             order: 100,
-            button: {
+            button: [{
                 key: 'Add',
                 title: 'input_files',
                 isUpdateUI: true,
@@ -237,7 +290,7 @@ class JsonFileTypeBase {
                     tree.input_files.push(file);
                     parent.addInputFileToParent(tree, file.path);
                 }
-            }
+            }]
         });
         this.propertyInfo.push({
             key: 'input_files',
@@ -246,7 +299,7 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     isUpdateUI: true,
                     validation: (tree: SwfTree, v: string): boolean => {
@@ -260,7 +313,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     callback: (tree: SwfTree, object: any, description: string) => {
                         const file = new SwfFile(object);
@@ -270,7 +323,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'path',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     isUpdateUI: true,
                     validation: (tree: SwfTree, newData: string, oldData: string): boolean => {
@@ -289,7 +342,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'required',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'boolean',
                     callback: (tree: SwfTree, object: any, value: string) => {
                         const file = new SwfFile(object);
@@ -298,7 +351,7 @@ class JsonFileTypeBase {
                     }
                 }
             ],
-            button: {
+            button: [{
                 key: 'Delete',
                 title: 'input_file',
                 isUpdateUI: true,
@@ -309,7 +362,7 @@ class JsonFileTypeBase {
                     const index = tree.input_files.indexOf(object);
                     tree.input_files.splice(index, 1);
                 }
-            }
+            }]
         });
     }
     protected addOutputFile() {
@@ -317,7 +370,7 @@ class JsonFileTypeBase {
             key: 'output_files',
             ishash: true,
             order: 110,
-            button: {
+            button: [{
                 key: 'Add',
                 title: 'output_files',
                 isUpdateUI: true,
@@ -327,7 +380,7 @@ class JsonFileTypeBase {
                     tree.output_files.push(file);
                     parent.addOutputFileToParent(tree, file.path);
                 }
-            }
+            }]
         });
         this.propertyInfo.push({
             key: 'output_files',
@@ -336,7 +389,7 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     isUpdateUI: true,
                     validation: (tree: SwfTree, v: string): boolean => {
@@ -350,7 +403,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     callback: (tree: SwfTree, object: any, description: string) => {
                         const file = new SwfFile(object);
@@ -360,7 +413,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'path',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     isUpdateUI: true,
                     validation: (tree: SwfTree, newData: string, oldData: string): boolean => {
@@ -379,7 +432,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'required',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'boolean',
                     callback: (tree: SwfTree, object: any, value: string) => {
                         const file = new SwfFile(object);
@@ -388,7 +441,7 @@ class JsonFileTypeBase {
                     }
                 }
             ],
-            button: {
+            button: [{
                 key: 'Delete',
                 title: 'output_file',
                 isUpdateUI: true,
@@ -399,7 +452,7 @@ class JsonFileTypeBase {
                     const index = tree.output_files.indexOf(object);
                     tree.output_files.splice(index, 1);
                 }
-            }
+            }]
         });
     }
     protected addSendFile() {
@@ -407,28 +460,39 @@ class JsonFileTypeBase {
             key: 'send_files',
             ishash: true,
             order: 120,
-            button: {
-                key: 'Browse',
-                title: 'send_files',
-                isUpdateUI: true,
-                callback: (tree: SwfTree) => {
-                    $(document).trigger('selectFile', {
-                        isMultiple: true,
-                        callback: (files: FileList) => {
-                            tree.setSendFilepath(files);
-                        }
-                    });
+            button: [
+                {
+                    key: 'Browse',
+                    title: 'send_files',
+                    isUpdateUI: true,
+                    callback: (tree: SwfTree) => {
+                        $(document).trigger('selectFile', {
+                            isMultiple: true,
+                            callback: (files: FileList) => {
+                                tree.setSendFilepath(files);
+                            }
+                        });
+                    }
+                },
+                {
+                    key: 'Add',
+                    title: 'send_files',
+                    isUpdateUI: true,
+                    callback: (tree: SwfTree) => {
+                        const file = SwfFile.getDefault();
+                        tree.send_files.push(file);
+                    }
                 }
-            }
+            ]
         });
         this.propertyInfo.push({
             key: 'send_files',
             isarray: true,
-            order: 121,
+            order: 122,
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     validation: (tree: SwfTree, v: string): boolean => {
                         return v.trim() ? true : false;
@@ -436,22 +500,31 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true
+                    type: 'string',
+                    readonly: (tree: SwfTree, sendFile: SwfFile) => {
+                        return tree.isExistSendfile(sendFile);
+                    },
+                    validation: (tree: SwfTree, v: string): boolean => {
+                        return !tree.isEnablePath(v);
+                    },
+                    callback: (tree: SwfTree, object: any, path: string) => {
+                        object.type = ClientUtility.getIOFileType(path);
+                    }
                 }
             ],
-            button: {
+            button: [{
                 key: 'Delete',
                 title: 'send_file',
                 isUpdateUI: true,
                 callback: (tree: SwfTree, object: SwfFile, name: string) => {
-                   tree.deleteSendfile(object);
+                    tree.deleteSendfile(object);
                 }
-            }
+            }]
         });
     }
     protected addReceiveFile() {
@@ -459,7 +532,7 @@ class JsonFileTypeBase {
             key: 'receive_files',
             ishash: true,
             order: 130,
-            button: {
+            button: [{
                 key: 'Add',
                 title: 'receive_files',
                 isUpdateUI: true,
@@ -467,7 +540,7 @@ class JsonFileTypeBase {
                     const file = SwfFile.getDefault();
                     tree.receive_files.push(file);
                 }
-            }
+            }]
         });
         this.propertyInfo.push({
             key: 'receive_files',
@@ -476,7 +549,7 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string',
                     validation: (tree: SwfTree, v: string): boolean => {
                         return v.trim() ? true : false;
@@ -484,12 +557,12 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: false,
+                    readonly: () => { return true },
                     type: 'string',
                     validation: (tree: SwfTree, v: string): boolean => {
                         return !tree.isEnablePath(v);
@@ -499,7 +572,7 @@ class JsonFileTypeBase {
                     }
                 }
             ],
-            button: {
+            button: [{
                 key: 'Delete',
                 title: 'receive_file',
                 isUpdateUI: true,
@@ -509,7 +582,7 @@ class JsonFileTypeBase {
                     const index = tree.receive_files.indexOf(object);
                     tree.receive_files.splice(index, 1);
                 }
-            }
+            }]
         });
     }
     protected addScriptParam() {
@@ -520,7 +593,7 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'cores',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'number',
                     validation: (tree: SwfTree, v: string): boolean => {
                         return parseInt(v) > 0;
@@ -528,7 +601,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'nodes',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'number',
                     validation: (tree: SwfTree, v: string): boolean => {
                         return parseInt(v) > 0;
@@ -545,32 +618,32 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'name',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: true,
+                    readonly: () => { return true },
                     type: 'string',
                 }
             ],
-            button: {
+            button: [{
                 key: 'Browse',
                 title: 'parameter_file',
                 callback: (tree: SwfTree) => {
                     $(document).trigger('selectFile', {
                         isMultiple: false,
                         callback: (files: FileList) => {
-                            tree.setParameterFile(files[0]);
+                            tree.setParameterFilePath(files[0]);
                         }
                     });
                 }
-            }
+            }]
         });
     }
     protected addHost() {
@@ -581,15 +654,68 @@ class JsonFileTypeBase {
             item: [
                 {
                     key: 'host',
-                    readonly: false,
+                    readonly: () => { return false },
+                    type: 'host'
+                }
+            ]
+        });
+    }
+    protected addHostForJob() {
+        this.propertyInfo.push({
+            key: 'host',
+            ishash: true,
+            order: 200,
+            item: [
+                {
+                    key: 'host',
+                    readonly: () => { return false },
                     type: 'host'
                 },
                 {
                     key: 'job_scheduler',
-                    readonly: false,
+                    readonly: () => { return false },
                     type: 'scheduler'
                 }
             ]
+        });
+    }
+    protected addUpload() {
+        this.propertyInfo.push({
+            key: 'upload_files',
+            ishash: true,
+            order: 400,
+            button: [{
+                key: 'Browse',
+                title: 'upload_files',
+                isUpdateUI: true,
+                callback: (tree: SwfTree) => {
+                    $(document).trigger('selectFile', {
+                        isMultiple: true,
+                        callback: (files: FileList) => {
+                            tree.setUploadFilePath(files);
+                        }
+                    });
+                }
+            }]
+        });
+        this.propertyInfo.push({
+            key: 'upload_files',
+            isarray: true,
+            order: 401,
+            item: [
+                {
+                    key: 'name',
+                    readonly: () => { return true }
+                }
+            ],
+            button: [{
+                key: 'Delete',
+                title: 'upload_file',
+                isUpdateUI: true,
+                callback: (tree: SwfTree, object: File, name: string) => {
+                    tree.deleteUploadfile(object);
+                }
+            }]
         });
     }
     public getPropertyInfo(): any {
@@ -626,6 +752,7 @@ class TypeTask extends JsonFileTypeBase {
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
+        this.addUpload();
     }
 }
 
@@ -637,6 +764,7 @@ class TypeWorkflow extends JsonFileTypeBase {
         super();
         this.extension = config.extension.workflow;
         this.type = config.json_types.workflow;
+        this.addUpload();
     }
 }
 
@@ -648,14 +776,14 @@ class TypeJob extends JsonFileTypeBase {
         super();
         this.extension = config.extension.job;
         this.type = config.json_types.job;
-        this.addScript();
+        this.addScriptForJob();
         this.addJobScript();
         this.addInputFile();
         this.addOutputFile();
         this.addSendFile();
         this.addReceiveFile();
         this.addScriptParam();
-        this.addHost();
+        this.addHostForJob();
     }
 }
 
@@ -685,6 +813,7 @@ class TypeLoop extends JsonFileTypeBase {
         this.extension = config.extension.loop;
         this.type = config.json_types.loop;
         this.addForParam();
+        this.addUpload();
     }
 }
 
@@ -696,6 +825,7 @@ class TypeIf extends JsonFileTypeBase {
         super();
         this.extension = config.extension.if;
         this.type = config.json_types.if;
+        this.addUpload();
     }
 }
 
@@ -707,6 +837,7 @@ class TypeElse extends JsonFileTypeBase {
         super();
         this.extension = config.extension.else;
         this.type = config.json_types.else;
+        this.addUpload();
     }
 }
 
@@ -720,6 +851,7 @@ class TypeCondition extends JsonFileTypeBase {
         this.type = config.json_types.condition;
         this.addScript();
         this.addInputFile();
+        this.addUpload();
     }
 }
 
@@ -733,6 +865,7 @@ class TypeBreak extends JsonFileTypeBase {
         this.type = config.json_types.break;
         this.addScript();
         this.addInputFile();
+        this.addUpload();
     }
 }
 
@@ -745,5 +878,6 @@ class TypePStudy extends JsonFileTypeBase {
         this.extension = config.extension.pstudy;
         this.type = config.json_types.pstudy;
         this.addParameterFile();
+        this.addUpload();
     }
 }

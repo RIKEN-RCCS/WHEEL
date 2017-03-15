@@ -9,18 +9,19 @@ $(() => {
 
     const run_button = $('#run_button');
     const run_figcaption = $('#run_figcaption');
+    const stop_button = $('#stop_button');
+    const stop_menu = $('#stop_menu');
     const addressBar = $('#address_bar');
-    // TODO TSURUTA workflow -> project
-    const workflowTable = $('#workflow_table');
-    const workflowTableBody = $('#workflow_table_body');
-    const workflowSvg = $('#workflow_tree_svg');
-    const workflowName = $('#workflow_name');
-    const workflowProg = $('#workflow_progress');
-    const workflowBirth = $('#workflow_birthday');
-    const workflowUpdate = $('#workflow_update');
+    const projectTable = $('#project_table');
+    const projectTableBody = $('#project_table_body');
+    const projectSvg = $('#project_tree_svg');
+    const projectName = $('#project_name');
+    const projectProgress = $('#project_progress');
+    const projectBirth = $('#project_birthday');
+    const projectUpdate = $('#project_update');
 
-    let swfProjectJson: SwfProjectJson;
-    let swfLog: SwfLog;
+    let swfProject: SwfProject;
+    let timer: NodeJS.Timer;
 
     /**
      *
@@ -29,57 +30,61 @@ $(() => {
     const projectFilePath = cookies['project'];
 
     /**
-     * open .tree.json or open .wf.json and create .tree.json
+     *
      */
     openProjectJsonSocket.onConnect(projectFilePath, (projectJson: SwfProjectJson) => {
-        swfProjectJson = projectJson;
+        swfProject = new SwfProject(projectJson);
         addressBar.val(ClientUtility.normalize(projectFilePath));
-        workflowName.text(projectJson.name);
-        workflowSvg.empty();
+        projectName.text(projectJson.name);
+        projectSvg.empty();
 
-        if (swfProjectJson.state !== config.state.planning) {
-            setIconStop();
-        }
+        updateIcon();
 
-        swfLog = SwfLog.create(projectJson.log);
-        const tableDataHtml = createChildWorkflowHtml(swfLog);
-        workflowTableBody.html(tableDataHtml);
+        const tableDataHtml = createChildWorkflowHtml(swfProject.log);
+        projectTableBody.html(tableDataHtml);
 
-        const draw = SVG('workflow_tree_svg');
-        drawWorkflowTree(draw, swfLog);
-        draw.size((SwfLog.getMaxHierarchy() + 2) * 20, workflowTable.height());
+        const draw = SVG('project_tree_svg');
+        drawWorkflowTree(draw, swfProject.log);
+        draw.size((SwfLog.getMaxHierarchy() + 2) * 20, projectTable.height());
     });
 
     /**
-     * get workflow file stat
+     * get project file stat
      */
     getFileStatSocket.onConnect(projectFilePath, (stat: FileStat) => {
-        workflowUpdate.text(new Date(stat.mtime).toLocaleString());
-        workflowBirth.text(new Date(stat.birthtime).toLocaleString());
+        projectUpdate.text(new Date(stat.mtime).toLocaleString());
+        projectBirth.text(new Date(stat.birthtime).toLocaleString());
     });
 
     /**
-     * run workflow
+     * run project
      */
     run_button.click(() => {
         // state is planning
-        if (swfProjectJson.state === config.state.planning) {
+        if (swfProject.isPlanning()) {
             inputPasssword((passInfo: { [name: string]: string }) => {
-                setIconRun();
+                updateIcon();
                 runProjectSocket.emit(projectFilePath, passInfo, (isSucceed: boolean) => {
                     if (isSucceed) {
-                        openProjectJsonSocket.emit(projectFilePath);
-                    }
-                    else {
-
+                        startTimer();
                     }
                 });
             });
         }
-        // state is not planning
-        else {
-
+        // state is not completed or failed
+        else if (!swfProject.isFinished()) {
+            startTimer();
         }
+    });
+
+    /**
+     *
+     */
+    stop_button.click(() => {
+        if (!swfProject.isFinished()) {
+            return;
+        }
+        updateIcon();
     });
 
     /**
@@ -89,8 +94,7 @@ $(() => {
         click: function () {
             const id: string = $(this).parent().id();
             const target: SwfLog = SwfLog.getSwfLogInstance(id);
-            // TODO convert to variable
-            const rootFilepath = `${swfLog.path}/${ClientUtility.getDefaultName(JsonFileType.WorkFlow)}`;
+            const rootFilepath = `${swfProject.log.path}/${ClientUtility.getDefaultName(JsonFileType.WorkFlow)}`;
             $(document).off('click').off('mouseover').off('mouseout');
             $('<form/>', { action: '/swf/workflow_manager.html', method: 'post' })
                 .append($('<input/>', { type: 'hidden', name: 'root', value: rootFilepath }))
@@ -104,7 +108,7 @@ $(() => {
         mouseout: function () {
             $(this).textDecorateNone();
         }
-    }, '.workflow_name_not_task');
+    }, '.project_name_not_task');
 
     /**
      *
@@ -125,10 +129,10 @@ $(() => {
         let attr: string;
 
         if (!ClientUtility.isImplimentsWorkflow(swfLog.type)) {
-            attr = 'class="workflow_name_task" style="cursor: default"';
+            attr = 'class="project_name_task" style="cursor: default"';
         }
         else {
-            attr = 'class="workflow_name_not_task" style="cursor: pointer"';
+            attr = 'class="project_name_not_task" style="cursor: pointer"';
         }
         const start = swfLog.execution_start_date ? new Date(swfLog.execution_start_date).toLocaleString() : '----/--/-- --:--:--';
         const end = swfLog.execution_end_date ? new Date(swfLog.execution_end_date).toLocaleString() : '----/--/-- --:--:--';
@@ -222,16 +226,72 @@ $(() => {
     /**
      *
      */
-    function setIconStop() {
-        run_button.attr('src', '/image/icon_stop.png');
-        run_figcaption.text('STOP');
+    function updateIcon() {
+        if (swfProject.isFinished()) {
+            setIconFinish();
+        }
+        else if (swfProject.isPlanning()) {
+            setIconReady();
+        }
+        else {
+            setIconRunning();
+        }
     }
 
     /**
      *
      */
-    function setIconRun() {
+    function setIconReady() {
         run_button.attr('src', '/image/icon_run.png');
         run_figcaption.text('RUN');
+        stop_menu.css('display', 'none');
+    }
+
+    /**
+     *
+     */
+    function setIconRunning() {
+        run_button.attr('src', '/image/icon_pause.png');
+        run_figcaption.text('PAUSE');
+        stop_menu.css('display', 'block');
+    }
+
+    /**
+     *
+     */
+    function setIconFinish() {
+        run_button.attr('src', '/image/icon_clean.png');
+        run_figcaption.text('CLEAN');
+        stop_menu.css('display', 'none');
+    }
+
+    /**
+     *
+     */
+    function startTimer() {
+        if (timer != null) {
+            return;
+        }
+        openProjectJsonSocket.emit(projectFilePath);
+        console.log('start timer');
+        timer = setInterval(() => {
+            if (swfProject.isFinished()) {
+                stopTimer();
+            }
+            else {
+                openProjectJsonSocket.emit(projectFilePath);
+            }
+        }, config.reload_project_ms);
+    }
+
+    /**
+     *
+     */
+    function stopTimer() {
+        if (timer != null) {
+            console.log('stop timer');
+            clearInterval(timer);
+            timer = null;
+        }
     }
 });

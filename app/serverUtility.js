@@ -313,37 +313,6 @@ var ServerUtility = (function () {
         return logJson;
     };
     /**
-     *
-     * @param projectJson
-     */
-    ServerUtility.readLogJson = function (logJson) {
-        var _this = this;
-        var read = function (projectLog, log) {
-            try {
-                var logFilePath = path.join(projectLog.path, _this.config.system_name + ".log");
-                var json_1 = _this.readJson(logFilePath);
-                log.children.push(json_1);
-                projectLog.children.forEach(function (child) {
-                    read(child, json_1);
-                });
-            }
-            catch (err) {
-                log.children.push(projectLog);
-            }
-        };
-        try {
-            var logFilePath = path.join(logJson.path, this.config.system_name + ".log");
-            var json_2 = this.readJson(logFilePath);
-            logJson.children.forEach(function (child) {
-                read(child, json_2);
-            });
-            return json_2;
-        }
-        catch (err) {
-            return logJson;
-        }
-    };
-    /**
      * read .wf.json file tree
      * @param path_project project json file (.prj.json)
      * @return project json file

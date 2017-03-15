@@ -11,6 +11,7 @@ $(() => {
 
     const resetDialog = new YesNoDialog('Are you sure you want to reset ?');
     const saveDialog = new YesNoDialog('Are you sure you want to save ?');
+    const editDialog = new YesNoDialog('Are you sure you want to save for editing script ?');
 
     const rootWorkflow = $('#root_workflow');
     const addressBar = $('#address_bar');
@@ -62,6 +63,13 @@ $(() => {
     });
 
     /**
+     *
+     */
+    $(document).on('editFile', () => {
+        editDialog.show();
+    });
+
+    /**
      * move to workflow manager page
      */
     rootWorkflow.click(() => {
@@ -69,22 +77,45 @@ $(() => {
     });
 
     /**
+     *
+     */
+    editDialog
+        .onClickCancel()
+        .onClickOK(() => {
+            window.open('', 'editor');
+            writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
+                uploadFiles(() => {
+                    readTreeJsonSocket.emit(rootFilePath);
+                    const fullpath = `${projectDirectory}/${childTree.getFullpath(config.submit_script)}`;
+                    $('<form/>', { action: '/swf/editor.html', method: 'post', target: 'editor' })
+                        .append($('<input/>', { type: 'hidden', name: 'edit', value: fullpath }))
+                        .appendTo(document.body)
+                        .submit();
+                });
+            });
+        });
+
+    /**
      * task name changed event
      */
-    workflowName.change(() => {
-        if (parentTree.name = workflowName.val().trim()) {
-            display(taskIndex);
-        }
-        else {
-            workflowName.borderInvalid();
+    workflowName.on('keyup', (eventObject) => {
+        if (eventObject.which === 0x0D) {
+            if (parentTree.name = workflowName.val().trim()) {
+                display(taskIndex);
+            }
+            else {
+                workflowName.borderInvalid();
+            }
         }
     });
 
     /**
      * task description changed event
      */
-    workflowDesc.change(() => {
-        parentTree.description = workflowDesc.val().trim();
+    workflowDesc.on('keyup', (eventObject) => {
+        if (eventObject.which === 0x0D) {
+            parentTree.description = workflowDesc.val().trim();
+        }
     });
 
     /**
@@ -131,9 +162,7 @@ $(() => {
      */
     readTreeJsonSocket.onConnect(rootFilePath, (treeJson: SwfTreeJson) => {
         rootTree = SwfTree.create(treeJson);
-        jsonProperty.hide();
-        childTree = null;
-        display(taskIndex);
+        hideProperty();
     });
 
     /**
@@ -150,28 +179,43 @@ $(() => {
                     workflow: {
                         name: "Workflow",
                         callback: () => {
-                            createChildTree(JsonFileType.WorkFlow);
+                            createChildTree(JsonFileType.WorkFlow, parentTree, (child: SwfTree) => {
+                                hideProperty();
+                            });
                         }
                     },
                     sep1: '---------',
                     task: {
                         name: 'Task',
                         callback: () => {
-                            createChildTree(JsonFileType.Task);
+                            createChildTree(JsonFileType.Task, parentTree, (child: SwfTree) => {
+                                hideProperty();
+                            });
                         }
                     },
                     sep2: '---------',
                     rtask: {
                         name: 'RemoteTask',
                         callback: () => {
-                            createChildTree(JsonFileType.RemoteTask);
+                            createChildTree(JsonFileType.RemoteTask, parentTree, (child: SwfTree) => {
+                                getHostList(() => {
+                                    child.host = new SwfHost(hostInfos[0]);
+                                });
+                                hideProperty();
+                            });
                         }
                     },
                     sep3: '---------',
                     job: {
                         name: 'Job',
                         callback: () => {
-                            createChildTree(JsonFileType.Job);
+                            createChildTree(JsonFileType.Job, parentTree, (child: SwfTree) => {
+                                getHostList(() => {
+                                    child.host = new SwfHost(hostInfos[0]);
+                                    child.host.job_scheduler = config.scheduler.TCS;
+                                });
+                                hideProperty();
+                            });
                         }
                     },
                     sep4: '---------',
@@ -179,21 +223,33 @@ $(() => {
                     loop: {
                         name: 'Loop',
                         callback: () => {
-                            createChildTree(JsonFileType.Loop);
+                            createChildTree(JsonFileType.Loop, parentTree, (child: SwfTree) => {
+                                hideProperty();
+                            });
                         }
                     },
                     sep6: '---------',
                     if: {
                         name: 'If',
                         callback: () => {
-                            createChildTree(JsonFileType.If);
+                            createChildTree(JsonFileType.If, parentTree, (ifChild: SwfTree) => {
+                                createChildTree(JsonFileType.Condition, ifChild, (ifGrandson: SwfTree) => {
+                                    createChildTree(JsonFileType.Else, parentTree, (elseChild: SwfTree) => {
+                                        createChildTree(JsonFileType.Condition, elseChild, (elseGrandson: SwfTree) => {
+                                            hideProperty();
+                                        });
+                                    });
+                                });
+                            });
                         }
                     },
                     sep7: '---------',
                     break: {
                         name: 'Break',
                         callback: () => {
-                            createChildTree(JsonFileType.Break);
+                            createChildTree(JsonFileType.Break, parentTree, (child: SwfTree) => {
+                                hideProperty();
+                            });
                         },
                         disabled: () => {
                             return !ClientUtility.checkFileType(parentTree, JsonFileType.Loop);
@@ -203,7 +259,9 @@ $(() => {
                     pstudy: {
                         name: 'PStudy',
                         callback: () => {
-                            createChildTree(JsonFileType.PStudy);
+                            createChildTree(JsonFileType.PStudy, parentTree, (child: SwfTree) => {
+                                hideProperty();
+                            });
                         },
                     }
                 }
@@ -267,43 +325,30 @@ $(() => {
      * @param child
      */
     function showProperty(child: SwfTree) {
-        if (hostInfos == null) {
-            getRemoteHostListSocket.emit((hosts: SwfHostJson[]) => {
-                hostInfos = hosts;
-                jsonProperty.show(child, hostInfos);
-            });
-        }
-        else {
+        getHostList(() => {
             jsonProperty.show(child, hostInfos);
-        }
+        });
+    }
+
+    /**
+     *
+     */
+    function hideProperty() {
+        jsonProperty.hide();
+        childTree = null;
+        display(taskIndex);
     }
 
     /**
      *
      * @param fileType
      * @param tree
+     * @param callback
      */
-    function createChildTree(fileType: JsonFileType, tree?: SwfTree) {
-        if (tree == null) {
-            tree = SwfTree.getSwfTree(taskIndex);
-        }
-
+    function createChildTree(fileType: JsonFileType, tree: SwfTree, callback: ((child: SwfTree) => void)) {
         getTemplateJsonFileSocket.emit(fileType, (json: SwfTreeJson) => {
-            const rand = Math.floor(Date.now() / 100) % 100000;
-            const dirname = `${json.type}Dir${`00000${rand}`.slice(-5)}`;
-            const child = tree.addChild(json, dirname, fileType);
-
-            if (fileType === JsonFileType.If) {
-                createChildTree(JsonFileType.Condition, child);
-            }
-            else if (fileType === JsonFileType.Condition) {
-                createChildTree(JsonFileType.Else);
-            }
-            else {
-                jsonProperty.hide();
-                childTree = null;
-                display(taskIndex);
-            }
+            const child = tree.addChild(json, fileType);
+            callback(child);
         });
     }
 
@@ -326,6 +371,22 @@ $(() => {
 
     /**
      *
+     * @param callback
+     */
+    function getHostList(callback: Function) {
+        if (hostInfos == null) {
+            getRemoteHostListSocket.emit((hosts: SwfHostJson[]) => {
+                hostInfos = hosts;
+                callback();
+            });
+        }
+        else {
+            callback();
+        }
+    }
+
+    /**
+     *
      * @param tree
      */
     function getFullpath(tree: SwfTree): string {
@@ -340,17 +401,24 @@ $(() => {
      */
     function uploadFiles(callback: Function) {
         const files = SwfTree.getUploadFiles(projectDirectory);
-        const loop = () => {
-            const data = files.shift();
-            if (!data) {
-                callback();
-                return;
-            }
+        const fileCount = files.length;
+        let sendCount = 0;
 
-            fileUploadSocket.emit(data, (isUpload: boolean) => {
-                loop();
-            });
+        if (fileCount === 0) {
+            callback();
+            return;
         }
-        loop();
+
+        fileUploadSocket.onEvent((isUpload: boolean, filename: string) => {
+            sendCount++;
+            if (sendCount === fileCount) {
+                fileUploadSocket.offEvent();
+                callback();
+            }
+        });
+
+        files.forEach(data => {
+            fileUploadSocket.emit(data);
+        });
     }
 });

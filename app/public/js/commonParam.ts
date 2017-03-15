@@ -14,6 +14,8 @@ var config = {
         pstudy: '.ps.json'
     },
     default_filename: 'define',
+    submit_script: 'submit.sh',
+    system_name: 'swf',
     file_types: {
         file: 'file',
         files: 'files',
@@ -58,7 +60,7 @@ var config = {
         flow: 'orange'
     },
     scheduler: {
-        TSC: 'TCS',
+        TCS: 'TCS',
         TORQUE: 'TORQUE'
     },
     state: {
@@ -68,5 +70,6 @@ var config = {
         waiting: 'Waiting',
         completed: 'Completed',
         failed: 'Failed'
-    }
+    },
+    reload_project_ms: 2000
 };

@@ -14,6 +14,10 @@
         "condition": "./config/template.cnd.json",
         "pstudy": "./config/template.ps.json"
     },
+    "scheduler": {
+        "TCS": "./config/pjsub.sh",
+        "TORQUE": "./config/qsub.sh"
+    },
     "extension": {
         "project": ".prj.json",
         "workflow": ".wf.json",
@@ -45,6 +49,15 @@
         "break": "Break",
         "pstudy": "PStudy"
     },
+    "state": {
+        "planning": "Planning",
+        "running": "Running",
+        "rerunning": "ReRunning",
+        "waiting": "Waiting",
+        "completed": "Completed",
+        "failed": "Failed"
+    },
     "system_name": "swf",
-    "default_filename": "define"
+    "default_filename": "define",
+    "submit_script": "submit.sh"
 }

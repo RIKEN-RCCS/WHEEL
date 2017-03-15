@@ -14,17 +14,20 @@ var UploadFileSocket = (function () {
      * @param callback
      */
     UploadFileSocket.prototype.onEvent = function (callback) {
-        this.socket.once(UploadFileSocket.eventName, callback);
+        this.socket.on(UploadFileSocket.eventName, callback);
+    };
+    /**
+     *
+     */
+    UploadFileSocket.prototype.offEvent = function () {
+        this.socket.removeAllListeners(UploadFileSocket.eventName);
     };
     /**
      *
      * @param file
-     * @param filepath
-     * @param callback
      */
-    UploadFileSocket.prototype.emit = function (data, callback) {
+    UploadFileSocket.prototype.emit = function (data) {
         var _this = this;
-        this.onEvent(callback);
         var fileReader = new FileReader();
         fileReader.readAsBinaryString(data.file);
         fileReader.onload = function (eventObject) {

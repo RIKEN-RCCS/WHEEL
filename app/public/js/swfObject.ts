@@ -412,10 +412,33 @@ class SwfLog implements SwfLogJson {
 }
 
 class SwfProject implements SwfProjectJson {
-    name: string;
-    description: string;
-    state: string;
-    path: string;
-    path_workflow: string;
-    log: SwfLog;
+    public name: string;
+    public description: string;
+    public state: string;
+    public path: string;
+    public path_workflow: string;
+    public log: SwfLog;
+    public constructor(projectJson: (SwfProject | SwfProjectJson)) {
+        this.name = projectJson.name;
+        this.description = projectJson.description;
+        this.state = projectJson.state;
+        this.path = projectJson.path;
+        this.path_workflow = projectJson.path_workflow;
+        this.log = SwfLog.create(projectJson.log);
+    }
+
+    /**
+     *
+     */
+    public isPlanning(): boolean {
+        return this.state === config.state.planning;
+    }
+
+    /**
+     *
+     */
+    public isFinished(): boolean {
+        const state = config.state;
+        return this.state === state.completed || this.state === state.failed;
+    }
 }

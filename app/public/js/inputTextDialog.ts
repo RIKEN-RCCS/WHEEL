@@ -152,17 +152,18 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
         return this;
     }
 
-    public onBusy(name: string) {
+    public onBusy(name: string): InputTextDialog {
         this.disableEvent();
         this.inputText
             .prop('disabled', true);
         this.buttonOK
             .text(name)
             .prop('disabled', true)
-            .class('testing_button button');
+            .class('disable_button button');
+        return this;
     }
 
-    public offBusy() {
+    public offBusy(): InputTextDialog {
         this.enableEvent();
         this.inputText
             .prop('disabled', false);
@@ -170,5 +171,6 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
             .text('OK')
             .prop('disabled', false)
             .class('dialog_button button');
+        return this;
     }
 }
