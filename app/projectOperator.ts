@@ -532,12 +532,12 @@ class TaskOperator {
             let command: string = '';
             command += `cd ${dir_remote}\n`;
             if (job.host.job_scheduler == SwfJobScheduler.TCS) {
-                command += `pjsub ${job.script.path}\n`;
+                command += `sh ${job.script.path}\n`;
             } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
-                command += `qsub ${job.script.path}\n`;
+                command += `sh ${job.script.path}\n`;
             } else {
                 // default TCS
-                command += `pjsub ${job.script.path}\n`;
+                command += `sh ${job.script.path}\n`;
             }
 
             client.exec(command, execCallback);
