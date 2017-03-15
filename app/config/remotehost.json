@@ -1,27 +1,36 @@
 [
-    {
-        "name": "RIKEN K computer",
-        "host": "localhost",
-        "path": "/",
-        "username": "",
-        "description": "",
-        "job_scheduler": ""
-    },
-    {
-        "name": "password",
-        "host": "10.113.42.234",
-        "path": "test",
-        "username": "hsim",
-        "description": "",
-        "job_scheduler": "TORQUE"
-    },
-    {
-        "name": "key",
-        "host": "10.113.42.234",
-        "path": "test",
-        "username": "hsim",
-        "description": "",
-        "job_scheduler": "TCS",
-        "privateKey": "C:\\\\Users\\\\fj3107ft\\\\Desktop\\\\WorkFlow\\\\id_rsa"
-    }
+	{
+		"name": "RIKEN K computer",
+		"host": "localhost",
+		"path": "/",
+		"username": "",
+		"description": "",
+		"job_scheduler": ""
+	},
+	{
+		"name": "password",
+		"host": "10.113.42.234",
+		"path": "test",
+		"username": "hsim",
+		"description": "",
+		"job_scheduler": "TORQUE"
+	},
+	{
+		"name": "key",
+		"host": "10.113.42.234",
+		"path": "test",
+		"username": "hsim",
+		"description": "",
+		"job_scheduler": "TCS",
+		"privateKey": "C:\\\\Users\\\\fj3107ft\\\\Desktop\\\\WorkFlow\\\\id_rsa"
+	},
+	{
+		"name": "hayaka",
+		"host": "hayaka.cc.kyushu-u.ac.jp",
+		"path": "/home/usr0/k70000a/RC_1.0.7/RIAMC/test",
+		"username": "k70000a",
+		"description": "",
+		"job_scheduler": "",
+		"privateKey": "/home/tsuruta/.ssh/id_rsa"
+	}
 ]
