@@ -1,14 +1,14 @@
 "use strict";
 var fs = require("fs");
 /**
- *
+ * socket io communication class for gettingfile status
  */
 var GetFileStatEvent = (function () {
     function GetFileStatEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     GetFileStatEvent.prototype.onEvent = function (socket) {
         socket.on(GetFileStatEvent.eventName, function (filepath) {

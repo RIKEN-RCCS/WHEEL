@@ -1,12 +1,13 @@
 import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
-import serverUtility = require('./serverUtility');
+import ServerUtility = require('./serverUtility');
+import ServerSocketIO = require('./serverSocketIO');
 
 /**
- *
+ * socket io communication class for template json file from server
  */
-class getTemplateJsonFileEvent implements SocketListener {
+class getTemplateJsonFileEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -14,12 +15,12 @@ class getTemplateJsonFileEvent implements SocketListener {
     private static eventName = 'onGetJsonFile';
 
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(getTemplateJsonFileEvent.eventName, (filetype: JsonFileType) => {
-            const filepath = serverUtility.getTemplateFilePath(filetype);
+            const filepath = ServerUtility.getTemplateFilePath(filetype);
             fs.readFile(filepath, (err, data) => {
                 if (err) {
                     logger.error(err);

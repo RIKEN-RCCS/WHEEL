@@ -1,91 +1,105 @@
 "use strict";
 var fs = require("fs");
+var ssh2 = require("ssh2");
 var logger = require("./logger");
-var serverUtility = require("./serverUtility");
-var remote = require("./remote");
+var ServerUtility = require("./serverUtility");
 /**
- *
+ * socket io communication class for remote ssh connection test to server
  */
 var SshConnectionEvent = (function () {
     function SshConnectionEvent() {
     }
     /**
-     * @param socket:
-     * @return none
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     SshConnectionEvent.prototype.onEvent = function (socket) {
         var _this = this;
+        var succeed = function () {
+            socket.emit(SshConnectionEvent.eventName, true);
+        };
+        var failed = function () {
+            socket.emit(SshConnectionEvent.eventName, false);
+        };
         socket.on(SshConnectionEvent.eventName, function (name, password) {
-            serverUtility.getHostInfo(function (err, hostList) {
+            ServerUtility.getHostInfo(function (err, hostList) {
                 if (err) {
                     logger.error(err);
-                    socket.emit(SshConnectionEvent.eventName, false);
+                    failed();
                     return;
                 }
                 if (!hostList) {
                     logger.error('host list does not exist');
-                    socket.emit(SshConnectionEvent.eventName, false);
+                    failed();
                     return;
                 }
                 var host = hostList.filter(function (host) { return host.name === name; })[0];
                 if (!host) {
                     logger.error(name + " is not found at host list conf");
-                    socket.emit(SshConnectionEvent.eventName, false);
+                    failed();
                 }
-                if (serverUtility.isLocalHost(host.host)) {
-                    socket.emit(SshConnectionEvent.eventName, true);
+                if (ServerUtility.isLocalHost(host.host)) {
+                    succeed();
                     return;
                 }
-                _this.sshConnect(host, password, socket);
+                _this.sshConnectTest(host, password, function (err) {
+                    if (err) {
+                        logger.error(err);
+                        failed();
+                    }
+                    else {
+                        succeed();
+                    }
+                });
             });
         });
     };
     /**
      * execute ssh connect
-     * @param hostInfo: host information
-     * @param pass: input password
-     * @param socket: socket io object
+     * @param hostInfo host information
+     * @param pass input password string
+     * @param callback The function to call when we end ssh connection test
      */
-    SshConnectionEvent.prototype.sshConnect = function (hostInfo, pass, socket) {
-        var _this = this;
-        var ssh = new remote.Ssh();
+    SshConnectionEvent.prototype.sshConnectTest = function (hostInfo, pass, callback) {
         var config = {
             host: hostInfo.host,
             port: 22,
             username: hostInfo.username
         };
-        try {
-            if (hostInfo.privateKey) {
-                config.privateKey = fs.readFileSync(hostInfo.privateKey);
-                config.passphrase = pass;
-            }
-            else {
-                config.password = pass;
-            }
-            ssh.connect(config, function () {
-                _this.emitSucceed(socket);
-            }, function () {
-                _this.emitFailed(socket);
+        if (hostInfo.privateKey) {
+            config.passphrase = pass;
+            config.privateKey = fs.readFileSync(hostInfo.privateKey);
+        }
+        else {
+            config.password = pass;
+        }
+        var client = new ssh2.Client();
+        client
+            .on('connect', function () {
+            logger.debug("connected");
+        })
+            .on('ready', function () {
+            client.sftp(function (err, sftp) {
+                if (err) {
+                    callback(err);
+                }
+                else {
+                    callback();
+                }
+                client.end();
             });
-        }
-        catch (err) {
+        })
+            .on('error', function (err) {
             logger.error(err);
-            this.emitFailed(socket);
-        }
-    };
-    /**
-     * send connect is succeed
-     * @param socket: socket io object
-     */
-    SshConnectionEvent.prototype.emitSucceed = function (socket) {
-        socket.emit(SshConnectionEvent.eventName, true);
-    };
-    /**
-     * send connect is failed
-     * @param socket: socket io object
-     */
-    SshConnectionEvent.prototype.emitFailed = function (socket) {
-        socket.emit(SshConnectionEvent.eventName, false);
+            callback(err);
+        })
+            .on('close', function (had_error) {
+            logger.debug('connection close');
+        })
+            .on('end', function () {
+            logger.debug('end remote session.');
+        })
+            .connect(config);
     };
     return SshConnectionEvent;
 }());

@@ -1,11 +1,12 @@
 import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
+import ServerSocketIO = require('./serverSocketIO');
 
 /**
- *
+ * socket io communication class for gettingfile status
  */
-class GetFileStatEvent implements SocketListener {
+class GetFileStatEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -13,8 +14,8 @@ class GetFileStatEvent implements SocketListener {
     private static eventName = 'onGetFileStat';
 
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(GetFileStatEvent.eventName, (filepath: string) => {

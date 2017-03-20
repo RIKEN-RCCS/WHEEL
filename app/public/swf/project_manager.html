@@ -29,19 +29,27 @@
     <div class="subtitle">Project Manager</div>
 
     <div class="menu_area">
-        <figure class="menu_container">
+        <figure id="run_menu" class="menu_container">
             <img src="/image/icon_run.png" class="icon" id="run_button" />
-            <figcaption id="run_figcaption">RUN</figcaption>
+            <figcaption>RUN</figcaption>
+        </figure>
+        <figure id="pause_menu" class="menu_container" style="display: none">
+            <img src="/image/icon_pause.png" class="icon" id="run_button" />
+            <figcaption>PAUSE</figcaption>
+        </figure>
+        <figure id="clean_menu" class="menu_container" style="display: none">
+            <img src="/image/icon_clean.png" class="icon" id="clean_button" />
+            <figcaption>CLEAN</figcaption>
         </figure>
         <figure id="stop_menu" class="menu_container" style="display: none">
-            <img src="/image/icon_stop.png" class="icon" id="stop_button"/>
+            <img src="/image/icon_stop.png" class="icon" id="stop_button" />
             <figcaption>STOP</figcaption>
         </figure>
     </div>
 
     <div class="address_bar_area">
         <img src="/image/icon_file.png" class="file_icon">
-        <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly">
+        <input type="text" id="address_bar" class="address_bar text_box " readonly="readonly" style="background-color: rgb(70, 70, 65)">
     </div>
 
     <table class="selected_workflow">
@@ -65,11 +73,10 @@
         <div id="project_tree_svg"></div>
         <div style="width: 100%">
             <table id="project_table">
-                <thead>
+                <thead id="project_table_head">
                     <tr>
                         <th>Name</th>
                         <th>State</th>
-                        <th>Plan Date</th>
                         <th>Execution Date</th>
                         <th>Finish Date</th>
                         <th>Description</th>

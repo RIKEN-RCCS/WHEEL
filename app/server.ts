@@ -8,7 +8,6 @@ import ServerSocketIO = require('./serverSocketIO');
 import GetFileListEvent = require('./getFileListEvent');
 import RunWorkflowEvent = require('./runProjectEvent');
 import UploadFileEvent = require('./uploadFileEvent');
-import CreateDirectoryEvent = require('./createDirectoryEvent');
 import GetFileStatEvent = require('./getFileStatEvent');
 import ReadTreeJsonEvent = require('./readTreeJsonEvent');
 import OpenProjectJsonEvent = require('./openProjectJsonEvent');
@@ -25,7 +24,7 @@ import CleanProjectEvent = require('./cleanProjectEvent');
 
 const config = serverConfig.getConfig();
 const server = httpServer.start(config.port);
-const serverSocket = new ServerSocketIO(server);
+const serverSocket = new ServerSocketIO.SwfSocketIO(server);
 
 serverSocket.addEventListener('/swf/home', [
     new GetFileListEvent(),

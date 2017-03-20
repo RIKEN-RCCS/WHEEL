@@ -1,3 +1,6 @@
+/**
+ *
+ */
 interface JQuery {
     /**
      * highlight border of JQuery element border is invalid

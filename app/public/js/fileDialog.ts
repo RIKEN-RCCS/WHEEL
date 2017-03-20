@@ -1,77 +1,76 @@
 /**
- *
+ * File dialog class
  */
 class FileDialog implements DialogBase<FileDialog> {
 
     /**
-     *
+     * gray panel element
      */
     public grayPanel: JQuery = $('#gray_panel');
 
     /**
-     *
+     * dialog frame area element
      */
     public dialogArea: JQuery = $('#dialog_area_browse');
 
     /**
-     *
+     * input text element
      */
     public inputText: JQuery = $('#input_text_browse');
 
     /**
-     *
+     * ok button element
      */
     public buttonOK: JQuery = $('#dialog_ok_button_browse');
 
     /**
-     *
+     * cancel button element
      */
     public buttonCancel: JQuery = $('#dialog_cancel_button_browse');
 
     /**
-     *
+     * socket io instance
      */
     private socket: GetFileListSocket;
 
     /**
-     *
+     * address bar element
      */
     private addressBar = $('#address_bar');
 
     /**
-     *
+     * display file icon element
      */
-    private fileDialog = $('#file_dialog');
+    private displayIconArea = $('#file_dialog');
 
     /**
-     *
+     * current display directory
      */
     private currentDirectory: string = null;
 
     /**
-     *
+     * last select directory
      */
     private lastSelectDirectory: string = null;
 
     /**
-     *
+     * last select file
      */
     private lastSelectFilepath: string = null;
 
     /**
-     *
+     * callback function for click ok button
      */
     private clickOkCallback: ((inputTextElement: JQuery) => void);
 
     /**
-     *
+     * callback function for click cancel button
      */
     private clickCancelCallback;
 
     /**
-     *
-     * @param socket
-     * @param dialogAreaName
+     * create file dialog instance
+     * @param socket socket io communication class for getting file list
      */
     public constructor(socket: GetFileListSocket) {
         this.socket = socket;
@@ -79,15 +78,16 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
-     * @returns
+     * get last select directory
+     * @return get last select directory
      */
     public getLastSelectDirectory(): string {
         return this.lastSelectDirectory;
     }
 
     /**
-     *
+     * get last select file path
+     * @return get last select file path
      */
     public getLastSelectFilepath(): string {
         if (this.lastSelectFilepath) {
@@ -99,60 +99,45 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
-     * @param directoryPath
-     * @param filename
-     * @returns html string
-     */
-    private getFileIconHtml(directoryPath: string, filename: string): string {
-        return `
-        <div class="select_file_container" id="${directoryPath}${filename}_file" onMouseDown="return false;">
-            <img class="file_icon" src="/image/icon_file.png" />
-            <p>${filename}</p>
-        </div>`;
-    };
-
-    /**
-     *
-     * @param directoryPath
-     * @param dirname
-     * @return html string
-     */
-    private getDirectoryIconHtml(directoryPath: string, dirname: string): string {
-        return `
-        <div class="select_dir_container" id="${directoryPath}${dirname}_dir" onMouseDown="return false;">
-            <img class="dir_icon" src="/image/icon_dir.png" />
-            <p>${dirname}</p>
-        </div>`;
-    };
-
-    /**
-     *
-     * @param fileTypes
+     * create html string for all file icon
+     * @param fileTypes all file types interface
+     * @return html string for all file icon
      */
     private createHtml4FileIcon(fileTypes: FileTypeList): string {
-        const html: string[] = [];
-        fileTypes.files
+        const htmls: string[] = fileTypes.files
             .filter(file => file.type === 'file')
-            .forEach(file => html.push(this.getFileIconHtml(fileTypes.directory, file.name)));
-        return html.join('');
+            .map(file => {
+                return `
+                    <div class="select_file_container" id="${fileTypes.directory}${file.name}_file" onMouseDown="return false;">
+                        <img class="file_icon" src="/image/icon_file.png" />
+                        <p>${file.name}</p>
+                    </div>`;
+            });
+        return htmls.join('');
     }
 
     /**
-     *
-     * @param fileTypes
+     * create html string for all directory icon
+     * @param fileTypes all file types interface
+     * @return html string for all directory icon
      */
     private createHtml4DirIcon(fileTypes: FileTypeList): string {
-        const html: string[] = [];
-        fileTypes.files
+        const htmls: string[] = fileTypes.files
             .filter(file => file.type === 'dir')
-            .forEach(file => html.push(this.getDirectoryIconHtml(fileTypes.directory, file.name)));
-        return html.join('');
+            .map(file => {
+                return `
+                    <div class="select_dir_container" id="${fileTypes.directory}${file.name}_dir" onMouseDown="return false;">
+                        <img class="dir_icon" src="/image/icon_dir.png" />
+                        <p>${file.name}</p>
+                    </div>`;
+            });
+        return htmls.join('');
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for directory icon double click event
+     * @param callback The function to call when we get directory icon double click event
+     * @return FileDialog class instance
      */
     public onDirIconDblClick(callback?: ((text: string) => void)): FileDialog {
         $(document).on('dblclick', '[id$=_dir]', (eventObject: JQueryEventObject) => {
@@ -169,8 +154,9 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for directory icon mouseup event
+     * @param callback The function to call when we get directory icon mouseup event
+     * @return FileDialog class instance
      */
     public onDirIconMouseup(callback?: ((text: string) => void)): FileDialog {
         $(document).on('mouseup', '[id$=_dir]', (eventObject: JQueryEventObject) => {
@@ -186,8 +172,9 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for file icon double click event
+     * @param callback The function to call when we get file icon double click event
+     * @return FileDialog class instance
      */
     public onFileIconDblClick(callback?: ((text: string) => void)): FileDialog {
         $(document).on('dblclick', '[id$=_file]', (eventObject: JQueryEventObject) => {
@@ -204,8 +191,9 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for file icon mouseup event
+     * @param callback The function to call when we get file icon mouseup event
+     * @return FileDialog class instance
      */
     public onFileIconMouseup(callback?: ((text: string) => void)): FileDialog {
         $(document).on('mouseup', '[id$=_file]', (eventObject: JQueryEventObject) => {
@@ -222,8 +210,9 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for address change event
+     * @param callback The function to call when we get address change event
+     * @return FileDialog class instance
      */
     public onChangeAddress(callback?: Function): FileDialog {
         this.addressBar.change(() => {
@@ -237,9 +226,10 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
+     * update file dialog list
+     * @return FileDialog class instance
      */
-    public updateDialog() {
+    public updateDialog(): FileDialog {
         const directory: string = this.lastSelectDirectory || this.currentDirectory;
         this.socket.emit(directory, (fileTypes: FileTypeList) => {
             if (fileTypes == null) {
@@ -250,18 +240,20 @@ class FileDialog implements DialogBase<FileDialog> {
 
             const directoryIconHtml = this.createHtml4DirIcon(fileTypes);
             const fileIconHtml = this.createHtml4FileIcon(fileTypes);
-            this.fileDialog.empty();
-            this.fileDialog.html(directoryIconHtml + fileIconHtml);
+            this.displayIconArea.empty();
+            this.displayIconArea.html(directoryIconHtml + fileIconHtml);
             this.addressBar.val(fileTypes.directory);
             this.addressBar.borderValid();
             this.lastSelectDirectory = fileTypes.directory
             this.currentDirectory = fileTypes.directory;
         });
+        return this;
     }
 
     /**
-     *
-     * @param eventObject
+     * get selected icon element
+     * @param eventObject event fired object
+     * @return selected JQuery object
      */
     private getSelectIconElement(eventObject: JQueryEventObject): JQuery {
         let element: JQuery;
@@ -277,19 +269,22 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
+     * clear selected rectangle
+     * @return FileDialog class instance
      */
-    private clearSelectIcon(): void {
+    private clearSelectIcon(): FileDialog {
         $('.select_dir_container,.select_file_container').each((index, element) => {
             $(element).css('border', 'solid 1px rgba(0, 0, 0, 0)');
         });
+        return this;
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for ok button click event
+     * @param callback The function to call when we get ok button click event
+     * @return FileDialog class instance
      */
-    public onClickOK(callback?: (inputTextElement: JQuery) => void): FileDialog {
+    public onClickOK(callback?: ((inputTextElement: JQuery) => void)): FileDialog {
         if (!this.clickOkCallback) {
             this.clickOkCallback = callback;
         }
@@ -297,8 +292,9 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for cancel button click event
+     * @param callback The function to call when we get cancel button click event
+     * @return FileDialog class instance
      */
     public onClickCancel(callback?: Function): FileDialog {
         if (!this.clickCancelCallback) {
@@ -308,7 +304,8 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
+     * show dialog
+     * @return FileDialog class instance
      */
     public show(): FileDialog {
         this.lastSelectFilepath = null;
@@ -337,7 +334,8 @@ class FileDialog implements DialogBase<FileDialog> {
     }
 
     /**
-     *
+     * hide dialog
+     * @return FileDialog class instance
      */
     public hide(): FileDialog {
         this.lastSelectDirectory = this.currentDirectory;

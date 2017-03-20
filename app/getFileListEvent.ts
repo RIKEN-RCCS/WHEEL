@@ -1,13 +1,14 @@
 import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
-import serverUtility = require('./serverUtility');
-import serverConfig = require('./serverConfig');
+import ServerUtility = require('./serverUtility');
+import ServerConfig = require('./serverConfig');
+import ServerSocketIO = require('./serverSocketIO');
 
 /**
- *
+ * socket io communication class for gettingfile list
  */
-class GetFileListEvent implements SocketListener {
+class GetFileListEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -20,23 +21,23 @@ class GetFileListEvent implements SocketListener {
     private watcher: fs.FSWatcher;
 
     /**
-     * socket io event listener
-     * @param socket socket io object
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
-    public onEvent(socket: SocketIO.Socket): void {
+    public onEvent(socket: SocketIO.Socket) {
         this.onGetFileList(socket);
         this.onDisconnect(socket);
     }
 
     /**
-     *
-     * @param socket socket io object
+     * get file list
+     * @param socket socket io instance
      */
-    private onGetFileList(socket: SocketIO.Socket): void {
+    private onGetFileList(socket: SocketIO.Socket) {
         socket.on(GetFileListEvent.eventName, (directoryPath: string, extension: string) => {
 
             if (directoryPath == null) {
-                directoryPath = serverUtility.getHomeDir();
+                directoryPath = ServerUtility.getHomeDir();
             }
 
             directoryPath = path.resolve(directoryPath);
@@ -46,10 +47,10 @@ class GetFileListEvent implements SocketListener {
     }
 
     /**
-     *
+     * Adds a listener for disconnect event
      * @param socket socket io object
      */
-    private onDisconnect(socket: SocketIO.Socket): void {
+    private onDisconnect(socket: SocketIO.Socket) {
         socket.on('disconnect', () => {
             if (this.watcher != null) {
                 this.watcher.close();
@@ -58,12 +59,12 @@ class GetFileListEvent implements SocketListener {
     }
 
     /**
-     *
+     * emit to client for sending file list
      * @param pathDirectory read directory path
      * @param socket socket io object
      * @param fileRegex file extension pattern
      */
-    private emitFileList(pathDirectory: string, socket: SocketIO.Socket, fileRegex: RegExp): void {
+    private emitFileList(pathDirectory: string, socket: SocketIO.Socket, fileRegex: RegExp) {
         try {
             const getFileList: FileType[] = this.getFileList(pathDirectory, fileRegex);
             logger.debug(`send file list ${JSON.stringify(getFileList)}`);
@@ -89,10 +90,10 @@ class GetFileListEvent implements SocketListener {
     }
 
     /**
-     *
+     * get file list
      * @param pathDirectory read directory path
      * @param fileRegexfile extension pattern
-     * @returns file type array
+     * @return file list
      */
     private getFileList(pathDirectory: string, fileRegex: RegExp): FileType[] {
         let getFileList: FileType[] = [

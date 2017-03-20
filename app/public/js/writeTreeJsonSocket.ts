@@ -1,4 +1,6 @@
-
+/**
+ * socket io communication class for write SwfTreeJson information to server
+ */
 class WriteTreeJsonSocket {
 
     /**
@@ -13,15 +15,15 @@ class WriteTreeJsonSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     public onEvent(callback: ((isSucceed: boolean) => void)): void {
         this.socket.once(WriteTreeJsonSocket.eventName, (isSucceed: boolean) => {
@@ -30,10 +32,10 @@ class WriteTreeJsonSocket {
     }
 
     /**
-     *
-     * @param projectDirectory
-     * @param treeJson
-     * @param callback
+     * emit to server for write SwfTreeJson information
+     * @param projectDirectory project directory name
+     * @param tree write SwfTree instance
+     * @param callback The function to call when we get the event
      */
     public emit(projectDirectory, tree: SwfTree, callback: ((isSucceed: boolean) => void)): void {
         this.onEvent(callback);

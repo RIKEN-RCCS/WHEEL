@@ -1,66 +1,66 @@
 /**
- *
+ * File dialog class
  */
 var FileDialog = (function () {
     /**
-     *
-     * @param socket
-     * @param dialogAreaName
+     * create file dialog instance
+     * @param socket socket io communication class for getting file list
      */
     function FileDialog(socket) {
         var _this = this;
         /**
-         *
+         * gray panel element
          */
         this.grayPanel = $('#gray_panel');
         /**
-         *
+         * dialog frame area element
          */
         this.dialogArea = $('#dialog_area_browse');
         /**
-         *
+         * input text element
          */
         this.inputText = $('#input_text_browse');
         /**
-         *
+         * ok button element
          */
         this.buttonOK = $('#dialog_ok_button_browse');
         /**
-         *
+         * cancel button element
          */
         this.buttonCancel = $('#dialog_cancel_button_browse');
         /**
-         *
+         * address bar element
          */
         this.addressBar = $('#address_bar');
         /**
-         *
+         * display file icon element
          */
-        this.fileDialog = $('#file_dialog');
+        this.displayIconArea = $('#file_dialog');
         /**
-         *
+         * current display directory
          */
         this.currentDirectory = null;
         /**
-         *
+         * last select directory
          */
         this.lastSelectDirectory = null;
         /**
-         *
+         * last select file
          */
         this.lastSelectFilepath = null;
         this.socket = socket;
         this.grayPanel.click(function () { return _this.hide(); });
     }
     /**
-     *
-     * @returns
+     * get last select directory
+     * @return get last select directory
      */
     FileDialog.prototype.getLastSelectDirectory = function () {
         return this.lastSelectDirectory;
     };
     /**
-     *
+     * get last select file path
+     * @return get last select file path
      */
     FileDialog.prototype.getLastSelectFilepath = function () {
         if (this.lastSelectFilepath) {
@@ -71,52 +71,35 @@ var FileDialog = (function () {
         }
     };
     /**
-     *
-     * @param directoryPath
-     * @param filename
-     * @returns html string
-     */
-    FileDialog.prototype.getFileIconHtml = function (directoryPath, filename) {
-        return "\n        <div class=\"select_file_container\" id=\"" + directoryPath + filename + "_file\" onMouseDown=\"return false;\">\n            <img class=\"file_icon\" src=\"/image/icon_file.png\" />\n            <p>" + filename + "</p>\n        </div>";
-    };
-    ;
-    /**
-     *
-     * @param directoryPath
-     * @param dirname
-     * @return html string
-     */
-    FileDialog.prototype.getDirectoryIconHtml = function (directoryPath, dirname) {
-        return "\n        <div class=\"select_dir_container\" id=\"" + directoryPath + dirname + "_dir\" onMouseDown=\"return false;\">\n            <img class=\"dir_icon\" src=\"/image/icon_dir.png\" />\n            <p>" + dirname + "</p>\n        </div>";
-    };
-    ;
-    /**
-     *
-     * @param fileTypes
+     * create html string for all file icon
+     * @param fileTypes all file types interface
+     * @return html string for all file icon
      */
     FileDialog.prototype.createHtml4FileIcon = function (fileTypes) {
-        var _this = this;
-        var html = [];
-        fileTypes.files
+        var htmls = fileTypes.files
             .filter(function (file) { return file.type === 'file'; })
-            .forEach(function (file) { return html.push(_this.getFileIconHtml(fileTypes.directory, file.name)); });
-        return html.join('');
+            .map(function (file) {
+            return "\n                    <div class=\"select_file_container\" id=\"" + fileTypes.directory + file.name + "_file\" onMouseDown=\"return false;\">\n                        <img class=\"file_icon\" src=\"/image/icon_file.png\" />\n                        <p>" + file.name + "</p>\n                    </div>";
+        });
+        return htmls.join('');
     };
     /**
-     *
-     * @param fileTypes
+     * create html string for all directory icon
+     * @param fileTypes all file types interface
+     * @return html string for all directory icon
      */
     FileDialog.prototype.createHtml4DirIcon = function (fileTypes) {
-        var _this = this;
-        var html = [];
-        fileTypes.files
+        var htmls = fileTypes.files
             .filter(function (file) { return file.type === 'dir'; })
-            .forEach(function (file) { return html.push(_this.getDirectoryIconHtml(fileTypes.directory, file.name)); });
-        return html.join('');
+            .map(function (file) {
+            return "\n                    <div class=\"select_dir_container\" id=\"" + fileTypes.directory + file.name + "_dir\" onMouseDown=\"return false;\">\n                        <img class=\"dir_icon\" src=\"/image/icon_dir.png\" />\n                        <p>" + file.name + "</p>\n                    </div>";
+        });
+        return htmls.join('');
     };
     /**
-     *
-     * @param callback
+     * Adds a listener for directory icon double click event
+     * @param callback The function to call when we get directory icon double click event
+     * @return FileDialog class instance
      */
     FileDialog.prototype.onDirIconDblClick = function (callback) {
         var _this = this;
@@ -133,8 +116,9 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
-     * @param callback
+     * Adds a listener for directory icon mouseup event
+     * @param callback The function to call when we get directory icon mouseup event
+     * @return FileDialog class instance
      */
     FileDialog.prototype.onDirIconMouseup = function (callback) {
         var _this = this;
@@ -150,8 +134,9 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
-     * @param callback
+     * Adds a listener for file icon double click event
+     * @param callback The function to call when we get file icon double click event
+     * @return FileDialog class instance
      */
     FileDialog.prototype.onFileIconDblClick = function (callback) {
         var _this = this;
@@ -168,8 +153,9 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
-     * @param callback
+     * Adds a listener for file icon mouseup event
+     * @param callback The function to call when we get file icon mouseup event
+     * @return FileDialog class instance
      */
     FileDialog.prototype.onFileIconMouseup = function (callback) {
         var _this = this;
@@ -186,8 +172,9 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
-     * @param callback
+     * Adds a listener for address change event
+     * @param callback The function to call when we get address change event
+     * @return FileDialog class instance
      */
     FileDialog.prototype.onChangeAddress = function (callback) {
         var _this = this;
@@ -201,7 +188,8 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
+     * update file dialog list
+     * @return FileDialog class instance
      */
     FileDialog.prototype.updateDialog = function () {
         var _this = this;
@@ -214,17 +202,19 @@ var FileDialog = (function () {
             }
             var directoryIconHtml = _this.createHtml4DirIcon(fileTypes);
             var fileIconHtml = _this.createHtml4FileIcon(fileTypes);
-            _this.fileDialog.empty();
-            _this.fileDialog.html(directoryIconHtml + fileIconHtml);
+            _this.displayIconArea.empty();
+            _this.displayIconArea.html(directoryIconHtml + fileIconHtml);
             _this.addressBar.val(fileTypes.directory);
             _this.addressBar.borderValid();
             _this.lastSelectDirectory = fileTypes.directory;
             _this.currentDirectory = fileTypes.directory;
         });
+        return this;
     };
     /**
-     *
-     * @param eventObject
+     * get selected icon element
+     * @param eventObject event fired object
+     * @return selected JQuery object
      */
     FileDialog.prototype.getSelectIconElement = function (eventObject) {
         var element;
@@ -239,16 +229,19 @@ var FileDialog = (function () {
         return element;
     };
     /**
-     *
+     * clear selected rectangle
+     * @return FileDialog class instance
      */
     FileDialog.prototype.clearSelectIcon = function () {
         $('.select_dir_container,.select_file_container').each(function (index, element) {
             $(element).css('border', 'solid 1px rgba(0, 0, 0, 0)');
         });
+        return this;
     };
     /**
-     *
-     * @param callback
+     * Adds a listener for ok button click event
+     * @param callback The function to call when we get ok button click event
+     * @return FileDialog class instance
      */
     FileDialog.prototype.onClickOK = function (callback) {
         if (!this.clickOkCallback) {
@@ -257,8 +250,9 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
-     * @param callback
+     * Adds a listener for cancel button click event
+     * @param callback The function to call when we get cancel button click event
+     * @return FileDialog class instance
      */
     FileDialog.prototype.onClickCancel = function (callback) {
         if (!this.clickCancelCallback) {
@@ -267,7 +261,8 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
+     * show dialog
+     * @return FileDialog class instance
      */
     FileDialog.prototype.show = function () {
         var _this = this;
@@ -296,7 +291,8 @@ var FileDialog = (function () {
         return this;
     };
     /**
-     *
+     * hide dialog
+     * @return FileDialog class instance
      */
     FileDialog.prototype.hide = function () {
         this.lastSelectDirectory = this.currentDirectory;

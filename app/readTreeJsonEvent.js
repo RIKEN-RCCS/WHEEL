@@ -2,17 +2,19 @@
 var path = require("path");
 var logger = require("./logger");
 var ServerUtility = require("./serverUtility");
+/**
+ * socket io communication class for read tree json from server
+ */
 var ReadTreeJsonEvent = (function () {
     function ReadTreeJsonEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     ReadTreeJsonEvent.prototype.onEvent = function (socket) {
-        var _this = this;
         socket.on(ReadTreeJsonEvent.eventName, function (workflowJsonFilePath) {
-            _this.roodDirectory = path.dirname(workflowJsonFilePath);
+            var roodDirectory = path.dirname(workflowJsonFilePath);
             try {
                 logger.debug("tree json=" + workflowJsonFilePath);
                 var createJsonFile = ServerUtility.createTreeJson(workflowJsonFilePath);

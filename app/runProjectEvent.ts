@@ -3,12 +3,13 @@ import path = require('path');
 import logger = require('./logger');
 import ServerConfig = require('./serverConfig');
 import ServerUtility = require('./serverUtility');
+import ServerSocketIO = require('./serverSocketIO');
 import ProjectOperator = require('./projectOperator');
 
 /**
- *
+ * socket io communication class for run project to server
  */
-class RunProjectEvent implements SocketListener {
+class RunProjectEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -16,24 +17,23 @@ class RunProjectEvent implements SocketListener {
     private static eventName = 'onRunProject';
 
     /**
-     *
+     * running state
      */
-    private config = ServerConfig.getConfig();
+    private runningState: string = ServerConfig.getConfig().state.running;
 
     /**
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
-        socket.on(RunProjectEvent.eventName, (swfFilePath: string, host_passSet: { [name: string]: string }) => {
-
-            // TODDO set password and passphrase
-            this.updateProjectJson(swfFilePath, (err) => {
+        socket.on(RunProjectEvent.eventName, (projectFilepath: string, host_passSet: { [name: string]: string }) => {
+            this.updateProjectJson(projectFilepath, (err) => {
                 if (err) {
                     logger.error(err);
                     socket.emit(RunProjectEvent.eventName, false);
                     return;
                 }
-                const projectOperator = new ProjectOperator(swfFilePath);
+                const projectOperator = new ProjectOperator(projectFilepath);
                 projectOperator.run(host_passSet);
                 socket.emit(RunProjectEvent.eventName, true);
             });
@@ -41,21 +41,20 @@ class RunProjectEvent implements SocketListener {
     }
 
     /**
-     *
-     * @param filepath
-     * @param callback
+     * update project json data
+     * @param projectFilepath project json file path
+     * @param callback The function to call when we have finished update
      */
-    private updateProjectJson(filepath: string, callback: ((err?: Error) => void)) {
-        fs.readFile(filepath, (err, data) => {
+    private updateProjectJson(projectFilepath: string, callback: ((err?: Error) => void)) {
+        fs.readFile(projectFilepath, (err, data) => {
             if (err) {
                 callback(err);
                 return;
             }
 
             const projectJson: SwfProjectJson = JSON.parse(data.toString());
-            projectJson.state = this.config.state.running;
-            this.updateLogJson(projectJson.log);
-            fs.writeFile(filepath, JSON.stringify(projectJson, null, '\t'), (err) => {
+            projectJson.state = this.runningState;
+            fs.writeFile(projectFilepath, JSON.stringify(projectJson, null, '\t'), (err) => {
                 if (err) {
                     callback(err);
                     return;
@@ -63,53 +62,6 @@ class RunProjectEvent implements SocketListener {
                 callback();
             });
         });
-    }
-
-    /**
-     *
-     * @param logJson
-     */
-    private updateLogJson(logJson: SwfLogJson) {
-        for (let index = logJson.children.length - 1; index >= 0; index--) {
-
-            const child = logJson.children[index];
-            if (!ServerUtility.IsTypeLoop(child)) {
-                this.updateLogJson(child);
-                continue;
-            }
-
-            const loopFilename = ServerUtility.getDefaultName(child.type);
-            const loopJsonFilepath = path.join(child.path, loopFilename);
-
-            try {
-                const data = fs.readFileSync(loopJsonFilepath);
-                const loopJson: SwfLoopJson = JSON.parse(data.toString());
-                const forParam: ForParam = loopJson.forParam;
-                const newChildren: SwfLogJson[] = [];
-                for (let loop = forParam.start; loop <= forParam.end; loop += forParam.step) {
-                    const newLoop: SwfLogJson = {
-                        name: `${child.name}[${loop}]`,
-                        path: `${child.path}[${loop}]`,
-                        description: child.description,
-                        type: child.type,
-                        state: child.state,
-                        execution_start_date: '',
-                        execution_end_date: '',
-                        children: JSON.parse(JSON.stringify(child.children))
-                    };
-                    newChildren.push(newLoop);
-                }
-                logJson.children.splice(index, 1);
-                newChildren.reverse().forEach(newChild => {
-                    logJson.children.splice(index, 0, newChild);
-                });
-            }
-            catch (err) {
-                logger.error(err);
-            }
-
-            this.updateLogJson(child);
-        }
     }
 }
 

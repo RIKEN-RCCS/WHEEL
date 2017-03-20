@@ -1,31 +1,67 @@
-
 /**
  *
  */
 class SwfTree extends SwfWorkflow implements SwfTreeJson {
+    /**
+     * root workflow instance
+     */
     private static root: SwfTree;
-
+    /**
+     * children tree
+     */
     public children: SwfTree[] = [];
+    /**
+     * loop parameter for loop
+     */
     public forParam: ForParam;
+    /**
+     * condition parameter for if, else and break
+     */
     public condition: SwfFile;
+    /**
+     * host information for job and remotetask
+     */
     public host: SwfHost;
+    /**
+     * job script file for job
+     */
     public job_script: SwfFile;
+    /**
+     * parameter file for parameter study
+     */
     public parameter_file: SwfFile;
+    /**
+     * script parameter for job
+     */
+    public script_param: ScriptParams;
+    /**
+     * old path
+     */
     public oldPath: string;
-    public script_param: {
-        cores: number;
-        nodes: number;
-    };
-
+    /**
+     * upload script file
+     */
     private uploadScript: File;
+    /**
+     * upload parameter file
+     */
     private uploadParamFile: File;
+    /**
+     * upload send files
+     */
     private uploadSendfiles: File[] = [];
+    /**
+     * other upload files
+     */
     private upload_files: File[] = [];
+    /**
+     * indexes are local task index array from root tree
+     */
     private indexes: number[] = [];
 
     /**
-     *
-     * @param treeJson
+     * create new instance
+     * @param treeJson tree json data
      */
     private constructor(treeJson: (SwfTree | SwfTreeJson)) {
         super(treeJson);
@@ -59,23 +95,26 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
+     * get index string
+     * @return index string
      */
     public getIndexString(): string {
         return this.indexes.join('_');
     }
 
     /**
-     *
+     * get hierarchy number
+     * @return hierarchy number
      */
     public getHierarchy(): number {
         return this.indexes.length - 1;
     }
 
     /**
-     *
+     * get unique index number
+     * @return unique index number
      */
-    public getAbsoluteIndex(): number {
+    public getUniqueIndex(): number {
         let index = 0;
         const search = (tree: SwfTree): number => {
             if (tree === this) {
@@ -88,16 +127,16 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
+     * get task index (task index is local index)
+     * @return task index
      */
     public getTaskIndex(): number {
         return this.indexes[this.indexes.length - 1];
     }
 
     /**
-     *
-     * @param treeJson
-     * @returns created SwfTree instance
+     * create tree json instance
+     * @param treeJson tree json data
      */
     public static create(treeJson: (SwfTree | SwfTreeJson)): SwfTree {
         this.root = new SwfTree(treeJson);
@@ -106,9 +145,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param hierarchy
+     * renumbering index
+     * @param tree SwfTree instance
+     * @param indexes parent index array
+     * @param renumbering tree instance
      */
     private static renumberingIndex(tree: SwfTree, indexes: number[] = [0]): SwfTree {
         tree.indexes = indexes;
@@ -122,9 +162,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param treeJson
-     * @param fileType
+     * add child date to this tree
+     * @param treeJson json data
+     * @param fileType json file type
+     * @param added child data
      */
     public addChild(treeJson: SwfTreeJson, fileType: JsonFileType): SwfTree {
         const rand = Math.floor(Date.now() / 100) % 100000;
@@ -146,8 +187,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param dirname
+     * whether specified directory name is duplicate or not
+     * @param dirname directory name
+     * @return whether specified directory name is duplicate or not
      */
     public isDirnameDuplicate(dirname: string): boolean {
         if (this.children.filter(child => child.path === dirname)[0]) {
@@ -159,9 +201,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param index
-     * @return SwfTree instance of selected index
+     * get SwfTree instance
+     * @param index index string (ex '0_1_0')
+     * @return SwfTree instance
      */
     public static getSwfTree(index: string): SwfTree {
         const notSeachedList: SwfTree[] = [this.root];
@@ -180,13 +222,11 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param path
+     * get relative directory from root workflow
+     * @return relative directory path
      */
     public getCurrentDirectory(): string {
-
-        const searchDirectory = (tree: SwfTree, path: string = ''): string => {
+        return (function searchDirectory(tree: SwfTree, path: string = ''): string {
             path = ClientUtility.normalize(`${tree.path}/${path}`);
             const parent = tree.getParent();
             if (parent == null) {
@@ -195,15 +235,13 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             else {
                 return searchDirectory(parent, path);
             }
-        };
-
-        return searchDirectory(this);
+        })(this);
     }
 
     /**
-     *
+     * get parent tree instance
+     * @return parent instance
      */
-
     public getParent(): SwfTree {
         if (this.isRoot()) {
             return null;
@@ -223,15 +261,17 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
+     * whether this instance is root or not
+     * @return whether this instance is root or not
      */
     public isRoot(): boolean {
         return this === SwfTree.root;
     }
 
     /**
-     *
-    */
+     * convet SwfTreeJson object
+     * @return SwfTreeJson object
+     */
     public toSwfTreeJson(): SwfTreeJson {
         const root = new SwfTree(this);
         const notSeachedList: SwfTree[] = [root];
@@ -260,7 +300,8 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
+     * convet SwfFile object
+     * @return SwfFile object
      */
     public toSwfFile(): SwfFile {
         return new SwfFile({
@@ -273,8 +314,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param path
+     * whether specified path name is valid or not
+     * @param path path name
+     * @return whether specified path name is valid or not
      */
     public isEnablePath(path: string): boolean {
         if (!path) {
@@ -305,16 +347,31 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param to
+     * get relative path from root workflow to specified path name
+     * @param path path string
+     * @return relative path from root workflow
      */
-    public getFullpath(to: (SwfFile | SwfFileJson | string)) {
+    public getFullpath(path: string): string;
+
+    /**
+     * get relative path from root workflow to specified path name
+     * @param file SwfFile instance
+     * @return relative path from root workflow
+     */
+    public getFullpath(file: (SwfFile | SwfFileJson)): string;
+
+    /**
+     * get relative path from root workflow to specified path name
+     * @param object path string or SwfFile instance
+     * @return relative path from root workflow
+     */
+    public getFullpath(object: (SwfFile | SwfFileJson | string)): string {
         let path: string;
-        if (typeof to === 'string') {
-            path = to;
+        if (typeof object === 'string') {
+            path = object;
         }
         else {
-            path = to.path;
+            path = object.path;
         }
         const directory = this.getCurrentDirectory();
         const basename = ClientUtility.basename(path);
@@ -322,34 +379,62 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param to
+     * get relative path from this directory to specified path name
+     * @param path path string
+     * @return relative path from this directory
      */
-    public getRelativePath(to: (SwfFile | SwfFileJson | string)) {
+    public getRelativePath(path: string);
+
+    /**
+     * get relative path from this directory to specified path name
+     * @param file SwfFile instance
+     * @return relative path from this directory
+     */
+    public getRelativePath(file: (SwfFile | SwfFileJson));
+
+    /**
+     * get relative path from this directory to specified path name
+     * @param object path string or SwfFile instance
+     * @return relative path from this directory
+     */
+    public getRelativePath(object: (SwfFile | SwfFileJson | string)) {
         let path: string;
-        if (typeof to === 'string') {
-            path = to;
+        if (typeof object === 'string') {
+            path = object;
         }
         else {
-            path = this.getFullpath(to);
+            path = this.getFullpath(object);
         }
         const directory = this.getCurrentDirectory();
         return `./${path.replace(new RegExp(`${directory}`), '')}`;
     }
 
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * add input file to parent tree
+     * @param index child task index number
+     * @param filepath filepath string
      */
-    public addInputFileToParent(task: (number | SwfTree), filepath: string) {
+    public addInputFileToParent(index: number, filepath: string);
+
+    /**
+     * add input file to parent tree
+     * @param tree add target tree
+     * @param filepath filepath string
+     */
+    public addInputFileToParent(tree: SwfTree, filepath: string);
+
+    /**
+     * add input file to parent tree
+     * @param object child task index number or add target tree
+     * @param filepath filepath string
+     */
+    public addInputFileToParent(object: (number | SwfTree), filepath: string) {
         let child: SwfTree;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         const file = child.findInputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
@@ -357,18 +442,31 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * add output file to parent tree
+     * @param index child task index number
+     * @param filepath filepath string
      */
-    public addOutputFileToParent(task: (number | SwfTree), filepath: string) {
+    public addOutputFileToParent(index: number, filepath: string);
+
+    /**
+     * add output file to parent tree
+     * @param tree add target tree
+     * @param filepath filepath string
+     */
+    public addOutputFileToParent(tree: SwfTree, filepath: string);
+
+    /**
+     * add output file to parent tree
+     * @param object child task index number or add target tree
+     * @param filepath filepath string
+     */
+    public addOutputFileToParent(object: (number | SwfTree), filepath: string) {
         let child: SwfTree;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         const file = child.findOutputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
@@ -380,6 +478,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param tree
      * @param file
      * @param fullpath
+     * @param isInput
      */
     private static addFileToParent(tree: SwfTree, file: SwfFile, fullpath: string, isInput: boolean) {
         if (tree.isRoot()) {
@@ -395,18 +494,31 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * delete input file from parent tree
+     * @param index child task index number
+     * @param filepath filepath string
      */
-    public deleteInputFileFromParent(task: (number | SwfTree), filepath: string) {
+    public deleteInputFileFromParent(index: number, filepath: string);
+
+    /**
+     * delete input file from parent tree
+     * @param tree delete target tree
+     * @param filepath filepath string
+     */
+    public deleteInputFileFromParent(tree: SwfTree, filepath: string);
+
+    /**
+     * delete input file from parent tree
+     * @param object child task index number or delete target tree
+     * @param filepath filepath string
+     */
+    public deleteInputFileFromParent(object: (number | SwfTree), filepath: string) {
         let child: SwfTree;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         const file = child.findInputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
@@ -414,18 +526,31 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * delete output file from parent tree
+     * @param index child task index number
+     * @param filepath filepath string
      */
-    public deleteOutputFileFromParent(task: (number | SwfTree), filepath: string) {
+    public deleteOutputFileFromParent(index: number, filepath: string);
+
+    /**
+     * delete output file from parent tree
+     * @param tree delete target tree
+     * @param filepath filepath string
+     */
+    public deleteOutputFileFromParent(tree: SwfTree, filepath: string);
+
+    /**
+     * delete output file from parent tree
+     * @param object child task index number or delete target tree
+     * @param filepath filepath string
+     */
+    public deleteOutputFileFromParent(object: (number | SwfTree), filepath: string) {
         let child: SwfTree;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         const file = child.findOutputFile(filepath).clone();
         const fullpath = child.getFullpath(file);
@@ -433,10 +558,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param fullpath
-     * @param isInput
+     * delete input files or output files from parent tree
+     * @param tree target tree
+     * @param fullpath delete target relative path from root workflow
+     * @param isInput whether input files or not
      */
     private static deleteFileFromParent(tree: SwfTree, fullpath: string, isInput: boolean) {
         if (tree == null || tree.isRoot()) {
@@ -479,9 +604,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param oldFile
-     * @param newFile
+     * update child input files
+     * @param oldFile old file data
+     * @param newFile new file data
      */
     public updateInputFile(oldFile: SwfFile, newFile: SwfFile) {
         const file = this.findInputFile(oldFile.path).clone();
@@ -491,9 +616,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param oldFile
-     * @param newFile
+     * update child output files
+     * @param oldFile old file data
+     * @param newFile new file data
      */
     public updateOutputFile(oldFile: SwfFile, newFile: SwfFile) {
         const file = this.findOutputFile(oldFile.path).clone();
@@ -503,13 +628,13 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param oldFile
-     * @param newFile
-     * @param oldFullpath
-     * @param newFullpath
-     * @param isInput
+     * update child input files or output files
+     * @param tree target tree
+     * @param oldFile old file data
+     * @param newFile new file data
+     * @param oldFullpath old relative path from root workflow
+     * @param newFullpath new relative path from root workflow
+     * @param isInput whether input files or not
      */
     private static updateChildFile(tree: SwfTree, oldFile: SwfFile, newFile: SwfFile, oldFullpath: string, newFullpath: string, isInput: boolean) {
 
@@ -563,10 +688,12 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         });
     }
 
+    /**
+     * update path name
+     * @param file updated file data
+     */
     public updatePath(file: SwfFile) {
-        // const oldFile :SwfFile =
         const oldFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
-
         this.path = file.path;
         const newFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
 
@@ -583,69 +710,100 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
                 child.path = parent.getRelativePath(newFullpath);
             }
         });
-
-        // this.input_files.forEach(input => {
-        //     // console.log(input.path);
-
-        // });
     }
 
+    /**
+     * get the file with the same input file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same input file path name as the specified path name
+     */
     public findInputFile(path: string): SwfFile {
         const file: SwfFile = this.getInputFile(path);
         if (file) {
             return file;
         }
         else {
-            return this.input_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+            return this.input_files.filter(file => `${this.path}/${file.getNormalPath()}` === ClientUtility.normalize(path))[0];
         }
     }
 
+    /**
+     * get the file with the same output file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same output file path name as the specified path name
+     */
     public findOutputFile(path: string): SwfFile {
         const file: SwfFile = this.getOutputFile(path);
         if (file) {
             return file;
         }
         else {
-            return this.output_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+            return this.output_files.filter(file => `${this.path}/${file.getNormalPath()}` === ClientUtility.normalize(path))[0];
         }
     }
 
+    /**
+     * get the file with the same send file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same send file path name as the specified path name
+     */
     public findSendFile(path: string): SwfFile {
         const file: SwfFile = this.getSendFile(path);
         if (file) {
             return file;
         }
         else {
-            return this.send_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+            return this.send_files.filter(file => `${this.path}/${file.getNormalPath()}` === ClientUtility.normalize(path))[0];
         }
     }
 
+    /**
+     * get the file with the same receive file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same receive file path name as the specified path name
+     */
     public findReceiveFile(path: string): SwfFile {
         const file: SwfFile = this.getReceiveFile(path);
         if (file) {
             return file;
         }
         else {
-            return this.receive_files.filter(file => `${this.path}/${file.getPath()}` === ClientUtility.normalize(path))[0];
+            return this.receive_files.filter(file => `${this.path}/${file.getNormalPath()}` === ClientUtility.normalize(path))[0];
         }
     }
 
-    public setScriptPath(file: File) {
+    /**
+     * add script file for upload
+     * @param file upload script file
+     */
+    public addScriptFile(file: File) {
         this.uploadScript = file;
         this.script.path = file.name;
     }
 
-    public setJobScriptPath(file: File) {
+    /**
+     * add job script file for upload
+     * @param file upload job script file
+     */
+    public addJobScriptFile(file: File) {
         this.uploadScript = file;
         this.job_script.path = file.name;
     }
 
-    public setParameterFilePath(file: File) {
+    /**
+     * add parameter file for upload
+     * @param file upload parameter file
+     */
+    public addParameterFile(file: File) {
         this.uploadParamFile = file;
         this.parameter_file.path = file.name;
     }
 
-    public setSendFilepath(files: FileList) {
+    /**
+     * add send file for upload
+     * @param files upload send file list
+     */
+    public addSendFile(files: FileList) {
         for (let index = 0; index < files.length; index++) {
             this.deleteSendfile(files[index].name);
             this.uploadSendfiles.push(files[index]);
@@ -659,13 +817,29 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         }
     }
 
-    public deleteSendfile(target: (SwfFile | string)) {
+    /**
+     * delete specified file from send files
+     * @param path path name
+     */
+    public deleteSendfile(path: string);
+
+    /**
+     * delete specified file from send files
+     * @param file delete file
+     */
+    public deleteSendfile(file: SwfFile);
+
+    /**
+     * delete specified file from send files
+     * @param object path name or delete file
+     */
+    public deleteSendfile(object: (SwfFile | string)) {
         let filepath: string;
-        if (typeof target === 'string') {
-            filepath = target;
+        if (typeof object === 'string') {
+            filepath = object;
         }
         else {
-            filepath = target.path;
+            filepath = object.path;
         }
 
         for (let index = this.send_files.length - 1; index >= 0; index--) {
@@ -681,13 +855,21 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         }
     }
 
-    public setUploadFilePath(files: FileList) {
+    /**
+     * add scpecified files to upload files
+     * @param files upload files
+     */
+    public addUploadFile(files: FileList) {
         this.upload_files = [];
         for (let index = 0; index < files.length; index++) {
             this.upload_files.push(files[index]);
         }
     }
 
+    /**
+     * delete specified file in upload files
+     * @param file file instance
+     */
     public deleteUploadfile(file: File) {
         for (let index = this.upload_files.length - 1; index >= 0; index--) {
             if (this.upload_files[index].name === file.name) {
@@ -696,6 +878,11 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         }
     }
 
+    /**
+     * whether specified file is exist in upload send files or not
+     * @param sendFile send file
+     * @return whether specified file is exist in upload send files or not
+     */
     public isExistSendfile(sendFile: SwfFile) {
         const target = this.uploadSendfiles.filter(file => file.name === sendFile.path)[0];
         if (target) {
@@ -706,10 +893,19 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         }
     }
 
-    public isExistUploadScript() {
+    /**
+     * whether upload script is exist or not
+     * @return whether upload script is exist or not
+     */
+    public isExistUploadScript(): boolean {
         return this.uploadScript != null;
     }
 
+    /**
+     * get upload files
+     * @param projectDirectory project directory name
+     * @return upload files
+     */
     public static getUploadFiles(projectDirectory: string): UploadFileData[] {
         const files: UploadFileData[] = [];
         const notSeachedList: SwfTree[] = [this.root];
@@ -720,25 +916,25 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             }
             if (tree.uploadScript) {
                 files.push({
-                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadScript.name)}`),
+                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadScript.name)}`),
                     file: tree.uploadScript
                 });
             }
             if (tree.uploadParamFile) {
                 files.push({
-                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadParamFile.name)}`),
+                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadParamFile.name)}`),
                     file: tree.uploadParamFile
                 });
             }
             tree.uploadSendfiles.forEach(file => {
                 files.push({
-                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
+                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
                     file: file
                 });
             });
             tree.upload_files.forEach(file => {
                 files.push({
-                    path: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
+                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
                     file: file
                 });
             });

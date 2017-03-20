@@ -1,18 +1,28 @@
 import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
-import serverUtility = require('./serverUtility');
-import serverConfig = require('./serverConfig');
+import ServerUtility = require('./serverUtility');
+import ServerConfig = require('./serverConfig');
+import ServerSocketIO = require('./serverSocketIO');
 
-interface QueueDataType {
+/**
+ * json data path
+ */
+interface JsonDataPath {
+    /**
+     * directory name
+     */
     directory: string;
+    /**
+     * tree json data
+     */
     json: SwfTreeJson;
 }
 
 /**
- *
+ * socket io communication class for write SwfTreeJson information to server
  */
-class WriteTreeJsonEvent implements SocketListener {
+class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -20,18 +30,18 @@ class WriteTreeJsonEvent implements SocketListener {
     private static eventName = 'writeTreeJson';
 
     /**
-     * error is occurred flag
+     * error flag
      */
     private error: boolean;
 
     /**
-     *
+     * queue of json data path
      */
-    private queue: QueueDataType[] = [];
+    private queue: JsonDataPath[] = [];
 
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(WriteTreeJsonEvent.eventName, (projectDirectory: string, json: SwfTreeJson) => {
@@ -45,17 +55,17 @@ class WriteTreeJsonEvent implements SocketListener {
     }
 
     /**
-     *
-     * @param callback
+     * save tree json
+     * @param callback The function to call when we save tree json
      */
-    private saveTreeJson(callback: Function) {
+    private saveTreeJson(callback: (() => void)) {
         const data = this.queue.shift();
         if (!data) {
             callback();
             return;
         }
 
-        const filename = serverUtility.getDefaultName(data.json.type);
+        const filename = ServerUtility.getDefaultName(data.json.type);
         const oldDirectory = path.join(data.directory, data.json.oldPath);
         const newDirectory = path.join(data.directory, data.json.path);
         const filepath = path.join(newDirectory, filename);
@@ -67,7 +77,11 @@ class WriteTreeJsonEvent implements SocketListener {
         };
 
         const update = () => {
-            this.generateJobScript(data, () => {
+            this.generateSubmitScript(data, (err: Error) => {
+                if (err) {
+                    error(err);
+                    return;
+                }
                 const copy: SwfTreeJson = JSON.parse(JSON.stringify(data.json));
                 delete copy.children;
                 delete copy.oldPath;
@@ -142,9 +156,9 @@ class WriteTreeJsonEvent implements SocketListener {
     }
 
     /**
-     *
-     * @param parentDirectory
-     * @param json
+     * set data to queue
+     * @param parentDirectory parent tree directory
+     * @param json tree json data
      */
     private setQueue(parentDirectory: string, json: SwfTreeJson): void {
 
@@ -162,17 +176,17 @@ class WriteTreeJsonEvent implements SocketListener {
     }
 
     /**
-     *
-     * @param json
-     * @param callback
+     * genereta submic script
+     * @param data json data path
+     * @param callback The function to call when we generate submit script
      */
-    private generateJobScript(data: QueueDataType, callback: Function) {
-        if (!serverUtility.IsTypeJob(data.json)) {
+    private generateSubmitScript(data: JsonDataPath, callback: ((err?: Error) => void)) {
+        if (!ServerUtility.isTypeJob(data.json)) {
             callback();
             return;
         }
 
-        const config = serverConfig.getConfig();
+        const config = ServerConfig.getConfig();
         const submitJobname = config.submit_script;
         const srcPath = path.join(__dirname, config.scheduler[data.json.host.job_scheduler]);
         const dstPath = path.join(data.directory, data.json.path, submitJobname);
@@ -185,7 +199,7 @@ class WriteTreeJsonEvent implements SocketListener {
                     '%%cores%%': data.json.script_param.cores.toString(),
                     '%%script%%': data.json.job_script.path
                 };
-                serverUtility.writeFileKeywordReplacedAsync(srcPath, dstPath, format, callback);
+                ServerUtility.writeFileKeywordReplacedAsync(srcPath, dstPath, format, callback);
                 logger.info(`create file=${dstPath}`);
             }
             callback();

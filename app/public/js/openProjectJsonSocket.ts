@@ -1,4 +1,6 @@
-
+/**
+ * socket io communication class for getting project json from server
+ */
 class OpenProjectJsonSocket {
 
     /**
@@ -18,28 +20,28 @@ class OpenProjectJsonSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param filename
-     * @param callback
+     * Adds a listener for connect event that will be invoked a single time before being automatically removed
+     * @param projectFilepath project file path
+     * @param callback The function to call when we get the event
      */
-    public onConnect(filename: string, callback: ((projectJson: SwfProjectJson) => void)): void {
+    public onConnect(projectFilepath: string, callback: ((projectJson: SwfProjectJson) => void)): void {
         this.callback = callback;
         this.socket
             .on('connect', () => {
-                this.emit(filename);
+                this.emit(projectFilepath);
             });
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     public onEvent(callback?: ((projectJson: SwfProjectJson) => void)): void {
         if (callback == null) {
@@ -49,12 +51,12 @@ class OpenProjectJsonSocket {
     }
 
     /**
-     *
-     * @param filename
-     * @param callback
+     * emit to server for gettingproject json
+     * @param projectFilepath project file path
+     * @param callback The function to call when we get the event
      */
-    public emit(filename: string, callback?: ((projectJson: SwfProjectJson) => void)) {
+    public emit(projectFilepath: string, callback?: ((projectJson: SwfProjectJson) => void)) {
         this.onEvent(callback);
-        this.socket.emit(OpenProjectJsonSocket.eventName, filename);
+        this.socket.emit(OpenProjectJsonSocket.eventName, projectFilepath);
     }
 }

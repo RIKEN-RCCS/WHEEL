@@ -11,36 +11,50 @@ $(() => {
     // file dialog
     const dialog = new FileDialog(getFileListSocket);
 
-    // file dialog event
-    dialog
-        .onDirIconMouseup()
-        .onDirIconDblClick()
-        .onChangeAddress()
-        .onClickCancel()
-        .onClickOK((inputTextElement: JQuery) => {
-            const dirname = inputTextElement.val().trim();
-            if (!dirname || !ClientUtility.isValidDirectoryName(dirname)) {
-                inputTextElement.borderInvalid();
-                return;
-            }
+    /**
+     * initialize
+     */
+    (function init() {
+        setCreateNewProjectDialog();
+        setClickEventForNewButton();
+    })();
 
-            const directoryPath = `${dialog.getLastSelectDirectory()}${dirname}`;
-            createNewProjectSocket.emit(directoryPath, (rootFilePath: string) => {
-                if (!rootFilePath) {
+    /**
+     * set several events for file dialog to create a new project
+     */
+    function setCreateNewProjectDialog() {
+        dialog
+            .onDirIconMouseup()
+            .onDirIconDblClick()
+            .onChangeAddress()
+            .onClickCancel()
+            .onClickOK((inputTextElement: JQuery) => {
+                const dirname = inputTextElement.val().trim();
+                if (!dirname || !ClientUtility.isValidDirectoryName(dirname)) {
                     inputTextElement.borderInvalid();
                     return;
                 }
-                else {
-                    ClientUtility.moveWorkflowLink(rootFilePath);
-                }
-            })
-        });
+
+                const directoryPath = `${dialog.getLastSelectDirectory()}${dirname}`;
+                createNewProjectSocket.emit(directoryPath, (rootFilePath: string) => {
+                    if (!rootFilePath) {
+                        inputTextElement.borderInvalid();
+                        return;
+                    }
+                    else {
+                        ClientUtility.moveWorkflowLink(rootFilePath);
+                    }
+                })
+            });
+    }
 
     /**
-     * click create new workflow icon
+     * set button click event to create a new project
      */
-    createNew.click(() => {
-        dialog.updateDialog();
-        dialog.show();
-    });
+    function setClickEventForNewButton() {
+        createNew.click(() => {
+            dialog.updateDialog();
+            dialog.show();
+        });
+    }
 });

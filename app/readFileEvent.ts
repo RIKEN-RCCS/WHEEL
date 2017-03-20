@@ -1,10 +1,11 @@
 import fs = require('fs');
-import path = require('path');
 import logger = require('./logger');
-import serverConfig = require('./serverConfig');
-import ServerUtility = require('./serverUtility');
+import ServerSocketIO = require('./serverSocketIO');
 
-class ReadFileEvent implements SocketListener {
+/**
+ * socket io communication class for read file data from server
+ */
+class ReadFileEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -12,17 +13,12 @@ class ReadFileEvent implements SocketListener {
     private static eventName = 'readFile';
 
     /**
-     *
-     */
-    private roodDirectory: string;
-
-    /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
-        socket.on(ReadFileEvent.eventName, (editFilePath: string) => {
-            fs.readFile(editFilePath, (err, data) => {
+        socket.on(ReadFileEvent.eventName, (readFilePath: string) => {
+            fs.readFile(readFilePath, (err, data) => {
                 if (err) {
                     logger.error(err);
                     socket.emit(ReadFileEvent.eventName);

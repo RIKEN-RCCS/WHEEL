@@ -12,9 +12,21 @@
     <script type="text/javascript" src="/third_party/svg/svg.min.js"></script>
     <script type="text/javascript" src="/third_party/svg/svg.draggable.min.js"></script>
 
-    <script type="text/javascript" src="/js/clientUtility.js"></script>
-    <script type="text/javascript" src="/js/svgNodeUI.js"></script>
     <script type="text/javascript" src="/js/svgPlugBase.js"></script>
+    <script type="text/javascript" src="/js/svgBox.js"></script>
+    <script type="text/javascript" src="/js/svgCable.js"></script>
+    <script type="text/javascript" src="/js/svgConnector.js"></script>
+    <script type="text/javascript" src="/js/svgContainer.js"></script>
+    <script type="text/javascript" src="/js/svgFileRelations.js"></script>
+    <script type="text/javascript" src="/js/svgLower.js"></script>
+    <script type="text/javascript" src="/js/svgNodePane.js"></script>
+    <script type="text/javascript" src="/js/svgReceptor.js"></script>
+    <script type="text/javascript" src="/js/svgRelations.js"></script>
+    <script type="text/javascript" src="/js/svgUpper.js"></script>
+    <script type="text/javascript" src="/js/svgNodeUI.js"></script>
+
+
+    <script type="text/javascript" src="/js/clientUtility.js"></script>
     <script type="text/javascript" src="/js/jqueryExtends.js"></script>
     <script type="text/javascript" src="/js/swfObject.js"></script>
     <script type="text/javascript" src="/js/swfTree.js"></script>
@@ -43,23 +55,19 @@
 
     <div class="address_bar_area">
         <img src="/image/icon_workflow.png" class="icon" id="root_workflow">
-        <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly">
+        <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly" style="background-color: rgb(70, 70, 65)">
     </div>
 
     <table class="selected_workflow">
         <tr>
             <th>Name</th>
-            <th>Create Date</th>
-            <th>Update Date</th>
             <th>Description</th>
             <th></th>
             <th></th>
         </tr>
         <tr>
-            <td><input type="text" id="workflow_name" class="text_box"></td>
-            <td id="workflow_birthday"></td>
-            <td id="workflow_update"></td>
-            <td><input type="text" id="workflow_desc" class="text_box"></td>
+            <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px"></td>
+            <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);"></td>
             <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
             <td style="width: 90px"><button type="button" class="button" id="reset_button">Reset</button></td>
         </tr>

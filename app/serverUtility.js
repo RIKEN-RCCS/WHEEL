@@ -7,22 +7,55 @@ var __extends = (this && this.__extends) || function (d, b) {
 var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
-var serverConfig = require("./serverConfig");
+var ServerConfig = require("./serverConfig");
 /**
  * json file type
  */
 var JsonFileType;
 (function (JsonFileType) {
+    /**
+     * file type project
+     */
     JsonFileType[JsonFileType["Project"] = 0] = "Project";
+    /**
+     * file type workflow
+     */
     JsonFileType[JsonFileType["WorkFlow"] = 1] = "WorkFlow";
+    /**
+     * file type task
+     */
     JsonFileType[JsonFileType["Task"] = 2] = "Task";
+    /**
+     * file type remote task
+     */
     JsonFileType[JsonFileType["RemoteTask"] = 3] = "RemoteTask";
+    /**
+     * file type job
+     */
     JsonFileType[JsonFileType["Job"] = 4] = "Job";
+    /**
+     * file type loop
+     */
     JsonFileType[JsonFileType["Loop"] = 5] = "Loop";
+    /**
+     * file type if
+     */
     JsonFileType[JsonFileType["If"] = 6] = "If";
+    /**
+     * file type else
+     */
     JsonFileType[JsonFileType["Else"] = 7] = "Else";
+    /**
+     * file type condition
+     */
     JsonFileType[JsonFileType["Condition"] = 8] = "Condition";
+    /**
+     * file type break
+     */
     JsonFileType[JsonFileType["Break"] = 9] = "Break";
+    /**
+     * file type parameter study
+     */
     JsonFileType[JsonFileType["PStudy"] = 10] = "PStudy";
 })(JsonFileType || (JsonFileType = {}));
 /**
@@ -31,6 +64,11 @@ var JsonFileType;
 var ServerUtility = (function () {
     function ServerUtility() {
     }
+    /**
+     * copy file
+     * @param path_src source path string
+     * @param path_dst destination path string
+     */
     ServerUtility.copyFile = function (path_src, path_dst) {
         if (!fs.existsSync(path_src)) {
             return;
@@ -43,8 +81,61 @@ var ServerUtility = (function () {
         if (fs.existsSync(path_dst_file)) {
             fs.unlinkSync(path_dst_file);
         }
-        fs.createReadStream(path_src).pipe(fs.createWriteStream(path_dst_file));
+        fs.writeFileSync(path_dst_file, fs.readFileSync(path_src));
     };
+    /**
+     * copy file async
+     * @param path_src source path string
+     * @param path_dst destination path string
+     * @param callback The function to call when we have finished copy file
+     */
+    ServerUtility.copyFileAsync = function (path_src, path_dst, callback) {
+        var path_dst_file = path_dst;
+        var copy = function () {
+            fs.readFile(path_src, function (err, data) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                fs.writeFile(path_dst_file, data, function (err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    callback();
+                });
+            });
+        };
+        fs.stat(path_src, function (err, stat) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            fs.lstat(path_dst, function (err, stat) {
+                if (!err && stat.isDirectory()) {
+                    path_dst_file = path.join(path_dst, path.basename(path_src));
+                }
+                fs.stat(path_dst_file, function (err, stat) {
+                    if (err) {
+                        copy();
+                        return;
+                    }
+                    fs.unlink(path_dst_file, function (err) {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        copy();
+                    });
+                });
+            });
+        });
+    };
+    /**
+     * copy folder
+     * @param path_src source path string
+     * @param path_dst destination path string
+     */
     ServerUtility.copyFolder = function (path_src, path_dst) {
         if (!fs.existsSync(path_src)) {
             return;
@@ -67,11 +158,116 @@ var ServerUtility = (function () {
         }
     };
     /**
-     *
+     * copy folder async
+     * @param path_src source path string
+     * @param path_dst destination path string
+     * @param callback The funcion to call when we have finished to copy folder
+     */
+    ServerUtility.copyFolderAsync = function (path_src, path_dst, callback) {
+        var _this = this;
+        var filenames;
+        var loop = function () {
+            var filename = filenames.shift();
+            if (!filename) {
+                callback();
+                return;
+            }
+            var path_src_child = path.join(path_src, filename);
+            fs.lstat(path_src_child, function (err, stat) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                if (stat.isDirectory()) {
+                    _this.copyFolderAsync(path_src_child, path.join(path_dst, filename), loop);
+                }
+                else {
+                    _this.copyFileAsync(path_src_child, path_dst, loop);
+                }
+            });
+        };
+        fs.stat(path_src, function (err, stat) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            fs.stat(path_dst, function (err, stat) {
+                fs.mkdir(path_dst, function (err) {
+                    fs.lstat(path_src, function (err, stat) {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        if (!stat.isDirectory()) {
+                            callback(new Error(path_src + " is not directory"));
+                            return;
+                        }
+                        fs.readdir(path_src, function (err, files) {
+                            if (err) {
+                                callback(err);
+                                return;
+                            }
+                            filenames = files;
+                            loop();
+                        });
+                    });
+                });
+            });
+        });
+    };
+    /**
+     * unlink specified directory
+     * @param path_dir unlink directory path
+     */
+    ServerUtility.unlinkDirectory = function (path_dir) {
+        if (!fs.existsSync(path_dir)) {
+            return;
+        }
+        if (fs.lstatSync(path_dir).isDirectory()) {
+            var name_bases = fs.readdirSync(path_dir);
+            for (var i = 0; i < name_bases.length; i++) {
+                var path_child = path.join(path_dir, name_bases[i]);
+                if (fs.lstatSync(path_child).isDirectory()) {
+                    ServerUtility.unlinkDirectory(path_child);
+                }
+                else {
+                    fs.unlinkSync(path_child);
+                }
+            }
+            fs.rmdirSync(path_dir);
+        }
+    };
+    /**
+     * link directory
+     * @param path_src source path string
+     * @param path_dst destination path string
+     */
+    ServerUtility.linkDirectory = function (path_src, path_dst) {
+        if (!fs.existsSync(path_src)) {
+            return;
+        }
+        if (!fs.existsSync(path_dst)) {
+            fs.mkdirSync(path_dst);
+        }
+        //copy
+        if (fs.lstatSync(path_src).isDirectory()) {
+            var files = fs.readdirSync(path_src);
+            files.forEach(function (name_base) {
+                var path_src_child = path.join(path_src, name_base);
+                if (fs.lstatSync(path_src_child).isDirectory()) {
+                    ServerUtility.copyFolder(path_src_child, path.join(path_dst, name_base));
+                }
+                else {
+                    ServerUtility.copyFile(path_src_child, path_dst);
+                }
+            });
+        }
+    };
+    /**
+     * write file with replace keyword
      * @param src_path path of source file
      * @param dst_path path of destination file
      * @param values to replace set of key and value
-     * @returns none
      */
     ServerUtility.writeFileKeywordReplaced = function (src_path, dst_path, values) {
         var data = fs.readFileSync(src_path);
@@ -82,16 +278,17 @@ var ServerUtility = (function () {
         fs.writeFileSync(dst_path, text);
     };
     /**
-     *
-     * @param src_path
-     * @param dst_path
-     * @param values
-     * @param callback
+     * write file async with replace keyword
+     * @param src_path path of source file
+     * @param dst_path path of destination file
+     * @param values to replace set of key and value
+     * @param callback The function to call when we have finished to write file
      */
     ServerUtility.writeFileKeywordReplacedAsync = function (src_path, dst_path, values, callback) {
         fs.readFile(src_path, function (err, data) {
             if (err) {
                 logger.error(err);
+                callback(err);
                 return;
             }
             var text = data.toString();
@@ -100,7 +297,7 @@ var ServerUtility = (function () {
             });
             fs.writeFile(dst_path, text, function (err) {
                 if (err) {
-                    logger.error(err);
+                    callback(err);
                     return;
                 }
                 callback();
@@ -109,9 +306,7 @@ var ServerUtility = (function () {
     };
     /**
      * get all host infomation
-     * @param isSucceed execute callback function when process is succeed
-     * @param ifError exexute callback function when process is failed
-     * @returns none
+     * @param callback The function to call when we have finished to get host information
      */
     ServerUtility.getHostInfo = function (callback) {
         fs.readFile(ServerUtility.getHostListPath(), function (err, data) {
@@ -131,9 +326,7 @@ var ServerUtility = (function () {
     /**
      * delete host information
      * @param name delete host label name
-     * @param isSucceed execute callback function when process is succeed
-     * @param ifError exexute callback function when process is failed
-     * @returns none
+     * @param callback The function to call when we have finished to delete host information
      */
     ServerUtility.deleteHostInfo = function (name, callback) {
         this.getHostInfo(function (err, remoteHostList) {
@@ -159,9 +352,7 @@ var ServerUtility = (function () {
     /**
      * add host information
      * @param addHostInfo add host information
-     * @param isSucceed execute callback function when process is succeed
-     * @param ifError exexute callback function when process is failed
-     * @returns none
+     * @param callback The function to call when we have finished to add host information
      */
     ServerUtility.addHostInfo = function (addHostInfo, callback) {
         this.getHostInfo(function (err, remoteHostList) {
@@ -186,29 +377,32 @@ var ServerUtility = (function () {
         });
     };
     /**
-     *
+     * get host list path
+     * @return host list path
      */
     ServerUtility.getHostListPath = function () {
         return path.join(__dirname, this.config.remotehost);
     };
     /**
-     *
+     * read template project json file
+     * @return template project json data
      */
     ServerUtility.readTemplateProjectJson = function () {
         var filepath = this.getTemplateFilePath(JsonFileType.Project);
         return this.readProjectJson(filepath);
     };
     /**
-     *
+     * read template workflow json file
+     * @return template workflow json data
      */
     ServerUtility.readTemplateWorkflowJson = function () {
         var filepath = this.getTemplateFilePath(JsonFileType.WorkFlow);
         return this.readJson(filepath);
     };
     /**
-     * read .prj.json file tree
-     * @param filepath project json file (.proj.json file)
-     * @return swf project json
+     * read projct json
+     * @param filepath project json file path
+     * @return project json data
      */
     ServerUtility.readProjectJson = function (filepath) {
         var regex = new RegExp("(?:" + this.config.extension.project.replace(/\./, '\.') + ")$");
@@ -292,9 +486,9 @@ var ServerUtility = (function () {
         return logJson;
     };
     /**
-     * read .wf.json file tree
+     * create project json data
      * @param path_project project json file (.prj.json)
-     * @return project json file
+     * @return project json data
      */
     ServerUtility.createProjectJson = function (path_project) {
         var projectJson = this.readProjectJson(path_project);
@@ -304,10 +498,10 @@ var ServerUtility = (function () {
         return projectJson;
     };
     /**
-     *
-     * @param filepath
-     * @param json
-     * @param callback
+     * write json data
+     * @param filepath write file path
+     * @param json write json data
+     * @param callback The function to call when we write json file
      */
     ServerUtility.writeJson = function (filepath, json, callback) {
         fs.writeFile(filepath, JSON.stringify(json, null, '\t'), function (err) {
@@ -321,28 +515,28 @@ var ServerUtility = (function () {
     /**
      * whether specified hostname is localhost or not
      * @param hostname hostname
-     * @returns true(localhost) or false
+     * @return whether specified hostname is localhost or not
      */
     ServerUtility.isLocalHost = function (hostname) {
         return (hostname === 'localhost') || (hostname === '127.0.0.1');
     };
     /**
      * whether platform is windows or not
-     * @returns true(windows) or false
+     * @return whether platform is windows or not
      */
     ServerUtility.isWindows = function () {
         return process.platform === 'win32';
     };
     /**
      * whether platform is linux or not
-     * @returns true(linux) or false
+     * @return whether platform is linux or not
      */
     ServerUtility.isLinux = function () {
         return process.platform === 'linux';
     };
     /**
      * get home directory
-     * @returns directory path
+     * @return home directory path
      */
     ServerUtility.getHomeDir = function () {
         if (this.isWindows()) {
@@ -356,77 +550,86 @@ var ServerUtility = (function () {
         }
     };
     /**
-     *
-     * @param fileType
-     * @returns
+     * get template file path by type
+     * @param fileType json file type
+     * @return template file path by type
      */
     ServerUtility.getTemplateFilePath = function (fileType) {
-        return this.getTemplate(fileType).getPath();
+        return this.getTypeOfJson(fileType).getTemplateFilepath();
     };
     /**
-     *
-     * @param filepath
-     * @param fileType
+     * whether specified log json or project json is finished or not
+     * @param json project json data or log json data
+     * @return whether specified log json or project json is finished or not
      */
-    ServerUtility.getTemplateFile = function (filepath, fileType) {
-        var extension = this.getTemplate(fileType).getExtension();
-        if (!filepath.match(new RegExp(extension.replace(/\./, '\.') + "$"))) {
-            filepath += extension;
-        }
-        return filepath;
+    ServerUtility.isProjectFinished = function (json) {
+        return json.state === this.config.state.finishd || json.state === this.config.state.failed;
     };
     /**
-     *
-     * @param json
+     * whether specified json is type of job or not
+     * @param json tree json data or log json data
+     * @return whether specified json is type of job or not
      */
-    ServerUtility.IsTypeJob = function (json) {
-        var template = this.getTemplate(json.type);
+    ServerUtility.isTypeJob = function (json) {
+        var template = this.getTypeOfJson(json.type);
         return template.getType() === this.config.json_types.job;
     };
     /**
-     *
-     * @param json
+     * whether specified json is type of loop or not
+     * @param json tree json data or log json data
+     * @return whether specified json is type of loop or not
      */
-    ServerUtility.IsTypeLoop = function (json) {
-        var template = this.getTemplate(json.type);
+    ServerUtility.isTypeLoop = function (json) {
+        var template = this.getTypeOfJson(json.type);
         return template.getType() === this.config.json_types.loop;
     };
     /**
-     *
-     * @param fileType
+     * whether specified json is type of parameter study or not
+     * @param json tree json data or log json data
+     * @return whether specified json is type of parameter study or not
+     */
+    ServerUtility.isTypePStudy = function (json) {
+        var template = this.getTypeOfJson(json.type);
+        return template.getType() === this.config.json_types.pstudy;
+    };
+    /**
+     * get default default file name by type
+     * @param fileType filetype or file type string
+     * @return default default file name by type
      */
     ServerUtility.getDefaultName = function (fileType) {
-        var template = this.getTemplate(fileType);
+        var template = this.getTypeOfJson(fileType);
         var extension = template.getExtension();
         return "" + this.config.default_filename + extension;
     };
     /**
-     *
-     * @param fileType
+     * get instane by type
+     * @param fileType filetype or file type string
+     * @return instance by type
      */
-    ServerUtility.getTemplate = function (fileType) {
+    ServerUtility.getTypeOfJson = function (fileType) {
         if (typeof fileType === 'string') {
             switch (fileType) {
                 case this.config.json_types.workflow:
-                    return new WorkflowTemplate();
+                    return new TypeWorkflow();
                 case this.config.json_types.task:
-                    return new TaskTemplate();
+                    return new TypeTask();
                 case this.config.json_types.loop:
-                    return new LoopTemplate();
+                    return new TypeLoop();
                 case this.config.json_types.if:
-                    return new IfTemplate();
+                    return new TypeIf();
                 case this.config.json_types.else:
-                    return new ElseTemplate();
+                    return new TypeElse();
                 case this.config.json_types.break:
-                    return new BreakTemplate();
+                    return new TypeBreak();
                 case this.config.json_types.remotetask:
-                    return new RemoteTaskTemplate();
+                    return new TypeRemoteTask();
                 case this.config.json_types.job:
-                    return new JobTemplate();
+                    return new TypeJob();
                 case this.config.json_types.condition:
-                    return new ConditionTemplate();
+                    return new TypeCondition();
                 case this.config.json_types.pstudy:
-                    return new PStudyTemplate();
+                    return new TypePStudy();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -434,27 +637,27 @@ var ServerUtility = (function () {
         else {
             switch (fileType) {
                 case JsonFileType.Project:
-                    return new ProjectTemplate();
+                    return new TypeProject();
                 case JsonFileType.WorkFlow:
-                    return new WorkflowTemplate();
+                    return new TypeWorkflow();
                 case JsonFileType.Task:
-                    return new TaskTemplate();
+                    return new TypeTask();
                 case JsonFileType.Loop:
-                    return new LoopTemplate();
+                    return new TypeLoop();
                 case JsonFileType.If:
-                    return new IfTemplate();
+                    return new TypeIf();
                 case JsonFileType.Else:
-                    return new ElseTemplate();
+                    return new TypeElse();
                 case JsonFileType.Break:
-                    return new BreakTemplate();
+                    return new TypeBreak();
                 case JsonFileType.RemoteTask:
-                    return new RemoteTaskTemplate();
+                    return new TypeRemoteTask();
                 case JsonFileType.Job:
-                    return new JobTemplate();
+                    return new TypeJob();
                 case JsonFileType.Condition:
-                    return new ConditionTemplate();
+                    return new TypeCondition();
                 case JsonFileType.PStudy:
-                    return new PStudyTemplate();
+                    return new TypePStudy();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -465,141 +668,222 @@ var ServerUtility = (function () {
 /**
  * config parameter
  */
-ServerUtility.config = serverConfig.getConfig();
-var TemplateBase = (function () {
-    function TemplateBase() {
-        this.config = serverConfig.getConfig();
+ServerUtility.config = ServerConfig.getConfig();
+/**
+ * type base
+ */
+var TypeBase = (function () {
+    function TypeBase() {
+        /**
+         * config date
+         */
+        this.config = ServerConfig.getConfig();
     }
-    TemplateBase.prototype.getExtension = function () {
+    /**
+     * get file extension name
+     * @return file extension name
+     */
+    TypeBase.prototype.getExtension = function () {
         return this.extension;
     };
-    TemplateBase.prototype.getPath = function () {
-        return path.normalize(__dirname + "/" + this.path);
+    /**
+     * get template file path
+     * @return template file path
+     */
+    TypeBase.prototype.getTemplateFilepath = function () {
+        return path.normalize(__dirname + "/" + this.templateFilepath);
     };
-    TemplateBase.prototype.getType = function () {
+    /**
+     * get file type
+     * @return file type
+     */
+    TypeBase.prototype.getType = function () {
         return this.type;
     };
-    return TemplateBase;
+    return TypeBase;
 }());
-var ProjectTemplate = (function (_super) {
-    __extends(ProjectTemplate, _super);
-    function ProjectTemplate() {
+/**
+ * type project
+ */
+var TypeProject = (function (_super) {
+    __extends(TypeProject, _super);
+    /**
+     * create new instance
+     */
+    function TypeProject() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.project;
-        _this.path = _this.config.template.project;
+        _this.templateFilepath = _this.config.template.project;
         return _this;
     }
-    return ProjectTemplate;
-}(TemplateBase));
-var TaskTemplate = (function (_super) {
-    __extends(TaskTemplate, _super);
-    function TaskTemplate() {
+    return TypeProject;
+}(TypeBase));
+/**
+ * type task
+ */
+var TypeTask = (function (_super) {
+    __extends(TypeTask, _super);
+    /**
+     * create new instance
+     */
+    function TypeTask() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.task;
-        _this.path = _this.config.template.task;
+        _this.templateFilepath = _this.config.template.task;
         _this.type = _this.config.json_types.task;
         return _this;
     }
-    return TaskTemplate;
-}(TemplateBase));
-var WorkflowTemplate = (function (_super) {
-    __extends(WorkflowTemplate, _super);
-    function WorkflowTemplate() {
+    return TypeTask;
+}(TypeBase));
+/**
+ * type workflow
+ */
+var TypeWorkflow = (function (_super) {
+    __extends(TypeWorkflow, _super);
+    /**
+     * create new instance
+     */
+    function TypeWorkflow() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.workflow;
-        _this.path = _this.config.template.workflow;
+        _this.templateFilepath = _this.config.template.workflow;
         _this.type = _this.config.json_types.workflow;
         return _this;
     }
-    return WorkflowTemplate;
-}(TemplateBase));
-var LoopTemplate = (function (_super) {
-    __extends(LoopTemplate, _super);
-    function LoopTemplate() {
+    return TypeWorkflow;
+}(TypeBase));
+var TypeLoop = (function (_super) {
+    __extends(TypeLoop, _super);
+    /**
+     * create new instance
+     */
+    function TypeLoop() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.loop;
-        _this.path = _this.config.template.loop;
+        _this.templateFilepath = _this.config.template.loop;
         _this.type = _this.config.json_types.loop;
         return _this;
     }
-    return LoopTemplate;
-}(TemplateBase));
-var IfTemplate = (function (_super) {
-    __extends(IfTemplate, _super);
-    function IfTemplate() {
+    return TypeLoop;
+}(TypeBase));
+/**
+ * type if
+ */
+var TypeIf = (function (_super) {
+    __extends(TypeIf, _super);
+    /**
+     * create new instance
+     */
+    function TypeIf() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.if;
-        _this.path = _this.config.template.if;
+        _this.templateFilepath = _this.config.template.if;
         _this.type = _this.config.json_types.if;
         return _this;
     }
-    return IfTemplate;
-}(TemplateBase));
-var ElseTemplate = (function (_super) {
-    __extends(ElseTemplate, _super);
-    function ElseTemplate() {
+    return TypeIf;
+}(TypeBase));
+/**
+ * type else
+ */
+var TypeElse = (function (_super) {
+    __extends(TypeElse, _super);
+    /**
+     * create new instance
+     */
+    function TypeElse() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.else;
-        _this.path = _this.config.template.else;
+        _this.templateFilepath = _this.config.template.else;
         _this.type = _this.config.json_types.else;
         return _this;
     }
-    return ElseTemplate;
-}(TemplateBase));
-var BreakTemplate = (function (_super) {
-    __extends(BreakTemplate, _super);
-    function BreakTemplate() {
+    return TypeElse;
+}(TypeBase));
+/**
+ * type break
+ */
+var TypeBreak = (function (_super) {
+    __extends(TypeBreak, _super);
+    /**
+     * create new instance
+     */
+    function TypeBreak() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.break;
-        _this.path = _this.config.template.break;
+        _this.templateFilepath = _this.config.template.break;
         _this.type = _this.config.json_types.break;
         return _this;
     }
-    return BreakTemplate;
-}(TemplateBase));
-var RemoteTaskTemplate = (function (_super) {
-    __extends(RemoteTaskTemplate, _super);
-    function RemoteTaskTemplate() {
+    return TypeBreak;
+}(TypeBase));
+/**
+ * type remote task
+ */
+var TypeRemoteTask = (function (_super) {
+    __extends(TypeRemoteTask, _super);
+    /**
+     * create new instance
+     */
+    function TypeRemoteTask() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.remotetask;
-        _this.path = _this.config.template.remotetask;
+        _this.templateFilepath = _this.config.template.remotetask;
         _this.type = _this.config.json_types.remotetask;
         return _this;
     }
-    return RemoteTaskTemplate;
-}(TemplateBase));
-var JobTemplate = (function (_super) {
-    __extends(JobTemplate, _super);
-    function JobTemplate() {
+    return TypeRemoteTask;
+}(TypeBase));
+/**
+ * type job
+ */
+var TypeJob = (function (_super) {
+    __extends(TypeJob, _super);
+    /**
+     * create new instance
+     */
+    function TypeJob() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.job;
-        _this.path = _this.config.template.job;
+        _this.templateFilepath = _this.config.template.job;
         _this.type = _this.config.json_types.job;
         return _this;
     }
-    return JobTemplate;
-}(TemplateBase));
-var ConditionTemplate = (function (_super) {
-    __extends(ConditionTemplate, _super);
-    function ConditionTemplate() {
+    return TypeJob;
+}(TypeBase));
+/**
+ * type condition
+ */
+var TypeCondition = (function (_super) {
+    __extends(TypeCondition, _super);
+    /**
+     * create new instance
+     */
+    function TypeCondition() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.condition;
-        _this.path = _this.config.template.condition;
+        _this.templateFilepath = _this.config.template.condition;
         _this.type = _this.config.json_types.condition;
         return _this;
     }
-    return ConditionTemplate;
-}(TemplateBase));
-var PStudyTemplate = (function (_super) {
-    __extends(PStudyTemplate, _super);
-    function PStudyTemplate() {
+    return TypeCondition;
+}(TypeBase));
+/**
+ * type parameter study
+ */
+var TypePStudy = (function (_super) {
+    __extends(TypePStudy, _super);
+    /**
+     * create new instance
+     */
+    function TypePStudy() {
         var _this = _super.call(this) || this;
         _this.extension = _this.config.extension.pstudy;
-        _this.path = _this.config.template.pstudy;
+        _this.templateFilepath = _this.config.template.pstudy;
         _this.type = _this.config.json_types.pstudy;
         return _this;
     }
-    return PStudyTemplate;
-}(TemplateBase));
+    return TypePStudy;
+}(TypeBase));
 module.exports = ServerUtility;
 //# sourceMappingURL=serverUtility.js.map

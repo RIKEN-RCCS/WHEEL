@@ -1,5 +1,5 @@
 /**
- *
+ * socket io communication class for delete host information from server
  */
 class DeleteHostSocket {
 
@@ -15,27 +15,27 @@ class DeleteHostSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     public onEvent(callback: ((isDeleteHost: boolean) => void)): void {
         this.socket.once(DeleteHostSocket.eventName, callback);
     }
 
     /**
-     *
-     * @param labelName
-     * @param callback
+     * emit to server for delete host information
+     * @param name key name of registered host information
+     * @param callback The function to call when we get the event
      */
-    public emit(labelName: string, callback: ((isDeleteHost: boolean) => void)): void {
+    public emit(name: string, callback: ((isDeleteHost: boolean) => void)): void {
         this.onEvent(callback);
-        this.socket.emit(DeleteHostSocket.eventName, labelName);
+        this.socket.emit(DeleteHostSocket.eventName, name);
     }
 }

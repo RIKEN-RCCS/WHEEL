@@ -8,23 +8,59 @@ var __extends = (this && this.__extends) || function (d, b) {
  */
 var JsonFileType;
 (function (JsonFileType) {
+    /**
+     * Project
+     */
     JsonFileType[JsonFileType["Project"] = 0] = "Project";
+    /**
+     * WorkFlow
+     */
     JsonFileType[JsonFileType["WorkFlow"] = 1] = "WorkFlow";
+    /**
+     * Task
+     */
     JsonFileType[JsonFileType["Task"] = 2] = "Task";
+    /**
+     * RemoteTask
+     */
     JsonFileType[JsonFileType["RemoteTask"] = 3] = "RemoteTask";
+    /**
+     * Job
+     */
     JsonFileType[JsonFileType["Job"] = 4] = "Job";
+    /**
+     * Loop
+     */
     JsonFileType[JsonFileType["Loop"] = 5] = "Loop";
+    /**
+     * If
+     */
     JsonFileType[JsonFileType["If"] = 6] = "If";
+    /**
+     * Else
+     */
     JsonFileType[JsonFileType["Else"] = 7] = "Else";
+    /**
+     * Condition
+     */
     JsonFileType[JsonFileType["Condition"] = 8] = "Condition";
+    /**
+     * Break
+     */
     JsonFileType[JsonFileType["Break"] = 9] = "Break";
+    /**
+     * PStudy
+     */
     JsonFileType[JsonFileType["PStudy"] = 10] = "PStudy";
 })(JsonFileType || (JsonFileType = {}));
 /**
- *
+ * json file base class
  */
 var JsonFileTypeBase = (function () {
     function JsonFileTypeBase() {
+        /**
+         * property information
+         */
         this.propertyInfo = [
             {
                 key: 'name',
@@ -80,27 +116,25 @@ var JsonFileTypeBase = (function () {
             }
         ];
     }
+    /**
+     * get extension string
+     * @return get extension string
+     */
     JsonFileTypeBase.prototype.getExtension = function () {
         return this.extension;
     };
+    /**
+     * get json file type string
+     * @return get json file type string
+     */
     JsonFileTypeBase.prototype.getType = function () {
         return this.type;
     };
-    JsonFileTypeBase.prototype.checkExtension = function (target) {
-        var filename;
-        if (typeof target === 'string') {
-            filename = target;
-        }
-        else {
-            filename = target.path;
-        }
-        if (filename.match(new RegExp(this.extension.replace(/\./, '\\.') + "$"))) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    };
+    /**
+     * whether specified string or SwfTree instance type is matched or not
+     * @param target file type string or SwfTree instance
+     * @return whether specified string or SwfTree instance type is matched or not
+     */
     JsonFileTypeBase.prototype.checkFileType = function (target) {
         var type;
         if (typeof target === 'string') {
@@ -111,6 +145,9 @@ var JsonFileTypeBase = (function () {
         }
         return type === this.type;
     };
+    /**
+     * add script property information
+     */
     JsonFileTypeBase.prototype.addScript = function () {
         this.propertyInfo.push({
             key: 'script',
@@ -140,13 +177,16 @@ var JsonFileTypeBase = (function () {
                         $(document).trigger('selectFile', {
                             isMultiple: false,
                             callback: function (files) {
-                                tree.setScriptPath(files[0]);
+                                tree.addScriptFile(files[0]);
                             }
                         });
                     }
                 }]
         });
     };
+    /**
+     * add job script property information
+     */
     JsonFileTypeBase.prototype.addJobScript = function () {
         this.propertyInfo.push({
             key: 'job_script',
@@ -176,13 +216,16 @@ var JsonFileTypeBase = (function () {
                         $(document).trigger('selectFile', {
                             isMultiple: false,
                             callback: function (files) {
-                                tree.setJobScriptPath(files[0]);
+                                tree.addJobScriptFile(files[0]);
                             }
                         });
                     }
                 }]
         });
     };
+    /**
+     * add for loop property information
+     */
     JsonFileTypeBase.prototype.addForParam = function () {
         this.propertyInfo.push({
             key: 'forParam',
@@ -224,6 +267,9 @@ var JsonFileTypeBase = (function () {
             ]
         });
     };
+    /**
+     * add input files property information
+     */
     JsonFileTypeBase.prototype.addInputFile = function () {
         this.propertyInfo.push({
             key: 'input_files',
@@ -314,6 +360,9 @@ var JsonFileTypeBase = (function () {
                 }]
         });
     };
+    /**
+     * add output files property information
+     */
     JsonFileTypeBase.prototype.addOutputFile = function () {
         this.propertyInfo.push({
             key: 'output_files',
@@ -404,6 +453,9 @@ var JsonFileTypeBase = (function () {
                 }]
         });
     };
+    /**
+     * add send files property information
+     */
     JsonFileTypeBase.prototype.addSendFile = function () {
         this.propertyInfo.push({
             key: 'send_files',
@@ -418,7 +470,7 @@ var JsonFileTypeBase = (function () {
                         $(document).trigger('selectFile', {
                             isMultiple: true,
                             callback: function (files) {
-                                tree.setSendFilepath(files);
+                                tree.addSendFile(files);
                             }
                         });
                     }
@@ -476,6 +528,9 @@ var JsonFileTypeBase = (function () {
                 }]
         });
     };
+    /**
+     * add receive files property information
+     */
     JsonFileTypeBase.prototype.addReceiveFile = function () {
         this.propertyInfo.push({
             key: 'receive_files',
@@ -537,6 +592,9 @@ var JsonFileTypeBase = (function () {
                 }]
         });
     };
+    /**
+     * add script parameter property information
+     */
     JsonFileTypeBase.prototype.addScriptParam = function () {
         this.propertyInfo.push({
             key: 'script_param',
@@ -562,6 +620,9 @@ var JsonFileTypeBase = (function () {
             ]
         });
     };
+    /**
+     * add parameter file property information
+     */
     JsonFileTypeBase.prototype.addParameterFile = function () {
         this.propertyInfo.push({
             key: 'parameter_file',
@@ -591,13 +652,16 @@ var JsonFileTypeBase = (function () {
                         $(document).trigger('selectFile', {
                             isMultiple: false,
                             callback: function (files) {
-                                tree.setParameterFilePath(files[0]);
+                                tree.addParameterFile(files[0]);
                             }
                         });
                     }
                 }]
         });
     };
+    /**
+     * add host property information
+     */
     JsonFileTypeBase.prototype.addHost = function () {
         this.propertyInfo.push({
             key: 'host',
@@ -612,6 +676,9 @@ var JsonFileTypeBase = (function () {
             ]
         });
     };
+    /**
+     * add upload property information
+     */
     JsonFileTypeBase.prototype.addUpload = function () {
         this.propertyInfo.push({
             key: 'upload_files',
@@ -625,7 +692,7 @@ var JsonFileTypeBase = (function () {
                         $(document).trigger('selectFile', {
                             isMultiple: true,
                             callback: function (files) {
-                                tree.setUploadFilePath(files);
+                                tree.addUploadFile(files);
                             }
                         });
                     }
@@ -651,6 +718,10 @@ var JsonFileTypeBase = (function () {
                 }]
         });
     };
+    /**
+     * get property information
+     * @returns property information
+     */
     JsonFileTypeBase.prototype.getPropertyInfo = function () {
         this.propertyInfo.sort(function (a, b) {
             if (a.order < b.order) {
@@ -665,10 +736,13 @@ var JsonFileTypeBase = (function () {
     return JsonFileTypeBase;
 }());
 /**
- *
+ * type of project class
  */
 var TypeProject = (function (_super) {
     __extends(TypeProject, _super);
+    /**
+     *
+     */
     function TypeProject() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.project;
@@ -677,10 +751,13 @@ var TypeProject = (function (_super) {
     return TypeProject;
 }(JsonFileTypeBase));
 /**
- *
+ * type of task class
  */
 var TypeTask = (function (_super) {
     __extends(TypeTask, _super);
+    /**
+     * create new instance for task
+     */
     function TypeTask() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.task;
@@ -694,10 +771,13 @@ var TypeTask = (function (_super) {
     return TypeTask;
 }(JsonFileTypeBase));
 /**
- *
+ * type of workflow class
  */
 var TypeWorkflow = (function (_super) {
     __extends(TypeWorkflow, _super);
+    /**
+     * create new instance for workflow
+     */
     function TypeWorkflow() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.workflow;
@@ -708,10 +788,13 @@ var TypeWorkflow = (function (_super) {
     return TypeWorkflow;
 }(JsonFileTypeBase));
 /**
- *
+ * type of job class
  */
 var TypeJob = (function (_super) {
     __extends(TypeJob, _super);
+    /**
+     * create new instance for job
+     */
     function TypeJob() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.job;
@@ -726,6 +809,9 @@ var TypeJob = (function (_super) {
         _this.addHost();
         return _this;
     }
+    /**
+     * add script property information for job
+     */
     TypeJob.prototype.addScrip = function () {
         this.propertyInfo.push({
             key: 'script',
@@ -760,11 +846,14 @@ var TypeJob = (function (_super) {
                         }
                     },
                     callback: function (tree) {
-                        $(document).trigger('editFile');
+                        $(document).trigger('editScript');
                     }
                 }]
         });
     };
+    /**
+     * add host property information for job
+     */
     TypeJob.prototype.addHost = function () {
         this.propertyInfo.push({
             key: 'host',
@@ -787,10 +876,13 @@ var TypeJob = (function (_super) {
     return TypeJob;
 }(JsonFileTypeBase));
 /**
- *
+ * type of remote task class
  */
 var TypeRemoteTask = (function (_super) {
     __extends(TypeRemoteTask, _super);
+    /**
+     * create new instance for remote task
+     */
     function TypeRemoteTask() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.remotetask;
@@ -806,10 +898,13 @@ var TypeRemoteTask = (function (_super) {
     return TypeRemoteTask;
 }(JsonFileTypeBase));
 /**
- *
+ * type of loop class
  */
 var TypeLoop = (function (_super) {
     __extends(TypeLoop, _super);
+    /**
+     * create new instance for loop
+     */
     function TypeLoop() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.loop;
@@ -821,10 +916,13 @@ var TypeLoop = (function (_super) {
     return TypeLoop;
 }(JsonFileTypeBase));
 /**
- *
+ * type of if class
  */
 var TypeIf = (function (_super) {
     __extends(TypeIf, _super);
+    /**
+     * create new instance for if
+     */
     function TypeIf() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.if;
@@ -835,10 +933,13 @@ var TypeIf = (function (_super) {
     return TypeIf;
 }(JsonFileTypeBase));
 /**
- *
+ * type of else class
  */
 var TypeElse = (function (_super) {
     __extends(TypeElse, _super);
+    /**
+     * create new instance for else
+     */
     function TypeElse() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.else;
@@ -849,10 +950,13 @@ var TypeElse = (function (_super) {
     return TypeElse;
 }(JsonFileTypeBase));
 /**
- *
+ * type of condition class
  */
 var TypeCondition = (function (_super) {
     __extends(TypeCondition, _super);
+    /**
+     * create new instance for condition
+     */
     function TypeCondition() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.condition;
@@ -863,6 +967,9 @@ var TypeCondition = (function (_super) {
         _this.addUpload();
         return _this;
     }
+    /**
+     * add output files property information for condition
+     */
     TypeCondition.prototype.addOutputFile = function () {
         this.propertyInfo.push({
             key: 'output_files',
@@ -927,10 +1034,13 @@ var TypeCondition = (function (_super) {
     return TypeCondition;
 }(JsonFileTypeBase));
 /**
- *
+ * type of break class
  */
 var TypeBreak = (function (_super) {
     __extends(TypeBreak, _super);
+    /**
+     * create new instance for break
+     */
     function TypeBreak() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.break;
@@ -943,10 +1053,13 @@ var TypeBreak = (function (_super) {
     return TypeBreak;
 }(JsonFileTypeBase));
 /**
- *
+ * type of parameter study class
  */
 var TypePStudy = (function (_super) {
     __extends(TypePStudy, _super);
+    /**
+     * create new instance for parameter study
+     */
     function TypePStudy() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.pstudy;

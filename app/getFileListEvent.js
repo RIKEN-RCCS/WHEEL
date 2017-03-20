@@ -2,30 +2,30 @@
 var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
-var serverUtility = require("./serverUtility");
+var ServerUtility = require("./serverUtility");
 /**
- *
+ * socket io communication class for gettingfile list
  */
 var GetFileListEvent = (function () {
     function GetFileListEvent() {
     }
     /**
-     * socket io event listener
-     * @param socket socket io object
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     GetFileListEvent.prototype.onEvent = function (socket) {
         this.onGetFileList(socket);
         this.onDisconnect(socket);
     };
     /**
-     *
-     * @param socket socket io object
+     * get file list
+     * @param socket socket io instance
      */
     GetFileListEvent.prototype.onGetFileList = function (socket) {
         var _this = this;
         socket.on(GetFileListEvent.eventName, function (directoryPath, extension) {
             if (directoryPath == null) {
-                directoryPath = serverUtility.getHomeDir();
+                directoryPath = ServerUtility.getHomeDir();
             }
             directoryPath = path.resolve(directoryPath);
             var regex = extension == null ? null : new RegExp(extension.replace(/\./, '\\.') + "$");
@@ -33,7 +33,7 @@ var GetFileListEvent = (function () {
         });
     };
     /**
-     *
+     * Adds a listener for disconnect event
      * @param socket socket io object
      */
     GetFileListEvent.prototype.onDisconnect = function (socket) {
@@ -45,7 +45,7 @@ var GetFileListEvent = (function () {
         });
     };
     /**
-     *
+     * emit to client for sending file list
      * @param pathDirectory read directory path
      * @param socket socket io object
      * @param fileRegex file extension pattern
@@ -69,10 +69,10 @@ var GetFileListEvent = (function () {
         }
     };
     /**
-     *
+     * get file list
      * @param pathDirectory read directory path
      * @param fileRegexfile extension pattern
-     * @returns file type array
+     * @return file list
      */
     GetFileListEvent.prototype.getFileList = function (pathDirectory, fileRegex) {
         var getFileList = [

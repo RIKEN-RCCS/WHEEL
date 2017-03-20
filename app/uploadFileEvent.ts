@@ -1,8 +1,12 @@
 import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
+import ServerSocketIO = require('./serverSocketIO');
 
-class UploadFileEvent implements SocketListener {
+/**
+ * socket io communication class for upload file to server
+ */
+class UploadFileEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -10,8 +14,8 @@ class UploadFileEvent implements SocketListener {
     private static eventName = 'onUploadFile';
 
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(UploadFileEvent.eventName, (filepath: string, data: Buffer) => {

@@ -1,642 +1,25 @@
 /**
- *
+ * svg node
  */
-var SvgContainer = (function () {
-    function SvgContainer() {
-        /**
-         *
-         */
-        this.container = {};
-    }
-    /**
-     *
-     * @param plug
-     */
-    SvgContainer.prototype.add = function (plug) {
-        var name = plug.name();
-        if (this.container[name]) {
-            throw new Error('index is duplicated');
-        }
-        this.container[name] = plug;
-    };
-    /**
-     *
-     * @param object
-     */
-    SvgContainer.prototype.remove = function (object) {
-        var name;
-        if (typeof object === 'string') {
-            name = object;
-        }
-        else {
-            name = object.name();
-        }
-        if (this.container[name]) {
-            this.container[name].delete();
-            this.container[name] = null;
-            delete this.container[name];
-        }
-    };
-    /**
-     *
-     * @param object
-     */
-    SvgContainer.prototype.isExist = function (object) {
-        var name;
-        if (typeof object === 'string') {
-            name = object;
-        }
-        else {
-            name = object.name();
-        }
-        return this.container[name] != null;
-    };
-    /**
-     *
-     * @param name
-     */
-    SvgContainer.prototype.find = function (name) {
-        return this.container[name];
-    };
-    /**
-     *
-     */
-    SvgContainer.prototype.front = function () {
-        var _this = this;
-        Object.keys(this.container).forEach(function (key) {
-            _this.container[key].front();
-        });
-    };
-    /**
-     *
-     * @param x
-     * @param y
-     */
-    SvgContainer.prototype.move = function (x, y) {
-        var _this = this;
-        Object.keys(this.container).forEach(function (key) {
-            _this.container[key].move(x, y);
-        });
-    };
-    /**
-     *
-     * @param callback
-     */
-    SvgContainer.prototype.forEach = function (callback) {
-        var _this = this;
-        Object.keys(this.container).forEach(function (key) {
-            callback(_this.container[key]);
-        });
-    };
-    /**
-     *
-     */
-    SvgContainer.prototype.clear = function () {
-        var _this = this;
-        Object.keys(this.container).forEach(function (key) {
-            _this.remove(key);
-        });
-    };
-    /**
-     *
-     * @param taskIndex
-     * @param filepath
-     */
-    SvgContainer.prototype.findFromIndex = function (taskIndex, filepath) {
-        var _this = this;
-        return Object.keys(this.container).filter(function (key) {
-            var task = _this.container[key].taskIndex();
-            if (filepath === undefined) {
-                return task == taskIndex;
-            }
-            else {
-                var file = _this.container[key].filepathFromTree();
-                return (task == taskIndex && file == filepath);
-            }
-        }).map(function (key) { return _this.container[key]; });
-    };
-    /**
-     *
-     * @param callback
-     */
-    SvgContainer.prototype.count = function (callback) {
-        var _this = this;
-        var counter = 0;
-        Object.keys(this.container).forEach(function (key) {
-            if (callback(_this.container[key])) {
-                counter++;
-            }
-        });
-        return counter;
-    };
-    return SvgContainer;
-}());
-var SvgFileRelations = (function () {
-    /**
-     *
-     * @param fileRelations
-     */
-    function SvgFileRelations(fileRelations) {
-        this.fileRelations = fileRelations;
-    }
-    /**
-     *
-     * @param taskIndex
-     * @param filepath
-     * @param dirname
-     */
-    SvgFileRelations.prototype.count = function (taskIndex, filepath, dirname) {
-        var filename = taskIndex + "_" + dirname + "/" + ClientUtility.normalize(filepath);
-        return this.fileRelations
-            .filter(function (relation) { return relation.getOutputFileName() === filename; })
-            .length;
-    };
-    /**
-     *
-     */
-    SvgFileRelations.prototype.setFileRelation = function (allConnectors, allReceptors) {
-        var _this = this;
-        if (this.fileRelations == null) {
-            return;
-        }
-        var relaltions = JSON.parse(JSON.stringify(this.fileRelations));
-        this.clear();
-        relaltions.forEach(function (relation) {
-            var connectors = allConnectors.findFromIndex(relation.index_before_task, relation.path_output_file);
-            var receptors = allReceptors.findFromIndex(relation.index_after_task, relation.path_input_file);
-            if (connectors == null || receptors == null) {
-                return;
-            }
-            connectors.forEach(function (connector, index) {
-                if (connector.isConnect()) {
-                    return;
-                }
-                receptors.forEach(function (receptor) {
-                    if (receptor.isConnect()) {
-                        return;
-                    }
-                    if (!connector.connect(receptor)) {
-                        _this.deleteFileRelation(connector, receptor);
-                    }
-                    else {
-                        _this.addFileRelation(connector, receptor);
-                    }
-                });
-            });
-        });
-    };
-    /**
-     *
-     * @param connector
-     * @param receptor
-     */
-    SvgFileRelations.prototype.createFileRelation = function (connector, receptor) {
-        if (connector == null || receptor == null) {
-            return null;
-        }
-        var outputPath = ClientUtility.normalize(connector.parentDirname() + "/" + connector.filepath());
-        var inputPath = ClientUtility.normalize(receptor.parentDirname() + "/" + receptor.filepath());
-        var relation = {
-            index_before_task: connector.taskIndex(),
-            path_output_file: "./" + outputPath,
-            index_after_task: receptor.taskIndex(),
-            path_input_file: "./" + inputPath,
-        };
-        return new SwfRelationFile(relation);
-    };
-    /**
-     *
-     * @param connector
-     * @param receptor
-     */
-    SvgFileRelations.prototype.addFileRelation = function (connector, receptor) {
-        var relation = this.createFileRelation(connector, receptor);
-        if (relation == null) {
-            return;
-        }
-        this.deleteFileRelation(connector, receptor);
-        this.fileRelations.push(relation);
-    };
-    /**
-     *
-     * @param connector
-     * @param receptor
-     */
-    SvgFileRelations.prototype.deleteFileRelation = function (connector, receptor) {
-        var fileRelation = this.createFileRelation(connector, receptor);
-        if (fileRelation == null) {
-            return;
-        }
-        for (var index = this.fileRelations.length - 1; index >= 0; index--) {
-            if (this.fileRelations[index].toString() === fileRelation.toString()) {
-                this.fileRelations.splice(index, 1);
-            }
-        }
-    };
-    /**
-     *
-     */
-    SvgFileRelations.prototype.clear = function () {
-        this.fileRelations.splice(0, this.fileRelations.length);
-    };
-    return SvgFileRelations;
-}());
-var SvgRelations = (function () {
-    /**
-     *
-     * @param relations
-     */
-    function SvgRelations(relations) {
-        this.relations = relations;
-    }
-    /**
-     *
-     * @param taskIndex
-     */
-    SvgRelations.prototype.getTaskIndexCount = function (taskIndex) {
-        return this.relations
-            .filter(function (relation) { return (relation.index_before_task === taskIndex); })
-            .length;
-    };
-    /**
-     *
-     * @param allLowers
-     * @param allUppers
-     */
-    SvgRelations.prototype.setRelation = function (allLowers, allUppers) {
-        if (this.relations == null) {
-            return;
-        }
-        this.relations.forEach(function (relation) {
-            var lowers = allLowers.findFromIndex(relation.index_before_task);
-            var uppers = allUppers.findFromIndex(relation.index_after_task);
-            if (lowers == null || uppers == null) {
-                return;
-            }
-            lowers.forEach(function (lower) {
-                if (lower.isConnect()) {
-                    return;
-                }
-                uppers.forEach(function (upper) {
-                    lower.connect(upper);
-                });
-            });
-        });
-    };
-    /**
-     *
-     * @param upper
-     * @param lower
-     */
-    SvgRelations.prototype.createRelation = function (upper, lower) {
-        if (upper == null || lower == null) {
-            return null;
-        }
-        return new SwfRelation({
-            index_before_task: lower.taskIndex(),
-            index_after_task: upper.taskIndex()
-        });
-    };
-    /**
-     *
-     * @param upper
-     * @param lower
-     */
-    SvgRelations.prototype.addRelation = function (upper, lower) {
-        var relation = this.createRelation(upper, lower);
-        if (relation == null) {
-            return;
-        }
-        this.deleteRelation(upper, lower);
-        this.relations.push(relation);
-    };
-    /**
-     *
-     * @param upper
-     * @param lower
-     */
-    SvgRelations.prototype.deleteRelation = function (upper, lower) {
-        var taskRelation = this.createRelation(upper, lower);
-        if (taskRelation == null) {
-            return;
-        }
-        for (var index = this.relations.length - 1; index >= 0; index--) {
-            if (this.relations[index].toString() === taskRelation.toString()) {
-                this.relations.splice(index, 1);
-            }
-        }
-    };
-    /**
-     *
-     */
-    SvgRelations.prototype.clear = function () {
-        this.relations = [];
-    };
-    return SvgRelations;
-}());
-var SvgBox = (function () {
-    /**
-     *
-     * @param draw
-     * @param tree
-     * @param position
-     */
-    function SvgBox(draw, tree, position) {
-        this.draw = draw;
-        this.group = this.draw.group();
-        this.inputGroup = this.draw.group();
-        this.outputGroup = this.draw.group();
-        this.tree = tree;
-        this.position = position;
-        this.create();
-    }
-    /**
-     *
-     */
-    SvgBox.prototype.create = function () {
-        var input = this.createInput();
-        var output = this.createOutput();
-        var outputBBox = output.bbox();
-        var inputBBox = input.bbox();
-        var bodyHeight = 12 + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
-        this.height = bodyHeight + SvgBox.titleHeight;
-        var title = this.createTitle();
-        this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, this.title.bbox().width)) + SvgBox.titleHeight * 2;
-        output.x(this.width - 8);
-        this.createConditionFrame();
-        this.group
-            .add(this.createOuterFrame())
-            .add(this.createInnerFrame())
-            .add(title)
-            .add(input)
-            .add(output)
-            .move(this.position.x, this.position.y)
-            .style('cursor', 'default')
-            .opacity(SvgBox.opacity)
-            .draggable();
-        this.innerFrame.size(this.width - SvgBox.stroke, bodyHeight);
-        return this;
-    };
-    /**
-     *
-     * @param mousedown
-     */
-    SvgBox.prototype.onMousedown = function (callback) {
-        var _this = this;
-        this.group.on('mousedown', function (e) {
-            e.preventDefault();
-            _this.group.style('cursor', 'move');
-            callback(_this.tree);
-        });
-        return this;
-    };
-    /**
-     *
-     * @param dblclick
-     */
-    SvgBox.prototype.onDblclick = function (callback) {
-        var _this = this;
-        this.group.on('dblclick', function (e) {
-            e.stopPropagation();
-            e.preventDefault();
-            callback(_this.tree);
-        });
-        return this;
-    };
-    /**
-     *
-     * @param callback
-     */
-    SvgBox.prototype.onDragstart = function (callback) {
-        var _this = this;
-        this.group.on('dragstart', function (e) {
-            e.preventDefault();
-            _this.startX = e.detail.p.x;
-            _this.startY = e.detail.p.y;
-            callback();
-            _this.select();
-        });
-    };
-    /**
-     *
-     * @param callback
-     */
-    SvgBox.prototype.onDragmove = function (callback) {
-        var _this = this;
-        this.group.on('dragmove', function (e) {
-            var x = _this.position.x + e.detail.p.x - _this.startX;
-            var y = _this.position.y + e.detail.p.y - _this.startY;
-            callback(x, y);
-        });
-        return this;
-    };
-    /**
-     *
-     * @param callback
-     */
-    SvgBox.prototype.onDragend = function (callback) {
-        var _this = this;
-        this.group.on('dragend', function (e) {
-            e.preventDefault();
-            _this.group.style('cursor', 'default');
-            // this.position.x = Math.max(this.group.x(), 0);
-            // this.position.y = Math.max(this.group.y(), 0);
-            _this.position.x = _this.group.x();
-            _this.position.y = _this.group.y();
-            _this.group.move(_this.position.x, _this.position.y);
-            callback(_this.position.x, _this.position.y);
-        });
-        return this;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.front = function () {
-        this.group.front();
-        return this;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.x = function () {
-        return this.position.x;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.y = function () {
-        return this.position.y;
-    };
-    /**
-     *
-     * @param x
-     * @param y
-     */
-    SvgBox.prototype.move = function (x, y) {
-        this.position.x = x;
-        this.position.y = y;
-        this.group.move(x, y);
-        return this;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.getHeight = function () {
-        return this.height;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.getWidth = function () {
-        return this.width;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.select = function () {
-        this.group.opacity(1.0);
-        return this;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.unselect = function () {
-        this.group.opacity(SvgBox.opacity);
-        return this;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.createOuterFrame = function () {
-        this.outerFrame = this.draw
-            .polygon([
-            [SvgBox.titleHeight / 2, 0],
-            [this.width, 0],
-            [this.width, SvgBox.titleHeight],
-            [0, SvgBox.titleHeight],
-            [0, SvgBox.titleHeight / 2]
-        ])
-            .fill(config.node_color[this.tree.type.toLowerCase()]);
-        return this.outerFrame;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.createInnerFrame = function () {
-        this.innerFrame = this.draw
-            .rect(0, 0)
-            .attr({
-            'fill': 'rgb(50, 50, 50)',
-            'stroke': config.node_color[this.tree.type.toLowerCase()],
-            'stroke-width': SvgBox.stroke
-        })
-            .move(SvgBox.stroke / 2, SvgBox.titleHeight);
-        return this.innerFrame;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.createTitle = function () {
-        this.title = this.draw
-            .text(this.tree.name)
-            .fill('#111')
-            .x(SvgBox.titleHeight / 2)
-            .cy(SvgBox.titleHeight / 2);
-        return this.title;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.createOutput = function () {
-        var _this = this;
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
-            return this.outputGroup;
-        }
-        this.tree.output_files.forEach(function (output, index) {
-            var y = SvgBox.caclPlugPosY(index);
-            var text = _this.draw
-                .text(output.name)
-                .fill('white')
-                .y(y);
-            text.x(-text.bbox().width);
-            _this.outputGroup.add(text);
-        });
-        return this.outputGroup;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.createInput = function () {
-        var _this = this;
-        this.tree.input_files.forEach(function (input, index) {
-            var y = SvgBox.caclPlugPosY(index);
-            var text = _this.draw
-                .text(input.name)
-                .fill('white')
-                .move(12, y);
-            _this.inputGroup.add(text);
-        });
-        return this.inputGroup;
-    };
-    /**
-     *
-     */
-    SvgBox.prototype.createConditionFrame = function () {
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Break) || ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
-            var polygon = this.draw
-                .polygon([
-                [this.width - 4, 0],
-                [this.width, 0],
-                [this.width + 16, this.height / 2],
-                [this.width, this.height],
-                [this.width - 4, this.height]
-            ])
-                .fill(config.node_color[this.tree.type.toLowerCase()]);
-            this.group.add(polygon);
-        }
-    };
-    SvgBox.prototype.delete = function () {
-        this.draw = null;
-        this.group.off('mousedown', null);
-        this.group.off('dblclick', null);
-        this.group.off('dragstart', null);
-        this.group.off('dragmove', null);
-        this.group.off('dragend', null);
-        this.group.draggable(false);
-        this.inputGroup.each(function (i, children) {
-            children[i].remove();
-        });
-        this.outputGroup.each(function (i, children) {
-            children[i].remove();
-        });
-        this.group.each(function (i, children) {
-            children[i].remove();
-        });
-        this.inputGroup.remove();
-        this.outputGroup.remove();
-        this.group.remove();
-    };
-    /**
-     *
-     * @param index
-     */
-    SvgBox.caclPlugPosY = function (index) {
-        return SvgBox.titleHeight + 5 + index * 25;
-    };
-    return SvgBox;
-}());
-SvgBox.opacity = 0.6;
-SvgBox.stroke = 2;
-SvgBox.titleHeight = 20;
 var SvgNodeUI = (function () {
     /**
-     *
-     * @param svg
-     * @param tree
+     * create new instance
+     * @param svg draw canvas
+     * @param tree target display tree
+     * @param position display position
      */
     function SvgNodeUI(svg, tree, position) {
+        /**
+         * has outout file plugs
+         */
         this.hasConnectors = new SvgContainer();
+        /**
+         * has input file plugs
+         */
         this.hasReceptors = new SvgContainer();
+        /**
+         * has after task plug
+         */
         this.hasLowers = new SvgContainer();
         this.box = new SvgBox(svg, tree, position);
         this.tree = tree;
@@ -650,7 +33,10 @@ var SvgNodeUI = (function () {
         this.onDragend();
     }
     /**
-     *
+     * initialize node
+     * @param id html id of draw canvas
+     * @param mousedown The function to call when we get the mousedown event
+     * @param dblclick The function to call when we get the double click event
      */
     SvgNodeUI.init = function (id, mousedown, dblclick) {
         var _this = this;
@@ -670,6 +56,7 @@ var SvgNodeUI = (function () {
         });
         this.allNodeUI = [];
         if (this.draw == null) {
+            this.id = id;
             this.draw = SVG(id);
             this.draw.on('mousedown', function () {
                 _this.unselect();
@@ -681,19 +68,20 @@ var SvgNodeUI = (function () {
         }
     };
     /**
-     *
-     * @param tree
-     * @param mousedown
-     * @param dblclick
-     * @param isHighlight
+     * create node
+     * @param parent create node tree parent
+     * @param selectTree selected child tree
+     * @param id html id of draw canvas
+     * @param mousedown The function to call when we get the mousedown event
+     * @param dblclick The function to call when we get the double click event
      */
-    SvgNodeUI.create = function (tree, selectTree, id, mousedown, dblclick) {
+    SvgNodeUI.create = function (parent, selectTree, id, mousedown, dblclick) {
         var _this = this;
         this.init(id, mousedown, dblclick);
-        this.fileRelations = new SvgFileRelations(tree.file_relations);
-        this.relations = new SvgRelations(tree.relations);
-        tree.children.forEach(function (child, index) {
-            var node = new SvgNodeUI(SvgNodeUI.draw, child, tree.positions[index]);
+        this.fileRelations = new SvgFileRelations(parent.file_relations);
+        this.relations = new SvgRelations(parent.relations);
+        parent.children.forEach(function (child, index) {
+            var node = new SvgNodeUI(SvgNodeUI.draw, child, parent.positions[index]);
             _this.allNodeUI.push(node);
             node.box.onMousedown(mousedown);
             node.box.onDblclick(dblclick);
@@ -702,11 +90,11 @@ var SvgNodeUI = (function () {
                 _this.selectedNodeUI = node;
             }
         });
-        this.fileRelations.setFileRelation(this.allConnectors, this.allReceptors);
-        this.relations.setRelation(this.allLowers, this.allUppers);
+        this.fileRelations.initFileRelation(this.allConnectors, this.allReceptors);
+        this.relations.initRelation(this.allLowers, this.allUppers);
     };
     /**
-     *
+     * unselect
      */
     SvgNodeUI.unselect = function () {
         if (this.selectedNodeUI != null && this.selectedNodeUI.box != null) {
@@ -715,7 +103,7 @@ var SvgNodeUI = (function () {
         this.selectedNodeUI = null;
     };
     /**
-     *
+     * create before task plug
      */
     SvgNodeUI.prototype.createUpper = function () {
         var _this = this;
@@ -726,7 +114,7 @@ var SvgNodeUI = (function () {
             offsetX: this.box.getWidth() / 2,
             offsetY: 0,
             color: config.plug_color.flow,
-            taskIndex: this.tree.getTaskIndex()
+            tree: this.tree
         };
         var upper = new SvgUpper(plugConfig)
             .onMouseup(function () {
@@ -746,19 +134,19 @@ var SvgNodeUI = (function () {
         SvgNodeUI.allUppers.add(upper);
     };
     /**
-     *
+     * create after task plug
      */
     SvgNodeUI.prototype.createLower = function () {
-        this.generateLower();
+        this.generateNewLower();
         var count = SvgNodeUI.relations.getTaskIndexCount(this.tree.getTaskIndex());
         for (var c = 0; c < count; c++) {
-            this.generateLower();
+            this.generateNewLower();
         }
     };
     /**
-     *
+     * generate new after task plug
      */
-    SvgNodeUI.prototype.generateLower = function () {
+    SvgNodeUI.prototype.generateNewLower = function () {
         var _this = this;
         var plugConfig = {
             svg: SvgNodeUI.draw,
@@ -767,12 +155,12 @@ var SvgNodeUI = (function () {
             offsetX: this.box.getWidth() / 2,
             offsetY: this.box.getHeight() + 2,
             color: config.plug_color.flow,
-            taskIndex: this.tree.getTaskIndex()
+            tree: this.tree
         };
         var lower = new SvgLower(plugConfig)
             .onDragstart(function () {
             if (!lower.isConnect()) {
-                var newer = _this.generateLower();
+                var newer = _this.generateNewLower();
                 console.log("create new lower index=" + newer.name() + " ");
             }
         })
@@ -792,7 +180,7 @@ var SvgNodeUI = (function () {
             var upper = SvgNodeUI.selectedUpper;
             SvgNodeUI.selectedUpper = null;
             _this.front();
-            if (lower.connect(upper)) {
+            if (lower.connect(upper, false)) {
                 SvgNodeUI.relations.addRelation(upper, lower);
             }
             else {
@@ -812,30 +200,28 @@ var SvgNodeUI = (function () {
         return lower;
     };
     /**
-     *
+     * create output file plug
      */
     SvgNodeUI.prototype.createConnector = function () {
         var _this = this;
-        var group = SvgNodeUI.draw.group();
         if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
-            return group;
+            return;
         }
         this.tree.output_files.forEach(function (output, index) {
             var y = SvgBox.caclPlugPosY(index);
-            _this.generateConnector(output, index);
+            _this.generateNewConnector(output, index);
             var count = SvgNodeUI.fileRelations.count(_this.tree.getTaskIndex(), output.path, _this.tree.path);
             for (var c = 0; c < count; c++) {
-                _this.generateConnector(output, index);
+                _this.generateNewConnector(output, index);
             }
         });
-        return group;
     };
     /**
-     *
-     * @param output
-     * @param fileIndex
+     * generate new output file plug
+     * @param output target file
+     * @param index file index
      */
-    SvgNodeUI.prototype.generateConnector = function (output, index) {
+    SvgNodeUI.prototype.generateNewConnector = function (output, index) {
         var _this = this;
         var plugConfig = {
             svg: SvgNodeUI.draw,
@@ -845,13 +231,12 @@ var SvgNodeUI = (function () {
             offsetY: SvgBox.caclPlugPosY(index),
             color: config.plug_color[output.type],
             file: output,
-            tree: this.tree,
-            taskIndex: this.tree.getTaskIndex()
+            tree: this.tree
         };
         var connector = new SvgConnector(plugConfig)
             .onDragstart(function () {
             if (!connector.isConnect()) {
-                var newer = _this.generateConnector(output, index);
+                var newer = _this.generateNewConnector(output, index);
                 console.log("create new connecotr index=" + newer.name() + " ");
             }
         })
@@ -865,7 +250,7 @@ var SvgNodeUI = (function () {
                 receptor.frontIfConnectedPlug();
             });
             SvgNodeUI.fileRelations.deleteFileRelation(connector, receptor);
-            _this.addParentFile(connector, receptor);
+            _this.addParentFileRelation(connector, receptor);
         })
             .onDragmove(function () {
         })
@@ -876,7 +261,7 @@ var SvgNodeUI = (function () {
             _this.front();
             if (connector.connect(receptor)) {
                 SvgNodeUI.fileRelations.addFileRelation(connector, receptor);
-                _this.deleteParentFile(connector, receptor);
+                _this.deleteParentFileRelation(connector, receptor);
             }
             else {
                 SvgNodeUI.allConnectors.remove(connector);
@@ -892,11 +277,10 @@ var SvgNodeUI = (function () {
         return connector;
     };
     /**
-     *
+     * create input file plug
      */
     SvgNodeUI.prototype.createReceptor = function () {
         var _this = this;
-        var group = SvgNodeUI.draw.group();
         this.tree.input_files.forEach(function (input, fileIndex) {
             var plugConfig = {
                 svg: SvgNodeUI.draw,
@@ -906,8 +290,7 @@ var SvgNodeUI = (function () {
                 offsetY: SvgBox.caclPlugPosY(fileIndex),
                 color: config.plug_color[input.type],
                 file: input,
-                tree: _this.tree,
-                taskIndex: _this.tree.getTaskIndex()
+                tree: _this.tree
             };
             var receptor = new SvgReceptor(plugConfig)
                 .onMouseup(function () {
@@ -926,50 +309,49 @@ var SvgNodeUI = (function () {
             _this.hasReceptors.add(receptor);
             SvgNodeUI.allReceptors.add(receptor);
         });
-        return group;
     };
     /**
-     *
-     * @param connector
-     * @param receptor
+     * add file relation to parent
+     * @param connector output file plug
+     * @param receptor input file plug
      */
-    SvgNodeUI.prototype.addParentFile = function (connector, receptor) {
+    SvgNodeUI.prototype.addParentFileRelation = function (connector, receptor) {
         if (receptor == null) {
             return;
         }
-        var filepath = connector.filepathFromTree();
+        var filepath = connector.getFilepathFromTree();
         var count = this.hasConnectors.count(function (plug) {
-            return filepath === plug.filepathFromTree() && plug.isConnect();
+            return filepath === plug.getFilepathFromTree() && plug.isConnect();
         });
         if (count === 0) {
-            this.parent.addOutputFileToParent(connector.taskIndex(), connector.filepathFromTree());
+            this.parent.addOutputFileToParent(connector.getTaskIndex(), connector.getFilepathFromTree());
         }
-        this.parent.addInputFileToParent(receptor.taskIndex(), receptor.filepathFromTree());
+        this.parent.addInputFileToParent(receptor.getTaskIndex(), receptor.getFilepathFromTree());
     };
     /**
-     *
-     * @param connector
-     * @param receptor
+     * delete file relation from parent
+     * @param connector output file plug
+     * @param receptor input file plug
      */
-    SvgNodeUI.prototype.deleteParentFile = function (connector, receptor) {
+    SvgNodeUI.prototype.deleteParentFileRelation = function (connector, receptor) {
         if (connector != null) {
-            var taskIndex = connector.taskIndex();
-            var filepath_1 = connector.filepathFromTree();
+            var taskIndex = connector.getTaskIndex();
+            var filepath_1 = connector.getFilepathFromTree();
             var count = this.hasConnectors.count(function (plug) {
-                return filepath_1 === plug.filepathFromTree() && plug.isConnect();
+                return filepath_1 === plug.getFilepathFromTree() && plug.isConnect();
             });
             if (count !== 0) {
                 this.parent.deleteOutputFileFromParent(taskIndex, filepath_1);
             }
         }
         if (receptor != null) {
-            var taskIndex = receptor.taskIndex();
-            var filepath = receptor.filepathFromTree();
+            var taskIndex = receptor.getTaskIndex();
+            var filepath = receptor.getFilepathFromTree();
             this.parent.deleteInputFileFromParent(taskIndex, filepath);
         }
     };
     /**
-     *
+     * move to front
      */
     SvgNodeUI.prototype.front = function () {
         this.box.front();
@@ -979,7 +361,7 @@ var SvgNodeUI = (function () {
         this.hasConnectors.front();
     };
     /**
-     *
+     * Adds a listener for dragstart event
      */
     SvgNodeUI.prototype.onDragstart = function () {
         var _this = this;
@@ -994,7 +376,7 @@ var SvgNodeUI = (function () {
         });
     };
     /**
-     *
+     * Adds a listener for dragmove event
      */
     SvgNodeUI.prototype.onDragmove = function () {
         var _this = this;
@@ -1003,7 +385,7 @@ var SvgNodeUI = (function () {
         });
     };
     /**
-     *
+     * Adds a listener for dragend event
      */
     SvgNodeUI.prototype.onDragend = function () {
         var _this = this;
@@ -1012,9 +394,9 @@ var SvgNodeUI = (function () {
         });
     };
     /**
-     *
-     * @param x
-     * @param y
+     * move plug
+     * @param x x potision
+     * @param y y position
      */
     SvgNodeUI.prototype.movePlug = function (x, y) {
         this.hasConnectors.forEach(function (connector) {
@@ -1031,13 +413,13 @@ var SvgNodeUI = (function () {
         }
     };
     /**
-     *
-     * @param x
-     * @param y
+     * move to web browser area
+     * @param x x position
+     * @param y y position
      */
     SvgNodeUI.prototype.fit = function (x, y) {
         var _this = this;
-        var element = $('#node_svg');
+        var element = $("#" + SvgNodeUI.id);
         SvgNodeUI.allNodeUI.forEach(function (node) {
             var nodeX = node.box.x();
             var nodeY = node.box.y();
@@ -1051,128 +433,32 @@ var SvgNodeUI = (function () {
     };
     return SvgNodeUI;
 }());
+/**
+ * all nodes
+ */
 SvgNodeUI.allNodeUI = [];
-SvgNodeUI.allReceptors = new SvgContainer();
+/**
+ * all outout file plugs
+ */
 SvgNodeUI.allConnectors = new SvgContainer();
+/**
+ * all input file plugs
+ */
+SvgNodeUI.allReceptors = new SvgContainer();
+/**
+ * all before task plugs
+ */
 SvgNodeUI.allUppers = new SvgContainer();
+/**
+ * all next task plugs
+ */
 SvgNodeUI.allLowers = new SvgContainer();
+/**
+ * file relations
+ */
 SvgNodeUI.fileRelations = new SvgFileRelations([]);
+/**
+ * task relations
+ */
 SvgNodeUI.relations = new SvgRelations([]);
-var SvgNodePane = (function () {
-    /**
-     *
-     * @param draw
-     * @param tree
-     */
-    function SvgNodePane(tree) {
-        this.tree = tree;
-        this.create();
-        this.setEvents();
-    }
-    /**
-     *
-     */
-    SvgNodePane.prototype.create = function () {
-        var x = 10 * this.tree.getHierarchy() + 12;
-        var y = 20 * this.tree.getAbsoluteIndex() + 15;
-        var NORMAL_COLOR = 'white';
-        var HIGHLIGHT_COLOR = 'orange';
-        var color = SvgNodePane.taskIndex === this.tree.getIndexString() ? HIGHLIGHT_COLOR : NORMAL_COLOR;
-        this.triangle = SvgNodePane.draw
-            .polygon([[x - 5, y - 5], [x - 5, y + 5], [x + 2, y]])
-            .attr({ fill: color, stroke: 'black' })
-            .center(x, y);
-        this.text = SvgNodePane.draw
-            .text(this.tree.name)
-            .font({
-            size: 12,
-            leading: '1'
-        })
-            .fill(NORMAL_COLOR)
-            .x(x + 10)
-            .cy(y);
-        SvgNodePane.svgHeight = Math.max(SvgNodePane.svgHeight, y);
-        SvgNodePane.svgWidth = Math.max(SvgNodePane.svgWidth, this.text.bbox().width + this.text.x());
-    };
-    /**
-     *
-     */
-    SvgNodePane.prototype.setEvents = function () {
-        var _this = this;
-        if (!ClientUtility.isImplimentsWorkflow(this.tree.type)) {
-            return;
-        }
-        this.text.style('cursor', 'pointer');
-        this.text.on('mouseover', function () {
-            _this.text.attr({ 'text-decoration': 'underline' });
-        });
-        this.text.on('mouseout', function () {
-            _this.text.attr({ 'text-decoration': 'none' });
-        });
-        this.text.on('click', function () {
-            SvgNodePane.callback(_this.tree);
-        });
-    };
-    /**
-     *
-     */
-    SvgNodePane.prototype.delete = function () {
-        this.text.off('mouseover', null);
-        this.text.off('mouseout', null);
-        this.text.off('click', null);
-        this.text.remove();
-        this.triangle.remove();
-        this.text = null;
-        this.triangle = null;
-    };
-    /**
-     *
-     * @param taskIndex
-     * @param id
-     * @param clicked
-     */
-    SvgNodePane.init = function (taskIndex, id, clicked) {
-        this.panes.forEach(function (pane) {
-            pane.delete();
-            pane = null;
-        });
-        this.callback = null;
-        if (this.draw == null) {
-            this.draw = SVG(id);
-        }
-        this.panes = [];
-        this.svgHeight = 0;
-        this.svgWidth = 0;
-        this.taskIndex = taskIndex;
-        this.callback = clicked;
-    };
-    /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param id
-     * @param clicked
-     */
-    SvgNodePane.create = function (tree, taskIndex, id, clicked) {
-        this.init(taskIndex, id, clicked);
-        this.createPane(tree);
-        this.draw.size(this.svgWidth + 5, this.svgHeight + 10);
-    };
-    /**
-     *
-     * @param draw
-     * @param tree
-     */
-    SvgNodePane.createPane = function (tree) {
-        var _this = this;
-        this.panes.push(new SvgNodePane(tree));
-        tree.children.forEach(function (child) {
-            _this.createPane(child);
-        });
-    };
-    return SvgNodePane;
-}());
-SvgNodePane.svgHeight = 0;
-SvgNodePane.svgWidth = 0;
-SvgNodePane.panes = [];
 //# sourceMappingURL=svgNodeUI.js.map

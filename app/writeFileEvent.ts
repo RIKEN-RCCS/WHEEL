@@ -1,13 +1,11 @@
 import fs = require('fs');
-import path = require('path');
 import logger = require('./logger');
-import serverUtility = require('./serverUtility');
-import serverConfig = require('./serverConfig');
+import ServerSocketIO = require('./serverSocketIO');
 
 /**
- *
+ * socket io communication class for write file to server
  */
-class WriteFileEvent implements SocketListener {
+class WriteFileEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -15,13 +13,8 @@ class WriteFileEvent implements SocketListener {
     private static eventName = 'writeFile';
 
     /**
-     * error is occurred flag
-     */
-    private error: boolean;
-
-    /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(WriteFileEvent.eventName, (filepath: string, data) => {

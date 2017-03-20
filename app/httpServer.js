@@ -13,8 +13,8 @@ var HttpServer = (function () {
     }
     /**
      * start HTTP server
-     * @param port
-     * @returns Server instance
+     * @param port port number
+     * @return http server
      */
     HttpServer.start = function (port) {
         if (port != null) {
@@ -27,7 +27,7 @@ var HttpServer = (function () {
         function requestListener(request, response) {
             var requestUrl = url.parse(request.url, true);
             var pathname = requestUrl.pathname;
-            var filename = HttpServer.createFilepath(pathname);
+            var filename = HttpServer.convertReqpathToFilepath(pathname);
             fs.readFile(filename, readFileCallback);
             function readFileCallback(err, data) {
                 if (err) {
@@ -58,28 +58,28 @@ var HttpServer = (function () {
         }
     };
     /**
-     * create file path
-     * @param pathname request url path name
-     * @returns file path string
+     * convert request path to file path
+     * @param requestPath request path
+     * @return converted file path
      */
-    HttpServer.createFilepath = function (pathname) {
-        if (pathname === '/') {
-            pathname = '/swf/home.html';
+    HttpServer.convertReqpathToFilepath = function (requestPath) {
+        if (requestPath === '/') {
+            requestPath = '/swf/home.html';
         }
-        return path.join(__dirname, 'public', pathname);
+        return path.join(__dirname, 'public', requestPath);
     };
     return HttpServer;
 }());
 /**
- * port number
+ * default port number
  */
 HttpServer.portNumber = process.env.port || 1337;
 /**
- * encoding
+ * encoding string
  */
 HttpServer.encoding = 'UTF-8';
 /**
- * HTTP response header
+ * HTTP response header options
  */
 HttpServer.headers = {
     '.htm': { 'Content-Type': 'text/html', charset: HttpServer.encoding },

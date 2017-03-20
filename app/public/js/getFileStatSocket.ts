@@ -1,45 +1,67 @@
+/**
+ * file status interface
+ */
 interface FileStat {
-    dev: number;
-    ino: number;
-    mode: number;
-    nlink: number;
-    uid: number;
-    gid: number;
-    rdev: number;
-    size: number;
-    blksize: number;
-    blocks: number;
+    /**
+     * device id
+     */
+    readonly dev: number;
+    /**
+     * inode number
+     */
+    readonly ino: number;
+    /**
+     * access mode
+     */
+    readonly mode: number;
+    /**
+     * hard link number
+     */
+    readonly nlink: number;
+    /**
+     * user id
+     */
+    readonly uid: number;
+    /**
+     * group id
+     */
+    readonly gid: number;
+    /**
+     * special device id
+     */
+    readonly rdev: number;
+    /**
+     * file size (byte)
+     */
+    readonly size: number;
+    /**
+     * block size
+     */
+    readonly blksize: number;
+    /**
+     * block number
+     */
+    readonly blocks: number;
     /**
      * last access time
      */
-    atime: string;
+    readonly atime: string;
     /**
      * last modify time
      */
-    mtime: string;
+    readonly mtime: string;
     /**
      * last change time
      */
-    ctime: string;
+    readonly ctime: string;
     /**
      * file birth time
      */
-    birthtime: string;
+    readonly birthtime: string;
 }
 
 /**
- *
- */
-interface GetFileStatCallback {
-    /**
-     *
-     */
-    (stat: FileStat): void;
-}
-
-
-/**
- *
+ * socket io communication class for gettingfile status
  */
 class GetFileStatSocket {
 
@@ -55,18 +77,18 @@ class GetFileStatSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
+     * Adds a listener for connect event that will be invoked a single time before being automatically removed
      * @param filename
-     * @param callback
+     * @param callback The function to call when we get this event
      */
-    public onConnect(filename: string, callback: GetFileStatCallback): void {
+    public onConnect(filename: string, callback: ((stat: FileStat) => void)): void {
         this.socket
             .on('connect', () => {
                 this.emit(filename, callback);
@@ -74,19 +96,19 @@ class GetFileStatSocket {
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get this event
      */
-    public onEvent(callback: GetFileStatCallback): void {
+    public onEvent(callback: ((stat: FileStat) => void)): void {
         this.socket.once(GetFileStatSocket.eventName, callback);
     }
 
     /**
-     *
+     * emit to server for gettingfile status
      * @param filepath
-     * @param callback
+     * @param callback The function to call when we get this event
      */
-    public emit(filepath: string, callback: GetFileStatCallback): void {
+    public emit(filepath: string, callback: ((stat: FileStat) => void)): void {
         this.onEvent(callback);
         this.socket.emit(GetFileStatSocket.eventName, filepath);
     }

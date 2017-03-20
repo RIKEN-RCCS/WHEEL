@@ -2,13 +2,14 @@
 var fs = require("fs");
 var path = require("path");
 /**
- *
+ * server config data class
  */
 var ServerConfig = (function () {
     function ServerConfig() {
     }
     /**
-     *
+     * get configdata
+     * @return config data
      */
     ServerConfig.getConfig = function () {
         if (this.config != null) {

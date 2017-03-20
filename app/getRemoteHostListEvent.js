@@ -1,19 +1,19 @@
 "use strict";
 var logger = require("./logger");
-var swfUtility = require("./serverUtility");
+var ServerUtility = require("./serverUtility");
 /**
- *
+ * socket io communication class for getting host information from server
  */
 var GetRemoteHostListEvent = (function () {
     function GetRemoteHostListEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for connect event
+     * @param socket socket io instance
      */
     GetRemoteHostListEvent.prototype.onEvent = function (socket) {
         socket.on(GetRemoteHostListEvent.eventName, function () {
-            swfUtility.getHostInfo(function (err, hostList) {
+            ServerUtility.getHostInfo(function (err, hostList) {
                 if (err) {
                     logger.error(err);
                     socket.emit(GetRemoteHostListEvent.eventName);

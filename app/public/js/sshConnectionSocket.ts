@@ -1,13 +1,6 @@
-interface SshConnectionParam {
-    label: string;
-    // cid: string,
-    // type: string,
-    // host: string,
-    // passphrase?: string,
-    // isPassword: boolean,
-    isTest: boolean;
-}
-
+/**
+ * socket io communication class for remote ssh connection test to server
+ */
 class SshConnectionSocket {
 
     /**
@@ -22,28 +15,28 @@ class SshConnectionSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     public onEvent(callback: ((isConnect: boolean) => void)): void {
         this.socket.once(SshConnectionSocket.eventName, callback);
     }
 
     /**
-     *
-     * @param label
-     * @param password
-     * @param callback
+     * emit to server for remote ssh connection test
+     * @param name key name of registered host information
+     * @param password password string
+     * @param callback The function to call when we get the event
      */
-    public emit(label: string, password: string, callback: ((isConnect: boolean) => void)): void {
+    public emit(name: string, password: string, callback: ((isConnect: boolean) => void)): void {
         this.onEvent(callback);
-        this.socket.json.emit(SshConnectionSocket.eventName, label, password);
+        this.socket.json.emit(SshConnectionSocket.eventName, name, password);
     }
 }

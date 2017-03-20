@@ -8,13 +8,15 @@ $(() => {
     const dialog = new FileDialog(getFileListSocket);
 
     /**
-     * file dialog event
+     * set dialog events
      */
-    dialog
-        .onDirIconMouseup()
-        .onDirIconDblClick()
-        .onFileIconMouseup()
-        .onFileIconDblClick(ClientUtility.moveWorkflowLink)
-        .onChangeAddress()
-        .updateDialog();
+    (function setDialogEvents() {
+        dialog
+            .onDirIconMouseup()
+            .onDirIconDblClick()
+            .onFileIconMouseup()
+            .onFileIconDblClick(ClientUtility.moveWorkflowLink)
+            .onChangeAddress()
+            .updateDialog();
+    })();
 });

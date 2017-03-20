@@ -1,62 +1,126 @@
-
-interface SwfFileType {
-    file: string;
-    files: string;
-    directory: string;
-}
-
+/**
+ * plug config
+ */
 interface PlugConfig {
+    /**
+     * draw canvas
+     */
     svg: svgjs.Doc;
+    /**
+     * start x point
+     */
     originX: number,
+    /**
+     * start y point
+     */
     originY: number,
+    /**
+     * x offset from svg box
+     */
     offsetX: number;
+    /**
+     * y offset from svg box
+     */
     offsetY: number;
+    /**
+     * color string
+     */
     color: string;
-    taskIndex: number;
+    /**
+     * plug had tree
+     */
+    tree: SwfTree;
+    /**
+     * file data for input and output files plug
+     */
     file?: SwfFile;
-    tree?: SwfTree;
 }
 
+/**
+ * base plug class
+ */
 class SvgPlugBase {
-
+    /**
+     * plug
+     */
     protected plug: svgjs.Element;
+    /**
+     * plug width
+     */
     protected plugWidth: number;
+    /**
+     * plug height
+     */
     protected plugHeight: number;
+    /**
+     * plug config
+     */
     protected plugConfig: PlugConfig;
+    /**
+     * unieue index number
+     */
     private index: number;
+    /**
+     * task index number
+     */
+    private taskIndex: number;
+    /**
+     * counter for definition unieue index number
+     */
     private static counter: number = 0;
 
+    /**
+     * create new instance
+     * @param config plug config
+     */
     public constructor(config: PlugConfig) {
         this.plugConfig = config;
-        const isStream = config.file === undefined;
-        this.plug = SvgPlugBase.createPlug(config.svg, isStream).fill(config.color);
+        const isFileRelation = config.file !== undefined;
+        this.plug = this.createPlug(config.svg, isFileRelation).fill(config.color);
         const bbox = this.plug.bbox();
         this.plugWidth = bbox.width;
         this.plugHeight = bbox.height;
         this.index = SvgPlugBase.counter++;
+        this.taskIndex = config.tree.getTaskIndex();
     }
 
+    /**
+     * get plug name
+     * @return plug name
+     */
     public name(): string {
         if (this.plugConfig.file) {
-            return `${this.index}_${this.plugConfig.taskIndex}_${this.plugConfig.file.path}`;
+            return `${this.index}_${this.taskIndex}_${this.plugConfig.file.path}`;
         }
         else {
-            return `${this.index}_${this.plugConfig.taskIndex}`;
+            return `${this.index}_${this.taskIndex}`;
         }
     }
 
-    public fileType(): string {
+    /**
+     * get file type
+     * @return file type ('file' or 'files' or 'directory')
+     */
+    public getFileType(): string {
         return this.plugConfig.file.type;
     }
 
-    public filepath(): string {
+    /**
+     * get file path
+     * @return file path
+     */
+    public getFilepath(): string {
         if (this.plugConfig.file) {
             return this.plugConfig.file.path;
         }
         return '';
     }
 
-    public filepathFromTree(): string {
+    /**
+     * get file path from tree
+     * @return file path
+     */
+    public getFilepathFromTree(): string {
         if (this.plugConfig.file) {
             if (this.plugConfig.tree) {
                 return `./${ClientUtility.normalize(`${this.plugConfig.tree.path}/${this.plugConfig.file.path}`)}`;
@@ -68,6 +132,17 @@ class SvgPlugBase {
         return '';
     }
 
+    /**
+     * get json file type (ex 'Task', 'Workflow' etc)
+     */
+    public getType(): string {
+        return this.plugConfig.tree.type;
+    }
+
+    /**
+     * get parent directory name
+     * @return parent directory name
+     */
     public parentDirname(): string {
         if (this.plugConfig.tree) {
             return this.plugConfig.tree.path;
@@ -75,10 +150,20 @@ class SvgPlugBase {
         return '';
     }
 
-    public taskIndex(): number {
-        return this.plugConfig.taskIndex;
+    /**
+     * get task index
+     * @return task index
+     */
+    public getTaskIndex(): number {
+        return this.taskIndex;
     }
 
+    /**
+     * move to specified point
+     * @param x x point
+     * @param y y point
+     * @return SvgPlugBase instance
+     */
     public move(x: number, y: number): SvgPlugBase {
         if (this.plug != null) {
             this.plug.move(x, y);
@@ -86,6 +171,10 @@ class SvgPlugBase {
         return this;
     }
 
+    /**
+     * move to front
+     * @return SvgPlugBase instance
+     */
     public front(): SvgPlugBase {
         if (this.plug != null) {
             this.plug.front();
@@ -93,6 +182,10 @@ class SvgPlugBase {
         return this;
     }
 
+    /**
+     * move to back
+     * @return SvgPlugBase instance
+     */
     public back(): SvgPlugBase {
         if (this.plug != null) {
             this.plug.back();
@@ -100,30 +193,34 @@ class SvgPlugBase {
         return this;
     }
 
-    public translate(x: number, y: number): SvgPlugBase {
-        if (this.plug != null) {
-            this.plug.translate(x, y);
-        }
-        return this;
-    }
-
+    /**
+     * get x position
+     * @return x position
+     */
     public x(): number {
         return this.plug.x();
     }
 
+    /**
+     * get y position
+     * @return y position
+     */
     public y(): number {
         return this.plug.y();
     }
 
-    public rotate(d: number): SvgPlugBase {
-        this.plug.rotate(d);
-        return this;
-    }
-
+    /**
+     * get x offset
+     * @return x offset
+     */
     public offset(): svgjs.Transform {
         return this.plug.transform();
     }
 
+    /**
+     * get y offset
+     * @return y offset
+     */
     public delete(): SvgPlugBase {
         this.plugConfig.svg = null;
         this.plug.remove();
@@ -131,6 +228,10 @@ class SvgPlugBase {
         return this;
     }
 
+    /**
+     * move default position
+     * @return SvgPlugBase instance
+     */
     protected moveDefault(): SvgPlugBase {
         this.plug
             .move(this.plugConfig.originX, this.plugConfig.originY)
@@ -138,545 +239,18 @@ class SvgPlugBase {
         return this;
     }
 
-    public static createPlug(svg: svgjs.Element, isStream: boolean): svgjs.Element {
-        if (isStream) {
+    /**
+     * create plug
+     * @param svg draw canvas
+     * @param isFileRelation whether plug is file or not
+     * @return create plug
+     */
+    private createPlug(svg: svgjs.Element, isFileRelation: boolean): svgjs.Element {
+        if (!isFileRelation) {
             return svg.polygon([[0, 0], [20, 0], [20, 5], [10, 10], [0, 5]]);
         }
         else {
             return svg.polygon([[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]]);
-        }
-    }
-}
-
-class SvgConnector extends SvgPlugBase {
-
-    private receptor: SvgReceptor;
-    private cable: SvgCable;
-
-    public constructor(config: PlugConfig) {
-        super(config);
-        this.plug.draggable();
-        this.moveDefault();
-        const cable = this.plugConfig.svg.path('').fill('none').stroke({ color: this.plugConfig.color, width: 2 });
-        this.cable = new SvgCable(cable, this.x(), this.y(), (startX: number, startY: number, endX: number, endY: number) => {
-            const sx = this.plugConfig.offsetX + startX + this.plugWidth / 2;
-            const sy = this.plugConfig.offsetY + startY + this.plugHeight / 2;
-            const ex = this.plugConfig.offsetX + endX + this.plugWidth / 2;
-            const ey = this.plugConfig.offsetY + endY + this.plugHeight / 2;
-            const mx = (sx + ex) / 2;
-            const plot: string[] = [
-                'M',
-                `${sx} ${sy}`,
-                'C',
-                `${mx} ${sy}`,
-                `${mx} ${ey}`,
-                `${ex} ${ey}`
-            ];
-            return plot.join(' ');
-        });
-    }
-
-    public isConnect(): boolean {
-        return this.receptor != null;
-    }
-
-    public onDragstart(callback: (() => void)): SvgConnector {
-        this.plug.on('dragstart', e => {
-            e.preventDefault();
-            callback();
-        });
-        return this;
-    }
-
-    public onMousedown(callback: ((receptor: SvgReceptor) => void)): SvgConnector {
-        this.plug.on('mousedown', () => {
-            const receptor = this.receptor;
-            if (this.isConnect()) {
-                console.log(`disconnect index=${this.name()} to index=${this.receptor.name()}`);
-                this.receptor.deleteConnect();
-                this.receptor = null;
-            }
-            else {
-                this.cable.plotStart(this.x(), this.y());
-            }
-            callback(receptor);
-        });
-        return this;
-    }
-
-    public onDragmove(callback: (() => void)): SvgConnector {
-        this.plug.on('dragmove', e => {
-            if (this.isConnect()) {
-                this.plotConnectedCable(this.receptor);
-            }
-            else {
-                this.cable.plotEnd(this.x(), this.y());
-            }
-            callback();
-        });
-        return this;
-    }
-
-    public onDragend(callback: (() => void)): SvgConnector {
-        this.plug.on('dragend', e => {
-            e.preventDefault();
-            callback();
-        });
-        return this;
-    }
-
-    public connect(receptor: SvgReceptor): boolean {
-        if (receptor != null && receptor.connect(this)) {
-            console.log(`connect index=${this.name()} to index=${receptor.name()}`);
-
-            this.receptor = receptor;
-            this.calcConnectPotision(this.receptor, (x: number, y: number) => {
-                this.move(x, y).front();
-            }).plotConnectedCable(this.receptor);
-            return true;
-        }
-        else {
-            this.cable.delete();
-            this.moveDefault();
-        }
-        return false;
-    }
-
-    public calcConnectPotision(receptor: SvgReceptor, callback: ((x: number, y: number) => void)): SvgConnector {
-        if (this.isConnect() && receptor != null) {
-            const transform = receptor.offset();
-            const x = receptor.x();
-            const y = receptor.y();
-            callback(-this.plugConfig.offsetX + x + transform.x, -this.plugConfig.offsetY + y + transform.y);
-        }
-        return this;
-    }
-
-    public moveIfDisconnect(x: number, y: number): SvgConnector {
-        if (!this.isConnect()) {
-            this.move(x, y);
-        }
-        else {
-            this.cable.plotStart(x, y);
-        }
-        return this;
-    }
-
-    public plotConnectedCable(receptor: SvgReceptor): SvgConnector {
-        if (this.isConnect()) {
-            this.calcConnectPotision(receptor, (x: number, y: number) => {
-                this.cable.plotEnd(x, y);
-            });
-        }
-        return this;
-    }
-
-    public delete(): SvgPlugBase {
-        this.plugConfig.svg = null;
-        this.plugConfig.tree = null;
-        this.plugConfig.file = null;
-        if (this.plug != null) {
-            this.plug.off('mousedown', null);
-            this.plug.off('dragstart', null);
-            this.plug.off('dragmove', null);
-            this.plug.off('dragend', null);
-            this.plug.remove();
-            this.plug = null;
-        }
-        this.cable.remove();
-        return this;
-    }
-}
-
-class SvgReceptor extends SvgPlugBase {
-
-    private connector: SvgConnector;
-    public constructor(config: PlugConfig) {
-        super(config);
-        this.moveDefault();
-    }
-
-    public onMouseup(callback: (() => void)): SvgReceptor {
-        this.plug.on('mouseup', e => {
-            callback();
-        });
-        return this;
-    }
-
-    public isConnect(): boolean {
-        return this.connector != null;
-    }
-
-    private isMatchType(filetype: string): boolean {
-        const fileTypesRegexp = new RegExp(`^(?:${Object.keys(config.file_types).map(key => config.file_types[key]).join('|')})$`);
-        return filetype.match(fileTypesRegexp) ? true : false;
-    }
-
-    public connect(connector: SvgConnector): boolean {
-        const receptorFiletype = this.fileType();
-        const connectorFiletype = connector.fileType();
-
-        if (!this.isMatchType(receptorFiletype) || !this.isMatchType(connectorFiletype)) {
-            return false;
-        }
-        if (receptorFiletype.match(new RegExp(`^${connectorFiletype}`))) {
-            if (!this.isConnect()) {
-                this.connector = connector;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public moveIfConnectedPlug(x: number, y: number): SvgReceptor {
-        this.move(x, y);
-        if (this.isConnect()) {
-            this.connector.calcConnectPotision(this, (x: number, y: number) => {
-                this.connector.move(x, y);
-            });
-            this.connector.plotConnectedCable(this);
-        }
-        return this;
-    }
-
-    public frontIfConnectedPlug(): SvgReceptor {
-        if (this.isConnect()) {
-            this.connector.front();
-        }
-        else {
-            this.front();
-        }
-        return this;
-    }
-
-    public deleteConnect(): SvgReceptor {
-        this.connector = null;
-        return this;
-    }
-
-    public delete(): SvgPlugBase {
-        this.plugConfig.svg = null;
-        this.plugConfig.tree = null;
-        this.plugConfig.file = null;
-        if (this.plug != null) {
-            this.plug.off('mouseup', null);
-            this.plug.remove();
-            this.plug = null;
-        }
-        return this;
-    }
-}
-
-class SvgUpper extends SvgPlugBase {
-    private lowers: { [key: string]: SvgLower } = {};
-    public constructor(config: PlugConfig) {
-        super(config);
-        this.plugConfig.offsetX -= this.plugWidth / 2;
-        this.plugConfig.offsetY -= 5;
-        this.moveDefault();
-    }
-
-    public isConnect(): boolean {
-        return Object.keys(this.lowers).length > 0;
-    }
-
-    public connect(lower: SvgLower): boolean {
-        const taskIndex = lower.taskIndex();
-        if (!this.lowers[taskIndex]) {
-            this.lowers[taskIndex] = lower;
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    public onMouseup(callback: (() => void)): SvgUpper {
-        this.plug.on('mouseup', e => {
-            callback();
-        });
-        return this;
-    }
-
-    public moveIfConnectedPlug(x: number, y: number): SvgUpper {
-        this.move(x, y);
-        Object.keys(this.lowers).forEach(key => {
-            this.lowers[key].calcConnectPotision(this, (x: number, y: number) => {
-                this.lowers[key].move(x, y);
-            });
-            this.lowers[key].plotConnectedCable(this);
-        });
-        return this;
-    }
-
-    public frontIfConnectedPlug(): SvgUpper {
-        if (this.isConnect()) {
-            Object.keys(this.lowers).forEach(key => {
-                this.lowers[key].front();
-            });
-            this.back();
-        }
-        return this;
-    }
-
-    public deleteConnect(lower: SvgLower): SvgUpper {
-        delete this.lowers[lower.taskIndex()];
-        return this;
-    }
-
-    public delete(): SvgPlugBase {
-        this.plugConfig.svg = null;
-        this.plugConfig.tree = null;
-        this.plugConfig.file = null;
-        if (this.plug != null) {
-            this.plug.off('mouseup', null);
-            this.plug.remove();
-            this.plug = null;
-        }
-
-        return this;
-    }
-}
-
-class SvgLower extends SvgPlugBase {
-
-    private upper: SvgUpper;
-    private cable: SvgCable;
-
-    public constructor(config: PlugConfig) {
-        super(config);
-        this.plugConfig.offsetX -= this.plugWidth / 2;
-        this.plugConfig.offsetY -= 5;
-        this.moveDefault();
-        this.plug.draggable();
-
-        const cable = this.plugConfig.svg.path('').fill('none').stroke({ color: this.plugConfig.color, width: 2 });
-        this.cable = new SvgCable(cable, this.x(), this.y(), (startX: number, startY: number, endX: number, endY: number) => {
-            const sx = this.plugConfig.offsetX + startX + this.plugWidth / 2;
-            const sy = this.plugConfig.offsetY + startY + this.plugHeight / 2;
-            const ex = this.plugConfig.offsetX + endX + this.plugWidth / 2;
-            const ey = this.plugConfig.offsetY + endY + this.plugHeight / 2;
-            const my = (sy + ey) / 2;
-            const plot: string[] = [
-                'M',
-                `${sx} ${sy}`,
-                'C',
-                `${sx} ${my}`,
-                `${ex} ${my}`,
-                `${ex} ${ey}`
-            ];
-
-            return plot.join(' ');
-        });
-    }
-
-    public isConnect(): boolean {
-        return this.upper != null;
-    }
-
-    public onDragstart(callback: (() => void)): SvgLower {
-        this.plug.on('dragstart', e => {
-            e.preventDefault();
-            callback();
-        });
-        return this;
-    }
-
-    public onMousedown(callback: ((upper: SvgUpper) => void)): SvgLower {
-        this.plug.on('mousedown', e => {
-            e.preventDefault();
-
-            const upper = this.upper;
-            if (this.isConnect()) {
-                console.log(`disconnect ${this.name()} to ${this.upper.name()}`);
-                this.upper.deleteConnect(this);
-                this.upper = null;
-            }
-            else {
-                this.cable.plotStart(this.x(), this.y());
-            }
-
-            callback(upper);
-        });
-        return this;
-    }
-
-    public onDragmove(callback: (() => void)): SvgLower {
-        this.plug.on('dragmove', e => {
-            if (this.isConnect()) {
-                this.plotConnectedCable(this.upper);
-            }
-            else {
-                this.cable.plotEnd(this.x(), this.y());
-            }
-            callback();
-        });
-        return this;
-    }
-
-    public onDragend(callback: (() => void)): SvgLower {
-        this.plug.on('dragend', e => {
-            e.preventDefault();
-            callback();
-        });
-        return this;
-    }
-
-    public connect(upper: SvgUpper): boolean {
-        if (upper != null && upper.connect(this)) {
-            console.log(`connect lower=${this.name()} to upper=${upper.name()}`);
-            this.upper = upper;
-            this.calcConnectPotision(this.upper, (x: number, y: number) => {
-                this.move(x, y).front();
-            }).plotConnectedCable(this.upper);
-            return true;
-        }
-        else {
-            this.cable.delete();
-            this.moveDefault();
-            return false;
-        }
-    }
-
-    public moveIfDisconnect(x: number, y: number): SvgLower {
-        if (!this.isConnect()) {
-            this.move(x, y);
-        }
-        else {
-            this.cable.plotStart(x, y);
-        }
-        return this;
-    }
-
-    public calcConnectPotision(upper: SvgUpper, callback: ((x: number, y: number) => void)): SvgLower {
-        if (this.isConnect() && upper != null) {
-            const offset = upper.offset();
-            const x = upper.x();
-            const y = upper.y();
-            callback(-this.plugConfig.offsetX + x + offset.x, -this.plugConfig.offsetY + y + offset.y);
-        }
-        return this;
-    }
-
-    public plotConnectedCable(upper: SvgUpper): SvgLower {
-        if (this.isConnect()) {
-            this.calcConnectPotision(upper, (x: number, y: number) => {
-                this.cable.plotEnd(x, y);
-            });
-        }
-        return this;
-    }
-
-    public delete(): SvgPlugBase {
-        this.plugConfig.svg = null;
-        this.plugConfig.tree = null;
-        this.plugConfig.file = null;
-        if (this.plug != null) {
-            this.plug.off('mousedown', null);
-            this.plug.off('dragstart', null);
-            this.plug.off('dragmove', null);
-            this.plug.off('dragend', null);
-            this.plug.draggable(false);
-            this.plug.remove();
-            this.plug = null;
-        }
-        this.cable.remove();
-        return this;
-    }
-}
-
-/**
- * cable class
- */
-class SvgCable {
-
-    /**
-     * cable element
-     */
-    private cable: svgjs.Element;
-    /**
-     * x coordinate of start point
-     */
-    private startX: number;
-    /**
-     * y coordinate of start point
-     */
-    private startY: number;
-    /**
-     * x coordinate of end point
-     */
-    private endX: number;
-    /**
-     * y coordinate of end point
-     */
-    private endY: number;
-    /**
-     * plot cable callback function
-     */
-    private plotCallback: ((startX: number, startY: number, endX: number, endY: number) => string);
-
-    /**
-     *
-     * @param cable
-     * @param startX
-     * @param startY
-     * @param plotCallback
-     */
-    public constructor(cable: svgjs.Element, startX: number, startY: number, plotCallback) {
-        this.plotCallback = plotCallback;
-        this.startX = startX;
-        this.startY = startY;
-        this.cable = cable;
-    }
-
-    /**
-     *
-     * @param x
-     * @param y
-     */
-    public plotStart(x: number, y: number): void {
-        this.startX = x;
-        this.startY = y;
-        this.plotCable();
-    }
-
-    /**
-     *
-     * @param x
-     * @param y
-     */
-    public plotEnd(x: number, y: number): void {
-        this.endX = x;
-        this.endY = y;
-        this.plotCable();
-    }
-
-    /**
-     *
-     */
-    private plotCable(): void {
-        if (this.endX !== undefined && this.endY !== undefined) {
-            const plot: string = this.plotCallback(this.startX, this.startY, this.endX, this.endY);
-            this.cable.plot(plot).back();
-        }
-    }
-
-    /**
-     *
-     */
-    public delete(): void {
-        this.cable.plot('');
-        this.endX = undefined;
-        this.endY = undefined;
-    }
-
-    /**
-     *
-     */
-    public remove(): void {
-        if (this.cable != null) {
-            this.cable.remove();
-            this.cable = null;
         }
     }
 }

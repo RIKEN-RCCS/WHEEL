@@ -4,40 +4,41 @@ var logger = require("./logger");
 var ProjectOperator = require("./projectOperator");
 var ServerConfig = require("./serverConfig");
 /**
- *
+ * socket io communication class for cleaning project request to server
  */
 var CleanProjectvent = (function () {
     function CleanProjectvent() {
         /**
-         *
+         * plannning state
          */
-        this.state = ServerConfig.getConfig().state.planning;
+        this.planningState = ServerConfig.getConfig().state.planning;
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     CleanProjectvent.prototype.onEvent = function (socket) {
         var _this = this;
         socket.on(CleanProjectvent.eventName, function (projectFilePath) {
             var operator = new ProjectOperator(projectFilePath);
-            operator.clean();
-            _this.cleanupProject(projectFilePath, function (err) {
-                if (err) {
-                    logger.error(err);
-                    socket.emit(CleanProjectvent.eventName, false);
-                    return;
-                }
-                socket.emit(CleanProjectvent.eventName, true);
+            operator.cleanAsync(function () {
+                _this.cleanProject(projectFilePath, function (err) {
+                    if (err) {
+                        logger.error(err);
+                        socket.emit(CleanProjectvent.eventName, false);
+                        return;
+                    }
+                    socket.emit(CleanProjectvent.eventName, true);
+                });
             });
         });
     };
     /**
-     *
-     * @param projectFilePath
-     * @param callback
+     * clean project json
+     * @param projectFilePath project json file path
+     * @param callback The function to call when we clean project
      */
-    CleanProjectvent.prototype.cleanupProject = function (projectFilePath, callback) {
+    CleanProjectvent.prototype.cleanProject = function (projectFilePath, callback) {
         var _this = this;
         fs.readFile(projectFilePath, function (err, data) {
             if (err) {
@@ -45,8 +46,8 @@ var CleanProjectvent = (function () {
                 return;
             }
             var projectJson = JSON.parse(data.toString());
-            projectJson.state = _this.state;
-            _this.cleanupLogJson(projectJson.log);
+            projectJson.state = _this.planningState;
+            _this.cleanLogJson(projectJson.log);
             fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), function (err) {
                 if (err) {
                     callback(err);
@@ -57,16 +58,16 @@ var CleanProjectvent = (function () {
         });
     };
     /**
-     *
-     * @param json
+     * clearn log json
+     * @param logJson log json object
      */
-    CleanProjectvent.prototype.cleanupLogJson = function (logJson) {
+    CleanProjectvent.prototype.cleanLogJson = function (logJson) {
         var _this = this;
-        logJson.state = this.state;
+        logJson.state = this.planningState;
         logJson.execution_start_date = '';
         logJson.execution_end_date = '';
         logJson.children.forEach(function (child) {
-            _this.cleanupLogJson(child);
+            _this.cleanLogJson(child);
         });
     };
     return CleanProjectvent;

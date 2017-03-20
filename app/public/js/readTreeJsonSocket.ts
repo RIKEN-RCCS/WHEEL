@@ -1,4 +1,6 @@
-
+/**
+ * socket io communication class for read tree json from server
+ */
 class ReadTreeJsonSocket {
 
     /**
@@ -18,27 +20,27 @@ class ReadTreeJsonSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param filepath
-     * @param callback
+     * Adds a listener for connect event that will be invoked a single time before being automatically removed
+     * @param treeJsonFilepath tree json file path
+     * @param callback The function to call when we get the event
      */
-    public onConnect(filepath: string, callback: ((treeJson: SwfTreeJson) => void)): void {
+    public onConnect(treeJsonFilepath: string, callback: ((treeJson: SwfTreeJson) => void)): void {
         this.callback = callback;
         this.socket
             .on('connect', () => {
-                this.emit(filepath);
+                this.emit(treeJsonFilepath);
             });
     }
 
     /**
-     *
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
      */
     public onEvent(): void {
         this.socket.once(ReadTreeJsonSocket.eventName, (treeJson: SwfTreeJson) => {
@@ -47,11 +49,11 @@ class ReadTreeJsonSocket {
     }
 
     /**
-     *
-     * @param filepath
+     * emit to server for read tree json
+     * @param treeJsonFilepath tree json file path
      */
-    public emit(filepath: string): void {
+    public emit(treeJsonFilepath: string): void {
         this.onEvent();
-        this.socket.emit(ReadTreeJsonSocket.eventName, filepath);
+        this.socket.emit(ReadTreeJsonSocket.eventName, treeJsonFilepath);
     }
 }

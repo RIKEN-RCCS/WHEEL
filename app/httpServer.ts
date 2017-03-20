@@ -15,18 +15,21 @@ class HttpServer {
      * HTTP server instance
      */
     private static server;
+
     /**
-     * port number
+     * default port number
      */
     private static portNumber: number = process.env.port || 1337;
+
     /**
-     * encoding
+     * encoding string
      */
     private static encoding: string = 'UTF-8';
+
     /**
-     * HTTP response header
+     * HTTP response header options
      */
-    private static headers = {
+    private static headers: { [extension: string]: any } = {
         '.htm': { 'Content-Type': 'text/html', charset: HttpServer.encoding },
         '.html': { 'Content-Type': 'text/html', charset: HttpServer.encoding },
         '.css': { 'Content-Type': 'text/css', charset: HttpServer.encoding },
@@ -39,8 +42,8 @@ class HttpServer {
 
     /**
      * start HTTP server
-     * @param port
-     * @returns Server instance
+     * @param port port number
+     * @return http server
      */
     public static start(port?: number): http.Server {
 
@@ -57,7 +60,7 @@ class HttpServer {
         function requestListener(request: http.IncomingMessage, response: http.ServerResponse) {
             const requestUrl = url.parse(request.url, true);
             const pathname = requestUrl.pathname;
-            const filename = HttpServer.createFilepath(pathname);
+            const filename = HttpServer.convertReqpathToFilepath(pathname);
 
             fs.readFile(filename, readFileCallback);
 
@@ -93,15 +96,15 @@ class HttpServer {
     }
 
     /**
-     * create file path
-     * @param pathname request url path name
-     * @returns file path string
+     * convert request path to file path
+     * @param requestPath request path
+     * @return converted file path
      */
-    private static createFilepath(pathname: string): string {
-        if (pathname === '/') {
-            pathname = '/swf/home.html';
+    private static convertReqpathToFilepath(requestPath: string): string {
+        if (requestPath === '/') {
+            requestPath = '/swf/home.html';
         }
-        return path.join(__dirname, 'public', pathname);
+        return path.join(__dirname, 'public', requestPath);
     }
 }
 

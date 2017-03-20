@@ -1,6 +1,5 @@
-
 /**
- *
+ * socket io communication class for template json file from server
  */
 class GetTemplateJsonFileSocket {
 
@@ -16,24 +15,24 @@ class GetTemplateJsonFileSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     public onEvent(callback: ((json: any) => void)): void {
         this.socket.once(GetTemplateJsonFileSocket.eventName, callback);
     }
 
     /**
-     *
-     * @param filetype
-     * @param callback
+     * emit to server for getting template json file
+     * @param filetype json file type
+     * @param callback The function to call when we get the event
      */
     public emit(filetype: JsonFileType, callback: ((json: any) => void)): void {
         this.onEvent(callback);

@@ -1,19 +1,19 @@
 "use strict";
 var logger = require("./logger");
-var serverUtility = require("./serverUtility");
+var ServerUtility = require("./serverUtility");
 /**
- *
+ * socket io communication class for addidg host informattion to server
  */
 var AddHostEvent = (function () {
     function AddHostEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     AddHostEvent.prototype.onEvent = function (socket) {
         socket.on(AddHostEvent.eventName, function (hostInfo) {
-            serverUtility.addHostInfo(hostInfo, function (err) {
+            ServerUtility.addHostInfo(hostInfo, function (err) {
                 if (err) {
                     logger.error(err);
                     socket.emit(AddHostEvent.eventName, false);

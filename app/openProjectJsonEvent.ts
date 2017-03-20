@@ -4,56 +4,59 @@ import path = require('path');
 import logger = require('./logger');
 import ServerUtility = require('./serverUtility');
 import ServerConfig = require('./serverConfig');
+import ServerSocketIO = require('./serverSocketIO');
 
-class OpenProjectJsonEvent implements SocketListener {
+/**
+ * socket io communication class for getting project json from server
+ */
+class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
      */
     private static eventName = 'openProjectJson';
+
     /**
      * config parameter
      */
     private config = ServerConfig.getConfig();
+
     /**
      *
      */
     private queue: SwfLogJson[] = [];
 
     /**
-     *
-     * @param socket
+     * Adds a listener for connect event
+     * @param socket socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
 
-        socket.on(OpenProjectJsonEvent.eventName, (path_project: string) => {
-            fs.readFile(path_project, (err, data) => {
+        socket.on(OpenProjectJsonEvent.eventName, (projectFilepath: string) => {
+            fs.readFile(projectFilepath, (err, data) => {
                 try {
                     if (err) {
-                        // logger.error(err);
-                        // TODO TSURUTA create template project.
-                        // const createJson = ServerUtility.createProjectJson(path_project);
-                        // socket.json.emit(OpenProjectJsonEvent.eventName, createJson);
-                        // this.write(path_project, createJson, socket);
+                        logger.error(err);
+                        socket.emit(OpenProjectJsonEvent.eventName);
+                        return;
+                    }
+                    const projectJson: SwfProjectJson = JSON.parse(data.toString());
+                    if (projectJson.state === this.config.state.planning) {
+                        this.createProjectJson(projectFilepath, projectJson, (err: Error) => {
+                            if (err) {
+                                logger.error(err);
+                                socket.json.emit(OpenProjectJsonEvent.eventName);
+                                return;
+                            }
+                            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+                        });
                     }
                     else {
-                        const projectJson: SwfProjectJson = ServerUtility.readProjectJson(path_project);
-                        if (projectJson.state === this.config.state.planning) {
-                            this.createProjectJson(path_project, projectJson, socket);
-                            return;
-                        }
                         this.queue.length = 0;
                         this.setQueue(projectJson.log);
                         this.updateLogJson(() => {
                             projectJson.state = projectJson.log.state;
-                            ServerUtility.writeJson(path_project, projectJson, (err) => {
-                                if (err) {
-                                    logger.error(err);
-                                    socket.json.emit(OpenProjectJsonEvent.eventName);
-                                    return;
-                                }
-                                socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
-                            });
+                            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
                         });
                     }
                 }
@@ -66,58 +69,112 @@ class OpenProjectJsonEvent implements SocketListener {
     }
 
     /**
-     *
-     * @param json
+     * rename log json path
+     * @param logJson log json data
+     * @param from string befor conversion
+     * @param to string after conversion
      */
-    private setQueue(json: SwfLogJson): void {
-        this.queue.push(json);
-        if (json.children) {
-            json.children.forEach(child => {
+    private renameLogjsonPath(logJson: SwfLogJson, from: string, to: string) {
+        logJson.path = logJson.path.replace(from, to);
+        logJson.children.forEach(child => {
+            this.renameLogjsonPath(child, from, to);
+        });
+    };
+
+
+    /**
+     * set queue scpecified log json data
+     * @param logJson log json data
+     */
+    private setQueue(logJson: SwfLogJson) {
+        this.queue.push(logJson);
+
+        for (let index = logJson.children.length - 1; index >= 0; index--) {
+            const child = logJson.children[index];
+            if (!ServerUtility.isTypeLoop(child) && !ServerUtility.isTypePStudy(child)) {
                 this.setQueue(child);
+                continue;
+            }
+            const basename = path.basename(child.path);
+            const files = fs.readdirSync(logJson.path);
+            const newChildren: SwfLogJson[] = [];
+            files.forEach(file => {
+                if (file.match(new RegExp(`^${basename}\\[([0-9]+)\\]$`))) {
+                    const newLogJson: SwfLogJson = {
+                        name: `${child.name}[${RegExp.$1}]`,
+                        path: `${child.path}[${RegExp.$1}]`,
+                        description: child.description,
+                        type: child.type,
+                        state: child.state,
+                        execution_start_date: '',
+                        execution_end_date: '',
+                        children: JSON.parse(JSON.stringify(child.children))
+                    };
+                    newLogJson.children.forEach(newChild => {
+                        this.renameLogjsonPath(newChild, child.path, newLogJson.path);
+                    });
+                    newChildren.push(newLogJson);
+                }
             });
+            logJson.children.splice(index, 1);
+            newChildren
+                .sort((a, b) => {
+                    const aIndex = parseInt(a.path.match(/\[([0-9]+)\]$/)[1]);
+                    const bIndex = parseInt(b.path.match(/\[([0-9]+)\]$/)[1]);
+                    if (aIndex < bIndex) {
+                        return 1;
+                    }
+                    else {
+                        return -1;
+                    }
+                })
+                .forEach(newChild => {
+                    logJson.children.splice(index, 0, newChild);
+                    this.setQueue(newChild);
+                });
         }
     }
 
     /**
-     *
-     * @param callback
+     * update log json data
+     * @param callback The function to call when we have updated log json
      */
-    private updateLogJson(callback: Function) {
-        const json = this.queue.shift();
-        if (!json) {
+    private updateLogJson(callback: (() => void)) {
+        const logJson = this.queue.shift();
+        if (!logJson) {
             callback();
             return;
         }
 
-        const logFilePath = path.join(json.path, `${this.config.system_name}.log`);
+        if (ServerUtility.isProjectFinished(logJson)) {
+            this.updateLogJson(callback);
+            return;
+        }
+
+        const logFilePath = path.join(logJson.path, `${this.config.system_name}.log`);
         fs.readFile(logFilePath, (err, data) => {
             if (!err) {
                 const readJson: SwfLogJson = JSON.parse(data.toString());
-                json.state = readJson.state;
-                json.execution_start_date = readJson.execution_start_date;
-                json.execution_end_date = readJson.execution_end_date;
+                logJson.state = readJson.state;
+                logJson.execution_start_date = readJson.execution_start_date;
+                logJson.execution_end_date = readJson.execution_end_date;
             }
             this.updateLogJson(callback);
         });
     }
 
     /**
-     *
-     * @param path_project
-     * @param projectJson
-     * @param socket
+     * create project new project json
+     * @param projectPath project json file path
+     * @param projectJson project json data
+     * @param callback The function to call when we have created project json
      */
-    private createProjectJson(path_project: string, projectJson: SwfProjectJson, socket: SocketIO.Socket) {
-        const dir_project = path.dirname(path_project);
+    private createProjectJson(projectPath: string, projectJson: SwfProjectJson, callback: ((err: Error) => void)) {
+        const dir_project = path.dirname(projectPath);
         const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
         projectJson.log = ServerUtility.createLogJson(path_workflow);
-        ServerUtility.writeJson(path_project, projectJson, (err) => {
-            if (err) {
-                logger.error(err);
-                socket.json.emit(OpenProjectJsonEvent.eventName);
-                return;
-            }
-            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+        ServerUtility.writeJson(projectPath, projectJson, (err) => {
+            callback(err);
         });
     }
 }

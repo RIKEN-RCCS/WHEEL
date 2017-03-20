@@ -1,16 +1,19 @@
+/**
+ * json property class for display
+ */
 var JsonProperty = (function () {
     function JsonProperty() {
         /**
-         *
+         * display element
          */
         this.property = $('#property');
         /**
-         *
+         * setting events
          */
         this.events = {};
     }
     /**
-     *
+     * clear all events
      */
     JsonProperty.prototype.clearEvents = function () {
         var _this = this;
@@ -20,49 +23,51 @@ var JsonProperty = (function () {
         });
     };
     /**
-     *
-     * @param object
-     * @param key
-     * @param id
+     * set text changed event for number property
+     * @param object property information of SwfTree instance
+     * @param id id for html
+     * @param prop property config
      */
-    JsonProperty.prototype.createNumberChangedEvent = function (object, key, id, prop) {
+    JsonProperty.prototype.setChangeEventForNumber = function (object, id, prop) {
         var _this = this;
-        $(document).on('change', "#" + id, function (eventObject) {
+        id = "#" + id;
+        this.events[id] = 'change';
+        $(document).on(this.events[id], id, function (eventObject) {
             var element = $(eventObject.target);
             var v = element.val().trim();
             if (v.match(/^\-?\d+$/)) {
-                if (prop.validation === undefined || (prop.validation && prop.validation(_this.child, v))) {
-                    object[key] = parseInt(v);
+                if (prop.validation === undefined || (prop.validation && prop.validation(_this.tree, v))) {
+                    object[prop.key] = parseInt(v);
                     element.borderValid();
                     return;
                 }
             }
             element.borderInvalid();
         });
-        this.events["#" + id] = 'change';
     };
     /**
-     *
-     * @param object
-     * @param key
-     * @param id
-     * @param prop
+     * set keyup event for string property
+     * @param object property information of SwfTree instance
+     * @param id id for html
+     * @param prop property config
      */
-    JsonProperty.prototype.createTextChangedEvent = function (object, key, id, prop) {
+    JsonProperty.prototype.setKeyupEventForString = function (object, id, prop) {
         var _this = this;
-        $(document).on('keyup', "#" + id, function (eventObject) {
+        id = "#" + id;
+        this.events[id] = 'keyup';
+        $(document).on(this.events[id], id, function (eventObject) {
             var element = $(eventObject.target);
             var newData = element.val();
-            var oldData = object[key];
+            var oldData = object[prop.key];
             if (oldData === newData) {
                 element.borderValid();
                 return;
             }
-            if (prop.validation === undefined || (prop.validation && prop.validation(_this.child, newData, oldData))) {
+            if (prop.validation === undefined || (prop.validation && prop.validation(_this.tree, newData, oldData))) {
                 if (prop.callback) {
-                    prop.callback(_this.child, object, newData);
+                    prop.callback(_this.tree, object, newData);
                 }
-                object[key] = newData;
+                object[prop.key] = newData;
                 if (prop.isUpdateUI) {
                     $(document).trigger('updateDisplay');
                 }
@@ -75,55 +80,38 @@ var JsonProperty = (function () {
         this.events["#" + id] = 'keyup';
     };
     /**
-     *
-     * @param object
-     * @param key
-     * @param id
+     * set select box change event for boolean property
+     * @param object property information of SwfTree instance
+     * @param id id for html
+     * @param prop property config
      */
-    JsonProperty.prototype.createBooleanChangedEvent = function (object, key, id, prop) {
+    JsonProperty.prototype.setChangeEventForBoolean = function (object, id, prop) {
         var _this = this;
-        $(document).on('change', "#" + id, function (eventObject) {
+        id = "#" + id;
+        this.events[id] = 'change';
+        $(document).on(this.events[id], id, function (eventObject) {
             var element = $(eventObject.target);
             var newData = element.val();
-            var oldData = object[key];
+            var oldData = object[prop.key];
             if (oldData === newData) {
                 return;
             }
             if (prop.callback) {
-                prop.callback(_this.child, object, newData);
+                prop.callback(_this.tree, object, newData);
             }
-            object[key] = newData === 'true';
+            object[prop.key] = newData === 'true';
         });
-        this.events["#" + id] = 'change';
     };
     /**
-     *
-     * @param object
-     * @param key
-     * @param id
+     * set select box change event for host property
+     * @param host registered host information
+     * @param id id for html
      */
-    JsonProperty.prototype.createTypeChangedEvent = function (object, key, id, prop) {
-        $(document).on('change', "#" + id, function (eventObject) {
-            var newData = $(eventObject.target).val();
-            var oldData = object[key];
-            if (oldData === newData) {
-                return;
-            }
-            object[key] = newData;
-            $(document).trigger('updateDisplay');
-        });
-        this.events["#" + id] = 'change';
-    };
-    /**
-     *
-     * @param host
-     * @param key
-     * @param id
-     * @param prop
-     */
-    JsonProperty.prototype.createHostChangedEvent = function (host, id) {
+    JsonProperty.prototype.setChangeEventForHost = function (host, id) {
         var _this = this;
-        $(document).on('change', "#" + id, function (eventObject) {
+        id = "#" + id;
+        this.events[id] = 'change';
+        $(document).on(this.events[id], id, function (eventObject) {
             var newData = $(eventObject.target).val();
             var oldData = host.name;
             if (oldData === newData) {
@@ -137,17 +125,16 @@ var JsonProperty = (function () {
             host.username = newHost.username;
             host.privateKey = newHost.privateKey;
         });
-        this.events["#" + id] = 'change';
     };
     /**
-     *
-     * @param host
-     * @param key
-     * @param id
-     * @param prop
+     * set select box change event for scheduler property
+     * @param host registered host information
+     * @param id id for html
      */
-    JsonProperty.prototype.createSchedulerChangedEvent = function (host, id) {
-        $(document).on('change', "#" + id, function (eventObject) {
+    JsonProperty.prototype.setChangeEnvetForScheduler = function (host, id) {
+        id = "#" + id;
+        this.events[id] = 'change';
+        $(document).on(this.events[id], id, function (eventObject) {
             var newData = $(eventObject.target).val();
             var oldData = host.job_scheduler;
             if (oldData === newData) {
@@ -155,65 +142,6 @@ var JsonProperty = (function () {
             }
             host.job_scheduler = newData;
         });
-        this.events["#" + id] = 'change';
-    };
-    /**
-     *
-     * @param object
-     * @param prop
-     */
-    JsonProperty.prototype.getContents = function (object, prop) {
-        var content = '';
-        var id = "property_" + JsonProperty.counter++;
-        var key = prop.key;
-        if (prop.readonly && prop.readonly(this.child, object)) {
-            content = "<input type=\"text\" value=\"" + object[key] + "\" class=\"text_box text_readonly property_text\" disabled>";
-        }
-        else {
-            switch (prop.type) {
-                case 'string':
-                    content = "<input type=\"text\" value=\"" + object[key] + "\" class=\"text_box property_text\" id=\"" + id + "\">";
-                    this.createTextChangedEvent(object, key, id, prop);
-                    break;
-                case 'number':
-                    content = "<input type=\"number\" value=\"" + object[key] + "\" class=\"text_box property_text\" id=\"" + id + "\" min=\"0\">";
-                    this.createNumberChangedEvent(object, key, id, prop);
-                    break;
-                case 'boolean':
-                    var selectedTrue = object[key] ? 'selected' : '';
-                    var selectedFalse = !object[key] ? 'selected' : '';
-                    content = "\n                    <select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">\n                        <option value=\"true\" " + selectedTrue + ">TRUE</option>\n                        <option value=\"false\" " + selectedFalse + ">FALSE</option>\n                    </select>";
-                    this.createBooleanChangedEvent(object, key, id, prop);
-                    break;
-                case 'host':
-                    var hosts = this.hostInfos.map(function (host) {
-                        var isSelected = host.name === object.name ? 'selected' : '';
-                        return "<option value=\"" + host.name + "\" " + isSelected + ">" + host.name + "</option>";
-                    });
-                    content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + hosts.join('') + "</select>";
-                    this.createHostChangedEvent(object, id);
-                    break;
-                case 'scheduler':
-                    var schedulers = Object.keys(config.scheduler).map(function (key) {
-                        var value = config.scheduler[key];
-                        var isSelected = value === object.job_scheduler ? 'selected' : '';
-                        return "<option value=\"" + value + "\" " + isSelected + ">" + value + "</option>";
-                    });
-                    content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + schedulers.join('') + "</select>";
-                    this.createSchedulerChangedEvent(object, id);
-                    break;
-                default:
-                    break;
-            }
-        }
-        return "\n            <tr>\n                <td style=\"width:150px; padding-left: 10px\">" + this.createItemName(key) + "</td>\n                <td style=\"height: 29px\">" + content + "</td>\n            <tr>";
-    };
-    /**
-     * update property infomation
-     */
-    JsonProperty.prototype.updateDisplay = function () {
-        this.property.empty();
-        this.property.html(this.createPropertyHtml(this.child));
     };
     /**
      *
@@ -221,17 +149,17 @@ var JsonProperty = (function () {
      * @param key
      * @param prop
      */
-    JsonProperty.prototype.setupButtonEvent = function (object, key, props) {
+    JsonProperty.prototype.createButtonEvent = function (object, props) {
         var _this = this;
         var html = [];
         var title;
         props.forEach(function (prop) {
             var id = "button_property_" + JsonProperty.counter++;
-            if (!prop.validation || prop.validation(_this.child)) {
+            if (!prop.validation || prop.validation(_this.tree)) {
                 $(document).on('click', "#" + id, function (eventObject) {
                     var element = $(eventObject.target);
                     if (prop.callback) {
-                        prop.callback(_this.child, object);
+                        prop.callback(_this.tree, object);
                     }
                     if (prop.isUpdateUI) {
                         _this.updateDisplay();
@@ -254,24 +182,81 @@ var JsonProperty = (function () {
         return "<hr><div>" + title + "<div>" + html.join('') + "</div></div>";
     };
     /**
+     * create html content
+     * @param object property information of SwfTree instance
+     * @param prop property config
+     */
+    JsonProperty.prototype.createHtmlContent = function (object, prop) {
+        var content = '';
+        var id = "property_" + JsonProperty.counter++;
+        if (prop.readonly && prop.readonly(this.tree, object)) {
+            content = "<input type=\"text\" value=\"" + object[prop.key] + "\" class=\"text_box text_readonly property_text\" disabled>";
+        }
+        else {
+            switch (prop.type) {
+                case 'string':
+                    content = "<input type=\"text\" value=\"" + object[prop.key] + "\" class=\"text_box property_text\" id=\"" + id + "\">";
+                    this.setKeyupEventForString(object, id, prop);
+                    break;
+                case 'number':
+                    content = "<input type=\"number\" value=\"" + object[prop.key] + "\" class=\"text_box property_text\" id=\"" + id + "\" min=\"0\">";
+                    this.setChangeEventForNumber(object, id, prop);
+                    break;
+                case 'boolean':
+                    var selectedTrue = object[prop.key] ? 'selected' : '';
+                    var selectedFalse = !object[prop.key] ? 'selected' : '';
+                    content = "\n                    <select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">\n                        <option value=\"true\" " + selectedTrue + ">TRUE</option>\n                        <option value=\"false\" " + selectedFalse + ">FALSE</option>\n                    </select>";
+                    this.setChangeEventForBoolean(object, id, prop);
+                    break;
+                case 'host':
+                    var hosts = this.hostInfos.map(function (host) {
+                        var isSelected = host.name === object.name ? 'selected' : '';
+                        return "<option value=\"" + host.name + "\" " + isSelected + ">" + host.name + "</option>";
+                    });
+                    content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + hosts.join('') + "</select>";
+                    this.setChangeEventForHost(object, id);
+                    break;
+                case 'scheduler':
+                    var schedulers = Object.keys(config.scheduler).map(function (key) {
+                        var value = config.scheduler[key];
+                        var isSelected = value === object.job_scheduler ? 'selected' : '';
+                        return "<option value=\"" + value + "\" " + isSelected + ">" + value + "</option>";
+                    });
+                    content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + schedulers.join('') + "</select>";
+                    this.setChangeEnvetForScheduler(object, id);
+                    break;
+                default:
+                    break;
+            }
+        }
+        return "\n            <tr>\n                <td style=\"width:150px; padding-left: 10px\">" + this.createItemName(prop.key) + "</td>\n                <td style=\"height: 29px\">" + content + "</td>\n            <tr>";
+    };
+    /**
+     * update property infomation
+     */
+    JsonProperty.prototype.updateDisplay = function () {
+        this.property.empty();
+        this.property.html(this.createPropertyHtml());
+    };
+    /**
      * create property item name
-     * @param key
+     * @param key property key name
+     * @return create property item name
      */
     JsonProperty.prototype.createItemName = function (key) {
         return key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').toLocaleLowerCase();
     };
     /**
      * create property html
-     * @param tree
+     * @return html string
      */
-    JsonProperty.prototype.createPropertyHtml = function (tree) {
+    JsonProperty.prototype.createPropertyHtml = function () {
         var _this = this;
         this.clearEvents();
         JsonProperty.counter = 0;
-        this.child = tree;
         var html = ['<div>property</div>'];
         var parentHtml = [];
-        var property = ClientUtility.getPropertyInfo(tree);
+        var property = ClientUtility.getPropertyInfo(this.tree);
         var createTableHtml = function (data) {
             var html = "<table>" + data.join('') + "</table>";
             data.length = 0;
@@ -279,7 +264,7 @@ var JsonProperty = (function () {
         };
         var createSubTitle = function (object, prop) {
             if (prop.button) {
-                return _this.setupButtonEvent(object, prop.key, prop.button);
+                return _this.createButtonEvent(object, prop.button);
             }
             else if (prop.title) {
                 return "<hr><div>" + prop.title + "</div>";
@@ -294,11 +279,11 @@ var JsonProperty = (function () {
                 if (html[0]) {
                     parentHtml.push(createTableHtml(html));
                 }
-                tree[key].forEach(function (value, index) {
+                _this.tree[key].forEach(function (value, index) {
                     prop.item.forEach(function (item) {
-                        html.push(_this.getContents(value, item));
+                        html.push(_this.createHtmlContent(value, item));
                     });
-                    parentHtml.push(createSubTitle(tree[key][index], prop));
+                    parentHtml.push(createSubTitle(_this.tree[key][index], prop));
                     parentHtml.push(createTableHtml(html));
                 });
                 html.length = 0;
@@ -309,23 +294,23 @@ var JsonProperty = (function () {
                 }
                 if (prop.item) {
                     prop.item.forEach(function (item) {
-                        html.push(_this.getContents(tree[key], item));
+                        html.push(_this.createHtmlContent(_this.tree[key], item));
                     });
-                    parentHtml.push(createSubTitle(tree[key], prop));
+                    parentHtml.push(createSubTitle(_this.tree[key], prop));
                     parentHtml.push(createTableHtml(html));
                 }
                 else {
-                    parentHtml.push(createSubTitle(tree[key], prop));
+                    parentHtml.push(createSubTitle(_this.tree[key], prop));
                 }
             }
             else {
                 if (prop.title) {
-                    html.push(createSubTitle(tree[key], prop));
+                    html.push(createSubTitle(_this.tree[key], prop));
                 }
                 else if (!html[0]) {
                     html.push('<hr>');
                 }
-                html.push(_this.getContents(tree, prop));
+                html.push(_this.createHtmlContent(_this.tree, prop));
             }
         });
         if (html.length) {
@@ -345,14 +330,14 @@ var JsonProperty = (function () {
         });
     };
     /**
-     *
      * show property
-     * @param tree
-     * @param hostInfos
+     * @param tree display target SwfTree instance
+     * @param hostInfos registerd host informations
      */
     JsonProperty.prototype.show = function (tree, hostInfos) {
+        this.tree = tree;
         this.hostInfos = hostInfos;
-        this.property.html(this.createPropertyHtml(tree));
+        this.property.html(this.createPropertyHtml());
         if (this.property.css('display') === 'none') {
             this.property.displayBlock();
             this.property.animate({ width: '350px', 'min-width': '350px' }, 100);
@@ -361,7 +346,7 @@ var JsonProperty = (function () {
     return JsonProperty;
 }());
 /**
- *
+ * unique counter for html element id
  */
 JsonProperty.counter = 0;
 //# sourceMappingURL=jsonProperty.js.map

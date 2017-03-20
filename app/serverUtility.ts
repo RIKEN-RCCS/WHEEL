@@ -1,22 +1,55 @@
 import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
-import serverConfig = require('./serverConfig');
+import ServerConfig = require('./serverConfig');
 
 /**
  * json file type
  */
 enum JsonFileType {
+    /**
+     * file type project
+     */
     Project,
+    /**
+     * file type workflow
+     */
     WorkFlow,
+    /**
+     * file type task
+     */
     Task,
+    /**
+     * file type remote task
+     */
     RemoteTask,
+    /**
+     * file type job
+     */
     Job,
+    /**
+     * file type loop
+     */
     Loop,
+    /**
+     * file type if
+     */
     If,
+    /**
+     * file type else
+     */
     Else,
+    /**
+     * file type condition
+     */
     Condition,
+    /**
+     * file type break
+     */
     Break,
+    /**
+     * file type parameter study
+     */
     PStudy
 }
 
@@ -24,7 +57,12 @@ enum JsonFileType {
  * Utility for server
  */
 class ServerUtility {
-    public static copyFile(path_src, path_dst) {
+    /**
+     * copy file
+     * @param path_src source path string
+     * @param path_dst destination path string
+     */
+    public static copyFile(path_src: string, path_dst: string) {
         if (!fs.existsSync(path_src)) {
             return;
         }
@@ -38,10 +76,67 @@ class ServerUtility {
         if (fs.existsSync(path_dst_file)) {
             fs.unlinkSync(path_dst_file);
         }
-        fs.createReadStream(path_src).pipe(fs.createWriteStream(path_dst_file));
+
+        fs.writeFileSync(path_dst_file, fs.readFileSync(path_src));
     }
 
-    public static copyFolder(path_src, path_dst) {
+    /**
+     * copy file async
+     * @param path_src source path string
+     * @param path_dst destination path string
+     * @param callback The function to call when we have finished copy file
+     */
+    public static copyFileAsync(path_src: string, path_dst: string, callback: ((err?: Error) => void)) {
+        let path_dst_file = path_dst;
+
+        const copy = () => {
+            fs.readFile(path_src, (err, data) => {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                fs.writeFile(path_dst_file, data, (err) => {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    callback();
+                });
+            });
+        };
+
+        fs.stat(path_src, (err, stat) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+            fs.lstat(path_dst, (err, stat) => {
+                if (!err && stat.isDirectory()) {
+                    path_dst_file = path.join(path_dst, path.basename(path_src));
+                }
+                fs.stat(path_dst_file, (err, stat) => {
+                    if (err) {
+                        copy();
+                        return;
+                    }
+                    fs.unlink(path_dst_file, (err) => {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        copy();
+                    });
+                });
+            });
+        });
+    }
+
+    /**
+     * copy folder
+     * @param path_src source path string
+     * @param path_dst destination path string
+     */
+    public static copyFolder(path_src: string, path_dst: string) {
         if (!fs.existsSync(path_src)) {
             return;
         }
@@ -65,11 +160,124 @@ class ServerUtility {
     }
 
     /**
-     *
+     * copy folder async
+     * @param path_src source path string
+     * @param path_dst destination path string
+     * @param callback The funcion to call when we have finished to copy folder
+     */
+    public static copyFolderAsync(path_src: string, path_dst: string, callback: ((err?: Error) => void)) {
+
+        let filenames: string[];
+
+        const loop = () => {
+            const filename = filenames.shift();
+            if (!filename) {
+                callback();
+                return;
+            }
+
+            const path_src_child = path.join(path_src, filename);
+            fs.lstat(path_src_child, (err, stat) => {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                if (stat.isDirectory()) {
+                    this.copyFolderAsync(path_src_child, path.join(path_dst, filename), loop);
+                }
+                else {
+                    this.copyFileAsync(path_src_child, path_dst, loop);
+                }
+            });
+        };
+
+        fs.stat(path_src, (err, stat) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+            fs.stat(path_dst, (err, stat) => {
+                fs.mkdir(path_dst, (err) => {
+                    fs.lstat(path_src, (err, stat) => {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        if (!stat.isDirectory()) {
+                            callback(new Error(`${path_src} is not directory`));
+                            return;
+                        }
+                        fs.readdir(path_src, (err, files) => {
+                            if (err) {
+                                callback(err);
+                                return;
+                            }
+                            filenames = files;
+                            loop();
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+    /**
+     * unlink specified directory
+     * @param path_dir unlink directory path
+     */
+    public static unlinkDirectory(path_dir: string) {
+        if (!fs.existsSync(path_dir)) {
+            return;
+        }
+
+        if (fs.lstatSync(path_dir).isDirectory()) {
+            const name_bases = fs.readdirSync(path_dir);
+            for (let i = 0; i < name_bases.length; i++) {
+                const path_child = path.join(path_dir, name_bases[i]);
+                if (fs.lstatSync(path_child).isDirectory()) {
+                    ServerUtility.unlinkDirectory(path_child);
+                } else {
+                    fs.unlinkSync(path_child);
+                }
+            }
+            fs.rmdirSync(path_dir);
+        }
+    }
+
+    /**
+     * link directory
+     * @param path_src source path string
+     * @param path_dst destination path string
+     */
+    public static linkDirectory(path_src: string, path_dst: string) {
+        if (!fs.existsSync(path_src)) {
+            return;
+        }
+
+        if (!fs.existsSync(path_dst)) {
+            fs.mkdirSync(path_dst);
+        }
+
+        //copy
+        if (fs.lstatSync(path_src).isDirectory()) {
+            const files = fs.readdirSync(path_src);
+            files.forEach(function (name_base) {
+                const path_src_child = path.join(path_src, name_base);
+                if (fs.lstatSync(path_src_child).isDirectory()) {
+                    ServerUtility.copyFolder(path_src_child, path.join(path_dst, name_base));
+                } else {
+                    ServerUtility.copyFile(path_src_child, path_dst);
+                }
+            });
+        }
+    }
+
+
+    /**
+     * write file with replace keyword
      * @param src_path path of source file
      * @param dst_path path of destination file
      * @param values to replace set of key and value
-     * @returns none
      */
     public static writeFileKeywordReplaced(src_path: string, dst_path: string, values: Object) {
         const data: Buffer = fs.readFileSync(src_path);
@@ -81,16 +289,17 @@ class ServerUtility {
     }
 
     /**
-     *
-     * @param src_path
-     * @param dst_path
-     * @param values
-     * @param callback
+     * write file async with replace keyword
+     * @param src_path path of source file
+     * @param dst_path path of destination file
+     * @param values to replace set of key and value
+     * @param callback The function to call when we have finished to write file
      */
-    public static writeFileKeywordReplacedAsync(src_path: string, dst_path: string, values: { [key: string]: string }, callback: Function) {
+    public static writeFileKeywordReplacedAsync(src_path: string, dst_path: string, values: { [key: string]: string }, callback: ((err?: Error) => void)) {
         fs.readFile(src_path, (err, data) => {
             if (err) {
                 logger.error(err);
+                callback(err);
                 return;
             }
 
@@ -101,7 +310,7 @@ class ServerUtility {
 
             fs.writeFile(dst_path, text, (err) => {
                 if (err) {
-                    logger.error(err);
+                    callback(err);
                     return;
                 }
                 callback();
@@ -112,13 +321,11 @@ class ServerUtility {
     /**
      * config parameter
      */
-    private static config = serverConfig.getConfig();
+    private static config = ServerConfig.getConfig();
 
     /**
      * get all host infomation
-     * @param isSucceed execute callback function when process is succeed
-     * @param ifError exexute callback function when process is failed
-     * @returns none
+     * @param callback The function to call when we have finished to get host information
      */
     public static getHostInfo(callback: ((err?: Error, hosts?: SwfHostJson[]) => void)) {
         fs.readFile(ServerUtility.getHostListPath(), (err, data) => {
@@ -139,9 +346,7 @@ class ServerUtility {
     /**
      * delete host information
      * @param name delete host label name
-     * @param isSucceed execute callback function when process is succeed
-     * @param ifError exexute callback function when process is failed
-     * @returns none
+     * @param callback The function to call when we have finished to delete host information
      */
     public static deleteHostInfo(name: string, callback: ((err?: Error) => void)) {
         this.getHostInfo((err, remoteHostList) => {
@@ -168,9 +373,7 @@ class ServerUtility {
     /**
      * add host information
      * @param addHostInfo add host information
-     * @param isSucceed execute callback function when process is succeed
-     * @param ifError exexute callback function when process is failed
-     * @returns none
+     * @param callback The function to call when we have finished to add host information
      */
     public static addHostInfo(addHostInfo: SwfHostJson, callback: ((err?) => void)) {
         this.getHostInfo((err, remoteHostList) => {
@@ -196,14 +399,16 @@ class ServerUtility {
     }
 
     /**
-     *
+     * get host list path
+     * @return host list path
      */
     public static getHostListPath(): string {
         return path.join(__dirname, this.config.remotehost);
     }
 
     /**
-     *
+     * read template project json file
+     * @return template project json data
      */
     public static readTemplateProjectJson(): SwfProjectJson {
         const filepath = this.getTemplateFilePath(JsonFileType.Project);
@@ -211,7 +416,8 @@ class ServerUtility {
     }
 
     /**
-     *
+     * read template workflow json file
+     * @return template workflow json data
      */
     public static readTemplateWorkflowJson(): SwfWorkflowJson {
         const filepath = this.getTemplateFilePath(JsonFileType.WorkFlow);
@@ -219,9 +425,9 @@ class ServerUtility {
     }
 
     /**
-     * read .prj.json file tree
-     * @param filepath project json file (.proj.json file)
-     * @return swf project json
+     * read projct json
+     * @param filepath project json file path
+     * @return project json data
      */
     public static readProjectJson(filepath: string): SwfProjectJson {
         const regex = new RegExp(`(?:${this.config.extension.project.replace(/\./, '\.')})$`);
@@ -314,9 +520,9 @@ class ServerUtility {
     }
 
     /**
-     * read .wf.json file tree
+     * create project json data
      * @param path_project project json file (.prj.json)
-     * @return project json file
+     * @return project json data
      */
     public static createProjectJson(path_project: string): SwfProjectJson {
         const projectJson: SwfProjectJson = this.readProjectJson(path_project);
@@ -328,10 +534,10 @@ class ServerUtility {
     }
 
     /**
-     *
-     * @param filepath
-     * @param json
-     * @param callback
+     * write json data
+     * @param filepath write file path
+     * @param json write json data
+     * @param callback The function to call when we write json file
      */
     public static writeJson(filepath: string, json: any, callback: ((err?: Error) => void)): void {
         fs.writeFile(filepath, JSON.stringify(json, null, '\t'), (err) => {
@@ -346,7 +552,7 @@ class ServerUtility {
     /**
      * whether specified hostname is localhost or not
      * @param hostname hostname
-     * @returns true(localhost) or false
+     * @return whether specified hostname is localhost or not
      */
     public static isLocalHost(hostname: string): boolean {
         return (hostname === 'localhost') || (hostname === '127.0.0.1');
@@ -354,7 +560,7 @@ class ServerUtility {
 
     /**
      * whether platform is windows or not
-     * @returns true(windows) or false
+     * @return whether platform is windows or not
      */
     public static isWindows(): boolean {
         return process.platform === 'win32';
@@ -362,7 +568,7 @@ class ServerUtility {
 
     /**
      * whether platform is linux or not
-     * @returns true(linux) or false
+     * @return whether platform is linux or not
      */
     public static isLinux(): boolean {
         return process.platform === 'linux';
@@ -370,7 +576,7 @@ class ServerUtility {
 
     /**
      * get home directory
-     * @returns directory path
+     * @return home directory path
      */
     public static getHomeDir(): string {
         if (this.isWindows()) {
@@ -385,82 +591,92 @@ class ServerUtility {
     }
 
     /**
-     *
-     * @param fileType
-     * @returns
+     * get template file path by type
+     * @param fileType json file type
+     * @return template file path by type
      */
     public static getTemplateFilePath(fileType: JsonFileType): string {
-        return this.getTemplate(fileType).getPath();
+        return this.getTypeOfJson(fileType).getTemplateFilepath();
     }
 
     /**
-     *
-     * @param filepath
-     * @param fileType
+     * whether specified log json or project json is finished or not
+     * @param json project json data or log json data
+     * @return whether specified log json or project json is finished or not
      */
-    public static getTemplateFile(filepath: string, fileType: JsonFileType): string {
-        const extension: string = this.getTemplate(fileType).getExtension();
-        if (!filepath.match(new RegExp(`${extension.replace(/\./, '\.')}$`))) {
-            filepath += extension;
-        }
-        return filepath;
+    public static isProjectFinished(json: (SwfLogJson | SwfProjectJson)) {
+        return json.state === this.config.state.finishd || json.state === this.config.state.failed;
     }
 
     /**
-     *
-     * @param json
+     * whether specified json is type of job or not
+     * @param json tree json data or log json data
+     * @return whether specified json is type of job or not
      */
-    public static IsTypeJob(json: (SwfLogJson | SwfTreeJson)) {
-        const template = this.getTemplate(json.type);
+    public static isTypeJob(json: (SwfLogJson | SwfTreeJson)) {
+        const template = this.getTypeOfJson(json.type);
         return template.getType() === this.config.json_types.job;
     }
 
     /**
-     *
-     * @param json
+     * whether specified json is type of loop or not
+     * @param json tree json data or log json data
+     * @return whether specified json is type of loop or not
      */
-    public static IsTypeLoop(json: (SwfLogJson | SwfTreeJson)) {
-        const template = this.getTemplate(json.type);
+    public static isTypeLoop(json: (SwfLogJson | SwfTreeJson)) {
+        const template = this.getTypeOfJson(json.type);
         return template.getType() === this.config.json_types.loop;
     }
 
     /**
-     *
-     * @param fileType
+     * whether specified json is type of parameter study or not
+     * @param json tree json data or log json data
+     * @return whether specified json is type of parameter study or not
+     */
+    public static isTypePStudy(json: (SwfLogJson | SwfTreeJson)) {
+        const template = this.getTypeOfJson(json.type);
+        return template.getType() === this.config.json_types.pstudy;
+    }
+
+    /**
+     * get default default file name by type
+     * @param fileType filetype or file type string
+     * @return default default file name by type
      */
     public static getDefaultName(fileType: (string | JsonFileType)): string {
-        const template = this.getTemplate(fileType);
+        const template = this.getTypeOfJson(fileType);
         const extension = template.getExtension();
         return `${this.config.default_filename}${extension}`;
     }
 
     /**
-     *
-     * @param fileType
+     * get instane by type
+     * @param fileType filetype or file type string
+     * @return instance by type
      */
-    private static getTemplate(fileType: (string | JsonFileType)): TemplateBase {
+    private static getTypeOfJson(fileType: (string | JsonFileType)): TypeBase {
         if (typeof fileType === 'string') {
             switch (fileType) {
                 case this.config.json_types.workflow:
-                    return new WorkflowTemplate();
+                    return new TypeWorkflow();
                 case this.config.json_types.task:
-                    return new TaskTemplate();
+                    return new TypeTask();
                 case this.config.json_types.loop:
-                    return new LoopTemplate();
+                    return new TypeLoop();
                 case this.config.json_types.if:
-                    return new IfTemplate();
+                    return new TypeIf();
                 case this.config.json_types.else:
-                    return new ElseTemplate();
+                    return new TypeElse();
                 case this.config.json_types.break:
-                    return new BreakTemplate();
+                    return new TypeBreak();
                 case this.config.json_types.remotetask:
-                    return new RemoteTaskTemplate();
+                    return new TypeRemoteTask();
                 case this.config.json_types.job:
-                    return new JobTemplate();
+                    return new TypeJob();
                 case this.config.json_types.condition:
-                    return new ConditionTemplate();
+                    return new TypeCondition();
                 case this.config.json_types.pstudy:
-                    return new PStudyTemplate();
+                    return new TypePStudy();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -468,27 +684,27 @@ class ServerUtility {
         else {
             switch (fileType) {
                 case JsonFileType.Project:
-                    return new ProjectTemplate();
+                    return new TypeProject();
                 case JsonFileType.WorkFlow:
-                    return new WorkflowTemplate();
+                    return new TypeWorkflow();
                 case JsonFileType.Task:
-                    return new TaskTemplate();
+                    return new TypeTask();
                 case JsonFileType.Loop:
-                    return new LoopTemplate();
+                    return new TypeLoop();
                 case JsonFileType.If:
-                    return new IfTemplate();
+                    return new TypeIf();
                 case JsonFileType.Else:
-                    return new ElseTemplate();
+                    return new TypeElse();
                 case JsonFileType.Break:
-                    return new BreakTemplate();
+                    return new TypeBreak();
                 case JsonFileType.RemoteTask:
-                    return new RemoteTaskTemplate();
+                    return new TypeRemoteTask();
                 case JsonFileType.Job:
-                    return new JobTemplate();
+                    return new TypeJob();
                 case JsonFileType.Condition:
-                    return new ConditionTemplate();
+                    return new TypeCondition();
                 case JsonFileType.PStudy:
-                    return new PStudyTemplate();
+                    return new TypePStudy();
                 default:
                     throw new TypeError('file type is undefined');
             }
@@ -496,105 +712,195 @@ class ServerUtility {
     }
 }
 
-class TemplateBase {
-    protected config = serverConfig.getConfig();
+/**
+ * type base
+ */
+class TypeBase {
+    /**
+     * config date
+     */
+    protected config = ServerConfig.getConfig();
+    /**
+     * file extension name
+     */
     protected extension: string;
-    protected path: string;
+    /**
+     * template file path
+     */
+    protected templateFilepath: string;
+    /**
+     * file type string
+     */
     protected type: string;
+    /**
+     * get file extension name
+     * @return file extension name
+     */
     public getExtension(): string {
         return this.extension;
     }
-    public getPath(): string {
-        return path.normalize(`${__dirname}/${this.path}`);
+    /**
+     * get template file path
+     * @return template file path
+     */
+    public getTemplateFilepath(): string {
+        return path.normalize(`${__dirname}/${this.templateFilepath}`);
     }
+    /**
+     * get file type
+     * @return file type
+     */
     public getType(): string {
         return this.type;
     }
 }
-class ProjectTemplate extends TemplateBase {
+/**
+ * type project
+ */
+class TypeProject extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.project;
-        this.path = this.config.template.project;
+        this.templateFilepath = this.config.template.project;
     }
 }
-class TaskTemplate extends TemplateBase {
+/**
+ * type task
+ */
+class TypeTask extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.task;
-        this.path = this.config.template.task;
+        this.templateFilepath = this.config.template.task;
         this.type = this.config.json_types.task;
     }
 }
-class WorkflowTemplate extends TemplateBase {
+/**
+ * type workflow
+ */
+class TypeWorkflow extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.workflow;
-        this.path = this.config.template.workflow;
+        this.templateFilepath = this.config.template.workflow;
         this.type = this.config.json_types.workflow;
     }
 }
-class LoopTemplate extends TemplateBase {
+class TypeLoop extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.loop;
-        this.path = this.config.template.loop;
+        this.templateFilepath = this.config.template.loop;
         this.type = this.config.json_types.loop;
     }
 }
-class IfTemplate extends TemplateBase {
+/**
+ * type if
+ */
+class TypeIf extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.if;
-        this.path = this.config.template.if;
+        this.templateFilepath = this.config.template.if;
         this.type = this.config.json_types.if;
     }
 }
-class ElseTemplate extends TemplateBase {
+/**
+ * type else
+ */
+class TypeElse extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.else;
-        this.path = this.config.template.else;
+        this.templateFilepath = this.config.template.else;
         this.type = this.config.json_types.else;
     }
 }
-class BreakTemplate extends TemplateBase {
+/**
+ * type break
+ */
+class TypeBreak extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.break;
-        this.path = this.config.template.break;
+        this.templateFilepath = this.config.template.break;
         this.type = this.config.json_types.break;
     }
 }
-class RemoteTaskTemplate extends TemplateBase {
+/**
+ * type remote task
+ */
+class TypeRemoteTask extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.remotetask;
-        this.path = this.config.template.remotetask;
+        this.templateFilepath = this.config.template.remotetask;
         this.type = this.config.json_types.remotetask;
     }
 }
-class JobTemplate extends TemplateBase {
+/**
+ * type job
+ */
+class TypeJob extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.job;
-        this.path = this.config.template.job;
+        this.templateFilepath = this.config.template.job;
         this.type = this.config.json_types.job;
     }
 }
-class ConditionTemplate extends TemplateBase {
+/**
+ * type condition
+ */
+class TypeCondition extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.condition;
-        this.path = this.config.template.condition;
+        this.templateFilepath = this.config.template.condition;
         this.type = this.config.json_types.condition;
     }
 }
-class PStudyTemplate extends TemplateBase {
+/**
+ * type parameter study
+ */
+class TypePStudy extends TypeBase {
+    /**
+     * create new instance
+     */
     public constructor() {
         super();
         this.extension = this.config.extension.pstudy;
-        this.path = this.config.template.pstudy;
+        this.templateFilepath = this.config.template.pstudy;
         this.type = this.config.json_types.pstudy;
     }
 }

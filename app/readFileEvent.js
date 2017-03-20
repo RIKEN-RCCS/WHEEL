@@ -1,16 +1,19 @@
 "use strict";
 var fs = require("fs");
 var logger = require("./logger");
+/**
+ * socket io communication class for read file data from server
+ */
 var ReadFileEvent = (function () {
     function ReadFileEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket socket io instance
      */
     ReadFileEvent.prototype.onEvent = function (socket) {
-        socket.on(ReadFileEvent.eventName, function (editFilePath) {
-            fs.readFile(editFilePath, function (err, data) {
+        socket.on(ReadFileEvent.eventName, function (readFilePath) {
+            fs.readFile(readFilePath, function (err, data) {
                 if (err) {
                     logger.error(err);
                     socket.emit(ReadFileEvent.eventName);

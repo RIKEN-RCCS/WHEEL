@@ -1,20 +1,20 @@
 "use strict";
 var fs = require("fs");
 var logger = require("./logger");
-var serverUtility = require("./serverUtility");
+var ServerUtility = require("./serverUtility");
 /**
- *
+ * socket io communication class for template json file from server
  */
 var getTemplateJsonFileEvent = (function () {
     function getTemplateJsonFileEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     getTemplateJsonFileEvent.prototype.onEvent = function (socket) {
         socket.on(getTemplateJsonFileEvent.eventName, function (filetype) {
-            var filepath = serverUtility.getTemplateFilePath(filetype);
+            var filepath = ServerUtility.getTemplateFilePath(filetype);
             fs.readFile(filepath, function (err, data) {
                 if (err) {
                     logger.error(err);

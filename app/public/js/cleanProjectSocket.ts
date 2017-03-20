@@ -1,4 +1,8 @@
+/**
+ * socket io communication class for cleaning project request to server
+ */
 class CleanProjectSocket {
+
     /**
      * event name
      */
@@ -11,27 +15,27 @@ class CleanProjectSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     public onEvent(callback: ((isSucceed: boolean) => void)): void {
         this.socket.once(CleanProjectSocket.eventName, callback);
     }
 
     /**
-     *
-     * @param projectFilepath
-     * @param callback
+     * emit to server for cleaning project
+     * @param projectPath project path name
+     * @param callback The function to call when we get the event
      */
-    public emit(projectFilepath: string, callback: ((isSucceed: boolean) => void)): void {
+    public emit(projectPath: string, callback: ((isSucceed: boolean) => void)): void {
         this.onEvent(callback);
-        this.socket.emit(CleanProjectSocket.eventName, projectFilepath);
+        this.socket.emit(CleanProjectSocket.eventName, projectPath);
     }
 }

@@ -1,4 +1,6 @@
-
+/**
+ * socket io communication class for read file data from server
+ */
 class ReadFileSocket {
 
     /**
@@ -14,22 +16,22 @@ class ReadFileSocket {
     /**
      * callback function
      */
-    private callback: ((data: Buffer) => void);
+    private callback: ((data: string) => void);
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     *
-     * @param filepath
-     * @param callback
+     * Adds a listener for connect event that will be invoked a single time before being automatically removed
+     * @param filepath read file path
+     * @param callback The function to call when we get the event
      */
-    public onConnect(filepath: string, callback: ((data) => void)): void {
+    public onConnect(filepath: string, callback: ((data: string) => void)): void {
         this.callback = callback;
         this.socket
             .on('connect', () => {
@@ -38,20 +40,20 @@ class ReadFileSocket {
     }
 
     /**
-     *
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
      */
     public onEvent(): void {
-        this.socket.once(ReadFileSocket.eventName, (data) => {
+        this.socket.once(ReadFileSocket.eventName, (data: string) => {
             this.callback(data);
         });
     }
 
     /**
-     *
-     * @param editFilePath
+     * emit to server for read file data
+     * @param filepath read file path
      */
-    public emit(editFilePath: string): void {
+    public emit(filepath: string): void {
         this.onEvent();
-        this.socket.emit(ReadFileSocket.eventName, editFilePath);
+        this.socket.emit(ReadFileSocket.eventName, filepath);
     }
 }

@@ -2,12 +2,15 @@
 var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
+/**
+ * socket io communication class for upload file to server
+ */
 var UploadFileEvent = (function () {
     function UploadFileEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     UploadFileEvent.prototype.onEvent = function (socket) {
         socket.on(UploadFileEvent.eventName, function (filepath, data) {

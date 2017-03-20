@@ -1,26 +1,29 @@
+/**
+ * socket io communication class for read tree json from server
+ */
 var ReadTreeJsonSocket = (function () {
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     function ReadTreeJsonSocket(socket) {
         this.socket = socket;
     }
     /**
-     *
-     * @param filepath
-     * @param callback
+     * Adds a listener for connect event that will be invoked a single time before being automatically removed
+     * @param treeJsonFilepath tree json file path
+     * @param callback The function to call when we get the event
      */
-    ReadTreeJsonSocket.prototype.onConnect = function (filepath, callback) {
+    ReadTreeJsonSocket.prototype.onConnect = function (treeJsonFilepath, callback) {
         var _this = this;
         this.callback = callback;
         this.socket
             .on('connect', function () {
-            _this.emit(filepath);
+            _this.emit(treeJsonFilepath);
         });
     };
     /**
-     *
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
      */
     ReadTreeJsonSocket.prototype.onEvent = function () {
         var _this = this;
@@ -29,12 +32,12 @@ var ReadTreeJsonSocket = (function () {
         });
     };
     /**
-     *
-     * @param filepath
+     * emit to server for read tree json
+     * @param treeJsonFilepath tree json file path
      */
-    ReadTreeJsonSocket.prototype.emit = function (filepath) {
+    ReadTreeJsonSocket.prototype.emit = function (treeJsonFilepath) {
         this.onEvent();
-        this.socket.emit(ReadTreeJsonSocket.eventName, filepath);
+        this.socket.emit(ReadTreeJsonSocket.eventName, treeJsonFilepath);
     };
     return ReadTreeJsonSocket;
 }());

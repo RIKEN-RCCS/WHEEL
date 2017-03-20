@@ -11,28 +11,28 @@ var ClientUtility = (function () {
     /**
      * whether specified hostname is localhost or not
      * @param hostname hostname
-     * @returns true(localhost) or false
+     * @return specified hostname is localhost or not
      */
     ClientUtility.isLocalHost = function (hostname) {
         return (hostname === 'localhost') || (hostname === '127.0.0.1');
     };
     /**
      * whether platform is windows or not
-     * @returns true(windows) or false
+     * @return running platform is windows or not
      */
     ClientUtility.isWindows = function () {
         return navigator.platform.indexOf('Win') != -1;
     };
     /**
      * whether platform is linux or not
-     * @returns true(linux) or false
+     * @return running platform is linux or not
      */
     ClientUtility.isLinux = function () {
         return navigator.platform.indexOf('Linux') != -1;
     };
     /**
      * get home directory
-     * @returns directory path
+     * @return get home directory
      */
     ClientUtility.getHomeDir = function () {
         if (this.isWindows()) {
@@ -46,8 +46,8 @@ var ClientUtility = (function () {
         }
     };
     /**
-     * get cookie informations
-     * @returns cookie infomation hash
+     * get cookies hash set
+     * @return all cookies information
      */
     ClientUtility.getCookies = function () {
         if (!document.cookie) {
@@ -61,9 +61,15 @@ var ClientUtility = (function () {
         return cookies;
     };
     /**
+     * delete cookie that matched specified key
+     * @param key key name
+     */
+    ClientUtility.deleteCookie = function (key) {
+        document.cookie = key + "=; max-age=0";
+    };
+    /**
      * move to workflow.html page
      * @param filepath selected workflow filepath
-     * @returns none
      */
     ClientUtility.moveWorkflowLink = function (filepath) {
         $('<form/>', { action: '/swf/project_manager.html', method: 'post' })
@@ -74,14 +80,15 @@ var ClientUtility = (function () {
     /**
      * get file status color string
      * @param state task status string
-     * @returns color string
+     * @return status color string
      */
     ClientUtility.getStateColor = function (state) {
         return config.state_color[state.toLowerCase()];
     };
     /**
-     *
-     * @param filepath
+     * normalize path string
+     * @param filepath file path string
+     * @return normalized path string
      */
     ClientUtility.normalize = function (filepath) {
         var split = filepath.replace(/[\\\/]+/g, '/').split('/');
@@ -100,28 +107,31 @@ var ClientUtility = (function () {
         return path.join('/').replace(/^\.\//, '');
     };
     /**
-     *
-     * @param filepath
+     * get basename of file path
+     * @param filepath file path string
+     * @return basename of file path
      */
     ClientUtility.basename = function (filepath) {
         return filepath.replace(/\\/g, '/').replace(/\/$/, '').replace(/.*\//, '');
     };
     /**
-     *
-     * @param filepath
+     * get dirname of file path
+     * @param filepath file path string
+     * @return dirname of file path
      */
     ClientUtility.dirname = function (filepath) {
         return filepath.replace(/\\/g, '/').replace(/\/$/, '').replace(/\/[^/]*$/, '');
     };
     /**
-     *
-     * @param path
+     * get file type string
+     * @param filepath file path string
+     * @return 'file' or 'files' or 'directory' string
      */
-    ClientUtility.getIOFileType = function (path) {
-        if (path.match(/\/$/)) {
+    ClientUtility.getIOFileType = function (filepath) {
+        if (filepath.match(/\/$/)) {
             return 'directory';
         }
-        else if (path.match(/\*/)) {
+        else if (filepath.match(/\*/)) {
             return 'files';
         }
         else {
@@ -129,14 +139,15 @@ var ClientUtility = (function () {
         }
     };
     /**
-     *
-     * @param dirname
+     * whether filepath can use for directory name or not
+     * @param filepath file path string
+     * @return specified filepath can use for directory name or not
      */
-    ClientUtility.isValidDirectoryName = function (dirname) {
-        if (!dirname) {
+    ClientUtility.isValidDirectoryName = function (filepath) {
+        if (!filepath) {
             return false;
         }
-        else if (dirname.match(/[\\\/:\*\?\"\<\>\|]/g)) {
+        else if (filepath.match(/[\\\/:\*\?\"\<\>\|]/g)) {
             return false;
         }
         else {
@@ -144,43 +155,53 @@ var ClientUtility = (function () {
         }
     };
     /**
-     *
-     * @param tree
+     * get property information
+     * @param tree SwfTree class instance
+     * @return get property information
      */
     ClientUtility.getPropertyInfo = function (tree) {
         return this.getTemplate(tree).getPropertyInfo();
     };
     /**
-     *
-     * @param target
-     * @param fileType
+     * whether specified type string is matched or not
+     * @param target json file type string or SwfTree instance
+     * @param fileType json file type
+     * @return whether specified type string is matched or not
      */
-    ClientUtility.checkFileType = function (target, fileType) {
-        if (target == null) {
+    ClientUtility.checkFileType = function (object, fileType) {
+        if (object == null) {
             return false;
         }
-        return this.getTemplate(fileType).checkFileType(target);
+        return this.getTemplate(fileType).checkFileType(object);
     };
     /**
-     *
-     * @param type
+     * get default json file name
+     * @param object SwfTree class instance or json file type
+     * @return get default json file name
      */
-    ClientUtility.getDefaultName = function (type) {
-        var template = this.getTemplate(type);
+    ClientUtility.getDefaultName = function (object) {
+        var template;
+        if (typeof object === 'number') {
+            template = this.getTemplate(object);
+        }
+        else {
+            template = this.getTemplate(object);
+        }
         var extension = template.getExtension();
         return "" + config.default_filename + extension;
     };
     /**
-     *
-     * @param type
+     * whether specified class has script or not
+     * @param target SwfTree instance or SwfLog instance
+     * @return whether specified class has script or not
      */
-    ClientUtility.isImplimentsWorkflow = function (type) {
+    ClientUtility.isImplimentsWorkflow = function (target) {
         var workflowType = this.getJsonFileType(JsonFileType.WorkFlow);
         var loopType = this.getJsonFileType(JsonFileType.Loop);
         var ifType = this.getJsonFileType(JsonFileType.If);
         var elseType = this.getJsonFileType(JsonFileType.Else);
         var pstudyType = this.getJsonFileType(JsonFileType.PStudy);
-        if (type.match(new RegExp("^(?:" + [workflowType, loopType, ifType, elseType, pstudyType].join('|') + ")$"))) {
+        if (target.type.match(new RegExp("^(?:" + [workflowType, loopType, ifType, elseType, pstudyType].join('|') + ")$"))) {
             return true;
         }
         else {
@@ -188,15 +209,17 @@ var ClientUtility = (function () {
         }
     };
     /**
-     *
-     * @param ileType
+     * get json file type string
+     * @param fileType json file type
+     * @return json file type string
      */
     ClientUtility.getJsonFileType = function (fileType) {
         return this.getTemplate(fileType).getType();
     };
     /**
-     *
-     * @param fileType
+     * get templete class by file type
+     * @param object json file type or SwfTree class instance
+     * @return JsonFileTypeBase class instance
      */
     ClientUtility.getTemplate = function (object) {
         if (typeof object === 'number') {

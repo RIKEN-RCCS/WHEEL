@@ -4,45 +4,51 @@ var logger = require("./logger");
 /**
  * socket io class for server
  */
-var ServerSocketIO = (function () {
+var ServerSocketIO;
+(function (ServerSocketIO) {
     /**
-     * construct new socket
+     * socket io class for server
      */
-    function ServerSocketIO(server) {
+    var SwfSocketIO = (function () {
         /**
-         * event name and listener pair list
+         * construct new socket
+         * @param server server instance
          */
-        this.eventNspPairs = [];
-        this.server = socketio(server);
-    }
-    /**
-     *
-     * @param nsp: socket namespace
-     * @param listeners: event listener interface array
-     * @returns none
-     */
-    ServerSocketIO.prototype.addEventListener = function (nsp, listeners) {
-        this.eventNspPairs.push({
-            io: this.server.of(nsp),
-            listeners: listeners
-        });
-    };
-    /**
-     * Connection event fired when we get a new connection
-     * @returns none
-     */
-    ServerSocketIO.prototype.onConnect = function () {
-        this.eventNspPairs.forEach(function (pair) {
-            pair.io.on('connect', function (socket) {
-                logger.debug("socket on connect " + pair.io.name);
-                pair.listeners.forEach(function (listener) { return listener.onEvent(socket); });
-                socket.on('disconnect', function () {
-                    logger.debug("socket on disconnect " + pair.io.name);
+        function SwfSocketIO(server) {
+            /**
+             * event name and listener pair list
+             */
+            this.eventNspPairs = [];
+            this.server = socketio(server);
+        }
+        /**
+         * adds event listeners
+         * @param nsp socket namespace name
+         * @param listeners event listener interface array
+         */
+        SwfSocketIO.prototype.addEventListener = function (namespace, listeners) {
+            this.eventNspPairs.push({
+                io: this.server.of(namespace),
+                listeners: listeners
+            });
+        };
+        /**
+         * Connection event fired when we get a new connection
+         */
+        SwfSocketIO.prototype.onConnect = function () {
+            this.eventNspPairs.forEach(function (pair) {
+                pair.io.on('connect', function (socket) {
+                    logger.debug("socket on connect " + pair.io.name);
+                    pair.listeners.forEach(function (listener) { return listener.onEvent(socket); });
+                    socket.on('disconnect', function () {
+                        logger.debug("socket on disconnect " + pair.io.name);
+                    });
                 });
             });
-        });
-    };
-    return ServerSocketIO;
-}());
+        };
+        return SwfSocketIO;
+    }());
+    ServerSocketIO.SwfSocketIO = SwfSocketIO;
+})(ServerSocketIO || (ServerSocketIO = {}));
 module.exports = ServerSocketIO;
 //# sourceMappingURL=serverSocketIO.js.map

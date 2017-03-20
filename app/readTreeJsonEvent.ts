@@ -1,10 +1,13 @@
-import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
 import serverConfig = require('./serverConfig');
 import ServerUtility = require('./serverUtility');
+import ServerSocketIO = require('./serverSocketIO');
 
-class ReadTreeJsonEvent implements SocketListener {
+/**
+ * socket io communication class for read tree json from server
+ */
+class ReadTreeJsonEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -12,17 +15,12 @@ class ReadTreeJsonEvent implements SocketListener {
     private static eventName = 'readTreeJson';
 
     /**
-     *
-     */
-    private roodDirectory: string;
-
-    /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(ReadTreeJsonEvent.eventName, (workflowJsonFilePath: string) => {
-            this.roodDirectory = path.dirname(workflowJsonFilePath);
+            const roodDirectory = path.dirname(workflowJsonFilePath);
             try {
                 logger.debug(`tree json=${workflowJsonFilePath}`);
                 const createJsonFile = ServerUtility.createTreeJson(workflowJsonFilePath);

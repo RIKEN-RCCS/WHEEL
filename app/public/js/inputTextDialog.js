@@ -1,40 +1,43 @@
+/**
+ * text input dialog class
+ */
 var InputTextDialog = (function () {
     /**
-     *
-     * @param name
+     * create input text dialog instance
+     * @param name dialog label name
      */
     function InputTextDialog(name) {
         var _this = this;
         /**
-         *
+         * gray panel element
          */
         this.grayPanel = $('#gray_panel');
         /**
-         *
+         * dialog frame area element
          */
         this.dialogArea = $('#dialog_area_input');
         /**
-         *
+         * input text element
          */
         this.inputText = $('#input_text_input');
         /**
-         *
+         * ok button element
          */
         this.buttonOK = $('#dialog_ok_button_input');
         /**
-         *
+         * cancel button element
          */
         this.buttonCancel = $('#dialog_cancel_button_input');
         /**
-         *
+         * dialog title element
          */
         this.title = $('#dialog_title_input');
         /**
-         *
+         * input text label element
          */
         this.label = $('#label_input');
         /**
-         *
+         * event enable flag
          */
         this.isEnableEvent = true;
         this.grayPanel.click(function () {
@@ -42,8 +45,14 @@ var InputTextDialog = (function () {
                 _this.hide();
             }
         });
-        this.name = name === undefined ? '' : name;
+        this.defaultName = name === undefined ? '' : name;
     }
+    /**
+     * show dialog
+     * @param title dialog title string
+     * @param label dialog label string
+     * @return InputTextDialog instance
+     */
     InputTextDialog.prototype.show = function (title, label) {
         var _this = this;
         this.grayPanel.displayBlock();
@@ -67,12 +76,12 @@ var InputTextDialog = (function () {
             }
         });
         if (title == null) {
-            title = "Please enter " + this.name + " name";
+            title = "Please enter " + this.defaultName + " name";
         }
         if (label == null) {
-            label = this.name + ":";
+            label = this.defaultName + ":";
         }
-        this.offBusy();
+        this.clearBusy();
         this.title.text(title);
         this.label.text(label);
         this.inputText.borderValid();
@@ -80,6 +89,10 @@ var InputTextDialog = (function () {
         this.inputText.focus();
         return this;
     };
+    /**
+     * hide dialog
+     * @return InputTextDialog instance
+     */
     InputTextDialog.prototype.hide = function () {
         this.grayPanel.displayNone();
         this.dialogArea.displayNone();
@@ -88,25 +101,48 @@ var InputTextDialog = (function () {
         this.inputText.off('keyup');
         return this;
     };
+    /**
+     * Adds a callback function for ok button click event
+     * @param callback
+     * @return InputTextDialog instance
+     */
     InputTextDialog.prototype.onClickOK = function (callback) {
         this.clickOkCallback = null;
         this.clickOkCallback = callback;
         return this;
     };
+    /**
+     * Adds a callback function for cancel button click event
+     * @param callback
+     * @return InputTextDialog instance
+     */
     InputTextDialog.prototype.onClickCancel = function (callback) {
         this.clickCancelCallback = null;
         this.clickCancelCallback = callback;
         return this;
     };
+    /**
+     * set events enable
+     * @return InputTextDialog instance
+     */
     InputTextDialog.prototype.enableEvent = function () {
         this.isEnableEvent = true;
         return this;
     };
+    /**
+     * set events disable
+     * @return InputTextDialog instance
+     */
     InputTextDialog.prototype.disableEvent = function () {
         this.isEnableEvent = false;
         return this;
     };
-    InputTextDialog.prototype.onBusy = function (name) {
+    /**
+     * set busy
+     * @param name button name
+     * @return InputTextDialog instance
+     */
+    InputTextDialog.prototype.setBusy = function (name) {
         this.disableEvent();
         this.inputText
             .prop('disabled', true);
@@ -116,7 +152,11 @@ var InputTextDialog = (function () {
             .class('disable_button button');
         return this;
     };
-    InputTextDialog.prototype.offBusy = function () {
+    /**
+     * clear busy
+     * @return InputTextDialog instance
+     */
+    InputTextDialog.prototype.clearBusy = function () {
         this.enableEvent();
         this.inputText
             .prop('disabled', false);

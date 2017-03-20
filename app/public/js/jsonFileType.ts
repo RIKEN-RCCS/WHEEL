@@ -3,40 +3,105 @@
  * json file type
  */
 enum JsonFileType {
+    /**
+     * Project
+     */
     Project,
+    /**
+     * WorkFlow
+     */
     WorkFlow,
+    /**
+     * Task
+     */
     Task,
+    /**
+     * RemoteTask
+     */
     RemoteTask,
+    /**
+     * Job
+     */
     Job,
+    /**
+     * Loop
+     */
     Loop,
+    /**
+     * If
+     */
     If,
+    /**
+     * Else
+     */
     Else,
+    /**
+     * Condition
+     */
     Condition,
+    /**
+     * Break
+     */
     Break,
+    /**
+     * PStudy
+     */
     PStudy
 }
 
 /**
- *
+ * property information
  */
 interface PropertyInfo {
+    /**
+     * property name of class
+     */
     key: string;
-    title: string;
-    readonly: Function;
-    type: string;
-    isUpdateUI: boolean;
-    validation: Function;
-    callback: Function;
+    /**
+     * display order number
+     */
     order: number;
+    /**
+     * readonly or not function
+     */
+    readonly: Function;
+    /**
+     * property type string ('string', 'number', 'boolean', 'host' or 'scheduler')
+     */
+    type: string;
+    /**
+     * update user interface flag
+     */
+    isUpdateUI?: boolean;
+    /**
+     * input data validation function
+     */
+    validation?: Function;
+    /**
+     * callback function for event fired
+     */
+    callback?: Function;
+    /**
+     * highlighting text
+     */
+    title?: string;
 }
 
 /**
- *
+ * json file base class
  */
 class JsonFileTypeBase {
+    /**
+     * json file extension
+     */
     protected extension: string;
-    protected path: string;
+    /**
+     * json file type
+     */
     protected type: string;
+    /**
+     * property information
+     */
     protected propertyInfo: any = [
         {
             key: 'name',
@@ -91,29 +156,29 @@ class JsonFileTypeBase {
             order: 310
         }
     ];
+
+    /**
+     * get extension string
+     * @return get extension string
+     */
     public getExtension(): string {
         return this.extension;
     }
+
+    /**
+     * get json file type string
+     * @return get json file type string
+     */
     public getType(): string {
         return this.type;
     }
-    public checkExtension(target: (string | SwfTree | SwfTreeJson)) {
-        let filename: string;
-        if (typeof target === 'string') {
-            filename = target;
-        }
-        else {
-            filename = target.path;
-        }
 
-        if (filename.match(new RegExp(`${this.extension.replace(/\./, '\\.')}$`))) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    public checkFileType(target: (string | SwfTree | SwfTreeJson)) {
+    /**
+     * whether specified string or SwfTree instance type is matched or not
+     * @param target file type string or SwfTree instance
+     * @return whether specified string or SwfTree instance type is matched or not
+     */
+    public checkFileType(target: (string | SwfTree | SwfTreeJson)): boolean {
         let type: string;
         if (typeof target === 'string') {
             type = target;
@@ -123,6 +188,10 @@ class JsonFileTypeBase {
         }
         return type === this.type;
     }
+
+    /**
+     * add script property information
+     */
     protected addScript() {
         this.propertyInfo.push({
             key: 'script',
@@ -152,13 +221,17 @@ class JsonFileTypeBase {
                     $(document).trigger('selectFile', {
                         isMultiple: false,
                         callback: (files: FileList) => {
-                            tree.setScriptPath(files[0]);
+                            tree.addScriptFile(files[0]);
                         }
                     });
                 }
             }]
         });
     }
+
+    /**
+     * add job script property information
+     */
     protected addJobScript() {
         this.propertyInfo.push({
             key: 'job_script',
@@ -188,13 +261,17 @@ class JsonFileTypeBase {
                     $(document).trigger('selectFile', {
                         isMultiple: false,
                         callback: (files: FileList) => {
-                            tree.setJobScriptPath(files[0]);
+                            tree.addJobScriptFile(files[0]);
                         }
                     });
                 }
             }]
         });
     }
+
+    /**
+     * add for loop property information
+     */
     protected addForParam() {
         this.propertyInfo.push({
             key: 'forParam',
@@ -236,6 +313,10 @@ class JsonFileTypeBase {
             ]
         });
     }
+
+    /**
+     * add input files property information
+     */
     protected addInputFile() {
         this.propertyInfo.push({
             key: 'input_files',
@@ -326,6 +407,10 @@ class JsonFileTypeBase {
             }]
         });
     }
+
+    /**
+     * add output files property information
+     */
     protected addOutputFile() {
         this.propertyInfo.push({
             key: 'output_files',
@@ -416,6 +501,10 @@ class JsonFileTypeBase {
             }]
         });
     }
+
+    /**
+     * add send files property information
+     */
     protected addSendFile() {
         this.propertyInfo.push({
             key: 'send_files',
@@ -430,7 +519,7 @@ class JsonFileTypeBase {
                         $(document).trigger('selectFile', {
                             isMultiple: true,
                             callback: (files: FileList) => {
-                                tree.setSendFilepath(files);
+                                tree.addSendFile(files);
                             }
                         });
                     }
@@ -488,6 +577,10 @@ class JsonFileTypeBase {
             }]
         });
     }
+
+    /**
+     * add receive files property information
+     */
     protected addReceiveFile() {
         this.propertyInfo.push({
             key: 'receive_files',
@@ -549,6 +642,10 @@ class JsonFileTypeBase {
             }]
         });
     }
+
+    /**
+     * add script parameter property information
+     */
     protected addScriptParam() {
         this.propertyInfo.push({
             key: 'script_param',
@@ -574,6 +671,10 @@ class JsonFileTypeBase {
             ]
         });
     }
+
+    /**
+     * add parameter file property information
+     */
     protected addParameterFile() {
         this.propertyInfo.push({
             key: 'parameter_file',
@@ -603,13 +704,17 @@ class JsonFileTypeBase {
                     $(document).trigger('selectFile', {
                         isMultiple: false,
                         callback: (files: FileList) => {
-                            tree.setParameterFilePath(files[0]);
+                            tree.addParameterFile(files[0]);
                         }
                     });
                 }
             }]
         });
     }
+
+    /**
+     * add host property information
+     */
     protected addHost() {
         this.propertyInfo.push({
             key: 'host',
@@ -624,6 +729,10 @@ class JsonFileTypeBase {
             ]
         });
     }
+
+    /**
+     * add upload property information
+     */
     protected addUpload() {
         this.propertyInfo.push({
             key: 'upload_files',
@@ -637,7 +746,7 @@ class JsonFileTypeBase {
                     $(document).trigger('selectFile', {
                         isMultiple: true,
                         callback: (files: FileList) => {
-                            tree.setUploadFilePath(files);
+                            tree.addUploadFile(files);
                         }
                     });
                 }
@@ -663,6 +772,11 @@ class JsonFileTypeBase {
             }]
         });
     }
+
+    /**
+     * get property information
+     * @returns property information
+     */
     public getPropertyInfo(): any {
         this.propertyInfo.sort((a, b) => {
             if (a.order < b.order) {
@@ -677,9 +791,12 @@ class JsonFileTypeBase {
 }
 
 /**
- *
+ * type of project class
  */
 class TypeProject extends JsonFileTypeBase {
+    /**
+     *
+     */
     public constructor() {
         super();
         this.extension = config.extension.project;
@@ -687,9 +804,12 @@ class TypeProject extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of task class
  */
 class TypeTask extends JsonFileTypeBase {
+    /**
+     * create new instance for task
+     */
     public constructor() {
         super();
         this.extension = config.extension.task;
@@ -702,9 +822,12 @@ class TypeTask extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of workflow class
  */
 class TypeWorkflow extends JsonFileTypeBase {
+    /**
+     * create new instance for workflow
+     */
     public constructor() {
         super();
         this.extension = config.extension.workflow;
@@ -714,9 +837,12 @@ class TypeWorkflow extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of job class
  */
 class TypeJob extends JsonFileTypeBase {
+    /**
+     * create new instance for job
+     */
     public constructor() {
         super();
         this.extension = config.extension.job;
@@ -731,6 +857,9 @@ class TypeJob extends JsonFileTypeBase {
         this.addHost();
     }
 
+    /**
+     * add script property information for job
+     */
     protected addScrip() {
         this.propertyInfo.push({
             key: 'script',
@@ -765,12 +894,15 @@ class TypeJob extends JsonFileTypeBase {
                     }
                 },
                 callback: (tree: SwfTree) => {
-                    $(document).trigger('editFile');
+                    $(document).trigger('editScript');
                 }
             }]
         });
     }
 
+    /**
+     * add host property information for job
+     */
     protected addHost() {
         this.propertyInfo.push({
             key: 'host',
@@ -793,9 +925,12 @@ class TypeJob extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of remote task class
  */
 class TypeRemoteTask extends JsonFileTypeBase {
+    /**
+     * create new instance for remote task
+     */
     public constructor() {
         super();
         this.extension = config.extension.remotetask;
@@ -810,9 +945,12 @@ class TypeRemoteTask extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of loop class
  */
 class TypeLoop extends JsonFileTypeBase {
+    /**
+     * create new instance for loop
+     */
     public constructor() {
         super();
         this.extension = config.extension.loop;
@@ -823,9 +961,12 @@ class TypeLoop extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of if class
  */
 class TypeIf extends JsonFileTypeBase {
+    /**
+     * create new instance for if
+     */
     public constructor() {
         super();
         this.extension = config.extension.if;
@@ -835,9 +976,12 @@ class TypeIf extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of else class
  */
 class TypeElse extends JsonFileTypeBase {
+    /**
+     * create new instance for else
+     */
     public constructor() {
         super();
         this.extension = config.extension.else;
@@ -847,9 +991,12 @@ class TypeElse extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of condition class
  */
 class TypeCondition extends JsonFileTypeBase {
+    /**
+     * create new instance for condition
+     */
     public constructor() {
         super();
         this.extension = config.extension.condition;
@@ -860,6 +1007,9 @@ class TypeCondition extends JsonFileTypeBase {
         this.addUpload();
     }
 
+    /**
+     * add output files property information for condition
+     */
     protected addOutputFile() {
         this.propertyInfo.push({
             key: 'output_files',
@@ -924,9 +1074,12 @@ class TypeCondition extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of break class
  */
 class TypeBreak extends JsonFileTypeBase {
+    /**
+     * create new instance for break
+     */
     public constructor() {
         super();
         this.extension = config.extension.break;
@@ -938,9 +1091,12 @@ class TypeBreak extends JsonFileTypeBase {
 }
 
 /**
- *
+ * type of parameter study class
  */
 class TypePStudy extends JsonFileTypeBase {
+    /**
+     * create new instance for parameter study
+     */
     public constructor() {
         super();
         this.extension = config.extension.pstudy;

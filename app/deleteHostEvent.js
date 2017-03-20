@@ -1,19 +1,19 @@
 "use strict";
 var logger = require("./logger");
-var serverUtility = require("./serverUtility");
+var ServerUtility = require("./serverUtility");
 /**
- *
+ * socket io communication class for delete host information from server
  */
 var DeleteHostEvent = (function () {
     function DeleteHostEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket socket io instance
      */
     DeleteHostEvent.prototype.onEvent = function (socket) {
-        socket.on(DeleteHostEvent.eventName, function (label) {
-            serverUtility.deleteHostInfo(label, function (err) {
+        socket.on(DeleteHostEvent.eventName, function (name) {
+            ServerUtility.deleteHostInfo(name, function (err) {
                 if (err) {
                     logger.error(err);
                     socket.emit(DeleteHostEvent.eventName, false);

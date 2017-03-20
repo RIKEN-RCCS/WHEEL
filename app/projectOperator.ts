@@ -5,7 +5,6 @@ import ssh2 = require('ssh2');
 import child_process = require('child_process');
 import logger = require('./logger');
 import serverUtility = require('./serverUtility');
-import remote = require('./remote');
 
 const SwfState = {
     PLANNING: 'Planning',
@@ -25,7 +24,7 @@ const SwfType = {
     IF: 'If',
     ELSE: 'Else',
     BREAK: 'Break',
-    PSTADY: 'PStudy'
+    PSTUDY: 'PStudy'
 };
 
 const SwfScriptType = {
@@ -40,21 +39,35 @@ const SwfJobScheduler = {
 };
 
 /**
- * operator of SWF project
+ * Operator of SWF project.
  */
 class ProjectOperator {
+    /**
+     * json file of project
+     */
     private projectJson: SwfProjectJson;
+    /**
+     * tree of task
+     */
     private tree: TaskTree;
 
+    /**
+     * Create new instance.
+     * @param path_project
+     */
     public constructor(path_project: string) {
         this.projectJson = serverUtility.createProjectJson(path_project);
         const dir_project = path.dirname(path_project);
         const path_workflow = path.resolve(dir_project, this.projectJson.path_workflow);
         let treeJson: SwfTreeJson = serverUtility.createTreeJson(path_workflow);
         this.tree = ProjectOperator.createTaskTree(treeJson);
-        ProjectOperator.setPathAbsolute(this.tree, this.projectJson.log);
+        ProjectOperator.setPathAbsolute(this.tree, this.projectJson.log.path);
     }
 
+    /**
+     * Run project.
+     * @param host_passSet
+     */
     public run(host_passSet: { [name: string]: string }) {
         ProjectOperator.setPassToHost(this.tree, host_passSet);
         TaskManager.cleanUp(this.tree);
@@ -68,24 +81,36 @@ class ProjectOperator {
         }
     }
 
+    /**
+     * Clean up project.
+     */
     public clean() {
         TaskManager.cleanUp(this.tree);
-   }
+    }
+
+    /**
+     * Asynchronous clean up project.
+     * @param callback
+     */
+    public cleanAsync(callback: (() => void)) {
+        TaskManager.cleanUpAsync(this.tree, callback);
+    }
 
     /**
      * set absolute path of directory of the task
+     * @param tree taeget tree
+     * @param path_to_root path to root of tree
      */
-    private static setPathAbsolute(tree: TaskTree, logJson: SwfLogJson) {
+    public static setPathAbsolute(tree: TaskTree, path_to_root: string) {
         const date = new Date();
         const name_dir_time: string = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
-        let path_to_root: string = logJson.path;
         _setPathAbsolute(tree, '');
 
         function _setPathAbsolute(_tree: TaskTree, path_from_root: string) {
-            _tree.path = path.join(path_to_root, path_from_root);
+            _tree.local_path = path.join(path_to_root, path_from_root);
             if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
                 let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson>_tree;
-                remoteTask.host.path = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root.replace('\\', '/'));
+                _tree.remote_path = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root.replace('\\', '/'));
             }
 
             for (let i = 0; i < _tree.children.length; i++) {
@@ -95,9 +120,12 @@ class ProjectOperator {
     }
 
     /**
-     * set parent
+     * Create TaskTree.
+     * @param treeJson base of tree
+     * @param parent parent of tree
+     * @return created tree
      */
-    private static createTaskTree(treeJson: SwfTreeJson, parent: TaskTree = null): TaskTree {
+    public static createTaskTree(treeJson: SwfTreeJson, parent: TaskTree = null): TaskTree {
         let tree = <TaskTree>treeJson;
         tree.parent = parent;
         for (let i = 0; i < treeJson.children.length; i++) {
@@ -106,6 +134,11 @@ class ProjectOperator {
         return tree;
     }
 
+    /**
+     * Set password and passphrase for remote host authentication
+     * @param tree target tree
+     * @param host_passSet set of password and passphrase for remote host authentication
+     */
     private static setPassToHost(tree: TaskTree, host_passSet: Object) {
         if (tree.type == SwfType.REMOTETASK || tree.type == SwfType.JOB) {
             let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson>tree;
@@ -117,7 +150,30 @@ class ProjectOperator {
         for (let i = 0; i < tree.children.length; i++) {
             this.setPassToHost(tree.children[i], host_passSet);
         }
-        return;
+    }
+
+    /**
+     * Copy task tree.
+     * @param _tree origin tree
+     * @return created tree
+     */
+    public static copyTaskTree(_tree: TaskTree): TaskTree {
+        let object: Object = {};
+        for (var key in _tree) {
+            if (key == 'children' || key == 'parent') {
+                continue;
+            }
+            object[key] = _tree[key];
+        }
+
+        object['children'] = new Array<TaskTree>();
+        let tree: TaskTree = <TaskTree>object;
+        for (let i = 0; i < _tree.children.length; i++) {
+            const child: TaskTree = ProjectOperator.copyTaskTree(_tree.children[i]);
+            tree.children.push(child);
+            child.parent = tree;
+        }
+        return tree;
     }
 }
 
@@ -125,10 +181,23 @@ class ProjectOperator {
  * Task Manager
  */
 class TaskManager {
+    /**
+     * run task tree
+     * @param tree
+     */
     public static run(tree: TaskTree) {
         if (tree == null) {
             // finish all or error
             logger.info('Finish Project');
+            return;
+        }
+
+        if (tree.type == SwfType.JOB) {
+            // push local queue
+            LocalQueue.push(() => {
+                TaskManager.writeLogRunning(tree);
+                TaskOperator.runJob(tree);
+            });
             return;
         }
 
@@ -145,7 +214,7 @@ class TaskManager {
                 TaskOperator.runRemoteTask(tree);
                 break;
             case SwfType.JOB:
-                TaskOperator.runJob(tree);
+                //TaskOperator.runJob(tree);
                 break;
             case SwfType.LOOP:
                 TaskOperator.runLoop(tree);
@@ -162,19 +231,27 @@ class TaskManager {
                 // TODO make special
                 TaskOperator.runTask(tree);
                 break;
-            case SwfType.PSTADY:
+            case SwfType.PSTUDY:
                 // TODO make special
                 TaskOperator.runPStudy(tree);
                 break;
         }
     }
 
+    /**
+     * Completed tree. Write log.
+     * @param tree Task
+     */
     public static completed(tree: TaskTree) {
         TaskManager.writeLogCompleted(tree);
         // run parent
         TaskManager.run(tree.parent);
     }
 
+    /**
+     * Failed tree. Write log.
+     * @param tree Task
+     */
     public static failed(tree: TaskTree) {
         if (tree == null) {
             // finish all or error
@@ -186,6 +263,10 @@ class TaskManager {
         TaskManager.failed(tree.parent);
     }
 
+    /**
+     * Failed condition.
+     * @param tree Task
+     */
     public static failedCondition(tree: TaskTree) {
         if (tree == null) {
             logger.info('task is null');
@@ -198,16 +279,33 @@ class TaskManager {
         TaskManager.run(tree.parent.parent);
     }
 
+    /**
+     * name of log file
+     */
     private static name_logFile: string = 'swf.log';
 
+    /**
+     * Clean up log file and index file and copyed directry.
+     * @param tree Task
+     */
     public static cleanUp(tree: TaskTree) {
-        const path_logFile: string = path.resolve(tree.path, TaskManager.name_logFile);
-        const path_index = path.resolve(tree.path, TaskManager.name_indexFile);
+        const path_logFile: string = path.resolve(tree.local_path, TaskManager.name_logFile);
+        const path_index = path.resolve(tree.local_path, TaskManager.name_indexFile);
         if (fs.existsSync(path_logFile)) {
             fs.unlinkSync(path_logFile);
         }
         if (fs.existsSync(path_index)) {
             fs.unlinkSync(path_index);
+        }
+
+        if (tree.type == SwfType.LOOP || tree.type == SwfType.PSTUDY) {
+            const parent_path = path.dirname(tree.local_path);
+            const files = fs.readdirSync(parent_path);
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].match(new RegExp(`^${tree.path}\\[([0-9]+)\\]$`))) {
+                    serverUtility.unlinkDirectory(path.join(parent_path, files[i]))
+                }
+            }
         }
 
         for (let i = 0; i < tree.children.length; i++) {
@@ -216,6 +314,51 @@ class TaskManager {
         return;
     }
 
+    /**
+     * Asynchronous clean up project.
+     * @param tree Task
+     * @param callback
+     */
+    public static cleanUpAsync(tree: TaskTree, callback: (() => void)) {
+
+        const queue: TaskTree[] = [];
+
+        (function ready(tree: TaskTree) {
+            queue.push(tree);
+            tree.children.forEach(child => {
+                ready(child);
+            });
+        })(tree);
+
+        (function cleanup() {
+            const tree = queue.shift();
+            if (!tree) {
+                callback();
+                return;
+            }
+            const path_logFile: string = path.resolve(tree.local_path, TaskManager.name_logFile);
+            const path_index = path.resolve(tree.local_path, TaskManager.name_indexFile);
+            fs.unlink(path_logFile, (err) => {
+                fs.unlink(path_index, (err) => {
+                    if (tree.type == SwfType.LOOP || tree.type == SwfType.PSTUDY) {
+                        const parent_path = path.dirname(tree.local_path);
+                        const files = fs.readdirSync(parent_path);
+                        for (let i = 0; i < files.length; i++) {
+                            if (files[i].match(new RegExp(`^${tree.path}\\[([0-9]+)\\]$`))) {
+                                serverUtility.unlinkDirectory(path.join(parent_path, files[i]))
+                            }
+                        }
+                    }
+                    cleanup();
+                });
+            });
+        })();
+    }
+
+    /**
+     * Write log for running.
+     * @param tree Task
+     */
     private static writeLogRunning(tree: TaskTree) {
         if (TaskManager.isRun(tree)) {
             return;
@@ -223,13 +366,13 @@ class TaskManager {
 
         logger.info(`Run ${tree.type} : ${tree.name}`);
 
-        const dir_task: string = tree.path;
+        const dir_task: string = tree.local_path;
         const path_logFile: string = path.resolve(dir_task, TaskManager.name_logFile);
         const logJson: SwfLogJson = {
             name: tree.name,
             description: tree.description,
             state: SwfState.RUNNING,
-            path: tree.path,
+            path: tree.local_path,
             type: tree.type,
             execution_start_date: new Date().toLocaleString(),
             execution_end_date: '',
@@ -239,8 +382,12 @@ class TaskManager {
         fs.writeFileSync(path_logFile, JSON.stringify(logJson, null, '\t'));
     }
 
+    /**
+     * Write log for completed.
+     * @param tree Task
+     */
     private static writeLogCompleted(tree: TaskTree) {
-        const dir_task: string = tree.path;
+        const dir_task: string = tree.local_path;
         const path_logFile: string = path.resolve(dir_task, TaskManager.name_logFile);
         const data = fs.readFileSync(path_logFile);
         let logJson: SwfLogJson = JSON.parse(data.toString());
@@ -252,11 +399,15 @@ class TaskManager {
         fs.writeFileSync(path_logFile, JSON.stringify(logJson, null, '\t'));
     }
 
+    /**
+     * Write log for failed.
+     * @param tree Task
+     */
     private static writeLogFailed(tree: TaskTree) {
         logger.error(`Failed ${tree.type} : ${tree.name}`);
-        logger.error(`path : ${tree.path}`);
+        logger.error(`path : ${tree.local_path}`);
 
-        const dir_task: string = tree.path;
+        const dir_task: string = tree.local_path;
         const path_logFile: string = path.resolve(dir_task, TaskManager.name_logFile);
         const data = fs.readFileSync(path_logFile);
         let logJson: SwfLogJson = JSON.parse(data.toString());
@@ -265,17 +416,27 @@ class TaskManager {
         fs.writeFileSync(path_logFile, JSON.stringify(logJson, null, '\t'));
     }
 
+    /**
+     * Check whether task run.
+     * @param tree Task
+     * @return whether run task
+     */
     public static isRun(tree: TaskTree): boolean {
-        const path_logFile: string = path.resolve(tree.path, TaskManager.name_logFile);
+        const path_logFile: string = path.resolve(tree.local_path, TaskManager.name_logFile);
         return fs.existsSync(path_logFile);
     }
 
+    /**
+     * Check whether task completed.
+     * @param tree Task
+     * @return whether task completed
+     */
     public static isCompleted(tree: TaskTree): boolean {
         if (!TaskManager.isRun(tree)) {
             return false;
         }
 
-        const path_logFile: string = path.resolve(tree.path, TaskManager.name_logFile);
+        const path_logFile: string = path.resolve(tree.local_path, TaskManager.name_logFile);
         const data = fs.readFileSync(path_logFile);
         const logJson: SwfLogJson = JSON.parse(data.toString());
 
@@ -283,12 +444,17 @@ class TaskManager {
         return isCompleted;
     }
 
+    /**
+     * Check whether failed task.
+     * @param tree Task
+     * @return whether task failed
+     */
     public static isFailed(tree: TaskTree): boolean {
         if (!TaskManager.isRun(tree)) {
             return false;
         }
 
-        const path_logFile: string = path.resolve(tree.path, TaskManager.name_logFile);
+        const path_logFile: string = path.resolve(tree.local_path, TaskManager.name_logFile);
         const data = fs.readFileSync(path_logFile);
         const logJson: SwfLogJson = JSON.parse(data.toString());
 
@@ -296,9 +462,18 @@ class TaskManager {
         return isCompleted;
     }
 
+    /**
+     * name of index file
+     */
     private static name_indexFile = 'loop.idx.json';
+
+    /**
+     * Get index for Loop and PStudy.
+     * @param tree Task
+     * @return index of Loop and PStudy
+     */
     public static getIndex(tree: TaskTree): number {
-        const path_index = path.resolve(tree.path, TaskManager.name_indexFile);
+        const path_index = path.resolve(tree.local_path, TaskManager.name_indexFile);
         if (!fs.existsSync(path_index)) {
             return NaN;
         }
@@ -307,21 +482,29 @@ class TaskManager {
         return json.index;
     }
 
+    /**
+     * Set index for Loop and PStudy
+     * @param tree Task
+     * @param index of Loop and PStudy
+     */
     public static setIndex(tree: TaskTree, index: number) {
-        const path_index = path.resolve(tree.path, TaskManager.name_indexFile);
+        const path_index = path.resolve(tree.local_path, TaskManager.name_indexFile);
         if (fs.existsSync(path_index)) {
             fs.unlinkSync(path_index);
         }
         const json: ForIndex = { index: index };
         fs.writeFileSync(path_index, JSON.stringify(json, null, '\t'));
     }
-
 }
 
 /**
  * Task Operator
  */
 class TaskOperator {
+    /**
+     * Run Workflow.
+     * @param tree Task
+     */
     public static runWorkflow(tree: TaskTree) {
         const workflow = <SwfWorkflowJson>tree;
 
@@ -339,7 +522,7 @@ class TaskOperator {
             // unlink file relation
             for (let i = 0; i < workflow.file_relations.length; i++) {
                 const relation = workflow.file_relations[i];
-                const path_dst: string = path.resolve(workflow.path, relation.path_input_file);
+                const path_dst: string = path.resolve(tree.local_path, relation.path_input_file);
                 TaskOperator.unlink(path_dst);
             }
 
@@ -379,18 +562,22 @@ class TaskOperator {
                     continue;
                 }
 
-                const path_src: string = path.resolve(workflow.path, relation.path_output_file);
-                const path_dst: string = path.resolve(workflow.path, relation.path_input_file);
+                let path_src: string = path.resolve(tree.local_path, relation.path_output_file);
+                let path_dst: string = path.resolve(tree.local_path, relation.path_input_file);
                 TaskOperator.link(path_src, path_dst);
             }
             TaskManager.run(child);
         }
     }
 
+    /**
+     * Run Task
+     * @param tree Workflowask
+     */
     public static runTask(tree: TaskTree) {
         const task = <SwfTaskJson>tree;
 
-        if (!fs.existsSync(path.join(task.path, task.script.path))) {
+        if (!fs.existsSync(path.join(tree.local_path, task.script.path))) {
             logger.error('Script file is not found');
             failed();
             return
@@ -415,13 +602,13 @@ class TaskOperator {
             }
         }
 
-        TaskOperator.exec(command, task.path, completed, failed);
+        TaskOperator.exec(command, tree.local_path, completed, failed);
 
         function completed() {
             let isCompleted = true;
             for (let i = 0; i < task.output_files.length; i++) {
                 const file_path = task.output_files[i].path
-                isCompleted = isCompleted && fs.existsSync(path.join(task.path, file_path));
+                isCompleted = isCompleted && fs.existsSync(path.join(tree.local_path, file_path));
             }
 
             if (isCompleted) {
@@ -436,11 +623,15 @@ class TaskOperator {
         }
     }
 
+    /**
+     * Run RemoteTask
+     * @param tree RemoteTask
+     */
     public static runRemoteTask(tree: TaskTree) {
         const remoteTask = <SwfRemoteTaskJson><SwfTaskJson>tree;
         const client = new ssh2.Client();
 
-        if (!fs.existsSync(path.join(remoteTask.path, remoteTask.script.path))) {
+        if (!fs.existsSync(path.join(tree.local_path, remoteTask.script.path))) {
             logger.error('Script file is not found');
             failed();
             return
@@ -479,7 +670,7 @@ class TaskOperator {
                 command += `./${remoteTask.script.path}\n`;
             }
 
-            TaskOperator.execRemote(client, command, remoteTask.host.path, execCallback, failed);
+            TaskOperator.execRemote(client, command, tree.remote_path, execCallback, failed);
 
             function execCallback() {
                 // TODO check whether success
@@ -498,12 +689,16 @@ class TaskOperator {
         }
     }
 
+    /**
+     * Run Job.
+     * @param tree Job
+     */
     public static runJob(tree: TaskTree) {
         const job = <SwfJobJson><SwfTaskJson>tree;
         const client = new ssh2.Client();
 
-        var t = path.join(job.path, job.script.path);
-        if (!fs.existsSync(path.join(job.path, job.script.path))) {
+        var t = path.join(tree.local_path, job.script.path);
+        if (!fs.existsSync(path.join(tree.local_path, job.script.path))) {
             logger.error('Script file is not found');
             failed();
             return
@@ -515,7 +710,6 @@ class TaskOperator {
             username: job.host.username,
         }
 
-        // TODO get password from dialog
         if (job.host.privateKey) {
             config.privateKey = fs.readFileSync(job.host.privateKey);
             config.passphrase = job.host.pass;
@@ -527,29 +721,21 @@ class TaskOperator {
         client.on('ready', readyCallback);
 
         function readyCallback() {
-            TaskOperator.setUpRemote(job, client, runScript, failed);
+            TaskOperator.setUpRemote(job, client, submit, failed);
         }
 
-
-        function runScript() {
+        function submit() {
             let command: string = '';
-            command += `cd ${job.host.path}\n`;
-            if (job.host.job_scheduler == SwfJobScheduler.TCS) {
-                command += `sh ${job.script.path}\n`;
-            } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
-                command += `sh ${job.script.path}\n`;
-            } else {
-                // default TCS
-                command += `sh ${job.script.path}\n`;
-            }
+            command += `cd ${tree.remote_path}\n`;
+            command += `sh ${job.script.path}\n`;
 
-            client.exec(command, execCallback);
+            client.exec(command, submitCallback);
 
-            function execCallback(err: Error, channel: ssh2.ClientChannel) {
+            function submitCallback(err: Error, channel: ssh2.ClientChannel) {
                 if (err) {
                     TaskManager.failed(tree);
                     logger.error(`error : ${err}`);
-                    logger.error(`working directory : ${job.host.path}`);
+                    logger.error(`working directory : ${tree.remote_path}`);
                     logger.error(`command : ${command}`);
 
                     return;
@@ -564,7 +750,8 @@ class TaskOperator {
                     // TODO check whether success
 
                     //logger.info(`Stream :: close :: code: ${exitCode}, signal: ${signalName}`);
-                    const intervalId: NodeJS.Timer = setInterval(checkFinish, 2000);
+                    // set interval 10 sec.
+                    const intervalId: NodeJS.Timer = setInterval(checkFinish, 10000);
 
                     function checkFinish() {
                         // check job scheduler
@@ -574,7 +761,7 @@ class TaskOperator {
 
                         let command: string = '';
                         if (job.host.job_scheduler == SwfJobScheduler.TCS) {
-                            command += `pjstat ${jobId} -s\n`;
+                            command += `pjstat ${jobId}\n`;
                         } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
                             command += `qstat -l ${jobId} -x\n`;
                         } else {
@@ -588,7 +775,7 @@ class TaskOperator {
                             if (err) {
                                 TaskManager.failed(tree);
                                 logger.error(`error : ${err}`);
-                                logger.error(`working directory : ${job.host.path}`);
+                                logger.error(`working directory : ${tree.remote_path}`);
                                 logger.error(`command : ${command}`);
 
                                 return;
@@ -607,15 +794,15 @@ class TaskOperator {
                             // check state of job
                             let isFinish = false;
                             if (job.host.job_scheduler == SwfJobScheduler.TCS) {
-                                const regExp: RegExp = /STATE(\s?)*:(\s?)*EXT/i;
-                                isFinish = (regExp.test(stdout));
+                                const regExp: RegExp = /JOB_ID/i;
+                                isFinish = (!regExp.test(stdout));
                             } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
                                 const regExp: RegExp = /<job_state>C<\/job_state>/i;
                                 isFinish = (regExp.test(stdout));
                             } else {
                                 // default TCS
-                                const regExp: RegExp = /STATE(\s?)*:(\s?)*EXT/i;
-                                isFinish = (regExp.test(stdout));
+                                const regExp: RegExp = /JOB_ID/i;
+                                isFinish = (!regExp.test(stdout));
                             }
 
                             if (isFinish) {
@@ -658,14 +845,20 @@ class TaskOperator {
             // TODO check whether success
             TaskManager.completed(tree);
             client.end();
+            LocalQueue.finish();
         }
 
         function failed() {
             TaskManager.failed(tree);
             client.end();
+            LocalQueue.finish();
         }
     }
 
+    /**
+     * Run Lopp.
+     * @param tree Loop
+     */
     public static runLoop(tree: TaskTree) {
         const loop = <SwfLoopJson>tree;
 
@@ -673,6 +866,7 @@ class TaskOperator {
         if (isNaN(index)) {
             index = loop.forParam.start;
         } else {
+
             // increment
             index += loop.forParam.step;
         }
@@ -684,36 +878,28 @@ class TaskOperator {
             return;
         }
 
-        let workflow: SwfWorkflowJson = {
-            name: `${loop.name}[${index}]`,
-            description: loop.description,
-            path: `${loop.path}[${index}]`,
-            type: SwfType.WORKFLOW,
-            children_file: loop.children_file,
-            relations: loop.relations,
-            file_relations: loop.file_relations,
-            positions: loop.positions,
-            script: loop.script,
-            input_files: loop.input_files,
-            output_files: loop.output_files,
-            send_files: loop.send_files,
-            receive_files: loop.receive_files,
-            max_size_receive_file: loop.max_size_receive_file,
-            clean_up: loop.clean_up
-        };
+        let workflow: SwfWorkflowJson = ProjectOperator.copyTaskTree(tree);
+        workflow.name = `${loop.name}[${index}]`;
+        workflow.path = `${loop.path}[${index}]`;
+        workflow.type = SwfType.WORKFLOW;
 
         const child: TaskTree = <TaskTree>workflow;
-        child.children = tree.children;
         child.parent = tree;
-        TaskManager.cleanUp(child);
+
+        ProjectOperator.setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
 
         // copy directory
-        serverUtility.copyFolder(loop.path, child.path);
+        serverUtility.copyFolder(tree.local_path, child.local_path);
+        TaskManager.cleanUp(child);
         TaskManager.setIndex(child, index);
 
         TaskManager.run(child);
     }
 
+    /**
+     * Run If.
+     * @param tree If
+     */
     public static runIf(tree: TaskTree) {
         const conditionTree: TaskTree = tree.children[0]
         if (!TaskManager.isRun(conditionTree)) {
@@ -734,10 +920,14 @@ class TaskOperator {
         }
     }
 
+    /**
+     * Run Condtion.
+     * @param tree Condition
+     */
     public static runCondition(tree: TaskTree) {
         const condition = <SwfTaskJson>tree;
 
-        if (!fs.existsSync(path.join(condition.path, condition.script.path))) {
+        if (!fs.existsSync(path.join(tree.local_path, condition.script.path))) {
             TaskManager.completed(tree);
             return;
         }
@@ -761,13 +951,13 @@ class TaskOperator {
             }
         }
 
-        TaskOperator.exec(command, condition.path, completed, failed);
+        TaskOperator.exec(command, tree.local_path, completed, failed);
 
         function completed() {
             let isCompleted = true;
             for (let i = 0; i < condition.output_files.length; i++) {
                 const file_path = condition.output_files[i].path
-                isCompleted = isCompleted && fs.existsSync(path.join(condition.path, file_path));
+                isCompleted = isCompleted && fs.existsSync(path.join(tree.local_path, file_path));
             }
 
             if (isCompleted) {
@@ -782,6 +972,10 @@ class TaskOperator {
         }
     }
 
+    /**
+     * Run PStudy.
+     * @param tree PStudy
+     */
     public static runPStudy(tree: TaskTree) {
         const pstudy = <SwfPStudyJson><SwfTaskJson>tree;
 
@@ -793,47 +987,45 @@ class TaskOperator {
             index++;
         }
 
-        const parameter_file_path: string = path.resolve(pstudy.path, pstudy.parameter_file.path);
+        TaskManager.setIndex(tree, index);
+
+        const parameter_file_path: string = path.resolve(tree.local_path, pstudy.parameter_file.path);
         const data: Buffer = fs.readFileSync(parameter_file_path);
         const parameter: SwfPSParameterJson = JSON.parse(data.toString());
         var ps_size = TaskOperator.getSizePSSpace(parameter.target_params);
+
         if (ps_size <= index) {
-            // TODO check whether success
-            TaskManager.completed(tree);
+            let isCompleted = true;
+            if (tree.hidden_children != null) {
+                for (let i = 0; i < tree.hidden_children.length; i++) {
+                    isCompleted = isCompleted && TaskManager.isCompleted(tree.hidden_children[i]);
+                }
+            }
+            if (isCompleted) {
+                TaskManager.completed(tree);
+            }
             return;
         }
 
-        TaskManager.setIndex(tree, index);
-
-        let workflow: SwfWorkflowJson = {
-            name: `${pstudy.name}[${index}]`,
-            description: pstudy.description,
-            path: `${pstudy.path}[${index}]`,
-            type: SwfType.WORKFLOW,
-            children_file: pstudy.children_file,
-            relations: pstudy.relations,
-            file_relations: pstudy.file_relations,
-            positions: pstudy.positions,
-            script: pstudy.script,
-            input_files: pstudy.input_files,
-            output_files: pstudy.output_files,
-            send_files: pstudy.send_files,
-            receive_files: pstudy.receive_files,
-            max_size_receive_file: pstudy.max_size_receive_file,
-            clean_up: pstudy.clean_up
-        };
+        let workflow: SwfWorkflowJson = ProjectOperator.copyTaskTree(tree);
+        workflow.name = `${pstudy.name}[${index}]`;
+        workflow.path = `${pstudy.path}[${index}]`;
+        workflow.type = SwfType.WORKFLOW;
 
         const child: TaskTree = <TaskTree>workflow;
-        child.children = tree.children;
         child.parent = tree;
+        if (tree.hidden_children == null) {
+            tree.hidden_children = new Array<TaskTree>();
+        }
+        tree.hidden_children.push(child)
 
-        // copy directory
-        serverUtility.copyFolder(pstudy.path, child.path);
+        ProjectOperator.setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
+        serverUtility.copyFolder(tree.local_path, child.local_path);
         TaskManager.cleanUp(child);
-        //TaskManager.setIndex(child, index);
+        TaskManager.setIndex(child, index);
 
-        const src_path = path.join(pstudy.path, parameter.target_file);
-        const dst_path = path.join(child.path, parameter.target_file.replace('.svy', ''));
+        const src_path = path.join(tree.local_path, parameter.target_file);
+        const dst_path = path.join(child.local_path, parameter.target_file.replace('.svy', ''));
         const values: Object = TaskOperator.getPSVector(parameter.target_params, index);
         serverUtility.writeFileKeywordReplaced(src_path, dst_path, values);
 
@@ -841,6 +1033,12 @@ class TaskOperator {
         TaskManager.run(tree);
     }
 
+    /**
+     * Get parameter vector of PStudy space.
+     * @param psSpace PStudy space
+     * @param index index of vector for PStudy space.
+     * @return parameter vector of PStudy space
+     */
     private static getPSVector(psSpace: Array<SwfPSAxisJson>, index: number): Object {
         let vector: Object = {};
         for (let i = 0; i < psSpace.length; i++) {
@@ -859,6 +1057,11 @@ class TaskOperator {
         return vector;
     }
 
+    /**
+     * Get size of PStudy space.
+     * @param psSpace
+     * @return size of PStudy space
+     */
     private static getSizePSSpace(psSpace: Array<SwfPSAxisJson>): number {
         let size = 1;
         for (let i = 0; i < psSpace.length; i++) {
@@ -867,6 +1070,11 @@ class TaskOperator {
         return size;
     }
 
+    /**
+     * Get size of PStudy axis.
+     * @param psAxis PStudy axis
+     * @return size of PStudy axis
+     */
     private static getSizePSAxis(psAxis: SwfPSAxisJson): number {
         let size = 0;
         if (psAxis.list != null) {
@@ -883,8 +1091,13 @@ class TaskOperator {
         return size;
     }
 
+    /**
+     * Link output and input of task.
+     * @param src_path path of source file
+     * @param dst_path path of destination file
+     */
     private static link(src_path: string, dst_path: string) {
-        if (fs.existsSync(dst_path)) {
+        if (fs.existsSync(dst_path) && !fs.statSync(dst_path).isDirectory()) {
             fs.unlinkSync(dst_path);
         }
 
@@ -896,13 +1109,24 @@ class TaskOperator {
         //fs.symlinkSync(path_src_relative, path_dst);
     }
 
+    /**
+     * Unlink output and input of task.
+     * @param dst_path path of destination file
+     */
     private static unlink(dst_path: string) {
         if (fs.existsSync(dst_path)) {
             fs.unlinkSync(dst_path);
         }
     }
 
-    private static exec(command: string, working_dir: string, callback?: () => void, callbackErr?: () => void) {
+    /**
+     * Execute server side.
+     * @param command command for execution
+     * @param working_dir path of directory for execution
+     * @param callback function to call when end of execution without error
+     * @param callbackErr function ro call when we get error
+     */
+    private static exec(command: string, working_dir: string, callback?: (() => void), callbackErr?: (() => void)) {
         const exec = child_process.exec;
         const option: child_process.ExecOptions = {
             cwd: working_dir
@@ -923,13 +1147,21 @@ class TaskOperator {
                 return;
             }
 
-            if (callbackErr) {
+            if (callback) {
                 callback();
             }
         }
     }
 
-    private static execRemote(client: ssh2.Client, command: string, working_dir: string, callback?: () => void, callbackErr?: () => void) {
+    /**
+     * Execute remote side.
+     * @param client connection of remote side
+     * @param command command for execution
+     * @param working_dir path of directory for execution
+     * @param callback function to call when end of execution without error
+     * @param callbackErr function ro call when we get error
+     */
+    private static execRemote(client: ssh2.Client, command: string, working_dir: string, callback?: (() => void), callbackErr?: (() => void)) {
         if (command != '') {
             command = `cd ${working_dir};\n` + command;
         }
@@ -967,19 +1199,42 @@ class TaskOperator {
         }
     }
 
-    private static mkdirRemote(client: ssh2.Client, path: string, working_dir: string, callback?: () => void, callbackErr?: () => void) {
+    /**
+     * Make directory remote side.
+     * @param client connection of remote side
+     * @param path path of directory you want
+     * @param working_dir path of directory for execution
+     * @param callback function to call when end of execution without error
+     * @param callbackErr function ro call when we get error
+     */
+    private static mkdirRemote(client: ssh2.Client, path: string, working_dir: string, callback?: (() => void), callbackErr?: (() => void)) {
         const command: string = `mkdir -p ${path};`;
         TaskOperator.execRemote(client, command, working_dir, callback, callbackErr);
     }
 
-    private static rmFileRemote(client: ssh2.Client, path: string, working_dir: string, callback?: () => void, callbackErr?: () => void) {
+    /**
+     * Remove file remote side
+     * @param client connection of remote side
+     * @param path path of file you want
+     * @param working_dir path of directory for execution
+     * @param callback function to call when end of execution without error
+     * @param callbackErr function ro call when we get error
+     */
+    private static rmFileRemote(client: ssh2.Client, path: string, working_dir: string, callback?: (() => void), callbackErr?: (() => void)) {
         const command: string = `rm ${path};`;
         TaskOperator.execRemote(client, command, working_dir, callback, callbackErr);
     }
 
-    private static setUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback: () => void, callbackErr: () => void) {
+    /**
+     * Set up remote to execute RemoteTask
+     * @param remoteTask taeget RemoteTask
+     * @param client connection of remote side
+     * @param callback function to call when end of execution without error
+     * @param callbackErr function ro call when we get error
+     */
+    private static setUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback?: (() => void), callbackErr?: (() => void)) {
         // make working directory
-        TaskOperator.mkdirRemote(client, remoteTask.host.path, '', mkdirCallback, callbackErr);
+        TaskOperator.mkdirRemote(client, (<TaskTree>remoteTask).remote_path, '', mkdirCallback, callbackErr);
 
         function mkdirCallback() {
             // send files
@@ -1008,8 +1263,16 @@ class TaskOperator {
                 const file = remoteTask.script;
                 command += ` "${file.path}"`;
             }
+            // job script file
+            if (remoteTask.type == SwfType.JOB) {
+                const job = <SwfJobJson>remoteTask;
+                if (job.job_script.path != '') {
+                    const file = job.job_script;
+                    command += ` "${file.path}"`;
+                }
+            }
 
-            TaskOperator.exec(command, remoteTask.path, compressCallback, callbackErr);
+            TaskOperator.exec(command, (<TaskTree>remoteTask).local_path, compressCallback, callbackErr);
         }
 
         function compressCallback() {
@@ -1026,8 +1289,8 @@ class TaskOperator {
             }
 
             // send script file
-            const local_path: string = path.join(remoteTask.path, tarFile_name);
-            const remote_path: string = path.posix.join(remoteTask.host.path, tarFile_name)
+            const local_path: string = path.join((<TaskTree>remoteTask).local_path, tarFile_name);
+            const remote_path: string = path.posix.join((<TaskTree>remoteTask).remote_path, tarFile_name)
             sftp.fastPut(local_path, remote_path, sendFileCallback);
 
             function sendFileCallback(err: Error) {
@@ -1047,19 +1310,26 @@ class TaskOperator {
         function extractFilesRemote() {
             const command: string = `tar xvf "${tarFile_name}";`;
 
-            TaskOperator.execRemote(client, command, remoteTask.host.path, extractCallback, callbackErr);
+            TaskOperator.execRemote(client, command, (<TaskTree>remoteTask).remote_path, extractCallback, callbackErr);
         }
 
         function extractCallback() {
             // remove compressed files
-            fs.unlinkSync(path.join(remoteTask.path, tarFile_name));
+            fs.unlinkSync(path.join((<TaskTree>remoteTask).local_path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.host.path, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, (<TaskTree>remoteTask).remote_path, callback, callback);
         }
 
     }
 
-    private static cleanUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback: () => void, callbackErr: () => void) {
+    /**
+     * Clean up remote after execute RemoteTask
+     * @param remoteTask taeget RemoteTask
+     * @param client connection of remote side
+     * @param callback function to call when end of execution without error
+     * @param callbackErr function ro call when we get error
+     */
+    private static cleanUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback?: (() => void), callbackErr?: (() => void)) {
         let tarFile_name: string = 'recieve_files.tar.gz';
         if (remoteTask.receive_files.length + remoteTask.output_files.length < 1) {
             callback();
@@ -1081,7 +1351,7 @@ class TaskOperator {
                 command += ` "${file.path}"`;
             }
 
-            TaskOperator.execRemote(client, command, remoteTask.host.path, compressCallback, callbackErr);
+            TaskOperator.execRemote(client, command, (<TaskTree>remoteTask).remote_path, compressCallback, callbackErr);
         }
 
         function compressCallback() {
@@ -1098,8 +1368,8 @@ class TaskOperator {
             }
 
             // send script file
-            const local_path: string = path.join(remoteTask.path, tarFile_name);
-            const remote_path: string = path.posix.join(remoteTask.host.path, tarFile_name)
+            const local_path: string = path.join((<TaskTree>remoteTask).local_path, tarFile_name);
+            const remote_path: string = path.posix.join((<TaskTree>remoteTask).remote_path, tarFile_name)
             sftp.fastGet(remote_path, local_path, recieveFileCallback);
 
             function recieveFileCallback(err: Error) {
@@ -1122,22 +1392,101 @@ class TaskOperator {
                 command = `"${path.resolve('tar.exe')}" xvf "${tarFile_name}"`;
             }
 
-            TaskOperator.exec(command, remoteTask.path, extractCallback, callbackErr);
+            TaskOperator.exec(command, (<TaskTree>remoteTask).local_path, extractCallback, callbackErr);
         }
 
         function extractCallback() {
             // remove compressed files
-            fs.unlinkSync(path.join(remoteTask.path, tarFile_name));
+            fs.unlinkSync(path.join((<TaskTree>remoteTask).local_path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.host.path, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, (<TaskTree>remoteTask).remote_path, callback, callback);
         }
     }
 
 }
 
+/**
+ * Tree of task.
+ */
 interface TaskTree extends SwfTreeJson {
+    /**
+     * parent of tree
+     */
     parent: TaskTree;
+    /**
+     * children of tree
+     */
     children: Array<TaskTree>;
+    /**
+     * path of directory of task on local
+     */
+    local_path: string;
+    /**
+     * path of directory of task on remote
+     */
+    remote_path?: string;
+    /**
+     * created children by tree
+     */
+    hidden_children?: Array<TaskTree>;
+}
+
+/**
+ * local job queue
+ */
+class LocalQueue {
+    /**
+     * upper number limit for job submit
+     */
+    private static MAX_JOB = 5;
+    /**
+     * number of job submited
+     */
+    private static num_job = 0;
+    /**
+     * queue of job
+     */
+    private static queue: Array<() => void> = new Array<() => void>();
+    /**
+     * ID of timer
+     */
+    private static intervalId: NodeJS.Timer;
+
+    /**
+     * Push job queue.
+     * @param job function to submit job
+     */
+    public static push(job: (() => void)) {
+        LocalQueue.queue.push(job);
+
+        if (LocalQueue.queue.length == 1) {
+            LocalQueue.intervalId = setInterval(LocalQueue.checkQueue, 10000)
+        }
+    }
+
+    /**
+     * Finish submited Job.
+     */
+    public static finish() {
+        LocalQueue.num_job--;
+    }
+
+    /**
+     * Check whether job can be submit.
+     */
+    private static checkQueue() {
+        if (LocalQueue.queue.length < 1) {
+            clearInterval(LocalQueue.intervalId);
+        }
+
+        while (LocalQueue.num_job < LocalQueue.MAX_JOB) {
+            const job = LocalQueue.queue.shift();
+            if (job != null) {
+                job();
+                LocalQueue.num_job++;
+            }
+        }
+    }
 }
 
 export = ProjectOperator;

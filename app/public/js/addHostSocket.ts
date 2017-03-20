@@ -1,5 +1,5 @@
 /**
- * add host information to server
+ * socket io communication class for add host information to server
  */
 class AddHostSocket {
 
@@ -15,24 +15,24 @@ class AddHostSocket {
 
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     public constructor(socket: SocketIO.Socket) {
         this.socket = socket;
     }
 
     /**
-     * set callback function for add host information event
-     * @param callback callback function
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     public onEvent(callback: ((isAdd: boolean) => void)): void {
         this.socket.once(AddHostSocket.eventName, callback);
     }
 
     /**
-     * emit to server for save host information
-     * @param hostInfo send
-     * @param callback callback function
+     * emit to server for add host information
+     * @param hostInfo send host information
+     * @param callback The function to call when we get this event
      */
     public emit(hostInfo: SwfHostJson, callback: ((isAdd: boolean) => void)): void {
         this.onEvent(callback);

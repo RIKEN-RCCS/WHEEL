@@ -1,18 +1,4 @@
 $(() => {
-    const hostTable = $('#host_table');
-    const sshKeyRadio = $('#authtype_sshkey');
-    const browseButton = $('#browse_button');
-    const addHostButton = $('#add_host_button');
-    const addError = $('#add_error_area');
-
-    // host setting
-    const textLabel = $('#text_label');
-    const textHost = $('#text_host');
-    const textPath = $('#text_path');
-    const textId = $('#text_id');
-    const sshKeyAddress = $('#sshkey_address');
-    const textBoxes: JQuery[] = [textLabel, textHost, textPath, textId, sshKeyAddress];
-
     // socket io
     const socket = io('/swf/remotehost');
     const getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
@@ -20,153 +6,179 @@ $(() => {
     const addHostSocket = new AddHostSocket(socket);
     const deleteHostSocket = new DeleteHostSocket(socket);
     const getFileListSocket = new GetFileListSocket(socket, '');
+
+    // elements
+    const hostTable = $('#host_table');
+    const sshKeyRadio = $('#authtype_sshkey');
+    const browseButton = $('#browse_button');
+    const addHostButton = $('#add_host_button');
+    const addError = $('#add_error_area');
+    const inputText = $('#input_text_browse');
+    const textLabel = $('#text_label');
+    const textHost = $('#text_host');
+    const textPath = $('#text_path');
+    const textId = $('#text_id');
+    const sshKeyAddress = $('#sshkey_address');
+    const textBoxes: JQuery[] = [textLabel, textHost, textPath, textId, sshKeyAddress];
+
+    // romote host list
     let remotHostList: SwfHostJson[];
 
     // file dialog
-    const inputText = $('#input_text_browse');
     const dialog = new FileDialog(getFileListSocket);
 
-    /**
-     * button animation for mouse cursor hover
-     */
-    browseButton.on('click', () => {
-        dialog.updateDialog();
-        dialog.show();
-    });
+    // connect flag to server
+    let isConnect: boolean = false;
 
     /**
-     * click add host information event
+     * initialize
      */
-    addHostButton.click(() => {
-        const isCheckedSshKey: boolean = sshKeyRadio.prop('checked');
-        const label: string = textLabel.val().trim();
-        const host: string = textHost.val().trim();
-        const path: string = textPath.val().trim();
-        const name: string = textId.val().trim();
-        const sshkey: string = sshKeyAddress.val().trim();
-        let errorText: string = '';
-
-        textBoxes.forEach(textbox => textbox.borderValid());
-
-        if (!ClientUtility.isLocalHost(host)) {
-            if (isCheckedSshKey && !sshkey) {
-                sshKeyAddress.borderInvalid();
-                errorText = 'Key File is empty or white space';
-            }
-            if (!name) {
-                textId.borderInvalid();
-                errorText = 'ID is empty or white space';
-            }
-        }
-
-        if (!path) {
-            textPath.borderInvalid();
-            errorText = 'Path is empty or white space';
-        }
-        if (!host) {
-            textHost.borderInvalid();
-            errorText = 'Host is empty or white space';
-        }
-        if (!label) {
-            textLabel.borderInvalid();
-            errorText = 'Label is empty or white space';
-        }
-        if (remotHostList.filter(host => host.name === label).length) {
-            textLabel.borderInvalid();
-            errorText = 'Label is duplicate';
-        }
-
-        if (errorText) {
-            addError.text(errorText);
-            return;
-        }
-
-        addError.text('Added');
-
-        const hostInfo: SwfHostJson = {
-            name: label,
-            host: host,
-            path: path,
-            username: name,
-            description: '',
-            job_scheduler: ''
-        };
-
-        if (isCheckedSshKey) {
-            hostInfo.privateKey = sshkey;
-        }
-
-        textBoxes.forEach(textbox => textbox.val(''));
-        addHostSocket.emit(hostInfo, (isAdd: boolean) => {
-            getRemoteHostListSocket.emit(getHostListCallback);
-        });
-    });
-
-    /**
-     * select radio button event for disable brose button and text box
-     */
-    $(document)
-        .on('change', '.auth_type_radio', () => {
-            const isCheckedSshKey: boolean = sshKeyRadio.prop('checked');
-            if (!isCheckedSshKey) {
-                disableKeyBrowse();
-            }
-            else {
-                enableKeyBrowse();
-            }
-        })
-        .on('click', '.test_connect_button, .ng_test_button', function () {
-            testConnect($(this));
-        });
-
-    /**
-     * request remote host list event
-     */
-    getRemoteHostListSocket.onConnect(getHostListCallback);
-
-    /**
-     * click ok button event
-     */
-    dialog
-        .onDirIconMouseup((directory: string) => {
-            inputText.val('');
-        })
-        .onDirIconDblClick((directory: string) => {
-            inputText.val('');
-        })
-        .onFileIconMouseup((filepath: string) => {
-            inputText.val(ClientUtility.basename(filepath));
-        })
-        .onFileIconDblClick((filepath: string) => {
-            sshKeyAddress.val(filepath);
-            dialog.hide();
-        })
-        .onChangeAddress()
-        .onClickCancel()
-        .onClickOK(() => {
-            const filepath = dialog.getLastSelectFilepath();
-            const directory = dialog.getLastSelectDirectory();
-            if (filepath) {
-                sshKeyAddress.val(filepath);
-                dialog.hide();
-            }
-            else if (directory) {
-                dialog.updateDialog();
-            }
-        });
-
-    /**
-     *
-     */
-    (function initDisplay() {
-        textBoxes.forEach(text => text.val(''));
-        enableKeyBrowse();
+    (function init() {
+        getHostList();
+        setClickEventForBrowseButton();
+        setClickEventForAddButton();
+        setHostListEvents();
+        setFileDialogEvents();
+        clearInputText();
+        enableRadioButtonToSshKey();
     })();
 
     /**
-     *
+     * set button click event to open file dialog
      */
-    function enableKeyBrowse() {
+    function setClickEventForBrowseButton() {
+        browseButton.on('click', () => {
+            dialog.updateDialog();
+            dialog.show();
+        });
+    }
+
+    /**
+     * set button click event to add host information
+     */
+    function setClickEventForAddButton() {
+        addHostButton.click(() => {
+            const isCheckedSshKey: boolean = sshKeyRadio.prop('checked');
+            const label: string = textLabel.val().trim();
+            const host: string = textHost.val().trim();
+            const path: string = textPath.val().trim();
+            const name: string = textId.val().trim();
+            const sshkey: string = sshKeyAddress.val().trim();
+            let errorText: string = '';
+
+            textBoxes.forEach(textbox => textbox.borderValid());
+
+            if (!ClientUtility.isLocalHost(host)) {
+                if (isCheckedSshKey && !sshkey) {
+                    sshKeyAddress.borderInvalid();
+                    errorText = 'Key File is empty or white space';
+                }
+                if (!name) {
+                    textId.borderInvalid();
+                    errorText = 'ID is empty or white space';
+                }
+            }
+
+            if (!path) {
+                textPath.borderInvalid();
+                errorText = 'Path is empty or white space';
+            }
+            if (!host) {
+                textHost.borderInvalid();
+                errorText = 'Host is empty or white space';
+            }
+            if (!label) {
+                textLabel.borderInvalid();
+                errorText = 'Label is empty or white space';
+            }
+            if (remotHostList.filter(host => host.name === label).length) {
+                textLabel.borderInvalid();
+                errorText = 'Label is duplicate';
+            }
+
+            if (errorText) {
+                addError.text(errorText);
+                return;
+            }
+
+            addError.text('Added');
+
+            const hostInfo: SwfHostJson = {
+                name: label,
+                host: host,
+                path: path,
+                username: name,
+                description: '',
+                job_scheduler: ''
+            };
+
+            if (isCheckedSshKey) {
+                hostInfo.privateKey = sshkey;
+            }
+
+            textBoxes.forEach(textbox => textbox.val(''));
+            addHostSocket.emit(hostInfo, (isAdd: boolean) => {
+                getHostList();
+            });
+        });
+    }
+
+    /**
+     * set several events for host list
+     */
+    function setHostListEvents() {
+        $(document)
+            .on('change', '.auth_type_radio', () => {
+                const isCheckedSshKey: boolean = sshKeyRadio.prop('checked');
+                if (!isCheckedSshKey) {
+                    enableRadioButtonToPass();
+                }
+                else {
+                    enableRadioButtonToSshKey();
+                }
+            })
+            .on('click', '.test_connect_button, .ng_test_button', function () {
+                runConnect($(this));
+            });
+    }
+
+    /**
+     * set several events for file dialog
+     */
+    function setFileDialogEvents() {
+        dialog
+            .onDirIconMouseup((directory: string) => {
+                inputText.val('');
+            })
+            .onDirIconDblClick((directory: string) => {
+                inputText.val('');
+            })
+            .onFileIconMouseup((filepath: string) => {
+                inputText.val(ClientUtility.basename(filepath));
+            })
+            .onFileIconDblClick((filepath: string) => {
+                sshKeyAddress.val(filepath);
+                dialog.hide();
+            })
+            .onChangeAddress()
+            .onClickCancel()
+            .onClickOK(() => {
+                const filepath = dialog.getLastSelectFilepath();
+                const directory = dialog.getLastSelectDirectory();
+                if (filepath) {
+                    sshKeyAddress.val(filepath);
+                    dialog.hide();
+                }
+                else if (directory) {
+                    dialog.updateDialog();
+                }
+            });
+    }
+
+    /**
+     * enable radio button to ssh key
+     */
+    function enableRadioButtonToSshKey() {
         sshKeyRadio
             .prop('checked', 'checked');
         sshKeyAddress
@@ -176,9 +188,9 @@ $(() => {
     }
 
     /**
-     *
+     * enable radio button to password
      */
-    function disableKeyBrowse() {
+    function enableRadioButtonToPass() {
         sshKeyAddress
             .attr('disabled', 'disabled')
             .class('remotehost_text text_box text_readonly');
@@ -186,22 +198,37 @@ $(() => {
     }
 
     /**
-     *
-     * @param hostList
+     * get host list
      */
-    function getHostListCallback(hostList: SwfHostJson[]) {
-        if (hostList == null) {
-            console.error('remote host list file is not found');
+    function getHostList() {
+        if (!isConnect) {
+            isConnect = true;
+            getRemoteHostListSocket.onConnect((hostlist: SwfHostJson[]) => {
+                if (hostlist == null) {
+                    console.error('remote host list file is not found');
+                }
+                hostTable.html(createHtmlContent(hostlist));
+                remotHostList = hostlist;
+            });
         }
-        hostTable.html(createHtml4RemoteHost(hostList));
-        remotHostList = hostList;
+        else {
+            getRemoteHostListSocket.emit();
+        }
     }
 
     /**
-     *
-     * @param hostList
+     * clear input text
      */
-    function createHtml4RemoteHost(hostList: SwfHostJson[]): string {
+    function clearInputText() {
+        textBoxes.forEach(text => text.val(''));
+    }
+
+    /**
+     * create html content
+     * @param hostList registerd host list
+     * @return html string
+     */
+    function createHtmlContent(hostList: SwfHostJson[]): string {
         const html: string[] = hostList.map(host => {
             if (host.username === undefined) {
                 host.username = '';
@@ -214,13 +241,13 @@ $(() => {
 
             $(document).on('keyup', `#${host.name}_password`, (eventObject: JQueryEventObject) => {
                 if (eventObject.which == 0x0D) {
-                    testConnect($(`#${host.name}_test_connect`));
+                    runConnect($(`#${host.name}_test_connect`));
                 }
             });
 
             $(document).one('click', `#${host.name}_delete`, () => {
                 deleteHostSocket.emit(host.name, (result: boolean): void => {
-                    getRemoteHostListSocket.emit(getHostListCallback);
+                    getHostList();
                     $(document).off('keyup', `#${host.name}_password`);
                     $(document).off('click', `#${host.name}_test_connect`);
                 });
@@ -239,10 +266,10 @@ $(() => {
     }
 
     /**
-     *
-     * @param button
+     * run connect to host
+     * @param button cliced button element
      */
-    function testConnect(button: JQuery) {
+    function runConnect(button: JQuery) {
         const TEST_OK = 'OK';
         const TEST_NG = 'NG';
         const TESTING = 'Now Testing';

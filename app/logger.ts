@@ -1,50 +1,113 @@
 
+/**
+ * log lever
+ */
 enum LogLevel {
+    /**
+     * debug level
+     */
     debug,
+    /**
+     * info level
+     */
     info,
+    /**
+     * warn level
+     */
     warn,
+    /**
+     * error level
+     */
     error,
+    /**
+     * fatal level
+     */
     fatal
 };
 
+/**
+ * logger class
+ */
 class logger {
 
+    /**
+     * log level
+     */
     private static logLevel = LogLevel.info;
 
+    /**
+     * set log lovel
+     * @param level log level
+     */
     public static setLovLevel(level: LogLevel): void {
         this.logLevel = level;
     }
 
-    public static debug(object: string): void {
+    /**
+     * output debug log
+     * @param object display data
+     */
+    public static debug(object: any): void {
         if (this.logLevel <= LogLevel.debug) {
-            console.log(`${this._getDateString()} [DBG.] ${object}`);
+            if (typeof object == 'object') {
+                console.log(`${this.getDateString()} [DBG.] `, object);
+            }
+            else {
+                console.log(`${this.getDateString()} [DBG.] ${object}`);
+            }
         }
     }
 
-    public static info(object: string): void {
+    /**
+     * output info log
+     * @param object display data
+     */
+    public static info(object: any): void {
         if (this.logLevel <= LogLevel.info) {
-            console.log(`${this._getDateString()} [INFO] ${object}`);
+            if (typeof object == 'object') {
+                console.log(`${this.getDateString()} [INFO] `, object);
+            }
+            else {
+                console.log(`${this.getDateString()} [INFO] ${object}`);
+            }
         }
     }
 
-    public static warn(object: string): void {
+    /**
+     * output warning log
+     * @param object display data
+     */
+    public static warn(object: any): void {
         if (this.logLevel <= LogLevel.warn) {
-            console.log(`${this._getDateString()} [WARN] ${object}`);
+            if (typeof object == 'object') {
+                console.log(`${this.getDateString()} [WARN] `, object);
+            }
+            else {
+                console.log(`${this.getDateString()} [WARN] ${object}`);
+            }
         }
     }
 
+    /**
+     * output error log
+     * @param object display data
+     */
     public static error(object: any): void {
         if (this.logLevel <= LogLevel.error) {
             if (typeof object == 'object') {
-                console.log(`${this._getDateString()} [ERR.] `, object);
+                console.log(`${this.getDateString()} [ERR.] `, object);
             }
             else {
-                console.log(`${this._getDateString()} [ERR.] ${object}`);
+                console.log(`${this.getDateString()} [ERR.] ${object}`);
             }
         }
     }
 
-    private static _getDateString() {
+    /**
+     * get date string
+     * @return date string
+     */
+    private static getDateString(): string {
         const date = new Date();
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
     }

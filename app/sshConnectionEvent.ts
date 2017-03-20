@@ -1,14 +1,13 @@
 import fs = require('fs');
-import path = require('path');
 import ssh2 = require('ssh2');
 import logger = require('./logger');
-import serverUtility = require('./serverUtility');
-import remote = require('./remote');
+import ServerUtility = require('./serverUtility');
+import ServerSocketIO = require('./serverSocketIO');
 
 /**
- *
+ * socket io communication class for remote ssh connection test to server
  */
-class SshConnectionEvent implements SocketListener {
+class SshConnectionEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -16,20 +15,29 @@ class SshConnectionEvent implements SocketListener {
     private static eventName = 'onSshConnection';
 
     /**
-     * @param socket:
-     * @return none
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
+
+        const succeed = () => {
+            socket.emit(SshConnectionEvent.eventName, true);
+        };
+
+        const failed = () => {
+            socket.emit(SshConnectionEvent.eventName, false);
+        };
+
         socket.on(SshConnectionEvent.eventName, (name: string, password: string) => {
-            serverUtility.getHostInfo((err, hostList) => {
+            ServerUtility.getHostInfo((err, hostList) => {
                 if (err) {
                     logger.error(err);
-                    socket.emit(SshConnectionEvent.eventName, false);
+                    failed();
                     return;
                 }
                 if (!hostList) {
                     logger.error('host list does not exist');
-                    socket.emit(SshConnectionEvent.eventName, false);
+                    failed();
                     return;
                 }
 
@@ -37,71 +45,76 @@ class SshConnectionEvent implements SocketListener {
 
                 if (!host) {
                     logger.error(`${name} is not found at host list conf`);
-                    socket.emit(SshConnectionEvent.eventName, false);
+                    failed();
                 }
 
-                if (serverUtility.isLocalHost(host.host)) {
-                    socket.emit(SshConnectionEvent.eventName, true);
+                if (ServerUtility.isLocalHost(host.host)) {
+                    succeed();
                     return;
                 }
 
-                this.sshConnect(host, password, socket);
+                this.sshConnectTest(host, password, (err: Error) => {
+                    if (err) {
+                        logger.error(err);
+                        failed();
+                    }
+                    else {
+                        succeed();
+                    }
+                });
             });
         });
     }
 
     /**
      * execute ssh connect
-     * @param hostInfo: host information
-     * @param pass: input password
-     * @param socket: socket io object
+     * @param hostInfo host information
+     * @param pass input password string
+     * @param callback The function to call when we end ssh connection test
      */
-    private sshConnect(hostInfo: SwfHostJson, pass: string, socket: SocketIO.Socket) {
+    private sshConnectTest(hostInfo: SwfHostJson, pass: string, callback: ((err?: Error) => void)) {
 
-        const ssh = new remote.Ssh();
         const config: ssh2.ConnectConfig = {
             host: hostInfo.host,
             port: 22,
             username: hostInfo.username
         };
 
-        try {
-            if (hostInfo.privateKey) {
-                config.privateKey = fs.readFileSync(hostInfo.privateKey);
-                config.passphrase = pass;
-            }
-            else {
-                config.password = pass;
-            }
+        if (hostInfo.privateKey) {
+            config.passphrase = pass;
+            config.privateKey = fs.readFileSync(hostInfo.privateKey);
+        }
+        else {
+            config.password = pass;
+        }
 
-            ssh.connect(config,
-                () => {
-                    this.emitSucceed(socket);
-                },
-                () => {
-                    this.emitFailed(socket);
+        const client = new ssh2.Client();
+        client
+            .on('connect', () => {
+                logger.debug(`connected`);
+            })
+            .on('ready', () => {
+                client.sftp((err: Error, sftp: ssh2.SFTPWrapper) => {
+                    if (err) {
+                        callback(err);
+                    }
+                    else {
+                        callback();
+                    }
+                    client.end();
                 });
-        }
-        catch (err) {
-            logger.error(err);
-            this.emitFailed(socket);
-        }
-    }
-
-    /**
-     * send connect is succeed
-     * @param socket: socket io object
-     */
-    private emitSucceed(socket: SocketIO.Socket) {
-        socket.emit(SshConnectionEvent.eventName, true);
-    }
-
-    /**
-     * send connect is failed
-     * @param socket: socket io object
-     */
-    private emitFailed(socket: SocketIO.Socket) {
-        socket.emit(SshConnectionEvent.eventName, false);
+            })
+            .on('error', (err) => {
+                logger.error(err);
+                callback(err);
+            })
+            .on('close', (had_error) => {
+                logger.debug('connection close');
+            })
+            .on('end', () => {
+                logger.debug('end remote session.');
+            })
+            .connect(config);
     }
 }
 

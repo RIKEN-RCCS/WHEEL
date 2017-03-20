@@ -2,14 +2,14 @@ import http = require('http');
 import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
+import ServerSocketIO = require('./serverSocketIO');
 import ProjectOperator = require('./projectOperator');
-import ServerUtility = require('./serverUtility');
 import ServerConfig = require('./serverConfig');
 
 /**
- *
+ * socket io communication class for cleaning project request to server
  */
-class CleanProjectvent implements SocketListener {
+class CleanProjectvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -17,44 +17,44 @@ class CleanProjectvent implements SocketListener {
     private static eventName = 'cleanProject';
 
     /**
-     *
+     * plannning state
      */
-    private state: string = ServerConfig.getConfig().state.planning;
+    private planningState: string = ServerConfig.getConfig().state.planning;
 
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
-    public onEvent(socket: SocketIO.Socket): void {
+    public onEvent(socket: SocketIO.Socket) {
         socket.on(CleanProjectvent.eventName, (projectFilePath: string) => {
             const operator = new ProjectOperator(projectFilePath);
-            operator.clean();
-
-            this.cleanupProject(projectFilePath, (err) => {
-                if (err) {
-                    logger.error(err);
-                    socket.emit(CleanProjectvent.eventName, false);
-                    return
-                }
-                socket.emit(CleanProjectvent.eventName, true);
+            operator.cleanAsync(() => {
+                this.cleanProject(projectFilePath, (err) => {
+                    if (err) {
+                        logger.error(err);
+                        socket.emit(CleanProjectvent.eventName, false);
+                        return
+                    }
+                    socket.emit(CleanProjectvent.eventName, true);
+                });
             });
         });
     }
 
     /**
-     *
-     * @param projectFilePath
-     * @param callback
+     * clean project json
+     * @param projectFilePath project json file path
+     * @param callback The function to call when we clean project
      */
-    private cleanupProject(projectFilePath, callback: ((err?: Error) => void)) {
+    private cleanProject(projectFilePath, callback: ((err?: Error) => void)) {
         fs.readFile(projectFilePath, (err, data) => {
             if (err) {
                 callback(err);
                 return
             }
             const projectJson: SwfProjectJson = JSON.parse(data.toString());
-            projectJson.state = this.state;
-            this.cleanupLogJson(projectJson.log);
+            projectJson.state = this.planningState;
+            this.cleanLogJson(projectJson.log);
             fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), (err) => {
                 if (err) {
                     callback(err);
@@ -66,15 +66,15 @@ class CleanProjectvent implements SocketListener {
     }
 
     /**
-     *
-     * @param json
+     * clearn log json
+     * @param logJson log json object
      */
-    private cleanupLogJson(logJson: SwfLogJson) {
-        logJson.state = this.state;
+    private cleanLogJson(logJson: SwfLogJson) {
+        logJson.state = this.planningState;
         logJson.execution_start_date = '';
         logJson.execution_end_date = '';
         logJson.children.forEach(child => {
-            this.cleanupLogJson(child);
+            this.cleanLogJson(child);
         });
     }
 }

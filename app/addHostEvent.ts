@@ -1,11 +1,12 @@
 import fs = require('fs');
 import logger = require('./logger');
-import serverUtility = require('./serverUtility');
+import ServerUtility = require('./serverUtility');
+import ServerSocketIO = require('./serverSocketIO');
 
 /**
- *
+ * socket io communication class for addidg host informattion to server
  */
-class AddHostEvent implements SocketListener {
+class AddHostEvent implements ServerSocketIO.SocketListener {
 
     /**
      * event name
@@ -13,12 +14,12 @@ class AddHostEvent implements SocketListener {
     private static eventName = 'onAddHost';
 
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(AddHostEvent.eventName, (hostInfo: SwfHostJson) => {
-            serverUtility.addHostInfo(hostInfo, (err) => {
+            ServerUtility.addHostInfo(hostInfo, (err) => {
                 if (err) {
                     logger.error(err);
                     socket.emit(AddHostEvent.eventName, false);

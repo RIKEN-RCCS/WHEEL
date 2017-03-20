@@ -1,15 +1,18 @@
+/**
+ * socket io communication class for read file data from server
+ */
 var ReadFileSocket = (function () {
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     function ReadFileSocket(socket) {
         this.socket = socket;
     }
     /**
-     *
-     * @param filepath
-     * @param callback
+     * Adds a listener for connect event that will be invoked a single time before being automatically removed
+     * @param filepath read file path
+     * @param callback The function to call when we get the event
      */
     ReadFileSocket.prototype.onConnect = function (filepath, callback) {
         var _this = this;
@@ -20,7 +23,7 @@ var ReadFileSocket = (function () {
         });
     };
     /**
-     *
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
      */
     ReadFileSocket.prototype.onEvent = function () {
         var _this = this;
@@ -29,12 +32,12 @@ var ReadFileSocket = (function () {
         });
     };
     /**
-     *
-     * @param editFilePath
+     * emit to server for read file data
+     * @param filepath read file path
      */
-    ReadFileSocket.prototype.emit = function (editFilePath) {
+    ReadFileSocket.prototype.emit = function (filepath) {
         this.onEvent();
-        this.socket.emit(ReadFileSocket.eventName, editFilePath);
+        this.socket.emit(ReadFileSocket.eventName, filepath);
     };
     return ReadFileSocket;
 }());

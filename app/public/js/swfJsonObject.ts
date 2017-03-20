@@ -94,21 +94,22 @@ interface SwfRelationJson {
  */
 interface SwfFileRelationJson extends SwfRelationJson {
     /**
+     * befor task index
+     */
+    index_before_task: number;
+    /**
      * output file path name
      */
     path_output_file: string;
+    /**
+     * after task index
+     */
+    index_after_task: number;
     /**
      * input file path name
      */
     path_input_file: string;
 }
-
-// /**
-//  * Swf File Relation Json definition
-//  */
-// interface SwfFileRelationJson extends SwfRelationJson {
-//     relations_file: Array<SwfRelationFilesJson>;
-// }
 
 /**
  * Swf Position on 2D
@@ -128,9 +129,21 @@ interface Position2D {
  * Swf Workflow Json definition
  */
 interface SwfWorkflowJson extends SwfTaskJson {
+    /**
+     * children files
+     */
     children_file: SwfFileJson[];
+    /**
+     * task relations
+     */
     relations: SwfRelationJson[];
+    /**
+     * file relations
+     */
     file_relations: SwfFileRelationJson[];
+    /**
+     * task posistions
+     */
     positions: Position2D[];
 }
 
@@ -156,6 +169,9 @@ interface ForParam {
  * index of loop
  */
 interface ForIndex {
+    /**
+     * index number
+     */
     index: number;
 }
 
@@ -163,6 +179,9 @@ interface ForIndex {
  * Swf Loop Json definition
  */
 interface SwfLoopJson extends SwfWorkflowJson {
+    /**
+     * loop parameter
+     */
     forParam: ForParam;
 }
 
@@ -170,13 +189,37 @@ interface SwfLoopJson extends SwfWorkflowJson {
  * Swf Host Json definition
  */
 interface SwfHostJson {
+    /**
+     * representative name
+     */
     name: string;
+    /**
+     * host description
+     */
     description: string;
+    /**
+     * host path
+     */
     path: string;
+    /**
+     * host name
+     */
     host: string;
+    /**
+     * job sheduler name
+     */
     job_scheduler: string;
+    /**
+     * user name
+     */
     username: string;
+    /**
+     * private key filepath
+     */
     privateKey?: string;
+    /**
+     * password or passphrase
+     */
     pass?: string;
 }
 
@@ -184,6 +227,9 @@ interface SwfHostJson {
  * Swf Remote Task Json definition
  */
 interface SwfRemoteTaskJson extends SwfTaskJson {
+    /**
+     * host information
+     */
     host: SwfHostJson;
 }
 
@@ -191,6 +237,9 @@ interface SwfRemoteTaskJson extends SwfTaskJson {
  * Swf Job Json definition
  */
 interface SwfJobJson extends SwfRemoteTaskJson {
+    /**
+     * job script file
+     */
     job_script: SwfFileJson;
 }
 
@@ -199,16 +248,15 @@ interface SwfJobJson extends SwfRemoteTaskJson {
  */
 interface SwfLogJson {
     /**
-     * task name
+     * log name
      */
     name: string;
     /**
-     *
+     * log description
      */
     description: string;
     /**
-     * task state
-     * Planing, Running, ReRunning, Waiting, Completed, Failed
+     * task state ('Planing', 'Running', 'ReRunning', 'Waiting', 'Completed', 'Failed')
      */
     state: string;
     /**
@@ -216,24 +264,23 @@ interface SwfLogJson {
      */
     path: string;
     /**
-     * type of task
-     * Task, Workflow, RemoteTask, Job
+     * type ('Task', 'Workflow', 'RemoteTask', 'Job', 'If', 'Else', 'Condition', 'Loop', 'Break')
      */
     type: string;
     /**
-     *
+     * start date of execute task
      */
     execution_start_date: string;
     /**
-     *
+     * end date of execute task
      */
     execution_end_date: string;
     /**
-     *
+     * host information
      */
     host?: SwfHostJson;
     /**
-     *
+     * child logs
      */
     children: SwfLogJson[]
 }
@@ -242,8 +289,10 @@ interface SwfLogJson {
  * "if", "else" or "else if" statement
  */
 interface SwfIfJson extends SwfWorkflowJson {
+    /**
+     * condition file
+     */
     condition_file: SwfFileJson;
-    else_file: SwfFileJson;
 }
 
 /**
@@ -256,6 +305,9 @@ interface SwfBreakJson extends SwfTaskJson {
  * parameter study
  */
 interface SwfPStudyJson extends SwfWorkflowJson {
+    /**
+     * parameter file
+     */
     parameter_file: SwfFileJson;
 }
 
@@ -263,7 +315,13 @@ interface SwfPStudyJson extends SwfWorkflowJson {
  * parameter study define
  */
 interface SwfPSParameterJson {
+    /**
+     * target file
+     */
     target_file: string,
+    /**
+     * target parameters
+     */
     target_params: Array<SwfPSAxisJson>;
 }
 
@@ -271,13 +329,25 @@ interface SwfPSParameterJson {
  * parameter study define target_param
  */
 interface SwfPSAxisJson {
+    /**
+     * keywork
+     */
     keyword: string;
+    /**
+     * type
+     */
     type: string;
     /**
      * parameter of "for" statement
      */
     min: number | null;
+    /**
+     * max number or null
+     */
     max: number | null;
+    /**
+     * step number or null
+     */
     step: number | null;
     /**
      * list of value
@@ -289,27 +359,80 @@ interface SwfPSAxisJson {
  * project json
  */
 interface SwfProjectJson {
+    /**
+     * project name
+     */
     name: string;
+    /**
+     * project description
+     */
     description: string;
+    /**
+     * project state
+     */
     state: string;
+    /**
+     * project path
+     */
     path: string;
+    /**
+     * root workflow path
+     */
     path_workflow: string;
+    /**
+     * log file
+     */
     log: SwfLogJson;
+}
+
+/**
+ * script parameter
+ */
+interface ScriptParams {
+    /**
+     * cpu core number
+     */
+    cores: number;
+    /**
+     * node number
+     */
+    nodes: number;
 }
 
 /**
  * tree json
  */
 interface SwfTreeJson extends SwfWorkflowJson {
+    /**
+     * children tree
+     */
     children: SwfTreeJson[];
+    /**
+     * loop parameter for loop
+     */
     forParam: ForParam;
+    /**
+     * condition parameter for if, else and break
+     */
     condition: SwfFileJson;
+    /**
+     * host information for job and remotetask
+     */
     host: SwfHostJson;
+    /**
+     * job script file for job
+     */
     job_script: SwfFile;
+    /**
+     * parameter file for parameter study
+     */
     parameter_file: SwfFile;
+    /**
+     * script parameter for job
+     */
+    script_param: ScriptParams;
+    /**
+     * old path
+     */
     oldPath: string;
-    script_param: {
-        cores: number;
-        nodes: number;
-    };
 }

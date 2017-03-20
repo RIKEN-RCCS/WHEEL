@@ -2,29 +2,29 @@
 var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
-var serverConfig = require("./serverConfig");
-var serverUtility = require("./serverUtility");
+var ServerConfig = require("./serverConfig");
+var ServerUtility = require("./serverUtility");
 /**
- *
+ * socket io communication class for create new project to server
  */
 var CreateNewProjectEvent = (function () {
     function CreateNewProjectEvent() {
         /**
-         *
+         * config parameter
          */
-        this.config = serverConfig.getConfig();
+        this.config = ServerConfig.getConfig();
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     CreateNewProjectEvent.prototype.onEvent = function (socket) {
         var _this = this;
         socket.on(CreateNewProjectEvent.eventName, function (directoryPath) {
             var projectFileName = _this.config.system_name;
             var workflowFileName = _this.config.default_filename;
-            var projectJson = serverUtility.readTemplateProjectJson();
-            var workflowJson = serverUtility.readTemplateWorkflowJson();
+            var projectJson = ServerUtility.readTemplateProjectJson();
+            var workflowJson = ServerUtility.readTemplateWorkflowJson();
             projectJson.path = "./" + projectFileName + _this.config.extension.project;
             projectJson.path_workflow = "./" + workflowFileName + _this.config.extension.workflow;
             projectJson.log.path = path.dirname(projectJson.path_workflow);
@@ -39,13 +39,13 @@ var CreateNewProjectEvent = (function () {
                     socket.emit(CreateNewProjectEvent.eventName);
                     return;
                 }
-                serverUtility.writeJson(projectFilePath, projectJson, function (err) {
+                ServerUtility.writeJson(projectFilePath, projectJson, function (err) {
                     if (err) {
                         logger.error(err);
                         socket.emit(CreateNewProjectEvent.eventName);
                         return;
                     }
-                    serverUtility.writeJson(workflowFilePath, workflowJson, function (err) {
+                    ServerUtility.writeJson(workflowFilePath, workflowJson, function (err) {
                         if (err) {
                             logger.error(err);
                             socket.emit(CreateNewProjectEvent.eventName);

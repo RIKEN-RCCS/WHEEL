@@ -20,7 +20,7 @@ var WriteFileEvent = require("./writeFileEvent");
 var CleanProjectEvent = require("./cleanProjectEvent");
 var config = serverConfig.getConfig();
 var server = httpServer.start(config.port);
-var serverSocket = new ServerSocketIO(server);
+var serverSocket = new ServerSocketIO.SwfSocketIO(server);
 serverSocket.addEventListener('/swf/home', [
     new GetFileListEvent(),
     new CreateNewProjectEvent()

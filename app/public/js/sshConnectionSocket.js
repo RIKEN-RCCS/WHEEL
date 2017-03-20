@@ -1,27 +1,30 @@
+/**
+ * socket io communication class for remote ssh connection test to server
+ */
 var SshConnectionSocket = (function () {
     /**
      * create new instance
-     * @param socket
+     * @param socket socket io instance
      */
     function SshConnectionSocket(socket) {
         this.socket = socket;
     }
     /**
-     *
-     * @param callback
+     * Adds a listener for this event that will be invoked a single time before being automatically removed
+     * @param callback The function to call when we get the event
      */
     SshConnectionSocket.prototype.onEvent = function (callback) {
         this.socket.once(SshConnectionSocket.eventName, callback);
     };
     /**
-     *
-     * @param label
-     * @param password
-     * @param callback
+     * emit to server for remote ssh connection test
+     * @param name key name of registered host information
+     * @param password password string
+     * @param callback The function to call when we get the event
      */
-    SshConnectionSocket.prototype.emit = function (label, password, callback) {
+    SshConnectionSocket.prototype.emit = function (name, password, callback) {
         this.onEvent(callback);
-        this.socket.json.emit(SshConnectionSocket.eventName, label, password);
+        this.socket.json.emit(SshConnectionSocket.eventName, name, password);
     };
     return SshConnectionSocket;
 }());

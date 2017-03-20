@@ -1,4 +1,5 @@
 $(function () {
+    // socket io
     var socket = io('/swf/workflow');
     var readTreeJsonSocket = new ReadTreeJsonSocket(socket);
     var writeTreeJsonSocket = new WriteTreeJsonSocket(socket);
@@ -6,10 +7,13 @@ $(function () {
     var getTemplateJsonFileSocket = new GetTemplateJsonFileSocket(socket);
     var getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
     var fileUploadSocket = new UploadFileSocket(socket);
+    // property
     var jsonProperty = new JsonProperty();
+    // yes no dialog
     var resetDialog = new YesNoDialog('Are you sure you want to reset ?');
     var saveDialog = new YesNoDialog('Are you sure you want to save ?');
     var editDialog = new YesNoDialog('Are you sure you want to save for editing script ?');
+    // elements
     var rootWorkflow = $('#root_workflow');
     var addressBar = $('#address_bar');
     var workflowName = $('#workflow_name');
@@ -19,241 +23,299 @@ $(function () {
     var saveButton = $('#save_button');
     var resetButton = $('#reset_button');
     var fileSelect = $('#file_select');
+    // cookies
     var cookies = ClientUtility.getCookies();
     var projectFilePath = cookies['project'];
-    var projectDirectory = ClientUtility.dirname(ClientUtility.dirname(projectFilePath));
     var rootFilePath = cookies['root'];
+    var projectDirectory = ClientUtility.dirname(ClientUtility.dirname(projectFilePath));
     var taskIndex = cookies['index'];
     var hostInfos;
     var rootTree;
     var parentTree;
-    var childTree;
+    var selectedTree;
+    // connect flag to server
+    var isConnect = false;
     /**
-     *
+     * initialize
      */
-    $(document).on('updateDisplay', function () {
-        display(taskIndex);
-    });
+    (function init() {
+        readTreeJson();
+        setUpdateDisplayEvent();
+        setSelectFileEvent();
+        setEditScriptEvent();
+        setClickEventForMoveToProjectManagePage();
+        setSaveDialogEventsForScriptEdit();
+        setContextMenuEnvets();
+        setKeyupEventForRenameWorkflowName();
+        setKeyupEventForRenameWorkflowDescription();
+        setSaveDialogEvents();
+        setResetDialogEvents();
+        setClickEventForSaveWorkflow();
+        setClickEventForResetWorkflow();
+    })();
     /**
-     *
+     * set update display event to recreate a new tree
      */
-    $(document).on('selectFile', function (eventObject, value) {
-        if (value.isMultiple) {
-            fileSelect.prop('multiple', 'multiple');
-        }
-        else {
-            fileSelect.removeProp('multiple');
-        }
-        fileSelect.click();
-        fileSelect.off('change');
-        fileSelect.one('change', function (eventObject) {
-            var target = eventObject.target;
-            var files = target.files;
-            value.callback(files);
-            showProperty(childTree);
+    function setUpdateDisplayEvent() {
+        $(document).on('updateDisplay', function () {
+            updateDisplay(taskIndex);
         });
-    });
+    }
     /**
-     *
+     * set select file event by browse to upload file selection
      */
-    $(document).on('editFile', function () {
-        editDialog.show();
-    });
-    /**
-     * move to workflow manager page
-     */
-    rootWorkflow.click(function () {
-        ClientUtility.moveWorkflowLink(projectFilePath);
-    });
-    /**
-     *
-     */
-    editDialog
-        .onClickCancel()
-        .onClickOK(function () {
-        window.open('', 'editor');
-        writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
-            uploadFiles(function () {
-                readTreeJsonSocket.emit(rootFilePath);
-                var fullpath = projectDirectory + "/" + childTree.getFullpath(config.submit_script);
-                $('<form/>', { action: '/swf/editor.html', method: 'post', target: 'editor' })
-                    .append($('<input/>', { type: 'hidden', name: 'edit', value: fullpath }))
-                    .appendTo(document.body)
-                    .submit();
-            });
-        });
-    });
-    /**
-     * task name changed event
-     */
-    workflowName.on('keyup', function (eventObject) {
-        if (eventObject.which === 0x0D) {
-            if (parentTree.name = workflowName.val().trim()) {
-                display(taskIndex);
+    function setSelectFileEvent() {
+        $(document).on('selectFile', function (eventObject, value) {
+            if (value.isMultiple) {
+                fileSelect.prop('multiple', 'multiple');
             }
             else {
-                workflowName.borderInvalid();
+                fileSelect.removeProp('multiple');
             }
-        }
-    });
-    /**
-     * task description changed event
-     */
-    workflowDesc.on('keyup', function (eventObject) {
-        if (eventObject.which === 0x0D) {
-            parentTree.description = workflowDesc.val().trim();
-        }
-    });
-    /**
-     * reset dialog
-     */
-    resetDialog
-        .onClickCancel()
-        .onClickOK(function () {
-        readTreeJsonSocket.emit(rootFilePath);
-        resetDialog.hide();
-    });
-    /**
-     * save dialog
-     */
-    saveDialog
-        .onClickCancel()
-        .onClickOK(function () {
-        writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
-            uploadFiles(function () {
-                readTreeJsonSocket.emit(rootFilePath);
+            fileSelect.click();
+            fileSelect.off('change');
+            fileSelect.one('change', function (eventObject) {
+                var target = eventObject.target;
+                var files = target.files;
+                value.callback(files);
+                showProperty(selectedTree);
             });
         });
-    });
+    }
     /**
-     * save button click event
+     * set edit script file event to modify submit job script
      */
-    saveButton.click(function () {
-        if (ClientUtility.isValidDirectoryName(parentTree.name)) {
-            saveDialog.show();
+    function setEditScriptEvent() {
+        $(document).on('editScript', function () {
+            editDialog.show();
+        });
+    }
+    /**
+     * set click event to move to project manager page
+     */
+    function setClickEventForMoveToProjectManagePage() {
+        rootWorkflow.click(function () {
+            ClientUtility.moveWorkflowLink(projectFilePath);
+        });
+    }
+    /**
+     * set several events for yes no dialog to open script file
+     */
+    function setSaveDialogEventsForScriptEdit() {
+        editDialog
+            .onClickCancel()
+            .onClickOK(function () {
+            window.open('', 'editor');
+            writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
+                uploadFiles(function () {
+                    readTreeJson();
+                    moveToScriptEditPage();
+                });
+            });
+        });
+    }
+    /**
+     * movet to script edit page
+     */
+    function moveToScriptEditPage() {
+        var fullpath = projectDirectory + "/" + selectedTree.getFullpath(config.submit_script);
+        $('<form/>', { action: '/swf/editor.html', method: 'post', target: 'editor' })
+            .append($('<input/>', { type: 'hidden', name: 'edit', value: fullpath }))
+            .appendTo(document.body)
+            .submit();
+    }
+    /**
+     * set key up event for rename workflow name
+     */
+    function setKeyupEventForRenameWorkflowName() {
+        workflowName.on('keyup', function (eventObject) {
+            var name = workflowName.val().trim();
+            if (parentTree.name !== name) {
+                parentTree.name = name;
+                updateDisplay(taskIndex);
+            }
+        });
+    }
+    /**
+     * set key up event for rename description name
+     */
+    function setKeyupEventForRenameWorkflowDescription() {
+        workflowDesc.on('keyup', function (eventObject) {
+            var description = workflowDesc.val().trim();
+            if (parentTree.description !== description) {
+                parentTree.description = description;
+            }
+        });
+    }
+    /**
+     * set several events for yes no dialog for save workflow
+     */
+    function setSaveDialogEvents() {
+        saveDialog
+            .onClickCancel()
+            .onClickOK(function () {
+            writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
+                uploadFiles(function () {
+                    readTreeJson();
+                });
+            });
+        });
+    }
+    /**
+     * set several events for yes no dialog for reset workflow
+     */
+    function setResetDialogEvents() {
+        resetDialog
+            .onClickCancel()
+            .onClickOK(function () {
+            readTreeJson();
+            resetDialog.hide();
+        });
+    }
+    /**
+     * set click event for save workflow
+     */
+    function setClickEventForSaveWorkflow() {
+        saveButton.click(function () {
+            if (ClientUtility.isValidDirectoryName(parentTree.name)) {
+                saveDialog.show();
+            }
+        });
+    }
+    /**
+     * set click event for reset workflow
+     */
+    function setClickEventForResetWorkflow() {
+        resetButton.click(function () {
+            resetDialog.show();
+        });
+    }
+    /**
+     * read tree json file from server
+     */
+    function readTreeJson() {
+        if (!isConnect) {
+            isConnect = true;
+            readTreeJsonSocket.onConnect(rootFilePath, function (treeJson) {
+                rootTree = SwfTree.create(treeJson);
+                hideProperty();
+            });
         }
-    });
+        else {
+            readTreeJsonSocket.emit(rootFilePath);
+        }
+    }
     /**
-     * reset button click event
+     * set contextmenu events
      */
-    resetButton.click(function () {
-        resetDialog.show();
-    });
-    /**
-     * open .tree.json or open .wf.json and create .tree.json
-     */
-    readTreeJsonSocket.onConnect(rootFilePath, function (treeJson) {
-        rootTree = SwfTree.create(treeJson);
-        hideProperty();
-    });
-    /**
-     * context menu
-     */
-    $.contextMenu({
-        selector: '#node_svg',
-        autoHide: true,
-        reposition: false,
-        items: {
-            new: {
-                name: 'New',
-                items: {
-                    workflow: {
-                        name: "Workflow",
-                        callback: function () {
-                            createChildTree(JsonFileType.WorkFlow, parentTree, function (child) {
-                                hideProperty();
-                            });
-                        }
-                    },
-                    sep1: '---------',
-                    task: {
-                        name: 'Task',
-                        callback: function () {
-                            createChildTree(JsonFileType.Task, parentTree, function (child) {
-                                hideProperty();
-                            });
-                        }
-                    },
-                    sep2: '---------',
-                    rtask: {
-                        name: 'RemoteTask',
-                        callback: function () {
-                            createChildTree(JsonFileType.RemoteTask, parentTree, function (child) {
-                                getHostList(function () {
-                                    child.host = new SwfHost(hostInfos[0]);
+    function setContextMenuEnvets() {
+        $.contextMenu({
+            selector: '#node_svg',
+            autoHide: true,
+            reposition: false,
+            items: {
+                new: {
+                    name: 'New...',
+                    items: {
+                        workflow: {
+                            name: "Workflow",
+                            callback: function () {
+                                createChildTree(JsonFileType.WorkFlow, parentTree, function (child) {
+                                    hideProperty();
                                 });
-                                hideProperty();
-                            });
-                        }
-                    },
-                    sep3: '---------',
-                    job: {
-                        name: 'Job',
-                        callback: function () {
-                            createChildTree(JsonFileType.Job, parentTree, function (child) {
-                                getHostList(function () {
-                                    child.host = new SwfHost(hostInfos[0]);
-                                    child.host.job_scheduler = config.scheduler.TCS;
+                            }
+                        },
+                        sep1: '---------',
+                        task: {
+                            name: 'Task',
+                            callback: function () {
+                                createChildTree(JsonFileType.Task, parentTree, function (child) {
+                                    hideProperty();
                                 });
-                                hideProperty();
-                            });
-                        }
-                    },
-                    sep4: '---------',
-                    sep5: '---------',
-                    loop: {
-                        name: 'Loop',
-                        callback: function () {
-                            createChildTree(JsonFileType.Loop, parentTree, function (child) {
-                                hideProperty();
-                            });
-                        }
-                    },
-                    sep6: '---------',
-                    if: {
-                        name: 'If',
-                        callback: function () {
-                            createChildTree(JsonFileType.If, parentTree, function (ifChild) {
-                                createChildTree(JsonFileType.Condition, ifChild, function (ifGrandson) {
-                                    createChildTree(JsonFileType.Else, parentTree, function (elseChild) {
-                                        createChildTree(JsonFileType.Condition, elseChild, function (elseGrandson) {
-                                            hideProperty();
+                            }
+                        },
+                        sep2: '---------',
+                        rtask: {
+                            name: 'Remote Task',
+                            callback: function () {
+                                createChildTree(JsonFileType.RemoteTask, parentTree, function (child) {
+                                    getHostList(function () {
+                                        child.host = new SwfHost(hostInfos[0]);
+                                    });
+                                    hideProperty();
+                                });
+                            }
+                        },
+                        sep3: '---------',
+                        job: {
+                            name: 'Job',
+                            callback: function () {
+                                createChildTree(JsonFileType.Job, parentTree, function (child) {
+                                    getHostList(function () {
+                                        child.host = new SwfHost(hostInfos[0]);
+                                        child.host.job_scheduler = config.scheduler.TCS;
+                                    });
+                                    hideProperty();
+                                });
+                            }
+                        },
+                        sep4: '---------',
+                        sep5: '---------',
+                        loop: {
+                            name: 'Loop',
+                            callback: function () {
+                                createChildTree(JsonFileType.Loop, parentTree, function (child) {
+                                    hideProperty();
+                                });
+                            }
+                        },
+                        sep6: '---------',
+                        if: {
+                            name: 'If',
+                            callback: function () {
+                                createChildTree(JsonFileType.If, parentTree, function (ifChild) {
+                                    createChildTree(JsonFileType.Condition, ifChild, function (ifGrandson) {
+                                        createChildTree(JsonFileType.Else, parentTree, function (elseChild) {
+                                            createChildTree(JsonFileType.Condition, elseChild, function (elseGrandson) {
+                                                parentTree.relations.push(new SwfRelation(ifChild.getTaskIndex(), elseChild.getTaskIndex()));
+                                                hideProperty();
+                                            });
                                         });
                                     });
                                 });
-                            });
-                        }
-                    },
-                    sep7: '---------',
-                    break: {
-                        name: 'Break',
-                        callback: function () {
-                            createChildTree(JsonFileType.Break, parentTree, function (child) {
-                                hideProperty();
-                            });
+                            }
                         },
-                        disabled: function () {
-                            return !ClientUtility.checkFileType(parentTree, JsonFileType.Loop);
-                        }
-                    },
-                    sep8: '---------',
-                    pstudy: {
-                        name: 'PStudy',
-                        callback: function () {
-                            createChildTree(JsonFileType.PStudy, parentTree, function (child) {
-                                hideProperty();
-                            });
+                        sep7: '---------',
+                        break: {
+                            name: 'Break',
+                            callback: function () {
+                                createChildTree(JsonFileType.Break, parentTree, function (child) {
+                                    hideProperty();
+                                });
+                            },
+                            disabled: function () {
+                                return !ClientUtility.checkFileType(parentTree, JsonFileType.Loop);
+                            }
                         },
+                        sep8: '---------',
+                        pstudy: {
+                            name: 'Parameter Study',
+                            callback: function () {
+                                createChildTree(JsonFileType.PStudy, parentTree, function (child) {
+                                    hideProperty();
+                                });
+                            },
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    }
     /**
-     *
-     * @param object
+     * update display
+     * @param object tree index string or SwfTree instance
      */
-    function display(object) {
+    function updateDisplay(object) {
         if (typeof object === 'string') {
             taskIndex = object;
         }
@@ -262,74 +324,75 @@ $(function () {
         }
         SvgNodePane.create(rootTree, taskIndex, 'tree_svg', function (tree) {
             jsonProperty.hide();
-            childTree = null;
-            display(tree);
+            selectedTree = null;
+            updateDisplay(tree);
         });
-        createNode();
+        createRelationNode();
     }
     /**
-     *
+     * create relation node
      */
-    function createNode() {
+    function createRelationNode() {
         var tree = SwfTree.getSwfTree(taskIndex);
         parentTree = tree;
         var filepath = getFullpath(tree);
         addressBar.val(filepath);
         workflowName.val(tree.name);
         workflowDesc.val(tree.description);
-        getFileStat(filepath);
-        SvgNodeUI.create(tree, childTree, 'node_svg', function (child) {
+        SvgNodeUI.create(tree, selectedTree, 'node_svg', function (child) {
             if (child == null) {
                 jsonProperty.hide();
-                childTree = null;
+                selectedTree = null;
                 return;
             }
-            childTree = child;
+            selectedTree = child;
             showProperty(child);
         }, function (parent) {
             parent = parent || parentTree.getParent();
             if (parent == null) {
                 return;
             }
-            if (ClientUtility.isImplimentsWorkflow(parent.type)) {
+            if (ClientUtility.isImplimentsWorkflow(parent)) {
                 jsonProperty.hide();
-                childTree = null;
-                display(parent);
+                selectedTree = null;
+                updateDisplay(parent);
             }
         });
     }
     /**
-     *
-     * @param child
+     * show display
+     * @param tree display tree
      */
-    function showProperty(child) {
+    function showProperty(tree) {
         getHostList(function () {
-            jsonProperty.show(child, hostInfos);
+            jsonProperty.show(tree, hostInfos);
         });
     }
     /**
-     *
+     * hide display
      */
     function hideProperty() {
         jsonProperty.hide();
-        childTree = null;
-        display(taskIndex);
+        selectedTree = null;
+        updateDisplay(taskIndex);
     }
     /**
-     *
-     * @param fileType
-     * @param tree
-     * @param callback
+     * create child tree
+     * @param fileType json file type
+     * @param parent parent tree added child
+     * @param callback function
      */
-    function createChildTree(fileType, tree, callback) {
+    function createChildTree(fileType, parent, callback) {
         getTemplateJsonFileSocket.emit(fileType, function (json) {
-            var child = tree.addChild(json, fileType);
-            callback(child);
+            var child = parent.addChild(json, fileType);
+            if (callback) {
+                callback(child);
+            }
         });
     }
     /**
-     *
-     * @param filepath
+     * get file status
+     * @param filepath file path string
      */
     function getFileStat(filepath) {
         getFileStatSocket.emit(filepath, function (stat) {
@@ -344,8 +407,8 @@ $(function () {
         });
     }
     /**
-     *
-     * @param callback
+     * get host list
+     * @param callback function
      */
     function getHostList(callback) {
         if (hostInfos == null) {
@@ -359,8 +422,9 @@ $(function () {
         }
     }
     /**
-     *
-     * @param tree
+     * get absolute filepath from root workflow to selected SwfTree instance
+     * @param tree SwfTree instance
+     * @return absolute path
      */
     function getFullpath(tree) {
         var filename = ClientUtility.getDefaultName(tree);
@@ -368,8 +432,8 @@ $(function () {
         return ClientUtility.normalize(projectDirectory + "/" + currentDirectory + "/" + filename);
     }
     /**
-     *
-     * @param callback
+     * upload files
+     * @param callback function
      */
     function uploadFiles(callback) {
         var files = SwfTree.getUploadFiles(projectDirectory);

@@ -4,6 +4,9 @@ var path = require("path");
 var logger = require("./logger");
 var ServerUtility = require("./serverUtility");
 var ServerConfig = require("./serverConfig");
+/**
+ * socket io communication class for getting project json from server
+ */
 var OpenProjectJsonEvent = (function () {
     function OpenProjectJsonEvent() {
         /**
@@ -16,34 +19,36 @@ var OpenProjectJsonEvent = (function () {
         this.queue = [];
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for connect event
+     * @param socket socket socket io instance
      */
     OpenProjectJsonEvent.prototype.onEvent = function (socket) {
         var _this = this;
-        socket.on(OpenProjectJsonEvent.eventName, function (path_project) {
-            fs.readFile(path_project, function (err, data) {
+        socket.on(OpenProjectJsonEvent.eventName, function (projectFilepath) {
+            fs.readFile(projectFilepath, function (err, data) {
                 try {
                     if (err) {
+                        logger.error(err);
+                        socket.emit(OpenProjectJsonEvent.eventName);
+                        return;
+                    }
+                    var projectJson_1 = JSON.parse(data.toString());
+                    if (projectJson_1.state === _this.config.state.planning) {
+                        _this.createProjectJson(projectFilepath, projectJson_1, function (err) {
+                            if (err) {
+                                logger.error(err);
+                                socket.json.emit(OpenProjectJsonEvent.eventName);
+                                return;
+                            }
+                            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
+                        });
                     }
                     else {
-                        var projectJson_1 = ServerUtility.readProjectJson(path_project);
-                        if (projectJson_1.state === _this.config.state.planning) {
-                            _this.createProjectJson(path_project, projectJson_1, socket);
-                            return;
-                        }
                         _this.queue.length = 0;
                         _this.setQueue(projectJson_1.log);
                         _this.updateLogJson(function () {
                             projectJson_1.state = projectJson_1.log.state;
-                            ServerUtility.writeJson(path_project, projectJson_1, function (err) {
-                                if (err) {
-                                    logger.error(err);
-                                    socket.json.emit(OpenProjectJsonEvent.eventName);
-                                    return;
-                                }
-                                socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
-                            });
+                            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
                         });
                     }
                 }
@@ -55,57 +60,113 @@ var OpenProjectJsonEvent = (function () {
         });
     };
     /**
-     *
-     * @param json
+     * rename log json path
+     * @param logJson log json data
+     * @param from string befor conversion
+     * @param to string after conversion
      */
-    OpenProjectJsonEvent.prototype.setQueue = function (json) {
+    OpenProjectJsonEvent.prototype.renameLogjsonPath = function (logJson, from, to) {
         var _this = this;
-        this.queue.push(json);
-        if (json.children) {
-            json.children.forEach(function (child) {
-                _this.setQueue(child);
+        logJson.path = logJson.path.replace(from, to);
+        logJson.children.forEach(function (child) {
+            _this.renameLogjsonPath(child, from, to);
+        });
+    };
+    ;
+    /**
+     * set queue scpecified log json data
+     * @param logJson log json data
+     */
+    OpenProjectJsonEvent.prototype.setQueue = function (logJson) {
+        var _this = this;
+        this.queue.push(logJson);
+        var _loop_1 = function (index) {
+            var child = logJson.children[index];
+            if (!ServerUtility.isTypeLoop(child) && !ServerUtility.isTypePStudy(child)) {
+                this_1.setQueue(child);
+                return "continue";
+            }
+            var basename = path.basename(child.path);
+            var files = fs.readdirSync(logJson.path);
+            var newChildren = [];
+            files.forEach(function (file) {
+                if (file.match(new RegExp("^" + basename + "\\[([0-9]+)\\]$"))) {
+                    var newLogJson_1 = {
+                        name: child.name + "[" + RegExp.$1 + "]",
+                        path: child.path + "[" + RegExp.$1 + "]",
+                        description: child.description,
+                        type: child.type,
+                        state: child.state,
+                        execution_start_date: '',
+                        execution_end_date: '',
+                        children: JSON.parse(JSON.stringify(child.children))
+                    };
+                    newLogJson_1.children.forEach(function (newChild) {
+                        _this.renameLogjsonPath(newChild, child.path, newLogJson_1.path);
+                    });
+                    newChildren.push(newLogJson_1);
+                }
             });
+            logJson.children.splice(index, 1);
+            newChildren
+                .sort(function (a, b) {
+                var aIndex = parseInt(a.path.match(/\[([0-9]+)\]$/)[1]);
+                var bIndex = parseInt(b.path.match(/\[([0-9]+)\]$/)[1]);
+                if (aIndex < bIndex) {
+                    return 1;
+                }
+                else {
+                    return -1;
+                }
+            })
+                .forEach(function (newChild) {
+                logJson.children.splice(index, 0, newChild);
+                _this.setQueue(newChild);
+            });
+        };
+        var this_1 = this;
+        for (var index = logJson.children.length - 1; index >= 0; index--) {
+            _loop_1(index);
         }
     };
     /**
-     *
-     * @param callback
+     * update log json data
+     * @param callback The function to call when we have updated log json
      */
     OpenProjectJsonEvent.prototype.updateLogJson = function (callback) {
         var _this = this;
-        var json = this.queue.shift();
-        if (!json) {
+        var logJson = this.queue.shift();
+        if (!logJson) {
             callback();
             return;
         }
-        var logFilePath = path.join(json.path, this.config.system_name + ".log");
+        if (ServerUtility.isProjectFinished(logJson)) {
+            this.updateLogJson(callback);
+            return;
+        }
+        var logFilePath = path.join(logJson.path, this.config.system_name + ".log");
         fs.readFile(logFilePath, function (err, data) {
             if (!err) {
                 var readJson = JSON.parse(data.toString());
-                json.state = readJson.state;
-                json.execution_start_date = readJson.execution_start_date;
-                json.execution_end_date = readJson.execution_end_date;
+                logJson.state = readJson.state;
+                logJson.execution_start_date = readJson.execution_start_date;
+                logJson.execution_end_date = readJson.execution_end_date;
             }
             _this.updateLogJson(callback);
         });
     };
     /**
-     *
-     * @param path_project
-     * @param projectJson
-     * @param socket
+     * create project new project json
+     * @param projectPath project json file path
+     * @param projectJson project json data
+     * @param callback The function to call when we have created project json
      */
-    OpenProjectJsonEvent.prototype.createProjectJson = function (path_project, projectJson, socket) {
-        var dir_project = path.dirname(path_project);
+    OpenProjectJsonEvent.prototype.createProjectJson = function (projectPath, projectJson, callback) {
+        var dir_project = path.dirname(projectPath);
         var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
         projectJson.log = ServerUtility.createLogJson(path_workflow);
-        ServerUtility.writeJson(path_project, projectJson, function (err) {
-            if (err) {
-                logger.error(err);
-                socket.json.emit(OpenProjectJsonEvent.eventName);
-                return;
-            }
-            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
+        ServerUtility.writeJson(projectPath, projectJson, function (err) {
+            callback(err);
         });
     };
     return OpenProjectJsonEvent;

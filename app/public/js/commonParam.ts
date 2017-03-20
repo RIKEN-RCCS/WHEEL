@@ -1,3 +1,6 @@
+/**
+ * config parameter
+ */
 var config = {
     extension: {
         project: '.prj.json',
@@ -50,7 +53,7 @@ var config = {
         running: 'cyan',
         rerunning: 'orange',
         waiting: 'yellow',
-        completed: 'green',
+        completed: '#00ff00',
         failed: 'red'
     },
     plug_color: {

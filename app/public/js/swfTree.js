@@ -9,14 +9,26 @@ var __extends = (this && this.__extends) || function (d, b) {
 var SwfTree = (function (_super) {
     __extends(SwfTree, _super);
     /**
-     *
-     * @param treeJson
+     * create new instance
+     * @param treeJson tree json data
      */
     function SwfTree(treeJson) {
         var _this = _super.call(this, treeJson) || this;
+        /**
+         * children tree
+         */
         _this.children = [];
+        /**
+         * upload send files
+         */
         _this.uploadSendfiles = [];
+        /**
+         * other upload files
+         */
         _this.upload_files = [];
+        /**
+         * indexes are local task index array from root tree
+         */
         _this.indexes = [];
         _this.oldPath = treeJson.oldPath;
         if (treeJson.children) {
@@ -47,21 +59,24 @@ var SwfTree = (function (_super) {
         return _this;
     }
     /**
-     *
+     * get index string
+     * @return index string
      */
     SwfTree.prototype.getIndexString = function () {
         return this.indexes.join('_');
     };
     /**
-     *
+     * get hierarchy number
+     * @return hierarchy number
      */
     SwfTree.prototype.getHierarchy = function () {
         return this.indexes.length - 1;
     };
     /**
-     *
+     * get unique index number
+     * @return unique index number
      */
-    SwfTree.prototype.getAbsoluteIndex = function () {
+    SwfTree.prototype.getUniqueIndex = function () {
         var _this = this;
         var index = 0;
         var search = function (tree) {
@@ -74,15 +89,15 @@ var SwfTree = (function (_super) {
         return search(SwfTree.root);
     };
     /**
-     *
+     * get task index (task index is local index)
+     * @return task index
      */
     SwfTree.prototype.getTaskIndex = function () {
         return this.indexes[this.indexes.length - 1];
     };
     /**
-     *
-     * @param treeJson
-     * @returns created SwfTree instance
+     * create tree json instance
+     * @param treeJson tree json data
      */
     SwfTree.create = function (treeJson) {
         this.root = new SwfTree(treeJson);
@@ -90,9 +105,10 @@ var SwfTree = (function (_super) {
         return tree;
     };
     /**
-     *
-     * @param tree
-     * @param hierarchy
+     * renumbering index
+     * @param tree SwfTree instance
+     * @param indexes parent index array
+     * @param renumbering tree instance
      */
     SwfTree.renumberingIndex = function (tree, indexes) {
         var _this = this;
@@ -107,9 +123,10 @@ var SwfTree = (function (_super) {
         return tree;
     };
     /**
-     *
-     * @param treeJson
-     * @param fileType
+     * add child date to this tree
+     * @param treeJson json data
+     * @param fileType json file type
+     * @param added child data
      */
     SwfTree.prototype.addChild = function (treeJson, fileType) {
         var rand = Math.floor(Date.now() / 100) % 100000;
@@ -130,8 +147,9 @@ var SwfTree = (function (_super) {
         return tree;
     };
     /**
-     *
-     * @param dirname
+     * whether specified directory name is duplicate or not
+     * @param dirname directory name
+     * @return whether specified directory name is duplicate or not
      */
     SwfTree.prototype.isDirnameDuplicate = function (dirname) {
         if (this.children.filter(function (child) { return child.path === dirname; })[0]) {
@@ -142,9 +160,9 @@ var SwfTree = (function (_super) {
         }
     };
     /**
-     *
-     * @param index
-     * @return SwfTree instance of selected index
+     * get SwfTree instance
+     * @param index index string (ex '0_1_0')
+     * @return SwfTree instance
      */
     SwfTree.getSwfTree = function (index) {
         var notSeachedList = [this.root];
@@ -162,12 +180,11 @@ var SwfTree = (function (_super) {
         }
     };
     /**
-     *
-     * @param tree
-     * @param path
+     * get relative directory from root workflow
+     * @return relative directory path
      */
     SwfTree.prototype.getCurrentDirectory = function () {
-        var searchDirectory = function (tree, path) {
+        return (function searchDirectory(tree, path) {
             if (path === void 0) { path = ''; }
             path = ClientUtility.normalize(tree.path + "/" + path);
             var parent = tree.getParent();
@@ -177,11 +194,11 @@ var SwfTree = (function (_super) {
             else {
                 return searchDirectory(parent, path);
             }
-        };
-        return searchDirectory(this);
+        })(this);
     };
     /**
-     *
+     * get parent tree instance
+     * @return parent instance
      */
     SwfTree.prototype.getParent = function () {
         if (this.isRoot()) {
@@ -199,14 +216,16 @@ var SwfTree = (function (_super) {
         return searchParent(SwfTree.root, parentIndexes);
     };
     /**
-     *
+     * whether this instance is root or not
+     * @return whether this instance is root or not
      */
     SwfTree.prototype.isRoot = function () {
         return this === SwfTree.root;
     };
     /**
-     *
-    */
+     * convet SwfTreeJson object
+     * @return SwfTreeJson object
+     */
     SwfTree.prototype.toSwfTreeJson = function () {
         var _this = this;
         var root = new SwfTree(this);
@@ -233,7 +252,8 @@ var SwfTree = (function (_super) {
         return root;
     };
     /**
-     *
+     * convet SwfFile object
+     * @return SwfFile object
      */
     SwfTree.prototype.toSwfFile = function () {
         return new SwfFile({
@@ -245,8 +265,9 @@ var SwfTree = (function (_super) {
         });
     };
     /**
-     *
-     * @param path
+     * whether specified path name is valid or not
+     * @param path path name
+     * @return whether specified path name is valid or not
      */
     SwfTree.prototype.isEnablePath = function (path) {
         var _this = this;
@@ -274,67 +295,67 @@ var SwfTree = (function (_super) {
         }
     };
     /**
-     *
-     * @param to
+     * get relative path from root workflow to specified path name
+     * @param object path string or SwfFile instance
+     * @return relative path from root workflow
      */
-    SwfTree.prototype.getFullpath = function (to) {
+    SwfTree.prototype.getFullpath = function (object) {
         var path;
-        if (typeof to === 'string') {
-            path = to;
+        if (typeof object === 'string') {
+            path = object;
         }
         else {
-            path = to.path;
+            path = object.path;
         }
         var directory = this.getCurrentDirectory();
         var basename = ClientUtility.basename(path);
         return ClientUtility.normalize(directory + "/" + path);
     };
     /**
-     *
-     * @param to
+     * get relative path from this directory to specified path name
+     * @param object path string or SwfFile instance
+     * @return relative path from this directory
      */
-    SwfTree.prototype.getRelativePath = function (to) {
+    SwfTree.prototype.getRelativePath = function (object) {
         var path;
-        if (typeof to === 'string') {
-            path = to;
+        if (typeof object === 'string') {
+            path = object;
         }
         else {
-            path = this.getFullpath(to);
+            path = this.getFullpath(object);
         }
         var directory = this.getCurrentDirectory();
         return "./" + path.replace(new RegExp("" + directory), '');
     };
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * add input file to parent tree
+     * @param object child task index number or add target tree
+     * @param filepath filepath string
      */
-    SwfTree.prototype.addInputFileToParent = function (task, filepath) {
+    SwfTree.prototype.addInputFileToParent = function (object, filepath) {
         var child;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         var file = child.findInputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
         SwfTree.addFileToParent(this, file, fullpath, true);
     };
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * add output file to parent tree
+     * @param object child task index number or add target tree
+     * @param filepath filepath string
      */
-    SwfTree.prototype.addOutputFileToParent = function (task, filepath) {
+    SwfTree.prototype.addOutputFileToParent = function (object, filepath) {
         var child;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         var file = child.findOutputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
@@ -345,6 +366,7 @@ var SwfTree = (function (_super) {
      * @param tree
      * @param file
      * @param fullpath
+     * @param isInput
      */
     SwfTree.addFileToParent = function (tree, file, fullpath, isInput) {
         if (tree.isRoot()) {
@@ -359,46 +381,44 @@ var SwfTree = (function (_super) {
         this.addFileToParent(parent, file.clone(), fullpath, isInput);
     };
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * delete input file from parent tree
+     * @param object child task index number or delete target tree
+     * @param filepath filepath string
      */
-    SwfTree.prototype.deleteInputFileFromParent = function (task, filepath) {
+    SwfTree.prototype.deleteInputFileFromParent = function (object, filepath) {
         var child;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         var file = child.findInputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
         SwfTree.deleteFileFromParent(this, fullpath, true);
     };
     /**
-     *
-     * @param tree
-     * @param taskIndex
-     * @param filepath
+     * delete output file from parent tree
+     * @param object child task index number or delete target tree
+     * @param filepath filepath string
      */
-    SwfTree.prototype.deleteOutputFileFromParent = function (task, filepath) {
+    SwfTree.prototype.deleteOutputFileFromParent = function (object, filepath) {
         var child;
-        if (typeof task === 'number') {
-            child = this.children[task];
+        if (typeof object === 'number') {
+            child = this.children[object];
         }
         else {
-            child = task;
+            child = object;
         }
         var file = child.findOutputFile(filepath).clone();
         var fullpath = child.getFullpath(file);
         SwfTree.deleteFileFromParent(this, fullpath, false);
     };
     /**
-     *
-     * @param tree
-     * @param fullpath
-     * @param isInput
+     * delete input files or output files from parent tree
+     * @param tree target tree
+     * @param fullpath delete target relative path from root workflow
+     * @param isInput whether input files or not
      */
     SwfTree.deleteFileFromParent = function (tree, fullpath, isInput) {
         if (tree == null || tree.isRoot()) {
@@ -434,9 +454,9 @@ var SwfTree = (function (_super) {
         this.deleteFileFromParent(parent, fullpath, isInput);
     };
     /**
-     *
-     * @param oldFile
-     * @param newFile
+     * update child input files
+     * @param oldFile old file data
+     * @param newFile new file data
      */
     SwfTree.prototype.updateInputFile = function (oldFile, newFile) {
         var file = this.findInputFile(oldFile.path).clone();
@@ -445,9 +465,9 @@ var SwfTree = (function (_super) {
         SwfTree.updateChildFile(this, oldFile, newFile, oldFullpath, newFullpath, true);
     };
     /**
-     *
-     * @param oldFile
-     * @param newFile
+     * update child output files
+     * @param oldFile old file data
+     * @param newFile new file data
      */
     SwfTree.prototype.updateOutputFile = function (oldFile, newFile) {
         var file = this.findOutputFile(oldFile.path).clone();
@@ -456,13 +476,13 @@ var SwfTree = (function (_super) {
         SwfTree.updateChildFile(this, oldFile, newFile, oldFullpath, newFullpath, false);
     };
     /**
-     *
-     * @param tree
-     * @param oldFile
-     * @param newFile
-     * @param oldFullpath
-     * @param newFullpath
-     * @param isInput
+     * update child input files or output files
+     * @param tree target tree
+     * @param oldFile old file data
+     * @param newFile new file data
+     * @param oldFullpath old relative path from root workflow
+     * @param newFullpath new relative path from root workflow
+     * @param isInput whether input files or not
      */
     SwfTree.updateChildFile = function (tree, oldFile, newFile, oldFullpath, newFullpath, isInput) {
         var _this = this;
@@ -510,8 +530,11 @@ var SwfTree = (function (_super) {
             }
         });
     };
+    /**
+     * update path name
+     * @param file updated file data
+     */
     SwfTree.prototype.updatePath = function (file) {
-        // const oldFile :SwfFile =
         var oldFullpath = this.getFullpath("" + ClientUtility.getDefaultName(this));
         this.path = file.path;
         var newFullpath = this.getFullpath("" + ClientUtility.getDefaultName(this));
@@ -527,10 +550,12 @@ var SwfTree = (function (_super) {
                 child.path = parent.getRelativePath(newFullpath);
             }
         });
-        // this.input_files.forEach(input => {
-        //     // console.log(input.path);
-        // });
     };
+    /**
+     * get the file with the same input file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same input file path name as the specified path name
+     */
     SwfTree.prototype.findInputFile = function (path) {
         var _this = this;
         var file = this.getInputFile(path);
@@ -538,9 +563,14 @@ var SwfTree = (function (_super) {
             return file;
         }
         else {
-            return this.input_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+            return this.input_files.filter(function (file) { return _this.path + "/" + file.getNormalPath() === ClientUtility.normalize(path); })[0];
         }
     };
+    /**
+     * get the file with the same output file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same output file path name as the specified path name
+     */
     SwfTree.prototype.findOutputFile = function (path) {
         var _this = this;
         var file = this.getOutputFile(path);
@@ -548,9 +578,14 @@ var SwfTree = (function (_super) {
             return file;
         }
         else {
-            return this.output_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+            return this.output_files.filter(function (file) { return _this.path + "/" + file.getNormalPath() === ClientUtility.normalize(path); })[0];
         }
     };
+    /**
+     * get the file with the same send file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same send file path name as the specified path name
+     */
     SwfTree.prototype.findSendFile = function (path) {
         var _this = this;
         var file = this.getSendFile(path);
@@ -558,9 +593,14 @@ var SwfTree = (function (_super) {
             return file;
         }
         else {
-            return this.send_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+            return this.send_files.filter(function (file) { return _this.path + "/" + file.getNormalPath() === ClientUtility.normalize(path); })[0];
         }
     };
+    /**
+     * get the file with the same receive file path name as the specified path name
+     * @param path path name
+     * @returns get the file with the same receive file path name as the specified path name
+     */
     SwfTree.prototype.findReceiveFile = function (path) {
         var _this = this;
         var file = this.getReceiveFile(path);
@@ -568,22 +608,38 @@ var SwfTree = (function (_super) {
             return file;
         }
         else {
-            return this.receive_files.filter(function (file) { return _this.path + "/" + file.getPath() === ClientUtility.normalize(path); })[0];
+            return this.receive_files.filter(function (file) { return _this.path + "/" + file.getNormalPath() === ClientUtility.normalize(path); })[0];
         }
     };
-    SwfTree.prototype.setScriptPath = function (file) {
+    /**
+     * add script file for upload
+     * @param file upload script file
+     */
+    SwfTree.prototype.addScriptFile = function (file) {
         this.uploadScript = file;
         this.script.path = file.name;
     };
-    SwfTree.prototype.setJobScriptPath = function (file) {
+    /**
+     * add job script file for upload
+     * @param file upload job script file
+     */
+    SwfTree.prototype.addJobScriptFile = function (file) {
         this.uploadScript = file;
         this.job_script.path = file.name;
     };
-    SwfTree.prototype.setParameterFilePath = function (file) {
+    /**
+     * add parameter file for upload
+     * @param file upload parameter file
+     */
+    SwfTree.prototype.addParameterFile = function (file) {
         this.uploadParamFile = file;
         this.parameter_file.path = file.name;
     };
-    SwfTree.prototype.setSendFilepath = function (files) {
+    /**
+     * add send file for upload
+     * @param files upload send file list
+     */
+    SwfTree.prototype.addSendFile = function (files) {
         for (var index = 0; index < files.length; index++) {
             this.deleteSendfile(files[index].name);
             this.uploadSendfiles.push(files[index]);
@@ -596,13 +652,17 @@ var SwfTree = (function (_super) {
             }));
         }
     };
-    SwfTree.prototype.deleteSendfile = function (target) {
+    /**
+     * delete specified file from send files
+     * @param object path name or delete file
+     */
+    SwfTree.prototype.deleteSendfile = function (object) {
         var filepath;
-        if (typeof target === 'string') {
-            filepath = target;
+        if (typeof object === 'string') {
+            filepath = object;
         }
         else {
-            filepath = target.path;
+            filepath = object.path;
         }
         for (var index = this.send_files.length - 1; index >= 0; index--) {
             if (this.send_files[index].path === filepath) {
@@ -615,12 +675,20 @@ var SwfTree = (function (_super) {
             }
         }
     };
-    SwfTree.prototype.setUploadFilePath = function (files) {
+    /**
+     * add scpecified files to upload files
+     * @param files upload files
+     */
+    SwfTree.prototype.addUploadFile = function (files) {
         this.upload_files = [];
         for (var index = 0; index < files.length; index++) {
             this.upload_files.push(files[index]);
         }
     };
+    /**
+     * delete specified file in upload files
+     * @param file file instance
+     */
     SwfTree.prototype.deleteUploadfile = function (file) {
         for (var index = this.upload_files.length - 1; index >= 0; index--) {
             if (this.upload_files[index].name === file.name) {
@@ -628,6 +696,11 @@ var SwfTree = (function (_super) {
             }
         }
     };
+    /**
+     * whether specified file is exist in upload send files or not
+     * @param sendFile send file
+     * @return whether specified file is exist in upload send files or not
+     */
     SwfTree.prototype.isExistSendfile = function (sendFile) {
         var target = this.uploadSendfiles.filter(function (file) { return file.name === sendFile.path; })[0];
         if (target) {
@@ -637,9 +710,18 @@ var SwfTree = (function (_super) {
             return false;
         }
     };
+    /**
+     * whether upload script is exist or not
+     * @return whether upload script is exist or not
+     */
     SwfTree.prototype.isExistUploadScript = function () {
         return this.uploadScript != null;
     };
+    /**
+     * get upload files
+     * @param projectDirectory project directory name
+     * @return upload files
+     */
     SwfTree.getUploadFiles = function (projectDirectory) {
         var files = [];
         var notSeachedList = [this.root];
@@ -650,25 +732,25 @@ var SwfTree = (function (_super) {
             }
             if (tree.uploadScript) {
                 files.push({
-                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(tree.uploadScript.name)),
+                    filepath: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(tree.uploadScript.name)),
                     file: tree.uploadScript
                 });
             }
             if (tree.uploadParamFile) {
                 files.push({
-                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(tree.uploadParamFile.name)),
+                    filepath: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(tree.uploadParamFile.name)),
                     file: tree.uploadParamFile
                 });
             }
             tree.uploadSendfiles.forEach(function (file) {
                 files.push({
-                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(file.name)),
+                    filepath: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(file.name)),
                     file: file
                 });
             });
             tree.upload_files.forEach(function (file) {
                 files.push({
-                    path: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(file.name)),
+                    filepath: ClientUtility.normalize(projectDirectory + "/" + tree.getFullpath(file.name)),
                     file: file
                 });
             });

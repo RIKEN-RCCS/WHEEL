@@ -2,14 +2,14 @@
 var fs = require("fs");
 var logger = require("./logger");
 /**
- *
+ * socket io communication class for write file to server
  */
 var WriteFileEvent = (function () {
     function WriteFileEvent() {
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     WriteFileEvent.prototype.onEvent = function (socket) {
         socket.on(WriteFileEvent.eventName, function (filepath, data) {

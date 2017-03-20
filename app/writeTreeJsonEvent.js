@@ -2,21 +2,21 @@
 var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
-var serverUtility = require("./serverUtility");
-var serverConfig = require("./serverConfig");
+var ServerUtility = require("./serverUtility");
+var ServerConfig = require("./serverConfig");
 /**
- *
+ * socket io communication class for write SwfTreeJson information to server
  */
 var WriteTreeJsonEvent = (function () {
     function WriteTreeJsonEvent() {
         /**
-         *
+         * queue of json data path
          */
         this.queue = [];
     }
     /**
-     *
-     * @param socket
+     * Adds a listener for this event
+     * @param socket socket io instance
      */
     WriteTreeJsonEvent.prototype.onEvent = function (socket) {
         var _this = this;
@@ -30,8 +30,8 @@ var WriteTreeJsonEvent = (function () {
         });
     };
     /**
-     *
-     * @param callback
+     * save tree json
+     * @param callback The function to call when we save tree json
      */
     WriteTreeJsonEvent.prototype.saveTreeJson = function (callback) {
         var _this = this;
@@ -40,7 +40,7 @@ var WriteTreeJsonEvent = (function () {
             callback();
             return;
         }
-        var filename = serverUtility.getDefaultName(data.json.type);
+        var filename = ServerUtility.getDefaultName(data.json.type);
         var oldDirectory = path.join(data.directory, data.json.oldPath);
         var newDirectory = path.join(data.directory, data.json.path);
         var filepath = path.join(newDirectory, filename);
@@ -50,7 +50,11 @@ var WriteTreeJsonEvent = (function () {
             _this.saveTreeJson(callback);
         };
         var update = function () {
-            _this.generateJobScript(data, function () {
+            _this.generateSubmitScript(data, function (err) {
+                if (err) {
+                    error(err);
+                    return;
+                }
                 var copy = JSON.parse(JSON.stringify(data.json));
                 delete copy.children;
                 delete copy.oldPath;
@@ -120,9 +124,9 @@ var WriteTreeJsonEvent = (function () {
         }
     };
     /**
-     *
-     * @param parentDirectory
-     * @param json
+     * set data to queue
+     * @param parentDirectory parent tree directory
+     * @param json tree json data
      */
     WriteTreeJsonEvent.prototype.setQueue = function (parentDirectory, json) {
         var _this = this;
@@ -138,16 +142,16 @@ var WriteTreeJsonEvent = (function () {
         }
     };
     /**
-     *
-     * @param json
-     * @param callback
+     * genereta submic script
+     * @param data json data path
+     * @param callback The function to call when we generate submit script
      */
-    WriteTreeJsonEvent.prototype.generateJobScript = function (data, callback) {
-        if (!serverUtility.IsTypeJob(data.json)) {
+    WriteTreeJsonEvent.prototype.generateSubmitScript = function (data, callback) {
+        if (!ServerUtility.isTypeJob(data.json)) {
             callback();
             return;
         }
-        var config = serverConfig.getConfig();
+        var config = ServerConfig.getConfig();
         var submitJobname = config.submit_script;
         var srcPath = path.join(__dirname, config.scheduler[data.json.host.job_scheduler]);
         var dstPath = path.join(data.directory, data.json.path, submitJobname);
@@ -159,7 +163,7 @@ var WriteTreeJsonEvent = (function () {
                     '%%cores%%': data.json.script_param.cores.toString(),
                     '%%script%%': data.json.job_script.path
                 };
-                serverUtility.writeFileKeywordReplacedAsync(srcPath, dstPath, format, callback);
+                ServerUtility.writeFileKeywordReplacedAsync(srcPath, dstPath, format, callback);
                 logger.info("create file=" + dstPath);
             }
             callback();

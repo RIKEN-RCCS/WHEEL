@@ -2,16 +2,17 @@ import fs = require('fs');
 import path = require('path');
 
 /**
- *
+ * server config data class
  */
 class ServerConfig {
     /**
-     *
+     * config data
      */
     private static config;
 
     /**
-     *
+     * get configdata
+     * @return config data
      */
     public static getConfig() {
         if (this.config != null) {
