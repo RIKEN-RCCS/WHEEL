@@ -1279,7 +1279,7 @@ var LocalQueue = (function () {
         if (LocalQueue.queue.length < 1) {
             clearInterval(LocalQueue.intervalId);
         }
-        while (LocalQueue.num_job < LocalQueue.MAX_JOB) {
+        if (LocalQueue.num_job < LocalQueue.MAX_JOB) {
             var job = LocalQueue.queue.shift();
             if (job != null) {
                 job();

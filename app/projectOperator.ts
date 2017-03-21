@@ -1479,7 +1479,7 @@ class LocalQueue {
             clearInterval(LocalQueue.intervalId);
         }
 
-        while (LocalQueue.num_job < LocalQueue.MAX_JOB) {
+        if (LocalQueue.num_job < LocalQueue.MAX_JOB) {
             const job = LocalQueue.queue.shift();
             if (job != null) {
                 job();
