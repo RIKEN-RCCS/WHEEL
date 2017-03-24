@@ -28,9 +28,9 @@ enum JsonFileType {
      */
     Job,
     /**
-     * file type loop
+     * file type for
      */
-    Loop,
+    For,
     /**
      * file type if
      */
@@ -245,6 +245,58 @@ class ServerUtility {
     }
 
     /**
+     * unlink specified directory async
+     * @param path_dir unlink directory path
+     * @param callback The funcion to call when we have finished to unlink directory
+     */
+    public static unlinkDirectoryAsync(path_dir: string, callback: ((err?: Error) => void)) {
+        fs.lstat(path_dir, (err, stat) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+            if (stat.isDirectory()) {
+                fs.readdir(path_dir, (err, files) => {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+
+                    const loop = () => {
+                        const file = files.shift();
+                        if (!file) {
+                            fs.rmdir(path_dir, (err) => {
+                                callback(err);
+                            });
+                            return;
+                        }
+                        const path_child = path.join(path_dir, file);
+                        fs.lstat(path_child, (err, stat) => {
+                            if (err) {
+                                loop();
+                                return;
+                            }
+                            if (stat.isDirectory()) {
+                                this.unlinkDirectoryAsync(path_child, loop);
+                            }
+                            else {
+                                fs.unlink(path_child, (err) => {
+                                    loop();
+                                });
+                            }
+                        });
+                    };
+
+                    loop();
+                });
+            }
+            else {
+                callback();
+            }
+        });
+    }
+
+    /**
      * link directory
      * @param path_src source path string
      * @param path_dst destination path string
@@ -454,19 +506,19 @@ class ServerUtility {
 
     /**
      * read .wf.json file tree
-     * @param workflowJsonFilepath task json file (.wf.json or .tsk.json file)
+     * @param treeJsonFilepath task json file (.wf.json or .tsk.json file)
      * @return task json file
      */
-    public static createTreeJson(workflowJsonFilepath: string): SwfTreeJson {
+    public static createTreeJson(treeJsonFilepath: string): SwfTreeJson {
 
-        const parent = <SwfTreeJson>this.readJson(workflowJsonFilepath);
-        const parentDirname = path.dirname(workflowJsonFilepath);
+        const parent = <SwfTreeJson>this.readJson(treeJsonFilepath);
+        const parentDirname = path.dirname(treeJsonFilepath);
         parent.children = [];
         if (parent.children_file) {
             parent.children_file.forEach((child, index) => {
                 const childFilePath = path.resolve(parentDirname, child.path);
                 if (path.dirname(childFilePath).length <= parentDirname.length) {
-                    logger.error(`find circular reference. file=${workflowJsonFilepath}`);
+                    logger.error(`find circular reference. file=${treeJsonFilepath}`);
                 }
                 else {
                     const childJson = this.createTreeJson(childFilePath);
@@ -481,42 +533,90 @@ class ServerUtility {
     }
 
     /**
+     * renumbering display order
+     * @param treeJson tree json date
+     */
+    private static setDisplayOrder(treeJson: SwfTreeJson) {
+        let order = 0;
+        treeJson.children.forEach((child, index) => {
+            const relations = treeJson.relations.filter(relation => relation.index_after_task === index);
+            const fileRelations = treeJson.file_relations.filter(relation => relation.index_after_task === index);
+            if (!relations[0] && !fileRelations[0]) {
+                child.order = order;
+                order += 100;
+            }
+        });
+
+        function setOrder(before: number) {
+            treeJson.relations
+                .filter(relation => relation.index_before_task === before)
+                .forEach(relation => updateOrder(relation));
+            treeJson.file_relations
+                .filter(relation => relation.index_before_task === before)
+                .forEach(relation => updateOrder(relation));
+        }
+
+        function updateOrder(relation: (SwfRelationJson | SwfFileRelationJson)) {
+            const child = treeJson.children[relation.index_after_task];
+            const afterOrder = treeJson.children[relation.index_before_task].order + 1;
+            if (child.order === undefined) {
+                child.order = afterOrder;
+            }
+            else {
+                child.order = Math.max(child.order, afterOrder);
+            }
+            setOrder(relation.index_after_task);
+        }
+
+        treeJson.children.forEach((child, index) => {
+            if (child.order !== undefined && child.order % 100 === 0) {
+                setOrder(index);
+            }
+            this.setDisplayOrder(child);
+        });
+    }
+
+    /**
      * create log node json
      * @param path_taskFile path json file (.wf.json or .tsk.json file)
      * @return swf project json object
      */
     public static createLogJson(path_taskFile: string): SwfLogJson {
 
-        const workflowJson: any = this.readJson(path_taskFile);
+        const tree = this.createTreeJson(path_taskFile);
+        this.setDisplayOrder(tree);
 
-        const logJson: SwfLogJson = {
-            name: workflowJson.name,
-            path: path.dirname(path_taskFile),
-            description: workflowJson.description,
-            type: workflowJson.type,
-            state: this.config.state.planning,
-            execution_start_date: '',
-            execution_end_date: '',
-            children: [],
-            host: workflowJson.host
-        };
+        const planningState = this.config.state.planning;
+        (function convertTreeToLog(treeJson: SwfTreeJson, parentDir: string) {
+            treeJson.path = path.join(parentDir, treeJson.path);
+            const logJson: SwfLogJson = {
+                name: treeJson.name,
+                path: treeJson.path,
+                description: treeJson.description,
+                type: treeJson.type,
+                state: planningState,
+                execution_start_date: '',
+                execution_end_date: '',
+                children: [],
+                host: treeJson.host,
+                order: treeJson.order
+            };
 
-        const parentDirname = path.dirname(path_taskFile);
-        if (workflowJson.children_file) {
-            workflowJson.children_file.forEach(child => {
-                const path_childFile = path.join(parentDirname, child.path);
-                if (path.dirname(path_childFile).length <= parentDirname.length) {
-                    logger.error(`find circular reference. file=${path_taskFile}`);
-                }
-                else {
-                    const childJson = this.createLogJson(path_childFile);
-                    if (childJson != null) {
-                        logJson.children.push(childJson);
-                    }
+            Object.keys(treeJson).forEach(key => {
+                if (logJson[key] === undefined) {
+                    delete treeJson[key];
                 }
             });
-        }
-        return logJson;
+            Object.keys(logJson).forEach(key => {
+                if (treeJson[key] === undefined) {
+                    treeJson[key] = logJson[key];
+                }
+            });
+
+            treeJson.children.forEach(child => convertTreeToLog(child, logJson.path));
+        })(tree, path.dirname(path.dirname(path_taskFile)));
+
+        return <SwfLogJson><any>tree;
     }
 
     /**
@@ -529,7 +629,6 @@ class ServerUtility {
         const dir_project = path.dirname(path_project);
         const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
         projectJson.log = this.createLogJson(path_workflow);
-
         return projectJson;
     }
 
@@ -623,9 +722,9 @@ class ServerUtility {
      * @param json tree json data or log json data
      * @return whether specified json is type of loop or not
      */
-    public static isTypeLoop(json: (SwfLogJson | SwfTreeJson)) {
+    public static isTypeFor(json: (SwfLogJson | SwfTreeJson)) {
         const template = this.getTypeOfJson(json.type);
-        return template.getType() === this.config.json_types.loop;
+        return template.getType() === this.config.json_types.for;
     }
 
     /**
@@ -661,8 +760,8 @@ class ServerUtility {
                     return new TypeWorkflow();
                 case this.config.json_types.task:
                     return new TypeTask();
-                case this.config.json_types.loop:
-                    return new TypeLoop();
+                case this.config.json_types.for:
+                    return new TypeFor();
                 case this.config.json_types.if:
                     return new TypeIf();
                 case this.config.json_types.else:
@@ -689,8 +788,8 @@ class ServerUtility {
                     return new TypeWorkflow();
                 case JsonFileType.Task:
                     return new TypeTask();
-                case JsonFileType.Loop:
-                    return new TypeLoop();
+                case JsonFileType.For:
+                    return new TypeFor();
                 case JsonFileType.If:
                     return new TypeIf();
                 case JsonFileType.Else:
@@ -795,15 +894,15 @@ class TypeWorkflow extends TypeBase {
         this.type = this.config.json_types.workflow;
     }
 }
-class TypeLoop extends TypeBase {
+class TypeFor extends TypeBase {
     /**
      * create new instance
      */
     public constructor() {
         super();
-        this.extension = this.config.extension.loop;
-        this.templateFilepath = this.config.template.loop;
-        this.type = this.config.json_types.loop;
+        this.extension = this.config.extension.for;
+        this.templateFilepath = this.config.template.for;
+        this.type = this.config.json_types.for;
     }
 }
 /**

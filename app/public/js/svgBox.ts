@@ -187,7 +187,6 @@ class SvgBox {
             this.group.style('cursor', 'default');
             this.position.x = this.group.x();
             this.position.y = this.group.y();
-            this.group.move(this.position.x, this.position.y);
             callback(this.position.x, this.position.y);
         });
         return this;
@@ -315,7 +314,7 @@ class SvgBox {
      * @return output file text
      */
     private createOutput(): svgjs.Element {
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+        if (ClientUtility.isImplimentsCondition(this.tree)) {
             return this.outputGroup;
         }
         this.tree.output_files.forEach((output, index) => {
@@ -350,14 +349,14 @@ class SvgBox {
      * create condition frame extension
      */
     private createConditionFrame(): void {
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Break) || ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+        if (ClientUtility.isImplimentsCondition(this.tree)) {
             const polygon = this.draw
                 .polygon([
                     [this.width - 4, 0],
                     [this.width, 0],
                     [this.width + 16, this.height / 2],
-                    [this.width, this.height],
-                    [this.width - 4, this.height]
+                    [this.width, this.height + 1],
+                    [this.width - 4, this.height + 1]
                 ])
                 .fill(config.node_color[this.tree.type.toLowerCase()]);
             this.group.add(polygon);

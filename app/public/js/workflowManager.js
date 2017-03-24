@@ -10,7 +10,7 @@ $(function () {
     // property
     var jsonProperty = new JsonProperty();
     // yes no dialog
-    var resetDialog = new YesNoDialog('Are you sure you want to reset ?');
+    var revertDialog = new YesNoDialog('Are you sure you want to revert ?');
     var saveDialog = new YesNoDialog('Are you sure you want to save ?');
     var editDialog = new YesNoDialog('Are you sure you want to save for editing script ?');
     // elements
@@ -45,7 +45,7 @@ $(function () {
         setEditScriptEvent();
         setClickEventForMoveToProjectManagePage();
         setSaveDialogEventsForScriptEdit();
-        setContextMenuEnvets();
+        setContextMenuEvents();
         setKeyupEventForRenameWorkflowName();
         setKeyupEventForRenameWorkflowDescription();
         setSaveDialogEvents();
@@ -165,11 +165,11 @@ $(function () {
      * set several events for yes no dialog for reset workflow
      */
     function setResetDialogEvents() {
-        resetDialog
+        revertDialog
             .onClickCancel()
             .onClickOK(function () {
             readTreeJson();
-            resetDialog.hide();
+            revertDialog.hide();
         });
     }
     /**
@@ -187,7 +187,7 @@ $(function () {
      */
     function setClickEventForResetWorkflow() {
         resetButton.click(function () {
-            resetDialog.show();
+            revertDialog.show();
         });
     }
     /**
@@ -208,7 +208,7 @@ $(function () {
     /**
      * set contextmenu events
      */
-    function setContextMenuEnvets() {
+    function setContextMenuEvents() {
         $.contextMenu({
             selector: '#node_svg',
             autoHide: true,
@@ -262,9 +262,9 @@ $(function () {
                         sep4: '---------',
                         sep5: '---------',
                         loop: {
-                            name: 'Loop',
+                            name: 'For',
                             callback: function () {
-                                createChildTree(JsonFileType.Loop, parentTree, function (child) {
+                                createChildTree(JsonFileType.For, parentTree, function (child) {
                                     hideProperty();
                                 });
                             }
@@ -294,7 +294,7 @@ $(function () {
                                 });
                             },
                             disabled: function () {
-                                return !ClientUtility.checkFileType(parentTree, JsonFileType.Loop);
+                                return !ClientUtility.checkFileType(parentTree, JsonFileType.For);
                             }
                         },
                         sep8: '---------',

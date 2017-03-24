@@ -12,7 +12,7 @@ $(() => {
     const jsonProperty = new JsonProperty();
 
     // yes no dialog
-    const resetDialog = new YesNoDialog('Are you sure you want to reset ?');
+    const revertDialog = new YesNoDialog('Are you sure you want to revert ?');
     const saveDialog = new YesNoDialog('Are you sure you want to save ?');
     const editDialog = new YesNoDialog('Are you sure you want to save for editing script ?');
 
@@ -53,7 +53,7 @@ $(() => {
         setEditScriptEvent();
         setClickEventForMoveToProjectManagePage();
         setSaveDialogEventsForScriptEdit();
-        setContextMenuEnvets();
+        setContextMenuEvents();
         setKeyupEventForRenameWorkflowName();
         setKeyupEventForRenameWorkflowDescription();
         setSaveDialogEvents();
@@ -183,11 +183,11 @@ $(() => {
      * set several events for yes no dialog for reset workflow
      */
     function setResetDialogEvents() {
-        resetDialog
+        revertDialog
             .onClickCancel()
             .onClickOK(() => {
                 readTreeJson();
-                resetDialog.hide();
+                revertDialog.hide();
             });
     }
 
@@ -207,7 +207,7 @@ $(() => {
      */
     function setClickEventForResetWorkflow() {
         resetButton.click(() => {
-            resetDialog.show();
+            revertDialog.show();
         });
     }
 
@@ -230,7 +230,7 @@ $(() => {
     /**
      * set contextmenu events
      */
-    function setContextMenuEnvets() {
+    function setContextMenuEvents() {
         $.contextMenu({
             selector: '#node_svg',
             autoHide: true,
@@ -284,9 +284,9 @@ $(() => {
                         sep4: '---------',
                         sep5: '---------',
                         loop: {
-                            name: 'Loop',
+                            name: 'For',
                             callback: () => {
-                                createChildTree(JsonFileType.Loop, parentTree, (child: SwfTree) => {
+                                createChildTree(JsonFileType.For, parentTree, (child: SwfTree) => {
                                     hideProperty();
                                 });
                             }
@@ -316,7 +316,7 @@ $(() => {
                                 });
                             },
                             disabled: () => {
-                                return !ClientUtility.checkFileType(parentTree, JsonFileType.Loop);
+                                return !ClientUtility.checkFileType(parentTree, JsonFileType.For);
                             }
                         },
                         sep8: '---------',

@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /**
  *
  */
@@ -101,14 +106,13 @@ var SwfTree = (function (_super) {
      */
     SwfTree.create = function (treeJson) {
         this.root = new SwfTree(treeJson);
-        var tree = this.renumberingIndex(this.root);
-        return tree;
+        this.renumberingIndex(this.root);
+        return this.root;
     };
     /**
      * renumbering index
      * @param tree SwfTree instance
      * @param indexes parent index array
-     * @param renumbering tree instance
      */
     SwfTree.renumberingIndex = function (tree, indexes) {
         var _this = this;
@@ -120,7 +124,6 @@ var SwfTree = (function (_super) {
             newIndexes.push(index);
             _this.renumberingIndex(child, newIndexes);
         });
-        return tree;
     };
     /**
      * add child date to this tree
@@ -132,6 +135,7 @@ var SwfTree = (function (_super) {
         var rand = Math.floor(Date.now() / 100) % 100000;
         var dirname = treeJson.type + "Dir" + ("00000" + rand).slice(-5);
         var tree = new SwfTree(treeJson);
+        tree.name = SwfTree.getSerialNumberName(tree.name);
         tree.path = dirname;
         this.children.push(tree);
         this.children_file.push(new SwfFile({
@@ -145,6 +149,29 @@ var SwfTree = (function (_super) {
         SwfTree.renumberingIndex(SwfTree.root);
         tree.oldPath = '';
         return tree;
+    };
+    /**
+     * get serial number name
+     * @param name search name
+     * @return serial number name
+     */
+    SwfTree.getSerialNumberName = function (name) {
+        var max = 0;
+        var notSeachedList = [this.root];
+        var regexp = new RegExp("^" + name + "(\\d+)$");
+        while (true) {
+            var tree = notSeachedList.shift();
+            if (!tree) {
+                break;
+            }
+            if (tree.name.match(regexp)) {
+                max = Math.max(max, parseInt(RegExp.$1));
+            }
+            tree.children.forEach(function (child) {
+                notSeachedList.push(child);
+            });
+        }
+        return "" + name + (max + 1);
     };
     /**
      * whether specified directory name is duplicate or not
@@ -362,11 +389,11 @@ var SwfTree = (function (_super) {
         SwfTree.addFileToParent(this, file, fullpath, false);
     };
     /**
-     *
-     * @param tree
-     * @param file
-     * @param fullpath
-     * @param isInput
+     *　add output file to parent tree
+     * @param tree target tree
+     * @param file add file
+     * @param fullpath add target relative path from root workflow
+     * @param isInput whether input files or not
      */
     SwfTree.addFileToParent = function (tree, file, fullpath, isInput) {
         if (tree.isRoot()) {
@@ -764,6 +791,33 @@ var SwfTree = (function (_super) {
                 break;
         }
         return files;
+    };
+    /**
+     * whether circular reference is occurred or not
+     * @param before before task index
+     * @param after after task index
+     * @return whether circular reference is occurred or not
+     */
+    SwfTree.prototype.isCircularReference = function (before, after) {
+        var _this = this;
+        if (before === after) {
+            return true;
+        }
+        var relations = this.relations.filter(function (relation) { return relation.index_before_task === after; });
+        var fileRelations = this.file_relations.filter(function (relation) { return relation.index_before_task === after; });
+        if (!relations[0] && !fileRelations[0]) {
+            return false;
+        }
+        else {
+            var results1 = relations.filter(function (relation) { return _this.isCircularReference(before, relation.index_after_task); });
+            var results2 = fileRelations.filter(function (relation) { return _this.isCircularReference(before, relation.index_after_task); });
+            if (!results1[0] && !results2[0]) {
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
     };
     return SwfTree;
 }(SwfWorkflow));

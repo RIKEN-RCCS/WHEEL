@@ -120,8 +120,7 @@ class SvgConnector extends SvgPlugBase {
      */
     public connect(receptor: SvgReceptor): boolean {
         if (receptor != null && receptor.connect(this)) {
-            console.log(`connect index=${this.name()} to index=${receptor.name()}`);
-
+            // console.log(`connect index=${this.name()} to index=${receptor.name()}`);
             this.connectedReceptor = receptor;
             this.calcConnectPotision(this.connectedReceptor, (x: number, y: number) => {
                 this.move(x, y).front();

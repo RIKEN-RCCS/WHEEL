@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <link type="text/css" rel="stylesheet" href="/css/style.css" />
-    <link type="text/css" rel="stylesheet" href="/css/jquery.contextMenu.css" />
-    <script type="text/javascript" src="/third_party/jquery/jquery-3.1.1.min.js"></script>
-    <script type="text/javascript" src="/third_party/jquery/jquery.ui.position.min.js"></script>
-    <script type="text/javascript" src="/third_party/jquery/jquery.contextMenu.js"></script>
-    <script type="text/javascript" src="/third_party/socket.io/socket.io-1.4.5.js"></script>
-    <script type="text/javascript" src="/third_party/svg/svg.min.js"></script>
-    <script type="text/javascript" src="/third_party/svg/svg.draggable.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="/css/jquery.contextMenu-2.4.4.css" />
+    <script type="text/javascript" src="/third_party/jquery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/third_party/jquery/jquery.ui.position-1.12.1.min.js"></script>
+    <script type="text/javascript" src="/third_party/jquery/jquery.contextMenu-2.4.4.min.js"></script>
+    <script type="text/javascript" src="/third_party/socket.io/socket.io-1.7.3.min.js"></script>
+    <script type="text/javascript" src="/third_party/svg/svg-2.5.0.min.js"></script>
+    <script type="text/javascript" src="/third_party/svg/svg.draggable-2.2.1.min.js"></script>
 
     <script type="text/javascript" src="/js/svgPlugBase.js"></script>
     <script type="text/javascript" src="/js/svgBox.js"></script>
@@ -66,10 +66,10 @@
             <th></th>
         </tr>
         <tr>
-            <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px"></td>
-            <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);"></td>
+            <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px" spellcheck="false"></td>
+            <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);" spellcheck="false"></td>
             <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
-            <td style="width: 90px"><button type="button" class="button" id="reset_button">Reset</button></td>
+            <td style="width: 90px"><button type="button" class="button" id="reset_button">Revert</button></td>
         </tr>
     </table>
 

@@ -24,9 +24,9 @@ enum JsonFileType {
      */
     Job,
     /**
-     * Loop
+     * For
      */
-    Loop,
+    For,
     /**
      * If
      */
@@ -616,7 +616,7 @@ class JsonFileTypeBase {
                 },
                 {
                     key: 'path',
-                    readonly: () => { return true },
+                    readonly: () => { return false },
                     type: 'string',
                     validation: (tree: SwfTree, v: string): boolean => {
                         return !tree.isEnablePath(v);
@@ -774,18 +774,18 @@ class JsonFileTypeBase {
     }
 
     /**
+     * sort property info
+     */
+    protected sortPropertyInfo() {
+        this.propertyInfo.sort((a, b) => a.order < b.order ? -1 : 1);
+    }
+
+    /**
      * get property information
      * @returns property information
      */
     public getPropertyInfo(): any {
-        this.propertyInfo.sort((a, b) => {
-            if (a.order < b.order) {
-                return -1;
-            }
-            else {
-                return 1;
-            }
-        });
+
         return this.propertyInfo;
     }
 }
@@ -818,6 +818,7 @@ class TypeTask extends JsonFileTypeBase {
         this.addInputFile();
         this.addOutputFile();
         this.addUpload();
+        this.sortPropertyInfo();
     }
 }
 
@@ -855,6 +856,7 @@ class TypeJob extends JsonFileTypeBase {
         this.addReceiveFile();
         this.addScriptParam();
         this.addHost();
+        this.sortPropertyInfo();
     }
 
     /**
@@ -941,22 +943,24 @@ class TypeRemoteTask extends JsonFileTypeBase {
         this.addSendFile();
         this.addReceiveFile();
         this.addHost();
+        this.sortPropertyInfo();
     }
 }
 
 /**
- * type of loop class
+ * type of for class
  */
-class TypeLoop extends JsonFileTypeBase {
+class TypeFor extends JsonFileTypeBase {
     /**
      * create new instance for loop
      */
     public constructor() {
         super();
-        this.extension = config.extension.loop;
-        this.type = config.json_types.loop;
+        this.extension = config.extension.for;
+        this.type = config.json_types.for;
         this.addForParam();
         this.addUpload();
+        this.sortPropertyInfo();
     }
 }
 
@@ -1005,6 +1009,7 @@ class TypeCondition extends JsonFileTypeBase {
         this.addInputFile();
         this.addOutputFile();
         this.addUpload();
+        this.sortPropertyInfo();
     }
 
     /**
@@ -1086,7 +1091,74 @@ class TypeBreak extends JsonFileTypeBase {
         this.type = config.json_types.break;
         this.addScript();
         this.addInputFile();
+        this.addOutputFile();
         this.addUpload();
+        this.sortPropertyInfo();
+    }
+
+    /**
+     * add output files property information for break
+     */
+    protected addOutputFile() {
+        this.propertyInfo.push({
+            key: 'output_files',
+            ishash: true,
+            order: 110,
+            button: [{
+                key: 'Add',
+                title: 'output_files',
+                isUpdateUI: true,
+                callback: (tree: SwfTree) => {
+                    const file = SwfFile.getDefault();
+                    tree.output_files.push(file);
+                }
+            }]
+        });
+        this.propertyInfo.push({
+            key: 'output_files',
+            isarray: true,
+            order: 111,
+            item: [
+                {
+                    key: 'name',
+                    readonly: () => { return false },
+                    type: 'string',
+                    validation: (tree: SwfTree, v: string): boolean => {
+                        return v.trim() ? true : false;
+                    }
+                },
+                {
+                    key: 'description',
+                    readonly: () => { return false },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: () => { return false },
+                    type: 'string',
+                    validation: (tree: SwfTree, v: string): boolean => {
+                        return !tree.isEnablePath(v);
+                    },
+                    callback: (tree: SwfTree, object: SwfFile, path: string) => {
+                        object.type = ClientUtility.getIOFileType(path);
+                    }
+                },
+                {
+                    key: 'required',
+                    readonly: () => { return false },
+                    type: 'boolean'
+                }
+            ],
+            button: [{
+                key: 'Delete',
+                title: 'output_file',
+                isUpdateUI: true,
+                callback: (tree: SwfTree, object: SwfFile) => {
+                    const index = tree.output_files.indexOf(object);
+                    tree.output_files.splice(index, 1);
+                }
+            }]
+        });
     }
 }
 
@@ -1103,5 +1175,6 @@ class TypePStudy extends JsonFileTypeBase {
         this.type = config.json_types.pstudy;
         this.addParameterFile();
         this.addUpload();
+        this.sortPropertyInfo();
     }
 }

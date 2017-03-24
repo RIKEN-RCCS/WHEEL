@@ -179,7 +179,7 @@ class ClientUtility {
 
     /**
      * whether specified type string is matched or not
-     * @param type json file type string (ex 'Workflow', 'Loop')
+     * @param type json file type string (ex 'Workflow', 'For')
      * @param fileType json file type
      * @return whether specified type string is matched or not
      */
@@ -244,11 +244,27 @@ class ClientUtility {
      */
     public static isImplimentsWorkflow(target: (SwfTree | SwfLog)): boolean {
         const workflowType = this.getJsonFileType(JsonFileType.WorkFlow);
-        const loopType = this.getJsonFileType(JsonFileType.Loop);
+        const ForType = this.getJsonFileType(JsonFileType.For);
         const ifType = this.getJsonFileType(JsonFileType.If);
         const elseType = this.getJsonFileType(JsonFileType.Else);
         const pstudyType = this.getJsonFileType(JsonFileType.PStudy);
-        if (target.type.match(new RegExp(`^(?:${[workflowType, loopType, ifType, elseType, pstudyType].join('|')})$`))) {
+        if (target.type.match(new RegExp(`^(?:${[workflowType, ForType, ifType, elseType, pstudyType].join('|')})$`))) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    /**
+     * whether specified class is condition or not
+     * @param target SwfTree instance or SwfLog instance
+     * @return whether specified class is condition or not
+     */
+    public static isImplimentsCondition(target: SwfTree): boolean {
+        const conditionType = this.getJsonFileType(JsonFileType.Condition);
+        const breakType = this.getJsonFileType(JsonFileType.Break);
+        if (target.type.match(new RegExp(`^(?:${[conditionType, breakType].join('|')})$`))) {
             return true;
         }
         else {
@@ -295,8 +311,8 @@ class ClientUtility {
                     return new TypeTask();
                 case JsonFileType.Job:
                     return new TypeJob();
-                case JsonFileType.Loop:
-                    return new TypeLoop();
+                case JsonFileType.For:
+                    return new TypeFor();
                 case JsonFileType.If:
                     return new TypeIf();
                 case JsonFileType.Else:
@@ -320,8 +336,8 @@ class ClientUtility {
             else if (this.checkFileType(object, JsonFileType.WorkFlow)) {
                 return new TypeWorkflow();
             }
-            else if (this.checkFileType(object, JsonFileType.Loop)) {
-                return new TypeLoop();
+            else if (this.checkFileType(object, JsonFileType.For)) {
+                return new TypeFor();
             }
             else if (this.checkFileType(object, JsonFileType.If)) {
                 return new TypeIf();

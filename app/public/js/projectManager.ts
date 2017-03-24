@@ -202,7 +202,9 @@ $(() => {
     function createHtmlTable(swfLog: SwfLog): string {
         const html: string[] = [];
         html.push(createSingleLineHtml(swfLog));
-        swfLog.children.forEach(child => html.push(createHtmlTable(child)));
+        swfLog.children
+            .sort((a, b) => a.order > b.order ? 1 : -1)
+            .forEach(child => html.push(createHtmlTable(child)));
         return html.join('');
     }
 

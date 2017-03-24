@@ -180,7 +180,9 @@ $(function () {
     function createHtmlTable(swfLog) {
         var html = [];
         html.push(createSingleLineHtml(swfLog));
-        swfLog.children.forEach(function (child) { return html.push(createHtmlTable(child)); });
+        swfLog.children
+            .sort(function (a, b) { return a.order > b.order ? 1 : -1; })
+            .forEach(function (child) { return html.push(createHtmlTable(child)); });
         return html.join('');
     }
     /**

@@ -151,7 +151,7 @@ class JsonProperty {
      * @param host registered host information
      * @param id id for html
      */
-    private setChangeEnvetForScheduler(host: SwfHostJson, id: string) {
+    private setChangeEventForScheduler(host: SwfHostJson, id: string) {
         id = `#${id}`
         this.events[id] = 'change';
         $(document).on(this.events[id], id, (eventObject: JQueryEventObject) => {
@@ -219,7 +219,7 @@ class JsonProperty {
         else {
             switch (prop.type) {
                 case 'string':
-                    content = `<input type="text" value="${object[prop.key]}" class="text_box property_text" id="${id}">`;
+                    content = `<input type="text" value="${object[prop.key]}" class="text_box property_text" id="${id}" spellcheck="false">`;
                     this.setKeyupEventForString(object, id, prop);
                     break;
                 case 'number':
@@ -251,7 +251,7 @@ class JsonProperty {
                         return `<option value="${value}" ${isSelected}>${value}</option>`;
                     });
                     content = `<select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">${schedulers.join('')}</select>`;
-                    this.setChangeEnvetForScheduler(object, id);
+                    this.setChangeEventForScheduler(object, id);
                     break;
                 default:
                     break;

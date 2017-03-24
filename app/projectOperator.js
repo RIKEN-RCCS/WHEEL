@@ -19,9 +19,10 @@ var SwfType = {
     WORKFLOW: 'Workflow',
     REMOTETASK: 'RemoteTask',
     JOB: 'Job',
-    LOOP: 'Loop',
+    FOR: 'For',
     IF: 'If',
     ELSE: 'Else',
+    CONDITION: 'Condition',
     BREAK: 'Break',
     PSTUDY: 'PStudy'
 };
@@ -193,19 +194,19 @@ var TaskManager = (function () {
             case SwfType.JOB:
                 //TaskOperator.runJob(tree);
                 break;
-            case SwfType.LOOP:
-                TaskOperator.runLoop(tree);
+            case SwfType.FOR:
+                TaskOperator.runFor(tree);
                 break;
             case SwfType.IF:
-                // TODO make special
                 TaskOperator.runIf(tree);
                 break;
             case SwfType.ELSE:
-                // TODO make special
                 TaskOperator.runIf(tree);
                 break;
             case SwfType.BREAK:
-                // TODO make special
+                TaskOperator.runTask(tree);
+                break;
+            case SwfType.CONDITION:
                 TaskOperator.runTask(tree);
                 break;
             case SwfType.PSTUDY:
@@ -220,8 +221,21 @@ var TaskManager = (function () {
      */
     TaskManager.completed = function (tree) {
         TaskManager.writeLogCompleted(tree);
-        // run parent
-        TaskManager.run(tree.parent);
+        if (tree.type == SwfType.BREAK) {
+            var break_for = tree.parent;
+            while (break_for.type != SwfType.FOR) {
+                if (break_for.parent == null) {
+                    logger.error('The "break"\'s parent isn\'t "For"');
+                    return;
+                }
+                break_for = break_for.parent;
+            }
+            TaskManager.completed(break_for);
+        }
+        else {
+            // run parent
+            TaskManager.run(tree.parent);
+        }
     };
     /**
      * Failed tree. Write log.
@@ -234,21 +248,14 @@ var TaskManager = (function () {
             return;
         }
         TaskManager.writeLogFailed(tree);
-        TaskManager.failed(tree.parent);
-    };
-    /**
-     * Failed condition.
-     * @param tree Task
-     */
-    TaskManager.failedCondition = function (tree) {
-        if (tree == null) {
-            logger.info('task is null');
-            return;
+        if (tree.type == SwfType.CONDITION) {
+            var if_tree = tree.parent;
+            TaskManager.completed(if_tree);
+            TaskManager.run(if_tree.parent);
         }
-        TaskManager.writeLogFailed(tree);
-        TaskManager.writeLogCompleted(tree.parent);
-        // run parent
-        TaskManager.run(tree.parent.parent);
+        else {
+            TaskManager.failed(tree.parent);
+        }
     };
     /**
      * Clean up log file and index file and copyed directry.
@@ -263,11 +270,12 @@ var TaskManager = (function () {
         if (fs.existsSync(path_index)) {
             fs.unlinkSync(path_index);
         }
-        if (tree.type == SwfType.LOOP || tree.type == SwfType.PSTUDY) {
+        if (tree.type == SwfType.FOR || tree.type == SwfType.PSTUDY) {
             var parent_path = path.dirname(tree.local_path);
             var files = fs.readdirSync(parent_path);
+            var regexp = new RegExp("^" + tree.path + "_([0-9]+)$");
             for (var i = 0; i < files.length; i++) {
-                if (files[i].match(new RegExp("^" + tree.path + "\\[([0-9]+)\\]$"))) {
+                if (files[i].match(regexp)) {
                     serverUtility.unlinkDirectory(path.join(parent_path, files[i]));
                 }
             }
@@ -280,15 +288,13 @@ var TaskManager = (function () {
     /**
      * Asynchronous clean up project.
      * @param tree Task
-     * @param callback
+     * @param callback The function to call when we have finished cleanup project
      */
     TaskManager.cleanUpAsync = function (tree, callback) {
         var queue = [];
         (function ready(tree) {
             queue.push(tree);
-            tree.children.forEach(function (child) {
-                ready(child);
-            });
+            tree.children.forEach(function (child) { return ready(child); });
         })(tree);
         (function cleanup() {
             var tree = queue.shift();
@@ -300,16 +306,32 @@ var TaskManager = (function () {
             var path_index = path.resolve(tree.local_path, TaskManager.name_indexFile);
             fs.unlink(path_logFile, function (err) {
                 fs.unlink(path_index, function (err) {
-                    if (tree.type == SwfType.LOOP || tree.type == SwfType.PSTUDY) {
-                        var parent_path = path.dirname(tree.local_path);
-                        var files = fs.readdirSync(parent_path);
-                        for (var i = 0; i < files.length; i++) {
-                            if (files[i].match(new RegExp("^" + tree.path + "\\[([0-9]+)\\]$"))) {
-                                serverUtility.unlinkDirectory(path.join(parent_path, files[i]));
-                            }
-                        }
+                    if (tree.type !== SwfType.FOR && tree.type !== SwfType.PSTUDY) {
+                        cleanup();
+                        return;
                     }
-                    cleanup();
+                    var parent_path = path.dirname(tree.local_path);
+                    var regexp = new RegExp("^" + tree.path + "_([0-9]+)$");
+                    fs.readdir(parent_path, function (err, files) {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        var loop = function () {
+                            var file = files.shift();
+                            if (!file) {
+                                cleanup();
+                                return;
+                            }
+                            if (file.match(regexp)) {
+                                serverUtility.unlinkDirectoryAsync(path.join(parent_path, file), loop);
+                            }
+                            else {
+                                loop();
+                            }
+                        };
+                        loop();
+                    });
                 });
             });
         })();
@@ -342,6 +364,9 @@ var TaskManager = (function () {
      * @param tree Task
      */
     TaskManager.writeLogCompleted = function (tree) {
+        if (!TaskManager.isRun(tree)) {
+            TaskManager.writeLogRunning(tree);
+        }
         var dir_task = tree.local_path;
         var path_logFile = path.resolve(dir_task, TaskManager.name_logFile);
         var data = fs.readFileSync(path_logFile);
@@ -434,6 +459,20 @@ var TaskManager = (function () {
     };
     return TaskManager;
 }());
+///**
+// * Failed condition.
+// * @param tree Task
+// */
+//public static failedCondition(tree: TaskTree) {
+//    if (tree == null) {
+//        logger.info('task is null');
+//        return;
+//    }
+//    TaskManager.writeLogFailed(tree);
+//    TaskManager.writeLogCompleted(tree.parent);
+//    // run parent
+//    TaskManager.run(tree.parent.parent);
+//}
 /**
  * name of log file
  */
@@ -765,7 +804,7 @@ var TaskOperator = (function () {
      * Run Lopp.
      * @param tree Loop
      */
-    TaskOperator.runLoop = function (tree) {
+    TaskOperator.runFor = function (tree) {
         var loop = tree;
         var index = TaskManager.getIndex(tree);
         if (isNaN(index)) {
@@ -782,8 +821,8 @@ var TaskOperator = (function () {
             return;
         }
         var workflow = ProjectOperator.copyTaskTree(tree);
-        workflow.name = loop.name + "[" + index + "]";
-        workflow.path = loop.path + "[" + index + "]";
+        workflow.name = loop.name + "_" + index;
+        workflow.path = loop.path + "_" + index;
         workflow.type = SwfType.WORKFLOW;
         var child = workflow;
         child.parent = tree;
@@ -799,24 +838,25 @@ var TaskOperator = (function () {
      * @param tree If
      */
     TaskOperator.runIf = function (tree) {
-        var conditionTree = tree.children[0];
-        if (!TaskManager.isRun(conditionTree)) {
-            TaskManager.run(conditionTree);
+        var condition_tree = tree.children[0];
+        if (!TaskManager.isRun(condition_tree)) {
+            TaskManager.run(condition_tree);
         }
-        else if (TaskManager.isCompleted(conditionTree)) {
-            if (tree.type == SwfType.ELSE) {
-                // TODO solve other way
-                var index = tree.parent.children.indexOf(tree);
-                var ifTree = tree.parent.children[index - 1];
-                if (TaskManager.isCompleted(ifTree.children[0])) {
-                    TaskManager.completed(tree);
-                    return;
+        else if (TaskManager.isCompleted(condition_tree)) {
+            // TODO solve other way
+            var else_index = tree.parent.children.indexOf(tree) + 1;
+            if (else_index < tree.parent.children.length) {
+                var else_tree = tree.parent.children[else_index];
+                if (else_tree.type == SwfType.ELSE) {
+                    TaskManager.completed(else_tree);
                 }
             }
             TaskOperator.runWorkflow(tree);
         }
-        else if (TaskManager.isFailed(conditionTree)) {
-            TaskManager.completed(tree);
+        else {
+            if (tree.type == SwfType.ELSE) {
+                TaskManager.completed(condition_tree);
+            }
         }
     };
     /**
@@ -901,8 +941,8 @@ var TaskOperator = (function () {
             return;
         }
         var workflow = ProjectOperator.copyTaskTree(tree);
-        workflow.name = pstudy.name + "[" + index + "]";
-        workflow.path = pstudy.path + "[" + index + "]";
+        workflow.name = pstudy.name + "_" + index;
+        workflow.path = pstudy.path + "_" + index;
         workflow.type = SwfType.WORKFLOW;
         var child = workflow;
         child.parent = tree;
@@ -1262,24 +1302,20 @@ var LocalQueue = (function () {
      */
     LocalQueue.push = function (job) {
         LocalQueue.queue.push(job);
-        if (LocalQueue.queue.length == 1) {
-            LocalQueue.intervalId = setInterval(LocalQueue.checkQueue, 10000);
-        }
+        LocalQueue.checkQueue();
     };
     /**
      * Finish submited Job.
      */
     LocalQueue.finish = function () {
         LocalQueue.num_job--;
+        LocalQueue.checkQueue();
     };
     /**
      * Check whether job can be submit.
      */
     LocalQueue.checkQueue = function () {
-        if (LocalQueue.queue.length < 1) {
-            clearInterval(LocalQueue.intervalId);
-        }
-        if (LocalQueue.num_job < LocalQueue.MAX_JOB) {
+        while (0 < LocalQueue.queue.length && LocalQueue.num_job < LocalQueue.MAX_JOB) {
             var job = LocalQueue.queue.shift();
             if (job != null) {
                 job();

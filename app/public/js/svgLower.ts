@@ -127,7 +127,7 @@ class SvgLower extends SvgPlugBase {
      */
     public connect(upper: SvgUpper, isBind: boolean): boolean {
         if (upper != null && upper.connect(this)) {
-            console.log(`connect lower=${this.name()} to upper=${upper.name()}`);
+            // console.log(`connect lower=${this.name()} to upper=${upper.name()}`);
             this.connectedUpper = upper;
             this.calcConnectPotision(this.connectedUpper, (x: number, y: number) => {
                 this.move(x, y).front();

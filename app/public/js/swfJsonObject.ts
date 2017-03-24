@@ -178,7 +178,7 @@ interface ForIndex {
 /**
  * Swf Loop Json definition
  */
-interface SwfLoopJson extends SwfWorkflowJson {
+interface SwfForJson extends SwfWorkflowJson {
     /**
      * loop parameter
      */
@@ -279,6 +279,10 @@ interface SwfLogJson {
      * host information
      */
     host?: SwfHostJson;
+    /**
+     * display order
+     */
+    order?: number;
     /**
      * child logs
      */
@@ -382,7 +386,7 @@ interface SwfProjectJson {
     /**
      * log file
      */
-    log: SwfLogJson;
+    log?: SwfLogJson;
 }
 
 /**
@@ -435,4 +439,8 @@ interface SwfTreeJson extends SwfWorkflowJson {
      * old path
      */
     oldPath: string;
+    /**
+     * display order
+     */
+    order?: number;
 }

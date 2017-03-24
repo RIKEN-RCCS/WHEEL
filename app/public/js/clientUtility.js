@@ -197,11 +197,26 @@ var ClientUtility = (function () {
      */
     ClientUtility.isImplimentsWorkflow = function (target) {
         var workflowType = this.getJsonFileType(JsonFileType.WorkFlow);
-        var loopType = this.getJsonFileType(JsonFileType.Loop);
+        var ForType = this.getJsonFileType(JsonFileType.For);
         var ifType = this.getJsonFileType(JsonFileType.If);
         var elseType = this.getJsonFileType(JsonFileType.Else);
         var pstudyType = this.getJsonFileType(JsonFileType.PStudy);
-        if (target.type.match(new RegExp("^(?:" + [workflowType, loopType, ifType, elseType, pstudyType].join('|') + ")$"))) {
+        if (target.type.match(new RegExp("^(?:" + [workflowType, ForType, ifType, elseType, pstudyType].join('|') + ")$"))) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    /**
+     * whether specified class is condition or not
+     * @param target SwfTree instance or SwfLog instance
+     * @return whether specified class is condition or not
+     */
+    ClientUtility.isImplimentsCondition = function (target) {
+        var conditionType = this.getJsonFileType(JsonFileType.Condition);
+        var breakType = this.getJsonFileType(JsonFileType.Break);
+        if (target.type.match(new RegExp("^(?:" + [conditionType, breakType].join('|') + ")$"))) {
             return true;
         }
         else {
@@ -232,8 +247,8 @@ var ClientUtility = (function () {
                     return new TypeTask();
                 case JsonFileType.Job:
                     return new TypeJob();
-                case JsonFileType.Loop:
-                    return new TypeLoop();
+                case JsonFileType.For:
+                    return new TypeFor();
                 case JsonFileType.If:
                     return new TypeIf();
                 case JsonFileType.Else:
@@ -257,8 +272,8 @@ var ClientUtility = (function () {
             else if (this.checkFileType(object, JsonFileType.WorkFlow)) {
                 return new TypeWorkflow();
             }
-            else if (this.checkFileType(object, JsonFileType.Loop)) {
-                return new TypeLoop();
+            else if (this.checkFileType(object, JsonFileType.For)) {
+                return new TypeFor();
             }
             else if (this.checkFileType(object, JsonFileType.If)) {
                 return new TypeIf();

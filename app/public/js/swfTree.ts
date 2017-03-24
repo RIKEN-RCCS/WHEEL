@@ -140,17 +140,16 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      */
     public static create(treeJson: (SwfTree | SwfTreeJson)): SwfTree {
         this.root = new SwfTree(treeJson);
-        const tree = this.renumberingIndex(this.root);
-        return tree;
+        this.renumberingIndex(this.root);
+        return this.root;
     }
 
     /**
      * renumbering index
      * @param tree SwfTree instance
      * @param indexes parent index array
-     * @param renumbering tree instance
      */
-    private static renumberingIndex(tree: SwfTree, indexes: number[] = [0]): SwfTree {
+    private static renumberingIndex(tree: SwfTree, indexes: number[] = [0]) {
         tree.indexes = indexes;
         tree.oldPath = tree.path;
         tree.children.forEach((child, index) => {
@@ -158,7 +157,6 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             newIndexes.push(index);
             this.renumberingIndex(child, newIndexes);
         });
-        return tree;
     }
 
     /**
@@ -171,6 +169,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         const rand = Math.floor(Date.now() / 100) % 100000;
         const dirname = `${treeJson.type}Dir${`00000${rand}`.slice(-5)}`;
         const tree = new SwfTree(treeJson);
+        tree.name = SwfTree.getSerialNumberName(tree.name);
         tree.path = dirname;
         this.children.push(tree);
         this.children_file.push(new SwfFile({
@@ -184,6 +183,31 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         SwfTree.renumberingIndex(SwfTree.root);
         tree.oldPath = '';
         return tree;
+    }
+
+    /**
+     * get serial number name
+     * @param name search name
+     * @return serial number name
+     */
+    private static getSerialNumberName(name: string): string {
+        let max = 0;
+        const notSeachedList: SwfTree[] = [this.root];
+        const regexp = new RegExp(`^${name}(\\d+)$`);
+        while (true) {
+            const tree = notSeachedList.shift();
+            if (!tree) {
+                break;
+            }
+
+            if (tree.name.match(regexp)) {
+                max = Math.max(max, parseInt(RegExp.$1));
+            }
+            tree.children.forEach(child => {
+                notSeachedList.push(child);
+            });
+        }
+        return `${name}${max + 1}`;
     }
 
     /**
@@ -474,11 +498,11 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     *
-     * @param tree
-     * @param file
-     * @param fullpath
-     * @param isInput
+     *　add output file to parent tree
+     * @param tree target tree
+     * @param file add file
+     * @param fullpath add target relative path from root workflow
+     * @param isInput whether input files or not
      */
     private static addFileToParent(tree: SwfTree, file: SwfFile, fullpath: string, isInput: boolean) {
         if (tree.isRoot()) {
@@ -944,5 +968,33 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             });
         }
         return files;
+    }
+
+    /**
+     * whether circular reference is occurred or not
+     * @param before before task index
+     * @param after after task index
+     * @return whether circular reference is occurred or not
+     */
+    public isCircularReference(before: number, after: number): boolean {
+        if (before === after) {
+            return true;
+        }
+
+        const relations = this.relations.filter(relation => relation.index_before_task === after);
+        const fileRelations = this.file_relations.filter(relation => relation.index_before_task === after);
+        if (!relations[0] && !fileRelations[0]) {
+            return false;
+        }
+        else {
+            const results1 = relations.filter(relation => this.isCircularReference(before, relation.index_after_task));
+            const results2 = fileRelations.filter(relation => this.isCircularReference(before, relation.index_after_task));
+            if (!results1[0] && !results2[0]) {
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
     }
 }

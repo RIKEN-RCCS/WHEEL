@@ -20,9 +20,10 @@ const SwfType = {
     WORKFLOW: 'Workflow',
     REMOTETASK: 'RemoteTask',
     JOB: 'Job',
-    LOOP: 'Loop',
+    FOR: 'For',
     IF: 'If',
     ELSE: 'Else',
+    CONDITION: 'Condition',
     BREAK: 'Break',
     PSTUDY: 'PStudy'
 };
@@ -92,7 +93,7 @@ class ProjectOperator {
      * Asynchronous clean up project.
      * @param callback
      */
-    public cleanAsync(callback: (() => void)) {
+    public cleanAsync(callback: ((err?: Error) => void)) {
         TaskManager.cleanUpAsync(this.tree, callback);
     }
 
@@ -216,19 +217,19 @@ class TaskManager {
             case SwfType.JOB:
                 //TaskOperator.runJob(tree);
                 break;
-            case SwfType.LOOP:
-                TaskOperator.runLoop(tree);
+            case SwfType.FOR:
+                TaskOperator.runFor(tree);
                 break;
             case SwfType.IF:
-                // TODO make special
                 TaskOperator.runIf(tree);
                 break;
             case SwfType.ELSE:
-                // TODO make special
                 TaskOperator.runIf(tree);
                 break;
             case SwfType.BREAK:
-                // TODO make special
+                TaskOperator.runTask(tree);
+                break;
+            case SwfType.CONDITION:
                 TaskOperator.runTask(tree);
                 break;
             case SwfType.PSTUDY:
@@ -244,8 +245,21 @@ class TaskManager {
      */
     public static completed(tree: TaskTree) {
         TaskManager.writeLogCompleted(tree);
-        // run parent
-        TaskManager.run(tree.parent);
+        if (tree.type == SwfType.BREAK) {
+            let break_for = tree.parent;
+            while (break_for.type != SwfType.FOR) {
+                if (break_for.parent == null) {
+                    logger.error('The "break"\'s parent isn\'t "For"');
+                    return;
+                }
+                break_for = break_for.parent;
+            }
+
+            TaskManager.completed(break_for);
+        } else {
+            // run parent
+            TaskManager.run(tree.parent);
+        }
     }
 
     /**
@@ -260,24 +274,30 @@ class TaskManager {
         }
 
         TaskManager.writeLogFailed(tree);
-        TaskManager.failed(tree.parent);
-    }
-
-    /**
-     * Failed condition.
-     * @param tree Task
-     */
-    public static failedCondition(tree: TaskTree) {
-        if (tree == null) {
-            logger.info('task is null');
-            return;
+        if (tree.type == SwfType.CONDITION) {
+            const if_tree: TaskTree = tree.parent;
+            TaskManager.completed(if_tree)
+            TaskManager.run(if_tree.parent);
+        } else {
+            TaskManager.failed(tree.parent);
         }
-
-        TaskManager.writeLogFailed(tree);
-        TaskManager.writeLogCompleted(tree.parent);
-        // run parent
-        TaskManager.run(tree.parent.parent);
     }
+
+    ///**
+    // * Failed condition.
+    // * @param tree Task
+    // */
+    //public static failedCondition(tree: TaskTree) {
+    //    if (tree == null) {
+    //        logger.info('task is null');
+    //        return;
+    //    }
+
+    //    TaskManager.writeLogFailed(tree);
+    //    TaskManager.writeLogCompleted(tree.parent);
+    //    // run parent
+    //    TaskManager.run(tree.parent.parent);
+    //}
 
     /**
      * name of log file
@@ -298,11 +318,12 @@ class TaskManager {
             fs.unlinkSync(path_index);
         }
 
-        if (tree.type == SwfType.LOOP || tree.type == SwfType.PSTUDY) {
+        if (tree.type == SwfType.FOR || tree.type == SwfType.PSTUDY) {
             const parent_path = path.dirname(tree.local_path);
             const files = fs.readdirSync(parent_path);
+            const regexp = new RegExp(`^${tree.path}_([0-9]+)$`);
             for (let i = 0; i < files.length; i++) {
-                if (files[i].match(new RegExp(`^${tree.path}\\[([0-9]+)\\]$`))) {
+                if (files[i].match(regexp)) {
                     serverUtility.unlinkDirectory(path.join(parent_path, files[i]))
                 }
             }
@@ -317,17 +338,15 @@ class TaskManager {
     /**
      * Asynchronous clean up project.
      * @param tree Task
-     * @param callback
+     * @param callback The function to call when we have finished cleanup project
      */
-    public static cleanUpAsync(tree: TaskTree, callback: (() => void)) {
+    public static cleanUpAsync(tree: TaskTree, callback: ((err?: Error) => void)) {
 
         const queue: TaskTree[] = [];
 
         (function ready(tree: TaskTree) {
             queue.push(tree);
-            tree.children.forEach(child => {
-                ready(child);
-            });
+            tree.children.forEach(child => ready(child));
         })(tree);
 
         (function cleanup() {
@@ -338,18 +357,39 @@ class TaskManager {
             }
             const path_logFile: string = path.resolve(tree.local_path, TaskManager.name_logFile);
             const path_index = path.resolve(tree.local_path, TaskManager.name_indexFile);
+
             fs.unlink(path_logFile, (err) => {
                 fs.unlink(path_index, (err) => {
-                    if (tree.type == SwfType.LOOP || tree.type == SwfType.PSTUDY) {
-                        const parent_path = path.dirname(tree.local_path);
-                        const files = fs.readdirSync(parent_path);
-                        for (let i = 0; i < files.length; i++) {
-                            if (files[i].match(new RegExp(`^${tree.path}\\[([0-9]+)\\]$`))) {
-                                serverUtility.unlinkDirectory(path.join(parent_path, files[i]))
-                            }
-                        }
+                    if (tree.type !== SwfType.FOR && tree.type !== SwfType.PSTUDY) {
+                        cleanup();
+                        return;
                     }
-                    cleanup();
+
+                    const parent_path = path.dirname(tree.local_path);
+                    const regexp = new RegExp(`^${tree.path}_([0-9]+)$`);
+
+                    fs.readdir(parent_path, (err, files) => {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+
+                        const loop = () => {
+                            const file = files.shift();
+                            if (!file) {
+                                cleanup();
+                                return;
+                            }
+                            if (file.match(regexp)) {
+                                serverUtility.unlinkDirectoryAsync(path.join(parent_path, file), loop);
+                            }
+                            else {
+                                loop();
+                            }
+                        };
+
+                        loop();
+                    });
                 });
             });
         })();
@@ -387,6 +427,10 @@ class TaskManager {
      * @param tree Task
      */
     private static writeLogCompleted(tree: TaskTree) {
+        if (!TaskManager.isRun(tree)) {
+            TaskManager.writeLogRunning(tree);
+        }
+
         const dir_task: string = tree.local_path;
         const path_logFile: string = path.resolve(dir_task, TaskManager.name_logFile);
         const data = fs.readFileSync(path_logFile);
@@ -859,8 +903,8 @@ class TaskOperator {
      * Run Lopp.
      * @param tree Loop
      */
-    public static runLoop(tree: TaskTree) {
-        const loop = <SwfLoopJson>tree;
+    public static runFor(tree: TaskTree) {
+        const loop = <SwfForJson>tree;
 
         let index: number = TaskManager.getIndex(tree);
         if (isNaN(index)) {
@@ -879,8 +923,8 @@ class TaskOperator {
         }
 
         let workflow: SwfWorkflowJson = ProjectOperator.copyTaskTree(tree);
-        workflow.name = `${loop.name}[${index}]`;
-        workflow.path = `${loop.path}[${index}]`;
+        workflow.name = `${loop.name}_${index}`;
+        workflow.path = `${loop.path}_${index}`;
         workflow.type = SwfType.WORKFLOW;
 
         const child: TaskTree = <TaskTree>workflow;
@@ -901,22 +945,24 @@ class TaskOperator {
      * @param tree If
      */
     public static runIf(tree: TaskTree) {
-        const conditionTree: TaskTree = tree.children[0]
-        if (!TaskManager.isRun(conditionTree)) {
-            TaskManager.run(conditionTree);
-        } else if (TaskManager.isCompleted(conditionTree)) {
-            if (tree.type == SwfType.ELSE) {
-                // TODO solve other way
-                const index = tree.parent.children.indexOf(tree);
-                const ifTree: TaskTree = tree.parent.children[index - 1];
-                if (TaskManager.isCompleted(ifTree.children[0])) {
-                    TaskManager.completed(tree);
-                    return;
+        const condition_tree: TaskTree = tree.children[0];
+
+        if (!TaskManager.isRun(condition_tree)) {
+            TaskManager.run(condition_tree);
+        } else if (TaskManager.isCompleted(condition_tree)) {
+            // TODO solve other way
+            const else_index = tree.parent.children.indexOf(tree) + 1;
+            if (else_index < tree.parent.children.length) {
+                const else_tree: TaskTree = tree.parent.children[else_index];
+                if (else_tree.type == SwfType.ELSE) {
+                    TaskManager.completed(else_tree);
                 }
             }
             TaskOperator.runWorkflow(tree);
-        } else if (TaskManager.isFailed(conditionTree)) {
-            TaskManager.completed(tree);
+        } else {
+            if (tree.type == SwfType.ELSE) {
+                TaskManager.completed(condition_tree);
+            }
         }
     }
 
@@ -1008,8 +1054,8 @@ class TaskOperator {
         }
 
         let workflow: SwfWorkflowJson = ProjectOperator.copyTaskTree(tree);
-        workflow.name = `${pstudy.name}[${index}]`;
-        workflow.path = `${pstudy.path}[${index}]`;
+        workflow.name = `${pstudy.name}_${index}`;
+        workflow.path = `${pstudy.path}_${index}`;
         workflow.type = SwfType.WORKFLOW;
 
         const child: TaskTree = <TaskTree>workflow;
@@ -1447,10 +1493,6 @@ class LocalQueue {
      * queue of job
      */
     private static queue: Array<() => void> = new Array<() => void>();
-    /**
-     * ID of timer
-     */
-    private static intervalId: NodeJS.Timer;
 
     /**
      * Push job queue.
@@ -1459,9 +1501,7 @@ class LocalQueue {
     public static push(job: (() => void)) {
         LocalQueue.queue.push(job);
 
-        if (LocalQueue.queue.length == 1) {
-            LocalQueue.intervalId = setInterval(LocalQueue.checkQueue, 10000)
-        }
+        LocalQueue.checkQueue();
     }
 
     /**
@@ -1469,17 +1509,15 @@ class LocalQueue {
      */
     public static finish() {
         LocalQueue.num_job--;
+
+        LocalQueue.checkQueue();
     }
 
     /**
      * Check whether job can be submit.
      */
     private static checkQueue() {
-        if (LocalQueue.queue.length < 1) {
-            clearInterval(LocalQueue.intervalId);
-        }
-
-        if (LocalQueue.num_job < LocalQueue.MAX_JOB) {
+        while (0 < LocalQueue.queue.length && LocalQueue.num_job < LocalQueue.MAX_JOB) {
             const job = LocalQueue.queue.shift();
             if (job != null) {
                 job();

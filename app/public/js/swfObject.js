@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /**
  * Swf File definition
  */
@@ -367,6 +372,7 @@ var SwfLog = (function () {
         this.execution_start_date = logJson.execution_start_date;
         this.execution_end_date = logJson.execution_end_date;
         this.path = logJson.path;
+        this.order = logJson.order;
         if (logJson.children) {
             var children = JSON.parse(JSON.stringify(logJson.children));
             this.children = children.map(function (child) { return new SwfLog(child); });
@@ -545,21 +551,32 @@ var SwfProject = (function () {
         var finishedCount = 0;
         var runningCount = 0;
         var planningCount = 0;
-        var recursive = function (log) {
+        function getFinishedCount(log) {
+            var count = 0;
+            var notSearchedList = [log];
+            while (true) {
+                var shiftLog = notSearchedList.shift();
+                if (!shiftLog) {
+                    break;
+                }
+                count++;
+                shiftLog.children.forEach(function (child) { return notSearchedList.push(child); });
+            }
+            return count;
+        }
+        (function getStateCount(log) {
             if (log.isFinished()) {
-                finishedCount++;
+                finishedCount += getFinishedCount(log);
             }
             else if (log.isRunning()) {
                 runningCount++;
+                log.children.forEach(function (child) { return getStateCount(child); });
             }
             else {
                 planningCount++;
+                log.children.forEach(function (child) { return getStateCount(child); });
             }
-            log.children.forEach(function (child) {
-                recursive(child);
-            });
-        };
-        recursive(this.log);
+        })(this.log);
         return (finishedCount * 2 + runningCount) * 100 / ((finishedCount + planningCount + runningCount) * 2);
     };
     return SwfProject;

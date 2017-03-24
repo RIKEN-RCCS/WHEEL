@@ -53,6 +53,12 @@ class SvgReceptor extends SvgPlugBase {
      * @return whether connection is succeed or not
      */
     public connect(connector: SvgConnector): boolean {
+
+        if (this.isCircularReference(connector, this)) {
+            console.info('it is circular reference!');
+            return false;
+        }
+
         const receptorFiletype = this.getFileType();
         const connectorFiletype = connector.getFileType();
 

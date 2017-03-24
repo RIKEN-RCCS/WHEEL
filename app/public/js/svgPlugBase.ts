@@ -253,4 +253,17 @@ class SvgPlugBase {
             return svg.polygon([[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]]);
         }
     }
+
+    /**
+     * whether circular reference is occurred or not
+     * @param before before plug instancec
+     * @param after after plug instance
+     * @return whether circular reference is occurred or not
+     */
+    public isCircularReference(before: SvgPlugBase, after: SvgPlugBase): boolean {
+        const parent = this.plugConfig.tree.getParent();
+        const beforeIndex = before.getTaskIndex();
+        const afterIndex = after.getTaskIndex();
+        return parent.isCircularReference(beforeIndex, afterIndex);
+    }
 }

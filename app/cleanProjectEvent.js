@@ -47,7 +47,6 @@ var CleanProjectvent = (function () {
             }
             var projectJson = JSON.parse(data.toString());
             projectJson.state = _this.planningState;
-            _this.cleanLogJson(projectJson.log);
             fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), function (err) {
                 if (err) {
                     callback(err);
@@ -55,19 +54,6 @@ var CleanProjectvent = (function () {
                 }
                 callback();
             });
-        });
-    };
-    /**
-     * clearn log json
-     * @param logJson log json object
-     */
-    CleanProjectvent.prototype.cleanLogJson = function (logJson) {
-        var _this = this;
-        logJson.state = this.planningState;
-        logJson.execution_start_date = '';
-        logJson.execution_end_date = '';
-        logJson.children.forEach(function (child) {
-            _this.cleanLogJson(child);
         });
     };
     return CleanProjectvent;

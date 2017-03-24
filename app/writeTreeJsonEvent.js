@@ -92,6 +92,7 @@ var WriteTreeJsonEvent = (function () {
             });
         };
         if (data.json.path === undefined) {
+            // delete
         }
         else if (!data.json.oldPath) {
             add();

@@ -62,6 +62,10 @@ var GetFileListEvent = (function () {
             if (this.watcher != null) {
                 this.watcher.close();
             }
+            // watch directory and emit
+            // this.watcher = fs.watch(directory, (event, filename) => {
+            //     this.emitFileList(directory, socket, regex);
+            // });
         }
         catch (err) {
             logger.error(err);

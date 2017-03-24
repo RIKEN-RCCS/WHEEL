@@ -527,6 +527,10 @@ class SwfLog implements SwfLogJson {
      */
     public host?: SwfHost;
     /**
+     * display order
+     */
+    public order?: number;
+    /**
      * child logs
      */
     public children: SwfLog[]
@@ -552,6 +556,7 @@ class SwfLog implements SwfLogJson {
         this.execution_start_date = logJson.execution_start_date;
         this.execution_end_date = logJson.execution_end_date;
         this.path = logJson.path;
+        this.order = logJson.order;
 
         if (logJson.children) {
             const children = JSON.parse(JSON.stringify(logJson.children));
@@ -771,21 +776,35 @@ class SwfProject implements SwfProjectJson {
         let finishedCount = 0;
         let runningCount = 0;
         let planningCount = 0;
-        const recursive = (log: SwfLog) => {
+
+        function getFinishedCount(log: SwfLog): number {
+            let count = 0;
+            const notSearchedList = [log];
+            while (true) {
+                const shiftLog = notSearchedList.shift();
+                if (!shiftLog) {
+                    break;
+                }
+                count++;
+                shiftLog.children.forEach(child => notSearchedList.push(child));
+            }
+            return count;
+        }
+
+        (function getStateCount(log: SwfLog) {
             if (log.isFinished()) {
-                finishedCount++;
+                finishedCount += getFinishedCount(log);
             }
             else if (log.isRunning()) {
                 runningCount++;
+                log.children.forEach(child => getStateCount(child));
             }
             else {
                 planningCount++;
+                log.children.forEach(child => getStateCount(child));
             }
-            log.children.forEach(child => {
-                recursive(child);
-            });
-        };
-        recursive(this.log);
+        })(this.log);
+
         return (finishedCount * 2 + runningCount) * 100 / ((finishedCount + planningCount + runningCount) * 2);
     }
 }

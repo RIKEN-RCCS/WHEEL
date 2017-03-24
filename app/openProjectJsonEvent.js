@@ -33,15 +33,9 @@ var OpenProjectJsonEvent = (function () {
                         return;
                     }
                     var projectJson_1 = JSON.parse(data.toString());
+                    _this.createProjectJson(projectFilepath, projectJson_1);
                     if (projectJson_1.state === _this.config.state.planning) {
-                        _this.createProjectJson(projectFilepath, projectJson_1, function (err) {
-                            if (err) {
-                                logger.error(err);
-                                socket.json.emit(OpenProjectJsonEvent.eventName);
-                                return;
-                            }
-                            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
-                        });
+                        socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
                     }
                     else {
                         _this.queue.length = 0;
@@ -82,23 +76,25 @@ var OpenProjectJsonEvent = (function () {
         this.queue.push(logJson);
         var _loop_1 = function (index) {
             var child = logJson.children[index];
-            if (!ServerUtility.isTypeLoop(child) && !ServerUtility.isTypePStudy(child)) {
+            if (!ServerUtility.isTypeFor(child) && !ServerUtility.isTypePStudy(child)) {
                 this_1.setQueue(child);
                 return "continue";
             }
             var basename = path.basename(child.path);
             var files = fs.readdirSync(logJson.path);
             var newChildren = [];
+            var regexp = new RegExp("^" + basename + "_([0-9]+)$");
             files.forEach(function (file) {
-                if (file.match(new RegExp("^" + basename + "\\[([0-9]+)\\]$"))) {
+                if (file.match(regexp)) {
                     var newLogJson_1 = {
-                        name: child.name + "[" + RegExp.$1 + "]",
-                        path: child.path + "[" + RegExp.$1 + "]",
+                        name: child.name + "_" + RegExp.$1,
+                        path: child.path + "_" + RegExp.$1,
                         description: child.description,
                         type: child.type,
                         state: child.state,
                         execution_start_date: '',
                         execution_end_date: '',
+                        order: child.order,
                         children: JSON.parse(JSON.stringify(child.children))
                     };
                     newLogJson_1.children.forEach(function (newChild) {
@@ -110,8 +106,8 @@ var OpenProjectJsonEvent = (function () {
             logJson.children.splice(index, 1);
             newChildren
                 .sort(function (a, b) {
-                var aIndex = parseInt(a.path.match(/\[([0-9]+)\]$/)[1]);
-                var bIndex = parseInt(b.path.match(/\[([0-9]+)\]$/)[1]);
+                var aIndex = parseInt(a.path.match(/([0-9]+)$/)[1]);
+                var bIndex = parseInt(b.path.match(/([0-9]+)$/)[1]);
                 if (aIndex < bIndex) {
                     return 1;
                 }
@@ -159,15 +155,11 @@ var OpenProjectJsonEvent = (function () {
      * create project new project json
      * @param projectPath project json file path
      * @param projectJson project json data
-     * @param callback The function to call when we have created project json
      */
-    OpenProjectJsonEvent.prototype.createProjectJson = function (projectPath, projectJson, callback) {
+    OpenProjectJsonEvent.prototype.createProjectJson = function (projectPath, projectJson) {
         var dir_project = path.dirname(projectPath);
         var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
         projectJson.log = ServerUtility.createLogJson(path_workflow);
-        ServerUtility.writeJson(projectPath, projectJson, function (err) {
-            callback(err);
-        });
     };
     return OpenProjectJsonEvent;
 }());

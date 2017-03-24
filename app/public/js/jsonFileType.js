@@ -1,8 +1,13 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /**
  * json file type
  */
@@ -29,9 +34,9 @@ var JsonFileType;
      */
     JsonFileType[JsonFileType["Job"] = 4] = "Job";
     /**
-     * Loop
+     * For
      */
-    JsonFileType[JsonFileType["Loop"] = 5] = "Loop";
+    JsonFileType[JsonFileType["For"] = 5] = "For";
     /**
      * If
      */
@@ -566,7 +571,7 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'path',
-                    readonly: function () { return true; },
+                    readonly: function () { return false; },
                     type: 'string',
                     validation: function (tree, v) {
                         return !tree.isEnablePath(v);
@@ -719,18 +724,16 @@ var JsonFileTypeBase = (function () {
         });
     };
     /**
+     * sort property info
+     */
+    JsonFileTypeBase.prototype.sortPropertyInfo = function () {
+        this.propertyInfo.sort(function (a, b) { return a.order < b.order ? -1 : 1; });
+    };
+    /**
      * get property information
      * @returns property information
      */
     JsonFileTypeBase.prototype.getPropertyInfo = function () {
-        this.propertyInfo.sort(function (a, b) {
-            if (a.order < b.order) {
-                return -1;
-            }
-            else {
-                return 1;
-            }
-        });
         return this.propertyInfo;
     };
     return JsonFileTypeBase;
@@ -766,6 +769,7 @@ var TypeTask = (function (_super) {
         _this.addInputFile();
         _this.addOutputFile();
         _this.addUpload();
+        _this.sortPropertyInfo();
         return _this;
     }
     return TypeTask;
@@ -807,6 +811,7 @@ var TypeJob = (function (_super) {
         _this.addReceiveFile();
         _this.addScriptParam();
         _this.addHost();
+        _this.sortPropertyInfo();
         return _this;
     }
     /**
@@ -893,27 +898,29 @@ var TypeRemoteTask = (function (_super) {
         _this.addSendFile();
         _this.addReceiveFile();
         _this.addHost();
+        _this.sortPropertyInfo();
         return _this;
     }
     return TypeRemoteTask;
 }(JsonFileTypeBase));
 /**
- * type of loop class
+ * type of for class
  */
-var TypeLoop = (function (_super) {
-    __extends(TypeLoop, _super);
+var TypeFor = (function (_super) {
+    __extends(TypeFor, _super);
     /**
      * create new instance for loop
      */
-    function TypeLoop() {
+    function TypeFor() {
         var _this = _super.call(this) || this;
-        _this.extension = config.extension.loop;
-        _this.type = config.json_types.loop;
+        _this.extension = config.extension.for;
+        _this.type = config.json_types.for;
         _this.addForParam();
         _this.addUpload();
+        _this.sortPropertyInfo();
         return _this;
     }
-    return TypeLoop;
+    return TypeFor;
 }(JsonFileTypeBase));
 /**
  * type of if class
@@ -965,6 +972,7 @@ var TypeCondition = (function (_super) {
         _this.addInputFile();
         _this.addOutputFile();
         _this.addUpload();
+        _this.sortPropertyInfo();
         return _this;
     }
     /**
@@ -1047,9 +1055,75 @@ var TypeBreak = (function (_super) {
         _this.type = config.json_types.break;
         _this.addScript();
         _this.addInputFile();
+        _this.addOutputFile();
         _this.addUpload();
+        _this.sortPropertyInfo();
         return _this;
     }
+    /**
+     * add output files property information for break
+     */
+    TypeBreak.prototype.addOutputFile = function () {
+        this.propertyInfo.push({
+            key: 'output_files',
+            ishash: true,
+            order: 110,
+            button: [{
+                    key: 'Add',
+                    title: 'output_files',
+                    isUpdateUI: true,
+                    callback: function (tree) {
+                        var file = SwfFile.getDefault();
+                        tree.output_files.push(file);
+                    }
+                }]
+        });
+        this.propertyInfo.push({
+            key: 'output_files',
+            isarray: true,
+            order: 111,
+            item: [
+                {
+                    key: 'name',
+                    readonly: function () { return false; },
+                    type: 'string',
+                    validation: function (tree, v) {
+                        return v.trim() ? true : false;
+                    }
+                },
+                {
+                    key: 'description',
+                    readonly: function () { return false; },
+                    type: 'string'
+                },
+                {
+                    key: 'path',
+                    readonly: function () { return false; },
+                    type: 'string',
+                    validation: function (tree, v) {
+                        return !tree.isEnablePath(v);
+                    },
+                    callback: function (tree, object, path) {
+                        object.type = ClientUtility.getIOFileType(path);
+                    }
+                },
+                {
+                    key: 'required',
+                    readonly: function () { return false; },
+                    type: 'boolean'
+                }
+            ],
+            button: [{
+                    key: 'Delete',
+                    title: 'output_file',
+                    isUpdateUI: true,
+                    callback: function (tree, object) {
+                        var index = tree.output_files.indexOf(object);
+                        tree.output_files.splice(index, 1);
+                    }
+                }]
+        });
+    };
     return TypeBreak;
 }(JsonFileTypeBase));
 /**
@@ -1066,6 +1140,7 @@ var TypePStudy = (function (_super) {
         _this.type = config.json_types.pstudy;
         _this.addParameterFile();
         _this.addUpload();
+        _this.sortPropertyInfo();
         return _this;
     }
     return TypePStudy;

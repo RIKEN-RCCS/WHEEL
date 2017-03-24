@@ -31,7 +31,6 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
      * @param socket socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
-
         socket.on(OpenProjectJsonEvent.eventName, (projectFilepath: string) => {
             fs.readFile(projectFilepath, (err, data) => {
                 try {
@@ -41,15 +40,10 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
                         return;
                     }
                     const projectJson: SwfProjectJson = JSON.parse(data.toString());
+                    this.createProjectJson(projectFilepath, projectJson);
+
                     if (projectJson.state === this.config.state.planning) {
-                        this.createProjectJson(projectFilepath, projectJson, (err: Error) => {
-                            if (err) {
-                                logger.error(err);
-                                socket.json.emit(OpenProjectJsonEvent.eventName);
-                                return;
-                            }
-                            socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
-                        });
+                        socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
                     }
                     else {
                         this.queue.length = 0;
@@ -91,23 +85,25 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
 
         for (let index = logJson.children.length - 1; index >= 0; index--) {
             const child = logJson.children[index];
-            if (!ServerUtility.isTypeLoop(child) && !ServerUtility.isTypePStudy(child)) {
+            if (!ServerUtility.isTypeFor(child) && !ServerUtility.isTypePStudy(child)) {
                 this.setQueue(child);
                 continue;
             }
             const basename = path.basename(child.path);
             const files = fs.readdirSync(logJson.path);
             const newChildren: SwfLogJson[] = [];
+            const regexp = new RegExp(`^${basename}_([0-9]+)$`);
             files.forEach(file => {
-                if (file.match(new RegExp(`^${basename}\\[([0-9]+)\\]$`))) {
+                if (file.match(regexp)) {
                     const newLogJson: SwfLogJson = {
-                        name: `${child.name}[${RegExp.$1}]`,
-                        path: `${child.path}[${RegExp.$1}]`,
+                        name: `${child.name}_${RegExp.$1}`,
+                        path: `${child.path}_${RegExp.$1}`,
                         description: child.description,
                         type: child.type,
                         state: child.state,
                         execution_start_date: '',
                         execution_end_date: '',
+                        order: child.order,
                         children: JSON.parse(JSON.stringify(child.children))
                     };
                     newLogJson.children.forEach(newChild => {
@@ -119,8 +115,8 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
             logJson.children.splice(index, 1);
             newChildren
                 .sort((a, b) => {
-                    const aIndex = parseInt(a.path.match(/\[([0-9]+)\]$/)[1]);
-                    const bIndex = parseInt(b.path.match(/\[([0-9]+)\]$/)[1]);
+                    const aIndex = parseInt(a.path.match(/([0-9]+)$/)[1]);
+                    const bIndex = parseInt(b.path.match(/([0-9]+)$/)[1]);
                     if (aIndex < bIndex) {
                         return 1;
                     }
@@ -167,15 +163,11 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
      * create project new project json
      * @param projectPath project json file path
      * @param projectJson project json data
-     * @param callback The function to call when we have created project json
      */
-    private createProjectJson(projectPath: string, projectJson: SwfProjectJson, callback: ((err: Error) => void)) {
+    private createProjectJson(projectPath: string, projectJson: SwfProjectJson) {
         const dir_project = path.dirname(projectPath);
         const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
         projectJson.log = ServerUtility.createLogJson(path_workflow);
-        ServerUtility.writeJson(projectPath, projectJson, (err) => {
-            callback(err);
-        });
     }
 }
 

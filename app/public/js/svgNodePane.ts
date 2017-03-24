@@ -151,12 +151,10 @@ class SvgNodePane {
 
     /**
      * create all pane
-     * @param root root tree
+     * @param tree tree
      */
-    private static createPane(root: SwfTree) {
-        this.panes.push(new SvgNodePane(root));
-        root.children.forEach(child => {
-            this.createPane(child);
-        });
+    private static createPane(tree: SwfTree) {
+        this.panes.push(new SvgNodePane(tree));
+        tree.children.forEach(child => this.createPane(child));
     }
 }

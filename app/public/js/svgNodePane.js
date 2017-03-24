@@ -102,14 +102,12 @@ var SvgNodePane = (function () {
     };
     /**
      * create all pane
-     * @param root root tree
+     * @param tree tree
      */
-    SvgNodePane.createPane = function (root) {
+    SvgNodePane.createPane = function (tree) {
         var _this = this;
-        this.panes.push(new SvgNodePane(root));
-        root.children.forEach(function (child) {
-            _this.createPane(child);
-        });
+        this.panes.push(new SvgNodePane(tree));
+        tree.children.forEach(function (child) { return _this.createPane(child); });
     };
     return SvgNodePane;
 }());

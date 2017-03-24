@@ -105,9 +105,9 @@ class SvgNodeUI {
         this.createUpper();
         this.createLower();
 
-        this.onDragstart();
-        this.onDragmove();
-        this.onDragend();
+        this.setDragstartEvent();
+        this.setDragmoveEvent();
+        this.setDragendEvent();
     }
 
     /**
@@ -206,15 +206,8 @@ class SvgNodeUI {
 
         const upper = new SvgUpper(plugConfig)
             .onMouseup(() => {
-                let lower = SvgNodeUI.selectedLower;
-                if (lower != null) {
-                    if (this.hasLowers.isExist(lower)) {
-                        console.log('not connect to your self');
-                        lower = null;
-                    }
-                    else {
-                        SvgNodeUI.selectedUpper = this.hasUpper;
-                    }
+                if (SvgNodeUI.selectedLower != null) {
+                    SvgNodeUI.selectedUpper = upper;
                 }
                 SvgNodeUI.selectedLower = null;
             });
@@ -302,7 +295,7 @@ class SvgNodeUI {
      * create output file plug
      */
     private createConnector() {
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+        if (ClientUtility.isImplimentsCondition(this.tree)) {
             return;
         }
         this.tree.output_files.forEach((output, index) => {
@@ -338,7 +331,7 @@ class SvgNodeUI {
             .onDragstart(() => {
                 if (!connector.isConnect()) {
                     const newer = this.generateNewConnector(output, index);
-                    console.log(`create new connecotr index=${newer.name()} `);
+                    console.log(`create new connecotr index=${newer.name()}`);
                 }
             })
             .onMousedown((receptor: SvgReceptor) => {
@@ -351,20 +344,20 @@ class SvgNodeUI {
                     receptor.frontIfConnectedPlug();
                 });
                 SvgNodeUI.fileRelations.deleteFileRelation(connector, receptor);
-                this.addParentFileRelation(connector, receptor);
+                this.addFileRelationToParent(connector, receptor);
             })
             .onDragmove(() => {
 
             })
             .onDragend((): void => {
-                SvgNodeUI.selectedConnector = null;
+
                 let receptor = SvgNodeUI.selectedReceptor;
                 SvgNodeUI.selectedReceptor = null;
-                this.front();
+                SvgNodeUI.selectedConnector = null;
 
                 if (connector.connect(receptor)) {
                     SvgNodeUI.fileRelations.addFileRelation(connector, receptor);
-                    this.deleteParentFileRelation(connector, receptor);
+                    this.deleteFileRelationFromParent(connector, receptor);
                 }
                 else {
                     SvgNodeUI.allConnectors.remove(connector);
@@ -401,15 +394,8 @@ class SvgNodeUI {
 
             const receptor = new SvgReceptor(plugConfig)
                 .onMouseup(() => {
-                    let connector = SvgNodeUI.selectedConnector;
-                    if (connector != null) {
-                        if (this.hasConnectors.isExist(connector)) {
-                            console.log('not connect to your self');
-                            connector = null;
-                        }
-                        else {
-                            SvgNodeUI.selectedReceptor = receptor;
-                        }
+                    if (SvgNodeUI.selectedConnector != null) {
+                        SvgNodeUI.selectedReceptor = receptor;
                     }
                     SvgNodeUI.selectedConnector = null;
                 });
@@ -424,7 +410,7 @@ class SvgNodeUI {
      * @param connector output file plug
      * @param receptor input file plug
      */
-    private addParentFileRelation(connector: SvgConnector, receptor: SvgReceptor) {
+    private addFileRelationToParent(connector: SvgConnector, receptor: SvgReceptor) {
         if (receptor == null) {
             return;
         }
@@ -443,7 +429,7 @@ class SvgNodeUI {
      * @param connector output file plug
      * @param receptor input file plug
      */
-    private deleteParentFileRelation(connector: SvgConnector, receptor: SvgReceptor) {
+    private deleteFileRelationFromParent(connector: SvgConnector, receptor: SvgReceptor) {
         if (connector != null) {
             const taskIndex = connector.getTaskIndex();
             const filepath = connector.getFilepathFromTree();
@@ -475,7 +461,7 @@ class SvgNodeUI {
     /**
      * Adds a listener for dragstart event
      */
-    private onDragstart() {
+    private setDragstartEvent() {
         this.box.onDragstart(() => {
             SvgNodeUI.unselect();
             SvgNodeUI.selectedNodeUI = this;
@@ -491,7 +477,7 @@ class SvgNodeUI {
     /**
      * Adds a listener for dragmove event
      */
-    private onDragmove(): void {
+    private setDragmoveEvent(): void {
         this.box.onDragmove((x: number, y: number) => {
             this.movePlug(x, y);
         });
@@ -500,7 +486,7 @@ class SvgNodeUI {
     /**
      * Adds a listener for dragend event
      */
-    private onDragend(): void {
+    private setDragendEvent(): void {
         this.box.onDragend((x: number, y: number) => {
             this.fit(x, y);
         });

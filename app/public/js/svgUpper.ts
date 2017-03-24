@@ -33,6 +33,12 @@ class SvgUpper extends SvgPlugBase {
      * @return whether connection is succeed or not
      */
     public connect(lower: SvgLower): boolean {
+
+        if (this.isCircularReference(lower, this)){
+            console.info('it is circular reference!');
+            return false;
+        }
+
         const taskIndex = lower.getTaskIndex();
         if (!this.connectedLowers[taskIndex]) {
             this.connectedLowers[taskIndex] = lower;

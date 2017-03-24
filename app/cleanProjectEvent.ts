@@ -54,7 +54,6 @@ class CleanProjectvent implements ServerSocketIO.SocketListener {
             }
             const projectJson: SwfProjectJson = JSON.parse(data.toString());
             projectJson.state = this.planningState;
-            this.cleanLogJson(projectJson.log);
             fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), (err) => {
                 if (err) {
                     callback(err);
@@ -62,19 +61,6 @@ class CleanProjectvent implements ServerSocketIO.SocketListener {
                 }
                 callback();
             });
-        });
-    }
-
-    /**
-     * clearn log json
-     * @param logJson log json object
-     */
-    private cleanLogJson(logJson: SwfLogJson) {
-        logJson.state = this.planningState;
-        logJson.execution_start_date = '';
-        logJson.execution_end_date = '';
-        logJson.children.forEach(child => {
-            this.cleanLogJson(child);
         });
     }
 }

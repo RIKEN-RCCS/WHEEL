@@ -28,9 +28,9 @@ var SvgNodeUI = (function () {
         this.createReceptor();
         this.createUpper();
         this.createLower();
-        this.onDragstart();
-        this.onDragmove();
-        this.onDragend();
+        this.setDragstartEvent();
+        this.setDragmoveEvent();
+        this.setDragendEvent();
     }
     /**
      * initialize node
@@ -106,7 +106,6 @@ var SvgNodeUI = (function () {
      * create before task plug
      */
     SvgNodeUI.prototype.createUpper = function () {
-        var _this = this;
         var plugConfig = {
             svg: SvgNodeUI.draw,
             originX: this.box.x(),
@@ -118,15 +117,8 @@ var SvgNodeUI = (function () {
         };
         var upper = new SvgUpper(plugConfig)
             .onMouseup(function () {
-            var lower = SvgNodeUI.selectedLower;
-            if (lower != null) {
-                if (_this.hasLowers.isExist(lower)) {
-                    console.log('not connect to your self');
-                    lower = null;
-                }
-                else {
-                    SvgNodeUI.selectedUpper = _this.hasUpper;
-                }
+            if (SvgNodeUI.selectedLower != null) {
+                SvgNodeUI.selectedUpper = upper;
             }
             SvgNodeUI.selectedLower = null;
         });
@@ -204,7 +196,7 @@ var SvgNodeUI = (function () {
      */
     SvgNodeUI.prototype.createConnector = function () {
         var _this = this;
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+        if (ClientUtility.isImplimentsCondition(this.tree)) {
             return;
         }
         this.tree.output_files.forEach(function (output, index) {
@@ -237,7 +229,7 @@ var SvgNodeUI = (function () {
             .onDragstart(function () {
             if (!connector.isConnect()) {
                 var newer = _this.generateNewConnector(output, index);
-                console.log("create new connecotr index=" + newer.name() + " ");
+                console.log("create new connecotr index=" + newer.name());
             }
         })
             .onMousedown(function (receptor) {
@@ -250,18 +242,17 @@ var SvgNodeUI = (function () {
                 receptor.frontIfConnectedPlug();
             });
             SvgNodeUI.fileRelations.deleteFileRelation(connector, receptor);
-            _this.addParentFileRelation(connector, receptor);
+            _this.addFileRelationToParent(connector, receptor);
         })
             .onDragmove(function () {
         })
             .onDragend(function () {
-            SvgNodeUI.selectedConnector = null;
             var receptor = SvgNodeUI.selectedReceptor;
             SvgNodeUI.selectedReceptor = null;
-            _this.front();
+            SvgNodeUI.selectedConnector = null;
             if (connector.connect(receptor)) {
                 SvgNodeUI.fileRelations.addFileRelation(connector, receptor);
-                _this.deleteParentFileRelation(connector, receptor);
+                _this.deleteFileRelationFromParent(connector, receptor);
             }
             else {
                 SvgNodeUI.allConnectors.remove(connector);
@@ -294,15 +285,8 @@ var SvgNodeUI = (function () {
             };
             var receptor = new SvgReceptor(plugConfig)
                 .onMouseup(function () {
-                var connector = SvgNodeUI.selectedConnector;
-                if (connector != null) {
-                    if (_this.hasConnectors.isExist(connector)) {
-                        console.log('not connect to your self');
-                        connector = null;
-                    }
-                    else {
-                        SvgNodeUI.selectedReceptor = receptor;
-                    }
+                if (SvgNodeUI.selectedConnector != null) {
+                    SvgNodeUI.selectedReceptor = receptor;
                 }
                 SvgNodeUI.selectedConnector = null;
             });
@@ -315,7 +299,7 @@ var SvgNodeUI = (function () {
      * @param connector output file plug
      * @param receptor input file plug
      */
-    SvgNodeUI.prototype.addParentFileRelation = function (connector, receptor) {
+    SvgNodeUI.prototype.addFileRelationToParent = function (connector, receptor) {
         if (receptor == null) {
             return;
         }
@@ -333,7 +317,7 @@ var SvgNodeUI = (function () {
      * @param connector output file plug
      * @param receptor input file plug
      */
-    SvgNodeUI.prototype.deleteParentFileRelation = function (connector, receptor) {
+    SvgNodeUI.prototype.deleteFileRelationFromParent = function (connector, receptor) {
         if (connector != null) {
             var taskIndex = connector.getTaskIndex();
             var filepath_1 = connector.getFilepathFromTree();
@@ -363,7 +347,7 @@ var SvgNodeUI = (function () {
     /**
      * Adds a listener for dragstart event
      */
-    SvgNodeUI.prototype.onDragstart = function () {
+    SvgNodeUI.prototype.setDragstartEvent = function () {
         var _this = this;
         this.box.onDragstart(function () {
             SvgNodeUI.unselect();
@@ -378,7 +362,7 @@ var SvgNodeUI = (function () {
     /**
      * Adds a listener for dragmove event
      */
-    SvgNodeUI.prototype.onDragmove = function () {
+    SvgNodeUI.prototype.setDragmoveEvent = function () {
         var _this = this;
         this.box.onDragmove(function (x, y) {
             _this.movePlug(x, y);
@@ -387,7 +371,7 @@ var SvgNodeUI = (function () {
     /**
      * Adds a listener for dragend event
      */
-    SvgNodeUI.prototype.onDragend = function () {
+    SvgNodeUI.prototype.setDragendEvent = function () {
         var _this = this;
         this.box.onDragend(function (x, y) {
             _this.fit(x, y);

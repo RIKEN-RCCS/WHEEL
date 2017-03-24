@@ -131,7 +131,7 @@ var JsonProperty = (function () {
      * @param host registered host information
      * @param id id for html
      */
-    JsonProperty.prototype.setChangeEnvetForScheduler = function (host, id) {
+    JsonProperty.prototype.setChangeEventForScheduler = function (host, id) {
         id = "#" + id;
         this.events[id] = 'change';
         $(document).on(this.events[id], id, function (eventObject) {
@@ -195,7 +195,7 @@ var JsonProperty = (function () {
         else {
             switch (prop.type) {
                 case 'string':
-                    content = "<input type=\"text\" value=\"" + object[prop.key] + "\" class=\"text_box property_text\" id=\"" + id + "\">";
+                    content = "<input type=\"text\" value=\"" + object[prop.key] + "\" class=\"text_box property_text\" id=\"" + id + "\" spellcheck=\"false\">";
                     this.setKeyupEventForString(object, id, prop);
                     break;
                 case 'number':
@@ -223,7 +223,7 @@ var JsonProperty = (function () {
                         return "<option value=\"" + value + "\" " + isSelected + ">" + value + "</option>";
                     });
                     content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + schedulers.join('') + "</select>";
-                    this.setChangeEnvetForScheduler(object, id);
+                    this.setChangeEventForScheduler(object, id);
                     break;
                 default:
                     break;

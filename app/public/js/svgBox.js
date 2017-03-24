@@ -114,7 +114,6 @@ var SvgBox = (function () {
             _this.group.style('cursor', 'default');
             _this.position.x = _this.group.x();
             _this.position.y = _this.group.y();
-            _this.group.move(_this.position.x, _this.position.y);
             callback(_this.position.x, _this.position.y);
         });
         return this;
@@ -231,7 +230,7 @@ var SvgBox = (function () {
      */
     SvgBox.prototype.createOutput = function () {
         var _this = this;
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+        if (ClientUtility.isImplimentsCondition(this.tree)) {
             return this.outputGroup;
         }
         this.tree.output_files.forEach(function (output, index) {
@@ -265,14 +264,14 @@ var SvgBox = (function () {
      * create condition frame extension
      */
     SvgBox.prototype.createConditionFrame = function () {
-        if (ClientUtility.checkFileType(this.tree, JsonFileType.Break) || ClientUtility.checkFileType(this.tree, JsonFileType.Condition)) {
+        if (ClientUtility.isImplimentsCondition(this.tree)) {
             var polygon = this.draw
                 .polygon([
                 [this.width - 4, 0],
                 [this.width, 0],
                 [this.width + 16, this.height / 2],
-                [this.width, this.height],
-                [this.width - 4, this.height]
+                [this.width, this.height + 1],
+                [this.width - 4, this.height + 1]
             ])
                 .fill(config.node_color[this.tree.type.toLowerCase()]);
             this.group.add(polygon);

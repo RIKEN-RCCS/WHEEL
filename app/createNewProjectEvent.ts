@@ -34,11 +34,8 @@ class CreateNewProjectEvent implements ServerSocketIO.SocketListener {
 
             projectJson.path = `./${projectFileName}${this.config.extension.project}`;
             projectJson.path_workflow = `./${workflowFileName}${this.config.extension.workflow}`;
-            projectJson.log.path = path.dirname(projectJson.path_workflow);
 
-            projectJson.log.name = workflowJson.name;
-            projectJson.log.description = workflowJson.description;
-
+            workflowJson.name = `${workflowJson.name}1`;
             workflowJson.path = path.basename(directoryPath);
 
             const projectFilePath = path.join(directoryPath, projectJson.path);

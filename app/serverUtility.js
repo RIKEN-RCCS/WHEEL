@@ -1,9 +1,14 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
@@ -34,9 +39,9 @@ var JsonFileType;
      */
     JsonFileType[JsonFileType["Job"] = 4] = "Job";
     /**
-     * file type loop
+     * file type for
      */
-    JsonFileType[JsonFileType["Loop"] = 5] = "Loop";
+    JsonFileType[JsonFileType["For"] = 5] = "For";
     /**
      * file type if
      */
@@ -238,6 +243,56 @@ var ServerUtility = (function () {
         }
     };
     /**
+     * unlink specified directory async
+     * @param path_dir unlink directory path
+     * @param callback The funcion to call when we have finished to unlink directory
+     */
+    ServerUtility.unlinkDirectoryAsync = function (path_dir, callback) {
+        var _this = this;
+        fs.lstat(path_dir, function (err, stat) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            if (stat.isDirectory()) {
+                fs.readdir(path_dir, function (err, files) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    var loop = function () {
+                        var file = files.shift();
+                        if (!file) {
+                            fs.rmdir(path_dir, function (err) {
+                                callback(err);
+                            });
+                            return;
+                        }
+                        var path_child = path.join(path_dir, file);
+                        fs.lstat(path_child, function (err, stat) {
+                            if (err) {
+                                loop();
+                                return;
+                            }
+                            if (stat.isDirectory()) {
+                                _this.unlinkDirectoryAsync(path_child, loop);
+                            }
+                            else {
+                                fs.unlink(path_child, function (err) {
+                                    loop();
+                                });
+                            }
+                        });
+                    };
+                    loop();
+                });
+            }
+            else {
+                callback();
+            }
+        });
+    };
+    /**
      * link directory
      * @param path_src source path string
      * @param path_dst destination path string
@@ -425,19 +480,19 @@ var ServerUtility = (function () {
     };
     /**
      * read .wf.json file tree
-     * @param workflowJsonFilepath task json file (.wf.json or .tsk.json file)
+     * @param treeJsonFilepath task json file (.wf.json or .tsk.json file)
      * @return task json file
      */
-    ServerUtility.createTreeJson = function (workflowJsonFilepath) {
+    ServerUtility.createTreeJson = function (treeJsonFilepath) {
         var _this = this;
-        var parent = this.readJson(workflowJsonFilepath);
-        var parentDirname = path.dirname(workflowJsonFilepath);
+        var parent = this.readJson(treeJsonFilepath);
+        var parentDirname = path.dirname(treeJsonFilepath);
         parent.children = [];
         if (parent.children_file) {
             parent.children_file.forEach(function (child, index) {
                 var childFilePath = path.resolve(parentDirname, child.path);
                 if (path.dirname(childFilePath).length <= parentDirname.length) {
-                    logger.error("find circular reference. file=" + workflowJsonFilepath);
+                    logger.error("find circular reference. file=" + treeJsonFilepath);
                 }
                 else {
                     var childJson = _this.createTreeJson(childFilePath);
@@ -450,40 +505,82 @@ var ServerUtility = (function () {
         return parent;
     };
     /**
+     * renumbering display order
+     * @param treeJson tree json date
+     */
+    ServerUtility.setDisplayOrder = function (treeJson) {
+        var _this = this;
+        var order = 0;
+        treeJson.children.forEach(function (child, index) {
+            var relations = treeJson.relations.filter(function (relation) { return relation.index_after_task === index; });
+            var fileRelations = treeJson.file_relations.filter(function (relation) { return relation.index_after_task === index; });
+            if (!relations[0] && !fileRelations[0]) {
+                child.order = order;
+                order += 100;
+            }
+        });
+        function setOrder(before) {
+            treeJson.relations
+                .filter(function (relation) { return relation.index_before_task === before; })
+                .forEach(function (relation) { return updateOrder(relation); });
+            treeJson.file_relations
+                .filter(function (relation) { return relation.index_before_task === before; })
+                .forEach(function (relation) { return updateOrder(relation); });
+        }
+        function updateOrder(relation) {
+            var child = treeJson.children[relation.index_after_task];
+            var afterOrder = treeJson.children[relation.index_before_task].order + 1;
+            if (child.order === undefined) {
+                child.order = afterOrder;
+            }
+            else {
+                child.order = Math.max(child.order, afterOrder);
+            }
+            setOrder(relation.index_after_task);
+        }
+        treeJson.children.forEach(function (child, index) {
+            if (child.order !== undefined && child.order % 100 === 0) {
+                setOrder(index);
+            }
+            _this.setDisplayOrder(child);
+        });
+    };
+    /**
      * create log node json
      * @param path_taskFile path json file (.wf.json or .tsk.json file)
      * @return swf project json object
      */
     ServerUtility.createLogJson = function (path_taskFile) {
-        var _this = this;
-        var workflowJson = this.readJson(path_taskFile);
-        var logJson = {
-            name: workflowJson.name,
-            path: path.dirname(path_taskFile),
-            description: workflowJson.description,
-            type: workflowJson.type,
-            state: this.config.state.planning,
-            execution_start_date: '',
-            execution_end_date: '',
-            children: [],
-            host: workflowJson.host
-        };
-        var parentDirname = path.dirname(path_taskFile);
-        if (workflowJson.children_file) {
-            workflowJson.children_file.forEach(function (child) {
-                var path_childFile = path.join(parentDirname, child.path);
-                if (path.dirname(path_childFile).length <= parentDirname.length) {
-                    logger.error("find circular reference. file=" + path_taskFile);
-                }
-                else {
-                    var childJson = _this.createLogJson(path_childFile);
-                    if (childJson != null) {
-                        logJson.children.push(childJson);
-                    }
+        var tree = this.createTreeJson(path_taskFile);
+        this.setDisplayOrder(tree);
+        var planningState = this.config.state.planning;
+        (function convertTreeToLog(treeJson, parentDir) {
+            treeJson.path = path.join(parentDir, treeJson.path);
+            var logJson = {
+                name: treeJson.name,
+                path: treeJson.path,
+                description: treeJson.description,
+                type: treeJson.type,
+                state: planningState,
+                execution_start_date: '',
+                execution_end_date: '',
+                children: [],
+                host: treeJson.host,
+                order: treeJson.order
+            };
+            Object.keys(treeJson).forEach(function (key) {
+                if (logJson[key] === undefined) {
+                    delete treeJson[key];
                 }
             });
-        }
-        return logJson;
+            Object.keys(logJson).forEach(function (key) {
+                if (treeJson[key] === undefined) {
+                    treeJson[key] = logJson[key];
+                }
+            });
+            treeJson.children.forEach(function (child) { return convertTreeToLog(child, logJson.path); });
+        })(tree, path.dirname(path.dirname(path_taskFile)));
+        return tree;
     };
     /**
      * create project json data
@@ -579,9 +676,9 @@ var ServerUtility = (function () {
      * @param json tree json data or log json data
      * @return whether specified json is type of loop or not
      */
-    ServerUtility.isTypeLoop = function (json) {
+    ServerUtility.isTypeFor = function (json) {
         var template = this.getTypeOfJson(json.type);
-        return template.getType() === this.config.json_types.loop;
+        return template.getType() === this.config.json_types.for;
     };
     /**
      * whether specified json is type of parameter study or not
@@ -614,8 +711,8 @@ var ServerUtility = (function () {
                     return new TypeWorkflow();
                 case this.config.json_types.task:
                     return new TypeTask();
-                case this.config.json_types.loop:
-                    return new TypeLoop();
+                case this.config.json_types.for:
+                    return new TypeFor();
                 case this.config.json_types.if:
                     return new TypeIf();
                 case this.config.json_types.else:
@@ -642,8 +739,8 @@ var ServerUtility = (function () {
                     return new TypeWorkflow();
                 case JsonFileType.Task:
                     return new TypeTask();
-                case JsonFileType.Loop:
-                    return new TypeLoop();
+                case JsonFileType.For:
+                    return new TypeFor();
                 case JsonFileType.If:
                     return new TypeIf();
                 case JsonFileType.Else:
@@ -752,19 +849,19 @@ var TypeWorkflow = (function (_super) {
     }
     return TypeWorkflow;
 }(TypeBase));
-var TypeLoop = (function (_super) {
-    __extends(TypeLoop, _super);
+var TypeFor = (function (_super) {
+    __extends(TypeFor, _super);
     /**
      * create new instance
      */
-    function TypeLoop() {
+    function TypeFor() {
         var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.loop;
-        _this.templateFilepath = _this.config.template.loop;
-        _this.type = _this.config.json_types.loop;
+        _this.extension = _this.config.extension.for;
+        _this.templateFilepath = _this.config.template.for;
+        _this.type = _this.config.json_types.for;
         return _this;
     }
-    return TypeLoop;
+    return TypeFor;
 }(TypeBase));
 /**
  * type if

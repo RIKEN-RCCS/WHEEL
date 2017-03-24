@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var httpServer = require("./httpServer");
 var serverConfig = require("./serverConfig");
 var ServerSocketIO = require("./serverSocketIO");
