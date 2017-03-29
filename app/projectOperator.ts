@@ -1,4 +1,3 @@
-//inport = OpenLogJsonEvent;
 import fs = require('fs');
 import path = require('path');
 import ssh2 = require('ssh2');
@@ -110,8 +109,8 @@ class ProjectOperator {
         function _setPathAbsolute(_tree: TaskTree, path_from_root: string) {
             _tree.local_path = path.join(path_to_root, path_from_root);
             if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
-                let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson>_tree;
-                _tree.remote_path = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root.replace('\\', '/'));
+                let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson><SwfTaskJson>_tree;
+                _tree.remote_path = path.posix.join(remoteTask.remote.path, name_dir_time, path_from_root.replace('\\', '/'));
             }
 
             for (let i = 0; i < _tree.children.length; i++) {
@@ -127,7 +126,7 @@ class ProjectOperator {
      * @return created tree
      */
     public static createTaskTree(treeJson: SwfTreeJson, parent: TaskTree = null): TaskTree {
-        let tree = <TaskTree>treeJson;
+        let tree = <TaskTree><SwfTaskJson>treeJson;
         tree.parent = parent;
         for (let i = 0; i < treeJson.children.length; i++) {
             this.createTaskTree(treeJson.children[i], tree);
@@ -142,9 +141,9 @@ class ProjectOperator {
      */
     private static setPassToHost(tree: TaskTree, host_passSet: Object) {
         if (tree.type == SwfType.REMOTETASK || tree.type == SwfType.JOB) {
-            let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson>tree;
-            if (host_passSet.hasOwnProperty(remoteTask.host.name)) {
-                remoteTask.host.pass = host_passSet[remoteTask.host.name];
+            let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson><SwfTaskJson>tree;
+            if (host_passSet.hasOwnProperty(remoteTask.remote.name)) {
+                remoteTask.remote.pass = host_passSet[remoteTask.remote.name];
             }
         }
 
@@ -245,21 +244,8 @@ class TaskManager {
      */
     public static completed(tree: TaskTree) {
         TaskManager.writeLogCompleted(tree);
-        if (tree.type == SwfType.BREAK) {
-            let break_for = tree.parent;
-            while (break_for.type != SwfType.FOR) {
-                if (break_for.parent == null) {
-                    logger.error('The "break"\'s parent isn\'t "For"');
-                    return;
-                }
-                break_for = break_for.parent;
-            }
-
-            TaskManager.completed(break_for);
-        } else {
-            // run parent
-            TaskManager.run(tree.parent);
-        }
+        // run parent
+        TaskManager.run(tree.parent);
     }
 
     /**
@@ -278,26 +264,22 @@ class TaskManager {
             const if_tree: TaskTree = tree.parent;
             TaskManager.completed(if_tree)
             TaskManager.run(if_tree.parent);
+        } else if (tree.type == SwfType.BREAK) {
+            let break_for = tree.parent;
+            while (break_for.type != SwfType.FOR) {
+                if (break_for.parent == null) {
+                    logger.error('The "break"\'s parent isn\'t "For"');
+                    return;
+                }
+                TaskManager.writeLogCompleted(break_for);
+                break_for = break_for.parent;
+            }
+
+            TaskManager.completed(break_for);
         } else {
             TaskManager.failed(tree.parent);
         }
     }
-
-    ///**
-    // * Failed condition.
-    // * @param tree Task
-    // */
-    //public static failedCondition(tree: TaskTree) {
-    //    if (tree == null) {
-    //        logger.info('task is null');
-    //        return;
-    //    }
-
-    //    TaskManager.writeLogFailed(tree);
-    //    TaskManager.writeLogCompleted(tree.parent);
-    //    // run parent
-    //    TaskManager.run(tree.parent.parent);
-    //}
 
     /**
      * name of log file
@@ -550,7 +532,7 @@ class TaskOperator {
      * @param tree Task
      */
     public static runWorkflow(tree: TaskTree) {
-        const workflow = <SwfWorkflowJson>tree;
+        const workflow = <SwfWorkflowJson><SwfTaskJson>tree;
 
         // check finish all children
         let isCompletedList = new Array<boolean>(tree.children.length);
@@ -682,17 +664,17 @@ class TaskOperator {
         }
 
         let config: ssh2.ConnectConfig = {
-            host: remoteTask.host.host,
+            host: remoteTask.remote.host,
             port: 22,
-            username: remoteTask.host.username,
+            username: remoteTask.remote.username,
         };
 
         // TODO get password from dialog
-        if (remoteTask.host.privateKey) {
-            config.privateKey = fs.readFileSync(remoteTask.host.privateKey);
-            config.passphrase = remoteTask.host.pass;
+        if (remoteTask.remote.privateKey) {
+            config.privateKey = fs.readFileSync(remoteTask.remote.privateKey);
+            config.passphrase = remoteTask.remote.pass;
         } else {
-            config.password = remoteTask.host.pass;
+            config.password = remoteTask.remote.pass;
         }
 
         client.connect(config);
@@ -749,16 +731,16 @@ class TaskOperator {
         }
 
         let config: ssh2.ConnectConfig = {
-            host: job.host.host,
+            host: job.remote.host,
             port: 22,
-            username: job.host.username,
+            username: job.remote.username,
         }
 
-        if (job.host.privateKey) {
-            config.privateKey = fs.readFileSync(job.host.privateKey);
-            config.passphrase = job.host.pass;
+        if (job.remote.privateKey) {
+            config.privateKey = fs.readFileSync(job.remote.privateKey);
+            config.passphrase = job.remote.pass;
         } else {
-            config.password = job.host.pass;
+            config.password = job.remote.pass;
         }
 
         client.connect(config);
@@ -804,9 +786,9 @@ class TaskOperator {
                         }
 
                         let command: string = '';
-                        if (job.host.job_scheduler == SwfJobScheduler.TCS) {
+                        if (job.remote.job_scheduler == SwfJobScheduler.TCS) {
                             command += `pjstat ${jobId}\n`;
-                        } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
+                        } else if (job.remote.job_scheduler == SwfJobScheduler.TORQUE) {
                             command += `qstat -l ${jobId} -x\n`;
                         } else {
                             // default TCS
@@ -837,10 +819,10 @@ class TaskOperator {
                             const stdout: string = String(data);
                             // check state of job
                             let isFinish = false;
-                            if (job.host.job_scheduler == SwfJobScheduler.TCS) {
+                            if (job.remote.job_scheduler == SwfJobScheduler.TCS) {
                                 const regExp: RegExp = /JOB_ID/i;
                                 isFinish = (!regExp.test(stdout));
-                            } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
+                            } else if (job.remote.job_scheduler == SwfJobScheduler.TORQUE) {
                                 const regExp: RegExp = /<job_state>C<\/job_state>/i;
                                 isFinish = (regExp.test(stdout));
                             } else {
@@ -861,9 +843,9 @@ class TaskOperator {
                     // TODO test
                     const stdout = new String(data);
                     let regEtp: RegExp;
-                    if (job.host.job_scheduler == SwfJobScheduler.TCS) {
+                    if (job.remote.job_scheduler == SwfJobScheduler.TCS) {
                         regEtp = /Job\s(\d+)\ssubmitted/i;
-                    } else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
+                    } else if (job.remote.job_scheduler == SwfJobScheduler.TORQUE) {
                         regEtp = /(\d+)/;
                     } else {
                         // default TCS
@@ -904,7 +886,7 @@ class TaskOperator {
      * @param tree Loop
      */
     public static runFor(tree: TaskTree) {
-        const loop = <SwfForJson>tree;
+        const loop = <SwfForJson><SwfTaskJson>tree;
 
         let index: number = TaskManager.getIndex(tree);
         if (isNaN(index)) {
@@ -922,12 +904,12 @@ class TaskOperator {
             return;
         }
 
-        let workflow: SwfWorkflowJson = ProjectOperator.copyTaskTree(tree);
+        const child: TaskTree = ProjectOperator.copyTaskTree(tree);
+        let workflow: SwfWorkflowJson = <SwfWorkflowJson><SwfTaskJson>child;
         workflow.name = `${loop.name}_${index}`;
         workflow.path = `${loop.path}_${index}`;
         workflow.type = SwfType.WORKFLOW;
 
-        const child: TaskTree = <TaskTree>workflow;
         child.parent = tree;
 
         ProjectOperator.setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
@@ -1053,12 +1035,12 @@ class TaskOperator {
             return;
         }
 
-        let workflow: SwfWorkflowJson = ProjectOperator.copyTaskTree(tree);
+        const child: TaskTree = ProjectOperator.copyTaskTree(tree);
+        let workflow: SwfWorkflowJson = <SwfWorkflowJson><SwfTaskJson>child;
         workflow.name = `${pstudy.name}_${index}`;
         workflow.path = `${pstudy.path}_${index}`;
         workflow.type = SwfType.WORKFLOW;
 
-        const child: TaskTree = <TaskTree>workflow;
         child.parent = tree;
         if (tree.hidden_children == null) {
             tree.hidden_children = new Array<TaskTree>();
@@ -1279,8 +1261,9 @@ class TaskOperator {
      * @param callbackErr function ro call when we get error
      */
     private static setUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback?: (() => void), callbackErr?: (() => void)) {
+        const tree: TaskTree = <TaskTree><SwfTaskJson>remoteTask;
         // make working directory
-        TaskOperator.mkdirRemote(client, (<TaskTree>remoteTask).remote_path, '', mkdirCallback, callbackErr);
+        TaskOperator.mkdirRemote(client, tree.remote_path, '', mkdirCallback, callbackErr);
 
         function mkdirCallback() {
             // send files
@@ -1318,7 +1301,7 @@ class TaskOperator {
                 }
             }
 
-            TaskOperator.exec(command, (<TaskTree>remoteTask).local_path, compressCallback, callbackErr);
+            TaskOperator.exec(command, tree.local_path, compressCallback, callbackErr);
         }
 
         function compressCallback() {
@@ -1335,8 +1318,8 @@ class TaskOperator {
             }
 
             // send script file
-            const local_path: string = path.join((<TaskTree>remoteTask).local_path, tarFile_name);
-            const remote_path: string = path.posix.join((<TaskTree>remoteTask).remote_path, tarFile_name)
+            const local_path: string = path.join(tree.local_path, tarFile_name);
+            const remote_path: string = path.posix.join(tree.remote_path, tarFile_name)
             sftp.fastPut(local_path, remote_path, sendFileCallback);
 
             function sendFileCallback(err: Error) {
@@ -1356,14 +1339,14 @@ class TaskOperator {
         function extractFilesRemote() {
             const command: string = `tar xvf "${tarFile_name}";`;
 
-            TaskOperator.execRemote(client, command, (<TaskTree>remoteTask).remote_path, extractCallback, callbackErr);
+            TaskOperator.execRemote(client, command, tree.remote_path, extractCallback, callbackErr);
         }
 
         function extractCallback() {
             // remove compressed files
-            fs.unlinkSync(path.join((<TaskTree>remoteTask).local_path, tarFile_name));
+            fs.unlinkSync(path.join(tree.local_path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, (<TaskTree>remoteTask).remote_path, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, tree.remote_path, callback, callback);
         }
 
     }
@@ -1376,6 +1359,7 @@ class TaskOperator {
      * @param callbackErr function ro call when we get error
      */
     private static cleanUpRemote(remoteTask: SwfRemoteTaskJson, client: ssh2.Client, callback?: (() => void), callbackErr?: (() => void)) {
+        const tree: TaskTree = <TaskTree><SwfTaskJson>remoteTask;
         let tarFile_name: string = 'recieve_files.tar.gz';
         if (remoteTask.receive_files.length + remoteTask.output_files.length < 1) {
             callback();
@@ -1397,7 +1381,7 @@ class TaskOperator {
                 command += ` "${file.path}"`;
             }
 
-            TaskOperator.execRemote(client, command, (<TaskTree>remoteTask).remote_path, compressCallback, callbackErr);
+            TaskOperator.execRemote(client, command, tree.remote_path, compressCallback, callbackErr);
         }
 
         function compressCallback() {
@@ -1414,8 +1398,8 @@ class TaskOperator {
             }
 
             // send script file
-            const local_path: string = path.join((<TaskTree>remoteTask).local_path, tarFile_name);
-            const remote_path: string = path.posix.join((<TaskTree>remoteTask).remote_path, tarFile_name)
+            const local_path: string = path.join(tree.local_path, tarFile_name);
+            const remote_path: string = path.posix.join(tree.remote_path, tarFile_name)
             sftp.fastGet(remote_path, local_path, recieveFileCallback);
 
             function recieveFileCallback(err: Error) {
@@ -1438,14 +1422,14 @@ class TaskOperator {
                 command = `"${path.resolve('tar.exe')}" xvf "${tarFile_name}"`;
             }
 
-            TaskOperator.exec(command, (<TaskTree>remoteTask).local_path, extractCallback, callbackErr);
+            TaskOperator.exec(command, tree.local_path, extractCallback, callbackErr);
         }
 
         function extractCallback() {
             // remove compressed files
-            fs.unlinkSync(path.join((<TaskTree>remoteTask).local_path, tarFile_name));
+            fs.unlinkSync(path.join(tree.local_path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, (<TaskTree>remoteTask).remote_path, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, tree.remote_path, callback, callback);
         }
     }
 
@@ -1454,7 +1438,7 @@ class TaskOperator {
 /**
  * Tree of task.
  */
-interface TaskTree extends SwfTreeJson {
+interface TaskTree extends SwfTaskJson {
     /**
      * parent of tree
      */

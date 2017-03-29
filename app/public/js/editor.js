@@ -16,6 +16,9 @@ $(function () {
      * initialize
      */
     (function init() {
+        if (editFilePath == null) {
+            throw new Error('illegal access');
+        }
         ClientUtility.deleteCookie('edit');
         readScriptFile();
         setClickEventForReset();

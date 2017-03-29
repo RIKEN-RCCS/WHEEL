@@ -72,6 +72,17 @@ var SwfFile = (function () {
             required: true
         });
     };
+    /**
+     * rename file path
+     * @param tree tree instance
+     * @param oldDirectory old directory name
+     * @param newDirectory new directory name
+     */
+    SwfFile.prototype.renamePath = function (tree, oldDirectory, newDirectory) {
+        var oldFullpath = tree.getFullpath(this);
+        var newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+        this.path = tree.getRelativePath(newFullpath);
+    };
     return SwfFile;
 }());
 /**
@@ -90,8 +101,6 @@ var SwfTask = (function () {
         this.script = swfTask.script == null ? null : new SwfFile(swfTask.script);
         this.input_files = JSON.parse(JSON.stringify(swfTask.input_files)).map(function (file) { return new SwfFile(file); });
         this.output_files = JSON.parse(JSON.stringify(swfTask.output_files)).map(function (file) { return new SwfFile(file); });
-        this.send_files = JSON.parse(JSON.stringify(swfTask.send_files)).map(function (file) { return new SwfFile(file); });
-        this.receive_files = JSON.parse(JSON.stringify(swfTask.receive_files)).map(function (file) { return new SwfFile(file); });
         this.clean_up = swfTask.clean_up;
         this.max_size_receive_file = swfTask.max_size_receive_file;
     }
@@ -111,24 +120,18 @@ var SwfTask = (function () {
     SwfTask.prototype.getOutputFile = function (path) {
         return this.output_files.filter(function (file) { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
     };
-    /**
-     * get the file with the same send file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same send file path name as the specified path name
-     */
-    SwfTask.prototype.getSendFile = function (path) {
-        return this.send_files.filter(function (file) { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
-    };
-    /**
-     * get the file with the same receive file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same receive file path name as the specified path name
-     */
-    SwfTask.prototype.getReceiveFile = function (path) {
-        return this.receive_files.filter(function (file) { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
-    };
     return SwfTask;
 }());
+/**
+ * Swf Remote Task definition
+ */
+var SwfRemoteTask = (function (_super) {
+    __extends(SwfRemoteTask, _super);
+    function SwfRemoteTask() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return SwfRemoteTask;
+}(SwfTask));
 /**
  * Swf Relation definition
  */
@@ -191,6 +194,28 @@ var SwfRelationFile = (function () {
      */
     SwfRelationFile.prototype.toString = function () {
         return this.getOutputFileName() + "_" + this.getInputFileName();
+    };
+    /**
+     * rename output file path
+     * @param tree tree instance
+     * @param oldDirectory old directory name
+     * @param newDirectory new directory name
+     */
+    SwfRelationFile.prototype.renameOutputPath = function (tree, oldDirectory, newDirectory) {
+        var oldFullpath = tree.getFullpath(this.path_output_file);
+        var newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+        this.path_output_file = tree.getRelativePath(newFullpath);
+    };
+    /**
+     * rename input file path
+     * @param tree tree instance
+     * @param oldDirectory old directory name
+     * @param newDirectory new directory name
+     */
+    SwfRelationFile.prototype.renameInputPath = function (tree, oldDirectory, newDirectory) {
+        var oldFullpath = tree.getFullpath(this.path_input_file);
+        var newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+        this.path_input_file = tree.getRelativePath(newFullpath);
     };
     return SwfRelationFile;
 }());
@@ -330,12 +355,6 @@ var SwfHost = (function () {
     return SwfHost;
 }());
 // /**
-//  * Swf Remote Task definition
-//  */
-// class SwfRemoteTask extends SwfTask implements SwfRemoteTaskJson {
-//     host: SwfHost;
-// }
-// /**
 //  * Swf Job definition
 //  */
 // class SwfJob extends SwfRemoteTask implements SwfJobJson {
@@ -377,8 +396,8 @@ var SwfLog = (function () {
             var children = JSON.parse(JSON.stringify(logJson.children));
             this.children = children.map(function (child) { return new SwfLog(child); });
         }
-        if (logJson.host) {
-            this.host = JSON.parse(JSON.stringify(logJson.host));
+        if (logJson.remote) {
+            this.remote = JSON.parse(JSON.stringify(logJson.remote));
         }
     }
     /**
@@ -472,8 +491,8 @@ var SwfLog = (function () {
             if (!log) {
                 break;
             }
-            if (log.host && !ClientUtility.isLocalHost(log.host.host)) {
-                hash[log.host.name] = log.host;
+            if (log.remote && !ClientUtility.isLocalHost(log.remote.host)) {
+                hash[log.remote.name] = log.remote;
             }
             log.children.forEach(function (child) {
                 notSeachedList.push(child);

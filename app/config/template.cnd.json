@@ -1,6 +1,6 @@
 {
     "name": "NewCondition",
-    "description": "This is new condition.",
+    "description": "This is new Condition.",
     "path": "",
     "type": "Condition",
     "script": {
@@ -12,8 +12,6 @@
     },
     "input_files": [],
     "output_files": [],
-    "send_files": [],
-    "receive_files": [],
     "clean_up": true,
     "max_size_receive_file": 17179869184
 }

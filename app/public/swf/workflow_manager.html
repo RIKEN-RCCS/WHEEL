@@ -3,28 +3,35 @@
 
 <head>
     <meta charset="UTF-8">
-    <link type="text/css" rel="stylesheet" href="/css/style.css" />
+    <link type="text/css" rel="stylesheet" href="/css/jquery-ui-1.12.1.css" />
     <link type="text/css" rel="stylesheet" href="/css/jquery.contextMenu-2.4.4.css" />
+    <link type="text/css" rel="stylesheet" href="/css/style.css" />
     <script type="text/javascript" src="/third_party/jquery/jquery-3.2.1.min.js"></script>
-    <script type="text/javascript" src="/third_party/jquery/jquery.ui.position-1.12.1.min.js"></script>
+    <script type="text/javascript" src="/third_party/jquery/jquery-ui-1.12.1.min.js"></script>
     <script type="text/javascript" src="/third_party/jquery/jquery.contextMenu-2.4.4.min.js"></script>
     <script type="text/javascript" src="/third_party/socket.io/socket.io-1.7.3.min.js"></script>
     <script type="text/javascript" src="/third_party/svg/svg-2.5.0.min.js"></script>
     <script type="text/javascript" src="/third_party/svg/svg.draggable-2.2.1.min.js"></script>
 
-    <script type="text/javascript" src="/js/svgPlugBase.js"></script>
-    <script type="text/javascript" src="/js/svgBox.js"></script>
-    <script type="text/javascript" src="/js/svgCable.js"></script>
-    <script type="text/javascript" src="/js/svgConnector.js"></script>
-    <script type="text/javascript" src="/js/svgContainer.js"></script>
-    <script type="text/javascript" src="/js/svgFileRelations.js"></script>
-    <script type="text/javascript" src="/js/svgLower.js"></script>
-    <script type="text/javascript" src="/js/svgNodePane.js"></script>
-    <script type="text/javascript" src="/js/svgReceptor.js"></script>
-    <script type="text/javascript" src="/js/svgRelations.js"></script>
-    <script type="text/javascript" src="/js/svgUpper.js"></script>
-    <script type="text/javascript" src="/js/svgNodeUI.js"></script>
+    <script type="text/javascript" src="/js/socketio/getFileStatSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/readTreeJsonSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/writeTreeJsonSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/getTemplateJsonFileSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/getRemoteHostListSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/uploadFileSocket.js"></script>
 
+    <script type="text/javascript" src="/js/svg/svgPlugBase.js"></script>
+    <script type="text/javascript" src="/js/svg/svgBox.js"></script>
+    <script type="text/javascript" src="/js/svg/svgCable.js"></script>
+    <script type="text/javascript" src="/js/svg/svgConnector.js"></script>
+    <script type="text/javascript" src="/js/svg/svgContainer.js"></script>
+    <script type="text/javascript" src="/js/svg/svgFileRelations.js"></script>
+    <script type="text/javascript" src="/js/svg/svgLower.js"></script>
+    <script type="text/javascript" src="/js/svg/svgNodePane.js"></script>
+    <script type="text/javascript" src="/js/svg/svgReceptor.js"></script>
+    <script type="text/javascript" src="/js/svg/svgRelations.js"></script>
+    <script type="text/javascript" src="/js/svg/svgUpper.js"></script>
+    <script type="text/javascript" src="/js/svg/svgNodeUI.js"></script>
 
     <script type="text/javascript" src="/js/clientUtility.js"></script>
     <script type="text/javascript" src="/js/jqueryExtends.js"></script>
@@ -35,13 +42,6 @@
     <script type="text/javascript" src="/js/inputTextDialog.js"></script>
     <script type="text/javascript" src="/js/yesNoDialog.js"></script>
     <script type="text/javascript" src="/js/commonParam.js"></script>
-
-    <script type="text/javascript" src="/js/getFileStatSocket.js"></script>
-    <script type="text/javascript" src="/js/readTreeJsonSocket.js"></script>
-    <script type="text/javascript" src="/js/writeTreeJsonSocket.js"></script>
-    <script type="text/javascript" src="/js/getTemplateJsonFileSocket.js"></script>
-    <script type="text/javascript" src="/js/getRemoteHostListSocket.js"></script>
-    <script type="text/javascript" src="/js/uploadFileSocket.js"></script>
 
     <script type="text/javascript" src="/js/workflowManager.js"></script>
     <title>Scientific Workflow</title>
@@ -73,9 +73,9 @@
         </tr>
     </table>
 
-    <div class="workflow_manage_area sub_content_area" id="workflow_manage_area">
+    <div class="workflow_manage_area sub_content_area">
         <div id="tree_svg" class="workflow_tree_svg" onMouseDown="return false;"></div>
-        <div id="node_svg" class="node_tree"> </div>
+        <div id="node_svg" class="node_tree"></div>
         <div id="property" class="property"></div>
     </div>
 

@@ -215,7 +215,7 @@ class JsonFileTypeBase {
                 }
             ],
             button: [{
-                key: 'Browse',
+                key: 'Upload...',
                 title: 'script',
                 callback: (tree: SwfTree) => {
                     $(document).trigger('selectFile', {
@@ -255,7 +255,7 @@ class JsonFileTypeBase {
                 }
             ],
             button: [{
-                key: 'Browse',
+                key: 'Upload...',
                 title: 'job_script',
                 callback: (tree: SwfTree) => {
                     $(document).trigger('selectFile', {
@@ -283,9 +283,10 @@ class JsonFileTypeBase {
                     readonly: () => { return false },
                     type: 'number',
                     validation: (tree: SwfTree, v: string): boolean => {
+                        const forWorkflow = <SwfForJson><any>tree;
                         const num: number = parseInt(v);
-                        if (tree.forParam !== undefined) {
-                            return num < tree.forParam.end;
+                        if (forWorkflow.forParam !== undefined) {
+                            return num < forWorkflow.forParam.end;
                         }
                         return true;
                     }
@@ -295,9 +296,10 @@ class JsonFileTypeBase {
                     readonly: () => { return false },
                     type: 'number',
                     validation: (tree: SwfTree, v: string): boolean => {
+                        const forWorkflow = <SwfForJson><any>tree;
                         const num: number = parseInt(v);
-                        if (tree.forParam !== undefined) {
-                            return tree.forParam.start < num;
+                        if (forWorkflow.forParam !== undefined) {
+                            return forWorkflow.forParam.start < num;
                         }
                         return true;
                     }
@@ -512,7 +514,7 @@ class JsonFileTypeBase {
             order: 120,
             button: [
                 {
-                    key: 'Browse',
+                    key: 'Upload...',
                     title: 'send_files',
                     isUpdateUI: true,
                     callback: (tree: SwfTree) => {
@@ -529,8 +531,9 @@ class JsonFileTypeBase {
                     title: 'send_files',
                     isUpdateUI: true,
                     callback: (tree: SwfTree) => {
+                        const rtask = <SwfRemoteTask><any>tree;
                         const file = SwfFile.getDefault();
-                        tree.send_files.push(file);
+                        rtask.send_files.push(file);
                     }
                 }
             ]
@@ -591,8 +594,9 @@ class JsonFileTypeBase {
                 title: 'receive_files',
                 isUpdateUI: true,
                 callback: (tree: SwfTree) => {
+                    const rtask = <SwfRemoteTask><any>tree;
                     const file = SwfFile.getDefault();
-                    tree.receive_files.push(file);
+                    rtask.receive_files.push(file);
                 }
             }]
         });
@@ -636,8 +640,9 @@ class JsonFileTypeBase {
                 title: 'receive_file',
                 isUpdateUI: true,
                 callback: (tree: SwfTree, object: SwfFile, name: string) => {
-                    const index = tree.receive_files.indexOf(object);
-                    tree.receive_files.splice(index, 1);
+                    const rtask = <SwfRemoteTask><any>tree;
+                    const index = rtask.receive_files.indexOf(object);
+                    rtask.receive_files.splice(index, 1);
                 }
             }]
         });
@@ -698,7 +703,7 @@ class JsonFileTypeBase {
                 }
             ],
             button: [{
-                key: 'Browse',
+                key: 'Upload...',
                 title: 'parameter_file',
                 callback: (tree: SwfTree) => {
                     $(document).trigger('selectFile', {
@@ -717,7 +722,7 @@ class JsonFileTypeBase {
      */
     protected addHost() {
         this.propertyInfo.push({
-            key: 'host',
+            key: 'remote',
             ishash: true,
             order: 200,
             item: [
@@ -739,7 +744,7 @@ class JsonFileTypeBase {
             ishash: true,
             order: 400,
             button: [{
-                key: 'Browse',
+                key: 'Upload...',
                 title: 'upload_files',
                 isUpdateUI: true,
                 callback: (tree: SwfTree) => {
@@ -888,7 +893,8 @@ class TypeJob extends JsonFileTypeBase {
                 key: 'Edit',
                 title: 'submit_script',
                 validation: (tree: SwfTree) => {
-                    if (tree.job_script.path) {
+                    const jobTask = <SwfJobJson><any>tree;
+                    if (jobTask.job_script.path) {
                         return true;
                     }
                     else {
@@ -907,7 +913,7 @@ class TypeJob extends JsonFileTypeBase {
      */
     protected addHost() {
         this.propertyInfo.push({
-            key: 'host',
+            key: 'remote',
             ishash: true,
             order: 200,
             item: [
@@ -1039,6 +1045,7 @@ class TypeCondition extends JsonFileTypeBase {
                     key: 'name',
                     readonly: () => { return false },
                     type: 'string',
+                    isUpdateUI: true,
                     validation: (tree: SwfTree, v: string): boolean => {
                         return v.trim() ? true : false;
                     }
@@ -1123,6 +1130,7 @@ class TypeBreak extends JsonFileTypeBase {
                     key: 'name',
                     readonly: () => { return false },
                     type: 'string',
+                    isUpdateUI: true,
                     validation: (tree: SwfTree, v: string): boolean => {
                         return v.trim() ? true : false;
                     }

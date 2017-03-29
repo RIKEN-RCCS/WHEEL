@@ -28,6 +28,23 @@ class JsonProperty {
     private events: { [event: string]: string } = {};
 
     /**
+     * create new instance
+     */
+    public constructor() {
+        $(window).on('resize', () => {
+            this.resize();
+        });
+    }
+
+    /**
+     * resize property
+     */
+    private resize() {
+        const parent = this.property.parent();
+        this.property.css('top', `${parent.offset().top}px`);
+    }
+
+    /**
      * clear all events
      */
     private clearEvents() {
@@ -227,8 +244,8 @@ class JsonProperty {
                     this.setChangeEventForNumber(object, id, prop);
                     break;
                 case 'boolean':
-                    const selectedTrue = object[prop.key] ? 'selected' : '';
-                    const selectedFalse = !object[prop.key] ? 'selected' : '';
+                    const selectedTrue = object[prop.key] ? 'selected="selected"' : '';
+                    const selectedFalse = !object[prop.key] ? 'selected="selected"' : '';
                     content = `
                     <select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">
                         <option value="true" ${selectedTrue}>TRUE</option>
@@ -238,7 +255,7 @@ class JsonProperty {
                     break;
                 case 'host':
                     const hosts: string[] = this.hostInfos.map(host => {
-                        const isSelected = host.name === object.name ? 'selected' : '';
+                        const isSelected = host.name === object.name ? 'selected="selected"' : '';
                         return `<option value="${host.name}" ${isSelected}>${host.name}</option>`
                     });
                     content = `<select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">${hosts.join('')}</select>`;
@@ -247,7 +264,7 @@ class JsonProperty {
                 case 'scheduler':
                     const schedulers: string[] = Object.keys(config.scheduler).map(key => {
                         const value = config.scheduler[key];
-                        const isSelected = value === object.job_scheduler ? 'selected' : '';
+                        const isSelected = value === object.job_scheduler ? 'selected="selected"' : '';
                         return `<option value="${value}" ${isSelected}>${value}</option>`;
                     });
                     content = `<select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">${schedulers.join('')}</select>`;
@@ -384,6 +401,7 @@ class JsonProperty {
         this.hostInfos = hostInfos;
         this.property.html(this.createPropertyHtml());
         if (this.property.css('display') === 'none') {
+            this.resize();
             this.property.displayBlock();
             this.property.animate({ width: '350px', 'min-width': '350px' }, 100);
         }

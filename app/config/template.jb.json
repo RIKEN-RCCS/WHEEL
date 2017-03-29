@@ -1,6 +1,6 @@
 {
     "name": "NewJob",
-    "description": "This is new job.",
+    "description": "This is new Job.",
     "path": "",
     "type": "Job",
     "script": {

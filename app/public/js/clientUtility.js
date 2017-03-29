@@ -1,8 +1,4 @@
 /**
- * socket io
- */
-var io;
-/**
  * utility for client
  */
 var ClientUtility = (function () {

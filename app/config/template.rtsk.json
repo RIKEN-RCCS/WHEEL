@@ -1,6 +1,6 @@
 {
     "name": "NewRemoteTask",
-    "description": "This is new remote task.",
+    "description": "This is new Remote Task.",
     "path": "",
     "type": "RemoteTask",
     "script": {

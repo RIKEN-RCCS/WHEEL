@@ -2,7 +2,11 @@
  * json property class for display
  */
 var JsonProperty = (function () {
+    /**
+     * create new instance
+     */
     function JsonProperty() {
+        var _this = this;
         /**
          * display element
          */
@@ -11,7 +15,17 @@ var JsonProperty = (function () {
          * setting events
          */
         this.events = {};
+        $(window).on('resize', function () {
+            _this.resize();
+        });
     }
+    /**
+     * resize property
+     */
+    JsonProperty.prototype.resize = function () {
+        var parent = this.property.parent();
+        this.property.css('top', parent.offset().top + "px");
+    };
     /**
      * clear all events
      */
@@ -203,14 +217,14 @@ var JsonProperty = (function () {
                     this.setChangeEventForNumber(object, id, prop);
                     break;
                 case 'boolean':
-                    var selectedTrue = object[prop.key] ? 'selected' : '';
-                    var selectedFalse = !object[prop.key] ? 'selected' : '';
+                    var selectedTrue = object[prop.key] ? 'selected="selected"' : '';
+                    var selectedFalse = !object[prop.key] ? 'selected="selected"' : '';
                     content = "\n                    <select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">\n                        <option value=\"true\" " + selectedTrue + ">TRUE</option>\n                        <option value=\"false\" " + selectedFalse + ">FALSE</option>\n                    </select>";
                     this.setChangeEventForBoolean(object, id, prop);
                     break;
                 case 'host':
                     var hosts = this.hostInfos.map(function (host) {
-                        var isSelected = host.name === object.name ? 'selected' : '';
+                        var isSelected = host.name === object.name ? 'selected="selected"' : '';
                         return "<option value=\"" + host.name + "\" " + isSelected + ">" + host.name + "</option>";
                     });
                     content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + hosts.join('') + "</select>";
@@ -219,7 +233,7 @@ var JsonProperty = (function () {
                 case 'scheduler':
                     var schedulers = Object.keys(config.scheduler).map(function (key) {
                         var value = config.scheduler[key];
-                        var isSelected = value === object.job_scheduler ? 'selected' : '';
+                        var isSelected = value === object.job_scheduler ? 'selected="selected"' : '';
                         return "<option value=\"" + value + "\" " + isSelected + ">" + value + "</option>";
                     });
                     content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + schedulers.join('') + "</select>";
@@ -339,6 +353,7 @@ var JsonProperty = (function () {
         this.hostInfos = hostInfos;
         this.property.html(this.createPropertyHtml());
         if (this.property.css('display') === 'none') {
+            this.resize();
             this.property.displayBlock();
             this.property.animate({ width: '350px', 'min-width': '350px' }, 100);
         }

@@ -22,7 +22,7 @@ $(() => {
     const textBoxes: JQuery[] = [textLabel, textHost, textPath, textId, sshKeyAddress];
 
     // romote host list
-    let remotHostList: SwfHostJson[];
+    let remotHostList: SwfHostJson[] = [];
 
     // file dialog
     const dialog = new FileDialog(getFileListSocket);
@@ -127,19 +127,15 @@ $(() => {
      * set several events for host list
      */
     function setHostListEvents() {
-        $(document)
-            .on('change', '.auth_type_radio', () => {
-                const isCheckedSshKey: boolean = sshKeyRadio.prop('checked');
-                if (!isCheckedSshKey) {
-                    enableRadioButtonToPass();
-                }
-                else {
-                    enableRadioButtonToSshKey();
-                }
-            })
-            .on('click', '.test_connect_button, .ng_test_button', function () {
-                runConnect($(this));
-            });
+        $(document).on('change', '.auth_type_radio', () => {
+            const isCheckedSshKey: boolean = sshKeyRadio.prop('checked');
+            if (!isCheckedSshKey) {
+                enableRadioButtonToPass();
+            }
+            else {
+                enableRadioButtonToSshKey();
+            }
+        });
     }
 
     /**
@@ -229,6 +225,7 @@ $(() => {
      * @return html string
      */
     function createHtmlContent(hostList: SwfHostJson[]): string {
+        initTestConnectEnvet();
         const html: string[] = hostList.map(host => {
             if (host.username === undefined) {
                 host.username = '';
@@ -239,19 +236,7 @@ $(() => {
                 passwordHtml = `<input type="password" class="text_box" id="${host.name}_password" autocomplete="off">`;
             }
 
-            $(document).on('keyup', `#${host.name}_password`, (eventObject: JQueryEventObject) => {
-                if (eventObject.which == 0x0D) {
-                    runConnect($(`#${host.name}_test_connect`));
-                }
-            });
-
-            $(document).one('click', `#${host.name}_delete`, () => {
-                deleteHostSocket.emit(host.name, (result: boolean): void => {
-                    getHostList();
-                    $(document).off('keyup', `#${host.name}_password`);
-                    $(document).off('click', `#${host.name}_test_connect`);
-                });
-            });
+            setTestConnectEnvet(host);
 
             return `
                 <tr id="${host.name}">
@@ -263,6 +248,47 @@ $(() => {
         });
 
         return html.join('');
+    }
+
+    /**
+     * init test connect event
+     */
+    function initTestConnectEnvet() {
+        remotHostList.forEach(remote => {
+            $(document).off('keypress', '[id$=_password]');
+            $(document).off('keyup', '[id$=_password]');
+            $(document).off('click', '[id$=_test_connect]');
+        });
+    }
+
+    /**
+     * set test connect event
+     * @param host host information
+     */
+    function setTestConnectEnvet(host: SwfHostJson) {
+        const ENTER_KEY = 0x0D;
+        let keyPressed = false;
+
+        $(document).on('keypress', `#${host.name}_password`, (eventObject: JQueryEventObject) => {
+            keyPressed = true;
+        });
+
+        $(document).on('keyup', `#${host.name}_password`, (eventObject: JQueryEventObject) => {
+            if (eventObject.which === ENTER_KEY) {
+                runConnect($(`#${host.name}_test_connect`));
+            }
+            keyPressed = false;
+        });
+
+        $(document).on('click', `#${host.name}_test_connect`, function () {
+            runConnect($(this));
+        });
+
+        $(document).one('click', `#${host.name}_delete`, () => {
+            deleteHostSocket.emit(host.name, (result: boolean): void => {
+                getHostList();
+            });
+        });
     }
 
     /**

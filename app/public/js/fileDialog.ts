@@ -69,6 +69,11 @@ class FileDialog implements DialogBase<FileDialog> {
     private clickCancelCallback;
 
     /**
+     * key pressed flag
+     */
+    private keyPressedFlag = false;
+
+    /**
      * create file dialog instance
      * @param socket socket io communication class for getting file list
      */
@@ -104,12 +109,20 @@ class FileDialog implements DialogBase<FileDialog> {
      * @return html string for all file icon
      */
     private createHtml4FileIcon(fileTypes: FileTypeList): string {
+        const regexp = new RegExp(`${config.extension.project.replace('.', '\\.')}$`);
         const htmls: string[] = fileTypes.files
             .filter(file => file.type === 'file')
             .map(file => {
+                let htmlImage: string;
+                if (file.name.match(regexp)) {
+                    htmlImage = '<img class="project_icon" src="/image/icon_workflow.png" />';
+                }
+                else {
+                    htmlImage = '<img class="file_icon" src="/image/icon_file.png" />';
+                }
                 return `
                     <div class="select_file_container" id="${fileTypes.directory}${file.name}_file" onMouseDown="return false;">
-                        <img class="file_icon" src="/image/icon_file.png" />
+                        ${htmlImage}
                         <p>${file.name}</p>
                     </div>`;
             });
@@ -308,6 +321,7 @@ class FileDialog implements DialogBase<FileDialog> {
      * @return FileDialog class instance
      */
     public show(): FileDialog {
+        this.keyPressedFlag = false;
         this.lastSelectFilepath = null;
         this.lastSelectDirectory = null;
         this.inputText.val('');
@@ -325,10 +339,15 @@ class FileDialog implements DialogBase<FileDialog> {
             }
             this.hide();
         });
+        this.inputText.on('keypress', () => {
+            this.keyPressedFlag = true;
+        });
         this.inputText.on('keyup', (eventObject: JQueryEventObject) => {
-            if (eventObject.which === 0x0D && this.clickOkCallback) {
+            const ENTER_KEY = 0x0D;
+            if (eventObject.which === ENTER_KEY && this.clickOkCallback && this.keyPressedFlag) {
                 this.clickOkCallback(this.inputText);
             }
+            this.keyPressedFlag = false;
         });
         return this;
     }
@@ -346,6 +365,7 @@ class FileDialog implements DialogBase<FileDialog> {
         this.buttonOK.off('click');
         this.buttonCancel.off('click');
         this.inputText.off('keyup');
+        this.inputText.off('keypress');
         return this;
     }
 }

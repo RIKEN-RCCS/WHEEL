@@ -176,7 +176,7 @@ var JsonFileTypeBase = (function () {
                 }
             ],
             button: [{
-                    key: 'Browse',
+                    key: 'Upload...',
                     title: 'script',
                     callback: function (tree) {
                         $(document).trigger('selectFile', {
@@ -215,7 +215,7 @@ var JsonFileTypeBase = (function () {
                 }
             ],
             button: [{
-                    key: 'Browse',
+                    key: 'Upload...',
                     title: 'job_script',
                     callback: function (tree) {
                         $(document).trigger('selectFile', {
@@ -242,9 +242,10 @@ var JsonFileTypeBase = (function () {
                     readonly: function () { return false; },
                     type: 'number',
                     validation: function (tree, v) {
+                        var forWorkflow = tree;
                         var num = parseInt(v);
-                        if (tree.forParam !== undefined) {
-                            return num < tree.forParam.end;
+                        if (forWorkflow.forParam !== undefined) {
+                            return num < forWorkflow.forParam.end;
                         }
                         return true;
                     }
@@ -254,9 +255,10 @@ var JsonFileTypeBase = (function () {
                     readonly: function () { return false; },
                     type: 'number',
                     validation: function (tree, v) {
+                        var forWorkflow = tree;
                         var num = parseInt(v);
-                        if (tree.forParam !== undefined) {
-                            return tree.forParam.start < num;
+                        if (forWorkflow.forParam !== undefined) {
+                            return forWorkflow.forParam.start < num;
                         }
                         return true;
                     }
@@ -468,7 +470,7 @@ var JsonFileTypeBase = (function () {
             order: 120,
             button: [
                 {
-                    key: 'Browse',
+                    key: 'Upload...',
                     title: 'send_files',
                     isUpdateUI: true,
                     callback: function (tree) {
@@ -485,8 +487,9 @@ var JsonFileTypeBase = (function () {
                     title: 'send_files',
                     isUpdateUI: true,
                     callback: function (tree) {
+                        var rtask = tree;
                         var file = SwfFile.getDefault();
-                        tree.send_files.push(file);
+                        rtask.send_files.push(file);
                     }
                 }
             ]
@@ -546,8 +549,9 @@ var JsonFileTypeBase = (function () {
                     title: 'receive_files',
                     isUpdateUI: true,
                     callback: function (tree) {
+                        var rtask = tree;
                         var file = SwfFile.getDefault();
-                        tree.receive_files.push(file);
+                        rtask.receive_files.push(file);
                     }
                 }]
         });
@@ -591,8 +595,9 @@ var JsonFileTypeBase = (function () {
                     title: 'receive_file',
                     isUpdateUI: true,
                     callback: function (tree, object, name) {
-                        var index = tree.receive_files.indexOf(object);
-                        tree.receive_files.splice(index, 1);
+                        var rtask = tree;
+                        var index = rtask.receive_files.indexOf(object);
+                        rtask.receive_files.splice(index, 1);
                     }
                 }]
         });
@@ -651,7 +656,7 @@ var JsonFileTypeBase = (function () {
                 }
             ],
             button: [{
-                    key: 'Browse',
+                    key: 'Upload...',
                     title: 'parameter_file',
                     callback: function (tree) {
                         $(document).trigger('selectFile', {
@@ -669,7 +674,7 @@ var JsonFileTypeBase = (function () {
      */
     JsonFileTypeBase.prototype.addHost = function () {
         this.propertyInfo.push({
-            key: 'host',
+            key: 'remote',
             ishash: true,
             order: 200,
             item: [
@@ -690,7 +695,7 @@ var JsonFileTypeBase = (function () {
             ishash: true,
             order: 400,
             button: [{
-                    key: 'Browse',
+                    key: 'Upload...',
                     title: 'upload_files',
                     isUpdateUI: true,
                     callback: function (tree) {
@@ -843,7 +848,8 @@ var TypeJob = (function (_super) {
                     key: 'Edit',
                     title: 'submit_script',
                     validation: function (tree) {
-                        if (tree.job_script.path) {
+                        var jobTask = tree;
+                        if (jobTask.job_script.path) {
                             return true;
                         }
                         else {
@@ -861,7 +867,7 @@ var TypeJob = (function (_super) {
      */
     TypeJob.prototype.addHost = function () {
         this.propertyInfo.push({
-            key: 'host',
+            key: 'remote',
             ishash: true,
             order: 200,
             item: [
@@ -1002,6 +1008,7 @@ var TypeCondition = (function (_super) {
                     key: 'name',
                     readonly: function () { return false; },
                     type: 'string',
+                    isUpdateUI: true,
                     validation: function (tree, v) {
                         return v.trim() ? true : false;
                     }
@@ -1087,6 +1094,7 @@ var TypeBreak = (function (_super) {
                     key: 'name',
                     readonly: function () { return false; },
                     type: 'string',
+                    isUpdateUI: true,
                     validation: function (tree, v) {
                         return v.trim() ? true : false;
                     }

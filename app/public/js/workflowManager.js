@@ -23,6 +23,9 @@ $(function () {
     var saveButton = $('#save_button');
     var resetButton = $('#reset_button');
     var fileSelect = $('#file_select');
+    // svg
+    var treeSvg = $('#tree_svg');
+    var nodeSvg = $('#node_svg');
     // cookies
     var cookies = ClientUtility.getCookies();
     var projectFilePath = cookies['project'];
@@ -39,7 +42,11 @@ $(function () {
      * initialize
      */
     (function init() {
+        if (rootFilePath == null) {
+            throw new Error('illegal access');
+        }
         readTreeJson();
+        setResizeEventForTreePane();
         setUpdateDisplayEvent();
         setSelectFileEvent();
         setEditScriptEvent();
@@ -49,7 +56,7 @@ $(function () {
         setKeyupEventForRenameWorkflowName();
         setKeyupEventForRenameWorkflowDescription();
         setSaveDialogEvents();
-        setResetDialogEvents();
+        setRevertDialogEvents();
         setClickEventForSaveWorkflow();
         setClickEventForResetWorkflow();
     })();
@@ -60,6 +67,36 @@ $(function () {
         $(document).on('updateDisplay', function () {
             updateDisplay(taskIndex);
         });
+    }
+    /**
+     * resize node svg width
+     */
+    function resizeNodeSvg() {
+        nodeSvg.css('width', "calc(100% - " + treeSvg.outerWidth() + "px");
+    }
+    /**
+     * set resize event to resize tree pane panel
+     */
+    function setResizeEventForTreePane() {
+        treeSvg.resizable({
+            handles: 'e',
+            minWidth: 1,
+            maxWidth: 512,
+            stop: setScrollBar
+        });
+        $(window).resize(resizeNodeSvg);
+        resizeNodeSvg();
+    }
+    /**
+     * set scrollbar to tree svg
+     */
+    function setScrollBar() {
+        if (treeSvg.width() < SvgNodePane.getWidth()) {
+            treeSvg.css('overflow-x', 'auto');
+        }
+        else {
+            treeSvg.css('overflow-x', 'hidden');
+        }
     }
     /**
      * set select file event by browse to upload file selection
@@ -164,7 +201,7 @@ $(function () {
     /**
      * set several events for yes no dialog for reset workflow
      */
-    function setResetDialogEvents() {
+    function setRevertDialogEvents() {
         revertDialog
             .onClickCancel()
             .onClickOK(function () {
@@ -198,6 +235,9 @@ $(function () {
             isConnect = true;
             readTreeJsonSocket.onConnect(rootFilePath, function (treeJson) {
                 rootTree = SwfTree.create(treeJson);
+                if (!SwfTree.getSwfTree(taskIndex)) {
+                    taskIndex = SwfTree.getRootIndex();
+                }
                 hideProperty();
             });
         }
@@ -209,6 +249,15 @@ $(function () {
      * set contextmenu events
      */
     function setContextMenuEvents() {
+        function getClickPosition(option) {
+            var parentOffset = $(option.selector).offset();
+            var clickPosition = option.$menu.position();
+            var position = {
+                x: Math.round(clickPosition.left - parentOffset.left),
+                y: Math.round(clickPosition.top - parentOffset.top)
+            };
+            return position;
+        }
         $.contextMenu({
             selector: '#node_svg',
             autoHide: true,
@@ -219,8 +268,9 @@ $(function () {
                     items: {
                         workflow: {
                             name: "Workflow",
-                            callback: function () {
-                                createChildTree(JsonFileType.WorkFlow, parentTree, function (child) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.WorkFlow, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             }
@@ -228,8 +278,9 @@ $(function () {
                         sep1: '---------',
                         task: {
                             name: 'Task',
-                            callback: function () {
-                                createChildTree(JsonFileType.Task, parentTree, function (child) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.Task, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             }
@@ -237,10 +288,12 @@ $(function () {
                         sep2: '---------',
                         rtask: {
                             name: 'Remote Task',
-                            callback: function () {
-                                createChildTree(JsonFileType.RemoteTask, parentTree, function (child) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.RemoteTask, parentTree, position, function (child) {
                                     getHostList(function () {
-                                        child.host = new SwfHost(hostInfos[0]);
+                                        var rtask = child;
+                                        rtask.remote = new SwfHost(hostInfos[0]);
                                     });
                                     hideProperty();
                                 });
@@ -249,34 +302,37 @@ $(function () {
                         sep3: '---------',
                         job: {
                             name: 'Job',
-                            callback: function () {
-                                createChildTree(JsonFileType.Job, parentTree, function (child) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.Job, parentTree, position, function (child) {
                                     getHostList(function () {
-                                        child.host = new SwfHost(hostInfos[0]);
-                                        child.host.job_scheduler = config.scheduler.TCS;
+                                        var job = child;
+                                        job.remote = new SwfHost(hostInfos[0]);
+                                        job.remote.job_scheduler = config.scheduler.TCS;
                                     });
                                     hideProperty();
                                 });
                             }
                         },
                         sep4: '---------',
-                        sep5: '---------',
                         loop: {
                             name: 'For',
-                            callback: function () {
-                                createChildTree(JsonFileType.For, parentTree, function (child) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.For, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             }
                         },
-                        sep6: '---------',
+                        sep5: '---------',
                         if: {
                             name: 'If',
-                            callback: function () {
-                                createChildTree(JsonFileType.If, parentTree, function (ifChild) {
-                                    createChildTree(JsonFileType.Condition, ifChild, function (ifGrandson) {
-                                        createChildTree(JsonFileType.Else, parentTree, function (elseChild) {
-                                            createChildTree(JsonFileType.Condition, elseChild, function (elseGrandson) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.If, parentTree, position, function (ifChild) {
+                                    createChildTree(JsonFileType.Condition, ifChild, position, function (ifGrandson) {
+                                        createChildTree(JsonFileType.Else, parentTree, position, function (elseChild) {
+                                            createChildTree(JsonFileType.Condition, elseChild, position, function (elseGrandson) {
                                                 parentTree.relations.push(new SwfRelation(ifChild.getTaskIndex(), elseChild.getTaskIndex()));
                                                 hideProperty();
                                             });
@@ -285,23 +341,25 @@ $(function () {
                                 });
                             }
                         },
-                        sep7: '---------',
+                        sep6: '---------',
                         break: {
                             name: 'Break',
-                            callback: function () {
-                                createChildTree(JsonFileType.Break, parentTree, function (child) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.Break, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             },
                             disabled: function () {
-                                return !ClientUtility.checkFileType(parentTree, JsonFileType.For);
+                                return !parentTree.isExistForWorkflowAtParent();
                             }
                         },
-                        sep8: '---------',
+                        sep7: '---------',
                         pstudy: {
                             name: 'Parameter Study',
-                            callback: function () {
-                                createChildTree(JsonFileType.PStudy, parentTree, function (child) {
+                            callback: function (name, option) {
+                                var position = getClickPosition(option);
+                                createChildTree(JsonFileType.PStudy, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             },
@@ -327,6 +385,7 @@ $(function () {
             selectedTree = null;
             updateDisplay(tree);
         });
+        setScrollBar();
         createRelationNode();
     }
     /**
@@ -380,11 +439,11 @@ $(function () {
      * create child tree
      * @param fileType json file type
      * @param parent parent tree added child
-     * @param callback function
+     * @param callback The function to call when we create new child tree
      */
-    function createChildTree(fileType, parent, callback) {
+    function createChildTree(fileType, parent, position, callback) {
         getTemplateJsonFileSocket.emit(fileType, function (json) {
-            var child = parent.addChild(json, fileType);
+            var child = parent.addChild(json, fileType, position);
             if (callback) {
                 callback(child);
             }

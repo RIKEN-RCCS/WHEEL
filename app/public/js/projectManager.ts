@@ -53,6 +53,9 @@ $(() => {
      * initialize
      */
     (function init() {
+        if (projectFilePath == null) {
+            throw new Error('illegal access');
+        }
         getProjectJson();
         setClickEventForRunButton();
         setClickEventForStopButton();
@@ -67,6 +70,7 @@ $(() => {
     function setClickEventForRunButton() {
         run_button.click(() => {
             inputPasssword((passInfo: { [name: string]: string }) => {
+                ClientUtility.deleteCookie('root');
                 ClientUtility.deleteCookie('index');
                 runProjectSocket.emit(projectFilePath, passInfo, (isSucceed: boolean) => {
                     if (isSucceed) {

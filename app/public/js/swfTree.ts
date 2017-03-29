@@ -7,29 +7,13 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      */
     private static root: SwfTree;
     /**
+     * root index
+     */
+    private static rootIndex: number = 0;
+    /**
      * children tree
      */
     public children: SwfTree[] = [];
-    /**
-     * loop parameter for loop
-     */
-    public forParam: ForParam;
-    /**
-     * condition parameter for if, else and break
-     */
-    public condition: SwfFile;
-    /**
-     * host information for job and remotetask
-     */
-    public host: SwfHost;
-    /**
-     * job script file for job
-     */
-    public job_script: SwfFile;
-    /**
-     * parameter file for parameter study
-     */
-    public parameter_file: SwfFile;
     /**
      * script parameter for job
      */
@@ -71,27 +55,32 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             const children = JSON.parse(JSON.stringify(treeJson.children));
             this.children = children.map(child => new SwfTree(child));
         }
-        if (treeJson.forParam) {
-            this.forParam = JSON.parse(JSON.stringify(treeJson.forParam));
-        }
-        if (treeJson.condition) {
-            this.condition = new SwfFile(treeJson.condition);
-        }
-        if (treeJson.host) {
-            this.host = new SwfHost(treeJson.host);
-        }
-        if (treeJson.job_script) {
-            this.job_script = new SwfFile(treeJson.job_script);
-        }
-        if (treeJson.parameter_file) {
-            this.parameter_file = new SwfFile(treeJson.parameter_file);
-        }
+
+        Object.keys(treeJson).forEach(key => {
+            if (this[key] === undefined && treeJson[key] !== undefined) {
+                if (typeof treeJson[key] === 'object') {
+                    this[key] = JSON.parse(JSON.stringify(treeJson[key]));
+                }
+                else {
+                    this[key] = treeJson[key];
+                }
+            }
+        });
+
         if (ClientUtility.checkFileType(treeJson.type, JsonFileType.Job)) {
             this.script_param = {
                 cores: 1,
                 nodes: 1
             };
         }
+    }
+
+    /**
+     * get root index
+     * @return root index
+     */
+    public static getRootIndex(): string {
+        return this.rootIndex.toString();
     }
 
     /**
@@ -149,7 +138,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param tree SwfTree instance
      * @param indexes parent index array
      */
-    private static renumberingIndex(tree: SwfTree, indexes: number[] = [0]) {
+    private static renumberingIndex(tree: SwfTree, indexes: number[] = [this.rootIndex]) {
         tree.indexes = indexes;
         tree.oldPath = tree.path;
         tree.children.forEach((child, index) => {
@@ -163,9 +152,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * add child date to this tree
      * @param treeJson json data
      * @param fileType json file type
-     * @param added child data
+     * @param position display position
+     * @return added child data
      */
-    public addChild(treeJson: SwfTreeJson, fileType: JsonFileType): SwfTree {
+    public addChild(treeJson: SwfTreeJson, fileType: JsonFileType, position: Position2D): SwfTree {
         const rand = Math.floor(Date.now() / 100) % 100000;
         const dirname = `${treeJson.type}Dir${`00000${rand}`.slice(-5)}`;
         const tree = new SwfTree(treeJson);
@@ -179,7 +169,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             required: true,
             type: 'file'
         }));
-        this.positions.push({ x: 0, y: 0 });
+        this.positions.push(JSON.parse(JSON.stringify(position)));
         SwfTree.renumberingIndex(SwfTree.root);
         tree.oldPath = '';
         return tree;
@@ -355,12 +345,21 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         const output = this.output_files.filter(file => {
             return this.getFullpath(file.path) === fullpath;
         });
-        const send = this.send_files.filter(file => {
-            return this.getFullpath(file.path) === fullpath;
-        });
-        const receive = this.receive_files.filter(file => {
-            return this.getFullpath(file.path) === fullpath;
-        });
+
+        let send: SwfFileJson[] = [];
+        let receive: SwfFileJson[] = [];
+        const rtask = <SwfRemoteTask><any>this;
+
+        if (rtask.send_files !== undefined) {
+            send = rtask.send_files.filter(file => {
+                return this.getFullpath(file.path) === fullpath;
+            });
+        }
+        if (rtask.receive_files !== undefined) {
+            receive = rtask.receive_files.filter(file => {
+                return this.getFullpath(file.path) === fullpath;
+            });
+        }
 
         if (input[0] || output[0] || send[0] || receive[0]) {
             return true;
@@ -718,8 +717,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      */
     public updatePath(file: SwfFile) {
         const oldFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
+        const oldDirectory = this.getCurrentDirectory();
         this.path = file.path;
         const newFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
+        const newDirectory = this.getCurrentDirectory();
 
         console.log(`old=${oldFullpath} new=${newFullpath}`);
         const parent = this.getParent();
@@ -734,6 +735,19 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
                 child.path = parent.getRelativePath(newFullpath);
             }
         });
+
+        (function renamePath(tree: SwfTree) {
+            if (tree == null) {
+                return;
+            }
+            tree.file_relations.forEach(relation => {
+                relation.renameInputPath(tree, oldDirectory, newDirectory);
+                relation.renameOutputPath(tree, oldDirectory, newDirectory);
+            });
+            tree.input_files.forEach(file => file.renamePath(tree, oldDirectory, newDirectory));
+            tree.output_files.forEach(file => file.renamePath(tree, oldDirectory, newDirectory));
+            renamePath(tree.getParent());
+        })(parent);
     }
 
     /**
@@ -767,36 +781,6 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
-     * get the file with the same send file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same send file path name as the specified path name
-     */
-    public findSendFile(path: string): SwfFile {
-        const file: SwfFile = this.getSendFile(path);
-        if (file) {
-            return file;
-        }
-        else {
-            return this.send_files.filter(file => `${this.path}/${file.getNormalPath()}` === ClientUtility.normalize(path))[0];
-        }
-    }
-
-    /**
-     * get the file with the same receive file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same receive file path name as the specified path name
-     */
-    public findReceiveFile(path: string): SwfFile {
-        const file: SwfFile = this.getReceiveFile(path);
-        if (file) {
-            return file;
-        }
-        else {
-            return this.receive_files.filter(file => `${this.path}/${file.getNormalPath()}` === ClientUtility.normalize(path))[0];
-        }
-    }
-
-    /**
      * add script file for upload
      * @param file upload script file
      */
@@ -811,7 +795,8 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      */
     public addJobScriptFile(file: File) {
         this.uploadScript = file;
-        this.job_script.path = file.name;
+        const job = <SwfJobJson><any>this;
+        job.job_script.path = file.name;
     }
 
     /**
@@ -820,7 +805,8 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      */
     public addParameterFile(file: File) {
         this.uploadParamFile = file;
-        this.parameter_file.path = file.name;
+        const pstudy = <SwfPStudyJson><any>this;
+        pstudy.parameter_file.path = file.name;
     }
 
     /**
@@ -828,10 +814,11 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param files upload send file list
      */
     public addSendFile(files: FileList) {
+        const rtask = <SwfRemoteTask><any>this;
         for (let index = 0; index < files.length; index++) {
             this.deleteSendfile(files[index].name);
             this.uploadSendfiles.push(files[index]);
-            this.send_files.push(new SwfFile({
+            rtask.send_files.push(new SwfFile({
                 name: 'name',
                 description: '',
                 path: files[index].name,
@@ -866,9 +853,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             filepath = object.path;
         }
 
-        for (let index = this.send_files.length - 1; index >= 0; index--) {
-            if (this.send_files[index].path === filepath) {
-                this.send_files.splice(index, 1);
+        const rtask = <SwfRemoteTask><any>this;
+        for (let index = rtask.send_files.length - 1; index >= 0; index--) {
+            if (rtask.send_files[index].path === filepath) {
+                rtask.send_files.splice(index, 1);
             }
         }
 
@@ -976,7 +964,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param after after task index
      * @return whether circular reference is occurred or not
      */
-    public isCircularReference(before: number, after: number): boolean {
+    public isExistCircularReference(before: number, after: number): boolean {
         if (before === after) {
             return true;
         }
@@ -987,13 +975,32 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             return false;
         }
         else {
-            const results1 = relations.filter(relation => this.isCircularReference(before, relation.index_after_task));
-            const results2 = fileRelations.filter(relation => this.isCircularReference(before, relation.index_after_task));
+            const results1 = relations.filter(relation => this.isExistCircularReference(before, relation.index_after_task));
+            const results2 = fileRelations.filter(relation => this.isExistCircularReference(before, relation.index_after_task));
             if (!results1[0] && !results2[0]) {
                 return false;
             }
             else {
                 return true;
+            }
+        }
+    }
+
+    /**
+     * whether there is a For workflow at parent or not
+     * @return whether there is a For workflow at parent or not
+     */
+    public isExistForWorkflowAtParent(): boolean {
+        if (ClientUtility.checkFileType(this, JsonFileType.For)) {
+            return true;
+        }
+        else {
+            const parent = this.getParent();
+            if (parent == null) {
+                return false;
+            }
+            else {
+                return parent.isExistForWorkflowAtParent();
             }
         }
     }

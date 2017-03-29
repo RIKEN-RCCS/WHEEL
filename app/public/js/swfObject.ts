@@ -88,6 +88,18 @@ class SwfFile implements SwfFileJson {
             required: true
         });
     }
+
+    /**
+     * rename file path
+     * @param tree tree instance
+     * @param oldDirectory old directory name
+     * @param newDirectory new directory name
+     */
+    public renamePath(tree: SwfTree, oldDirectory: string, newDirectory: string) {
+        const oldFullpath = tree.getFullpath(this);
+        const newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+        this.path = tree.getRelativePath(newFullpath);
+    }
 }
 
 /**
@@ -124,14 +136,6 @@ class SwfTask implements SwfTaskJson {
      */
     public output_files: SwfFile[];
     /**
-     * send files
-     */
-    public send_files: SwfFile[];
-    /**
-     * receive files
-     */
-    public receive_files: SwfFile[];
-    /**
      * clean up flag
      */
     public clean_up: boolean;
@@ -152,8 +156,6 @@ class SwfTask implements SwfTaskJson {
         this.script = swfTask.script == null ? null : new SwfFile(swfTask.script);
         this.input_files = JSON.parse(JSON.stringify(swfTask.input_files)).map(file => new SwfFile(file));
         this.output_files = JSON.parse(JSON.stringify(swfTask.output_files)).map(file => new SwfFile(file));
-        this.send_files = JSON.parse(JSON.stringify(swfTask.send_files)).map(file => new SwfFile(file));
-        this.receive_files = JSON.parse(JSON.stringify(swfTask.receive_files)).map(file => new SwfFile(file));
         this.clean_up = swfTask.clean_up;
         this.max_size_receive_file = swfTask.max_size_receive_file;
     }
@@ -174,22 +176,24 @@ class SwfTask implements SwfTaskJson {
     public getOutputFile(path: string): SwfFile {
         return this.output_files.filter(file => { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
     }
+}
+
+/**
+ * Swf Remote Task definition
+ */
+class SwfRemoteTask extends SwfTask implements SwfRemoteTaskJson {
     /**
-     * get the file with the same send file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same send file path name as the specified path name
+     * host information
      */
-    public getSendFile(path: string): SwfFile {
-        return this.send_files.filter(file => { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
-    }
+    public remote: SwfHostJson;
     /**
-     * get the file with the same receive file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same receive file path name as the specified path name
+     * send files
      */
-    public getReceiveFile(path: string): SwfFile {
-        return this.receive_files.filter(file => { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
-    }
+    public send_files: SwfFileJson[];
+    /**
+     * receive files
+     */
+    public receive_files: SwfFileJson[];
 }
 
 /**
@@ -291,6 +295,30 @@ class SwfRelationFile implements SwfFileRelationJson {
      */
     public toString(): string {
         return `${this.getOutputFileName()}_${this.getInputFileName()}`;
+    }
+
+    /**
+     * rename output file path
+     * @param tree tree instance
+     * @param oldDirectory old directory name
+     * @param newDirectory new directory name
+     */
+    public renameOutputPath(tree: SwfTree, oldDirectory: string, newDirectory: string) {
+        const oldFullpath = tree.getFullpath(this.path_output_file);
+        const newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+        this.path_output_file = tree.getRelativePath(newFullpath);
+    }
+
+    /**
+     * rename input file path
+     * @param tree tree instance
+     * @param oldDirectory old directory name
+     * @param newDirectory new directory name
+     */
+    public renameInputPath(tree: SwfTree, oldDirectory: string, newDirectory: string) {
+        const oldFullpath = tree.getFullpath(this.path_input_file);
+        const newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+        this.path_input_file = tree.getRelativePath(newFullpath);
     }
 }
 
@@ -465,13 +493,6 @@ class SwfHost implements SwfHostJson {
 }
 
 // /**
-//  * Swf Remote Task definition
-//  */
-// class SwfRemoteTask extends SwfTask implements SwfRemoteTaskJson {
-//     host: SwfHost;
-// }
-
-// /**
 //  * Swf Job definition
 //  */
 // class SwfJob extends SwfRemoteTask implements SwfJobJson {
@@ -525,7 +546,7 @@ class SwfLog implements SwfLogJson {
     /**
      * host information
      */
-    public host?: SwfHost;
+    public remote?: SwfHost;
     /**
      * display order
      */
@@ -563,8 +584,8 @@ class SwfLog implements SwfLogJson {
             this.children = children.map(child => new SwfLog(child));
         }
 
-        if (logJson.host) {
-            this.host = JSON.parse(JSON.stringify(logJson.host));
+        if (logJson.remote) {
+            this.remote = JSON.parse(JSON.stringify(logJson.remote));
         }
     }
 
@@ -658,15 +679,15 @@ class SwfLog implements SwfLogJson {
      * @return used host list
      */
     public static getHostList(): SwfHostJson[] {
-        const hash = {};
+        const hash: { [name: string]: SwfHostJson } = {};
         const notSeachedList: SwfLog[] = [this.root];
         while (true) {
             const log = notSeachedList.shift();
             if (!log) {
                 break;
             }
-            if (log.host && !ClientUtility.isLocalHost(log.host.host)) {
-                hash[log.host.name] = log.host;
+            if (log.remote && !ClientUtility.isLocalHost(log.remote.host)) {
+                hash[log.remote.name] = log.remote;
             }
             log.children.forEach(child => {
                 notSeachedList.push(child);

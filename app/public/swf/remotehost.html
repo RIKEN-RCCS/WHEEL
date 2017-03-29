@@ -6,11 +6,13 @@
     <link type="text/css" rel="stylesheet" href="/css/style.css" />
     <script type="text/javascript" src="/third_party/jquery/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/third_party/socket.io/socket.io-1.7.3.min.js"></script>
-    <script type="text/javascript" src="/js/getRemoteHostListSocket.js"></script>
-    <script type="text/javascript" src="/js/sshConnectionSocket.js"></script>
-    <script type="text/javascript" src="/js/addHostSocket.js"></script>
-    <script type="text/javascript" src="/js/deleteHostSocket.js"></script>
-    <script type="text/javascript" src="/js/getFileListSocket.js"></script>
+
+    <script type="text/javascript" src="/js/socketio/getRemoteHostListSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/sshConnectionSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/addHostSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/deleteHostSocket.js"></script>
+    <script type="text/javascript" src="/js/socketio/getFileListSocket.js"></script>
+
     <script type="text/javascript" src="/js/clientUtility.js"></script>
     <script type="text/javascript" src="/js/fileDialog.js"></script>
     <script type="text/javascript" src="/js/jqueryExtends.js"></script>
@@ -58,7 +60,7 @@
                     <input type="radio" name="authtype" class="auth_type_radio" id="authtype_sshkey" checked>
                     <label class="text_label">Key File</label>
                     <input type="text" id="sshkey_address" class="remotehost_text text_box" style="margin-left: 15px">
-                    <button type="button" class="button" id="browse_button">Browse</button>
+                    <button type="button" class="button" id="browse_button">Browse...</button>
                 </div>
             </div>
         </div>

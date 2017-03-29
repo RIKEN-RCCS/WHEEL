@@ -587,7 +587,7 @@ class ServerUtility {
         this.setDisplayOrder(tree);
 
         const planningState = this.config.state.planning;
-        (function convertTreeToLog(treeJson: SwfTreeJson, parentDir: string) {
+        (function convertTreeToLog(treeJson: any, parentDir: string) {
             treeJson.path = path.join(parentDir, treeJson.path);
             const logJson: SwfLogJson = {
                 name: treeJson.name,
@@ -598,8 +598,8 @@ class ServerUtility {
                 execution_start_date: '',
                 execution_end_date: '',
                 children: [],
-                host: treeJson.host,
-                order: treeJson.order
+                order: treeJson.order,
+                remote: treeJson.remote
             };
 
             Object.keys(treeJson).forEach(key => {

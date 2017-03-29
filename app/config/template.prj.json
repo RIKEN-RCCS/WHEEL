@@ -1,6 +1,6 @@
 {
     "name": "NewProject",
-    "description": "This is new project.",
+    "description": "This is new Project.",
     "state": "Planning",
     "path": "./define.prj.json",
     "path_workflow": "./define.wf.json"

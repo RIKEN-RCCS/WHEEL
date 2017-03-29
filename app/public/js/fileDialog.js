@@ -48,6 +48,10 @@ var FileDialog = (function () {
          * last select file
          */
         this.lastSelectFilepath = null;
+        /**
+         * key pressed flag
+         */
+        this.keyPressedFlag = false;
         this.socket = socket;
         this.grayPanel.click(function () { return _this.hide(); });
     }
@@ -76,10 +80,18 @@ var FileDialog = (function () {
      * @return html string for all file icon
      */
     FileDialog.prototype.createHtml4FileIcon = function (fileTypes) {
+        var regexp = new RegExp(config.extension.project.replace('.', '\\.') + "$");
         var htmls = fileTypes.files
             .filter(function (file) { return file.type === 'file'; })
             .map(function (file) {
-            return "\n                    <div class=\"select_file_container\" id=\"" + fileTypes.directory + file.name + "_file\" onMouseDown=\"return false;\">\n                        <img class=\"file_icon\" src=\"/image/icon_file.png\" />\n                        <p>" + file.name + "</p>\n                    </div>";
+            var htmlImage;
+            if (file.name.match(regexp)) {
+                htmlImage = '<img class="project_icon" src="/image/icon_workflow.png" />';
+            }
+            else {
+                htmlImage = '<img class="file_icon" src="/image/icon_file.png" />';
+            }
+            return "\n                    <div class=\"select_file_container\" id=\"" + fileTypes.directory + file.name + "_file\" onMouseDown=\"return false;\">\n                        " + htmlImage + "\n                        <p>" + file.name + "</p>\n                    </div>";
         });
         return htmls.join('');
     };
@@ -266,6 +278,7 @@ var FileDialog = (function () {
      */
     FileDialog.prototype.show = function () {
         var _this = this;
+        this.keyPressedFlag = false;
         this.lastSelectFilepath = null;
         this.lastSelectDirectory = null;
         this.inputText.val('');
@@ -283,10 +296,15 @@ var FileDialog = (function () {
             }
             _this.hide();
         });
+        this.inputText.on('keypress', function () {
+            _this.keyPressedFlag = true;
+        });
         this.inputText.on('keyup', function (eventObject) {
-            if (eventObject.which === 0x0D && _this.clickOkCallback) {
+            var ENTER_KEY = 0x0D;
+            if (eventObject.which === ENTER_KEY && _this.clickOkCallback && _this.keyPressedFlag) {
                 _this.clickOkCallback(_this.inputText);
             }
+            _this.keyPressedFlag = false;
         });
         return this;
     };
@@ -303,6 +321,7 @@ var FileDialog = (function () {
         this.buttonOK.off('click');
         this.buttonCancel.off('click');
         this.inputText.off('keyup');
+        this.inputText.off('keypress');
         return this;
     };
     return FileDialog;

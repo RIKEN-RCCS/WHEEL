@@ -1,6 +1,6 @@
 {
     "name": "NewParameterStudy",
-    "description": "This is new Parameter study.",
+    "description": "This is new Parameter Study.",
     "path": "",
     "type": "PStudy",
     "script": {},
@@ -13,8 +13,6 @@
     },
     "input_files": [],
     "output_files": [],
-    "send_files": [],
-    "receive_files": [],
     "clean_up": true,
     "max_size_receive_file": 17179869184,
     "children_file": [],

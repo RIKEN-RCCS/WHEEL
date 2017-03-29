@@ -106,6 +106,11 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
     private keyupEnterCallback;
 
     /**
+     * key pressed flag
+     */
+    private keyPressedFlag = false;
+
+    /**
      * create input text dialog instance
      * @param name dialog label name
      */
@@ -125,6 +130,7 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
      * @return InputTextDialog instance
      */
     public show(title?: string, label?: string): InputTextDialog {
+        this.keyPressedFlag = false;
         this.grayPanel.displayBlock();
         this.dialogArea.displayBlock();
         this.buttonOK.on('click', () => {
@@ -140,8 +146,12 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
                 this.hide();
             }
         });
+        this.inputText.on('keypress', () => {
+            this.keyPressedFlag = true;
+        });
         this.inputText.on('keyup', (eventObject: JQueryEventObject) => {
-            if (this.isEnableEvent && this.clickOkCallback && eventObject.which === 0x0D) {
+            const ENTER_KEY = 0x0D;
+            if (this.isEnableEvent && this.clickOkCallback && eventObject.which === ENTER_KEY) {
                 this.clickOkCallback(this.inputText);
             }
         });
@@ -170,6 +180,7 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
         this.buttonOK.off('click');
         this.buttonCancel.off('click');
         this.inputText.off('keyup');
+        this.inputText.off('keypress');
         return this;
     }
 

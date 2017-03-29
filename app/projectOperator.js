@@ -1,5 +1,4 @@
 "use strict";
-//inport = OpenLogJsonEvent;
 var fs = require("fs");
 var path = require("path");
 var ssh2 = require("ssh2");
@@ -94,7 +93,7 @@ var ProjectOperator = (function () {
             _tree.local_path = path.join(path_to_root, path_from_root);
             if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
                 var remoteTask = _tree;
-                _tree.remote_path = path.posix.join(remoteTask.host.path, name_dir_time, path_from_root.replace('\\', '/'));
+                _tree.remote_path = path.posix.join(remoteTask.remote.path, name_dir_time, path_from_root.replace('\\', '/'));
             }
             for (var i = 0; i < _tree.children.length; i++) {
                 _setPathAbsolute(_tree.children[i], path.join(path_from_root, _tree.children[i].path));
@@ -124,8 +123,8 @@ var ProjectOperator = (function () {
     ProjectOperator.setPassToHost = function (tree, host_passSet) {
         if (tree.type == SwfType.REMOTETASK || tree.type == SwfType.JOB) {
             var remoteTask = tree;
-            if (host_passSet.hasOwnProperty(remoteTask.host.name)) {
-                remoteTask.host.pass = host_passSet[remoteTask.host.name];
+            if (host_passSet.hasOwnProperty(remoteTask.remote.name)) {
+                remoteTask.remote.pass = host_passSet[remoteTask.remote.name];
             }
         }
         for (var i = 0; i < tree.children.length; i++) {
@@ -221,21 +220,8 @@ var TaskManager = (function () {
      */
     TaskManager.completed = function (tree) {
         TaskManager.writeLogCompleted(tree);
-        if (tree.type == SwfType.BREAK) {
-            var break_for = tree.parent;
-            while (break_for.type != SwfType.FOR) {
-                if (break_for.parent == null) {
-                    logger.error('The "break"\'s parent isn\'t "For"');
-                    return;
-                }
-                break_for = break_for.parent;
-            }
-            TaskManager.completed(break_for);
-        }
-        else {
-            // run parent
-            TaskManager.run(tree.parent);
-        }
+        // run parent
+        TaskManager.run(tree.parent);
     };
     /**
      * Failed tree. Write log.
@@ -252,6 +238,18 @@ var TaskManager = (function () {
             var if_tree = tree.parent;
             TaskManager.completed(if_tree);
             TaskManager.run(if_tree.parent);
+        }
+        else if (tree.type == SwfType.BREAK) {
+            var break_for = tree.parent;
+            while (break_for.type != SwfType.FOR) {
+                if (break_for.parent == null) {
+                    logger.error('The "break"\'s parent isn\'t "For"');
+                    return;
+                }
+                TaskManager.writeLogCompleted(break_for);
+                break_for = break_for.parent;
+            }
+            TaskManager.completed(break_for);
         }
         else {
             TaskManager.failed(tree.parent);
@@ -459,20 +457,6 @@ var TaskManager = (function () {
     };
     return TaskManager;
 }());
-///**
-// * Failed condition.
-// * @param tree Task
-// */
-//public static failedCondition(tree: TaskTree) {
-//    if (tree == null) {
-//        logger.info('task is null');
-//        return;
-//    }
-//    TaskManager.writeLogFailed(tree);
-//    TaskManager.writeLogCompleted(tree.parent);
-//    // run parent
-//    TaskManager.run(tree.parent.parent);
-//}
 /**
  * name of log file
  */
@@ -610,17 +594,17 @@ var TaskOperator = (function () {
             return;
         }
         var config = {
-            host: remoteTask.host.host,
+            host: remoteTask.remote.host,
             port: 22,
-            username: remoteTask.host.username,
+            username: remoteTask.remote.username,
         };
         // TODO get password from dialog
-        if (remoteTask.host.privateKey) {
-            config.privateKey = fs.readFileSync(remoteTask.host.privateKey);
-            config.passphrase = remoteTask.host.pass;
+        if (remoteTask.remote.privateKey) {
+            config.privateKey = fs.readFileSync(remoteTask.remote.privateKey);
+            config.passphrase = remoteTask.remote.pass;
         }
         else {
-            config.password = remoteTask.host.pass;
+            config.password = remoteTask.remote.pass;
         }
         client.connect(config);
         client.on('ready', readyCallback);
@@ -668,16 +652,16 @@ var TaskOperator = (function () {
             return;
         }
         var config = {
-            host: job.host.host,
+            host: job.remote.host,
             port: 22,
-            username: job.host.username,
+            username: job.remote.username,
         };
-        if (job.host.privateKey) {
-            config.privateKey = fs.readFileSync(job.host.privateKey);
-            config.passphrase = job.host.pass;
+        if (job.remote.privateKey) {
+            config.privateKey = fs.readFileSync(job.remote.privateKey);
+            config.passphrase = job.remote.pass;
         }
         else {
-            config.password = job.host.pass;
+            config.password = job.remote.pass;
         }
         client.connect(config);
         client.on('ready', readyCallback);
@@ -712,10 +696,10 @@ var TaskOperator = (function () {
                             return;
                         }
                         var command = '';
-                        if (job.host.job_scheduler == SwfJobScheduler.TCS) {
+                        if (job.remote.job_scheduler == SwfJobScheduler.TCS) {
                             command += "pjstat " + jobId + "\n";
                         }
-                        else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
+                        else if (job.remote.job_scheduler == SwfJobScheduler.TORQUE) {
                             command += "qstat -l " + jobId + " -x\n";
                         }
                         else {
@@ -741,11 +725,11 @@ var TaskOperator = (function () {
                             var stdout = String(data);
                             // check state of job
                             var isFinish = false;
-                            if (job.host.job_scheduler == SwfJobScheduler.TCS) {
+                            if (job.remote.job_scheduler == SwfJobScheduler.TCS) {
                                 var regExp = /JOB_ID/i;
                                 isFinish = (!regExp.test(stdout));
                             }
-                            else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
+                            else if (job.remote.job_scheduler == SwfJobScheduler.TORQUE) {
                                 var regExp = /<job_state>C<\/job_state>/i;
                                 isFinish = (regExp.test(stdout));
                             }
@@ -765,10 +749,10 @@ var TaskOperator = (function () {
                     // TODO test
                     var stdout = new String(data);
                     var regEtp;
-                    if (job.host.job_scheduler == SwfJobScheduler.TCS) {
+                    if (job.remote.job_scheduler == SwfJobScheduler.TCS) {
                         regEtp = /Job\s(\d+)\ssubmitted/i;
                     }
-                    else if (job.host.job_scheduler == SwfJobScheduler.TORQUE) {
+                    else if (job.remote.job_scheduler == SwfJobScheduler.TORQUE) {
                         regEtp = /(\d+)/;
                     }
                     else {
@@ -820,11 +804,11 @@ var TaskOperator = (function () {
             TaskManager.completed(tree);
             return;
         }
-        var workflow = ProjectOperator.copyTaskTree(tree);
+        var child = ProjectOperator.copyTaskTree(tree);
+        var workflow = child;
         workflow.name = loop.name + "_" + index;
         workflow.path = loop.path + "_" + index;
         workflow.type = SwfType.WORKFLOW;
-        var child = workflow;
         child.parent = tree;
         ProjectOperator.setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
         // copy directory
@@ -940,11 +924,11 @@ var TaskOperator = (function () {
             }
             return;
         }
-        var workflow = ProjectOperator.copyTaskTree(tree);
+        var child = ProjectOperator.copyTaskTree(tree);
+        var workflow = child;
         workflow.name = pstudy.name + "_" + index;
         workflow.path = pstudy.path + "_" + index;
         workflow.type = SwfType.WORKFLOW;
-        var child = workflow;
         child.parent = tree;
         if (tree.hidden_children == null) {
             tree.hidden_children = new Array();
@@ -1142,8 +1126,9 @@ var TaskOperator = (function () {
      * @param callbackErr function ro call when we get error
      */
     TaskOperator.setUpRemote = function (remoteTask, client, callback, callbackErr) {
+        var tree = remoteTask;
         // make working directory
-        TaskOperator.mkdirRemote(client, remoteTask.remote_path, '', mkdirCallback, callbackErr);
+        TaskOperator.mkdirRemote(client, tree.remote_path, '', mkdirCallback, callbackErr);
         function mkdirCallback() {
             // send files
             compressFiles();
@@ -1178,7 +1163,7 @@ var TaskOperator = (function () {
                     command += " \"" + file.path + "\"";
                 }
             }
-            TaskOperator.exec(command, remoteTask.local_path, compressCallback, callbackErr);
+            TaskOperator.exec(command, tree.local_path, compressCallback, callbackErr);
         }
         function compressCallback() {
             // send file
@@ -1192,8 +1177,8 @@ var TaskOperator = (function () {
                 return;
             }
             // send script file
-            var local_path = path.join(remoteTask.local_path, tarFile_name);
-            var remote_path = path.posix.join(remoteTask.remote_path, tarFile_name);
+            var local_path = path.join(tree.local_path, tarFile_name);
+            var remote_path = path.posix.join(tree.remote_path, tarFile_name);
             sftp.fastPut(local_path, remote_path, sendFileCallback);
             function sendFileCallback(err) {
                 if (err) {
@@ -1209,13 +1194,13 @@ var TaskOperator = (function () {
         }
         function extractFilesRemote() {
             var command = "tar xvf \"" + tarFile_name + "\";";
-            TaskOperator.execRemote(client, command, remoteTask.remote_path, extractCallback, callbackErr);
+            TaskOperator.execRemote(client, command, tree.remote_path, extractCallback, callbackErr);
         }
         function extractCallback() {
             // remove compressed files
-            fs.unlinkSync(path.join(remoteTask.local_path, tarFile_name));
+            fs.unlinkSync(path.join(tree.local_path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.remote_path, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, tree.remote_path, callback, callback);
         }
     };
     /**
@@ -1226,6 +1211,7 @@ var TaskOperator = (function () {
      * @param callbackErr function ro call when we get error
      */
     TaskOperator.cleanUpRemote = function (remoteTask, client, callback, callbackErr) {
+        var tree = remoteTask;
         var tarFile_name = 'recieve_files.tar.gz';
         if (remoteTask.receive_files.length + remoteTask.output_files.length < 1) {
             callback();
@@ -1244,7 +1230,7 @@ var TaskOperator = (function () {
                 var file = remoteTask.output_files[i];
                 command += " \"" + file.path + "\"";
             }
-            TaskOperator.execRemote(client, command, remoteTask.remote_path, compressCallback, callbackErr);
+            TaskOperator.execRemote(client, command, tree.remote_path, compressCallback, callbackErr);
         }
         function compressCallback() {
             // recieve file
@@ -1258,8 +1244,8 @@ var TaskOperator = (function () {
                 return;
             }
             // send script file
-            var local_path = path.join(remoteTask.local_path, tarFile_name);
-            var remote_path = path.posix.join(remoteTask.remote_path, tarFile_name);
+            var local_path = path.join(tree.local_path, tarFile_name);
+            var remote_path = path.posix.join(tree.remote_path, tarFile_name);
             sftp.fastGet(remote_path, local_path, recieveFileCallback);
             function recieveFileCallback(err) {
                 if (err) {
@@ -1279,13 +1265,13 @@ var TaskOperator = (function () {
                 // Windows
                 command = "\"" + path.resolve('tar.exe') + "\" xvf \"" + tarFile_name + "\"";
             }
-            TaskOperator.exec(command, remoteTask.local_path, extractCallback, callbackErr);
+            TaskOperator.exec(command, tree.local_path, extractCallback, callbackErr);
         }
         function extractCallback() {
             // remove compressed files
-            fs.unlinkSync(path.join(remoteTask.local_path, tarFile_name));
+            fs.unlinkSync(path.join(tree.local_path, tarFile_name));
             // if this failed, callback next
-            TaskOperator.rmFileRemote(client, tarFile_name, remoteTask.remote_path, callback, callback);
+            TaskOperator.rmFileRemote(client, tarFile_name, tree.remote_path, callback, callback);
         }
     };
     return TaskOperator;

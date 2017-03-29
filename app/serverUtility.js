@@ -565,8 +565,8 @@ var ServerUtility = (function () {
                 execution_start_date: '',
                 execution_end_date: '',
                 children: [],
-                host: treeJson.host,
-                order: treeJson.order
+                order: treeJson.order,
+                remote: treeJson.remote
             };
             Object.keys(treeJson).forEach(function (key) {
                 if (logJson[key] === undefined) {

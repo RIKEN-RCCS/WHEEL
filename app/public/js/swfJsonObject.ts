@@ -58,14 +58,6 @@ interface SwfTaskJson {
      */
     output_files: SwfFileJson[];
     /**
-     * send files
-     */
-    send_files: SwfFileJson[];
-    /**
-     * receive files
-     */
-    receive_files: SwfFileJson[];
-    /**
      * clean up flag
      */
     clean_up: boolean;
@@ -230,7 +222,15 @@ interface SwfRemoteTaskJson extends SwfTaskJson {
     /**
      * host information
      */
-    host: SwfHostJson;
+    remote: SwfHostJson;
+    /**
+     * send files
+     */
+    send_files: SwfFileJson[];
+    /**
+     * receive files
+     */
+    receive_files: SwfFileJson[];
 }
 
 /**
@@ -241,6 +241,10 @@ interface SwfJobJson extends SwfRemoteTaskJson {
      * job script file
      */
     job_script: SwfFileJson;
+    /**
+     * script parameter
+     */
+    script_param: ScriptParams;
 }
 
 /**
@@ -278,7 +282,7 @@ interface SwfLogJson {
     /**
      * host information
      */
-    host?: SwfHostJson;
+    remote?: SwfHostJson;
     /**
      * display order
      */
@@ -303,6 +307,10 @@ interface SwfIfJson extends SwfWorkflowJson {
  * "break" statement
  */
 interface SwfBreakJson extends SwfTaskJson {
+    /**
+     * condition file
+     */
+    condition_file: SwfFileJson;
 }
 
 /**
@@ -411,30 +419,6 @@ interface SwfTreeJson extends SwfWorkflowJson {
      * children tree
      */
     children: SwfTreeJson[];
-    /**
-     * loop parameter for loop
-     */
-    forParam: ForParam;
-    /**
-     * condition parameter for if, else and break
-     */
-    condition: SwfFileJson;
-    /**
-     * host information for job and remotetask
-     */
-    host: SwfHostJson;
-    /**
-     * job script file for job
-     */
-    job_script: SwfFile;
-    /**
-     * parameter file for parameter study
-     */
-    parameter_file: SwfFile;
-    /**
-     * script parameter for job
-     */
-    script_param: ScriptParams;
     /**
      * old path
      */

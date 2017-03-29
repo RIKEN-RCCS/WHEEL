@@ -1,9 +1,4 @@
 /**
- * socket io
- */
-var io;
-
-/**
  * utility for client
  */
 class ClientUtility {

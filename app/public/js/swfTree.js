@@ -40,21 +40,16 @@ var SwfTree = (function (_super) {
             var children = JSON.parse(JSON.stringify(treeJson.children));
             _this.children = children.map(function (child) { return new SwfTree(child); });
         }
-        if (treeJson.forParam) {
-            _this.forParam = JSON.parse(JSON.stringify(treeJson.forParam));
-        }
-        if (treeJson.condition) {
-            _this.condition = new SwfFile(treeJson.condition);
-        }
-        if (treeJson.host) {
-            _this.host = new SwfHost(treeJson.host);
-        }
-        if (treeJson.job_script) {
-            _this.job_script = new SwfFile(treeJson.job_script);
-        }
-        if (treeJson.parameter_file) {
-            _this.parameter_file = new SwfFile(treeJson.parameter_file);
-        }
+        Object.keys(treeJson).forEach(function (key) {
+            if (_this[key] === undefined && treeJson[key] !== undefined) {
+                if (typeof treeJson[key] === 'object') {
+                    _this[key] = JSON.parse(JSON.stringify(treeJson[key]));
+                }
+                else {
+                    _this[key] = treeJson[key];
+                }
+            }
+        });
         if (ClientUtility.checkFileType(treeJson.type, JsonFileType.Job)) {
             _this.script_param = {
                 cores: 1,
@@ -63,6 +58,13 @@ var SwfTree = (function (_super) {
         }
         return _this;
     }
+    /**
+     * get root index
+     * @return root index
+     */
+    SwfTree.getRootIndex = function () {
+        return this.rootIndex.toString();
+    };
     /**
      * get index string
      * @return index string
@@ -116,7 +118,7 @@ var SwfTree = (function (_super) {
      */
     SwfTree.renumberingIndex = function (tree, indexes) {
         var _this = this;
-        if (indexes === void 0) { indexes = [0]; }
+        if (indexes === void 0) { indexes = [this.rootIndex]; }
         tree.indexes = indexes;
         tree.oldPath = tree.path;
         tree.children.forEach(function (child, index) {
@@ -129,9 +131,10 @@ var SwfTree = (function (_super) {
      * add child date to this tree
      * @param treeJson json data
      * @param fileType json file type
-     * @param added child data
+     * @param position display position
+     * @return added child data
      */
-    SwfTree.prototype.addChild = function (treeJson, fileType) {
+    SwfTree.prototype.addChild = function (treeJson, fileType, position) {
         var rand = Math.floor(Date.now() / 100) % 100000;
         var dirname = treeJson.type + "Dir" + ("00000" + rand).slice(-5);
         var tree = new SwfTree(treeJson);
@@ -145,7 +148,7 @@ var SwfTree = (function (_super) {
             required: true,
             type: 'file'
         }));
-        this.positions.push({ x: 0, y: 0 });
+        this.positions.push(JSON.parse(JSON.stringify(position)));
         SwfTree.renumberingIndex(SwfTree.root);
         tree.oldPath = '';
         return tree;
@@ -308,12 +311,19 @@ var SwfTree = (function (_super) {
         var output = this.output_files.filter(function (file) {
             return _this.getFullpath(file.path) === fullpath;
         });
-        var send = this.send_files.filter(function (file) {
-            return _this.getFullpath(file.path) === fullpath;
-        });
-        var receive = this.receive_files.filter(function (file) {
-            return _this.getFullpath(file.path) === fullpath;
-        });
+        var send = [];
+        var receive = [];
+        var rtask = this;
+        if (rtask.send_files !== undefined) {
+            send = rtask.send_files.filter(function (file) {
+                return _this.getFullpath(file.path) === fullpath;
+            });
+        }
+        if (rtask.receive_files !== undefined) {
+            receive = rtask.receive_files.filter(function (file) {
+                return _this.getFullpath(file.path) === fullpath;
+            });
+        }
         if (input[0] || output[0] || send[0] || receive[0]) {
             return true;
         }
@@ -563,8 +573,10 @@ var SwfTree = (function (_super) {
      */
     SwfTree.prototype.updatePath = function (file) {
         var oldFullpath = this.getFullpath("" + ClientUtility.getDefaultName(this));
+        var oldDirectory = this.getCurrentDirectory();
         this.path = file.path;
         var newFullpath = this.getFullpath("" + ClientUtility.getDefaultName(this));
+        var newDirectory = this.getCurrentDirectory();
         console.log("old=" + oldFullpath + " new=" + newFullpath);
         var parent = this.getParent();
         if (parent == null) {
@@ -577,6 +589,18 @@ var SwfTree = (function (_super) {
                 child.path = parent.getRelativePath(newFullpath);
             }
         });
+        (function renamePath(tree) {
+            if (tree == null) {
+                return;
+            }
+            tree.file_relations.forEach(function (relation) {
+                relation.renameInputPath(tree, oldDirectory, newDirectory);
+                relation.renameOutputPath(tree, oldDirectory, newDirectory);
+            });
+            tree.input_files.forEach(function (file) { return file.renamePath(tree, oldDirectory, newDirectory); });
+            tree.output_files.forEach(function (file) { return file.renamePath(tree, oldDirectory, newDirectory); });
+            renamePath(tree.getParent());
+        })(parent);
     };
     /**
      * get the file with the same input file path name as the specified path name
@@ -609,36 +633,6 @@ var SwfTree = (function (_super) {
         }
     };
     /**
-     * get the file with the same send file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same send file path name as the specified path name
-     */
-    SwfTree.prototype.findSendFile = function (path) {
-        var _this = this;
-        var file = this.getSendFile(path);
-        if (file) {
-            return file;
-        }
-        else {
-            return this.send_files.filter(function (file) { return _this.path + "/" + file.getNormalPath() === ClientUtility.normalize(path); })[0];
-        }
-    };
-    /**
-     * get the file with the same receive file path name as the specified path name
-     * @param path path name
-     * @returns get the file with the same receive file path name as the specified path name
-     */
-    SwfTree.prototype.findReceiveFile = function (path) {
-        var _this = this;
-        var file = this.getReceiveFile(path);
-        if (file) {
-            return file;
-        }
-        else {
-            return this.receive_files.filter(function (file) { return _this.path + "/" + file.getNormalPath() === ClientUtility.normalize(path); })[0];
-        }
-    };
-    /**
      * add script file for upload
      * @param file upload script file
      */
@@ -652,7 +646,8 @@ var SwfTree = (function (_super) {
      */
     SwfTree.prototype.addJobScriptFile = function (file) {
         this.uploadScript = file;
-        this.job_script.path = file.name;
+        var job = this;
+        job.job_script.path = file.name;
     };
     /**
      * add parameter file for upload
@@ -660,17 +655,19 @@ var SwfTree = (function (_super) {
      */
     SwfTree.prototype.addParameterFile = function (file) {
         this.uploadParamFile = file;
-        this.parameter_file.path = file.name;
+        var pstudy = this;
+        pstudy.parameter_file.path = file.name;
     };
     /**
      * add send file for upload
      * @param files upload send file list
      */
     SwfTree.prototype.addSendFile = function (files) {
+        var rtask = this;
         for (var index = 0; index < files.length; index++) {
             this.deleteSendfile(files[index].name);
             this.uploadSendfiles.push(files[index]);
-            this.send_files.push(new SwfFile({
+            rtask.send_files.push(new SwfFile({
                 name: 'name',
                 description: '',
                 path: files[index].name,
@@ -691,9 +688,10 @@ var SwfTree = (function (_super) {
         else {
             filepath = object.path;
         }
-        for (var index = this.send_files.length - 1; index >= 0; index--) {
-            if (this.send_files[index].path === filepath) {
-                this.send_files.splice(index, 1);
+        var rtask = this;
+        for (var index = rtask.send_files.length - 1; index >= 0; index--) {
+            if (rtask.send_files[index].path === filepath) {
+                rtask.send_files.splice(index, 1);
             }
         }
         for (var index = this.uploadSendfiles.length - 1; index >= 0; index--) {
@@ -798,7 +796,7 @@ var SwfTree = (function (_super) {
      * @param after after task index
      * @return whether circular reference is occurred or not
      */
-    SwfTree.prototype.isCircularReference = function (before, after) {
+    SwfTree.prototype.isExistCircularReference = function (before, after) {
         var _this = this;
         if (before === after) {
             return true;
@@ -809,8 +807,8 @@ var SwfTree = (function (_super) {
             return false;
         }
         else {
-            var results1 = relations.filter(function (relation) { return _this.isCircularReference(before, relation.index_after_task); });
-            var results2 = fileRelations.filter(function (relation) { return _this.isCircularReference(before, relation.index_after_task); });
+            var results1 = relations.filter(function (relation) { return _this.isExistCircularReference(before, relation.index_after_task); });
+            var results2 = fileRelations.filter(function (relation) { return _this.isExistCircularReference(before, relation.index_after_task); });
             if (!results1[0] && !results2[0]) {
                 return false;
             }
@@ -819,6 +817,28 @@ var SwfTree = (function (_super) {
             }
         }
     };
+    /**
+     * whether there is a For workflow at parent or not
+     * @return whether there is a For workflow at parent or not
+     */
+    SwfTree.prototype.isExistForWorkflowAtParent = function () {
+        if (ClientUtility.checkFileType(this, JsonFileType.For)) {
+            return true;
+        }
+        else {
+            var parent_1 = this.getParent();
+            if (parent_1 == null) {
+                return false;
+            }
+            else {
+                return parent_1.isExistForWorkflowAtParent();
+            }
+        }
+    };
     return SwfTree;
 }(SwfWorkflow));
+/**
+ * root index
+ */
+SwfTree.rootIndex = 0;
 //# sourceMappingURL=swfTree.js.map

@@ -40,6 +40,10 @@ var InputTextDialog = (function () {
          * event enable flag
          */
         this.isEnableEvent = true;
+        /**
+         * key pressed flag
+         */
+        this.keyPressedFlag = false;
         this.grayPanel.click(function () {
             if (_this.isEnableEvent) {
                 _this.hide();
@@ -55,6 +59,7 @@ var InputTextDialog = (function () {
      */
     InputTextDialog.prototype.show = function (title, label) {
         var _this = this;
+        this.keyPressedFlag = false;
         this.grayPanel.displayBlock();
         this.dialogArea.displayBlock();
         this.buttonOK.on('click', function () {
@@ -70,8 +75,12 @@ var InputTextDialog = (function () {
                 _this.hide();
             }
         });
+        this.inputText.on('keypress', function () {
+            _this.keyPressedFlag = true;
+        });
         this.inputText.on('keyup', function (eventObject) {
-            if (_this.isEnableEvent && _this.clickOkCallback && eventObject.which === 0x0D) {
+            var ENTER_KEY = 0x0D;
+            if (_this.isEnableEvent && _this.clickOkCallback && eventObject.which === ENTER_KEY) {
                 _this.clickOkCallback(_this.inputText);
             }
         });
@@ -99,6 +108,7 @@ var InputTextDialog = (function () {
         this.buttonOK.off('click');
         this.buttonCancel.off('click');
         this.inputText.off('keyup');
+        this.inputText.off('keypress');
         return this;
     };
     /**

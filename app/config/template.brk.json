@@ -1,19 +1,17 @@
 {
     "name": "NewBreak",
-    "description": "This is new break.",
+    "description": "This is new Break.",
     "path": "",
     "type": "Break",
     "script": {
-        "name": "NewCondition",
-        "description": "This is new Condition",
+        "name": "NewBreak",
+        "description": "This is new Break",
         "path": "",
         "type": "",
         "required": true
     },
     "input_files": [],
     "output_files": [],
-    "send_files": [],
-    "receive_files": [],
     "clean_up": true,
     "max_size_receive_file": 17179869184
 }
