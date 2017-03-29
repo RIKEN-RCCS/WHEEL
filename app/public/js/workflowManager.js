@@ -270,7 +270,7 @@ $(function () {
                             name: "Workflow",
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.WorkFlow, parentTree, position, function (child) {
+                                createChildTree(SwfType.WORKFLOW, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             }
@@ -280,7 +280,7 @@ $(function () {
                             name: 'Task',
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.Task, parentTree, position, function (child) {
+                                createChildTree(SwfType.TASK, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             }
@@ -290,7 +290,7 @@ $(function () {
                             name: 'Remote Task',
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.RemoteTask, parentTree, position, function (child) {
+                                createChildTree(SwfType.REMOTETASK, parentTree, position, function (child) {
                                     getHostList(function () {
                                         var rtask = child;
                                         rtask.remote = new SwfHost(hostInfos[0]);
@@ -304,7 +304,7 @@ $(function () {
                             name: 'Job',
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.Job, parentTree, position, function (child) {
+                                createChildTree(SwfType.JOB, parentTree, position, function (child) {
                                     getHostList(function () {
                                         var job = child;
                                         job.remote = new SwfHost(hostInfos[0]);
@@ -319,7 +319,7 @@ $(function () {
                             name: 'For',
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.For, parentTree, position, function (child) {
+                                createChildTree(SwfType.FOR, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             }
@@ -329,10 +329,10 @@ $(function () {
                             name: 'If',
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.If, parentTree, position, function (ifChild) {
-                                    createChildTree(JsonFileType.Condition, ifChild, position, function (ifGrandson) {
-                                        createChildTree(JsonFileType.Else, parentTree, position, function (elseChild) {
-                                            createChildTree(JsonFileType.Condition, elseChild, position, function (elseGrandson) {
+                                createChildTree(SwfType.IF, parentTree, position, function (ifChild) {
+                                    createChildTree(SwfType.CONDITION, ifChild, position, function (ifGrandson) {
+                                        createChildTree(SwfType.ELSE, parentTree, position, function (elseChild) {
+                                            createChildTree(SwfType.CONDITION, elseChild, position, function (elseGrandson) {
                                                 parentTree.relations.push(new SwfRelation(ifChild.getTaskIndex(), elseChild.getTaskIndex()));
                                                 hideProperty();
                                             });
@@ -346,7 +346,7 @@ $(function () {
                             name: 'Break',
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.Break, parentTree, position, function (child) {
+                                createChildTree(SwfType.BREAK, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             },
@@ -359,7 +359,7 @@ $(function () {
                             name: 'Parameter Study',
                             callback: function (name, option) {
                                 var position = getClickPosition(option);
-                                createChildTree(JsonFileType.PStudy, parentTree, position, function (child) {
+                                createChildTree(SwfType.PSTUDY, parentTree, position, function (child) {
                                     hideProperty();
                                 });
                             },
@@ -411,7 +411,7 @@ $(function () {
             if (parent == null) {
                 return;
             }
-            if (ClientUtility.isImplimentsWorkflow(parent)) {
+            if (SwfType.isImplimentsWorkflow(parent)) {
                 jsonProperty.hide();
                 selectedTree = null;
                 updateDisplay(parent);

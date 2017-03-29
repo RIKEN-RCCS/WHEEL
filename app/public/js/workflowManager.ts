@@ -298,7 +298,7 @@ $(() => {
                             name: "Workflow",
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.WorkFlow, parentTree, position, (child) => {
+                                createChildTree(SwfType.WORKFLOW, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             }
@@ -308,7 +308,7 @@ $(() => {
                             name: 'Task',
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.Task, parentTree, position, (child) => {
+                                createChildTree(SwfType.TASK, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             }
@@ -318,7 +318,7 @@ $(() => {
                             name: 'Remote Task',
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.RemoteTask, parentTree, position, (child) => {
+                                createChildTree(SwfType.REMOTETASK, parentTree, position, (child) => {
                                     getHostList(() => {
                                         const rtask = <SwfRemoteTask><any>child;
                                         rtask.remote = new SwfHost(hostInfos[0]);
@@ -332,7 +332,7 @@ $(() => {
                             name: 'Job',
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.Job, parentTree, position, (child) => {
+                                createChildTree(SwfType.JOB, parentTree, position, (child) => {
                                     getHostList(() => {
                                         const job = <SwfJobJson><any>child;
                                         job.remote = new SwfHost(hostInfos[0]);
@@ -347,7 +347,7 @@ $(() => {
                             name: 'For',
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.For, parentTree, position, (child) => {
+                                createChildTree(SwfType.FOR, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             }
@@ -357,10 +357,10 @@ $(() => {
                             name: 'If',
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.If, parentTree, position, (ifChild) => {
-                                    createChildTree(JsonFileType.Condition, ifChild, position, (ifGrandson) => {
-                                        createChildTree(JsonFileType.Else, parentTree, position, (elseChild) => {
-                                            createChildTree(JsonFileType.Condition, elseChild, position, (elseGrandson) => {
+                                createChildTree(SwfType.IF, parentTree, position, (ifChild) => {
+                                    createChildTree(SwfType.CONDITION, ifChild, position, (ifGrandson) => {
+                                        createChildTree(SwfType.ELSE, parentTree, position, (elseChild) => {
+                                            createChildTree(SwfType.CONDITION, elseChild, position, (elseGrandson) => {
                                                 parentTree.relations.push(new SwfRelation(ifChild.getTaskIndex(), elseChild.getTaskIndex()));
                                                 hideProperty();
                                             });
@@ -374,7 +374,7 @@ $(() => {
                             name: 'Break',
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.Break, parentTree, position, (child) => {
+                                createChildTree(SwfType.BREAK, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             },
@@ -387,7 +387,7 @@ $(() => {
                             name: 'Parameter Study',
                             callback: (name, option) => {
                                 const position = getClickPosition(option);
-                                createChildTree(JsonFileType.PStudy, parentTree, position, (child) => {
+                                createChildTree(SwfType.PSTUDY, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             },
@@ -457,7 +457,7 @@ $(() => {
                     return;
                 }
 
-                if (ClientUtility.isImplimentsWorkflow(parent)) {
+                if (SwfType.isImplimentsWorkflow(parent)) {
                     jsonProperty.hide();
                     selectedTree = null;
                     updateDisplay(parent);
@@ -490,7 +490,7 @@ $(() => {
      * @param parent parent tree added child
      * @param callback The function to call when we create new child tree
      */
-    function createChildTree(fileType: JsonFileType, parent: SwfTree, position: Position2D, callback?: ((child: SwfTree) => void)) {
+    function createChildTree(fileType: SwfType, parent: SwfTree, position: Position2D, callback?: ((child: SwfTree) => void)) {
         getTemplateJsonFileSocket.emit(fileType, (json: SwfTree) => {
             const child = parent.addChild(json, fileType, position);
             if (callback) {

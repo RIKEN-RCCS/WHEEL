@@ -268,7 +268,7 @@ var SvgBox = (function () {
      * create condition frame extension
      */
     SvgBox.prototype.createConditionFrame = function () {
-        if (ClientUtility.isImplimentsCondition(this.tree)) {
+        if (SwfType.isImplimentsCondition(this.tree)) {
             var polygon = this.draw
                 .polygon([
                 [this.width - 4, 0],

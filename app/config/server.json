@@ -37,26 +37,6 @@
         "files": "files",
         "directory": "directory"
     },
-    "json_types": {
-        "task": "Task",
-        "workflow": "Workflow",
-        "remotetask": "RemoteTask",
-        "job": "Job",
-        "for": "For",
-        "if": "If",
-        "else": "Else",
-        "condition": "Condition",
-        "break": "Break",
-        "pstudy": "PStudy"
-    },
-    "state": {
-        "planning": "Planning",
-        "running": "Running",
-        "rerunning": "ReRunning",
-        "waiting": "Waiting",
-        "completed": "Completed",
-        "failed": "Failed"
-    },
     "system_name": "swf",
     "default_filename": "define",
     "submit_script": "submit.sh"

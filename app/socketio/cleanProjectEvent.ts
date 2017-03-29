@@ -5,6 +5,7 @@ import logger = require('../logger');
 import ServerSocketIO = require('./serverSocketIO');
 import ProjectOperator = require('../projectOperator');
 import ServerConfig = require('../serverConfig');
+import SwfState = require('../swfState');
 
 /**
  * socket io communication class for cleaning project request to server
@@ -15,11 +16,6 @@ class CleanProjectvent implements ServerSocketIO.SocketListener {
      * event name
      */
     private static eventName = 'cleanProject';
-
-    /**
-     * plannning state
-     */
-    private planningState: string = ServerConfig.getConfig().state.planning;
 
     /**
      * Adds a listener for this event
@@ -53,7 +49,7 @@ class CleanProjectvent implements ServerSocketIO.SocketListener {
                 return
             }
             const projectJson: SwfProjectJson = JSON.parse(data.toString());
-            projectJson.state = this.planningState;
+            projectJson.state = SwfState.PLANNING;
             fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), (err) => {
                 if (err) {
                     callback(err);

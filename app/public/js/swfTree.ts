@@ -67,7 +67,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             }
         });
 
-        if (ClientUtility.checkFileType(treeJson.type, JsonFileType.Job)) {
+        if (ClientUtility.checkFileType(treeJson.type, SwfType.JOB)) {
             this.script_param = {
                 cores: 1,
                 nodes: 1
@@ -155,7 +155,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param position display position
      * @return added child data
      */
-    public addChild(treeJson: SwfTreeJson, fileType: JsonFileType, position: Position2D): SwfTree {
+    public addChild(treeJson: SwfTreeJson, fileType: SwfType, position: Position2D): SwfTree {
         const rand = Math.floor(Date.now() / 100) % 100000;
         const dirname = `${treeJson.type}Dir${`00000${rand}`.slice(-5)}`;
         const tree = new SwfTree(treeJson);
@@ -991,7 +991,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @return whether there is a For workflow at parent or not
      */
     public isExistForWorkflowAtParent(): boolean {
-        if (ClientUtility.checkFileType(this, JsonFileType.For)) {
+        if (ClientUtility.checkFileType(this, SwfType.FOR)) {
             return true;
         }
         else {

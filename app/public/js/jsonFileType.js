@@ -9,56 +9,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 /**
- * json file type
- */
-var JsonFileType;
-(function (JsonFileType) {
-    /**
-     * Project
-     */
-    JsonFileType[JsonFileType["Project"] = 0] = "Project";
-    /**
-     * WorkFlow
-     */
-    JsonFileType[JsonFileType["WorkFlow"] = 1] = "WorkFlow";
-    /**
-     * Task
-     */
-    JsonFileType[JsonFileType["Task"] = 2] = "Task";
-    /**
-     * RemoteTask
-     */
-    JsonFileType[JsonFileType["RemoteTask"] = 3] = "RemoteTask";
-    /**
-     * Job
-     */
-    JsonFileType[JsonFileType["Job"] = 4] = "Job";
-    /**
-     * For
-     */
-    JsonFileType[JsonFileType["For"] = 5] = "For";
-    /**
-     * If
-     */
-    JsonFileType[JsonFileType["If"] = 6] = "If";
-    /**
-     * Else
-     */
-    JsonFileType[JsonFileType["Else"] = 7] = "Else";
-    /**
-     * Condition
-     */
-    JsonFileType[JsonFileType["Condition"] = 8] = "Condition";
-    /**
-     * Break
-     */
-    JsonFileType[JsonFileType["Break"] = 9] = "Break";
-    /**
-     * PStudy
-     */
-    JsonFileType[JsonFileType["PStudy"] = 10] = "PStudy";
-})(JsonFileType || (JsonFileType = {}));
-/**
  * json file base class
  */
 var JsonFileTypeBase = (function () {
@@ -749,7 +699,7 @@ var JsonFileTypeBase = (function () {
 var TypeProject = (function (_super) {
     __extends(TypeProject, _super);
     /**
-     *
+     * create new instance for project
      */
     function TypeProject() {
         var _this = _super.call(this) || this;
@@ -769,7 +719,7 @@ var TypeTask = (function (_super) {
     function TypeTask() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.task;
-        _this.type = config.json_types.task;
+        _this.type = SwfType.TASK;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -790,7 +740,7 @@ var TypeWorkflow = (function (_super) {
     function TypeWorkflow() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.workflow;
-        _this.type = config.json_types.workflow;
+        _this.type = SwfType.WORKFLOW;
         _this.addUpload();
         return _this;
     }
@@ -807,7 +757,7 @@ var TypeJob = (function (_super) {
     function TypeJob() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.job;
-        _this.type = config.json_types.job;
+        _this.type = SwfType.JOB;
         _this.addScrip();
         _this.addJobScript();
         _this.addInputFile();
@@ -897,7 +847,7 @@ var TypeRemoteTask = (function (_super) {
     function TypeRemoteTask() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.remotetask;
-        _this.type = config.json_types.remotetask;
+        _this.type = SwfType.REMOTETASK;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -920,7 +870,7 @@ var TypeFor = (function (_super) {
     function TypeFor() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.for;
-        _this.type = config.json_types.for;
+        _this.type = SwfType.FOR;
         _this.addForParam();
         _this.addUpload();
         _this.sortPropertyInfo();
@@ -939,7 +889,7 @@ var TypeIf = (function (_super) {
     function TypeIf() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.if;
-        _this.type = config.json_types.if;
+        _this.type = SwfType.IF;
         _this.addUpload();
         return _this;
     }
@@ -956,7 +906,7 @@ var TypeElse = (function (_super) {
     function TypeElse() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.else;
-        _this.type = config.json_types.else;
+        _this.type = SwfType.ELSE;
         _this.addUpload();
         return _this;
     }
@@ -973,7 +923,7 @@ var TypeCondition = (function (_super) {
     function TypeCondition() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.condition;
-        _this.type = config.json_types.condition;
+        _this.type = SwfType.CONDITION;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -1059,7 +1009,7 @@ var TypeBreak = (function (_super) {
     function TypeBreak() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.break;
-        _this.type = config.json_types.break;
+        _this.type = SwfType.BREAK;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -1145,7 +1095,7 @@ var TypePStudy = (function (_super) {
     function TypePStudy() {
         var _this = _super.call(this) || this;
         _this.extension = config.extension.pstudy;
-        _this.type = config.json_types.pstudy;
+        _this.type = SwfType.PSTUDY;
         _this.addParameterFile();
         _this.addUpload();
         _this.sortPropertyInfo();

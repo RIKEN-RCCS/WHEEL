@@ -1,57 +1,10 @@
 import fs = require('fs');
 import path = require('path');
+import os = require('os');
 import logger = require('./logger');
 import ServerConfig = require('./serverConfig');
-
-/**
- * json file type
- */
-enum JsonFileType {
-    /**
-     * file type project
-     */
-    Project,
-    /**
-     * file type workflow
-     */
-    WorkFlow,
-    /**
-     * file type task
-     */
-    Task,
-    /**
-     * file type remote task
-     */
-    RemoteTask,
-    /**
-     * file type job
-     */
-    Job,
-    /**
-     * file type for
-     */
-    For,
-    /**
-     * file type if
-     */
-    If,
-    /**
-     * file type else
-     */
-    Else,
-    /**
-     * file type condition
-     */
-    Condition,
-    /**
-     * file type break
-     */
-    Break,
-    /**
-     * file type parameter study
-     */
-    PStudy
-}
+import SwfType = require('./swfType');
+import SwfState = require('./swfState');
 
 /**
  * Utility for server
@@ -463,7 +416,7 @@ class ServerUtility {
      * @return template project json data
      */
     public static readTemplateProjectJson(): SwfProjectJson {
-        const filepath = this.getTemplateFilePath(JsonFileType.Project);
+        const filepath = this.getTemplateFilePath(SwfType.PROJECT);
         return this.readProjectJson(filepath);
     }
 
@@ -472,7 +425,7 @@ class ServerUtility {
      * @return template workflow json data
      */
     public static readTemplateWorkflowJson(): SwfWorkflowJson {
-        const filepath = this.getTemplateFilePath(JsonFileType.WorkFlow);
+        const filepath = this.getTemplateFilePath(SwfType.WORKFLOW);
         return this.readJson(filepath);
     }
 
@@ -586,7 +539,7 @@ class ServerUtility {
         const tree = this.createTreeJson(path_taskFile);
         this.setDisplayOrder(tree);
 
-        const planningState = this.config.state.planning;
+        const planningState = SwfState.PLANNING;
         (function convertTreeToLog(treeJson: any, parentDir: string) {
             treeJson.path = path.join(parentDir, treeJson.path);
             const logJson: SwfLogJson = {
@@ -662,7 +615,7 @@ class ServerUtility {
      * @return whether platform is windows or not
      */
     public static isWindows(): boolean {
-        return process.platform === 'win32';
+        return os.platform() === 'win32';
     }
 
     /**
@@ -670,23 +623,23 @@ class ServerUtility {
      * @return whether platform is linux or not
      */
     public static isLinux(): boolean {
-        return process.platform === 'linux';
+        return os.platform() === 'linux';
     }
 
     /**
-     * get home directory
-     * @return home directory path
+     * whether platform is mac or not
+     * @return whether platform is mac or not
      */
-    public static getHomeDir(): string {
-        if (this.isWindows()) {
-            return process.env.USERPROFILE;
-        }
-        else if (this.isLinux()) {
-            return process.env.HOME;
-        }
-        else {
-            throw new Error('undefined platform');
-        }
+    public static isMac(): boolean {
+        return os.platform() === 'darwin';
+    }
+
+    /**
+     * whether platform is unix or not
+     * @return whether platform is unix or not
+     */
+    public static isUnix(): boolean {
+        return this.isLinux() || this.isMac();
     }
 
     /**
@@ -694,7 +647,7 @@ class ServerUtility {
      * @param fileType json file type
      * @return template file path by type
      */
-    public static getTemplateFilePath(fileType: JsonFileType): string {
+    public static getTemplateFilePath(fileType: SwfType): string {
         return this.getTypeOfJson(fileType).getTemplateFilepath();
     }
 
@@ -704,37 +657,7 @@ class ServerUtility {
      * @return whether specified log json or project json is finished or not
      */
     public static isProjectFinished(json: (SwfLogJson | SwfProjectJson)) {
-        return json.state === this.config.state.finishd || json.state === this.config.state.failed;
-    }
-
-    /**
-     * whether specified json is type of job or not
-     * @param json tree json data or log json data
-     * @return whether specified json is type of job or not
-     */
-    public static isTypeJob(json: (SwfLogJson | SwfTreeJson)) {
-        const template = this.getTypeOfJson(json.type);
-        return template.getType() === this.config.json_types.job;
-    }
-
-    /**
-     * whether specified json is type of loop or not
-     * @param json tree json data or log json data
-     * @return whether specified json is type of loop or not
-     */
-    public static isTypeFor(json: (SwfLogJson | SwfTreeJson)) {
-        const template = this.getTypeOfJson(json.type);
-        return template.getType() === this.config.json_types.for;
-    }
-
-    /**
-     * whether specified json is type of parameter study or not
-     * @param json tree json data or log json data
-     * @return whether specified json is type of parameter study or not
-     */
-    public static isTypePStudy(json: (SwfLogJson | SwfTreeJson)) {
-        const template = this.getTypeOfJson(json.type);
-        return template.getType() === this.config.json_types.pstudy;
+        return json.state === SwfState.COMPLETED || json.state === SwfState.FAILED;
     }
 
     /**
@@ -742,7 +665,7 @@ class ServerUtility {
      * @param fileType filetype or file type string
      * @return default default file name by type
      */
-    public static getDefaultName(fileType: (string | JsonFileType)): string {
+    public static getDefaultName(fileType: (string | SwfType)): string {
         const template = this.getTypeOfJson(fileType);
         const extension = template.getExtension();
         return `${this.config.default_filename}${extension}`;
@@ -753,60 +676,32 @@ class ServerUtility {
      * @param fileType filetype or file type string
      * @return instance by type
      */
-    private static getTypeOfJson(fileType: (string | JsonFileType)): TypeBase {
-        if (typeof fileType === 'string') {
-            switch (fileType) {
-                case this.config.json_types.workflow:
-                    return new TypeWorkflow();
-                case this.config.json_types.task:
-                    return new TypeTask();
-                case this.config.json_types.for:
-                    return new TypeFor();
-                case this.config.json_types.if:
-                    return new TypeIf();
-                case this.config.json_types.else:
-                    return new TypeElse();
-                case this.config.json_types.break:
-                    return new TypeBreak();
-                case this.config.json_types.remotetask:
-                    return new TypeRemoteTask();
-                case this.config.json_types.job:
-                    return new TypeJob();
-                case this.config.json_types.condition:
-                    return new TypeCondition();
-                case this.config.json_types.pstudy:
-                    return new TypePStudy();
-                default:
-                    throw new TypeError('file type is undefined');
-            }
-        }
-        else {
-            switch (fileType) {
-                case JsonFileType.Project:
-                    return new TypeProject();
-                case JsonFileType.WorkFlow:
-                    return new TypeWorkflow();
-                case JsonFileType.Task:
-                    return new TypeTask();
-                case JsonFileType.For:
-                    return new TypeFor();
-                case JsonFileType.If:
-                    return new TypeIf();
-                case JsonFileType.Else:
-                    return new TypeElse();
-                case JsonFileType.Break:
-                    return new TypeBreak();
-                case JsonFileType.RemoteTask:
-                    return new TypeRemoteTask();
-                case JsonFileType.Job:
-                    return new TypeJob();
-                case JsonFileType.Condition:
-                    return new TypeCondition();
-                case JsonFileType.PStudy:
-                    return new TypePStudy();
-                default:
-                    throw new TypeError('file type is undefined');
-            }
+    private static getTypeOfJson(fileType: (string | SwfType)): TypeBase {
+        switch (fileType) {
+            case SwfType.PROJECT:
+                return new TypeProject();
+            case SwfType.WORKFLOW:
+                return new TypeWorkflow();
+            case SwfType.TASK:
+                return new TypeTask();
+            case SwfType.FOR:
+                return new TypeFor();
+            case SwfType.IF:
+                return new TypeIf();
+            case SwfType.ELSE:
+                return new TypeElse();
+            case SwfType.BREAK:
+                return new TypeBreak();
+            case SwfType.REMOTETASK:
+                return new TypeRemoteTask();
+            case SwfType.JOB:
+                return new TypeJob();
+            case SwfType.CONDITION:
+                return new TypeCondition();
+            case SwfType.PSTUDY:
+                return new TypePStudy();
+            default:
+                throw new TypeError('file type is undefined');
         }
     }
 }
@@ -830,7 +725,8 @@ class TypeBase {
     /**
      * file type string
      */
-    protected type: string;
+    protected type: SwfType;
+
     /**
      * get file extension name
      * @return file extension name
@@ -849,7 +745,7 @@ class TypeBase {
      * get file type
      * @return file type
      */
-    public getType(): string {
+    public getType(): SwfType {
         return this.type;
     }
 }
@@ -877,7 +773,7 @@ class TypeTask extends TypeBase {
         super();
         this.extension = this.config.extension.task;
         this.templateFilepath = this.config.template.task;
-        this.type = this.config.json_types.task;
+        this.type = SwfType.TASK;
     }
 }
 /**
@@ -891,7 +787,7 @@ class TypeWorkflow extends TypeBase {
         super();
         this.extension = this.config.extension.workflow;
         this.templateFilepath = this.config.template.workflow;
-        this.type = this.config.json_types.workflow;
+        this.type = SwfType.WORKFLOW;
     }
 }
 class TypeFor extends TypeBase {
@@ -902,7 +798,7 @@ class TypeFor extends TypeBase {
         super();
         this.extension = this.config.extension.for;
         this.templateFilepath = this.config.template.for;
-        this.type = this.config.json_types.for;
+        this.type = SwfType.FOR;
     }
 }
 /**
@@ -916,7 +812,7 @@ class TypeIf extends TypeBase {
         super();
         this.extension = this.config.extension.if;
         this.templateFilepath = this.config.template.if;
-        this.type = this.config.json_types.if;
+        this.type = SwfType.IF;
     }
 }
 /**
@@ -930,7 +826,7 @@ class TypeElse extends TypeBase {
         super();
         this.extension = this.config.extension.else;
         this.templateFilepath = this.config.template.else;
-        this.type = this.config.json_types.else;
+        this.type = SwfType.ELSE;
     }
 }
 /**
@@ -944,7 +840,7 @@ class TypeBreak extends TypeBase {
         super();
         this.extension = this.config.extension.break;
         this.templateFilepath = this.config.template.break;
-        this.type = this.config.json_types.break;
+        this.type = SwfType.BREAK;
     }
 }
 /**
@@ -958,7 +854,7 @@ class TypeRemoteTask extends TypeBase {
         super();
         this.extension = this.config.extension.remotetask;
         this.templateFilepath = this.config.template.remotetask;
-        this.type = this.config.json_types.remotetask;
+        this.type = SwfType.REMOTETASK;
     }
 }
 /**
@@ -972,7 +868,7 @@ class TypeJob extends TypeBase {
         super();
         this.extension = this.config.extension.job;
         this.templateFilepath = this.config.template.job;
-        this.type = this.config.json_types.job;
+        this.type = SwfType.JOB;
     }
 }
 /**
@@ -986,7 +882,7 @@ class TypeCondition extends TypeBase {
         super();
         this.extension = this.config.extension.condition;
         this.templateFilepath = this.config.template.condition;
-        this.type = this.config.json_types.condition;
+        this.type = SwfType.CONDITION;
     }
 }
 /**
@@ -1000,7 +896,8 @@ class TypePStudy extends TypeBase {
         super();
         this.extension = this.config.extension.pstudy;
         this.templateFilepath = this.config.template.pstudy;
-        this.type = this.config.json_types.pstudy;
+        this.type = SwfType.PSTUDY;
     }
 }
+
 export = ServerUtility;

@@ -1,5 +1,6 @@
 import fs = require('fs');
 import path = require('path');
+import os = require('os');
 import logger = require('../logger');
 import ServerUtility = require('../serverUtility');
 import ServerConfig = require('../serverConfig');
@@ -37,7 +38,7 @@ class GetFileListEvent implements ServerSocketIO.SocketListener {
         socket.on(GetFileListEvent.eventName, (directoryPath: string, extension: string) => {
 
             if (directoryPath == null) {
-                directoryPath = ServerUtility.getHomeDir();
+                directoryPath = os.homedir();
             }
 
             directoryPath = path.resolve(directoryPath);

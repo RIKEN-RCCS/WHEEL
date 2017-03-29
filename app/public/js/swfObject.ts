@@ -122,7 +122,7 @@ class SwfTask implements SwfTaskJson {
      * type of task
      * Task, Workflow, RemoteTask, Job
      */
-    public type: string;
+    public type: SwfType;
     /**
      * script file
      */
@@ -526,7 +526,7 @@ class SwfLog implements SwfLogJson {
     /**
      * task state ('Planing', 'Running', 'ReRunning', 'Waiting', 'Completed', 'Failed')
      */
-    public state: string;
+    public state: SwfState;
     /**
      * path to directory of task
      */
@@ -534,7 +534,7 @@ class SwfLog implements SwfLogJson {
     /**
      * type ('Task', 'Workflow', 'RemoteTask', 'Job', 'If', 'Else', 'Condition', 'Loop', 'Break')
      */
-    public type: string;
+    public type: SwfType;
     /**
      * start date of execute task
      */
@@ -701,7 +701,7 @@ class SwfLog implements SwfLogJson {
      * @return whether this task is planning or not
      */
     public isPlanning(): boolean {
-        return this.state === config.state.planning;
+        return this.state === SwfState.PLANNING;
     }
 
     /**
@@ -709,8 +709,7 @@ class SwfLog implements SwfLogJson {
      * @return whether this task is finished or not
      */
     public isFinished(): boolean {
-        const state = config.state;
-        return this.state === state.completed || this.state === state.failed;
+        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
     }
 
     /**
@@ -737,7 +736,7 @@ class SwfProject implements SwfProjectJson {
     /**
      * project state
      */
-    public state: string;
+    public state: SwfState;
     /**
      * project path
      */
@@ -769,7 +768,7 @@ class SwfProject implements SwfProjectJson {
      * @return whether project is planning or not
      */
     public isPlanning(): boolean {
-        return this.state === config.state.planning;
+        return this.state === SwfState.PLANNING;
     }
 
     /**
@@ -777,8 +776,7 @@ class SwfProject implements SwfProjectJson {
      * @return whether project is finished or not
      */
     public isFinished(): boolean {
-        const state = config.state;
-        return this.state === state.completed || this.state === state.failed;
+        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
     }
 
     /**

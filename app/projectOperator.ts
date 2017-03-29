@@ -4,28 +4,8 @@ import ssh2 = require('ssh2');
 import child_process = require('child_process');
 import logger = require('./logger');
 import serverUtility = require('./serverUtility');
-
-const SwfState = {
-    PLANNING: 'Planning',
-    RUNNING: 'Running',
-    RERUNNING: 'ReRunning',
-    WAITING: 'Waiting',
-    COMPLETED: 'Completed',
-    FAILED: 'Failed',
-};
-
-const SwfType = {
-    TASK: 'Task',
-    WORKFLOW: 'Workflow',
-    REMOTETASK: 'RemoteTask',
-    JOB: 'Job',
-    FOR: 'For',
-    IF: 'If',
-    ELSE: 'Else',
-    CONDITION: 'Condition',
-    BREAK: 'Break',
-    PSTUDY: 'PStudy'
-};
+import SwfState = require('./swfState');
+import SwfType = require('./swfType');
 
 const SwfScriptType = {
     BASH: 'Bash',
@@ -610,7 +590,7 @@ class TaskOperator {
         }
 
         let command: string;
-        if (serverUtility.isLinux()) {
+        if (serverUtility.isUnix()) {
             // TODO test Linux
             if (task.script.type == SwfScriptType.BASH || path.extname(task.script.path) == '.sh') {
                 command = `sh ${task.script.path};\n`;
@@ -961,7 +941,7 @@ class TaskOperator {
         }
 
         let command: string;
-        if (serverUtility.isLinux()) {
+        if (serverUtility.isUnix()) {
             // TODO test Linux
             if (condition.script.type == SwfScriptType.BASH || path.extname(condition.script.path) == '.sh') {
                 command = `sh ${condition.script.path};\n`;

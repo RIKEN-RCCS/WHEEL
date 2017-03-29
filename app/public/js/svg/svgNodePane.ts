@@ -85,7 +85,7 @@ class SvgNodePane {
      * set events
      */
     private setEvents() {
-        if (!ClientUtility.isImplimentsWorkflow(this.tree)) {
+        if (!SwfType.isImplimentsWorkflow(this.tree)) {
             return;
         }
         this.text.style('cursor', 'pointer');

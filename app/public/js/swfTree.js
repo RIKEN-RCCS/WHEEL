@@ -50,7 +50,7 @@ var SwfTree = (function (_super) {
                 }
             }
         });
-        if (ClientUtility.checkFileType(treeJson.type, JsonFileType.Job)) {
+        if (ClientUtility.checkFileType(treeJson.type, SwfType.JOB)) {
             _this.script_param = {
                 cores: 1,
                 nodes: 1
@@ -822,7 +822,7 @@ var SwfTree = (function (_super) {
      * @return whether there is a For workflow at parent or not
      */
     SwfTree.prototype.isExistForWorkflowAtParent = function () {
-        if (ClientUtility.checkFileType(this, JsonFileType.For)) {
+        if (ClientUtility.checkFileType(this, SwfType.FOR)) {
             return true;
         }
         else {

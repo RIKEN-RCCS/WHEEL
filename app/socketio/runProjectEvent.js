@@ -1,17 +1,13 @@
 "use strict";
 var fs = require("fs");
 var logger = require("../logger");
-var ServerConfig = require("../serverConfig");
 var ProjectOperator = require("../projectOperator");
+var SwfState = require("../swfState");
 /**
  * socket io communication class for run project to server
  */
 var RunProjectEvent = (function () {
     function RunProjectEvent() {
-        /**
-         * running state
-         */
-        this.runningState = ServerConfig.getConfig().state.running;
     }
     /**
      * Adds a listener for this event
@@ -38,14 +34,13 @@ var RunProjectEvent = (function () {
      * @param callback The function to call when we have finished update
      */
     RunProjectEvent.prototype.updateProjectJson = function (projectFilepath, callback) {
-        var _this = this;
         fs.readFile(projectFilepath, function (err, data) {
             if (err) {
                 callback(err);
                 return;
             }
             var projectJson = JSON.parse(data.toString());
-            projectJson.state = _this.runningState;
+            projectJson.state = SwfState.RUNNING;
             fs.writeFile(projectFilepath, JSON.stringify(projectJson, null, '\t'), function (err) {
                 if (err) {
                     callback(err);

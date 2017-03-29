@@ -4,6 +4,7 @@ import logger = require('../logger');
 import ServerUtility = require('../serverUtility');
 import ServerConfig = require('../serverConfig');
 import ServerSocketIO = require('./serverSocketIO');
+import SwfType = require('../swfType');
 
 /**
  * json data path
@@ -181,7 +182,7 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
      * @param callback The function to call when we generate submit script
      */
     private generateSubmitScript(data: JsonDataPath, callback: ((err?: Error) => void)) {
-        if (!ServerUtility.isTypeJob(data.json)) {
+        if (data.json.type !== SwfType.JOB) {
             callback();
             return;
         }

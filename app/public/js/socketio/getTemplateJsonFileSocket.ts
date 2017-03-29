@@ -34,7 +34,7 @@ class GetTemplateJsonFileSocket {
      * @param filetype json file type
      * @param callback The function to call when we get the event
      */
-    public emit(filetype: JsonFileType, callback: ((json: any) => void)): void {
+    public emit(filetype: SwfType, callback: ((json: any) => void)): void {
         this.onEvent(callback);
         this.socket.emit(GetTemplateJsonFileSocket.eventName, filetype);
     }

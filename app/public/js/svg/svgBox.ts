@@ -371,7 +371,7 @@ class SvgBox {
      * create condition frame extension
      */
     private createConditionFrame(): void {
-        if (ClientUtility.isImplimentsCondition(this.tree)) {
+        if (SwfType.isImplimentsCondition(this.tree)) {
             const polygon = this.draw
                 .polygon([
                     [this.width - 4, 0],

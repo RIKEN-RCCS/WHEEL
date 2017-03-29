@@ -44,7 +44,7 @@ interface SwfTaskJson {
      * type of task
      * Task, Workflow, RemoteTask, Job
      */
-    type: string;
+    type: SwfType;
     /**
      * script file
      */
@@ -262,7 +262,7 @@ interface SwfLogJson {
     /**
      * task state ('Planing', 'Running', 'ReRunning', 'Waiting', 'Completed', 'Failed')
      */
-    state: string;
+    state: SwfState;
     /**
      * path to directory of task
      */
@@ -270,7 +270,7 @@ interface SwfLogJson {
     /**
      * type ('Task', 'Workflow', 'RemoteTask', 'Job', 'If', 'Else', 'Condition', 'Loop', 'Break')
      */
-    type: string;
+    type: SwfType;
     /**
      * start date of execute task
      */
@@ -348,7 +348,7 @@ interface SwfPSAxisJson {
     /**
      * type
      */
-    type: string;
+    type: SwfType;
     /**
      * parameter of "for" statement
      */
@@ -382,7 +382,7 @@ interface SwfProjectJson {
     /**
      * project state
      */
-    state: string;
+    state: SwfState;
     /**
      * project path
      */

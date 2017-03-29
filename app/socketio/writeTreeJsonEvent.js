@@ -4,6 +4,7 @@ var path = require("path");
 var logger = require("../logger");
 var ServerUtility = require("../serverUtility");
 var ServerConfig = require("../serverConfig");
+var SwfType = require("../swfType");
 /**
  * socket io communication class for write SwfTreeJson information to server
  */
@@ -148,7 +149,7 @@ var WriteTreeJsonEvent = (function () {
      * @param callback The function to call when we generate submit script
      */
     WriteTreeJsonEvent.prototype.generateSubmitScript = function (data, callback) {
-        if (!ServerUtility.isTypeJob(data.json)) {
+        if (data.json.type !== SwfType.JOB) {
             callback();
             return;
         }

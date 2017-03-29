@@ -1,8 +1,8 @@
 "use strict";
 var fs = require("fs");
 var path = require("path");
+var os = require("os");
 var logger = require("../logger");
-var ServerUtility = require("../serverUtility");
 /**
  * socket io communication class for gettingfile list
  */
@@ -25,7 +25,7 @@ var GetFileListEvent = (function () {
         var _this = this;
         socket.on(GetFileListEvent.eventName, function (directoryPath, extension) {
             if (directoryPath == null) {
-                directoryPath = ServerUtility.getHomeDir();
+                directoryPath = os.homedir();
             }
             directoryPath = path.resolve(directoryPath);
             var regex = extension == null ? null : new RegExp(extension.replace(/\./, '\\.') + "$");

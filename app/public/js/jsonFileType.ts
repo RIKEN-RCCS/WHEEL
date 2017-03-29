@@ -1,54 +1,3 @@
-
-/**
- * json file type
- */
-enum JsonFileType {
-    /**
-     * Project
-     */
-    Project,
-    /**
-     * WorkFlow
-     */
-    WorkFlow,
-    /**
-     * Task
-     */
-    Task,
-    /**
-     * RemoteTask
-     */
-    RemoteTask,
-    /**
-     * Job
-     */
-    Job,
-    /**
-     * For
-     */
-    For,
-    /**
-     * If
-     */
-    If,
-    /**
-     * Else
-     */
-    Else,
-    /**
-     * Condition
-     */
-    Condition,
-    /**
-     * Break
-     */
-    Break,
-    /**
-     * PStudy
-     */
-    PStudy
-}
-
 /**
  * property information
  */
@@ -790,7 +739,6 @@ class JsonFileTypeBase {
      * @returns property information
      */
     public getPropertyInfo(): any {
-
         return this.propertyInfo;
     }
 }
@@ -800,7 +748,7 @@ class JsonFileTypeBase {
  */
 class TypeProject extends JsonFileTypeBase {
     /**
-     *
+     * create new instance for project
      */
     public constructor() {
         super();
@@ -818,7 +766,7 @@ class TypeTask extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.task;
-        this.type = config.json_types.task;
+        this.type = SwfType.TASK;
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -837,7 +785,7 @@ class TypeWorkflow extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.workflow;
-        this.type = config.json_types.workflow;
+        this.type = SwfType.WORKFLOW;
         this.addUpload();
     }
 }
@@ -852,7 +800,7 @@ class TypeJob extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.job;
-        this.type = config.json_types.job;
+        this.type = SwfType.JOB;
         this.addScrip();
         this.addJobScript();
         this.addInputFile();
@@ -942,7 +890,7 @@ class TypeRemoteTask extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.remotetask;
-        this.type = config.json_types.remotetask;
+        this.type = SwfType.REMOTETASK;
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -963,7 +911,7 @@ class TypeFor extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.for;
-        this.type = config.json_types.for;
+        this.type = SwfType.FOR;
         this.addForParam();
         this.addUpload();
         this.sortPropertyInfo();
@@ -980,7 +928,7 @@ class TypeIf extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.if;
-        this.type = config.json_types.if;
+        this.type = SwfType.IF;
         this.addUpload();
     }
 }
@@ -995,7 +943,7 @@ class TypeElse extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.else;
-        this.type = config.json_types.else;
+        this.type = SwfType.ELSE;
         this.addUpload();
     }
 }
@@ -1010,7 +958,7 @@ class TypeCondition extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.condition;
-        this.type = config.json_types.condition;
+        this.type = SwfType.CONDITION;
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -1095,7 +1043,7 @@ class TypeBreak extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.break;
-        this.type = config.json_types.break;
+        this.type = SwfType.BREAK;
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -1180,7 +1128,7 @@ class TypePStudy extends JsonFileTypeBase {
     public constructor() {
         super();
         this.extension = config.extension.pstudy;
-        this.type = config.json_types.pstudy;
+        this.type = SwfType.PSTUDY;
         this.addParameterFile();
         this.addUpload();
         this.sortPropertyInfo();

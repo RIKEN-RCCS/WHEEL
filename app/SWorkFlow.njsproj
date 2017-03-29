@@ -130,7 +130,9 @@
     <TypeScriptCompile Include="public\js\svg\svgReceptor.ts" />
     <TypeScriptCompile Include="public\js\svg\svgRelations.ts" />
     <TypeScriptCompile Include="public\js\svg\svgUpper.ts" />
+    <TypeScriptCompile Include="public\js\swfState.ts" />
     <TypeScriptCompile Include="public\js\swfTree.ts" />
+    <TypeScriptCompile Include="public\js\swfType.ts" />
     <TypeScriptCompile Include="public\js\yesNoDialog.ts" />
     <TypeScriptCompile Include="public\js\clientUtility.ts" />
     <TypeScriptCompile Include="public\js\fileDialog.ts" />
@@ -161,6 +163,8 @@
     <TypeScriptCompile Include="socketio\uploadFileEvent.ts" />
     <TypeScriptCompile Include="socketio\writeFileEvent.ts" />
     <TypeScriptCompile Include="socketio\writeTreeJsonEvent.ts" />
+    <TypeScriptCompile Include="swfState.ts" />
+    <TypeScriptCompile Include="swfType.ts" />
     <TypeScriptCompile Include="typings\jquery.contextmenu\jquery.contextmenu.d.ts" />
     <TypeScriptCompile Include="typings\jqueryui\jqueryui.d.ts" />
     <TypeScriptCompile Include="typings\jquery\jquery.d.ts" />

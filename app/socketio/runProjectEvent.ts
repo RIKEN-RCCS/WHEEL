@@ -5,6 +5,7 @@ import ServerConfig = require('../serverConfig');
 import ServerUtility = require('../serverUtility');
 import ServerSocketIO = require('./serverSocketIO');
 import ProjectOperator = require('../projectOperator');
+import SwfState = require('../swfState');
 
 /**
  * socket io communication class for run project to server
@@ -15,11 +16,6 @@ class RunProjectEvent implements ServerSocketIO.SocketListener {
      * event name
      */
     private static eventName = 'onRunProject';
-
-    /**
-     * running state
-     */
-    private runningState: string = ServerConfig.getConfig().state.running;
 
     /**
      * Adds a listener for this event
@@ -53,7 +49,7 @@ class RunProjectEvent implements ServerSocketIO.SocketListener {
             }
 
             const projectJson: SwfProjectJson = JSON.parse(data.toString());
-            projectJson.state = this.runningState;
+            projectJson.state = SwfState.RUNNING;
             fs.writeFile(projectFilepath, JSON.stringify(projectJson, null, '\t'), (err) => {
                 if (err) {
                     callback(err);

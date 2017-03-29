@@ -24,18 +24,6 @@ var config = {
         files: 'files',
         directory: 'directory'
     },
-    json_types: {
-        task: 'Task',
-        workflow: 'Workflow',
-        remotetask: 'RemoteTask',
-        job: 'Job',
-        for: 'For',
-        if: 'If',
-        else: 'Else',
-        condition: 'Condition',
-        break: 'Break',
-        pstudy: 'PStudy'
-    },
     node_color: {
         task: '#FF0000',
         remotetask: '#FF6600',
@@ -65,14 +53,6 @@ var config = {
     scheduler: {
         TCS: 'TCS',
         TORQUE: 'TORQUE'
-    },
-    state: {
-        planning: 'Planning',
-        running: 'Running',
-        rerunning: 'ReRunning',
-        waiting: 'Waiting',
-        completed: 'Completed',
-        failed: 'Failed'
     },
     reload_project_ms: 2000
 };

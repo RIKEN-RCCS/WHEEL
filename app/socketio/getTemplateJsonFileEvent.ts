@@ -19,7 +19,7 @@ class getTemplateJsonFileEvent implements ServerSocketIO.SocketListener {
      * @param socket socket io instance
      */
     public onEvent(socket: SocketIO.Socket): void {
-        socket.on(getTemplateJsonFileEvent.eventName, (filetype: JsonFileType) => {
+        socket.on(getTemplateJsonFileEvent.eventName, (filetype: SwfType) => {
             const filepath = ServerUtility.getTemplateFilePath(filetype);
             fs.readFile(filepath, (err, data) => {
                 if (err) {

@@ -5,6 +5,8 @@ import logger = require('../logger');
 import ServerUtility = require('../serverUtility');
 import ServerConfig = require('../serverConfig');
 import ServerSocketIO = require('./serverSocketIO');
+import SwfState = require('../swfState');
+import SwfType = require('../swfType');
 
 /**
  * socket io communication class for getting project json from server
@@ -42,7 +44,7 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
                     const projectJson: SwfProjectJson = JSON.parse(data.toString());
                     this.createProjectJson(projectFilepath, projectJson);
 
-                    if (projectJson.state === this.config.state.planning) {
+                    if (projectJson.state === SwfState.PLANNING) {
                         socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
                     }
                     else {
@@ -85,7 +87,7 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
 
         for (let index = logJson.children.length - 1; index >= 0; index--) {
             const child = logJson.children[index];
-            if (!ServerUtility.isTypeFor(child) && !ServerUtility.isTypePStudy(child)) {
+            if (child.type !== SwfType.FOR && child.type !== SwfType.PSTUDY) {
                 this.setQueue(child);
                 continue;
             }

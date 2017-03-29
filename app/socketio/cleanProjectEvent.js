@@ -2,16 +2,12 @@
 var fs = require("fs");
 var logger = require("../logger");
 var ProjectOperator = require("../projectOperator");
-var ServerConfig = require("../serverConfig");
+var SwfState = require("../swfState");
 /**
  * socket io communication class for cleaning project request to server
  */
 var CleanProjectvent = (function () {
     function CleanProjectvent() {
-        /**
-         * plannning state
-         */
-        this.planningState = ServerConfig.getConfig().state.planning;
     }
     /**
      * Adds a listener for this event
@@ -39,14 +35,13 @@ var CleanProjectvent = (function () {
      * @param callback The function to call when we clean project
      */
     CleanProjectvent.prototype.cleanProject = function (projectFilePath, callback) {
-        var _this = this;
         fs.readFile(projectFilePath, function (err, data) {
             if (err) {
                 callback(err);
                 return;
             }
             var projectJson = JSON.parse(data.toString());
-            projectJson.state = _this.planningState;
+            projectJson.state = SwfState.PLANNING;
             fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), function (err) {
                 if (err) {
                     callback(err);

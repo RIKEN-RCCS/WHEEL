@@ -111,7 +111,7 @@ var SvgNodeUI = (function () {
      * create before task plug
      */
     SvgNodeUI.prototype.createUpper = function () {
-        if (ClientUtility.checkFileType(this.tree.type, JsonFileType.Condition)) {
+        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
             return;
         }
         var plugConfig = {
@@ -136,7 +136,7 @@ var SvgNodeUI = (function () {
      * create after task plug
      */
     SvgNodeUI.prototype.createLower = function () {
-        if (ClientUtility.checkFileType(this.tree.type, JsonFileType.Condition)) {
+        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
             return;
         }
         this.generateNewLower();
@@ -210,7 +210,7 @@ var SvgNodeUI = (function () {
      */
     SvgNodeUI.prototype.createConnector = function () {
         var _this = this;
-        if (ClientUtility.isImplimentsCondition(this.tree)) {
+        if (SwfType.isImplimentsCondition(this.tree)) {
             return;
         }
         this.tree.output_files.forEach(function (output, index) {

@@ -5,26 +5,8 @@ var ssh2 = require("ssh2");
 var child_process = require("child_process");
 var logger = require("./logger");
 var serverUtility = require("./serverUtility");
-var SwfState = {
-    PLANNING: 'Planning',
-    RUNNING: 'Running',
-    RERUNNING: 'ReRunning',
-    WAITING: 'Waiting',
-    COMPLETED: 'Completed',
-    FAILED: 'Failed',
-};
-var SwfType = {
-    TASK: 'Task',
-    WORKFLOW: 'Workflow',
-    REMOTETASK: 'RemoteTask',
-    JOB: 'Job',
-    FOR: 'For',
-    IF: 'If',
-    ELSE: 'Else',
-    CONDITION: 'Condition',
-    BREAK: 'Break',
-    PSTUDY: 'PStudy'
-};
+var SwfState = require("./swfState");
+var SwfType = require("./swfType");
 var SwfScriptType = {
     BASH: 'Bash',
     LUA: 'Lua',
@@ -542,7 +524,7 @@ var TaskOperator = (function () {
             return;
         }
         var command;
-        if (serverUtility.isLinux()) {
+        if (serverUtility.isUnix()) {
             // TODO test Linux
             if (task.script.type == SwfScriptType.BASH || path.extname(task.script.path) == '.sh') {
                 command = "sh " + task.script.path + ";\n";
@@ -854,7 +836,7 @@ var TaskOperator = (function () {
             return;
         }
         var command;
-        if (serverUtility.isLinux()) {
+        if (serverUtility.isUnix()) {
             // TODO test Linux
             if (condition.script.type == SwfScriptType.BASH || path.extname(condition.script.path) == '.sh') {
                 command = "sh " + condition.script.path + ";\n";

@@ -177,7 +177,7 @@ var ClientUtility = (function () {
      */
     ClientUtility.getDefaultName = function (object) {
         var template;
-        if (typeof object === 'number') {
+        if (typeof object === 'string') {
             template = this.getTemplate(object);
         }
         else {
@@ -185,39 +185,6 @@ var ClientUtility = (function () {
         }
         var extension = template.getExtension();
         return "" + config.default_filename + extension;
-    };
-    /**
-     * whether specified class has script or not
-     * @param target SwfTree instance or SwfLog instance
-     * @return whether specified class has script or not
-     */
-    ClientUtility.isImplimentsWorkflow = function (target) {
-        var workflowType = this.getJsonFileType(JsonFileType.WorkFlow);
-        var ForType = this.getJsonFileType(JsonFileType.For);
-        var ifType = this.getJsonFileType(JsonFileType.If);
-        var elseType = this.getJsonFileType(JsonFileType.Else);
-        var pstudyType = this.getJsonFileType(JsonFileType.PStudy);
-        if (target.type.match(new RegExp("^(?:" + [workflowType, ForType, ifType, elseType, pstudyType].join('|') + ")$"))) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    };
-    /**
-     * whether specified class is condition or not
-     * @param target SwfTree instance or SwfLog instance
-     * @return whether specified class is condition or not
-     */
-    ClientUtility.isImplimentsCondition = function (target) {
-        var conditionType = this.getJsonFileType(JsonFileType.Condition);
-        var breakType = this.getJsonFileType(JsonFileType.Break);
-        if (target.type.match(new RegExp("^(?:" + [conditionType, breakType].join('|') + ")$"))) {
-            return true;
-        }
-        else {
-            return false;
-        }
     };
     /**
      * get json file type string
@@ -233,68 +200,38 @@ var ClientUtility = (function () {
      * @return JsonFileTypeBase class instance
      */
     ClientUtility.getTemplate = function (object) {
-        if (typeof object === 'number') {
-            switch (object) {
-                case JsonFileType.Project:
-                    return new TypeProject();
-                case JsonFileType.WorkFlow:
-                    return new TypeWorkflow();
-                case JsonFileType.Task:
-                    return new TypeTask();
-                case JsonFileType.Job:
-                    return new TypeJob();
-                case JsonFileType.For:
-                    return new TypeFor();
-                case JsonFileType.If:
-                    return new TypeIf();
-                case JsonFileType.Else:
-                    return new TypeElse();
-                case JsonFileType.Break:
-                    return new TypeBreak();
-                case JsonFileType.RemoteTask:
-                    return new TypeRemoteTask();
-                case JsonFileType.Condition:
-                    return new TypeCondition();
-                case JsonFileType.PStudy:
-                    return new TypePStudy();
-                default:
-                    throw new TypeError('file type is undefined');
-            }
+        var type;
+        if (typeof object === 'string') {
+            type = object;
         }
         else {
-            if (this.checkFileType(object, JsonFileType.Task)) {
-                return new TypeTask();
-            }
-            else if (this.checkFileType(object, JsonFileType.WorkFlow)) {
+            type = object.type;
+        }
+        switch (type) {
+            case SwfType.PROJECT:
+                return new TypeProject();
+            case SwfType.WORKFLOW:
                 return new TypeWorkflow();
-            }
-            else if (this.checkFileType(object, JsonFileType.For)) {
-                return new TypeFor();
-            }
-            else if (this.checkFileType(object, JsonFileType.If)) {
-                return new TypeIf();
-            }
-            else if (this.checkFileType(object, JsonFileType.Else)) {
-                return new TypeElse();
-            }
-            else if (this.checkFileType(object, JsonFileType.Break)) {
-                return new TypeBreak();
-            }
-            else if (this.checkFileType(object, JsonFileType.RemoteTask)) {
-                return new TypeRemoteTask();
-            }
-            else if (this.checkFileType(object, JsonFileType.Job)) {
+            case SwfType.TASK:
+                return new TypeTask();
+            case SwfType.JOB:
                 return new TypeJob();
-            }
-            else if (this.checkFileType(object, JsonFileType.Condition)) {
+            case SwfType.FOR:
+                return new TypeFor();
+            case SwfType.IF:
+                return new TypeIf();
+            case SwfType.ELSE:
+                return new TypeElse();
+            case SwfType.BREAK:
+                return new TypeBreak();
+            case SwfType.REMOTETASK:
+                return new TypeRemoteTask();
+            case SwfType.CONDITION:
                 return new TypeCondition();
-            }
-            else if (this.checkFileType(object, JsonFileType.PStudy)) {
+            case SwfType.PSTUDY:
                 return new TypePStudy();
-            }
-            else {
+            default:
                 throw new TypeError('file type is undefined');
-            }
         }
     };
     return ClientUtility;

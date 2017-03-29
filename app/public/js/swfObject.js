@@ -505,15 +505,14 @@ var SwfLog = (function () {
      * @return whether this task is planning or not
      */
     SwfLog.prototype.isPlanning = function () {
-        return this.state === config.state.planning;
+        return this.state === SwfState.PLANNING;
     };
     /**
      * whether this task is finished or not
      * @return whether this task is finished or not
      */
     SwfLog.prototype.isFinished = function () {
-        var state = config.state;
-        return this.state === state.completed || this.state === state.failed;
+        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
     };
     /**
      * whether this task is running or not
@@ -545,15 +544,14 @@ var SwfProject = (function () {
      * @return whether project is planning or not
      */
     SwfProject.prototype.isPlanning = function () {
-        return this.state === config.state.planning;
+        return this.state === SwfState.PLANNING;
     };
     /**
      * whether project is finished or not
      * @return whether project is finished or not
      */
     SwfProject.prototype.isFinished = function () {
-        var state = config.state;
-        return this.state === state.completed || this.state === state.failed;
+        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
     };
     /**
      * whether project is running or not

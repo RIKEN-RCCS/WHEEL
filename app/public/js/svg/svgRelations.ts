@@ -51,8 +51,8 @@ class SvgRelations {
                 }
                 uppers.forEach(upper => {
                     let isBind = false;
-                    if (ClientUtility.checkFileType(lower.getType(), JsonFileType.If)) {
-                        if (ClientUtility.checkFileType(upper.getType(), JsonFileType.Else)) {
+                    if (ClientUtility.checkFileType(lower.getType(), SwfType.IF)) {
+                        if (ClientUtility.checkFileType(upper.getType(), SwfType.ELSE)) {
                             if (lower.getTaskIndex() + 1 === upper.getTaskIndex()) {
                                 isBind = true;
                             }

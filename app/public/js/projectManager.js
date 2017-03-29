@@ -112,7 +112,7 @@ $(function () {
             click: function () {
                 var id = $(this).parent().id();
                 var target = SwfLog.getSwfLogInstance(id);
-                var rootFilepath = swfProject.log.path + "/" + ClientUtility.getDefaultName(JsonFileType.WorkFlow);
+                var rootFilepath = swfProject.log.path + "/" + ClientUtility.getDefaultName(SwfType.WORKFLOW);
                 $(document).off('click').off('mouseover').off('mouseout');
                 $('<form/>', { action: '/swf/workflow_manager.html', method: 'post' })
                     .append($('<input/>', { type: 'hidden', name: 'root', value: rootFilepath }))
@@ -196,7 +196,7 @@ $(function () {
      */
     function createSingleLineHtml(swfLog) {
         var attr;
-        if (swfProject.isPlanning() && ClientUtility.isImplimentsWorkflow(swfLog)) {
+        if (swfProject.isPlanning() && SwfType.isImplimentsWorkflow(swfLog)) {
             attr = 'class="project_name_not_task" style="cursor: pointer"';
         }
         else {

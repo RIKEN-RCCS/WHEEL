@@ -42,7 +42,7 @@ var SvgNodePane = (function () {
      */
     SvgNodePane.prototype.setEvents = function () {
         var _this = this;
-        if (!ClientUtility.isImplimentsWorkflow(this.tree)) {
+        if (!SwfType.isImplimentsWorkflow(this.tree)) {
             return;
         }
         this.text.style('cursor', 'pointer');

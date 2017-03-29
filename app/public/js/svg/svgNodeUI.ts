@@ -200,7 +200,7 @@ class SvgNodeUI {
      * create before task plug
      */
     private createUpper() {
-        if (ClientUtility.checkFileType(this.tree.type, JsonFileType.Condition)) {
+        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
             return;
         }
 
@@ -229,7 +229,7 @@ class SvgNodeUI {
      * create after task plug
      */
     private createLower() {
-        if (ClientUtility.checkFileType(this.tree.type, JsonFileType.Condition)) {
+        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
             return;
         }
 
@@ -313,7 +313,7 @@ class SvgNodeUI {
      * create output file plug
      */
     private createConnector() {
-        if (ClientUtility.isImplimentsCondition(this.tree)) {
+        if (SwfType.isImplimentsCondition(this.tree)) {
             return;
         }
         this.tree.output_files.forEach((output, index) => {

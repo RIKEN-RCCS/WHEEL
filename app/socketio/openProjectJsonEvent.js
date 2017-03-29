@@ -4,6 +4,8 @@ var path = require("path");
 var logger = require("../logger");
 var ServerUtility = require("../serverUtility");
 var ServerConfig = require("../serverConfig");
+var SwfState = require("../swfState");
+var SwfType = require("../swfType");
 /**
  * socket io communication class for getting project json from server
  */
@@ -34,7 +36,7 @@ var OpenProjectJsonEvent = (function () {
                     }
                     var projectJson_1 = JSON.parse(data.toString());
                     _this.createProjectJson(projectFilepath, projectJson_1);
-                    if (projectJson_1.state === _this.config.state.planning) {
+                    if (projectJson_1.state === SwfState.PLANNING) {
                         socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
                     }
                     else {
@@ -76,7 +78,7 @@ var OpenProjectJsonEvent = (function () {
         this.queue.push(logJson);
         var _loop_1 = function (index) {
             var child = logJson.children[index];
-            if (!ServerUtility.isTypeFor(child) && !ServerUtility.isTypePStudy(child)) {
+            if (child.type !== SwfType.FOR && child.type !== SwfType.PSTUDY) {
                 this_1.setQueue(child);
                 return "continue";
             }
