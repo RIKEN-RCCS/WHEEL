@@ -9,11 +9,11 @@ interface PlugConfig {
     /**
      * start x point
      */
-    originX: number,
+    readonly originX: number,
     /**
      * start y point
      */
-    originY: number,
+    readonly originY: number,
     /**
      * x offset from svg box
      */
@@ -25,7 +25,7 @@ interface PlugConfig {
     /**
      * color string
      */
-    color: string;
+    readonly color: string;
     /**
      * plug had tree
      */
@@ -65,6 +65,10 @@ class SvgPlugBase {
      */
     private taskIndex: number;
     /**
+     * hash code
+     */
+    private hashcode: number;
+    /**
      * counter for definition unieue index number
      */
     private static counter: number = 0;
@@ -82,6 +86,7 @@ class SvgPlugBase {
         this.plugHeight = bbox.height;
         this.index = SvgPlugBase.counter++;
         this.taskIndex = config.tree.getTaskIndex();
+        this.hashcode = config.tree.getHashCode();
     }
 
     /**
@@ -90,10 +95,10 @@ class SvgPlugBase {
      */
     public name(): string {
         if (this.plugConfig.file) {
-            return `${this.index}_${this.taskIndex}_${this.plugConfig.file.path}`;
+            return `${this.index}_${this.hashcode}_${this.plugConfig.file.path}`;
         }
         else {
-            return `${this.index}_${this.taskIndex}`;
+            return `${this.index}_${this.hashcode}`;
         }
     }
 
@@ -123,7 +128,7 @@ class SvgPlugBase {
     public getFilepathFromTree(): string {
         if (this.plugConfig.file) {
             if (this.plugConfig.tree) {
-                return `./${ClientUtility.normalize(`${this.plugConfig.tree.path}/${this.plugConfig.file.path}`)}`;
+                return `./${ClientUtility.normalize(this.plugConfig.tree.path, this.plugConfig.file.path)}`;
             }
             else {
                 return this.plugConfig.file.path;
@@ -135,7 +140,7 @@ class SvgPlugBase {
     /**
      * get json file type (ex 'Task', 'Workflow' etc)
      */
-    public getType(): string {
+    public getType(): SwfType {
         return this.plugConfig.tree.type;
     }
 
@@ -156,6 +161,14 @@ class SvgPlugBase {
      */
     public getTaskIndex(): number {
         return this.taskIndex;
+    }
+
+    /**
+     * get hash code
+     * @return hash code
+     */
+    public getHashCode(): number {
+        return this.hashcode;
     }
 
     /**

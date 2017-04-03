@@ -82,7 +82,7 @@ var FileDialog = (function () {
     FileDialog.prototype.createHtml4FileIcon = function (fileTypes) {
         var regexp = new RegExp(config.extension.project.replace('.', '\\.') + "$");
         var htmls = fileTypes.files
-            .filter(function (file) { return file.type === 'file'; })
+            .filter(function (file) { return file.type === SwfFileType.FILE; })
             .map(function (file) {
             var htmlImage;
             if (file.name.match(regexp)) {
@@ -102,7 +102,7 @@ var FileDialog = (function () {
      */
     FileDialog.prototype.createHtml4DirIcon = function (fileTypes) {
         var htmls = fileTypes.files
-            .filter(function (file) { return file.type === 'dir'; })
+            .filter(function (file) { return file.type === SwfFileType.DIRECTORY; })
             .map(function (file) {
             return "\n                    <div class=\"select_dir_container\" id=\"" + fileTypes.directory + file.name + "_dir\" onMouseDown=\"return false;\">\n                        <img class=\"dir_icon\" src=\"/image/icon_dir.png\" />\n                        <p>" + file.name + "</p>\n                    </div>";
         });

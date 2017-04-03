@@ -6,17 +6,8 @@ import logger = require('./logger');
 import serverUtility = require('./serverUtility');
 import SwfState = require('./swfState');
 import SwfType = require('./swfType');
-
-const SwfScriptType = {
-    BASH: 'Bash',
-    LUA: 'Lua',
-    BATCH: 'Batch'
-};
-
-const SwfJobScheduler = {
-    TCS: 'TCS',
-    TORQUE: 'TORQUE'
-};
+import SwfJobScheduler = require('./swfJobScheduler');
+import SwfScriptType = require('./swfScriptType');
 
 /**
  * Operator of SWF project.
@@ -592,16 +583,16 @@ class TaskOperator {
         let command: string;
         if (serverUtility.isUnix()) {
             // TODO test Linux
-            if (task.script.type == SwfScriptType.BASH || path.extname(task.script.path) == '.sh') {
+            if (SwfScriptType.isBash(task)) {
                 command = `sh ${task.script.path};\n`;
-            } else if (task.script.type == SwfScriptType.LUA || path.extname(task.script.path) == '.lua') {
+            } else if (SwfScriptType.isLua(task)) {
                 command = `lua ${task.script.path};\n`;
             }
         } else {
             // Windows
-            if (task.script.type == SwfScriptType.BATCH || path.extname(task.script.path) == '.bat') {
+            if (SwfScriptType.isBatch(task)) {
                 command = task.script.path;
-            } else if (task.script.type == SwfScriptType.LUA || path.extname(task.script.path) == '.lua') {
+            } else if (SwfScriptType.isLua(task)) {
                 command = `${path.resolve('lua.exe')} ${task.script.path};\n`;
             } else {
                 command = task.script.path;
@@ -667,9 +658,9 @@ class TaskOperator {
 
         function runScript() {
             let command: string;
-            if (remoteTask.script.type == SwfScriptType.BASH || path.extname(remoteTask.script.path) == '.sh') {
+            if (SwfScriptType.isBash(remoteTask)) {
                 command = `sh ${remoteTask.script.path}\n`;
-            } else if (remoteTask.script.type == SwfScriptType.LUA || path.extname(remoteTask.script.path) == '.lua') {
+            } else if (SwfScriptType.isLua(remoteTask)) {
                 command = `lua ${remoteTask.script.path}\n`;
             } else {
                 // default
@@ -943,16 +934,16 @@ class TaskOperator {
         let command: string;
         if (serverUtility.isUnix()) {
             // TODO test Linux
-            if (condition.script.type == SwfScriptType.BASH || path.extname(condition.script.path) == '.sh') {
+            if (SwfScriptType.isBash(condition)) {
                 command = `sh ${condition.script.path};\n`;
-            } else if (condition.script.type == SwfScriptType.LUA || path.extname(condition.script.path) == '.lua') {
+            } else if (SwfScriptType.isLua(condition)) {
                 command = `lua ${condition.script.path};\n`;
             }
         } else {
             // Windows
-            if (condition.script.type == SwfScriptType.BATCH || path.extname(condition.script.path) == '.bat') {
+            if (SwfScriptType.isBatch(condition)) {
                 command = condition.script.path;
-            } else if (condition.script.type == SwfScriptType.LUA || path.extname(condition.script.path) == '.lua') {
+            } else if (SwfScriptType.isLua(condition)) {
                 command = `${path.resolve('lua.exe')} ${condition.script.path};\n`;
             } else {
                 command = condition.script.path;

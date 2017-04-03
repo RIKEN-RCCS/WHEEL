@@ -416,7 +416,7 @@ class ServerUtility {
      * @return template project json data
      */
     public static readTemplateProjectJson(): SwfProjectJson {
-        const filepath = this.getTemplateFilePath(SwfType.PROJECT);
+        const filepath = this.getTypeOfJson(SwfType.PROJECT).getTemplateFilePath();
         return this.readProjectJson(filepath);
     }
 
@@ -425,7 +425,7 @@ class ServerUtility {
      * @return template workflow json data
      */
     public static readTemplateWorkflowJson(): SwfWorkflowJson {
-        const filepath = this.getTemplateFilePath(SwfType.WORKFLOW);
+        const filepath = this.getTypeOfJson(SwfType.WORKFLOW).getTemplateFilePath();
         return this.readJson(filepath);
     }
 
@@ -643,41 +643,20 @@ class ServerUtility {
     }
 
     /**
-     * get template file path by type
-     * @param fileType json file type
-     * @return template file path by type
-     */
-    public static getTemplateFilePath(fileType: SwfType): string {
-        return this.getTypeOfJson(fileType).getTemplateFilepath();
-    }
-
-    /**
-     * whether specified log json or project json is finished or not
-     * @param json project json data or log json data
-     * @return whether specified log json or project json is finished or not
-     */
-    public static isProjectFinished(json: (SwfLogJson | SwfProjectJson)) {
-        return json.state === SwfState.COMPLETED || json.state === SwfState.FAILED;
-    }
-
-    /**
-     * get default default file name by type
-     * @param fileType filetype or file type string
-     * @return default default file name by type
-     */
-    public static getDefaultName(fileType: (string | SwfType)): string {
-        const template = this.getTypeOfJson(fileType);
-        const extension = template.getExtension();
-        return `${this.config.default_filename}${extension}`;
-    }
-
-    /**
      * get instane by type
-     * @param fileType filetype or file type string
+     * @param target filetype or tree json data
      * @return instance by type
      */
-    private static getTypeOfJson(fileType: (string | SwfType)): TypeBase {
-        switch (fileType) {
+    public static getTypeOfJson(target: (SwfType | string | SwfTreeJson)): TypeBase {
+        let type: SwfType;
+        if (typeof target === 'string') {
+            type = <SwfType>target;
+        }
+        else {
+            type = target.type;
+        }
+
+        switch (type) {
             case SwfType.PROJECT:
                 return new TypeProject();
             case SwfType.WORKFLOW:
@@ -715,31 +694,38 @@ class TypeBase {
      */
     protected config = ServerConfig.getConfig();
     /**
-     * file extension name
-     */
-    protected extension: string;
-    /**
-     * template file path
-     */
-    protected templateFilepath: string;
-    /**
      * file type string
      */
-    protected type: SwfType;
+    protected readonly type: SwfType;
+
+    /**
+     * create new instance
+     * @param type SwfType
+     */
+    protected constructor(type: SwfType) {
+        this.type = type;
+    }
 
     /**
      * get file extension name
      * @return file extension name
      */
     public getExtension(): string {
-        return this.extension;
+        return this.config.extension[this.type.toLocaleLowerCase()];
     }
     /**
      * get template file path
      * @return template file path
      */
-    public getTemplateFilepath(): string {
-        return path.normalize(`${__dirname}/${this.templateFilepath}`);
+    public getTemplateFilePath(): string {
+        return path.normalize(`${__dirname}/${this.config.template[this.type.toLocaleLowerCase()]}`);
+    }
+    /**
+     * get default file name
+     * @return default file name
+     */
+    public getDefaultName(): string {
+        return `${this.config.default_filename}${this.getExtension()}`;
     }
     /**
      * get file type
@@ -748,7 +734,14 @@ class TypeBase {
     public getType(): SwfType {
         return this.type;
     }
+    /**
+     * run task
+     */
+    public run() {
+        throw new Error('function is not implemented');
+    }
 }
+
 /**
  * type project
  */
@@ -757,9 +750,7 @@ class TypeProject extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.project;
-        this.templateFilepath = this.config.template.project;
+        super(SwfType.PROJECT);
     }
 }
 /**
@@ -770,12 +761,10 @@ class TypeTask extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.task;
-        this.templateFilepath = this.config.template.task;
-        this.type = SwfType.TASK;
+        super(SwfType.TASK);
     }
 }
+
 /**
  * type workflow
  */
@@ -784,21 +773,16 @@ class TypeWorkflow extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.workflow;
-        this.templateFilepath = this.config.template.workflow;
-        this.type = SwfType.WORKFLOW;
+        super(SwfType.WORKFLOW);
     }
 }
+
 class TypeFor extends TypeBase {
     /**
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.for;
-        this.templateFilepath = this.config.template.for;
-        this.type = SwfType.FOR;
+        super(SwfType.FOR);
     }
 }
 /**
@@ -809,10 +793,7 @@ class TypeIf extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.if;
-        this.templateFilepath = this.config.template.if;
-        this.type = SwfType.IF;
+        super(SwfType.IF);
     }
 }
 /**
@@ -823,10 +804,7 @@ class TypeElse extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.else;
-        this.templateFilepath = this.config.template.else;
-        this.type = SwfType.ELSE;
+        super(SwfType.ELSE);
     }
 }
 /**
@@ -837,10 +815,7 @@ class TypeBreak extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.break;
-        this.templateFilepath = this.config.template.break;
-        this.type = SwfType.BREAK;
+        super(SwfType.BREAK);
     }
 }
 /**
@@ -851,10 +826,7 @@ class TypeRemoteTask extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.remotetask;
-        this.templateFilepath = this.config.template.remotetask;
-        this.type = SwfType.REMOTETASK;
+        super(SwfType.REMOTETASK);
     }
 }
 /**
@@ -865,10 +837,7 @@ class TypeJob extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.job;
-        this.templateFilepath = this.config.template.job;
-        this.type = SwfType.JOB;
+        super(SwfType.JOB);
     }
 }
 /**
@@ -879,10 +848,7 @@ class TypeCondition extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.condition;
-        this.templateFilepath = this.config.template.condition;
-        this.type = SwfType.CONDITION;
+        super(SwfType.CONDITION);
     }
 }
 /**
@@ -893,10 +859,7 @@ class TypePStudy extends TypeBase {
      * create new instance
      */
     public constructor() {
-        super();
-        this.extension = this.config.extension.pstudy;
-        this.templateFilepath = this.config.template.pstudy;
-        this.type = SwfType.PSTUDY;
+        super(SwfType.PSTUDY);
     }
 }
 

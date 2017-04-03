@@ -13,7 +13,7 @@ class CreateNewProjectEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onCreateNewProject';
+    private static readonly eventName = 'onCreateNewProject';
 
     /**
      * config parameter

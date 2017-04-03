@@ -12,7 +12,11 @@ var __extends = (this && this.__extends) || (function () {
  * json file base class
  */
 var JsonFileTypeBase = (function () {
-    function JsonFileTypeBase() {
+    /**
+     * create new instance
+     * @param type SwfType
+     */
+    function JsonFileTypeBase(type) {
         /**
          * property information
          */
@@ -70,13 +74,14 @@ var JsonFileTypeBase = (function () {
                 order: 310
             }
         ];
+        this.type = type;
     }
     /**
      * get extension string
      * @return get extension string
      */
     JsonFileTypeBase.prototype.getExtension = function () {
-        return this.extension;
+        return config.extension[this.type.toLowerCase()];
     };
     /**
      * get json file type string
@@ -86,19 +91,11 @@ var JsonFileTypeBase = (function () {
         return this.type;
     };
     /**
-     * whether specified string or SwfTree instance type is matched or not
-     * @param target file type string or SwfTree instance
-     * @return whether specified string or SwfTree instance type is matched or not
+     * get default json file name
+     * @return get default json file name
      */
-    JsonFileTypeBase.prototype.checkFileType = function (target) {
-        var type;
-        if (typeof target === 'string') {
-            type = target;
-        }
-        else {
-            type = target.type;
-        }
-        return type === this.type;
+    JsonFileTypeBase.prototype.getDefaultName = function () {
+        return "" + config.default_filename + this.getExtension();
     };
     /**
      * add script property information
@@ -287,7 +284,7 @@ var JsonFileTypeBase = (function () {
                     callback: function (tree, object, path) {
                         var newFile = new SwfFile(object);
                         newFile.path = path;
-                        newFile.type = ClientUtility.getIOFileType(newFile.path);
+                        newFile.type = SwfFileType.getFileType(newFile);
                         tree.updateInputFile(object, newFile);
                         object.type = newFile.type;
                     }
@@ -380,7 +377,7 @@ var JsonFileTypeBase = (function () {
                     callback: function (tree, object, path) {
                         var newFile = new SwfFile(object);
                         newFile.path = path;
-                        newFile.type = ClientUtility.getIOFileType(newFile.path);
+                        newFile.type = SwfFileType.getFileType(newFile);
                         tree.updateOutputFile(object, newFile);
                         object.type = newFile.type;
                     }
@@ -472,7 +469,7 @@ var JsonFileTypeBase = (function () {
                         return !tree.isEnablePath(v);
                     },
                     callback: function (tree, object, path) {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 }
             ],
@@ -531,7 +528,7 @@ var JsonFileTypeBase = (function () {
                         return !tree.isEnablePath(v);
                     },
                     callback: function (tree, object, path) {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
@@ -702,9 +699,7 @@ var TypeProject = (function (_super) {
      * create new instance for project
      */
     function TypeProject() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.project;
-        return _this;
+        return _super.call(this, SwfType.PROJECT) || this;
     }
     return TypeProject;
 }(JsonFileTypeBase));
@@ -717,9 +712,7 @@ var TypeTask = (function (_super) {
      * create new instance for task
      */
     function TypeTask() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.task;
-        _this.type = SwfType.TASK;
+        var _this = _super.call(this, SwfType.TASK) || this;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -738,9 +731,7 @@ var TypeWorkflow = (function (_super) {
      * create new instance for workflow
      */
     function TypeWorkflow() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.workflow;
-        _this.type = SwfType.WORKFLOW;
+        var _this = _super.call(this, SwfType.WORKFLOW) || this;
         _this.addUpload();
         return _this;
     }
@@ -755,9 +746,7 @@ var TypeJob = (function (_super) {
      * create new instance for job
      */
     function TypeJob() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.job;
-        _this.type = SwfType.JOB;
+        var _this = _super.call(this, SwfType.JOB) || this;
         _this.addScrip();
         _this.addJobScript();
         _this.addInputFile();
@@ -845,9 +834,7 @@ var TypeRemoteTask = (function (_super) {
      * create new instance for remote task
      */
     function TypeRemoteTask() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.remotetask;
-        _this.type = SwfType.REMOTETASK;
+        var _this = _super.call(this, SwfType.REMOTETASK) || this;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -868,9 +855,7 @@ var TypeFor = (function (_super) {
      * create new instance for loop
      */
     function TypeFor() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.for;
-        _this.type = SwfType.FOR;
+        var _this = _super.call(this, SwfType.FOR) || this;
         _this.addForParam();
         _this.addUpload();
         _this.sortPropertyInfo();
@@ -887,9 +872,7 @@ var TypeIf = (function (_super) {
      * create new instance for if
      */
     function TypeIf() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.if;
-        _this.type = SwfType.IF;
+        var _this = _super.call(this, SwfType.IF) || this;
         _this.addUpload();
         return _this;
     }
@@ -904,9 +887,7 @@ var TypeElse = (function (_super) {
      * create new instance for else
      */
     function TypeElse() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.else;
-        _this.type = SwfType.ELSE;
+        var _this = _super.call(this, SwfType.ELSE) || this;
         _this.addUpload();
         return _this;
     }
@@ -921,9 +902,7 @@ var TypeCondition = (function (_super) {
      * create new instance for condition
      */
     function TypeCondition() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.condition;
-        _this.type = SwfType.CONDITION;
+        var _this = _super.call(this, SwfType.CONDITION) || this;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -976,7 +955,7 @@ var TypeCondition = (function (_super) {
                         return !tree.isEnablePath(v);
                     },
                     callback: function (tree, object, path) {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
@@ -1007,9 +986,7 @@ var TypeBreak = (function (_super) {
      * create new instance for break
      */
     function TypeBreak() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.break;
-        _this.type = SwfType.BREAK;
+        var _this = _super.call(this, SwfType.BREAK) || this;
         _this.addScript();
         _this.addInputFile();
         _this.addOutputFile();
@@ -1062,7 +1039,7 @@ var TypeBreak = (function (_super) {
                         return !tree.isEnablePath(v);
                     },
                     callback: function (tree, object, path) {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
@@ -1093,9 +1070,7 @@ var TypePStudy = (function (_super) {
      * create new instance for parameter study
      */
     function TypePStudy() {
-        var _this = _super.call(this) || this;
-        _this.extension = config.extension.pstudy;
-        _this.type = SwfType.PSTUDY;
+        var _this = _super.call(this, SwfType.PSTUDY) || this;
         _this.addParameterFile();
         _this.addUpload();
         _this.sortPropertyInfo();

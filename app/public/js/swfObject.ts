@@ -143,10 +143,14 @@ class SwfTask implements SwfTaskJson {
      * max size of rreceive file (kb)
      */
     public max_size_receive_file: number;
+    /**
+     * birthday epoch
+     */
+    public readonly birth: number;
 
     /**
-     *
-     * @param swfTask
+     * create new instance
+     * @param swfTask task json data
      */
     public constructor(swfTask: (SwfTask | SwfTaskJson)) {
         this.name = swfTask.name;
@@ -158,6 +162,7 @@ class SwfTask implements SwfTaskJson {
         this.output_files = JSON.parse(JSON.stringify(swfTask.output_files)).map(file => new SwfFile(file));
         this.clean_up = swfTask.clean_up;
         this.max_size_receive_file = swfTask.max_size_receive_file;
+        this.birth = swfTask.birth;
     }
 
     /**
@@ -468,7 +473,7 @@ class SwfHost implements SwfHostJson {
     /**
      * job sheduler name
      */
-    public job_scheduler: string;
+    public job_scheduler: SwfJobScheduler;
     /**
      * user name
      */
@@ -686,7 +691,7 @@ class SwfLog implements SwfLogJson {
             if (!log) {
                 break;
             }
-            if (log.remote && !ClientUtility.isLocalHost(log.remote.host)) {
+            if (log.remote && !ClientUtility.isLocalHost(log.remote)) {
                 hash[log.remote.name] = log.remote;
             }
             log.children.forEach(child => {
@@ -701,7 +706,7 @@ class SwfLog implements SwfLogJson {
      * @return whether this task is planning or not
      */
     public isPlanning(): boolean {
-        return this.state === SwfState.PLANNING;
+        return SwfState.isPlanning(this);
     }
 
     /**
@@ -709,7 +714,7 @@ class SwfLog implements SwfLogJson {
      * @return whether this task is finished or not
      */
     public isFinished(): boolean {
-        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
+        return SwfState.isFinished(this);
     }
 
     /**
@@ -768,7 +773,7 @@ class SwfProject implements SwfProjectJson {
      * @return whether project is planning or not
      */
     public isPlanning(): boolean {
-        return this.state === SwfState.PLANNING;
+        return SwfState.isPlanning(this);
     }
 
     /**
@@ -776,7 +781,7 @@ class SwfProject implements SwfProjectJson {
      * @return whether project is finished or not
      */
     public isFinished(): boolean {
-        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
+        return SwfState.isFinished(this);
     }
 
     /**

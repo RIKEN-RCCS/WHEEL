@@ -6,12 +6,12 @@ class DeleteHostSocket {
     /**
      * event name
      */
-    private static eventName = 'onDeleteHost';
+    private static readonly eventName = 'onDeleteHost';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * create new instance

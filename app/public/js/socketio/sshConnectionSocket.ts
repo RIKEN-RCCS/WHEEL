@@ -6,12 +6,12 @@ class SshConnectionSocket {
     /**
      * event name
      */
-    private static eventName = 'onSshConnection';
+    private static readonly eventName = 'onSshConnection';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * create new instance

@@ -15,7 +15,7 @@ class CleanProjectvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'cleanProject';
+    private static readonly eventName = 'cleanProject';
 
     /**
      * Adds a listener for this event

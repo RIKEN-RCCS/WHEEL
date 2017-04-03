@@ -11,7 +11,7 @@ class SvgConnector extends SvgPlugBase {
     /**
      * cable
      */
-    private cable: SvgCable;
+    private readonly cable: SvgCable;
 
     /**
      * create new instance

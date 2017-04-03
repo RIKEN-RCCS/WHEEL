@@ -6,7 +6,7 @@ class SvgFileRelations {
     /**
      * file relation
      */
-    private fileRelations: SwfRelationFile[];
+    private readonly fileRelations: SwfRelationFile[];
 
     /**
      * create new instance
@@ -18,13 +18,13 @@ class SvgFileRelations {
 
     /**
      * get matched count
-     * @param taskIndex task index
+     * @param hashcode hash code
      * @param filepath relation file path name
      * @param dirname tree path name
      * @return get matched count
      */
-    public count(taskIndex: number, filepath: string, pathname: string): number {
-        const filename = `${taskIndex}_${pathname}/${ClientUtility.normalize(filepath)}`;
+    public getMatchedCount(hashcode: number, filepath: string, pathname: string): number {
+        const filename = `${hashcode}_${pathname}/${ClientUtility.normalize(filepath)}`;
         return this.fileRelations
             .filter(relation => relation.getOutputFileName() === filename)
             .length;
@@ -43,8 +43,8 @@ class SvgFileRelations {
         const relaltions: SwfRelationFile[] = JSON.parse(JSON.stringify(this.fileRelations));
         this.clear();
         relaltions.forEach(relation => {
-            const connectors = <SvgConnector[]>allConnectors.findFromIndex(relation.index_before_task, relation.path_output_file);
-            const receptors = <SvgReceptor[]>allReceptors.findFromIndex(relation.index_after_task, relation.path_input_file);
+            const connectors = <SvgConnector[]>allConnectors.findFromHashCode(relation.index_before_task, relation.path_output_file);
+            const receptors = <SvgReceptor[]>allReceptors.findFromHashCode(relation.index_after_task, relation.path_input_file);
 
             if (connectors == null || receptors == null) {
                 return;
@@ -79,13 +79,13 @@ class SvgFileRelations {
             return null;
         }
 
-        const outputPath = ClientUtility.normalize(`${connector.parentDirname()}/${connector.getFilepath()}`);
-        const inputPath = ClientUtility.normalize(`${receptor.parentDirname()}/${receptor.getFilepath()}`);
+        const outputPath = ClientUtility.normalize(connector.parentDirname(), connector.getFilepath());
+        const inputPath = ClientUtility.normalize(receptor.parentDirname(), receptor.getFilepath());
 
         const relation: SwfFileRelationJson = {
-            index_before_task: connector.getTaskIndex(),
+            index_before_task: connector.getHashCode(),
             path_output_file: `./${outputPath}`,
-            index_after_task: receptor.getTaskIndex(),
+            index_after_task: receptor.getHashCode(),
             path_input_file: `./${inputPath}`,
         };
         return new SwfRelationFile(relation);

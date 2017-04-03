@@ -11,12 +11,12 @@ var SvgRelations = (function () {
     }
     /**
      * get matched count
-     * @param taskIndex task index
+     * @param hashcode hash code
      * @return get matched count
      */
-    SvgRelations.prototype.getTaskIndexCount = function (taskIndex) {
+    SvgRelations.prototype.getMatchedCount = function (hashcode) {
         return this.relations
-            .filter(function (relation) { return (relation.index_before_task === taskIndex); })
+            .filter(function (relation) { return (relation.index_before_task === hashcode); })
             .length;
     };
     /**
@@ -29,8 +29,8 @@ var SvgRelations = (function () {
             return;
         }
         this.relations.forEach(function (relation) {
-            var lowers = allLowers.findFromIndex(relation.index_before_task);
-            var uppers = allUppers.findFromIndex(relation.index_after_task);
+            var lowers = allLowers.findFromHashCode(relation.index_before_task);
+            var uppers = allUppers.findFromHashCode(relation.index_after_task);
             if (lowers == null || uppers == null) {
                 return;
             }
@@ -40,8 +40,8 @@ var SvgRelations = (function () {
                 }
                 uppers.forEach(function (upper) {
                     var isBind = false;
-                    if (ClientUtility.checkFileType(lower.getType(), SwfType.IF)) {
-                        if (ClientUtility.checkFileType(upper.getType(), SwfType.ELSE)) {
+                    if (SwfType.isIf(lower.getType())) {
+                        if (SwfType.isElse(upper.getType())) {
                             if (lower.getTaskIndex() + 1 === upper.getTaskIndex()) {
                                 isBind = true;
                             }
@@ -63,8 +63,8 @@ var SvgRelations = (function () {
             return null;
         }
         return new SwfRelation({
-            index_before_task: lower.getTaskIndex(),
-            index_after_task: upper.getTaskIndex()
+            index_before_task: lower.getHashCode(),
+            index_after_task: upper.getHashCode()
         });
     };
     /**

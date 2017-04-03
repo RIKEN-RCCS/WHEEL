@@ -10,7 +10,7 @@ class ReadFileEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'readFile';
+    private static readonly eventName = 'readFile';
 
     /**
      * Adds a listener for this event

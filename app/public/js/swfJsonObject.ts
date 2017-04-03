@@ -65,6 +65,10 @@ interface SwfTaskJson {
      * max size of rreceive file (kb)
      */
     max_size_receive_file: number;
+    /**
+     * birthday epoch
+     */
+    birth: number;
 }
 
 /**
@@ -164,7 +168,7 @@ interface ForIndex {
     /**
      * index number
      */
-    index: number;
+    readonly index: number;
 }
 
 /**
@@ -200,7 +204,7 @@ interface SwfHostJson {
     /**
      * job sheduler name
      */
-    job_scheduler: string;
+    job_scheduler?: SwfJobScheduler;
     /**
      * user name
      */

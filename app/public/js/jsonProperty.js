@@ -231,10 +231,9 @@ var JsonProperty = (function () {
                     this.setChangeEventForHost(object, id);
                     break;
                 case 'scheduler':
-                    var schedulers = Object.keys(config.scheduler).map(function (key) {
-                        var value = config.scheduler[key];
-                        var isSelected = value === object.job_scheduler ? 'selected="selected"' : '';
-                        return "<option value=\"" + value + "\" " + isSelected + ">" + value + "</option>";
+                    var schedulers = SwfJobScheduler.schedulers().map(function (scheduler) {
+                        var isSelected = scheduler === object.job_scheduler ? 'selected="selected"' : '';
+                        return "<option value=\"" + scheduler + "\" " + isSelected + ">" + scheduler + "</option>";
                     });
                     content = "<select name=\"" + id + "\" class=\"text_box\" style=\"width: calc(100% - 4px)\" id=\"" + id + "\">" + schedulers.join('') + "</select>";
                     this.setChangeEventForScheduler(object, id);
@@ -270,7 +269,7 @@ var JsonProperty = (function () {
         JsonProperty.counter = 0;
         var html = ['<div>property</div>'];
         var parentHtml = [];
-        var property = ClientUtility.getPropertyInfo(this.tree);
+        var property = ClientUtility.getTemplate(this.tree).getPropertyInfo();
         var createTableHtml = function (data) {
             var html = "<table>" + data.join('') + "</table>";
             data.length = 0;

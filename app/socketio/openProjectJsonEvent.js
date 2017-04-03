@@ -15,10 +15,6 @@ var OpenProjectJsonEvent = (function () {
          * config parameter
          */
         this.config = ServerConfig.getConfig();
-        /**
-         *
-         */
-        this.queue = [];
     }
     /**
      * Adds a listener for connect event
@@ -36,13 +32,13 @@ var OpenProjectJsonEvent = (function () {
                     }
                     var projectJson_1 = JSON.parse(data.toString());
                     _this.createProjectJson(projectFilepath, projectJson_1);
-                    if (projectJson_1.state === SwfState.PLANNING) {
+                    if (SwfState.isPlanning(projectJson_1)) {
                         socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
                     }
                     else {
-                        _this.queue.length = 0;
-                        _this.setQueue(projectJson_1.log);
-                        _this.updateLogJson(function () {
+                        var queue = [];
+                        _this.setQueue(queue, projectJson_1.log);
+                        _this.updateLogJson(queue, function () {
                             projectJson_1.state = projectJson_1.log.state;
                             socket.json.emit(OpenProjectJsonEvent.eventName, projectJson_1);
                         });
@@ -71,15 +67,16 @@ var OpenProjectJsonEvent = (function () {
     ;
     /**
      * set queue scpecified log json data
+     * @param queue set queue
      * @param logJson log json data
      */
-    OpenProjectJsonEvent.prototype.setQueue = function (logJson) {
+    OpenProjectJsonEvent.prototype.setQueue = function (queue, logJson) {
         var _this = this;
-        this.queue.push(logJson);
+        queue.push(logJson);
         var _loop_1 = function (index) {
             var child = logJson.children[index];
             if (child.type !== SwfType.FOR && child.type !== SwfType.PSTUDY) {
-                this_1.setQueue(child);
+                this_1.setQueue(queue, child);
                 return "continue";
             }
             var basename = path.basename(child.path);
@@ -119,7 +116,7 @@ var OpenProjectJsonEvent = (function () {
             })
                 .forEach(function (newChild) {
                 logJson.children.splice(index, 0, newChild);
-                _this.setQueue(newChild);
+                _this.setQueue(queue, newChild);
             });
         };
         var this_1 = this;
@@ -129,17 +126,18 @@ var OpenProjectJsonEvent = (function () {
     };
     /**
      * update log json data
+     * @param queue set queue
      * @param callback The function to call when we have updated log json
      */
-    OpenProjectJsonEvent.prototype.updateLogJson = function (callback) {
+    OpenProjectJsonEvent.prototype.updateLogJson = function (queue, callback) {
         var _this = this;
-        var logJson = this.queue.shift();
+        var logJson = queue.shift();
         if (!logJson) {
             callback();
             return;
         }
-        if (ServerUtility.isProjectFinished(logJson)) {
-            this.updateLogJson(callback);
+        if (SwfState.isFinished(logJson)) {
+            this.updateLogJson(queue, callback);
             return;
         }
         var logFilePath = path.join(logJson.path, this.config.system_name + ".log");
@@ -150,7 +148,7 @@ var OpenProjectJsonEvent = (function () {
                 logJson.execution_start_date = readJson.execution_start_date;
                 logJson.execution_end_date = readJson.execution_end_date;
             }
-            _this.updateLogJson(callback);
+            _this.updateLogJson(queue, callback);
         });
     };
     /**

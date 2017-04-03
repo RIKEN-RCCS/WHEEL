@@ -65,6 +65,7 @@
     <Content Include="config\template.rtsk.json" />
     <Content Include="config\template.tsk.json" />
     <Content Include="config\template.wf.json" />
+    <Content Include="gzip.exe" />
     <Content Include="lua.exe" />
     <Content Include="obj\Debug\SWorkFlow.njsproj.FileListAbsolute.txt" />
     <Content Include="package.json" />
@@ -105,6 +106,7 @@
     <TypeScriptCompile Include="public\js\socketio\addHostSocket.ts" />
     <TypeScriptCompile Include="public\js\socketio\cleanProjectSocket.ts" />
     <TypeScriptCompile Include="public\js\socketio\createNewProjectSocket.ts" />
+    <TypeScriptCompile Include="public\js\socketio\deleteDirectorySocket.ts" />
     <TypeScriptCompile Include="public\js\socketio\deleteHostSocket.ts" />
     <TypeScriptCompile Include="public\js\socketio\getFileListSocket.ts" />
     <TypeScriptCompile Include="public\js\socketio\getFileStatSocket.ts" />
@@ -130,6 +132,8 @@
     <TypeScriptCompile Include="public\js\svg\svgReceptor.ts" />
     <TypeScriptCompile Include="public\js\svg\svgRelations.ts" />
     <TypeScriptCompile Include="public\js\svg\svgUpper.ts" />
+    <TypeScriptCompile Include="public\js\swfFileType.ts" />
+    <TypeScriptCompile Include="public\js\swfJobScheduler.ts" />
     <TypeScriptCompile Include="public\js\swfState.ts" />
     <TypeScriptCompile Include="public\js\swfTree.ts" />
     <TypeScriptCompile Include="public\js\swfType.ts" />
@@ -149,6 +153,7 @@
     <TypeScriptCompile Include="socketio\addHostEvent.ts" />
     <TypeScriptCompile Include="socketio\cleanProjectEvent.ts" />
     <TypeScriptCompile Include="socketio\createNewProjectEvent.ts" />
+    <TypeScriptCompile Include="socketio\deleteDirectoryEvent.ts" />
     <TypeScriptCompile Include="socketio\deleteHostEvent.ts" />
     <TypeScriptCompile Include="socketio\getFileListEvent.ts" />
     <TypeScriptCompile Include="socketio\getFileStatEvent.ts" />
@@ -163,6 +168,9 @@
     <TypeScriptCompile Include="socketio\uploadFileEvent.ts" />
     <TypeScriptCompile Include="socketio\writeFileEvent.ts" />
     <TypeScriptCompile Include="socketio\writeTreeJsonEvent.ts" />
+    <TypeScriptCompile Include="swfFileType.ts" />
+    <TypeScriptCompile Include="swfJobScheduler.ts" />
+    <TypeScriptCompile Include="swfScriptType.ts" />
     <TypeScriptCompile Include="swfState.ts" />
     <TypeScriptCompile Include="swfType.ts" />
     <TypeScriptCompile Include="typings\jquery.contextmenu\jquery.contextmenu.d.ts" />
@@ -209,40 +217,13 @@
     <Folder Include="typings\svg.js\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="public\js\socketio\addHostSocket.js" />
-    <Compile Include="public\js\socketio\cleanProjectSocket.js" />
-    <Compile Include="public\js\socketio\createNewProjectSocket.js" />
-    <Compile Include="public\js\socketio\deleteHostSocket.js" />
-    <Compile Include="public\js\socketio\getFileListSocket.js" />
-    <Compile Include="public\js\socketio\getFileStatSocket.js" />
-    <Compile Include="public\js\socketio\getRemoteHostListSocket.js" />
-    <Compile Include="public\js\socketio\getTemplateJsonFileSocket.js" />
-    <Compile Include="public\js\socketio\openProjectJsonSocket.js" />
-    <Compile Include="public\js\socketio\readFileSocket.js" />
-    <Compile Include="public\js\socketio\readTreeJsonSocket.js" />
-    <Compile Include="public\js\socketio\runProjectSocket.js" />
-    <Compile Include="public\js\socketio\sshConnectionSocket.js" />
-    <Compile Include="public\js\socketio\uploadFileSocket.js" />
-    <Compile Include="public\js\socketio\writeFileSocket.js" />
-    <Compile Include="public\js\socketio\writeTreeJsonSocket.js" />
-    <Compile Include="public\js\svg\svgBox.js" />
-    <Compile Include="public\js\svg\svgCable.js" />
-    <Compile Include="public\js\svg\svgConnector.js" />
-    <Compile Include="public\js\svg\svgContainer.js" />
-    <Compile Include="public\js\svg\svgFileRelations.js" />
-    <Compile Include="public\js\svg\svgLower.js" />
-    <Compile Include="public\js\svg\svgNodePane.js" />
-    <Compile Include="public\js\svg\svgNodeUI.js" />
-    <Compile Include="public\js\svg\svgPlugBase.js" />
-    <Compile Include="public\js\svg\svgReceptor.js" />
-    <Compile Include="public\js\svg\svgRelations.js" />
-    <Compile Include="public\js\svg\svgUpper.js" />
     <Compile Include="public\third_party\jquery\jquery-3.2.1.min.js" />
+    <Compile Include="public\third_party\jquery\jquery-ui-1.12.1.min.js" />
     <Compile Include="public\third_party\jquery\jquery.contextMenu-2.4.4.min.js" />
-    <Compile Include="public\third_party\jquery\jquery.ui.position-1.12.1.min.js" />
     <Compile Include="public\third_party\socket.io\socket.io-1.7.3.min.js" />
     <Compile Include="public\third_party\svg\svg-2.5.0.min.js" />
     <Compile Include="public\third_party\svg\svg.draggable-2.2.1.min.js" />
+    <Compile Include="socketio\deleteDirectoryEvent.js" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />

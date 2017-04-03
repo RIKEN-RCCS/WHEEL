@@ -45,9 +45,9 @@ var SvgUpper = (function (_super) {
             console.info('it is circular reference!');
             return false;
         }
-        var taskIndex = lower.getTaskIndex();
-        if (!this.connectedLowers[taskIndex]) {
-            this.connectedLowers[taskIndex] = lower;
+        var hashcode = lower.getHashCode();
+        if (!this.connectedLowers[hashcode]) {
+            this.connectedLowers[hashcode] = lower;
             return true;
         }
         else {
@@ -102,7 +102,7 @@ var SvgUpper = (function (_super) {
      * @return SvgUpper instance
      */
     SvgUpper.prototype.deleteConnect = function (lower) {
-        delete this.connectedLowers[lower.getTaskIndex()];
+        delete this.connectedLowers[lower.getHashCode()];
         return this;
     };
     /**

@@ -26,11 +26,11 @@ module ServerSocketIO {
         /**
          * socket io namespace
          */
-        io: SocketIO.Namespace;
+        readonly io: SocketIO.Namespace;
         /**
          * socket io listeners
          */
-        listeners: SocketListener[];
+        readonly listeners: SocketListener[];
     }
 
     /**

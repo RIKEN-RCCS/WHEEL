@@ -13,11 +13,11 @@ interface JsonDataPath {
     /**
      * directory name
      */
-    directory: string;
+    readonly directory: string;
     /**
      * tree json data
      */
-    json: SwfTreeJson;
+    readonly json: SwfTreeJson;
 }
 
 /**
@@ -28,17 +28,7 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'writeTreeJson';
-
-    /**
-     * error flag
-     */
-    private error: boolean;
-
-    /**
-     * queue of json data path
-     */
-    private queue: JsonDataPath[] = [];
+    private static readonly eventName = 'writeTreeJson';
 
     /**
      * Adds a listener for this event
@@ -46,35 +36,34 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
      */
     public onEvent(socket: SocketIO.Socket): void {
         socket.on(WriteTreeJsonEvent.eventName, (projectDirectory: string, json: SwfTreeJson) => {
-            this.error = false;
-            this.queue.length = 0;
-            this.setQueue(projectDirectory, json);
-            this.saveTreeJson(() => {
-                socket.emit(WriteTreeJsonEvent.eventName, this.error);
+            const queue: JsonDataPath[] = [];
+            this.setQueue(queue, projectDirectory, json);
+            this.saveTreeJson(queue, () => {
+                socket.emit(WriteTreeJsonEvent.eventName);
             })
         });
     }
 
     /**
      * save tree json
+     * @param queue set queue
      * @param callback The function to call when we save tree json
      */
-    private saveTreeJson(callback: (() => void)) {
-        const data = this.queue.shift();
+    private saveTreeJson(queue: JsonDataPath[], callback: (() => void)) {
+        const data = queue.shift();
         if (!data) {
             callback();
             return;
         }
 
-        const filename = ServerUtility.getDefaultName(data.json.type);
+        const filename = ServerUtility.getTypeOfJson(data.json).getDefaultName();
         const oldDirectory = path.join(data.directory, data.json.oldPath);
         const newDirectory = path.join(data.directory, data.json.path);
         const filepath = path.join(newDirectory, filename);
 
         const error = (err) => {
             logger.error(err);
-            this.error = true;
-            this.saveTreeJson(callback);
+            this.saveTreeJson(queue, callback);
         };
 
         const update = () => {
@@ -90,10 +79,9 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
                 fs.writeFile(filepath, JSON.stringify(copy, null, '\t'), (err) => {
                     if (err) {
                         logger.error(err);
-                        this.error = true;
                     }
                     logger.info(`update file=${filepath}`);
-                    this.saveTreeJson(callback);
+                    this.saveTreeJson(queue, callback);
                 });
             });
         }
@@ -122,10 +110,7 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
             });
         };
 
-        if (data.json.path === undefined) {
-            // delete
-        }
-        else if (!data.json.oldPath) {
+        if (!data.json.oldPath) {
             add();
         }
         else if (data.json.path !== data.json.oldPath) {
@@ -158,12 +143,13 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
 
     /**
      * set data to queue
+     * @param queue set queue
      * @param parentDirectory parent tree directory
      * @param json tree json data
      */
-    private setQueue(parentDirectory: string, json: SwfTreeJson): void {
+    private setQueue(queue: JsonDataPath[], parentDirectory: string, json: SwfTreeJson): void {
 
-        this.queue.push({
+        queue.push({
             directory: parentDirectory,
             json: json
         });
@@ -171,7 +157,7 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
         const childDirectory = path.join(parentDirectory, json.path);
         if (json.children) {
             json.children.forEach(child => {
-                this.setQueue(childDirectory, child);
+                this.setQueue(queue, childDirectory, child);
             });
         }
     }
@@ -190,7 +176,7 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
         const config = ServerConfig.getConfig();
         const submitJobname = config.submit_script;
         const jobJson = <SwfJobJson><any>data.json;
-        const srcPath = path.join(__dirname, config.scheduler[jobJson.remote.job_scheduler]);
+        const srcPath = path.join(__dirname, jobJson.remote.job_scheduler);
         const dstPath = path.join(data.directory, data.json.path, submitJobname);
 
         fs.stat(dstPath, (err, stat) => {

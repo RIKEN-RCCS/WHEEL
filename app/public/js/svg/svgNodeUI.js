@@ -59,9 +59,12 @@ var SvgNodeUI = (function () {
             this.id = id;
             this.draw = SVG(id);
             this.draw.size(4096, 2048);
-            this.draw.on('mousedown', function () {
-                _this.unselect();
-                mousedown(null);
+            this.draw.on('mousedown', function (e) {
+                var key = e.button;
+                if (key === MouseKeyType.LEFT) {
+                    _this.unselect();
+                    mousedown(null);
+                }
             });
             this.draw.on('dblclick', function () {
                 dblclick(null);
@@ -86,7 +89,6 @@ var SvgNodeUI = (function () {
             _this.allNodeUI.push(node);
             node.box.onMousedown(mousedown);
             node.box.onDblclick(dblclick);
-            node.fit(node.box.x(), node.box.y());
             if (child === selectTree) {
                 node.box.select();
                 _this.selectedNodeUI = node;
@@ -111,7 +113,7 @@ var SvgNodeUI = (function () {
      * create before task plug
      */
     SvgNodeUI.prototype.createUpper = function () {
-        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
+        if (SwfType.isCondition(this.tree)) {
             return;
         }
         var plugConfig = {
@@ -136,11 +138,11 @@ var SvgNodeUI = (function () {
      * create after task plug
      */
     SvgNodeUI.prototype.createLower = function () {
-        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
+        if (this.tree.type === SwfType.CONDITION) {
             return;
         }
         this.generateNewLower();
-        var count = SvgNodeUI.relations.getTaskIndexCount(this.tree.getTaskIndex());
+        var count = SvgNodeUI.relations.getMatchedCount(this.tree.getHashCode());
         for (var c = 0; c < count; c++) {
             this.generateNewLower();
         }
@@ -216,7 +218,7 @@ var SvgNodeUI = (function () {
         this.tree.output_files.forEach(function (output, index) {
             var y = SvgBox.caclPlugPosY(index);
             _this.generateNewConnector(output, index);
-            var count = SvgNodeUI.fileRelations.count(_this.tree.getTaskIndex(), output.path, _this.tree.path);
+            var count = SvgNodeUI.fileRelations.getMatchedCount(_this.tree.getHashCode(), output.path, _this.tree.path);
             for (var c = 0; c < count; c++) {
                 _this.generateNewConnector(output, index);
             }
@@ -236,7 +238,7 @@ var SvgNodeUI = (function () {
             originY: this.box.y(),
             offsetX: this.box.getWidth() + SvgBox.getOutputTextOffset(),
             offsetY: SvgBox.caclPlugPosY(index),
-            color: config.plug_color[output.type],
+            color: SwfFileType.getPlugColor(output),
             file: output,
             tree: this.tree
         };
@@ -298,7 +300,7 @@ var SvgNodeUI = (function () {
                 originY: _this.box.y(),
                 offsetX: -8,
                 offsetY: SvgBox.caclPlugPosY(fileIndex),
-                color: config.plug_color[input.type],
+                color: SwfFileType.getPlugColor(input),
                 file: input,
                 tree: _this.tree
             };

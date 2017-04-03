@@ -39,9 +39,9 @@ class SvgUpper extends SvgPlugBase {
             return false;
         }
 
-        const taskIndex = lower.getTaskIndex();
-        if (!this.connectedLowers[taskIndex]) {
-            this.connectedLowers[taskIndex] = lower;
+        const hashcode = lower.getHashCode();
+        if (!this.connectedLowers[hashcode]) {
+            this.connectedLowers[hashcode] = lower;
             return true;
         }
         else {
@@ -98,7 +98,7 @@ class SvgUpper extends SvgPlugBase {
      * @return SvgUpper instance
      */
     public deleteConnect(lower: SvgLower): SvgUpper {
-        delete this.connectedLowers[lower.getTaskIndex()];
+        delete this.connectedLowers[lower.getHashCode()];
         return this;
     }
 

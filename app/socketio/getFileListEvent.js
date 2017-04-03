@@ -3,6 +3,7 @@ var fs = require("fs");
 var path = require("path");
 var os = require("os");
 var logger = require("../logger");
+var SwfFileType = require("../swfFileType");
 /**
  * socket io communication class for gettingfile list
  */
@@ -15,7 +16,6 @@ var GetFileListEvent = (function () {
      */
     GetFileListEvent.prototype.onEvent = function (socket) {
         this.onGetFileList(socket);
-        this.onDisconnect(socket);
     };
     /**
      * get file list
@@ -33,18 +33,6 @@ var GetFileListEvent = (function () {
         });
     };
     /**
-     * Adds a listener for disconnect event
-     * @param socket socket io object
-     */
-    GetFileListEvent.prototype.onDisconnect = function (socket) {
-        var _this = this;
-        socket.on('disconnect', function () {
-            if (_this.watcher != null) {
-                _this.watcher.close();
-            }
-        });
-    };
-    /**
      * emit to client for sending file list
      * @param pathDirectory read directory path
      * @param socket socket io object
@@ -59,13 +47,6 @@ var GetFileListEvent = (function () {
                 files: getFileList
             };
             socket.json.emit(GetFileListEvent.eventName, fileList);
-            if (this.watcher != null) {
-                this.watcher.close();
-            }
-            // watch directory and emit
-            // this.watcher = fs.watch(directory, (event, filename) => {
-            //     this.emitFileList(directory, socket, regex);
-            // });
         }
         catch (err) {
             logger.error(err);
@@ -82,7 +63,7 @@ var GetFileListEvent = (function () {
         var getFileList = [
             {
                 name: "../",
-                type: "dir"
+                type: SwfFileType.DIRECTORY
             }
         ];
         fs.readdirSync(pathDirectory)
@@ -91,13 +72,13 @@ var GetFileListEvent = (function () {
             if (stat.isFile() && (fileRegex != null && file.match(fileRegex))) {
                 getFileList.push({
                     name: file,
-                    type: "file"
+                    type: SwfFileType.FILE
                 });
             }
             else if (stat.isDirectory()) {
                 getFileList.push({
                     name: file + "/",
-                    type: "dir"
+                    type: SwfFileType.DIRECTORY
                 });
             }
         });

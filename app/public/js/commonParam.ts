@@ -19,11 +19,6 @@ var config = {
     default_filename: 'define',
     submit_script: 'submit.sh',
     system_name: 'swf',
-    file_types: {
-        file: 'file',
-        files: 'files',
-        directory: 'directory'
-    },
     node_color: {
         task: '#FF0000',
         remotetask: '#FF6600',
@@ -49,10 +44,6 @@ var config = {
         files: 'magenta',
         directory: 'yellow',
         flow: 'orange'
-    },
-    scheduler: {
-        TCS: 'TCS',
-        TORQUE: 'TORQUE'
     },
     reload_project_ms: 2000
 };

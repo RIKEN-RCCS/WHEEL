@@ -18,12 +18,12 @@ class SvgRelations {
 
     /**
      * get matched count
-     * @param taskIndex task index
+     * @param hashcode hash code
      * @return get matched count
      */
-    public getTaskIndexCount(taskIndex: number): number {
+    public getMatchedCount(hashcode: number): number {
         return this.relations
-            .filter(relation => (relation.index_before_task === taskIndex))
+            .filter(relation => (relation.index_before_task === hashcode))
             .length;
     }
 
@@ -38,8 +38,8 @@ class SvgRelations {
         }
 
         this.relations.forEach(relation => {
-            const lowers = <SvgLower[]>allLowers.findFromIndex(relation.index_before_task);
-            const uppers = <SvgUpper[]>allUppers.findFromIndex(relation.index_after_task);
+            const lowers = <SvgLower[]>allLowers.findFromHashCode(relation.index_before_task);
+            const uppers = <SvgUpper[]>allUppers.findFromHashCode(relation.index_after_task);
 
             if (lowers == null || uppers == null) {
                 return;
@@ -51,8 +51,8 @@ class SvgRelations {
                 }
                 uppers.forEach(upper => {
                     let isBind = false;
-                    if (ClientUtility.checkFileType(lower.getType(), SwfType.IF)) {
-                        if (ClientUtility.checkFileType(upper.getType(), SwfType.ELSE)) {
+                    if (SwfType.isIf(lower.getType())) {
+                        if (SwfType.isElse(upper.getType())) {
                             if (lower.getTaskIndex() + 1 === upper.getTaskIndex()) {
                                 isBind = true;
                             }
@@ -75,8 +75,8 @@ class SvgRelations {
             return null;
         }
         return new SwfRelation({
-            index_before_task: lower.getTaskIndex(),
-            index_after_task: upper.getTaskIndex()
+            index_before_task: lower.getHashCode(),
+            index_after_task: upper.getHashCode()
         });
     }
 

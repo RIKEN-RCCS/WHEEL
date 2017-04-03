@@ -12,7 +12,7 @@ class SshConnectionEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onSshConnection';
+    private static readonly eventName = 'onSshConnection';
 
     /**
      * Adds a listener for this event

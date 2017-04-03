@@ -7,6 +7,7 @@ $(function () {
     var getTemplateJsonFileSocket = new GetTemplateJsonFileSocket(socket);
     var getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
     var fileUploadSocket = new UploadFileSocket(socket);
+    var deleteDirectorySocket = new DeleteDirectorySocket(socket);
     // property
     var jsonProperty = new JsonProperty();
     // yes no dialog
@@ -143,10 +144,12 @@ $(function () {
             .onClickCancel()
             .onClickOK(function () {
             window.open('', 'editor');
-            writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
-                uploadFiles(function () {
-                    readTreeJson();
-                    moveToScriptEditPage();
+            deleteDirectorys(function () {
+                writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
+                    uploadFiles(function () {
+                        readTreeJson();
+                        moveToScriptEditPage();
+                    });
                 });
             });
         });
@@ -191,12 +194,29 @@ $(function () {
         saveDialog
             .onClickCancel()
             .onClickOK(function () {
-            writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
-                uploadFiles(function () {
-                    readTreeJson();
+            deleteDirectorys(function () {
+                writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
+                    uploadFiles(function () {
+                        readTreeJson();
+                    });
                 });
             });
         });
+    }
+    /**
+     * delete directorys
+     * @param callback The function to call when we delete directorys
+     */
+    function deleteDirectorys(callback) {
+        var directorys = SwfTree
+            .getDeleteDirectorys()
+            .map(function (dir) { return ClientUtility.normalize(projectDirectory, dir); });
+        if (directorys[0]) {
+            deleteDirectorySocket.emit(directorys, callback);
+        }
+        else {
+            callback();
+        }
     }
     /**
      * set several events for yes no dialog for reset workflow
@@ -308,7 +328,7 @@ $(function () {
                                     getHostList(function () {
                                         var job = child;
                                         job.remote = new SwfHost(hostInfos[0]);
-                                        job.remote.job_scheduler = config.scheduler.TCS;
+                                        job.remote.job_scheduler = SwfJobScheduler.TCS;
                                     });
                                     hideProperty();
                                 });
@@ -333,7 +353,7 @@ $(function () {
                                     createChildTree(SwfType.CONDITION, ifChild, position, function (ifGrandson) {
                                         createChildTree(SwfType.ELSE, parentTree, position, function (elseChild) {
                                             createChildTree(SwfType.CONDITION, elseChild, position, function (elseGrandson) {
-                                                parentTree.relations.push(new SwfRelation(ifChild.getTaskIndex(), elseChild.getTaskIndex()));
+                                                parentTree.relations.push(new SwfRelation(ifChild.getHashCode(), elseChild.getHashCode()));
                                                 hideProperty();
                                             });
                                         });
@@ -364,6 +384,18 @@ $(function () {
                                 });
                             },
                         }
+                    }
+                },
+                sep1: '---------',
+                delete: {
+                    name: 'Delete',
+                    callback: function () {
+                        selectedTree.remove();
+                        hideProperty();
+                        updateDisplay(taskIndex);
+                    },
+                    disabled: function () {
+                        return selectedTree == null;
                     }
                 }
             }
@@ -486,9 +518,9 @@ $(function () {
      * @return absolute path
      */
     function getFullpath(tree) {
-        var filename = ClientUtility.getDefaultName(tree);
+        var filename = ClientUtility.getTemplate(tree).getDefaultName();
         var currentDirectory = tree.getCurrentDirectory();
-        return ClientUtility.normalize(projectDirectory + "/" + currentDirectory + "/" + filename);
+        return ClientUtility.normalize(projectDirectory, currentDirectory, filename);
     }
     /**
      * upload files
@@ -502,7 +534,7 @@ $(function () {
             callback();
             return;
         }
-        fileUploadSocket.onEvent(function (isUpload, filename) {
+        fileUploadSocket.onEvent(function (isUpload, filepath) {
             sendCount++;
             if (sendCount === fileCount) {
                 fileUploadSocket.offEvent();

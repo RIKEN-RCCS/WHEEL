@@ -6,12 +6,12 @@ class ReadFileSocket {
     /**
      * event name
      */
-    private static eventName = 'readFile';
+    private static readonly eventName = 'readFile';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * callback function

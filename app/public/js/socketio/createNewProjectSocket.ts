@@ -6,12 +6,12 @@ class CreateNewProjectSocket {
     /**
      * event name
      */
-    private static eventName = 'onCreateNewProject';
+    private static readonly eventName = 'onCreateNewProject';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * create new instance

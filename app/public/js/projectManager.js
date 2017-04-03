@@ -112,7 +112,7 @@ $(function () {
             click: function () {
                 var id = $(this).parent().id();
                 var target = SwfLog.getSwfLogInstance(id);
-                var rootFilepath = swfProject.log.path + "/" + ClientUtility.getDefaultName(SwfType.WORKFLOW);
+                var rootFilepath = swfProject.log.path + "/" + ClientUtility.getTemplate(SwfType.WORKFLOW).getDefaultName();
                 $(document).off('click').off('mouseover').off('mouseout');
                 $('<form/>', { action: '/swf/workflow_manager.html', method: 'post' })
                     .append($('<input/>', { type: 'hidden', name: 'root', value: rootFilepath }))
@@ -223,7 +223,7 @@ $(function () {
         function drawCircle(swfLog, x, y) {
             var circle = draw.circle(diameter)
                 .attr({
-                'fill': ClientUtility.getStateColor(swfLog.state),
+                'fill': SwfState.getStateColor(swfLog.state),
                 'stroke': config.node_color[swfLog.type.toLocaleLowerCase()],
                 'stroke-width': 2
             })

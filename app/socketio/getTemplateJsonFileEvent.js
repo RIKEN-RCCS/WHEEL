@@ -5,32 +5,32 @@ var ServerUtility = require("../serverUtility");
 /**
  * socket io communication class for template json file from server
  */
-var getTemplateJsonFileEvent = (function () {
-    function getTemplateJsonFileEvent() {
+var GetTemplateJsonFileEvent = (function () {
+    function GetTemplateJsonFileEvent() {
     }
     /**
      * Adds a listener for this event
      * @param socket socket io instance
      */
-    getTemplateJsonFileEvent.prototype.onEvent = function (socket) {
-        socket.on(getTemplateJsonFileEvent.eventName, function (filetype) {
-            var filepath = ServerUtility.getTemplateFilePath(filetype);
+    GetTemplateJsonFileEvent.prototype.onEvent = function (socket) {
+        socket.on(GetTemplateJsonFileEvent.eventName, function (filetype) {
+            var filepath = ServerUtility.getTypeOfJson(filetype).getTemplateFilePath();
             fs.readFile(filepath, function (err, data) {
                 if (err) {
                     logger.error(err);
-                    socket.emit(getTemplateJsonFileEvent.eventName);
+                    socket.emit(GetTemplateJsonFileEvent.eventName);
                 }
                 else {
-                    socket.json.emit(getTemplateJsonFileEvent.eventName, JSON.parse(data.toString()));
+                    socket.json.emit(GetTemplateJsonFileEvent.eventName, JSON.parse(data.toString()));
                 }
             });
         });
     };
-    return getTemplateJsonFileEvent;
+    return GetTemplateJsonFileEvent;
 }());
 /**
  * event name
  */
-getTemplateJsonFileEvent.eventName = 'onGetJsonFile';
-module.exports = getTemplateJsonFileEvent;
+GetTemplateJsonFileEvent.eventName = 'onGetJsonFile';
+module.exports = GetTemplateJsonFileEvent;
 //# sourceMappingURL=getTemplateJsonFileEvent.js.map

@@ -6,37 +6,37 @@ class YesNoDialog implements DialogBase<YesNoDialog> {
     /**
      * gray panel element
      */
-    public grayPanel: JQuery = $('#gray_panel');
+    public readonly grayPanel: JQuery = $('#gray_panel');
 
     /**
      * dialog frame area element
      */
-    public dialogArea: JQuery = $('#dialog_area_yesno');
+    public readonly dialogArea: JQuery = $('#dialog_area_yesno');
 
     /**
      * input text element
      */
-    public inputText: JQuery = $('#input_text_yesno');
+    public readonly inputText: JQuery = $('#input_text_yesno');
 
     /**
      * ok button element
      */
-    public buttonOK: JQuery = $('#dialog_ok_button_yesno');
+    public readonly buttonOK: JQuery = $('#dialog_ok_button_yesno');
 
     /**
      * cancel button element
      */
-    public buttonCancel: JQuery = $('#dialog_cancel_button_yesno');
+    public readonly buttonCancel: JQuery = $('#dialog_cancel_button_yesno');
 
     /**
      * dialog title element
      */
-    private title: JQuery = $('#dialog_title_yesno');
+    private readonly title: JQuery = $('#dialog_title_yesno');
 
     /**
      * title text
      */
-    private text: string;
+    private readonly text: string;
 
     /**
      * callback function for click ok button

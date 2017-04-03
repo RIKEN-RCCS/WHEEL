@@ -90,20 +90,20 @@ var SvgContainer = (function () {
     };
     /**
      * find plug
-     * @param taskIndex task index number
+     * @param hashcode task hash code
      * @param filepath file path string
      * @param find plug list
      */
-    SvgContainer.prototype.findFromIndex = function (taskIndex, filepath) {
+    SvgContainer.prototype.findFromHashCode = function (hashcode, filepath) {
         var _this = this;
         return Object.keys(this.container).filter(function (key) {
-            var task = _this.container[key].getTaskIndex();
+            var task = _this.container[key].getHashCode();
             if (filepath === undefined) {
-                return task == taskIndex;
+                return task === hashcode;
             }
             else {
                 var file = _this.container[key].getFilepathFromTree();
-                return (task == taskIndex && file == filepath);
+                return (task === hashcode && file === filepath);
             }
         }).map(function (key) { return _this.container[key]; });
     };

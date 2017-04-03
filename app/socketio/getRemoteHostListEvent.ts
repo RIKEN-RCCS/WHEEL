@@ -12,7 +12,7 @@ class GetRemoteHostListEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onGetRemoteHostList';
+    private static readonly eventName = 'onGetRemoteHostList';
 
     /**
      * Adds a listener for connect event

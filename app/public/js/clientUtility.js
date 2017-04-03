@@ -6,10 +6,17 @@ var ClientUtility = (function () {
     }
     /**
      * whether specified hostname is localhost or not
-     * @param hostname hostname
+     * @param target hostname or host json data
      * @return specified hostname is localhost or not
      */
-    ClientUtility.isLocalHost = function (hostname) {
+    ClientUtility.isLocalHost = function (target) {
+        var hostname;
+        if (typeof target === 'string') {
+            hostname = target;
+        }
+        else {
+            hostname = target.host;
+        }
         return (hostname === 'localhost') || (hostname === '127.0.0.1');
     };
     /**
@@ -25,21 +32,6 @@ var ClientUtility = (function () {
      */
     ClientUtility.isLinux = function () {
         return navigator.platform.indexOf('Linux') != -1;
-    };
-    /**
-     * get home directory
-     * @return get home directory
-     */
-    ClientUtility.getHomeDir = function () {
-        if (this.isWindows()) {
-            return process.env.USERPROFILE;
-        }
-        else if (this.isLinux()) {
-            return process.env.HOME;
-        }
-        else {
-            throw new Error('undefined platform');
-        }
     };
     /**
      * get cookies hash set
@@ -74,20 +66,16 @@ var ClientUtility = (function () {
             .submit();
     };
     /**
-     * get file status color string
-     * @param state task status string
-     * @return status color string
-     */
-    ClientUtility.getStateColor = function (state) {
-        return config.state_color[state.toLowerCase()];
-    };
-    /**
      * normalize path string
      * @param filepath file path string
      * @return normalized path string
      */
-    ClientUtility.normalize = function (filepath) {
-        var split = filepath.replace(/[\\\/]+/g, '/').split('/');
+    ClientUtility.normalize = function () {
+        var filepath = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            filepath[_i] = arguments[_i];
+        }
+        var split = filepath.join('/').replace(/[\\\/]+/g, '/').split('/');
         var path = [split.shift()];
         split.forEach(function (name) {
             if (name === '.') {
@@ -119,22 +107,6 @@ var ClientUtility = (function () {
         return filepath.replace(/\\/g, '/').replace(/\/$/, '').replace(/\/[^/]*$/, '');
     };
     /**
-     * get file type string
-     * @param filepath file path string
-     * @return 'file' or 'files' or 'directory' string
-     */
-    ClientUtility.getIOFileType = function (filepath) {
-        if (filepath.match(/\/$/)) {
-            return 'directory';
-        }
-        else if (filepath.match(/\*/)) {
-            return 'files';
-        }
-        else {
-            return 'file';
-        }
-    };
-    /**
      * whether filepath can use for directory name or not
      * @param filepath file path string
      * @return specified filepath can use for directory name or not
@@ -149,50 +121,6 @@ var ClientUtility = (function () {
         else {
             return true;
         }
-    };
-    /**
-     * get property information
-     * @param tree SwfTree class instance
-     * @return get property information
-     */
-    ClientUtility.getPropertyInfo = function (tree) {
-        return this.getTemplate(tree).getPropertyInfo();
-    };
-    /**
-     * whether specified type string is matched or not
-     * @param target json file type string or SwfTree instance
-     * @param fileType json file type
-     * @return whether specified type string is matched or not
-     */
-    ClientUtility.checkFileType = function (object, fileType) {
-        if (object == null) {
-            return false;
-        }
-        return this.getTemplate(fileType).checkFileType(object);
-    };
-    /**
-     * get default json file name
-     * @param object SwfTree class instance or json file type
-     * @return get default json file name
-     */
-    ClientUtility.getDefaultName = function (object) {
-        var template;
-        if (typeof object === 'string') {
-            template = this.getTemplate(object);
-        }
-        else {
-            template = this.getTemplate(object);
-        }
-        var extension = template.getExtension();
-        return "" + config.default_filename + extension;
-    };
-    /**
-     * get json file type string
-     * @param fileType json file type
-     * @return json file type string
-     */
-    ClientUtility.getJsonFileType = function (fileType) {
-        return this.getTemplate(fileType).getType();
     };
     /**
      * get templete class by file type
@@ -236,4 +164,22 @@ var ClientUtility = (function () {
     };
     return ClientUtility;
 }());
+/**
+ * mouse key type extension
+ */
+var MouseKeyType;
+(function (MouseKeyType) {
+    /**
+     * left key
+     */
+    MouseKeyType.LEFT = 0;
+    /**
+     * center key
+     */
+    MouseKeyType.CENTER = 1;
+    /**
+     * right key
+     */
+    MouseKeyType.RIGHT = 2;
+})(MouseKeyType || (MouseKeyType = {}));
 //# sourceMappingURL=clientUtility.js.map

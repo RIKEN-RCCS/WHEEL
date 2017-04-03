@@ -10,7 +10,7 @@ class WriteFileEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'writeFile';
+    private static readonly eventName = 'writeFile';
 
     /**
      * Adds a listener for this event

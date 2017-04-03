@@ -16,17 +16,12 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'openProjectJson';
+    private static readonly eventName = 'openProjectJson';
 
     /**
      * config parameter
      */
     private config = ServerConfig.getConfig();
-
-    /**
-     *
-     */
-    private queue: SwfLogJson[] = [];
 
     /**
      * Adds a listener for connect event
@@ -44,13 +39,13 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
                     const projectJson: SwfProjectJson = JSON.parse(data.toString());
                     this.createProjectJson(projectFilepath, projectJson);
 
-                    if (projectJson.state === SwfState.PLANNING) {
+                    if (SwfState.isPlanning(projectJson)) {
                         socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
                     }
                     else {
-                        this.queue.length = 0;
-                        this.setQueue(projectJson.log);
-                        this.updateLogJson(() => {
+                        const queue: SwfLogJson[] = [];
+                        this.setQueue(queue, projectJson.log);
+                        this.updateLogJson(queue, () => {
                             projectJson.state = projectJson.log.state;
                             socket.json.emit(OpenProjectJsonEvent.eventName, projectJson);
                         });
@@ -80,15 +75,16 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
 
     /**
      * set queue scpecified log json data
+     * @param queue set queue
      * @param logJson log json data
      */
-    private setQueue(logJson: SwfLogJson) {
-        this.queue.push(logJson);
+    private setQueue(queue: SwfLogJson[], logJson: SwfLogJson) {
+        queue.push(logJson);
 
         for (let index = logJson.children.length - 1; index >= 0; index--) {
             const child = logJson.children[index];
             if (child.type !== SwfType.FOR && child.type !== SwfType.PSTUDY) {
-                this.setQueue(child);
+                this.setQueue(queue, child);
                 continue;
             }
             const basename = path.basename(child.path);
@@ -128,24 +124,25 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
                 })
                 .forEach(newChild => {
                     logJson.children.splice(index, 0, newChild);
-                    this.setQueue(newChild);
+                    this.setQueue(queue, newChild);
                 });
         }
     }
 
     /**
      * update log json data
+     * @param queue set queue
      * @param callback The function to call when we have updated log json
      */
-    private updateLogJson(callback: (() => void)) {
-        const logJson = this.queue.shift();
+    private updateLogJson(queue: SwfLogJson[], callback: (() => void)) {
+        const logJson = queue.shift();
         if (!logJson) {
             callback();
             return;
         }
 
-        if (ServerUtility.isProjectFinished(logJson)) {
-            this.updateLogJson(callback);
+        if (SwfState.isFinished(logJson)) {
+            this.updateLogJson(queue, callback);
             return;
         }
 
@@ -157,7 +154,7 @@ class OpenProjectJsonEvent implements ServerSocketIO.SocketListener {
                 logJson.execution_start_date = readJson.execution_start_date;
                 logJson.execution_end_date = readJson.execution_end_date;
             }
-            this.updateLogJson(callback);
+            this.updateLogJson(queue, callback);
         });
     }
 

@@ -11,13 +11,13 @@ var SvgFileRelations = (function () {
     }
     /**
      * get matched count
-     * @param taskIndex task index
+     * @param hashcode hash code
      * @param filepath relation file path name
      * @param dirname tree path name
      * @return get matched count
      */
-    SvgFileRelations.prototype.count = function (taskIndex, filepath, pathname) {
-        var filename = taskIndex + "_" + pathname + "/" + ClientUtility.normalize(filepath);
+    SvgFileRelations.prototype.getMatchedCount = function (hashcode, filepath, pathname) {
+        var filename = hashcode + "_" + pathname + "/" + ClientUtility.normalize(filepath);
         return this.fileRelations
             .filter(function (relation) { return relation.getOutputFileName() === filename; })
             .length;
@@ -35,8 +35,8 @@ var SvgFileRelations = (function () {
         var relaltions = JSON.parse(JSON.stringify(this.fileRelations));
         this.clear();
         relaltions.forEach(function (relation) {
-            var connectors = allConnectors.findFromIndex(relation.index_before_task, relation.path_output_file);
-            var receptors = allReceptors.findFromIndex(relation.index_after_task, relation.path_input_file);
+            var connectors = allConnectors.findFromHashCode(relation.index_before_task, relation.path_output_file);
+            var receptors = allReceptors.findFromHashCode(relation.index_after_task, relation.path_input_file);
             if (connectors == null || receptors == null) {
                 return;
             }
@@ -68,12 +68,12 @@ var SvgFileRelations = (function () {
         if (connector == null || receptor == null) {
             return null;
         }
-        var outputPath = ClientUtility.normalize(connector.parentDirname() + "/" + connector.getFilepath());
-        var inputPath = ClientUtility.normalize(receptor.parentDirname() + "/" + receptor.getFilepath());
+        var outputPath = ClientUtility.normalize(connector.parentDirname(), connector.getFilepath());
+        var inputPath = ClientUtility.normalize(receptor.parentDirname(), receptor.getFilepath());
         var relation = {
-            index_before_task: connector.getTaskIndex(),
+            index_before_task: connector.getHashCode(),
             path_output_file: "./" + outputPath,
-            index_after_task: receptor.getTaskIndex(),
+            index_after_task: receptor.getHashCode(),
             path_input_file: "./" + inputPath,
         };
         return new SwfRelationFile(relation);

@@ -139,9 +139,13 @@ class SvgNodeUI {
             this.id = id;
             this.draw = SVG(id);
             this.draw.size(4096, 2048);
-            this.draw.on('mousedown', () => {
-                this.unselect();
-                mousedown(null);
+
+            this.draw.on('mousedown', (e: MouseEvent) => {
+                const key = <MouseKeyType>e.button;
+                if (key === MouseKeyType.LEFT) {
+                    this.unselect();
+                    mousedown(null);
+                }
             });
             this.draw.on('dblclick', () => {
                 dblclick(null);
@@ -170,7 +174,6 @@ class SvgNodeUI {
 
             node.box.onMousedown(mousedown);
             node.box.onDblclick(dblclick);
-            node.fit(node.box.x(), node.box.y());
 
             if (child === selectTree) {
                 node.box.select();
@@ -200,7 +203,7 @@ class SvgNodeUI {
      * create before task plug
      */
     private createUpper() {
-        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
+        if (SwfType.isCondition(this.tree)) {
             return;
         }
 
@@ -229,12 +232,12 @@ class SvgNodeUI {
      * create after task plug
      */
     private createLower() {
-        if (ClientUtility.checkFileType(this.tree.type, SwfType.CONDITION)) {
+        if (this.tree.type === SwfType.CONDITION) {
             return;
         }
 
         this.generateNewLower();
-        const count = SvgNodeUI.relations.getTaskIndexCount(this.tree.getTaskIndex());
+        const count = SvgNodeUI.relations.getMatchedCount(this.tree.getHashCode());
 
         for (let c = 0; c < count; c++) {
             this.generateNewLower();
@@ -320,7 +323,7 @@ class SvgNodeUI {
             const y = SvgBox.caclPlugPosY(index);
             this.generateNewConnector(output, index);
 
-            const count = SvgNodeUI.fileRelations.count(this.tree.getTaskIndex(), output.path, this.tree.path);
+            const count = SvgNodeUI.fileRelations.getMatchedCount(this.tree.getHashCode(), output.path, this.tree.path);
             for (let c = 0; c < count; c++) {
                 this.generateNewConnector(output, index);
             }
@@ -341,7 +344,7 @@ class SvgNodeUI {
             originY: this.box.y(),
             offsetX: this.box.getWidth() + SvgBox.getOutputTextOffset(),
             offsetY: SvgBox.caclPlugPosY(index),
-            color: config.plug_color[output.type],
+            color: SwfFileType.getPlugColor(output),
             file: output,
             tree: this.tree
         };
@@ -410,7 +413,7 @@ class SvgNodeUI {
                 originY: this.box.y(),
                 offsetX: -8,
                 offsetY: SvgBox.caclPlugPosY(fileIndex),
-                color: config.plug_color[input.type],
+                color: SwfFileType.getPlugColor(input),
                 file: input,
                 tree: this.tree
             };

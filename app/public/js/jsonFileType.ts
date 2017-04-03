@@ -41,13 +41,9 @@ interface PropertyInfo {
  */
 class JsonFileTypeBase {
     /**
-     * json file extension
-     */
-    protected extension: string;
-    /**
      * json file type
      */
-    protected type: string;
+    protected readonly type: SwfType;
     /**
      * property information
      */
@@ -107,35 +103,35 @@ class JsonFileTypeBase {
     ];
 
     /**
+     * create new instance
+     * @param type SwfType
+     */
+    protected constructor(type: SwfType) {
+        this.type = type;
+    }
+
+    /**
      * get extension string
      * @return get extension string
      */
     public getExtension(): string {
-        return this.extension;
+        return config.extension[this.type.toLowerCase()];
     }
 
     /**
      * get json file type string
      * @return get json file type string
      */
-    public getType(): string {
+    public getType(): SwfType {
         return this.type;
     }
 
     /**
-     * whether specified string or SwfTree instance type is matched or not
-     * @param target file type string or SwfTree instance
-     * @return whether specified string or SwfTree instance type is matched or not
+     * get default json file name
+     * @return get default json file name
      */
-    public checkFileType(target: (string | SwfTree | SwfTreeJson)): boolean {
-        let type: string;
-        if (typeof target === 'string') {
-            type = target;
-        }
-        else {
-            type = target.type;
-        }
-        return type === this.type;
+    public getDefaultName(): string {
+        return `${config.default_filename}${this.getExtension()}`;
     }
 
     /**
@@ -328,7 +324,7 @@ class JsonFileTypeBase {
                     callback: (tree: SwfTree, object: any, path: string) => {
                         const newFile = new SwfFile(object);
                         newFile.path = path;
-                        newFile.type = ClientUtility.getIOFileType(newFile.path);
+                        newFile.type = SwfFileType.getFileType(newFile);
                         tree.updateInputFile(object, newFile);
                         object.type = newFile.type;
                     }
@@ -422,7 +418,7 @@ class JsonFileTypeBase {
                     callback: (tree: SwfTree, object: any, path: string) => {
                         const newFile = new SwfFile(object);
                         newFile.path = path;
-                        newFile.type = ClientUtility.getIOFileType(newFile.path);
+                        newFile.type = SwfFileType.getFileType(newFile);
                         tree.updateOutputFile(object, newFile);
                         object.type = newFile.type;
                     }
@@ -515,7 +511,7 @@ class JsonFileTypeBase {
                         return !tree.isEnablePath(v);
                     },
                     callback: (tree: SwfTree, object: any, path: string) => {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 }
             ],
@@ -575,7 +571,7 @@ class JsonFileTypeBase {
                         return !tree.isEnablePath(v);
                     },
                     callback: (tree: SwfTree, object: any, path: string) => {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
@@ -751,8 +747,7 @@ class TypeProject extends JsonFileTypeBase {
      * create new instance for project
      */
     public constructor() {
-        super();
-        this.extension = config.extension.project;
+        super(SwfType.PROJECT);
     }
 }
 
@@ -764,9 +759,7 @@ class TypeTask extends JsonFileTypeBase {
      * create new instance for task
      */
     public constructor() {
-        super();
-        this.extension = config.extension.task;
-        this.type = SwfType.TASK;
+        super(SwfType.TASK);
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -783,9 +776,7 @@ class TypeWorkflow extends JsonFileTypeBase {
      * create new instance for workflow
      */
     public constructor() {
-        super();
-        this.extension = config.extension.workflow;
-        this.type = SwfType.WORKFLOW;
+        super(SwfType.WORKFLOW);
         this.addUpload();
     }
 }
@@ -798,9 +789,7 @@ class TypeJob extends JsonFileTypeBase {
      * create new instance for job
      */
     public constructor() {
-        super();
-        this.extension = config.extension.job;
-        this.type = SwfType.JOB;
+        super(SwfType.JOB);
         this.addScrip();
         this.addJobScript();
         this.addInputFile();
@@ -888,9 +877,7 @@ class TypeRemoteTask extends JsonFileTypeBase {
      * create new instance for remote task
      */
     public constructor() {
-        super();
-        this.extension = config.extension.remotetask;
-        this.type = SwfType.REMOTETASK;
+        super(SwfType.REMOTETASK);
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -909,9 +896,7 @@ class TypeFor extends JsonFileTypeBase {
      * create new instance for loop
      */
     public constructor() {
-        super();
-        this.extension = config.extension.for;
-        this.type = SwfType.FOR;
+        super(SwfType.FOR);
         this.addForParam();
         this.addUpload();
         this.sortPropertyInfo();
@@ -926,9 +911,7 @@ class TypeIf extends JsonFileTypeBase {
      * create new instance for if
      */
     public constructor() {
-        super();
-        this.extension = config.extension.if;
-        this.type = SwfType.IF;
+        super(SwfType.IF);
         this.addUpload();
     }
 }
@@ -941,9 +924,7 @@ class TypeElse extends JsonFileTypeBase {
      * create new instance for else
      */
     public constructor() {
-        super();
-        this.extension = config.extension.else;
-        this.type = SwfType.ELSE;
+        super(SwfType.ELSE);
         this.addUpload();
     }
 }
@@ -956,9 +937,7 @@ class TypeCondition extends JsonFileTypeBase {
      * create new instance for condition
      */
     public constructor() {
-        super();
-        this.extension = config.extension.condition;
-        this.type = SwfType.CONDITION;
+        super(SwfType.CONDITION);
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -1011,7 +990,7 @@ class TypeCondition extends JsonFileTypeBase {
                         return !tree.isEnablePath(v);
                     },
                     callback: (tree: SwfTree, object: SwfFile, path: string) => {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
@@ -1041,9 +1020,7 @@ class TypeBreak extends JsonFileTypeBase {
      * create new instance for break
      */
     public constructor() {
-        super();
-        this.extension = config.extension.break;
-        this.type = SwfType.BREAK;
+        super(SwfType.BREAK);
         this.addScript();
         this.addInputFile();
         this.addOutputFile();
@@ -1096,7 +1073,7 @@ class TypeBreak extends JsonFileTypeBase {
                         return !tree.isEnablePath(v);
                     },
                     callback: (tree: SwfTree, object: SwfFile, path: string) => {
-                        object.type = ClientUtility.getIOFileType(path);
+                        object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
@@ -1126,9 +1103,7 @@ class TypePStudy extends JsonFileTypeBase {
      * create new instance for parameter study
      */
     public constructor() {
-        super();
-        this.extension = config.extension.pstudy;
-        this.type = SwfType.PSTUDY;
+        super(SwfType.PSTUDY);
         this.addParameterFile();
         this.addUpload();
         this.sortPropertyInfo();

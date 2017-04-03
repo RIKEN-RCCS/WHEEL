@@ -29,21 +29,21 @@ var LogLevel;
 /**
  * logger class
  */
-var logger = (function () {
-    function logger() {
+var Logger = (function () {
+    function Logger() {
     }
     /**
      * set log lovel
      * @param level log level
      */
-    logger.setLovLevel = function (level) {
+    Logger.setLovLevel = function (level) {
         this.logLevel = level;
     };
     /**
      * output debug log
      * @param object display data
      */
-    logger.debug = function (object) {
+    Logger.debug = function (object) {
         if (this.logLevel <= LogLevel.debug) {
             if (typeof object == 'object') {
                 console.log(this.getDateString() + " [DBG.] ", object);
@@ -57,7 +57,7 @@ var logger = (function () {
      * output info log
      * @param object display data
      */
-    logger.info = function (object) {
+    Logger.info = function (object) {
         if (this.logLevel <= LogLevel.info) {
             if (typeof object == 'object') {
                 console.log(this.getDateString() + " [INFO] ", object);
@@ -71,7 +71,7 @@ var logger = (function () {
      * output warning log
      * @param object display data
      */
-    logger.warn = function (object) {
+    Logger.warn = function (object) {
         if (this.logLevel <= LogLevel.warn) {
             if (typeof object == 'object') {
                 console.log(this.getDateString() + " [WARN] ", object);
@@ -85,7 +85,7 @@ var logger = (function () {
      * output error log
      * @param object display data
      */
-    logger.error = function (object) {
+    Logger.error = function (object) {
         if (this.logLevel <= LogLevel.error) {
             if (typeof object == 'object') {
                 console.log(this.getDateString() + " [ERR.] ", object);
@@ -99,15 +99,15 @@ var logger = (function () {
      * get date string
      * @return date string
      */
-    logger.getDateString = function () {
+    Logger.getDateString = function () {
         var date = new Date();
         return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     };
-    return logger;
+    return Logger;
 }());
 /**
  * log level
  */
-logger.logLevel = LogLevel.info;
-module.exports = logger;
+Logger.logLevel = LogLevel.info;
+module.exports = Logger;
 //# sourceMappingURL=logger.js.map

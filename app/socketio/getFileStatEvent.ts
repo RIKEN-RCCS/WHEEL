@@ -11,7 +11,7 @@ class GetFileStatEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onGetFileStat';
+    private static readonly eventName = 'onGetFileStat';
 
     /**
      * Adds a listener for this event

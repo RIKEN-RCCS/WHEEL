@@ -7,6 +7,7 @@ $(() => {
     const getTemplateJsonFileSocket = new GetTemplateJsonFileSocket(socket);
     const getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
     const fileUploadSocket = new UploadFileSocket(socket);
+    const deleteDirectorySocket = new DeleteDirectorySocket(socket);
 
     // property
     const jsonProperty = new JsonProperty();
@@ -160,10 +161,12 @@ $(() => {
             .onClickCancel()
             .onClickOK(() => {
                 window.open('', 'editor');
-                writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
-                    uploadFiles(() => {
-                        readTreeJson();
-                        moveToScriptEditPage();
+                deleteDirectorys(() => {
+                    writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
+                        uploadFiles(() => {
+                            readTreeJson();
+                            moveToScriptEditPage();
+                        });
                     });
                 });
             });
@@ -212,12 +215,31 @@ $(() => {
         saveDialog
             .onClickCancel()
             .onClickOK(() => {
-                writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
-                    uploadFiles(() => {
-                        readTreeJson();
+                deleteDirectorys(() => {
+                    writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
+                        uploadFiles(() => {
+                            readTreeJson();
+                        });
                     });
                 });
             });
+    }
+
+    /**
+     * delete directorys
+     * @param callback The function to call when we delete directorys
+     */
+    function deleteDirectorys(callback: (() => void)) {
+        const directorys = SwfTree
+            .getDeleteDirectorys()
+            .map(dir => ClientUtility.normalize(projectDirectory, dir));
+
+        if (directorys[0]) {
+            deleteDirectorySocket.emit(directorys, callback);
+        }
+        else {
+            callback();
+        }
     }
 
     /**
@@ -336,7 +358,7 @@ $(() => {
                                     getHostList(() => {
                                         const job = <SwfJobJson><any>child;
                                         job.remote = new SwfHost(hostInfos[0]);
-                                        job.remote.job_scheduler = config.scheduler.TCS;
+                                        job.remote.job_scheduler = SwfJobScheduler.TCS;
                                     });
                                     hideProperty();
                                 });
@@ -361,7 +383,7 @@ $(() => {
                                     createChildTree(SwfType.CONDITION, ifChild, position, (ifGrandson) => {
                                         createChildTree(SwfType.ELSE, parentTree, position, (elseChild) => {
                                             createChildTree(SwfType.CONDITION, elseChild, position, (elseGrandson) => {
-                                                parentTree.relations.push(new SwfRelation(ifChild.getTaskIndex(), elseChild.getTaskIndex()));
+                                                parentTree.relations.push(new SwfRelation(ifChild.getHashCode(), elseChild.getHashCode()));
                                                 hideProperty();
                                             });
                                         });
@@ -392,6 +414,18 @@ $(() => {
                                 });
                             },
                         }
+                    }
+                },
+                sep1: '---------',
+                delete: {
+                    name: 'Delete',
+                    callback: () => {
+                        selectedTree.remove();
+                        hideProperty();
+                        updateDisplay(taskIndex);
+                    },
+                    disabled: () => {
+                        return selectedTree == null;
                     }
                 }
             }
@@ -538,9 +572,9 @@ $(() => {
      * @return absolute path
      */
     function getFullpath(tree: SwfTree): string {
-        const filename = ClientUtility.getDefaultName(tree);
+        const filename = ClientUtility.getTemplate(tree).getDefaultName();
         const currentDirectory = tree.getCurrentDirectory();
-        return ClientUtility.normalize(`${projectDirectory}/${currentDirectory}/${filename}`);
+        return ClientUtility.normalize(projectDirectory, currentDirectory, filename);
     }
 
     /**
@@ -557,7 +591,7 @@ $(() => {
             return;
         }
 
-        fileUploadSocket.onEvent((isUpload: boolean, filename: string) => {
+        fileUploadSocket.onEvent((isUpload: boolean, filepath: string) => {
             sendCount++;
             if (sendCount === fileCount) {
                 fileUploadSocket.offEvent();

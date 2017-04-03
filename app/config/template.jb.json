@@ -10,7 +10,7 @@
         "type": "File",
         "required": true
     },
-    "host": {
+    "remote": {
         "name": "",
         "description": "",
         "path": "",

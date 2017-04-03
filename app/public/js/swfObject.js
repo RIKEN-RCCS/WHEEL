@@ -90,8 +90,8 @@ var SwfFile = (function () {
  */
 var SwfTask = (function () {
     /**
-     *
-     * @param swfTask
+     * create new instance
+     * @param swfTask task json data
      */
     function SwfTask(swfTask) {
         this.name = swfTask.name;
@@ -103,6 +103,7 @@ var SwfTask = (function () {
         this.output_files = JSON.parse(JSON.stringify(swfTask.output_files)).map(function (file) { return new SwfFile(file); });
         this.clean_up = swfTask.clean_up;
         this.max_size_receive_file = swfTask.max_size_receive_file;
+        this.birth = swfTask.birth;
     }
     /**
      * get the file with the same input file path name as the specified path name
@@ -491,7 +492,7 @@ var SwfLog = (function () {
             if (!log) {
                 break;
             }
-            if (log.remote && !ClientUtility.isLocalHost(log.remote.host)) {
+            if (log.remote && !ClientUtility.isLocalHost(log.remote)) {
                 hash[log.remote.name] = log.remote;
             }
             log.children.forEach(function (child) {
@@ -505,14 +506,14 @@ var SwfLog = (function () {
      * @return whether this task is planning or not
      */
     SwfLog.prototype.isPlanning = function () {
-        return this.state === SwfState.PLANNING;
+        return SwfState.isPlanning(this);
     };
     /**
      * whether this task is finished or not
      * @return whether this task is finished or not
      */
     SwfLog.prototype.isFinished = function () {
-        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
+        return SwfState.isFinished(this);
     };
     /**
      * whether this task is running or not
@@ -544,14 +545,14 @@ var SwfProject = (function () {
      * @return whether project is planning or not
      */
     SwfProject.prototype.isPlanning = function () {
-        return this.state === SwfState.PLANNING;
+        return SwfState.isPlanning(this);
     };
     /**
      * whether project is finished or not
      * @return whether project is finished or not
      */
     SwfProject.prototype.isFinished = function () {
-        return this.state === SwfState.COMPLETED || this.state === SwfState.FAILED;
+        return SwfState.isFinished(this);
     };
     /**
      * whether project is running or not

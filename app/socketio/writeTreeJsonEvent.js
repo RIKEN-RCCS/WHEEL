@@ -10,10 +10,6 @@ var SwfType = require("../swfType");
  */
 var WriteTreeJsonEvent = (function () {
     function WriteTreeJsonEvent() {
-        /**
-         * queue of json data path
-         */
-        this.queue = [];
     }
     /**
      * Adds a listener for this event
@@ -22,33 +18,32 @@ var WriteTreeJsonEvent = (function () {
     WriteTreeJsonEvent.prototype.onEvent = function (socket) {
         var _this = this;
         socket.on(WriteTreeJsonEvent.eventName, function (projectDirectory, json) {
-            _this.error = false;
-            _this.queue.length = 0;
-            _this.setQueue(projectDirectory, json);
-            _this.saveTreeJson(function () {
-                socket.emit(WriteTreeJsonEvent.eventName, _this.error);
+            var queue = [];
+            _this.setQueue(queue, projectDirectory, json);
+            _this.saveTreeJson(queue, function () {
+                socket.emit(WriteTreeJsonEvent.eventName);
             });
         });
     };
     /**
      * save tree json
+     * @param queue set queue
      * @param callback The function to call when we save tree json
      */
-    WriteTreeJsonEvent.prototype.saveTreeJson = function (callback) {
+    WriteTreeJsonEvent.prototype.saveTreeJson = function (queue, callback) {
         var _this = this;
-        var data = this.queue.shift();
+        var data = queue.shift();
         if (!data) {
             callback();
             return;
         }
-        var filename = ServerUtility.getDefaultName(data.json.type);
+        var filename = ServerUtility.getTypeOfJson(data.json).getDefaultName();
         var oldDirectory = path.join(data.directory, data.json.oldPath);
         var newDirectory = path.join(data.directory, data.json.path);
         var filepath = path.join(newDirectory, filename);
         var error = function (err) {
             logger.error(err);
-            _this.error = true;
-            _this.saveTreeJson(callback);
+            _this.saveTreeJson(queue, callback);
         };
         var update = function () {
             _this.generateSubmitScript(data, function (err) {
@@ -63,10 +58,9 @@ var WriteTreeJsonEvent = (function () {
                 fs.writeFile(filepath, JSON.stringify(copy, null, '\t'), function (err) {
                     if (err) {
                         logger.error(err);
-                        _this.error = true;
                     }
                     logger.info("update file=" + filepath);
-                    _this.saveTreeJson(callback);
+                    _this.saveTreeJson(queue, callback);
                 });
             });
         };
@@ -92,10 +86,7 @@ var WriteTreeJsonEvent = (function () {
                 }
             });
         };
-        if (data.json.path === undefined) {
-            // delete
-        }
-        else if (!data.json.oldPath) {
+        if (!data.json.oldPath) {
             add();
         }
         else if (data.json.path !== data.json.oldPath) {
@@ -127,19 +118,20 @@ var WriteTreeJsonEvent = (function () {
     };
     /**
      * set data to queue
+     * @param queue set queue
      * @param parentDirectory parent tree directory
      * @param json tree json data
      */
-    WriteTreeJsonEvent.prototype.setQueue = function (parentDirectory, json) {
+    WriteTreeJsonEvent.prototype.setQueue = function (queue, parentDirectory, json) {
         var _this = this;
-        this.queue.push({
+        queue.push({
             directory: parentDirectory,
             json: json
         });
         var childDirectory = path.join(parentDirectory, json.path);
         if (json.children) {
             json.children.forEach(function (child) {
-                _this.setQueue(childDirectory, child);
+                _this.setQueue(queue, childDirectory, child);
             });
         }
     };
@@ -156,7 +148,7 @@ var WriteTreeJsonEvent = (function () {
         var config = ServerConfig.getConfig();
         var submitJobname = config.submit_script;
         var jobJson = data.json;
-        var srcPath = path.join(__dirname, config.scheduler[jobJson.remote.job_scheduler]);
+        var srcPath = path.join(__dirname, jobJson.remote.job_scheduler);
         var dstPath = path.join(data.directory, data.json.path, submitJobname);
         fs.stat(dstPath, function (err, stat) {
             if (err && jobJson.job_script.path) {

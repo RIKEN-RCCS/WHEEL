@@ -396,7 +396,7 @@ var ServerUtility = (function () {
      * @return template project json data
      */
     ServerUtility.readTemplateProjectJson = function () {
-        var filepath = this.getTemplateFilePath(SwfType.PROJECT);
+        var filepath = this.getTypeOfJson(SwfType.PROJECT).getTemplateFilePath();
         return this.readProjectJson(filepath);
     };
     /**
@@ -404,7 +404,7 @@ var ServerUtility = (function () {
      * @return template workflow json data
      */
     ServerUtility.readTemplateWorkflowJson = function () {
-        var filepath = this.getTemplateFilePath(SwfType.WORKFLOW);
+        var filepath = this.getTypeOfJson(SwfType.WORKFLOW).getTemplateFilePath();
         return this.readJson(filepath);
     };
     /**
@@ -599,38 +599,19 @@ var ServerUtility = (function () {
         return this.isLinux() || this.isMac();
     };
     /**
-     * get template file path by type
-     * @param fileType json file type
-     * @return template file path by type
-     */
-    ServerUtility.getTemplateFilePath = function (fileType) {
-        return this.getTypeOfJson(fileType).getTemplateFilepath();
-    };
-    /**
-     * whether specified log json or project json is finished or not
-     * @param json project json data or log json data
-     * @return whether specified log json or project json is finished or not
-     */
-    ServerUtility.isProjectFinished = function (json) {
-        return json.state === SwfState.COMPLETED || json.state === SwfState.FAILED;
-    };
-    /**
-     * get default default file name by type
-     * @param fileType filetype or file type string
-     * @return default default file name by type
-     */
-    ServerUtility.getDefaultName = function (fileType) {
-        var template = this.getTypeOfJson(fileType);
-        var extension = template.getExtension();
-        return "" + this.config.default_filename + extension;
-    };
-    /**
      * get instane by type
-     * @param fileType filetype or file type string
+     * @param target filetype or tree json data
      * @return instance by type
      */
-    ServerUtility.getTypeOfJson = function (fileType) {
-        switch (fileType) {
+    ServerUtility.getTypeOfJson = function (target) {
+        var type;
+        if (typeof target === 'string') {
+            type = target;
+        }
+        else {
+            type = target.type;
+        }
+        switch (type) {
             case SwfType.PROJECT:
                 return new TypeProject();
             case SwfType.WORKFLOW:
@@ -667,25 +648,37 @@ ServerUtility.config = ServerConfig.getConfig();
  * type base
  */
 var TypeBase = (function () {
-    function TypeBase() {
+    /**
+     * create new instance
+     * @param type SwfType
+     */
+    function TypeBase(type) {
         /**
          * config date
          */
         this.config = ServerConfig.getConfig();
+        this.type = type;
     }
     /**
      * get file extension name
      * @return file extension name
      */
     TypeBase.prototype.getExtension = function () {
-        return this.extension;
+        return this.config.extension[this.type.toLocaleLowerCase()];
     };
     /**
      * get template file path
      * @return template file path
      */
-    TypeBase.prototype.getTemplateFilepath = function () {
-        return path.normalize(__dirname + "/" + this.templateFilepath);
+    TypeBase.prototype.getTemplateFilePath = function () {
+        return path.normalize(__dirname + "/" + this.config.template[this.type.toLocaleLowerCase()]);
+    };
+    /**
+     * get default file name
+     * @return default file name
+     */
+    TypeBase.prototype.getDefaultName = function () {
+        return "" + this.config.default_filename + this.getExtension();
     };
     /**
      * get file type
@@ -693,6 +686,12 @@ var TypeBase = (function () {
      */
     TypeBase.prototype.getType = function () {
         return this.type;
+    };
+    /**
+     * run task
+     */
+    TypeBase.prototype.run = function () {
+        throw new Error('function is not implemented');
     };
     return TypeBase;
 }());
@@ -705,10 +704,7 @@ var TypeProject = (function (_super) {
      * create new instance
      */
     function TypeProject() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.project;
-        _this.templateFilepath = _this.config.template.project;
-        return _this;
+        return _super.call(this, SwfType.PROJECT) || this;
     }
     return TypeProject;
 }(TypeBase));
@@ -721,11 +717,7 @@ var TypeTask = (function (_super) {
      * create new instance
      */
     function TypeTask() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.task;
-        _this.templateFilepath = _this.config.template.task;
-        _this.type = SwfType.TASK;
-        return _this;
+        return _super.call(this, SwfType.TASK) || this;
     }
     return TypeTask;
 }(TypeBase));
@@ -738,11 +730,7 @@ var TypeWorkflow = (function (_super) {
      * create new instance
      */
     function TypeWorkflow() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.workflow;
-        _this.templateFilepath = _this.config.template.workflow;
-        _this.type = SwfType.WORKFLOW;
-        return _this;
+        return _super.call(this, SwfType.WORKFLOW) || this;
     }
     return TypeWorkflow;
 }(TypeBase));
@@ -752,11 +740,7 @@ var TypeFor = (function (_super) {
      * create new instance
      */
     function TypeFor() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.for;
-        _this.templateFilepath = _this.config.template.for;
-        _this.type = SwfType.FOR;
-        return _this;
+        return _super.call(this, SwfType.FOR) || this;
     }
     return TypeFor;
 }(TypeBase));
@@ -769,11 +753,7 @@ var TypeIf = (function (_super) {
      * create new instance
      */
     function TypeIf() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.if;
-        _this.templateFilepath = _this.config.template.if;
-        _this.type = SwfType.IF;
-        return _this;
+        return _super.call(this, SwfType.IF) || this;
     }
     return TypeIf;
 }(TypeBase));
@@ -786,11 +766,7 @@ var TypeElse = (function (_super) {
      * create new instance
      */
     function TypeElse() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.else;
-        _this.templateFilepath = _this.config.template.else;
-        _this.type = SwfType.ELSE;
-        return _this;
+        return _super.call(this, SwfType.ELSE) || this;
     }
     return TypeElse;
 }(TypeBase));
@@ -803,11 +779,7 @@ var TypeBreak = (function (_super) {
      * create new instance
      */
     function TypeBreak() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.break;
-        _this.templateFilepath = _this.config.template.break;
-        _this.type = SwfType.BREAK;
-        return _this;
+        return _super.call(this, SwfType.BREAK) || this;
     }
     return TypeBreak;
 }(TypeBase));
@@ -820,11 +792,7 @@ var TypeRemoteTask = (function (_super) {
      * create new instance
      */
     function TypeRemoteTask() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.remotetask;
-        _this.templateFilepath = _this.config.template.remotetask;
-        _this.type = SwfType.REMOTETASK;
-        return _this;
+        return _super.call(this, SwfType.REMOTETASK) || this;
     }
     return TypeRemoteTask;
 }(TypeBase));
@@ -837,11 +805,7 @@ var TypeJob = (function (_super) {
      * create new instance
      */
     function TypeJob() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.job;
-        _this.templateFilepath = _this.config.template.job;
-        _this.type = SwfType.JOB;
-        return _this;
+        return _super.call(this, SwfType.JOB) || this;
     }
     return TypeJob;
 }(TypeBase));
@@ -854,11 +818,7 @@ var TypeCondition = (function (_super) {
      * create new instance
      */
     function TypeCondition() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.condition;
-        _this.templateFilepath = _this.config.template.condition;
-        _this.type = SwfType.CONDITION;
-        return _this;
+        return _super.call(this, SwfType.CONDITION) || this;
     }
     return TypeCondition;
 }(TypeBase));
@@ -871,11 +831,7 @@ var TypePStudy = (function (_super) {
      * create new instance
      */
     function TypePStudy() {
-        var _this = _super.call(this) || this;
-        _this.extension = _this.config.extension.pstudy;
-        _this.templateFilepath = _this.config.template.pstudy;
-        _this.type = SwfType.PSTUDY;
-        return _this;
+        return _super.call(this, SwfType.PSTUDY) || this;
     }
     return TypePStudy;
 }(TypeBase));

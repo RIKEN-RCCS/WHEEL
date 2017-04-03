@@ -11,7 +11,7 @@ class DeleteHostEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onDeleteHost';
+    private static readonly eventName = 'onDeleteHost';
 
     /**
      * Adds a listener for this event

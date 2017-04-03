@@ -43,7 +43,7 @@ class SvgReceptor extends SvgPlugBase {
      * @return whether file type is match or not
      */
     private isMatchType(filetype: string): boolean {
-        const fileTypesRegexp = new RegExp(`^(?:${Object.keys(config.file_types).map(key => config.file_types[key]).join('|')})$`);
+        const fileTypesRegexp = new RegExp(`^(?:${SwfFileType.types().join('|')})$`);
         return filetype.match(fileTypesRegexp) ? true : false;
     }
 

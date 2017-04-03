@@ -6,12 +6,12 @@ class OpenProjectJsonSocket {
     /**
      * event name
      */
-    private static eventName = 'openProjectJson';
+    private static readonly eventName = 'openProjectJson';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * callback function

@@ -15,6 +15,7 @@ var SvgPlugBase = (function () {
         this.plugHeight = bbox.height;
         this.index = SvgPlugBase.counter++;
         this.taskIndex = config.tree.getTaskIndex();
+        this.hashcode = config.tree.getHashCode();
     }
     /**
      * get plug name
@@ -22,10 +23,10 @@ var SvgPlugBase = (function () {
      */
     SvgPlugBase.prototype.name = function () {
         if (this.plugConfig.file) {
-            return this.index + "_" + this.taskIndex + "_" + this.plugConfig.file.path;
+            return this.index + "_" + this.hashcode + "_" + this.plugConfig.file.path;
         }
         else {
-            return this.index + "_" + this.taskIndex;
+            return this.index + "_" + this.hashcode;
         }
     };
     /**
@@ -52,7 +53,7 @@ var SvgPlugBase = (function () {
     SvgPlugBase.prototype.getFilepathFromTree = function () {
         if (this.plugConfig.file) {
             if (this.plugConfig.tree) {
-                return "./" + ClientUtility.normalize(this.plugConfig.tree.path + "/" + this.plugConfig.file.path);
+                return "./" + ClientUtility.normalize(this.plugConfig.tree.path, this.plugConfig.file.path);
             }
             else {
                 return this.plugConfig.file.path;
@@ -82,6 +83,13 @@ var SvgPlugBase = (function () {
      */
     SvgPlugBase.prototype.getTaskIndex = function () {
         return this.taskIndex;
+    };
+    /**
+     * get hash code
+     * @return hash code
+     */
+    SvgPlugBase.prototype.getHashCode = function () {
+        return this.hashcode;
     };
     /**
      * move to specified point

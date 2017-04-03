@@ -19,6 +19,7 @@ var CreateNewProjectEvent = require("./socketio/createNewProjectEvent");
 var ReadFileEvent = require("./socketio/readFileEvent");
 var WriteFileEvent = require("./socketio/writeFileEvent");
 var CleanProjectEvent = require("./socketio/cleanProjectEvent");
+var DeleteDirectoryEvent = require("./socketio/deleteDirectoryEvent");
 var config = serverConfig.getConfig();
 var server = httpServer.start(config.port);
 var serverSocket = new ServerSocketIO.SwfSocketIO(server);
@@ -49,7 +50,8 @@ serverSocket.addEventListener('/swf/workflow', [
     new WriteTreeJsonEvent(),
     new GetTemplateJsonFileEvent(),
     new GetRemoteHostListEvent(),
-    new UploadFileEvent()
+    new UploadFileEvent(),
+    new DeleteDirectoryEvent()
 ]);
 serverSocket.addEventListener('/swf/editor', [
     new ReadFileEvent(),

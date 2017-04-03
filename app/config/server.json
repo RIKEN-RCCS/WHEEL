@@ -32,11 +32,6 @@
         "condition": ".cnd.json",
         "pstudy": ".ps.json"
     },
-    "file_types": {
-        "file": "file",
-        "files": "files",
-        "directory": "directory"
-    },
     "system_name": "swf",
     "default_filename": "define",
     "submit_script": "submit.sh"

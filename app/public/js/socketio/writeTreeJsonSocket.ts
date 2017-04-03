@@ -6,12 +6,12 @@ class WriteTreeJsonSocket {
     /**
      * event name
      */
-    private static eventName = 'writeTreeJson';
+    private static readonly eventName = 'writeTreeJson';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * create new instance

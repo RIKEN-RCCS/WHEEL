@@ -24,7 +24,7 @@ class HttpServer {
     /**
      * encoding string
      */
-    private static encoding: string = 'UTF-8';
+    private static readonly encoding: string = 'UTF-8';
 
     /**
      * HTTP response header options

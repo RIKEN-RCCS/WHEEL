@@ -5,23 +5,23 @@ interface DialogBase<T> {
     /**
      * gray panel element
      */
-    grayPanel: JQuery;
+    readonly grayPanel: JQuery;
     /**
      * dialog frame area element
      */
-    dialogArea: JQuery;
+    readonly dialogArea: JQuery;
     /**
      * input text element
      */
-    inputText: JQuery;
+    readonly inputText: JQuery;
     /**
      * ok button element
      */
-    buttonOK: JQuery;
+    readonly buttonOK: JQuery;
     /**
      * cancel button element
      */
-    buttonCancel: JQuery;
+    readonly buttonCancel: JQuery;
     /**
      * show dialog function
      */
@@ -48,37 +48,37 @@ class InputTextDialog implements DialogBase<InputTextDialog> {
     /**
      * gray panel element
      */
-    public grayPanel: JQuery = $('#gray_panel');
+    public readonly grayPanel: JQuery = $('#gray_panel');
 
     /**
      * dialog frame area element
      */
-    public dialogArea: JQuery = $('#dialog_area_input');
+    public readonly dialogArea: JQuery = $('#dialog_area_input');
 
     /**
      * input text element
      */
-    public inputText: JQuery = $('#input_text_input');
+    public readonly inputText: JQuery = $('#input_text_input');
 
     /**
      * ok button element
      */
-    public buttonOK: JQuery = $('#dialog_ok_button_input');
+    public readonly buttonOK: JQuery = $('#dialog_ok_button_input');
 
     /**
      * cancel button element
      */
-    public buttonCancel: JQuery = $('#dialog_cancel_button_input');
+    public readonly buttonCancel: JQuery = $('#dialog_cancel_button_input');
 
     /**
      * dialog title element
      */
-    private title: JQuery = $('#dialog_title_input');
+    private readonly title: JQuery = $('#dialog_title_input');
 
     /**
      * input text label element
      */
-    private label: JQuery = $('#label_input');
+    private readonly label: JQuery = $('#label_input');
 
     /**
      * default name

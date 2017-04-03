@@ -6,12 +6,12 @@ class ReadTreeJsonSocket {
     /**
      * event name
      */
-    private static eventName = 'readTreeJson';
+    private static readonly eventName = 'readTreeJson';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * callback function

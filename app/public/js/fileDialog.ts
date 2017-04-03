@@ -6,42 +6,42 @@ class FileDialog implements DialogBase<FileDialog> {
     /**
      * gray panel element
      */
-    public grayPanel: JQuery = $('#gray_panel');
+    public readonly grayPanel: JQuery = $('#gray_panel');
 
     /**
      * dialog frame area element
      */
-    public dialogArea: JQuery = $('#dialog_area_browse');
+    public readonly dialogArea: JQuery = $('#dialog_area_browse');
 
     /**
      * input text element
      */
-    public inputText: JQuery = $('#input_text_browse');
+    public readonly inputText: JQuery = $('#input_text_browse');
 
     /**
      * ok button element
      */
-    public buttonOK: JQuery = $('#dialog_ok_button_browse');
+    public readonly buttonOK: JQuery = $('#dialog_ok_button_browse');
 
     /**
      * cancel button element
      */
-    public buttonCancel: JQuery = $('#dialog_cancel_button_browse');
+    public readonly buttonCancel: JQuery = $('#dialog_cancel_button_browse');
 
     /**
      * socket io instance
      */
-    private socket: GetFileListSocket;
+    private readonly socket: GetFileListSocket;
 
     /**
      * address bar element
      */
-    private addressBar = $('#address_bar');
+    private readonly addressBar = $('#address_bar');
 
     /**
      * display file icon element
      */
-    private displayIconArea = $('#file_dialog');
+    private readonly displayIconArea = $('#file_dialog');
 
     /**
      * current display directory
@@ -111,7 +111,7 @@ class FileDialog implements DialogBase<FileDialog> {
     private createHtml4FileIcon(fileTypes: FileTypeList): string {
         const regexp = new RegExp(`${config.extension.project.replace('.', '\\.')}$`);
         const htmls: string[] = fileTypes.files
-            .filter(file => file.type === 'file')
+            .filter(file => file.type === SwfFileType.FILE)
             .map(file => {
                 let htmlImage: string;
                 if (file.name.match(regexp)) {
@@ -136,7 +136,7 @@ class FileDialog implements DialogBase<FileDialog> {
      */
     private createHtml4DirIcon(fileTypes: FileTypeList): string {
         const htmls: string[] = fileTypes.files
-            .filter(file => file.type === 'dir')
+            .filter(file => file.type === SwfFileType.DIRECTORY)
             .map(file => {
                 return `
                     <div class="select_dir_container" id="${fileTypes.directory}${file.name}_dir" onMouseDown="return false;">

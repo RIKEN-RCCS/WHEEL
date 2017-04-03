@@ -262,10 +262,9 @@ class JsonProperty {
                     this.setChangeEventForHost(object, id);
                     break;
                 case 'scheduler':
-                    const schedulers: string[] = Object.keys(config.scheduler).map(key => {
-                        const value = config.scheduler[key];
-                        const isSelected = value === object.job_scheduler ? 'selected="selected"' : '';
-                        return `<option value="${value}" ${isSelected}>${value}</option>`;
+                    const schedulers: string[] = SwfJobScheduler.schedulers().map(scheduler => {
+                        const isSelected = scheduler === object.job_scheduler ? 'selected="selected"' : '';
+                        return `<option value="${scheduler}" ${isSelected}>${scheduler}</option>`;
                     });
                     content = `<select name="${id}" class="text_box" style="width: calc(100% - 4px)" id="${id}">${schedulers.join('')}</select>`;
                     this.setChangeEventForScheduler(object, id);
@@ -308,7 +307,7 @@ class JsonProperty {
         JsonProperty.counter = 0;
         const html: string[] = ['<div>property</div>'];
         const parentHtml: string[] = [];
-        const property = ClientUtility.getPropertyInfo(this.tree);
+        const property = ClientUtility.getTemplate(this.tree).getPropertyInfo();
 
         const createTableHtml = (data: string[]): string => {
             const html = `<table>${data.join('')}</table>`;

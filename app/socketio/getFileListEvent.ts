@@ -5,6 +5,7 @@ import logger = require('../logger');
 import ServerUtility = require('../serverUtility');
 import ServerConfig = require('../serverConfig');
 import ServerSocketIO = require('./serverSocketIO');
+import SwfFileType = require('../swfFileType');
 
 /**
  * socket io communication class for gettingfile list
@@ -14,12 +15,7 @@ class GetFileListEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onGetFileList';
-
-    /**
-     * file and directory watcher
-     */
-    private watcher: fs.FSWatcher;
+    private static readonly eventName = 'onGetFileList';
 
     /**
      * Adds a listener for this event
@@ -27,7 +23,6 @@ class GetFileListEvent implements ServerSocketIO.SocketListener {
      */
     public onEvent(socket: SocketIO.Socket) {
         this.onGetFileList(socket);
-        this.onDisconnect(socket);
     }
 
     /**
@@ -48,18 +43,6 @@ class GetFileListEvent implements ServerSocketIO.SocketListener {
     }
 
     /**
-     * Adds a listener for disconnect event
-     * @param socket socket io object
-     */
-    private onDisconnect(socket: SocketIO.Socket) {
-        socket.on('disconnect', () => {
-            if (this.watcher != null) {
-                this.watcher.close();
-            }
-        });
-    }
-
-    /**
      * emit to client for sending file list
      * @param pathDirectory read directory path
      * @param socket socket io object
@@ -74,15 +57,6 @@ class GetFileListEvent implements ServerSocketIO.SocketListener {
                 files: getFileList
             };
             socket.json.emit(GetFileListEvent.eventName, fileList);
-
-            if (this.watcher != null) {
-                this.watcher.close();
-            }
-
-            // watch directory and emit
-            // this.watcher = fs.watch(directory, (event, filename) => {
-            //     this.emitFileList(directory, socket, regex);
-            // });
         }
         catch (err) {
             logger.error(err);
@@ -100,7 +74,7 @@ class GetFileListEvent implements ServerSocketIO.SocketListener {
         let getFileList: FileType[] = [
             {
                 name: `../`,
-                type: "dir"
+                type: SwfFileType.DIRECTORY
             }
         ];
         fs.readdirSync(pathDirectory)
@@ -109,13 +83,13 @@ class GetFileListEvent implements ServerSocketIO.SocketListener {
                 if (stat.isFile() && (fileRegex != null && file.match(fileRegex))) {
                     getFileList.push({
                         name: file,
-                        type: "file"
+                        type: SwfFileType.FILE
                     });
                 }
                 else if (stat.isDirectory()) {
                     getFileList.push({
                         name: `${file}/`,
-                        type: "dir"
+                        type: SwfFileType.DIRECTORY
                     });
                 }
             });

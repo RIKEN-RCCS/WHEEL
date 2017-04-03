@@ -68,12 +68,12 @@ class GetFileStatSocket {
     /**
      * event name
      */
-    private static eventName = 'onGetFileStat';
+    private static readonly eventName = 'onGetFileStat';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * create new instance

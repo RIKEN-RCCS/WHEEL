@@ -9,7 +9,7 @@ class SvgBox {
     /**
      * box group
      */
-    private group: svgjs.Element;
+    private readonly group: svgjs.Element;
     /**
      * outer frame
      */
@@ -25,19 +25,19 @@ class SvgBox {
     /**
      * input files group
      */
-    private inputGroup: svgjs.Element;
+    private readonly inputGroup: svgjs.Element;
     /**
      * output files group
      */
-    private outputGroup: svgjs.Element;
+    private readonly outputGroup: svgjs.Element;
     /**
      * tree instance
      */
-    private tree: SwfTree;
+    private readonly tree: SwfTree;
     /**
      * position
      */
-    private position: Position2D;
+    private readonly position: Position2D;
     /**
      * current x position
      */
@@ -57,32 +57,32 @@ class SvgBox {
     /**
      * not selected opacity
      */
-    private static opacity = 0.6;
+    private static readonly opacity = 0.6;
     /**
      * frame storke width
      */
-    private static strokeWidth = 2;
+    private static readonly strokeWidth = 2;
     /**
      * title height
      */
-    private static titleHeight = 20;
+    private static readonly titleHeight = 20;
     /**
      * margin of box height
      */
-    private static marginHeight = 12;
+    private static readonly marginHeight = 12;
     /**
      * margin of box width
      */
-    private static marginWidth = SvgBox.titleHeight * 2;
+    private static readonly marginWidth = SvgBox.titleHeight * 2;
     /**
      * output text offset
      */
-    private static outputTextOffset = -8;
+    private static readonly outputTextOffset = -8;
 
     /**
      * input and output files step size
      */
-    private static stepSize = 25;
+    private static readonly stepSize = 25;
 
     /**
      * create new instance
@@ -142,10 +142,13 @@ class SvgBox {
      * @return SvgBox instance
      */
     public onMousedown(callback: ((tree: SwfTree) => void)): SvgBox {
-        this.group.on('mousedown', (e: Event) => {
+        this.group.on('mousedown', (e: MouseEvent) => {
             e.preventDefault();
-            this.group.style('cursor', 'move');
-            callback(this.tree);
+            const key = <MouseKeyType>e.button;
+            if (key === MouseKeyType.LEFT) {
+                this.group.style('cursor', 'move');
+                callback(this.tree);
+            }
         });
         return this;
     }
@@ -156,7 +159,7 @@ class SvgBox {
      * @return SvgBox instance
      */
     public onDblclick(callback: ((tree: SwfTree) => void)): SvgBox {
-        this.group.on('dblclick', (e: Event) => {
+        this.group.on('dblclick', (e: MouseEvent) => {
             e.stopPropagation();
             e.preventDefault();
             callback(this.tree);
@@ -389,7 +392,6 @@ class SvgBox {
      * delete this box
      */
     public delete() {
-        this.draw = null;
         this.group.off('mousedown', null);
         this.group.off('dblclick', null);
         this.group.off('dragstart', null);

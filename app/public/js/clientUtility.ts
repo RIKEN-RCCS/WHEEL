@@ -5,10 +5,17 @@ class ClientUtility {
 
     /**
      * whether specified hostname is localhost or not
-     * @param hostname hostname
+     * @param target hostname or host json data
      * @return specified hostname is localhost or not
      */
-    public static isLocalHost(hostname: string): boolean {
+    public static isLocalHost(target: (string | SwfHostJson)): boolean {
+        let hostname: string;
+        if (typeof target === 'string') {
+            hostname = target;
+        }
+        else {
+            hostname = target.host;
+        }
         return (hostname === 'localhost') || (hostname === '127.0.0.1');
     }
 
@@ -26,22 +33,6 @@ class ClientUtility {
      */
     public static isLinux(): boolean {
         return navigator.platform.indexOf('Linux') != -1;
-    }
-
-    /**
-     * get home directory
-     * @return get home directory
-     */
-    public static getHomeDir(): string {
-        if (this.isWindows()) {
-            return process.env.USERPROFILE;
-        }
-        else if (this.isLinux()) {
-            return process.env.HOME;
-        }
-        else {
-            throw new Error('undefined platform');
-        }
     }
 
     /**
@@ -80,21 +71,12 @@ class ClientUtility {
     }
 
     /**
-     * get file status color string
-     * @param state task status string
-     * @return status color string
-     */
-    public static getStateColor(state: string): string {
-        return config.state_color[state.toLowerCase()];
-    }
-
-    /**
      * normalize path string
      * @param filepath file path string
      * @return normalized path string
      */
-    public static normalize(filepath: string): string {
-        const split = filepath.replace(/[\\\/]+/g, '/').split('/');
+    public static normalize(...filepath: string[]): string {
+        const split = filepath.join('/').replace(/[\\\/]+/g, '/').split('/');
         const path: string[] = [split.shift()];
         split.forEach(name => {
             if (name === '.') {
@@ -130,23 +112,6 @@ class ClientUtility {
     }
 
     /**
-     * get file type string
-     * @param filepath file path string
-     * @return 'file' or 'files' or 'directory' string
-     */
-    public static getIOFileType(filepath: string) {
-        if (filepath.match(/\/$/)) {
-            return 'directory';
-        }
-        else if (filepath.match(/\*/)) {
-            return 'files';
-        }
-        else {
-            return 'file';
-        }
-    }
-
-    /**
      * whether filepath can use for directory name or not
      * @param filepath file path string
      * @return specified filepath can use for directory name or not
@@ -164,103 +129,25 @@ class ClientUtility {
     }
 
     /**
-     * get property information
-     * @param tree SwfTree class instance
-     * @return get property information
-     */
-    public static getPropertyInfo(tree: SwfTree) {
-        return this.getTemplate(tree).getPropertyInfo();
-    }
-
-    /**
-     * whether specified type string is matched or not
-     * @param type json file type string (ex 'Workflow', 'For')
-     * @param fileType json file type
-     * @return whether specified type string is matched or not
-     */
-    public static checkFileType(type: string, fileType: SwfType): boolean;
-
-    /**
-     * whether specified type string is matched or not
-     * @param tree SwfTree class instance
-     * @param fileType json file type
-     * @return whether specified type string is matched or not
-     */
-    public static checkFileType(tree: SwfTree, fileType: SwfType): boolean;
-
-    /**
-     * whether specified type string is matched or not
-     * @param target json file type string or SwfTree instance
-     * @param fileType json file type
-     * @return whether specified type string is matched or not
-     */
-    public static checkFileType(object: (string | SwfTree), fileType: SwfType): boolean {
-        if (object == null) {
-            return false;
-        }
-        return this.getTemplate(fileType).checkFileType(object);
-    }
-
-    /**
-     * get default json file name
-     * @param tree SwfTree class instance
-     * @return get default json file name
-     */
-    public static getDefaultName(tree: SwfTree): string;
-
-    /**
-     * get default json file name
-     * @param type json file type
-     * @return get default json file name
-     */
-    public static getDefaultName(type: SwfType): string;
-
-    /**
-     * get default json file name
-     * @param object SwfTree class instance or json file type
-     * @return get default json file name
-     */
-    public static getDefaultName(object: (SwfType | SwfTree)): string {
-        let template: JsonFileTypeBase;
-        if (typeof object === 'string') {
-            template = this.getTemplate(object);
-        }
-        else {
-            template = this.getTemplate(object);
-        }
-        const extension = template.getExtension();
-        return `${config.default_filename}${extension}`;
-    }
-
-    /**
-     * get json file type string
-     * @param fileType json file type
-     * @return json file type string
-     */
-    public static getJsonFileType(fileType: SwfType): string {
-        return this.getTemplate(fileType).getType();
-    }
-
-    /**
      * get templete class by file type
      * @param fileType json file type
      * @return JsonFileTypeBase class instance
      */
-    private static getTemplate(fileType: SwfType): JsonFileTypeBase;
+    public static getTemplate(fileType: SwfType): JsonFileTypeBase;
 
     /**
      * get templete class by file type
      * @param tree SwfTree class instance
      * @return JsonFileTypeBase class instance
      */
-    private static getTemplate(tree: SwfTree): JsonFileTypeBase;
+    public static getTemplate(tree: SwfTree): JsonFileTypeBase;
 
     /**
      * get templete class by file type
      * @param object json file type or SwfTree class instance
      * @return JsonFileTypeBase class instance
      */
-    private static getTemplate(object: (SwfType | SwfTree)): JsonFileTypeBase {
+    public static getTemplate(object: (SwfType | SwfTree)): JsonFileTypeBase {
         let type: SwfType;
         if (typeof object === 'string') {
             type = object;
@@ -295,4 +182,26 @@ class ClientUtility {
                 throw new TypeError('file type is undefined');
         }
     }
+}
+
+/**
+ * mouse key type
+ */
+type MouseKeyType = 0 | 1 | 2;
+/**
+ * mouse key type extension
+ */
+namespace MouseKeyType {
+    /**
+     * left key
+     */
+    export const LEFT: MouseKeyType = 0;
+    /**
+     * center key
+     */
+    export const CENTER: MouseKeyType = 1;
+    /**
+     * right key
+     */
+    export const RIGHT: MouseKeyType = 2;
 }

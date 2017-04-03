@@ -28,7 +28,7 @@ enum LogLevel {
 /**
  * logger class
  */
-class logger {
+class Logger {
 
     /**
      * log level
@@ -113,4 +113,4 @@ class logger {
     }
 }
 
-export = logger;
+export = Logger;

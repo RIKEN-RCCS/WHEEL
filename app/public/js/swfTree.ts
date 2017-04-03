@@ -7,9 +7,13 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      */
     private static root: SwfTree;
     /**
+     * delete directorys
+     */
+    private static deleteDirectorys: string[] = [];
+    /**
      * root index
      */
-    private static rootIndex: number = 0;
+    private static readonly rootIndex: number = 0;
     /**
      * children tree
      */
@@ -67,7 +71,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             }
         });
 
-        if (ClientUtility.checkFileType(treeJson.type, SwfType.JOB)) {
+        if (SwfType.isJob(treeJson)) {
             this.script_param = {
                 cores: 1,
                 nodes: 1
@@ -100,6 +104,14 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
+     * get delete directorys
+     * @return delete directorys
+     */
+    public static getDeleteDirectorys(): string[] {
+        return JSON.parse(JSON.stringify(this.deleteDirectorys));
+    }
+
+    /**
      * get unique index number
      * @return unique index number
      */
@@ -124,11 +136,20 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     }
 
     /**
+     * get hash code
+     * @return hash code
+     */
+    public getHashCode(): number {
+        return this.birth;
+    }
+
+    /**
      * create tree json instance
      * @param treeJson tree json data
      */
     public static create(treeJson: (SwfTree | SwfTreeJson)): SwfTree {
         this.root = new SwfTree(treeJson);
+        this.deleteDirectorys = [];
         this.renumberingIndex(this.root);
         return this.root;
     }
@@ -158,6 +179,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     public addChild(treeJson: SwfTreeJson, fileType: SwfType, position: Position2D): SwfTree {
         const rand = Math.floor(Date.now() / 100) % 100000;
         const dirname = `${treeJson.type}Dir${`00000${rand}`.slice(-5)}`;
+        treeJson.birth = Date.now();
         const tree = new SwfTree(treeJson);
         tree.name = SwfTree.getSerialNumberName(tree.name);
         tree.path = dirname;
@@ -165,7 +187,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         this.children_file.push(new SwfFile({
             name: tree.name,
             description: tree.description,
-            path: `./${dirname}/${ClientUtility.getDefaultName(fileType)}`,
+            path: `./${dirname}/${ClientUtility.getTemplate(fileType).getDefaultName()}`,
             required: true,
             type: 'file'
         }));
@@ -241,7 +263,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      */
     public getCurrentDirectory(): string {
         return (function searchDirectory(tree: SwfTree, path: string = ''): string {
-            path = ClientUtility.normalize(`${tree.path}/${path}`);
+            path = ClientUtility.normalize(tree.path, path);
             const parent = tree.getParent();
             if (parent == null) {
                 return path;
@@ -398,7 +420,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         }
         const directory = this.getCurrentDirectory();
         const basename = ClientUtility.basename(path);
-        return ClientUtility.normalize(`${directory}/${path}`);
+        return ClientUtility.normalize(directory, path);
     }
 
     /**
@@ -452,6 +474,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param filepath filepath string
      */
     public addInputFileToParent(object: (number | SwfTree), filepath: string) {
+        if (this.isRoot()) {
+            return;
+        }
         let child: SwfTree;
         if (typeof object === 'number') {
             child = this.children[object];
@@ -484,6 +509,9 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param filepath filepath string
      */
     public addOutputFileToParent(object: (number | SwfTree), filepath: string) {
+        if (this.isRoot()) {
+            return;
+        }
         let child: SwfTree;
         if (typeof object === 'number') {
             child = this.children[object];
@@ -662,7 +690,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
     private static updateChildFile(tree: SwfTree, oldFile: SwfFile, newFile: SwfFile, oldFullpath: string, newFullpath: string, isInput: boolean) {
 
         const parent = tree.getParent();
-        const newPath = `./${ClientUtility.normalize(`${tree.path}/${newFile.path}`)}`;
+        const newPath = `./${ClientUtility.normalize(tree.path, newFile.path)}`;
 
         if (oldFile.path !== newFile.path) {
             for (let index = parent.file_relations.length - 1; index >= 0; index--) {
@@ -716,10 +744,10 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @param file updated file data
      */
     public updatePath(file: SwfFile) {
-        const oldFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
+        const oldFullpath = this.getFullpath(`${ClientUtility.getTemplate(this).getDefaultName()}`);
         const oldDirectory = this.getCurrentDirectory();
         this.path = file.path;
-        const newFullpath = this.getFullpath(`${ClientUtility.getDefaultName(this)}`);
+        const newFullpath = this.getFullpath(`${ClientUtility.getTemplate(this).getDefaultName()}`);
         const newDirectory = this.getCurrentDirectory();
 
         console.log(`old=${oldFullpath} new=${newFullpath}`);
@@ -928,25 +956,25 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             }
             if (tree.uploadScript) {
                 files.push({
-                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadScript.name)}`),
+                    filepath: ClientUtility.normalize(projectDirectory, tree.getFullpath(tree.uploadScript.name)),
                     file: tree.uploadScript
                 });
             }
             if (tree.uploadParamFile) {
                 files.push({
-                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(tree.uploadParamFile.name)}`),
+                    filepath: ClientUtility.normalize(projectDirectory, tree.getFullpath(tree.uploadParamFile.name)),
                     file: tree.uploadParamFile
                 });
             }
             tree.uploadSendfiles.forEach(file => {
                 files.push({
-                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
+                    filepath: ClientUtility.normalize(projectDirectory, tree.getFullpath(file.name)),
                     file: file
                 });
             });
             tree.upload_files.forEach(file => {
                 files.push({
-                    filepath: ClientUtility.normalize(`${projectDirectory}/${tree.getFullpath(file.name)}`),
+                    filepath: ClientUtility.normalize(projectDirectory, tree.getFullpath(file.name)),
                     file: file
                 });
             });
@@ -991,7 +1019,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
      * @return whether there is a For workflow at parent or not
      */
     public isExistForWorkflowAtParent(): boolean {
-        if (ClientUtility.checkFileType(this, SwfType.FOR)) {
+        if (SwfType.isFor(this)) {
             return true;
         }
         else {
@@ -1003,5 +1031,41 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
                 return parent.isExistForWorkflowAtParent();
             }
         }
+    }
+
+    /**
+     * remove SwfTree instance from project
+     */
+    public remove() {
+
+        (function removeFileRelation(tree: SwfTree) {
+            const parent = tree.getParent();
+            parent.input_files.forEach(file => parent.deleteInputFileFromParent(tree, file.path));
+            parent.output_files.forEach(file => parent.deleteOutputFileFromParent(tree, file.path));
+            if (tree.children) {
+                tree.children.forEach(child => removeFileRelation(child));
+            }
+        })(this);
+
+        const taskIndex = this.getTaskIndex();
+        const parent = this.getParent();
+        parent.children.splice(taskIndex, 1);
+        parent.children_file.splice(taskIndex, 1);
+        parent.positions.splice(taskIndex, 1);
+
+        for (let index = parent.relations.length - 1; index >= 0; index--) {
+            const relation = parent.relations[index];
+            const hashcode = this.getHashCode();
+            if (hashcode === relation.index_before_task || hashcode === relation.index_after_task) {
+                parent.relations.splice(index, 1);
+            }
+        }
+
+        if (this.oldPath) {
+            const dirname = ClientUtility.dirname(this.getCurrentDirectory());
+            SwfTree.deleteDirectorys.push(ClientUtility.normalize(dirname, this.oldPath));
+        }
+
+        SwfTree.renumberingIndex(SwfTree.root);
     }
 }

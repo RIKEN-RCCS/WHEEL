@@ -15,7 +15,7 @@ class RunProjectEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onRunProject';
+    private static readonly eventName = 'onRunProject';
 
     /**
      * Adds a listener for this event

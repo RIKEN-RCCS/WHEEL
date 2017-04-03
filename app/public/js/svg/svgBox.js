@@ -54,8 +54,11 @@ var SvgBox = (function () {
         var _this = this;
         this.group.on('mousedown', function (e) {
             e.preventDefault();
-            _this.group.style('cursor', 'move');
-            callback(_this.tree);
+            var key = e.button;
+            if (key === MouseKeyType.LEFT) {
+                _this.group.style('cursor', 'move');
+                callback(_this.tree);
+            }
         });
         return this;
     };
@@ -285,7 +288,6 @@ var SvgBox = (function () {
      * delete this box
      */
     SvgBox.prototype.delete = function () {
-        this.draw = null;
         this.group.off('mousedown', null);
         this.group.off('dblclick', null);
         this.group.off('dragstart', null);

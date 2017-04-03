@@ -5,7 +5,7 @@ class SvgContainer {
     /**
      * container object
      */
-    private container: { [name: string]: SvgPlugBase } = {};
+    private readonly container: { [name: string]: SvgPlugBase } = {};
 
     /**
      * add plug
@@ -119,19 +119,19 @@ class SvgContainer {
 
     /**
      * find plug
-     * @param taskIndex task index number
+     * @param hashcode task hash code
      * @param filepath file path string
      * @param find plug list
      */
-    public findFromIndex(taskIndex: number, filepath?: string): SvgPlugBase[] {
+    public findFromHashCode(hashcode: number, filepath?: string): SvgPlugBase[] {
         return Object.keys(this.container).filter(key => {
-            const task = this.container[key].getTaskIndex();
+            const task = this.container[key].getHashCode();
             if (filepath === undefined) {
-                return task == taskIndex;
+                return task === hashcode;
             }
             else {
                 const file = this.container[key].getFilepathFromTree();
-                return (task == taskIndex && file == filepath);
+                return (task === hashcode && file === filepath);
             }
         }).map(key => this.container[key]);
     }

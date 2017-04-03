@@ -46,7 +46,7 @@ var SvgReceptor = (function (_super) {
      * @return whether file type is match or not
      */
     SvgReceptor.prototype.isMatchType = function (filetype) {
-        var fileTypesRegexp = new RegExp("^(?:" + Object.keys(config.file_types).map(function (key) { return config.file_types[key]; }).join('|') + ")$");
+        var fileTypesRegexp = new RegExp("^(?:" + SwfFileType.types().join('|') + ")$");
         return filetype.match(fileTypesRegexp) ? true : false;
     };
     /**

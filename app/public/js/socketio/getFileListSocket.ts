@@ -5,11 +5,11 @@ interface FileType {
     /**
      * file or directory name
      */
-    name: string;
+    readonly name: string;
     /**
      * 'file' or 'directory' string
      */
-    type: string;
+    readonly type: SwfFileType;
 }
 
 /**
@@ -19,11 +19,11 @@ interface FileTypeList {
     /**
      * directory name
      */
-    directory: string;
+    readonly directory: string;
     /**
      * file type list
      */
-    files: FileType[];
+    readonly files: FileType[];
 }
 
 /**

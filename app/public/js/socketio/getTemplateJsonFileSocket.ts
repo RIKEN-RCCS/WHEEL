@@ -6,12 +6,12 @@ class GetTemplateJsonFileSocket {
     /**
      * event name
      */
-    private static eventName = 'onGetJsonFile';
+    private static readonly eventName = 'onGetJsonFile';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * create new instance

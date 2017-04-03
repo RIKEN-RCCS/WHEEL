@@ -12,7 +12,7 @@ class ReadTreeJsonEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'readTreeJson';
+    private static readonly eventName = 'readTreeJson';
 
     /**
      * Adds a listener for this event

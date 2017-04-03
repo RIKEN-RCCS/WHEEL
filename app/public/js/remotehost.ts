@@ -108,8 +108,7 @@ $(() => {
                 host: host,
                 path: path,
                 username: name,
-                description: '',
-                job_scheduler: ''
+                description: ''
             };
 
             if (isCheckedSshKey) {
@@ -232,7 +231,7 @@ $(() => {
             }
 
             let passwordHtml = '';
-            if (!ClientUtility.isLocalHost(host.host)) {
+            if (!ClientUtility.isLocalHost(host)) {
                 passwordHtml = `<input type="password" class="text_box" id="${host.name}_password" autocomplete="off">`;
             }
 

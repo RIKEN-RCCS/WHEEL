@@ -11,7 +11,7 @@ class AddHostEvent implements ServerSocketIO.SocketListener {
     /**
      * event name
      */
-    private static eventName = 'onAddHost';
+    private static readonly eventName = 'onAddHost';
 
     /**
      * Adds a listener for this event

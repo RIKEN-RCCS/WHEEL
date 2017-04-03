@@ -37,7 +37,7 @@ class SvgNodePane {
     /**
      * display target tree
      */
-    private tree: SwfTree;
+    private readonly tree: SwfTree;
 
     /**
      * create new instance

@@ -6,12 +6,12 @@ class RunProjectSocket {
     /**
      * event name
      */
-    public static eventName = 'onRunProject';
+    public static readonly eventName = 'onRunProject';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * construct new socket

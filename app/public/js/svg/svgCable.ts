@@ -26,7 +26,7 @@ class SvgCable {
     /**
      * plot cable callback function
      */
-    private plotCallback: ((startX: number, startY: number, endX: number, endY: number) => string);
+    private readonly plotCallback: ((startX: number, startY: number, endX: number, endY: number) => string);
 
     /**
      * create new instance

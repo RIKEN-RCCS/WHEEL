@@ -76,14 +76,73 @@ namespace SwfType {
      * @param target SwfTree instance or SwfLog instance
      * @return whether specified class is condition or not
      */
-    export function isImplimentsCondition(target: SwfTree): boolean {
+    export function isImplimentsCondition(tree: SwfTree): boolean {
         const conditionType = SwfType.CONDITION;
         const breakType = SwfType.BREAK;
-        if (target.type.match(new RegExp(`^(?:${[conditionType, breakType].join('|')})$`))) {
+        if (tree.type.match(new RegExp(`^(?:${[conditionType, breakType].join('|')})$`))) {
             return true;
         }
         else {
             return false;
         }
+    }
+
+    /**
+     * get type string
+     * @param target SwfTree instance or string
+     * @return type string
+     */
+    export function getType(target: (SwfTree | SwfTreeJson | string)): SwfType {
+        if (typeof target === 'string') {
+            return <SwfType>target;
+        }
+        else {
+            return target.type;
+        }
+    }
+
+    /**
+     * whether specified tree is 'Condition' or not
+     * @param target SwfTree instance or string
+     * @return whether specified tree is 'Condition' or not
+     */
+    export function isCondition(target: (SwfTree | SwfTreeJson | string)) {
+        return this.getType(target) === this.CONDITION;
+    }
+
+    /**
+     * whether specified tree is 'If' or not
+     * @param target SwfTree instance or string
+     * @return whether specified tree is 'If' or not
+     */
+    export function isIf(target: (SwfTree | SwfTreeJson | string)) {
+        return this.getType(target) === this.IF;
+    }
+
+    /**
+     * whether specified tree is 'Else' or not
+     * @param target SwfTree instance or string
+     * @return whether specified tree is 'Else' or not
+     */
+    export function isElse(target: (SwfTree | SwfTreeJson | string)) {
+        return this.getType(target) === this.ELSE;
+    }
+
+    /**
+     * whether specified tree is 'For' or not
+     * @param target SwfTree instance or string
+     * @return whether specified tree is 'For' or not
+     */
+    export function isFor(target: (SwfTree | SwfTreeJson | string)) {
+        return this.getType(target) === this.FOR;
+    }
+
+    /**
+     * whether specified tree is 'Job' or not
+     * @param target SwfTree instance or string
+     * @return whether specified tree is 'Job' or not
+     */
+    export function isJob(target: (SwfTree | SwfTreeJson | string)) {
+        return this.getType(target) === this.JOB;
     }
 }

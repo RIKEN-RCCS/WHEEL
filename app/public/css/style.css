@@ -148,7 +148,7 @@ a:active {
     margin-left: 2.4%;
     align-items: center;
     vertical-align: middle;
-    position:relative;
+    position: relative;
 }
 
 .file_dialog {
@@ -370,7 +370,7 @@ td {
     color: rgb(105, 175, 45);
     font-size: 110%;
     display: flex;
-	align-items: center;
+    align-items: center;
     justify-content: space-between;
 }
 

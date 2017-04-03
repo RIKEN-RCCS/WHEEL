@@ -6,12 +6,12 @@ class GetRemoteHostListSocket {
     /**
      * event name
      */
-    private static eventName = 'onGetRemoteHostList';
+    private static readonly eventName = 'onGetRemoteHostList';
 
     /**
      * socketio client side instance
      */
-    private socket: SocketIOClient.Socket;
+    private readonly socket: SocketIOClient.Socket;
 
     /**
      * callback function

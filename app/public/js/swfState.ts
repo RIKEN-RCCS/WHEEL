@@ -31,4 +31,40 @@ namespace SwfState {
      * state failed
      */
     export const FAILED: SwfState = 'Failed';
+
+    /**
+     * get file status color string
+     * @param state task status string
+     * @return status color string
+     */
+    export function getStateColor(state: string): string {
+        return config.state_color[state.toLowerCase()];
+    }
+
+    /**
+     * whether specified log json or project json is planning or not
+     * @param json project json data or log json data
+     * @return whether specified log json or project json is planning or not
+     */
+    export function isPlanning(json: (SwfLogJson | SwfProjectJson)): boolean {
+        return json.state === this.PLANNING;
+    }
+
+    /**
+     * whether specified log json or project json is running or not
+     * @param json project json data or log json data
+     * @return whether specified log json or project json is running or not
+     */
+    export function isRunning(json: (SwfLogJson | SwfProjectJson)): boolean {
+        return !this.isPlanning() && !this.isFinished();
+    }
+
+    /**
+     * whether specified log json or project json is finished or not
+     * @param json project json data or log json data
+     * @return whether specified log json or project json is finished or not
+     */
+    export function isFinished(json: (SwfLogJson | SwfProjectJson)): boolean {
+        return json.state === this.COMPLETED || json.state === this.FAILED;
+    }
 }
