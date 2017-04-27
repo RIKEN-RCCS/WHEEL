@@ -55,9 +55,18 @@ var UploadFileEvent = (function () {
             fs.close(file.handler, function (err) {
                 if (err) {
                     logger.error(err);
+                    socket.emit(_this.doneEventName, isSucceed, filepath);
+                    delete _this.upload.filepath;
                 }
-                socket.emit(_this.doneEventName, isSucceed, filepath);
-                delete _this.upload.filepath;
+                else {
+                    fs.chmod(filepath, '664', function (err) {
+                        if (err) {
+                            logger.error(err);
+                        }
+                        socket.emit(_this.doneEventName, isSucceed, filepath);
+                        delete _this.upload.filepath;
+                    });
+                }
             });
         };
         var appendFile = function (filepath, callback) {

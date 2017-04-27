@@ -69,8 +69,8 @@ class UploadFileEvent implements ServerSocketIO.SocketListener {
                     return;
                 }
                 this.upload[filepath] = {
-                    uploaded : 0,
-                    size : size,
+                    uploaded: 0,
+                    size: size,
                     data: '',
                     handler: fd
                 };
@@ -83,9 +83,18 @@ class UploadFileEvent implements ServerSocketIO.SocketListener {
             fs.close(file.handler, (err) => {
                 if (err) {
                     logger.error(err);
+                    socket.emit(this.doneEventName, isSucceed, filepath);
+                    delete this.upload.filepath;
                 }
-                socket.emit(this.doneEventName, isSucceed, filepath);
-                delete this.upload.filepath;
+                else {
+                    fs.chmod(filepath, '664', (err) => {
+                        if (err) {
+                            logger.error(err);
+                        }
+                        socket.emit(this.doneEventName, isSucceed, filepath);
+                        delete this.upload.filepath;
+                    });
+                }
             });
         };
 

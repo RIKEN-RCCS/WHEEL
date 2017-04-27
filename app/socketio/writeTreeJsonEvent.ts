@@ -176,7 +176,7 @@ class WriteTreeJsonEvent implements ServerSocketIO.SocketListener {
         const config = ServerConfig.getConfig();
         const submitJobname = config.submit_script;
         const jobJson = <SwfJobJson><any>data.json;
-        const srcPath = path.join(__dirname, jobJson.remote.job_scheduler);
+        const srcPath = path.join(__dirname, `../${config.scheduler[jobJson.remote.job_scheduler]}`);
         const dstPath = path.join(data.directory, data.json.path, submitJobname);
 
         fs.stat(dstPath, (err, stat) => {

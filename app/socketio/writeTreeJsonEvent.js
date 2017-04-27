@@ -148,7 +148,7 @@ var WriteTreeJsonEvent = (function () {
         var config = ServerConfig.getConfig();
         var submitJobname = config.submit_script;
         var jobJson = data.json;
-        var srcPath = path.join(__dirname, jobJson.remote.job_scheduler);
+        var srcPath = path.join(__dirname, "../" + config.scheduler[jobJson.remote.job_scheduler]);
         var dstPath = path.join(data.directory, data.json.path, submitJobname);
         fs.stat(dstPath, function (err, stat) {
             if (err && jobJson.job_script.path) {
