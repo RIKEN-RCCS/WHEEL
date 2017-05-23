@@ -27,9 +27,20 @@ var GetFileListEvent = (function () {
             if (directoryPath == null) {
                 directoryPath = os.homedir();
             }
-            directoryPath = path.resolve(directoryPath);
-            var regex = extension == null ? null : new RegExp(extension.replace(/\./, '\\.') + "$");
-            _this.emitFileList(directoryPath, socket, regex);
+            if (!path.isAbsolute(directoryPath)) {
+                socket.emit(GetFileListEvent.eventName);
+                return;
+            }
+            fs.stat(directoryPath, function (err, stat) {
+                if (err || !stat.isDirectory()) {
+                    socket.emit(GetFileListEvent.eventName);
+                }
+                else {
+                    directoryPath = path.resolve(directoryPath);
+                    var regex = extension == null ? null : new RegExp(extension.replace(/\./, '\\.') + "$");
+                    _this.emitFileList(directoryPath, socket, regex);
+                }
+            });
         });
     };
     /**
