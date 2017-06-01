@@ -506,11 +506,12 @@ class TaskOperator {
         const workflow = <SwfWorkflowJson><SwfTaskJson>tree;
 
         // check finish all children
-        let isCompletedList = new Array<boolean>(tree.children.length);
+        let isCompletedList = {};
         let isCompletedAll: boolean = true;
-        for (let i = 0; i < isCompletedList.length; i++) {
-            isCompletedList[i] = TaskManager.isCompleted(tree.children[i]);
-            isCompletedAll = isCompletedAll && isCompletedList[i];
+        for (let i = 0; i < tree.children.length; i++) {
+            const birth = tree.children[i].birth;
+            isCompletedList[birth] = TaskManager.isCompleted(tree.children[i]);
+            isCompletedAll = isCompletedAll && isCompletedList[birth];
         }
 
         if (isCompletedAll) {
@@ -537,13 +538,13 @@ class TaskOperator {
             // check relation
             for (let i = 0; i < workflow.relations.length; i++) {
                 const relation = workflow.relations[i];
-                if (relation.index_after_task == index_task) {
+                if (relation.index_after_task == child.birth) {
                     isFinishPreTask = isFinishPreTask && isCompletedList[relation.index_before_task];
                 }
             }
             for (let i = 0; i < workflow.file_relations.length; i++) {
                 const relation = workflow.file_relations[i];
-                if (relation.index_after_task == index_task) {
+                if (relation.index_after_task == child.birth) {
                     isFinishPreTask = isFinishPreTask && isCompletedList[relation.index_before_task];
                 }
             }
@@ -555,7 +556,7 @@ class TaskOperator {
             // link file relation
             for (let i = 0; i < workflow.file_relations.length; i++) {
                 const relation = workflow.file_relations[i];
-                if (relation.index_after_task != index_task) {
+                if (relation.index_after_task != child.birth) {
                     continue;
                 }
 

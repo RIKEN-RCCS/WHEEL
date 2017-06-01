@@ -453,11 +453,12 @@ var TaskOperator = (function () {
     TaskOperator.runWorkflow = function (tree) {
         var workflow = tree;
         // check finish all children
-        var isCompletedList = new Array(tree.children.length);
+        var isCompletedList = {};
         var isCompletedAll = true;
-        for (var i = 0; i < isCompletedList.length; i++) {
-            isCompletedList[i] = TaskManager.isCompleted(tree.children[i]);
-            isCompletedAll = isCompletedAll && isCompletedList[i];
+        for (var i = 0; i < tree.children.length; i++) {
+            var birth = tree.children[i].birth;
+            isCompletedList[birth] = TaskManager.isCompleted(tree.children[i]);
+            isCompletedAll = isCompletedAll && isCompletedList[birth];
         }
         if (isCompletedAll) {
             // TODO check whether success
@@ -479,13 +480,13 @@ var TaskOperator = (function () {
             // check relation
             for (var i = 0; i < workflow.relations.length; i++) {
                 var relation = workflow.relations[i];
-                if (relation.index_after_task == index_task) {
+                if (relation.index_after_task == child.birth) {
                     isFinishPreTask = isFinishPreTask && isCompletedList[relation.index_before_task];
                 }
             }
             for (var i = 0; i < workflow.file_relations.length; i++) {
                 var relation = workflow.file_relations[i];
-                if (relation.index_after_task == index_task) {
+                if (relation.index_after_task == child.birth) {
                     isFinishPreTask = isFinishPreTask && isCompletedList[relation.index_before_task];
                 }
             }
@@ -495,7 +496,7 @@ var TaskOperator = (function () {
             // link file relation
             for (var i = 0; i < workflow.file_relations.length; i++) {
                 var relation = workflow.file_relations[i];
-                if (relation.index_after_task != index_task) {
+                if (relation.index_after_task != child.birth) {
                     continue;
                 }
                 var path_src = path.resolve(tree.local_path, relation.path_output_file);
