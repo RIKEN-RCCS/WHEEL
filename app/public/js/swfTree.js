@@ -452,9 +452,12 @@ var SwfTree = (function (_super) {
         else {
             child = object;
         }
-        var file = child.findInputFile(filepath).clone();
-        var fullpath = child.getFullpath(file);
-        SwfTree.deleteFileFromParent(this, fullpath, true);
+        var file = child.findInputFile(filepath);
+        if (file) {
+            var cloneFile = file.clone();
+            var fullpath = child.getFullpath(cloneFile);
+            SwfTree.deleteFileFromParent(this, fullpath, true);
+        }
     };
     /**
      * delete output file from parent tree
@@ -469,9 +472,12 @@ var SwfTree = (function (_super) {
         else {
             child = object;
         }
-        var file = child.findOutputFile(filepath).clone();
-        var fullpath = child.getFullpath(file);
-        SwfTree.deleteFileFromParent(this, fullpath, false);
+        var file = child.findOutputFile(filepath);
+        if (file) {
+            var cloneFile = file.clone();
+            var fullpath = child.getFullpath(cloneFile);
+            SwfTree.deleteFileFromParent(this, fullpath, false);
+        }
     };
     /**
      * delete input files or output files from parent tree

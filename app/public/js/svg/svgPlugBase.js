@@ -186,8 +186,8 @@ var SvgPlugBase = (function () {
      */
     SvgPlugBase.prototype.isCircularReference = function (before, after) {
         var parent = this.plugConfig.tree.getParent();
-        var beforeIndex = before.getTaskIndex();
-        var afterIndex = after.getTaskIndex();
+        var beforeIndex = before.getHashCode();
+        var afterIndex = after.getHashCode();
         return parent.isExistCircularReference(beforeIndex, afterIndex);
     };
     return SvgPlugBase;

@@ -275,8 +275,8 @@ class SvgPlugBase {
      */
     public isCircularReference(before: SvgPlugBase, after: SvgPlugBase): boolean {
         const parent = this.plugConfig.tree.getParent();
-        const beforeIndex = before.getTaskIndex();
-        const afterIndex = after.getTaskIndex();
+        const beforeIndex = before.getHashCode();
+        const afterIndex = after.getHashCode();
         return parent.isExistCircularReference(beforeIndex, afterIndex);
     }
 }

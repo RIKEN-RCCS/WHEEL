@@ -571,9 +571,13 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         else {
             child = object;
         }
-        const file = child.findInputFile(filepath).clone();
-        const fullpath = child.getFullpath(file);
-        SwfTree.deleteFileFromParent(this, fullpath, true);
+
+        const file = child.findInputFile(filepath);
+        if (file) {
+            const cloneFile = file.clone();
+            const fullpath = child.getFullpath(cloneFile);
+            SwfTree.deleteFileFromParent(this, fullpath, true);
+        }
     }
 
     /**
@@ -603,9 +607,12 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
         else {
             child = object;
         }
-        const file = child.findOutputFile(filepath).clone();
-        const fullpath = child.getFullpath(file);
-        SwfTree.deleteFileFromParent(this, fullpath, false);
+        const file = child.findOutputFile(filepath);
+        if (file) {
+            const cloneFile = file.clone();
+            const fullpath = child.getFullpath(cloneFile);
+            SwfTree.deleteFileFromParent(this, fullpath, false);
+        }
     }
 
     /**
