@@ -23,7 +23,7 @@ var ProjectOperator = (function () {
         var path_workflow = path.resolve(dir_project, this.projectJson.path_workflow);
         var treeJson = serverUtility.createTreeJson(path_workflow);
         this.tree = ProjectOperator.createTaskTree(treeJson);
-        ProjectOperator.setPathAbsolute(this.tree, this.projectJson.log.path);
+        ProjectOperator.initializePathAbsolute(this.tree, path.dirname(this.projectJson.log.path));
     }
     /**
      * Run project.
@@ -56,24 +56,52 @@ var ProjectOperator = (function () {
         TaskManager.cleanUpAsync(this.tree, callback);
     };
     /**
+     * set time stamp
+     * @param tree taeget tree
+     * @param path_to_root path to root of tree
+     */
+    ProjectOperator.setTimeStamp = function (tree, timeStamp) {
+        if (tree.type == SwfType.REMOTETASK || tree.type == SwfType.JOB) {
+            var remoteTask = tree;
+            remoteTask.timeStamp = timeStamp;
+        }
+        for (var i = 0; i < tree.children.length; i++) {
+            ProjectOperator.setTimeStamp(tree.children[i], timeStamp);
+        }
+    };
+    /**
      * set absolute path of directory of the task
      * @param tree taeget tree
      * @param path_to_root path to root of tree
      */
-    ProjectOperator.setPathAbsolute = function (tree, path_to_root) {
+    ProjectOperator.initializePathAbsolute = function (tree, local_root_path) {
         var date = new Date();
-        var name_dir_time = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getHours() + "-" + date.getMinutes() + "-" + date.getSeconds();
-        _setPathAbsolute(tree, '');
-        function _setPathAbsolute(_tree, path_from_root) {
-            _tree.local_path = path.join(path_to_root, path_from_root);
-            if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
-                var remoteTask = _tree;
-                _tree.remote_path = path.posix.join(remoteTask.remote.path, name_dir_time, path_from_root.replace('\\', '/'));
-            }
-            for (var i = 0; i < _tree.children.length; i++) {
-                _setPathAbsolute(_tree.children[i], path.join(path_from_root, _tree.children[i].path));
-            }
+        var timeStamp = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getHours() + "-" + date.getMinutes() + "-" + date.getSeconds();
+        ProjectOperator.setTimeStamp(tree, timeStamp);
+        ProjectOperator.setPathAbsolute(tree, local_root_path, '');
+    };
+    ProjectOperator.setPathAbsolute = function (tree, local_root_path, path_from_root) {
+        path_from_root = path.join(path_from_root, tree.path);
+        tree.local_path = path.join(local_root_path, path_from_root);
+        if (tree.type == SwfType.REMOTETASK || tree.type == SwfType.JOB) {
+            var remoteTask = tree;
+            tree.remote_path = path.posix.join(remoteTask.remote.path, remoteTask.timeStamp, path_from_root.replace('\\', '/'));
         }
+        for (var i = 0; i < tree.children.length; i++) {
+            ProjectOperator.setPathAbsolute(tree.children[i], local_root_path, path_from_root);
+        }
+    };
+    ProjectOperator.resetPathAbsolute = function (tree) {
+        var root = ProjectOperator.getRootTree(tree);
+        var local_root_path = path.dirname(root.local_path);
+        var path_from_root = path.relative(local_root_path, path.dirname(tree.local_path));
+        ProjectOperator.setPathAbsolute(tree, root.local_path, path_from_root);
+    };
+    ProjectOperator.getRootTree = function (tree) {
+        if (tree.parent != null) {
+            return ProjectOperator.getRootTree(tree.parent);
+        }
+        return tree;
     };
     /**
      * Create TaskTree.
@@ -786,7 +814,7 @@ var TaskOperator = (function () {
         workflow.path = loop.path + "_" + index;
         workflow.type = SwfType.WORKFLOW;
         child.parent = tree;
-        ProjectOperator.setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
+        ProjectOperator.resetPathAbsolute(child);
         // copy directory
         serverUtility.copyFolder(tree.local_path, child.local_path);
         TaskManager.cleanUp(child);
@@ -910,7 +938,7 @@ var TaskOperator = (function () {
             tree.hidden_children = new Array();
         }
         tree.hidden_children.push(child);
-        setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
+        ProjectOperator.resetPathAbsolute(child);
         serverUtility.copyFolder(tree.local_path, child.local_path);
         TaskManager.cleanUp(child);
         TaskManager.setIndex(child, index);
@@ -1132,24 +1160,24 @@ var TaskOperator = (function () {
             // send_files
             for (var i = 0; i < remoteTask.send_files.length; i++) {
                 var file = remoteTask.send_files[i];
-                command += " \"" + file.path + "\"";
+                command += " " + file.path;
             }
             // input_files
             for (var i = 0; i < remoteTask.input_files.length; i++) {
                 var file = remoteTask.input_files[i];
-                command += " \"" + file.path + "\"";
+                command += " " + file.path;
             }
             // script file
             if (remoteTask.script.path != '') {
                 var file = remoteTask.script;
-                command += " \"" + file.path + "\"";
+                command += " " + file.path;
             }
             // job script file
             if (remoteTask.type == SwfType.JOB) {
                 var job = remoteTask;
                 if (job.job_script.path != '') {
                     var file = job.job_script;
-                    command += " \"" + file.path + "\"";
+                    command += " " + file.path;
                 }
             }
             TaskOperator.exec(command, tree.local_path, compressCallback, callbackErr);
@@ -1212,12 +1240,12 @@ var TaskOperator = (function () {
             // receive_files
             for (var i = 0; i < remoteTask.receive_files.length; i++) {
                 var file = remoteTask.receive_files[i];
-                command += " \"" + file.path + "\"";
+                command += " " + file.path;
             }
             // output_files
             for (var i = 0; i < remoteTask.output_files.length; i++) {
                 var file = remoteTask.output_files[i];
-                command += " \"" + file.path + "\"";
+                command += " " + file.path;
             }
             TaskOperator.execRemote(client, command, tree.remote_path, compressCallback, callbackErr);
         }

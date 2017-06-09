@@ -199,6 +199,10 @@ class SwfRemoteTask extends SwfTask implements SwfRemoteTaskJson {
      * receive files
      */
     public receive_files: SwfFileJson[];
+    /**
+     * operated date
+     */
+    public timeStamp: string;
 }
 
 /**

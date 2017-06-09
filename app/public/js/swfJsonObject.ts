@@ -235,6 +235,10 @@ interface SwfRemoteTaskJson extends SwfTaskJson {
      * receive files
      */
     receive_files: SwfFileJson[];
+    /**
+     * operated date
+     */
+    timeStamp?: string;
 }
 
 /**

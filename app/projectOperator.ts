@@ -32,7 +32,7 @@ class ProjectOperator {
         const path_workflow = path.resolve(dir_project, this.projectJson.path_workflow);
         let treeJson: SwfTreeJson = serverUtility.createTreeJson(path_workflow);
         this.tree = ProjectOperator.createTaskTree(treeJson);
-        ProjectOperator.setPathAbsolute(this.tree, this.projectJson.log.path);
+        ProjectOperator.initializePathAbsolute(this.tree, path.dirname(this.projectJson.log.path));
     }
 
     /**
@@ -68,26 +68,57 @@ class ProjectOperator {
     }
 
     /**
+     * set time stamp
+     * @param tree taeget tree
+     * @param path_to_root path to root of tree
+     */
+    public static setTimeStamp(tree: TaskTree, timeStamp: string) {
+        if (tree.type == SwfType.REMOTETASK || tree.type == SwfType.JOB) {
+            let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson><SwfTaskJson>tree;
+            remoteTask.timeStamp = timeStamp;
+        }
+        for (let i = 0; i < tree.children.length; i++) {
+            ProjectOperator.setTimeStamp(tree.children[i], timeStamp);
+        }
+    }
+
+    /**
      * set absolute path of directory of the task
      * @param tree taeget tree
      * @param path_to_root path to root of tree
      */
-    public static setPathAbsolute(tree: TaskTree, path_to_root: string) {
+    public static initializePathAbsolute(tree: TaskTree, local_root_path: string) {
         const date = new Date();
-        const name_dir_time: string = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
-        _setPathAbsolute(tree, '');
+        const timeStamp: string = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
+        ProjectOperator.setTimeStamp(tree, timeStamp);
+        ProjectOperator.setPathAbsolute(tree, local_root_path, '')
+    }
 
-        function _setPathAbsolute(_tree: TaskTree, path_from_root: string) {
-            _tree.local_path = path.join(path_to_root, path_from_root);
-            if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
-                let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson><SwfTaskJson>_tree;
-                _tree.remote_path = path.posix.join(remoteTask.remote.path, name_dir_time, path_from_root.replace('\\', '/'));
-            }
-
-            for (let i = 0; i < _tree.children.length; i++) {
-                _setPathAbsolute(_tree.children[i], path.join(path_from_root, _tree.children[i].path));
-            }
+    public static setPathAbsolute(tree: TaskTree, local_root_path: string, path_from_root: string) {
+        path_from_root = path.join(path_from_root, tree.path);
+        tree.local_path = path.join(local_root_path, path_from_root);
+        if (tree.type == SwfType.REMOTETASK || tree.type == SwfType.JOB) {
+            let remoteTask: SwfRemoteTaskJson = <SwfRemoteTaskJson><SwfTaskJson>tree;
+            tree.remote_path = path.posix.join(remoteTask.remote.path, remoteTask.timeStamp, path_from_root.replace('\\', '/'));
         }
+
+        for (let i = 0; i < tree.children.length; i++) {
+            ProjectOperator.setPathAbsolute(tree.children[i], local_root_path, path_from_root);
+        }
+    }
+
+    public static resetPathAbsolute(tree: TaskTree) {
+        let root: TaskTree = ProjectOperator.getRootTree(tree);
+        let local_root_path: string = path.dirname(root.local_path);
+        let path_from_root: string = path.relative(local_root_path, path.dirname(tree.local_path));
+        ProjectOperator.setPathAbsolute(tree, root.local_path, path_from_root);
+    }
+
+    public static getRootTree(tree: TaskTree): TaskTree {
+        if (tree.parent != null){
+            return ProjectOperator.getRootTree(tree.parent);
+        }
+        return tree;
     }
 
     /**
@@ -884,7 +915,7 @@ class TaskOperator {
 
         child.parent = tree;
 
-        ProjectOperator.setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
+        ProjectOperator.resetPathAbsolute(child);
 
         // copy directory
         serverUtility.copyFolder(tree.local_path, child.local_path);
@@ -1019,7 +1050,7 @@ class TaskOperator {
         }
         tree.hidden_children.push(child)
 
-        setPathAbsolute(child, path.join(path.dirname(tree.local_path), child.path));
+        ProjectOperator.resetPathAbsolute(child);
         serverUtility.copyFolder(tree.local_path, child.local_path);
         TaskManager.cleanUp(child);
         TaskManager.setIndex(child, index);
@@ -1268,24 +1299,24 @@ class TaskOperator {
             // send_files
             for (let i = 0; i < remoteTask.send_files.length; i++) {
                 const file = remoteTask.send_files[i];
-                command += ` "${file.path}"`;
+                command += ` ${file.path}`;
             }
             // input_files
             for (let i = 0; i < remoteTask.input_files.length; i++) {
                 const file = remoteTask.input_files[i];
-                command += ` "${file.path}"`;
+                command += ` ${file.path}`;
             }
             // script file
             if (remoteTask.script.path != '') {
                 const file = remoteTask.script;
-                command += ` "${file.path}"`;
+                command += ` ${file.path}`;
             }
             // job script file
             if (remoteTask.type == SwfType.JOB) {
                 const job = <SwfJobJson>remoteTask;
                 if (job.job_script.path != '') {
                     const file = job.job_script;
-                    command += ` "${file.path}"`;
+                    command += ` ${file.path}`;
                 }
             }
 
@@ -1361,12 +1392,12 @@ class TaskOperator {
             // receive_files
             for (let i = 0; i < remoteTask.receive_files.length; i++) {
                 const file = remoteTask.receive_files[i];
-                command += ` "${file.path}"`;
+                command += ` ${file.path}`;
             }
             // output_files
             for (let i = 0; i < remoteTask.output_files.length; i++) {
                 const file = remoteTask.output_files[i];
-                command += ` "${file.path}"`;
+                command += ` ${file.path}`;
             }
 
             TaskOperator.execRemote(client, command, tree.remote_path, compressCallback, callbackErr);
