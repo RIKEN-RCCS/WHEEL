@@ -368,22 +368,7 @@ class SwfTree extends SwfWorkflow implements SwfTreeJson {
             return this.getFullpath(file.path) === fullpath;
         });
 
-        let send: SwfFileJson[] = [];
-        let receive: SwfFileJson[] = [];
-        const rtask = <SwfRemoteTask><any>this;
-
-        if (rtask.send_files !== undefined) {
-            send = rtask.send_files.filter(file => {
-                return this.getFullpath(file.path) === fullpath;
-            });
-        }
-        if (rtask.receive_files !== undefined) {
-            receive = rtask.receive_files.filter(file => {
-                return this.getFullpath(file.path) === fullpath;
-            });
-        }
-
-        if (input[0] || output[0] || send[0] || receive[0]) {
+        if (input[0] || output[0]) {
             return true;
         }
         else {

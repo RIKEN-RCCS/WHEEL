@@ -507,9 +507,6 @@ class JsonFileTypeBase {
                     readonly: (tree: SwfTree, sendFile: SwfFile) => {
                         return tree.isExistSendfile(sendFile);
                     },
-                    validation: (tree: SwfTree, v: string): boolean => {
-                        return !tree.isEnablePath(v);
-                    },
                     callback: (tree: SwfTree, object: any, path: string) => {
                         object.type = SwfFileType.getFileType(path);
                     }
@@ -567,9 +564,6 @@ class JsonFileTypeBase {
                     key: 'path',
                     readonly: () => { return false },
                     type: 'string',
-                    validation: (tree: SwfTree, v: string): boolean => {
-                        return !tree.isEnablePath(v);
-                    },
                     callback: (tree: SwfTree, object: any, path: string) => {
                         object.type = SwfFileType.getFileType(path);
                     }

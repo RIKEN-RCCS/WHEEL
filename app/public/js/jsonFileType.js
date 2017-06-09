@@ -465,9 +465,6 @@ var JsonFileTypeBase = (function () {
                     readonly: function (tree, sendFile) {
                         return tree.isExistSendfile(sendFile);
                     },
-                    validation: function (tree, v) {
-                        return !tree.isEnablePath(v);
-                    },
                     callback: function (tree, object, path) {
                         object.type = SwfFileType.getFileType(path);
                     }
@@ -524,9 +521,6 @@ var JsonFileTypeBase = (function () {
                     key: 'path',
                     readonly: function () { return false; },
                     type: 'string',
-                    validation: function (tree, v) {
-                        return !tree.isEnablePath(v);
-                    },
                     callback: function (tree, object, path) {
                         object.type = SwfFileType.getFileType(path);
                     }
