@@ -95,7 +95,7 @@ var ProjectOperator = (function () {
         var root = ProjectOperator.getRootTree(tree);
         var local_root_path = path.dirname(root.local_path);
         var path_from_root = path.relative(local_root_path, path.dirname(tree.local_path));
-        ProjectOperator.setPathAbsolute(tree, root.local_path, path_from_root);
+        ProjectOperator.setPathAbsolute(tree, local_root_path, path_from_root);
     };
     ProjectOperator.getRootTree = function (tree) {
         if (tree.parent != null) {
@@ -948,19 +948,6 @@ var TaskOperator = (function () {
         serverUtility.writeFileKeywordReplaced(src_path, dst_path, values);
         TaskManager.run(child);
         TaskManager.run(tree);
-        function setPathAbsolute(tree, path_to_root) {
-            _setPathAbsolute(tree, '');
-            function _setPathAbsolute(_tree, path_from_root) {
-                _tree.local_path = path.join(path_to_root, path_from_root);
-                if (_tree.type == SwfType.REMOTETASK || _tree.type == SwfType.JOB) {
-                    var remoteTask = _tree;
-                    _tree.remote_path = _tree.remote_path.replace(pstudy.path, workflow.path);
-                }
-                for (var i = 0; i < _tree.children.length; i++) {
-                    _setPathAbsolute(_tree.children[i], path.join(path_from_root, _tree.children[i].path));
-                }
-            }
-        }
     };
     /**
      * Get parameter vector of PStudy space.
