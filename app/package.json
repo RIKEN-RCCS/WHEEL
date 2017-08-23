@@ -7,8 +7,15 @@
     "name": "tsuruta.kazuya"
   },
   "license": "",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
   "dependencies": {
-    "socket.io": "~1.7.2",
-    "ssh2": "~0.5.4"
+    "socket.io": "^1.7.4",
+    "ssh2": "^0.5.5"
+  },
+  "devDependencies": {
+    "typescript": "^2.4.2"
   }
 }

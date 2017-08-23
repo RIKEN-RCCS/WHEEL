@@ -1,2 +1,2 @@
-cd ../app
+cd ../app/dst
 node server.js
