@@ -23,11 +23,11 @@ var GetFileStatEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    GetFileStatEvent.eventName = 'onGetFileStat';
     return GetFileStatEvent;
 }());
-/**
- * event name
- */
-GetFileStatEvent.eventName = 'onGetFileStat';
 module.exports = GetFileStatEvent;
 //# sourceMappingURL=getFileStatEvent.js.map

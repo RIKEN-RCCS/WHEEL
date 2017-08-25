@@ -68,28 +68,28 @@ var HttpServer = (function () {
         }
         return path.join(__dirname, 'public', requestPath);
     };
+    /**
+     * default port number
+     */
+    HttpServer.portNumber = process.env.port || 1337;
+    /**
+     * encoding string
+     */
+    HttpServer.encoding = 'UTF-8';
+    /**
+     * HTTP response header options
+     */
+    HttpServer.headers = {
+        '.htm': { 'Content-Type': 'text/html', charset: HttpServer.encoding },
+        '.html': { 'Content-Type': 'text/html', charset: HttpServer.encoding },
+        '.css': { 'Content-Type': 'text/css', charset: HttpServer.encoding },
+        '.js': { 'Content-Type': 'text/javascript', charset: HttpServer.encoding },
+        '.json': { 'Content-Type': 'text/javascript', charset: HttpServer.encoding },
+        '.jpg': { 'Content-Type': 'text/jpeg' },
+        '.jpeg': { 'Content-Type': 'text/jpeg' },
+        '.png': { 'Content-Type': 'text/png' }
+    };
     return HttpServer;
 }());
-/**
- * default port number
- */
-HttpServer.portNumber = process.env.port || 1337;
-/**
- * encoding string
- */
-HttpServer.encoding = 'UTF-8';
-/**
- * HTTP response header options
- */
-HttpServer.headers = {
-    '.htm': { 'Content-Type': 'text/html', charset: HttpServer.encoding },
-    '.html': { 'Content-Type': 'text/html', charset: HttpServer.encoding },
-    '.css': { 'Content-Type': 'text/css', charset: HttpServer.encoding },
-    '.js': { 'Content-Type': 'text/javascript', charset: HttpServer.encoding },
-    '.json': { 'Content-Type': 'text/javascript', charset: HttpServer.encoding },
-    '.jpg': { 'Content-Type': 'text/jpeg' },
-    '.jpeg': { 'Content-Type': 'text/jpeg' },
-    '.png': { 'Content-Type': 'text/png' }
-};
 module.exports = HttpServer;
 //# sourceMappingURL=httpServer.js.map

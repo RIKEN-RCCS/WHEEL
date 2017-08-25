@@ -41,10 +41,10 @@ var OpenProjectJsonSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(OpenProjectJsonSocket.eventName, projectFilepath);
     };
+    /**
+     * event name
+     */
+    OpenProjectJsonSocket.eventName = 'openProjectJson';
     return OpenProjectJsonSocket;
 }());
-/**
- * event name
- */
-OpenProjectJsonSocket.eventName = 'openProjectJson';
 //# sourceMappingURL=openProjectJsonSocket.js.map

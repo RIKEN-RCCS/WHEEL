@@ -23,11 +23,11 @@ var WriteFileEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    WriteFileEvent.eventName = 'writeFile';
     return WriteFileEvent;
 }());
-/**
- * event name
- */
-WriteFileEvent.eventName = 'writeFile';
 module.exports = WriteFileEvent;
 //# sourceMappingURL=writeFileEvent.js.map

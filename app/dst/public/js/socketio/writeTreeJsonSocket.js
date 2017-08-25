@@ -28,10 +28,10 @@ var WriteTreeJsonSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(WriteTreeJsonSocket.eventName, projectDirectory, tree.toSwfTreeJson());
     };
+    /**
+     * event name
+     */
+    WriteTreeJsonSocket.eventName = 'writeTreeJson';
     return WriteTreeJsonSocket;
 }());
-/**
- * event name
- */
-WriteTreeJsonSocket.eventName = 'writeTreeJson';
 //# sourceMappingURL=writeTreeJsonSocket.js.map

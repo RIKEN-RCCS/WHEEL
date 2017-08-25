@@ -28,10 +28,10 @@ var GetFileListSocket = (function () {
         this.onEvent(callback);
         this.socket.emit('onGetFileList', directory, this.extension);
     };
+    /**
+     * event name
+     */
+    GetFileListSocket.eventName = 'onGetFileList';
     return GetFileListSocket;
 }());
-/**
- * event name
- */
-GetFileListSocket.eventName = 'onGetFileList';
 //# sourceMappingURL=getFileListSocket.js.map

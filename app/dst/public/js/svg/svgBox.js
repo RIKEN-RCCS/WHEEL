@@ -315,34 +315,34 @@ var SvgBox = (function () {
     SvgBox.caclPlugPosY = function (index) {
         return SvgBox.titleHeight + SvgBox.marginHeight / 2 + index * SvgBox.stepSize;
     };
+    /**
+     * not selected opacity
+     */
+    SvgBox.opacity = 0.6;
+    /**
+     * frame storke width
+     */
+    SvgBox.strokeWidth = 2;
+    /**
+     * title height
+     */
+    SvgBox.titleHeight = 20;
+    /**
+     * margin of box height
+     */
+    SvgBox.marginHeight = 12;
+    /**
+     * margin of box width
+     */
+    SvgBox.marginWidth = SvgBox.titleHeight * 2;
+    /**
+     * output text offset
+     */
+    SvgBox.outputTextOffset = -8;
+    /**
+     * input and output files step size
+     */
+    SvgBox.stepSize = 25;
     return SvgBox;
 }());
-/**
- * not selected opacity
- */
-SvgBox.opacity = 0.6;
-/**
- * frame storke width
- */
-SvgBox.strokeWidth = 2;
-/**
- * title height
- */
-SvgBox.titleHeight = 20;
-/**
- * margin of box height
- */
-SvgBox.marginHeight = 12;
-/**
- * margin of box width
- */
-SvgBox.marginWidth = SvgBox.titleHeight * 2;
-/**
- * output text offset
- */
-SvgBox.outputTextOffset = -8;
-/**
- * input and output files step size
- */
-SvgBox.stepSize = 25;
 //# sourceMappingURL=svgBox.js.map

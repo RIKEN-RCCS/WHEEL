@@ -41,10 +41,10 @@ var GetRemoteHostListSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(GetRemoteHostListSocket.eventName);
     };
+    /**
+     * event name
+     */
+    GetRemoteHostListSocket.eventName = 'onGetRemoteHostList';
     return GetRemoteHostListSocket;
 }());
-/**
- * event name
- */
-GetRemoteHostListSocket.eventName = 'onGetRemoteHostList';
 //# sourceMappingURL=getRemoteHostListSocket.js.map

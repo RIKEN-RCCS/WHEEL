@@ -28,10 +28,10 @@ var WriteFileSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(WriteFileSocket.eventName, filepath, data);
     };
+    /**
+     * event name
+     */
+    WriteFileSocket.eventName = 'writeFile';
     return WriteFileSocket;
 }());
-/**
- * event name
- */
-WriteFileSocket.eventName = 'writeFile';
 //# sourceMappingURL=writeFileSocket.js.map

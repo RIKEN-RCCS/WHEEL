@@ -25,10 +25,10 @@ var DeleteDirectorySocket = (function () {
         this.onEvent(callback);
         this.socket.emit(DeleteDirectorySocket.eventName, directorys);
     };
+    /**
+     * event name
+     */
+    DeleteDirectorySocket.eventName = 'onDeleteDirectory';
     return DeleteDirectorySocket;
 }());
-/**
- * event name
- */
-DeleteDirectorySocket.eventName = 'onDeleteDirectory';
 //# sourceMappingURL=deleteDirectorySocket.js.map

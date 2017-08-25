@@ -161,11 +161,11 @@ var OpenProjectJsonEvent = (function () {
         var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
         projectJson.log = ServerUtility.createLogJson(path_workflow);
     };
+    /**
+     * event name
+     */
+    OpenProjectJsonEvent.eventName = 'openProjectJson';
     return OpenProjectJsonEvent;
 }());
-/**
- * event name
- */
-OpenProjectJsonEvent.eventName = 'openProjectJson';
 module.exports = OpenProjectJsonEvent;
 //# sourceMappingURL=openProjectJsonEvent.js.map

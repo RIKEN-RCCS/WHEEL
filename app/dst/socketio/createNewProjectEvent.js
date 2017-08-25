@@ -55,11 +55,11 @@ var CreateNewProjectEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    CreateNewProjectEvent.eventName = 'onCreateNewProject';
     return CreateNewProjectEvent;
 }());
-/**
- * event name
- */
-CreateNewProjectEvent.eventName = 'onCreateNewProject';
 module.exports = CreateNewProjectEvent;
 //# sourceMappingURL=createNewProjectEvent.js.map

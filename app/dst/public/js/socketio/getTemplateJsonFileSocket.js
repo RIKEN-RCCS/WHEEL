@@ -25,10 +25,10 @@ var GetTemplateJsonFileSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(GetTemplateJsonFileSocket.eventName, filetype);
     };
+    /**
+     * event name
+     */
+    GetTemplateJsonFileSocket.eventName = 'onGetJsonFile';
     return GetTemplateJsonFileSocket;
 }());
-/**
- * event name
- */
-GetTemplateJsonFileSocket.eventName = 'onGetJsonFile';
 //# sourceMappingURL=getTemplateJsonFileSocket.js.map

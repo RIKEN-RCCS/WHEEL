@@ -103,11 +103,11 @@ var Logger = (function () {
         var date = new Date();
         return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     };
+    /**
+     * log level
+     */
+    Logger.logLevel = LogLevel.info;
     return Logger;
 }());
-/**
- * log level
- */
-Logger.logLevel = LogLevel.info;
 module.exports = Logger;
 //# sourceMappingURL=logger.js.map

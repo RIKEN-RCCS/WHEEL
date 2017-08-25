@@ -95,11 +95,11 @@ var GetFileListEvent = (function () {
         });
         return getFileList;
     };
+    /**
+     * event name
+     */
+    GetFileListEvent.eventName = 'onGetFileList';
     return GetFileListEvent;
 }());
-/**
- * event name
- */
-GetFileListEvent.eventName = 'onGetFileList';
 module.exports = GetFileListEvent;
 //# sourceMappingURL=getFileListEvent.js.map

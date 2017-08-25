@@ -190,10 +190,10 @@ var SvgPlugBase = (function () {
         var afterIndex = after.getHashCode();
         return parent.isExistCircularReference(beforeIndex, afterIndex);
     };
+    /**
+     * counter for definition unieue index number
+     */
+    SvgPlugBase.counter = 0;
     return SvgPlugBase;
 }());
-/**
- * counter for definition unieue index number
- */
-SvgPlugBase.counter = 0;
 //# sourceMappingURL=svgPlugBase.js.map

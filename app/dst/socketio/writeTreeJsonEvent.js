@@ -165,11 +165,11 @@ var WriteTreeJsonEvent = (function () {
             callback();
         });
     };
+    /**
+     * event name
+     */
+    WriteTreeJsonEvent.eventName = 'writeTreeJson';
     return WriteTreeJsonEvent;
 }());
-/**
- * event name
- */
-WriteTreeJsonEvent.eventName = 'writeTreeJson';
 module.exports = WriteTreeJsonEvent;
 //# sourceMappingURL=writeTreeJsonEvent.js.map

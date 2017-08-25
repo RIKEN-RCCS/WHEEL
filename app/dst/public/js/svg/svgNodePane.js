@@ -117,18 +117,18 @@ var SvgNodePane = (function () {
     SvgNodePane.getWidth = function () {
         return this.svgWidth;
     };
+    /**
+     * canvas height
+     */
+    SvgNodePane.svgHeight = 0;
+    /**
+     * canvas width
+     */
+    SvgNodePane.svgWidth = 0;
+    /**
+     * all panes
+     */
+    SvgNodePane.panes = [];
     return SvgNodePane;
 }());
-/**
- * canvas height
- */
-SvgNodePane.svgHeight = 0;
-/**
- * canvas width
- */
-SvgNodePane.svgWidth = 0;
-/**
- * all panes
- */
-SvgNodePane.panes = [];
 //# sourceMappingURL=svgNodePane.js.map

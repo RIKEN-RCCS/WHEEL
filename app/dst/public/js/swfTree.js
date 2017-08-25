@@ -880,14 +880,14 @@ var SwfTree = (function (_super) {
         }
         SwfTree.renumberingIndex(SwfTree.root);
     };
+    /**
+     * delete directorys
+     */
+    SwfTree.deleteDirectorys = [];
+    /**
+     * root index
+     */
+    SwfTree.rootIndex = 0;
     return SwfTree;
 }(SwfWorkflow));
-/**
- * delete directorys
- */
-SwfTree.deleteDirectorys = [];
-/**
- * root index
- */
-SwfTree.rootIndex = 0;
 //# sourceMappingURL=swfTree.js.map

@@ -1,10 +1,11 @@
 import fs = require('fs');
 import path = require('path');
+import socketio = require('socket.io');
 
 import httpServer = require('./httpServer');
 import serverConfig = require('./serverConfig');
+import logger = require('./logger');
 
-import ServerSocketIO = require('./socketio/serverSocketIO');
 import GetFileListEvent = require('./socketio/getFileListEvent');
 import RunWorkflowEvent = require('./socketio/runProjectEvent');
 import UploadFileEvent = require('./socketio/uploadFileEvent');
@@ -25,30 +26,38 @@ import DeleteDirectoryEvent = require('./socketio/deleteDirectoryEvent');
 
 const config = serverConfig.getConfig();
 const server = httpServer.start(config.port);
-const serverSocket = new ServerSocketIO.SwfSocketIO(server);
+const sio = socketio(server);
 
-serverSocket.addEventListener('/swf/home', [
+var eventNspPairs=[];
+var addEventListener = function (namespace: string, listeners) {
+  eventNspPairs.push({
+    io: sio.of(namespace),
+    listeners: listeners
+  });
+}
+
+addEventListener('/swf/home', [
     new GetFileListEvent(),
     new CreateNewProjectEvent()
 ]);
-serverSocket.addEventListener('/swf/select', [
+addEventListener('/swf/select', [
     new GetFileListEvent()
 ]);
-serverSocket.addEventListener('/swf/project', [
+addEventListener('/swf/project', [
     new OpenProjectJsonEvent(),
     new RunWorkflowEvent(),
     new SshConnectionEvent(),
     new GetFileStatEvent(),
     new CleanProjectEvent()
 ]);
-serverSocket.addEventListener('/swf/remotehost', [
+addEventListener('/swf/remotehost', [
     new GetRemoteHostListEvent(),
     new SshConnectionEvent(),
     new AddHostEvent(),
     new DeleteHostEvent(),
     new GetFileListEvent()
 ]);
-serverSocket.addEventListener('/swf/workflow', [
+addEventListener('/swf/workflow', [
     new ReadTreeJsonEvent(),
     new GetFileStatEvent(),
     new WriteTreeJsonEvent(),
@@ -57,8 +66,18 @@ serverSocket.addEventListener('/swf/workflow', [
     new UploadFileEvent(),
     new DeleteDirectoryEvent()
 ]);
-serverSocket.addEventListener('/swf/editor', [
+addEventListener('/swf/editor', [
     new ReadFileEvent(),
     new WriteFileEvent()
 ]);
-serverSocket.onConnect();
+
+
+eventNspPairs.forEach(pair => {
+  pair.io.on('connect', (socket: SocketIO.Socket) => {
+    logger.debug(`socket on connect ${pair.io.name}`);
+    pair.listeners.forEach(listener => listener.onEvent(socket));
+    socket.on('disconnect', () => {
+      logger.debug(`socket on disconnect ${pair.io.name}`);
+    });
+  })
+});

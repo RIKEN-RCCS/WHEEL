@@ -50,11 +50,11 @@ var RunProjectEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    RunProjectEvent.eventName = 'onRunProject';
     return RunProjectEvent;
 }());
-/**
- * event name
- */
-RunProjectEvent.eventName = 'onRunProject';
 module.exports = RunProjectEvent;
 //# sourceMappingURL=runProjectEvent.js.map

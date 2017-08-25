@@ -26,11 +26,11 @@ var GetTemplateJsonFileEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    GetTemplateJsonFileEvent.eventName = 'onGetJsonFile';
     return GetTemplateJsonFileEvent;
 }());
-/**
- * event name
- */
-GetTemplateJsonFileEvent.eventName = 'onGetJsonFile';
 module.exports = GetTemplateJsonFileEvent;
 //# sourceMappingURL=getTemplateJsonFileEvent.js.map

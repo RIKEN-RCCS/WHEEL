@@ -37,10 +37,10 @@ var GetFileStatSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(GetFileStatSocket.eventName, filepath);
     };
+    /**
+     * event name
+     */
+    GetFileStatSocket.eventName = 'onGetFileStat';
     return GetFileStatSocket;
 }());
-/**
- * event name
- */
-GetFileStatSocket.eventName = 'onGetFileStat';
 //# sourceMappingURL=getFileStatSocket.js.map

@@ -439,34 +439,34 @@ var SvgNodeUI = (function () {
             _this.movePlug(x, y);
         });
     };
+    /**
+     * all nodes
+     */
+    SvgNodeUI.allNodeUI = [];
+    /**
+     * all outout file plugs
+     */
+    SvgNodeUI.allConnectors = new SvgContainer();
+    /**
+     * all input file plugs
+     */
+    SvgNodeUI.allReceptors = new SvgContainer();
+    /**
+     * all before task plugs
+     */
+    SvgNodeUI.allUppers = new SvgContainer();
+    /**
+     * all next task plugs
+     */
+    SvgNodeUI.allLowers = new SvgContainer();
+    /**
+     * file relations
+     */
+    SvgNodeUI.fileRelations = new SvgFileRelations([]);
+    /**
+     * task relations
+     */
+    SvgNodeUI.relations = new SvgRelations([]);
     return SvgNodeUI;
 }());
-/**
- * all nodes
- */
-SvgNodeUI.allNodeUI = [];
-/**
- * all outout file plugs
- */
-SvgNodeUI.allConnectors = new SvgContainer();
-/**
- * all input file plugs
- */
-SvgNodeUI.allReceptors = new SvgContainer();
-/**
- * all before task plugs
- */
-SvgNodeUI.allUppers = new SvgContainer();
-/**
- * all next task plugs
- */
-SvgNodeUI.allLowers = new SvgContainer();
-/**
- * file relations
- */
-SvgNodeUI.fileRelations = new SvgFileRelations([]);
-/**
- * task relations
- */
-SvgNodeUI.relations = new SvgRelations([]);
 //# sourceMappingURL=svgNodeUI.js.map

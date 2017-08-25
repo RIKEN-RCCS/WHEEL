@@ -24,11 +24,11 @@ var DeleteHostEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    DeleteHostEvent.eventName = 'onDeleteHost';
     return DeleteHostEvent;
 }());
-/**
- * event name
- */
-DeleteHostEvent.eventName = 'onDeleteHost';
 module.exports = DeleteHostEvent;
 //# sourceMappingURL=deleteHostEvent.js.map

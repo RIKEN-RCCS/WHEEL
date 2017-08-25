@@ -28,11 +28,11 @@ var DeleteDirectoryEvent = (function () {
             })();
         });
     };
+    /**
+     * event name
+     */
+    DeleteDirectoryEvent.eventName = 'onDeleteDirectory';
     return DeleteDirectoryEvent;
 }());
-/**
- * event name
- */
-DeleteDirectoryEvent.eventName = 'onDeleteDirectory';
 module.exports = DeleteDirectoryEvent;
 //# sourceMappingURL=deleteDirectoryEvent.js.map

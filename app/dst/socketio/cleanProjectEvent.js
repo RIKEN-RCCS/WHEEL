@@ -51,11 +51,11 @@ var CleanProjectvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    CleanProjectvent.eventName = 'cleanProject';
     return CleanProjectvent;
 }());
-/**
- * event name
- */
-CleanProjectvent.eventName = 'cleanProject';
 module.exports = CleanProjectvent;
 //# sourceMappingURL=cleanProjectEvent.js.map

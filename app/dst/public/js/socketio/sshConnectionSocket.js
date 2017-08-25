@@ -26,10 +26,10 @@ var SshConnectionSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(SshConnectionSocket.eventName, name, password);
     };
+    /**
+     * event name
+     */
+    SshConnectionSocket.eventName = 'onSshConnection';
     return SshConnectionSocket;
 }());
-/**
- * event name
- */
-SshConnectionSocket.eventName = 'onSshConnection';
 //# sourceMappingURL=sshConnectionSocket.js.map

@@ -25,10 +25,10 @@ var AddHostSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(AddHostSocket.eventName, hostInfo);
     };
+    /**
+     * event name
+     */
+    AddHostSocket.eventName = 'onAddHost';
     return AddHostSocket;
 }());
-/**
- * event name
- */
-AddHostSocket.eventName = 'onAddHost';
 //# sourceMappingURL=addHostSocket.js.map

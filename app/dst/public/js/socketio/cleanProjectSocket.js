@@ -25,10 +25,10 @@ var CleanProjectSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(CleanProjectSocket.eventName, projectPath);
     };
+    /**
+     * event name
+     */
+    CleanProjectSocket.eventName = 'cleanProject';
     return CleanProjectSocket;
 }());
-/**
- * event name
- */
-CleanProjectSocket.eventName = 'cleanProject';
 //# sourceMappingURL=cleanProjectSocket.js.map

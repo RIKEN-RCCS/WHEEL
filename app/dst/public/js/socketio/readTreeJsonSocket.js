@@ -39,10 +39,10 @@ var ReadTreeJsonSocket = (function () {
         this.onEvent();
         this.socket.emit(ReadTreeJsonSocket.eventName, treeJsonFilepath);
     };
+    /**
+     * event name
+     */
+    ReadTreeJsonSocket.eventName = 'readTreeJson';
     return ReadTreeJsonSocket;
 }());
-/**
- * event name
- */
-ReadTreeJsonSocket.eventName = 'readTreeJson';
 //# sourceMappingURL=readTreeJsonSocket.js.map

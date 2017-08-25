@@ -39,10 +39,10 @@ var ReadFileSocket = (function () {
         this.onEvent();
         this.socket.emit(ReadFileSocket.eventName, filepath);
     };
+    /**
+     * event name
+     */
+    ReadFileSocket.eventName = 'readFile';
     return ReadFileSocket;
 }());
-/**
- * event name
- */
-ReadFileSocket.eventName = 'readFile';
 //# sourceMappingURL=readFileSocket.js.map

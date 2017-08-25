@@ -28,11 +28,11 @@ var GetRemoteHostListEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    GetRemoteHostListEvent.eventName = 'onGetRemoteHostList';
     return GetRemoteHostListEvent;
 }());
-/**
- * event name
- */
-GetRemoteHostListEvent.eventName = 'onGetRemoteHostList';
 module.exports = GetRemoteHostListEvent;
 //# sourceMappingURL=getRemoteHostListEvent.js.map

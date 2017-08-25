@@ -458,16 +458,16 @@ var TaskManager = (function () {
         var json = { index: index };
         fs.writeFileSync(path_index, JSON.stringify(json, null, '\t'));
     };
+    /**
+     * name of log file
+     */
+    TaskManager.name_logFile = 'swf.log';
+    /**
+     * name of index file
+     */
+    TaskManager.name_indexFile = 'loop.idx.json';
     return TaskManager;
 }());
-/**
- * name of log file
- */
-TaskManager.name_logFile = 'swf.log';
-/**
- * name of index file
- */
-TaskManager.name_indexFile = 'loop.idx.json';
 /**
  * Task Operator
  */
@@ -1313,19 +1313,19 @@ var LocalQueue = (function () {
             }
         }
     };
+    /**
+     * upper number limit for job submit
+     */
+    LocalQueue.MAX_JOB = 5;
+    /**
+     * number of job submited
+     */
+    LocalQueue.num_job = 0;
+    /**
+     * queue of job
+     */
+    LocalQueue.queue = new Array();
     return LocalQueue;
 }());
-/**
- * upper number limit for job submit
- */
-LocalQueue.MAX_JOB = 5;
-/**
- * number of job submited
- */
-LocalQueue.num_job = 0;
-/**
- * queue of job
- */
-LocalQueue.queue = new Array();
 module.exports = ProjectOperator;
 //# sourceMappingURL=projectOperator.js.map

@@ -25,10 +25,10 @@ var DeleteHostSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(DeleteHostSocket.eventName, name);
     };
+    /**
+     * event name
+     */
+    DeleteHostSocket.eventName = 'onDeleteHost';
     return DeleteHostSocket;
 }());
-/**
- * event name
- */
-DeleteHostSocket.eventName = 'onDeleteHost';
 //# sourceMappingURL=deleteHostSocket.js.map

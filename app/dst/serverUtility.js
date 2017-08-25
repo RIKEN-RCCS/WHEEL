@@ -638,12 +638,12 @@ var ServerUtility = (function () {
                 throw new TypeError('file type is undefined');
         }
     };
+    /**
+     * config parameter
+     */
+    ServerUtility.config = ServerConfig.getConfig();
     return ServerUtility;
 }());
-/**
- * config parameter
- */
-ServerUtility.config = ServerConfig.getConfig();
 /**
  * type base
  */

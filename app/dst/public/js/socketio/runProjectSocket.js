@@ -26,10 +26,10 @@ var RunProjectSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(RunProjectSocket.eventName, projectFilepath, passInfo);
     };
+    /**
+     * event name
+     */
+    RunProjectSocket.eventName = 'onRunProject';
     return RunProjectSocket;
 }());
-/**
- * event name
- */
-RunProjectSocket.eventName = 'onRunProject';
 //# sourceMappingURL=runProjectSocket.js.map

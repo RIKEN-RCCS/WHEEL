@@ -101,11 +101,11 @@ var SshConnectionEvent = (function () {
         })
             .connect(config);
     };
+    /**
+     * event name
+     */
+    SshConnectionEvent.eventName = 'onSshConnection';
     return SshConnectionEvent;
 }());
-/**
- * event name
- */
-SshConnectionEvent.eventName = 'onSshConnection';
 module.exports = SshConnectionEvent;
 //# sourceMappingURL=sshConnectionEvent.js.map

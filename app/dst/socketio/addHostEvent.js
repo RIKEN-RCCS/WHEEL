@@ -24,11 +24,11 @@ var AddHostEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    AddHostEvent.eventName = 'onAddHost';
     return AddHostEvent;
 }());
-/**
- * event name
- */
-AddHostEvent.eventName = 'onAddHost';
 module.exports = AddHostEvent;
 //# sourceMappingURL=addHostEvent.js.map

@@ -23,11 +23,11 @@ var ReadFileEvent = (function () {
             });
         });
     };
+    /**
+     * event name
+     */
+    ReadFileEvent.eventName = 'readFile';
     return ReadFileEvent;
 }());
-/**
- * event name
- */
-ReadFileEvent.eventName = 'readFile';
 module.exports = ReadFileEvent;
 //# sourceMappingURL=readFileEvent.js.map

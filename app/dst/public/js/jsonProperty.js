@@ -357,10 +357,10 @@ var JsonProperty = (function () {
             this.property.animate({ width: '350px', 'min-width': '350px' }, 100);
         }
     };
+    /**
+     * unique counter for html element id
+     */
+    JsonProperty.counter = 0;
     return JsonProperty;
 }());
-/**
- * unique counter for html element id
- */
-JsonProperty.counter = 0;
 //# sourceMappingURL=jsonProperty.js.map

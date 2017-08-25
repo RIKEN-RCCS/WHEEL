@@ -25,10 +25,10 @@ var CreateNewProjectSocket = (function () {
         this.onEvent(callback);
         this.socket.emit(CreateNewProjectSocket.eventName, directoryPath);
     };
+    /**
+     * event name
+     */
+    CreateNewProjectSocket.eventName = 'onCreateNewProject';
     return CreateNewProjectSocket;
 }());
-/**
- * event name
- */
-CreateNewProjectSocket.eventName = 'onCreateNewProject';
 //# sourceMappingURL=createNewProjectSocket.js.map

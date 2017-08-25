@@ -26,11 +26,11 @@ var ReadTreeJsonEvent = (function () {
             }
         });
     };
+    /**
+     * event name
+     */
+    ReadTreeJsonEvent.eventName = 'readTreeJson';
     return ReadTreeJsonEvent;
 }());
-/**
- * event name
- */
-ReadTreeJsonEvent.eventName = 'readTreeJson';
 module.exports = ReadTreeJsonEvent;
 //# sourceMappingURL=readTreeJsonEvent.js.map
