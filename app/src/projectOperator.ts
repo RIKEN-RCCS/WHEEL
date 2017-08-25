@@ -177,6 +177,30 @@ class ProjectOperator {
         }
         return tree;
     }
+
+    /**
+     * update project json data
+     * @param projectFilepath project json file path
+     * @param callback The function to call when we have finished update
+     */
+    public updateProjectJson(projectFilepath: string, callback: ((err?: Error) => void)) {
+        fs.readFile(projectFilepath, (err, data) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            const projectJson: SwfProjectJson = JSON.parse(data.toString());
+            projectJson.state = SwfState.RUNNING;
+            fs.writeFile(projectFilepath, JSON.stringify(projectJson, null, '\t'), (err) => {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                callback();
+            });
+        });
+    }
 }
 
 /**
