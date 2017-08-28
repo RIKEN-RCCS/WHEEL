@@ -1,15 +1,19 @@
 Scientific Workflow
 
-How to install
+#How to install
+```
 > git clone
 > cd app
 > npm install
+```
 
-How to use
+#How to use
+```
 > cd app
 > npm start
+```
 
-For developers
+#For developers
 we have two scripts which call typescript compiler
 - npm run build
 - npm run dev
