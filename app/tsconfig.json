@@ -5,6 +5,7 @@
         "noImplicitAny": false,
         "sourceMap": true,
         "outDir": "./dst",
-        "rootDir": "./src"
+        "rootDir": "./src",
+        "allowJs": true
     }
 }
