@@ -5,6 +5,7 @@ var express = require("express");
 var cookieParser = require("cookie-parser");
 var bodyParser = require("body-parser");
 var http = require("http");
+var logger = require("./logger");
 var config = require('../dst/config/server');
 /*
  * set up express
@@ -28,7 +29,7 @@ app.set('port', port);
 //TODO special error handler for 404 should be placed here
 // error handler
 app.use(function (err, req, res, next) {
-    console.log(err);
+    logger.error(err);
     // render the error page
     res.status(err.status || 500);
     res.send('something broke!');
@@ -89,11 +90,11 @@ function onError(error) {
     // handle specific listen errors with friendly messages
     switch (error.code) {
         case 'EACCES':
-            console.error(bind + ' requires elevated privileges');
+            logger.error(bind + ' requires elevated privileges');
             process.exit(1);
             break;
         case 'EADDRINUSE':
-            console.error(bind + ' is already in use');
+            logger.error(bind + ' is already in use');
             process.exit(1);
             break;
         default:
@@ -108,6 +109,6 @@ function onListening() {
     var bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
-    console.log('Listening on ' + bind);
+    logger.info('Listening on ' + bind);
 }
 //# sourceMappingURL=server.js.map

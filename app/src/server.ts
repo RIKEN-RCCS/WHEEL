@@ -8,6 +8,7 @@ import cookieParser = require('cookie-parser');
 import bodyParser = require('body-parser');
 import http = require('http');
 
+import logger = require('./logger');
 const config = require('../dst/config/server');
 
 /*
@@ -38,7 +39,7 @@ app.set('port', port);
 
 // error handler
 app.use(function(err, req, res, next) {
-  console.log(err)
+  logger.error(err)
   // render the error page
   res.status(err.status || 500);
   res.send('something broke!');
@@ -108,11 +109,11 @@ function onError(error) {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
+      logger.error(bind + ' requires elevated privileges');
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
+      logger.error(bind + ' is already in use');
       process.exit(1);
       break;
     default:
@@ -129,5 +130,5 @@ function onListening() {
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-  console.log('Listening on ' + bind);
+  logger.info('Listening on ' + bind);
 }
