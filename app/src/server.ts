@@ -23,8 +23,18 @@ app.use(cookieParser());
 app.use(express.static(path.resolve('dst/public')));
 
 // routing
-import main=require('./routes/main.js');
-app.use('/', main);
+app.get('/', function(req, res, next){
+  res.sendFile(path.resolve('dst/public/swf/home.html'));
+});
+app.post('/swf/project_manager.html',function(req, res, next){
+  res.setHeader('Set-Cookie', req.cookies);
+});
+app.post('/swf/workflow_manager.html',function(req, res, next){
+  res.setHeader('Set-Cookie', req.cookies);
+});
+app.post('/swf/editor.html',function(req, res, next){
+  res.setHeader('Set-Cookie', req.cookies);
+});
 
 // port number
 var defaultPort=443;
