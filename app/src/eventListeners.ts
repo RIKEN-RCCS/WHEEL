@@ -392,8 +392,8 @@ interface UploadedFileData {
     }
 }
 
-export function add(socket: SocketIO.Socket, namespace: string, listeners) {
-  socket.of(namespace).on('connect', (socket: SocketIO.Socket) => {
+export function add(sio: SocketIO.Server, namespace: string, listeners) {
+  sio.of(namespace).on('connect', (socket: SocketIO.Socket) => {
     logger.debug(`socket on connect ${namespace}`);
     for(var eventName of listeners){
       eventListeners[eventName](socket);

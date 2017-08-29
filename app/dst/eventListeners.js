@@ -380,8 +380,8 @@ var eventListeners = {
         });
     }
 };
-function add(socket, namespace, listeners) {
-    socket.of(namespace).on('connect', function (socket) {
+function add(sio, namespace, listeners) {
+    sio.of(namespace).on('connect', function (socket) {
         logger.debug("socket on connect " + namespace);
         for (var _i = 0, listeners_1 = listeners; _i < listeners_1.length; _i++) {
             var eventName = listeners_1[_i];
