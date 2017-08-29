@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs");
 var path = require("path");
 var ServerUtility = require("./serverUtility");
-var ServerConfig = require("./serverConfig");
 var SwfState = require("./swfState");
 var SwfType = require("./swfType");
 /**
@@ -116,7 +115,7 @@ function updateLogJson(queue, callback) {
         updateLogJson(queue, callback);
         return;
     }
-    var config = ServerConfig.getConfig();
+    var config = require('../dst/config/server');
     var logFilePath = path.join(logJson.path, config.system_name + ".log");
     fs.readFile(logFilePath, function (err, data) {
         if (!err) {

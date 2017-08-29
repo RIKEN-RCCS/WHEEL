@@ -2,7 +2,6 @@ import fs = require('fs');
 import path = require('path');
 import os = require('os');
 import logger = require('./logger');
-import ServerConfig = require('./serverConfig');
 import SwfType = require('./swfType');
 import SwfState = require('./swfState');
 
@@ -326,7 +325,7 @@ class ServerUtility {
     /**
      * config parameter
      */
-    private static config = ServerConfig.getConfig();
+    private static config = require('../dst/config/server');
 
     /**
      * get all host infomation
@@ -692,7 +691,7 @@ class TypeBase {
     /**
      * config date
      */
-    protected config = ServerConfig.getConfig();
+    protected config = require('../dst/config/server');
     /**
      * file type string
      */

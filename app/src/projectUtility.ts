@@ -2,7 +2,6 @@ import fs=require('fs');
 import path = require('path');
 import logger = require('./logger');
 import ServerUtility = require('./serverUtility');
-import ServerConfig = require('./serverConfig');
 import SwfState = require('./swfState');
 import SwfType = require('./swfType');
 
@@ -116,7 +115,7 @@ export function updateLogJson(queue: SwfLogJson[], callback: (() => void)) {
         return;
     }
 
-    const config = ServerConfig.getConfig();
+    const config = require('../dst/config/server');
     const logFilePath = path.join(logJson.path, `${config.system_name}.log`);
     fs.readFile(logFilePath, (err, data) => {
         if (!err) {

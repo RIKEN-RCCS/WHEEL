@@ -13,7 +13,6 @@ var fs = require("fs");
 var path = require("path");
 var os = require("os");
 var logger = require("./logger");
-var ServerConfig = require("./serverConfig");
 var SwfType = require("./swfType");
 var SwfState = require("./swfState");
 /**
@@ -641,7 +640,7 @@ var ServerUtility = (function () {
     /**
      * config parameter
      */
-    ServerUtility.config = ServerConfig.getConfig();
+    ServerUtility.config = require('../dst/config/server');
     return ServerUtility;
 }());
 /**
@@ -656,7 +655,7 @@ var TypeBase = (function () {
         /**
          * config date
          */
-        this.config = ServerConfig.getConfig();
+        this.config = require('../dst/config/server');
         this.type = type;
     }
     /**

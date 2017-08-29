@@ -2,7 +2,6 @@ import fs = require('fs');
 import path = require('path');
 import logger = require('./logger');
 import ServerUtility = require('./serverUtility');
-import ServerConfig = require('./serverConfig');
 import SwfType = require('./swfType');
 
 /**
@@ -30,7 +29,7 @@ export function generateSubmitScript(data: JsonDataPath, callback: ((err?: Error
         return;
     }
 
-    const config = ServerConfig.getConfig();
+    const config = require('../dst/config/server');
     const submitJobname = config.submit_script;
     const jobJson = <SwfJobJson><any>data.json;
     const srcPath = path.join(__dirname, `../${config.scheduler[jobJson.remote.job_scheduler]}`);

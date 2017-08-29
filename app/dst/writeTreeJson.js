@@ -4,7 +4,6 @@ var fs = require("fs");
 var path = require("path");
 var logger = require("./logger");
 var ServerUtility = require("./serverUtility");
-var ServerConfig = require("./serverConfig");
 var SwfType = require("./swfType");
 /**
  * genereta submic script
@@ -16,7 +15,7 @@ function generateSubmitScript(data, callback) {
         callback();
         return;
     }
-    var config = ServerConfig.getConfig();
+    var config = require('../dst/config/server');
     var submitJobname = config.submit_script;
     var jobJson = data.json;
     var srcPath = path.join(__dirname, "../" + config.scheduler[jobJson.remote.job_scheduler]);
