@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 
-<head>
+  <head>
     <meta charset="UTF-8">
     <link type="text/css" rel="stylesheet" href="/css/pure-drawer.min-1.0.2.css" />
     <link type="text/css" rel="stylesheet" href="/css/style.css" />
@@ -25,104 +25,104 @@
     <script type="text/javascript" src="/js/inputTextDialog.js"></script>
     <script type="text/javascript" src="/js/projectManager.js"></script>
     <title>Scientific Workflow</title>
-</head>
+  </head>
 
-<body>
-<div class="pure-container" data-effect="pure-effect-slide">
-    <input type="checkbox" id="pure-toggle-right" class="pure-toggle" data-toggle="right">
-    <label class="pure-toggle-label" for="pure-toggle-right" data-toggle-label="right">
+  <body>
+    <div class="pure-container" data-effect="pure-effect-slide">
+      <input type="checkbox" id="pure-toggle-right" class="pure-toggle" data-toggle="right">
+      <label class="pure-toggle-label" for="pure-toggle-right" data-toggle-label="right">
         <span class="pure-toggle-icon"></span>
-    </label>
+      </label>
 
-    <div class="pure-drawer" data-position="right">
+      <div class="pure-drawer" data-position="right">
         <!-- Put your off canvas content here -->
         <a href="/swf/remotehost.html">remote host</a>
-    </div>
-    <div class="pure-pusher-container">
+      </div>
+      <div class="pure-pusher-container">
         <div class="pure-pusher">
-            <!-- Put your site content here -->
-    <header>
-        <a href="/swf/home.html">Scientific Workflow</a>
-    </header>
-    <div class="subtitle">Project Manager</div>
-    <div class="menu_area">
-        <figure id="run_menu" class="menu_container">
-            <img src="/image/icon_run.png" class="icon" id="run_button" />
-            <figcaption>RUN</figcaption>
-        </figure>
-        <figure id="pause_menu" class="menu_container" style="display: none">
-            <img src="/image/icon_pause.png" class="icon" id="run_button" />
-            <figcaption>PAUSE</figcaption>
-        </figure>
-        <figure id="clean_menu" class="menu_container" style="display: none">
-            <img src="/image/icon_clean.png" class="icon" id="clean_button" />
-            <figcaption>CLEAN</figcaption>
-        </figure>
-        <figure id="stop_menu" class="menu_container" style="display: none">
-            <img src="/image/icon_stop.png" class="icon" id="stop_button" />
-            <figcaption>STOP</figcaption>
-        </figure>
-    </div>
+          <!-- Put your site content here -->
+          <header>
+            <a href="/swf/home.html">Scientific Workflow</a>
+          </header>
+          <div class="subtitle">Project Manager</div>
+          <div class="menu_area">
+            <figure id="run_menu" class="menu_container">
+              <img src="/image/icon_run.png" class="icon" id="run_button" />
+              <figcaption>RUN</figcaption>
+            </figure>
+            <figure id="pause_menu" class="menu_container" style="display: none">
+              <img src="/image/icon_pause.png" class="icon" id="run_button" />
+              <figcaption>PAUSE</figcaption>
+            </figure>
+            <figure id="clean_menu" class="menu_container" style="display: none">
+              <img src="/image/icon_clean.png" class="icon" id="clean_button" />
+              <figcaption>CLEAN</figcaption>
+            </figure>
+            <figure id="stop_menu" class="menu_container" style="display: none">
+              <img src="/image/icon_stop.png" class="icon" id="stop_button" />
+              <figcaption>STOP</figcaption>
+            </figure>
+          </div>
 
-    <div class="address_bar_area">
-        <img src="/image/icon_file.png" class="file_icon">
-        <input type="text" id="address_bar" class="address_bar text_box " readonly="readonly" style="background-color: rgb(70, 70, 65)">
-    </div>
+          <div class="address_bar_area">
+            <img src="/image/icon_file.png" class="file_icon">
+            <input type="text" id="address_bar" class="address_bar text_box " readonly="readonly" style="background-color: rgb(70, 70, 65)">
+          </div>
 
-    <table class="selected_workflow">
-        <tr>
-            <th>Name</th>
-            <th>Progress</th>
-            <th>Create Date</th>
-            <th>Update Date</th>
-        </tr>
-        <tr>
-            <td id="project_name"></td>
-            <td>
+          <table class="selected_workflow">
+            <tr>
+              <th>Name</th>
+              <th>Progress</th>
+              <th>Create Date</th>
+              <th>Update Date</th>
+            </tr>
+            <tr>
+              <td id="project_name"></td>
+              <td>
                 <progress value="0" max="100" id="project_progress"></progress>
-            </td>
-            <td id="project_birthday"></td>
-            <td id="project_update"></td>
-        </tr>
-    </table>
+              </td>
+              <td id="project_birthday"></td>
+              <td id="project_update"></td>
+            </tr>
+          </table>
 
-    <div class="project_manage_area sub_content_area" onMouseDown="return false;">
-        <div id="project_tree_svg"></div>
-        <div style="width: 100%">
-            <table id="project_table">
+          <div class="project_manage_area sub_content_area" onMouseDown="return false;">
+            <div id="project_tree_svg"></div>
+            <div style="width: 100%">
+              <table id="project_table">
                 <thead id="project_table_head">
-                    <tr>
-                        <th>Name</th>
-                        <th>State</th>
-                        <th>Execution Date</th>
-                        <th>Finish Date</th>
-                        <th>Description</th>
-                    </tr>
+                  <tr>
+                    <th>Name</th>
+                    <th>State</th>
+                    <th>Execution Date</th>
+                    <th>Finish Date</th>
+                    <th>Description</th>
+                  </tr>
                 </thead>
                 <tbody id="project_table_body">
                 </tbody>
-            </table>
+              </table>
+            </div>
+          </div>
+
+          <div class="gray_panel" id="gray_panel"></div>
+          <div class="text_dialog_area dialog_area" id="dialog_area_input">
+            <p class="dialog_title" id="dialog_title_input"></p>
+            <div class="address_bar_area">
+              <span id="label_input"></span>
+              <input type="password" id="input_text_input" class="dialog_text_box text_box" autocomplete="off">
+            </div>
+            <div class="dialog_button_container">
+              <button type="button" class="dialog_button button" id="dialog_ok_button_input">OK</button>
+              <!--<button type="button" class="dialog_button button" id="dialog_cancel_button_input">Cancel</button>-->
+            </div>
+            <input type="file" id="file_select" style="display:none">
+          </div>
         </div>
+      </div>
+      <label class="pure-overlay" for="pure-toggle-right" data-overlay="right"></label>
     </div>
 
-    <div class="gray_panel" id="gray_panel"></div>
-    <div class="text_dialog_area dialog_area" id="dialog_area_input">
-        <p class="dialog_title" id="dialog_title_input"></p>
-        <div class="address_bar_area">
-            <span id="label_input"></span>
-            <input type="password" id="input_text_input" class="dialog_text_box text_box" autocomplete="off">
-        </div>
-        <div class="dialog_button_container">
-            <button type="button" class="dialog_button button" id="dialog_ok_button_input">OK</button>
-            <!--<button type="button" class="dialog_button button" id="dialog_cancel_button_input">Cancel</button>-->
-        </div>
-        <input type="file" id="file_select" style="display:none">
-    </div>
-        </div>
-    </div>
-    <label class="pure-overlay" for="pure-toggle-right" data-overlay="right"></label>
-</div>
-
-</body>
+  </body>
 
 </html>

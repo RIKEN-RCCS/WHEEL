@@ -21,13 +21,17 @@ app.get('/', function (req, res, next) {
     res.sendFile(path.resolve('dst/public/swf/home.html'));
 });
 app.post('/swf/project_manager.html', function (req, res, next) {
-    res.setHeader('Set-Cookie', req.cookies);
+    res.cookie('project', req.body.project);
+    res.sendFile(path.resolve('dst/public/swf/project_manager.html'));
 });
 app.post('/swf/workflow_manager.html', function (req, res, next) {
-    res.setHeader('Set-Cookie', req.cookies);
+    res.cookie('root', req.body.root);
+    res.cookie('index', req.body.index);
+    res.sendFile(path.resolve('dst/public/swf/workflow_manager.html'));
 });
 app.post('/swf/editor.html', function (req, res, next) {
-    res.setHeader('Set-Cookie', req.cookies);
+    res.cookie('edit', req.body.edit);
+    res.sendFile(path.resolve('dst/public/swf/editor.html'));
 });
 // port number
 var defaultPort = 443;
