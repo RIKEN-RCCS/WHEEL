@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 
-<head>
+  <head>
     <meta charset="UTF-8">
     <link type="text/css" rel="stylesheet" href="/css/jquery-ui-1.12.1.css" />
     <link type="text/css" rel="stylesheet" href="/css/jquery.contextMenu-2.4.4.css" />
+    <link type="text/css" rel="stylesheet" href="/css/pure-drawer.min-1.0.2.css" />
     <link type="text/css" rel="stylesheet" href="/css/style.css" />
     <script type="text/javascript" src="/third_party/jquery/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/third_party/jquery/jquery-ui-1.12.1.min.js"></script>
@@ -50,49 +51,67 @@
 
     <script type="text/javascript" src="/js/workflowManager.js"></script>
     <title>Scientific Workflow</title>
-</head>
+  </head>
 
-<body>
-    <header>
-        <a href="/swf/home.html">Scientific Workflow</a>
-    </header>
-    <div class="subtitle">Workflow Manager</div>
+  <body>
+    <div class="pure-container" data-effect="pure-effect-slide">
+      <input type="checkbox" id="pure-toggle-right" class="pure-toggle" data-toggle="right">
+      <label class="pure-toggle-label" for="pure-toggle-right" data-toggle-label="right">
+        <span class="pure-toggle-icon"></span>
+      </label>
 
-    <div class="address_bar_area">
-        <img src="/image/icon_workflow.png" class="icon" id="root_workflow">
-        <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly" style="background-color: rgb(70, 70, 65)">
-    </div>
+      <div class="pure-drawer" data-position="right">
+        <!-- Put your off canvas content here -->
+        <a href="/swf/remotehost.html">remote host</a>
+      </div>
+      <div class="pure-pusher-container">
+        <div class="pure-pusher">
+          <!-- Put your site content here -->
+          <header>
+            <a href="/swf/home.html">Scientific Workflow</a>
+          </header>
+          <div class="subtitle">Workflow Manager</div>
+          <div class="address_bar_area">
+            <img src="/image/icon_workflow.png" class="icon" id="root_workflow">
+            <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly" style="background-color: rgb(70, 70, 65)">
+          </div>
 
-    <table class="selected_workflow">
-        <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th></th>
-            <th></th>
-        </tr>
-        <tr>
-            <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px" spellcheck="false"></td>
-            <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);" spellcheck="false"></td>
-            <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
-            <td style="width: 90px"><button type="button" class="button" id="reset_button">Revert</button></td>
-        </tr>
-    </table>
+          <table class="selected_workflow">
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th></th>
+              <th></th>
+            </tr>
+            <tr>
+              <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px" spellcheck="false"></td>
+              <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);" spellcheck="false"></td>
+              <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
+              <td style="width: 90px"><button type="button" class="button" id="reset_button">Revert</button></td>
+            </tr>
+          </table>
 
-    <div class="workflow_manage_area sub_content_area">
-        <div id="tree_svg" class="workflow_tree_svg" onMouseDown="return false;"></div>
-        <div id="node_svg" class="node_tree"></div>
-        <div id="property" class="property"></div>
-    </div>
+          <div class="workflow_manage_area sub_content_area">
+            <div id="tree_svg" class="workflow_tree_svg" onMouseDown="return false;"></div>
+            <div id="node_svg" class="node_tree"></div>
+            <div id="property" class="property"></div>
+          </div>
 
-    <input type="file" id="file_select" style="display:none">
-    <div class="gray_panel" id="gray_panel"></div>
-    <div class="yesno_dialog_area dialog_area" id="dialog_area_yesno">
-        <p class="dialog_title" id="dialog_title_yesno"></p>
-        <div style="display: flex; flex-direction: row;">
-            <button type="button" class="button" id="dialog_ok_button_yesno">OK</button>
-            <button type="button" class="button" id="dialog_cancel_button_yesno">Cancel</button>
+          <input type="file" id="file_select" style="display:none">
+          <div class="gray_panel" id="gray_panel"></div>
+          <div class="yesno_dialog_area dialog_area" id="dialog_area_yesno">
+            <p class="dialog_title" id="dialog_title_yesno"></p>
+            <div style="display: flex; flex-direction: row;">
+              <button type="button" class="button" id="dialog_ok_button_yesno">OK</button>
+              <button type="button" class="button" id="dialog_cancel_button_yesno">Cancel</button>
+            </div>
+          </div>
         </div>
+      </div>
+      <label class="pure-overlay" for="pure-toggle-right" data-overlay="right"></label>
     </div>
-</body>
+
+
+  </body>
 
 </html>

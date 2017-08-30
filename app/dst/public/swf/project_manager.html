@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="/css/pure-drawer.min-1.0.2.css" />
     <link type="text/css" rel="stylesheet" href="/css/style.css" />
     <script type="text/javascript" src="/third_party/jquery/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/third_party/socket.io/socket.io-1.7.3.min.js"></script>
@@ -27,11 +28,23 @@
 </head>
 
 <body>
+<div class="pure-container" data-effect="pure-effect-slide">
+    <input type="checkbox" id="pure-toggle-right" class="pure-toggle" data-toggle="right">
+    <label class="pure-toggle-label" for="pure-toggle-right" data-toggle-label="right">
+        <span class="pure-toggle-icon"></span>
+    </label>
+
+    <div class="pure-drawer" data-position="right">
+        <!-- Put your off canvas content here -->
+        <a href="/swf/remotehost.html">remote host</a>
+    </div>
+    <div class="pure-pusher-container">
+        <div class="pure-pusher">
+            <!-- Put your site content here -->
     <header>
         <a href="/swf/home.html">Scientific Workflow</a>
     </header>
     <div class="subtitle">Project Manager</div>
-
     <div class="menu_area">
         <figure id="run_menu" class="menu_container">
             <img src="/image/icon_run.png" class="icon" id="run_button" />
@@ -105,6 +118,11 @@
         </div>
         <input type="file" id="file_select" style="display:none">
     </div>
+        </div>
+    </div>
+    <label class="pure-overlay" for="pure-toggle-right" data-overlay="right"></label>
+</div>
+
 </body>
 
 </html>
