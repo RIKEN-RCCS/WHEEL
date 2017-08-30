@@ -110,6 +110,7 @@ var eventListeners = {
     'onCreateNewProject': function (socket) {
         var eventName = 'onCreateNewProject';
         socket.on(eventName, function (directoryPath) {
+            var config = require('../dst/config/server');
             var projectFileName = config.system_name;
             var workflowFileName = config.default_filename;
             var projectJson = ServerUtility.readTemplateProjectJson();

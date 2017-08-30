@@ -104,6 +104,7 @@ var eventListeners={
 'onCreateNewProject': function (socket: SocketIO.Socket): void {
         const eventName = 'onCreateNewProject';
         socket.on(eventName, (directoryPath: string) => {
+            const config = require('../dst/config/server');
             const projectFileName: string = config.system_name;
             const workflowFileName: string = config.default_filename;
 
