@@ -1191,6 +1191,8 @@ class TaskOperator {
         exec(command, option, execCallback);
 
         function execCallback(err: Error, stdout: string, stderr: string) {
+            logger.stdout(stdout);
+            logger.stderr(stderr);
             if (err) {
                 logger.error(`error : ${err}`);
                 logger.error(`STDERR : ${stderr}`);
@@ -1246,11 +1248,11 @@ class TaskOperator {
             }
 
             function onOutCallback(data) {
-                logger.info(`STDOUT : ${data}`);
+                logger.SSHout(data.toString().trim());
             }
 
             function onErrCallback(data) {
-                logger.error(`STDERR : ${data}`);
+                logger.SSHerr(data.toString().trim());
             }
         }
     }

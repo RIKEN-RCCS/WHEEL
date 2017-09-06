@@ -51,6 +51,10 @@ app.use(function (err, req, res, next) {
 // set up http/socket server
 var server = http.createServer(app);
 var sio = require('socket.io')(server);
+// TODO independent socket.io instance and filename should be passed
+// hand over socket.io to logger
+logger.setSocket(sio.of('/swf/project'));
+logger.setLogfile("./TestLogFile.txt");
 // register event listeners
 var EventListeners = require("./eventListeners");
 EventListeners.add(sio, '/swf/home', [

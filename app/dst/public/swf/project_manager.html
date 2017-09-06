@@ -15,6 +15,7 @@
     <script type="text/javascript" src="/js/socketio/cleanProjectSocket.js"></script>
     <script type="text/javascript" src="/js/socketio/runProjectSocket.js"></script>
 
+
     <script type="text/javascript" src="/js/clientUtility.js"></script>
     <script type="text/javascript" src="/js/jqueryExtends.js"></script>
     <script type="text/javascript" src="/js/swfState.js"></script>
@@ -23,6 +24,7 @@
     <script type="text/javascript" src="/js/jsonFileType.js"></script>
     <script type="text/javascript" src="/js/commonParam.js"></script>
     <script type="text/javascript" src="/js/inputTextDialog.js"></script>
+    <script type="text/javascript" src="/js/logReciever.js"></script>
     <script type="text/javascript" src="/js/projectManager.js"></script>
     <title>Scientific Workflow</title>
   </head>
@@ -86,9 +88,9 @@
             </tr>
           </table>
 
-          <div class="project_manage_area sub_content_area" onMouseDown="return false;">
+          <div class="project_manage_area sub_content_area" id="project_tree" onMouseDown="return false;">
             <div id="project_tree_svg"></div>
-            <div style="width: 100%">
+            <div style="width: 40%">
               <table id="project_table">
                 <thead id="project_table_head">
                   <tr>
@@ -118,6 +120,22 @@
             </div>
             <input type="file" id="file_select" style="display:none">
           </div>
+
+        <div class="log_area">
+          <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug
+          <input type="checkbox" id="enableINFO"   checked="checked" value="node">Info
+          <input type="checkbox" id="enableWARN"   checked="checked" value="node">Warn
+          <input type="checkbox" id="enableERR"    checked="checked" value="node">Error
+          <input type="checkbox" id="enableStdout" checked="checked" value="node">stdout
+          <input type="checkbox" id="enableStderr" checked="checked" value="node">stderr
+          <input type="checkbox" id="enableSSHout" checked="checked" value="node">stdout(SSH)
+          <input type="checkbox" id="enableSSHerr" checked="checked" value="node">stderr(SSH)
+          <input type="checkbox" id="enable"   checked="checked" value="node">DEBUG
+          <button id="clear_log">clear</button>
+          <pre id="log"></pre>
+        </div>
+
+
         </div>
       </div>
       <label class="pure-overlay" for="pure-toggle-right" data-overlay="right"></label>

@@ -392,6 +392,18 @@ td {
 .pure-pusher{
     background-color: rgb(47, 47, 42);
 }
+.log_area{
+    color: rgb(240, 240, 240);
+}
+#project_tree{
+  width: 50%;
+  float: left;
+}
+#log{
+  height: calc(100% - 280px);
+  width: 45%;
+  overflow: auto;
+}
 
 input[type="text"],
 input[type="password"],

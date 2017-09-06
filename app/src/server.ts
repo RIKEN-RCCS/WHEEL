@@ -1,7 +1,6 @@
 import fs = require('fs');
 import path = require('path');
 import os = require('os');
-import socketio = require('socket.io');
 
 import express = require('express');
 import cookieParser = require('cookie-parser');
@@ -64,6 +63,11 @@ app.use(function(err, req, res, next) {
 const server = http.createServer(app);
 const sio = require('socket.io')(server);
 
+// TODO independent socket.io instance and filename should be passed
+// hand over socket.io to logger
+logger.setSocket(sio.of('/swf/project'));
+logger.setLogfile("./TestLogFile.txt");
+
 // register event listeners
 import EventListeners=require('./eventListeners');
 
@@ -101,6 +105,7 @@ EventListeners.add(sio, '/swf/editor', [
     'readFile',
     'writeFile' 
 ]);
+
 
 // Listen on provided port, on all network interfaces.
 server.listen(port);

@@ -1065,6 +1065,8 @@ var TaskOperator = (function () {
         };
         exec(command, option, execCallback);
         function execCallback(err, stdout, stderr) {
+            logger.stdout(stdout);
+            logger.stderr(stderr);
             if (err) {
                 logger.error("error : " + err);
                 logger.error("STDERR : " + stderr);
@@ -1113,10 +1115,10 @@ var TaskOperator = (function () {
                 }
             }
             function onOutCallback(data) {
-                logger.info("STDOUT : " + data);
+                logger.SSHout(data.toString().trim());
             }
             function onErrCallback(data) {
-                logger.error("STDERR : " + data);
+                logger.SSHerr(data.toString().trim());
             }
         }
     };

@@ -62,6 +62,7 @@ $(() => {
         setClickEventForCleanButton();
         setClickEventForPauseButton();
         setTaskNameEvents();
+        logReciever(socket);
     })();
 
     /**
