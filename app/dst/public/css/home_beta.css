@@ -1,0 +1,14 @@
+#projectList{
+  list-style-type: none;
+}
+#projectList li{
+  cursor: move;
+  width: 100%;
+  text-align: center;
+}
+#dialogue{
+  display: none;
+}
+.projectPath{
+  display: none;
+}
