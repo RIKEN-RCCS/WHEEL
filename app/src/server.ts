@@ -22,9 +22,8 @@ app.use(cookieParser());
 app.use(express.static(path.resolve('dst/public')));
 
 // routing
-app.get('/', function(req, res, next){
-  res.sendFile(path.resolve('dst/public/swf/home.html'));
-});
+var home=require('./routes/main');
+app.use('/', home);
 app.post('/swf/project_manager.html',function(req, res, next){
   res.cookie('project', req.body.project);
   res.sendFile(path.resolve('dst/public/swf/project_manager.html'));
@@ -70,10 +69,9 @@ logger.setLogfile("./TestLogFile.txt");
 
 // register event listeners
 import EventListeners=require('./eventListeners');
-import sioHelper=require('./socketioHelper');
-import home=require('./home');
 
-sioHelper.add(sio.of('/home'), home.eventListeners);
+import home_beta=require('./home_beta');
+home_beta.setup(sio);
 
 EventListeners.add(sio.of('/swf/home'), [
     'onGetFileList',

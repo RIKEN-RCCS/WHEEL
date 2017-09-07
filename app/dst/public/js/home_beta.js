@@ -1,19 +1,20 @@
 $(function () {
     // socket io
     var socket = io('/home');
+    //サーバからのデータ受信時の処理
     socket.on('projectList', function (data) {
         if (!data.hasOwnProperty('label'))
             return;
         if (!data.hasOwnProperty('path'))
             return;
-        $('#projectList').append("<li class=\"ui-state-default\"><span class=\"projectPath\">" + data.path + "</span>" + data.label + "</li>");
+        $('#projectList').append("<li class=\"ui-state-default\" id = " + data.id + " ><span class=\"projectPath\">" + data.path + "</span>" + data.label + "</li>");
     });
     socket.on('files', function (data) {
         if (!data.hasOwnProperty('name'))
             return;
         if (!data.hasOwnProperty('type'))
             return;
-        if (!(data.type in ['file', 'dir', 'link']))
+        if (!(data.type in ['file', 'dir', 'linkToFile', 'linkToDir']))
             return;
     });
     //TODO 別のファイルへお引っ越し?
@@ -55,10 +56,12 @@ $(function () {
     $('#projectList').disableSelection();
     // btn click event
     $('#btnNew').on("click", function (event) {
+        socket.emit('new', true);
         $('#normal').hide();
         $('#dialogue').show();
     });
     $('#btnImport').on("click", function (event) {
+        socket.emit('import', true);
         $('#normal').hide();
         $('#dialogue').show();
     });

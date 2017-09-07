@@ -9,7 +9,8 @@ export function add(sio: SocketIO.Namespace, listeners) {
   sio.on('connect', (socket: SocketIO.Socket) => {
     logger.debug(`socket on connect ${sio.name}`);
     for(var eventName in  listeners){
-      sio.on(eventName, listeners[eventName]);
+      logger.debug(`register event for ${eventName}`);
+      socket.on(eventName, listeners[eventName]);
     }
     socket.on('disconnect', () => {
       logger.debug(`socket on disconnect ${sio.name}`);

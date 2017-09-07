@@ -28,4 +28,4 @@ function setup(sio) {
     sioHelper.add(sio.of('/home'), eventListeners);
 }
 exports.setup = setup;
-//# sourceMappingURL=home.js.map
+//# sourceMappingURL=home_beta.js.map

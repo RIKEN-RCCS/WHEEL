@@ -11,7 +11,8 @@ function add(sio, listeners) {
     sio.on('connect', function (socket) {
         logger.debug("socket on connect " + sio.name);
         for (var eventName in listeners) {
-            sio.on(eventName, listeners[eventName]);
+            logger.debug("register event for " + eventName);
+            socket.on(eventName, listeners[eventName]);
         }
         socket.on('disconnect', function () {
             logger.debug("socket on disconnect " + sio.name);
