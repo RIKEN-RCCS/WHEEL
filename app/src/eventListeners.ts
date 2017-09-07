@@ -9,8 +9,7 @@ import ProjectOperator = require('./projectOperator');
 import writeTreeJson = require('./writeTreeJson');
 import projectUtility = require('./projectUtility');
 
-var eventListeners={
-'onAddHost': function(socket: SocketIO.Socket){
+var onAddHost= function(socket: SocketIO.Socket){
   const eventName = 'onAddHost';
   socket.on(eventName, (hostInfo: SwfHostJson) => {
       ServerUtility.addHostInfo(hostInfo, (err) => {
@@ -22,8 +21,9 @@ var eventListeners={
           }
       });
   });
-},
-'onDeleteHost': function (socket: SocketIO.Socket): void {
+}
+
+var onDeleteHost= function (socket: SocketIO.Socket): void {
     const eventName = 'onDeleteHost';
         socket.on(eventName, (name: string) => {
             ServerUtility.deleteHostInfo(name, (err) => {
@@ -35,8 +35,9 @@ var eventListeners={
                 }
             });
         });
-},
-'onGetRemoteHostList': function (socket: SocketIO.Socket): void {
+}
+
+var onGetRemoteHostList= function (socket: SocketIO.Socket): void {
         const eventName = 'onGetRemoteHostList';
         socket.on(eventName, () => {
             ServerUtility.getHostInfo((err, hostList) => {
@@ -51,8 +52,9 @@ var eventListeners={
                 }
             });
         });
-},
-'onGetFileList': function (socket: SocketIO.Socket): void {
+}
+
+var onGetFileList=function (socket: SocketIO.Socket): void {
     const eventName = 'onGetFileList';
     socket.on(eventName, (directoryPath: string, extension: string) => {
         directoryPath=directoryPath|| os.homedir()
@@ -74,8 +76,9 @@ var eventListeners={
             socket.emit(eventName);
         }
     });
-},
-'readFile': function (socket: SocketIO.Socket): void {
+}
+
+var readFile= function (socket: SocketIO.Socket): void {
       const eventName = 'readFile';
       socket.on(eventName, (readFilePath: string) => {
           fs.readFile(readFilePath, (err, data) => {
@@ -87,8 +90,9 @@ var eventListeners={
               socket.emit(eventName, data.toString());
           });
       });
-    },
-'writeFile': function (socket: SocketIO.Socket): void {
+}
+
+var writeFile= function (socket: SocketIO.Socket): void {
       const eventName = 'writeFile';
       socket.on(eventName, (filepath: string, data) => {
           fs.writeFile(filepath, data, (err) => {
@@ -100,8 +104,8 @@ var eventListeners={
               socket.emit(eventName, true);
           });
       });
-    },
-'onCreateNewProject': function (socket: SocketIO.Socket): void {
+    }
+var onCreateNewProject= function (socket: SocketIO.Socket): void {
         const eventName = 'onCreateNewProject';
         socket.on(eventName, (directoryPath: string) => {
             const config = require('../dst/config/server');
@@ -143,8 +147,9 @@ var eventListeners={
                 });
             });
         });
-},
-'onSshConnection': function (socket: SocketIO.Socket): void {
+}
+
+var onSshConnection=function (socket: SocketIO.Socket): void {
       const eventName = 'onSshConnection';
       const succeed = () => {
           socket.emit(eventName, true);
@@ -188,8 +193,9 @@ var eventListeners={
                 });
             });
         });
-},
-'onRunProject': function (socket: SocketIO.Socket): void {
+}
+
+var onRunProject= function (socket: SocketIO.Socket): void {
     const eventName = 'onRunProject';
         socket.on(eventName, (projectFilepath: string, host_passSet: { [name: string]: string }) => {
                 const projectOperator = new ProjectOperator(projectFilepath);
@@ -203,8 +209,9 @@ var eventListeners={
                 socket.emit(eventName, true);
             });
         });
-},
-'onGetFileStat': function (socket: SocketIO.Socket): void {
+}
+
+var onGetFileStat= function (socket: SocketIO.Socket): void {
     const eventName = 'onGetFileStat';
         socket.on(eventName, (filepath: string) => {
             fs.stat(filepath, (err, stats: fs.Stats) => {
@@ -215,8 +222,9 @@ var eventListeners={
                 }
             });
         });
-    },
-'readTreeJson': function (socket: SocketIO.Socket): void {
+}
+
+var readTreeJson= function (socket: SocketIO.Socket): void {
     const eventName = 'readTreeJson';
         socket.on(eventName, (workflowJsonFilePath: string) => {
             const roodDirectory = path.dirname(workflowJsonFilePath);
@@ -230,8 +238,9 @@ var eventListeners={
                 socket.emit(eventName);
             }
         });
-    },
-'writeTreeJson': function (socket: SocketIO.Socket): void {
+    }
+
+var onWriteTreeJson= function (socket: SocketIO.Socket): void {
     const eventName = 'writeTreeJson';
         socket.on(eventName, (projectDirectory: string, json: SwfTreeJson) => {
             const queue = [];
@@ -240,8 +249,9 @@ var eventListeners={
                 socket.emit(eventName);
             })
         });
-    },
-'onGetJsonFile': function (socket: SocketIO.Socket): void {
+    }
+
+var onGetJsonFile= function (socket: SocketIO.Socket): void {
     const eventName = 'onGetJsonFile';
         socket.on(eventName, (filetype: SwfType) => {
             const filepath = ServerUtility.getTypeOfJson(filetype).getTemplateFilePath();
@@ -255,8 +265,9 @@ var eventListeners={
                 }
             });
         });
-    },
-'onDeleteDirectory': function (socket: SocketIO.Socket): void {
+    }
+
+var onDeleteDirectory= function (socket: SocketIO.Socket): void {
     const  eventName = 'onDeleteDirectory';
         socket.on(eventName, (directorys: string[]) => {
             (function loop() {
@@ -273,8 +284,9 @@ var eventListeners={
                 });
             })();
         });
-    },
-'cleanProject': function (socket: SocketIO.Socket) {
+    }
+
+var cleanProject= function (socket: SocketIO.Socket) {
     const eventName = 'cleanProject';
         socket.on(eventName, (projectFilePath: string) => {
             const operator = new ProjectOperator(projectFilePath);
@@ -289,8 +301,10 @@ var eventListeners={
                 });
             });
         });
-    },
-'openProjectJson': function (socket: SocketIO.Socket): void {
+    }
+
+
+var openProjectJson= function (socket: SocketIO.Socket): void {
     const eventName = 'openProjectJson';
         socket.on(eventName, (projectFilepath: string) => {
           var projectJson = projectUtility.openProjectJson(projectFilepath);
@@ -301,8 +315,9 @@ var eventListeners={
             socket.emit(eventName);
           }
         });
-    },
-'UploadFileEvent': function (socket: SocketIO.Socket): void {
+    }
+
+var UploadFileEvent= function (socket: SocketIO.Socket): void {
 interface UploadedFileData {
     uploaded: number;
     data: any;
@@ -391,16 +406,35 @@ interface UploadedFileData {
                 });
             });
     }
+
+var eventListeners={
+'onAddHost': onAddHost,
+'onDeleteHost': onDeleteHost,
+'onGetRemoteHostList': onGetRemoteHostList,
+'onGetFileList': onGetFileList,
+'readFile': readFile,
+'writeFile': writeFile,
+'onCreateNewProject': onCreateNewProject,
+'onSshConnection': onSshConnection,
+'onRunProject': onRunProject,
+'onGetFileStat': onGetFileStat,
+'readTreeJson': readTreeJson,
+'writeTreeJson': onWriteTreeJson, 
+'onGetJsonFile': onGetJsonFile,
+'onDeleteDirectory': onDeleteDirectory,
+'cleanProject': cleanProject,
+'openProjectJson': openProjectJson,
+'UploadFileEvent': UploadFileEvent
 }
 
-export function add(sio: SocketIO.Server, namespace: string, listeners) {
-  sio.of(namespace).on('connect', (socket: SocketIO.Socket) => {
-    logger.debug(`socket on connect ${namespace}`);
+export function add(sio: SocketIO.Namespace, listeners) {
+  sio.on('connect', (socket: SocketIO.Socket) => {
+    logger.debug(`socket on connect ${sio.name}`);
     for(var eventName of listeners){
       eventListeners[eventName](socket);
     }
     socket.on('disconnect', () => {
-      logger.debug(`socket on disconnect ${namespace}`);
+      logger.debug(`socket on disconnect ${sio.name}`);
     });
   })
 }

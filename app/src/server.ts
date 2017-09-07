@@ -70,29 +70,33 @@ logger.setLogfile("./TestLogFile.txt");
 
 // register event listeners
 import EventListeners=require('./eventListeners');
+import sioHelper=require('./socketioHelper');
+import home=require('./home');
 
-EventListeners.add(sio, '/swf/home', [
+sioHelper.add(sio.of('/home'), home.eventListeners);
+
+EventListeners.add(sio.of('/swf/home'), [
     'onGetFileList',
     'onCreateNewProject' 
 ]);
-EventListeners.add(sio, '/swf/select', [
+EventListeners.add(sio.of('/swf/select'), [
    'onGetFileList'
 ]);
-EventListeners.add(sio, '/swf/project', [
+EventListeners.add(sio.of('/swf/project'), [
     'openProjectJson',
     'onRunProject',
     'onSshConnection',
     'onGetFileStat',
     'cleanProject'
 ]);
-EventListeners.add(sio, '/swf/remotehost', [
+EventListeners.add(sio.of('/swf/remotehost'), [
     'onGetRemoteHostList',
     'onSshConnection',
     'onAddHost',
     'onDeleteHost',
     'onGetFileList' 
 ]);
-EventListeners.add(sio, '/swf/workflow', [
+EventListeners.add(sio.of('/swf/workflow'), [
     'readTreeJson',
     'onGetFileStat',
     'writeTreeJson',
@@ -101,10 +105,11 @@ EventListeners.add(sio, '/swf/workflow', [
     'UploadFileEvent',
     'onDeleteDirectory'
 ]);
-EventListeners.add(sio, '/swf/editor', [
+EventListeners.add(sio.of('/swf/editor'), [
     'readFile',
     'writeFile' 
 ]);
+
 
 
 // Listen on provided port, on all network interfaces.
