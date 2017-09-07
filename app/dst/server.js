@@ -8,25 +8,31 @@ var http = require("http");
 var logger = require("./logger");
 var config = require('../dst/config/server');
 /*
- * set up express
+ * set up express, http and socket.io
  */
 var app = express();
+var server = http.createServer(app);
+var sio = require('socket.io')(server);
 // middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.resolve('dst/public'), { index: false }));
 // routing
-var home = require("./routes/main");
-var PM = require("./routes/projectManager");
-var WM = require("./routes/workflowManager");
-var editor = require("./routes/editor");
-var remoteHost = require("./routes/remoteHost");
-app.use('/', home);
-app.use('/swf/project_manager.html', PM);
-app.use('/swf/workflow_manager.html', WM);
-app.use('/swf/editor.html', editor);
-app.use('/swf/remotehost.html', remoteHost);
+var routes = {
+    "home": require('./routes/main'),
+    "home_beta": require('./routes/home_beta'),
+    "PM": require('./routes/projectManager'),
+    "WM": require('./routes/workflowManager'),
+    "editor": require('./routes/editor'),
+    "remoteHost": require('./routes/remoteHost')
+};
+app.use('/', routes.home);
+app.use('/home_beta', routes.home_beta);
+app.use('/swf/project_manager.html', routes.PM);
+app.use('/swf/workflow_manager.html', routes.WM);
+app.use('/swf/editor.html', routes.editor);
+app.use('/swf/remotehost.html', routes.remoteHost);
 // port number
 var defaultPort = 443;
 var port = parseInt(process.env.PORT) || config.port || defaultPort;
@@ -42,9 +48,6 @@ app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.send('something broken!');
 });
-// set up http/socket server
-var server = http.createServer(app);
-var sio = require('socket.io')(server);
 // TODO independent socket.io instance and filename should be passed
 // hand over socket.io to logger
 logger.setSocket(sio.of('/swf/project'));
