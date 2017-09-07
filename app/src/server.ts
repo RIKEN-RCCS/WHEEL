@@ -19,24 +19,20 @@ var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.resolve('dst/public')));
+app.use(express.static(path.resolve('dst/public'), {index: false}));
 
 // routing
-var home=require('./routes/main');
+import home=require('./routes/main');
+import PM=require('./routes/projectManager');
+import WM=require('./routes/workflowManager');
+import editor=require('./routes/editor');
+import remoteHost=require('./routes/remoteHost');
 app.use('/', home);
-app.post('/swf/project_manager.html',function(req, res, next){
-  res.cookie('project', req.body.project);
-  res.sendFile(path.resolve('dst/public/swf/project_manager.html'));
-});
-app.post('/swf/workflow_manager.html',function(req, res, next){
-  res.cookie('root', req.body.root);
-  res.cookie('index', req.body.index);
-  res.sendFile(path.resolve('dst/public/swf/workflow_manager.html'));
-});
-app.post('/swf/editor.html',function(req, res, next){
-  res.cookie('edit', req.body.edit);
-  res.sendFile(path.resolve('dst/public/swf/editor.html'));
-});
+app.use('/swf/project_manager.html', PM);
+app.use('/swf/workflow_manager.html', WM);
+app.use('/swf/editor.html', editor);
+app.use('/swf/remotehost.html', remoteHost);
+
 
 // port number
 var defaultPort=443;
@@ -54,7 +50,7 @@ app.use(function(err, req, res, next) {
   logger.error(err)
   // render the error page
   res.status(err.status || 500);
-  res.send('something broke!');
+  res.send('something broken!');
 }); 
 
 
