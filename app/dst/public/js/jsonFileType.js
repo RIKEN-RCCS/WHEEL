@@ -1,75 +1,65 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 /**
  * json file base class
  */
-var JsonFileTypeBase = (function () {
+class JsonFileTypeBase {
     /**
      * create new instance
      * @param type SwfType
      */
-    function JsonFileTypeBase(type) {
+    constructor(type) {
         /**
          * property information
          */
         this.propertyInfo = [
             {
                 key: 'name',
-                readonly: function () { return false; },
+                readonly: () => { return false; },
                 type: 'string',
                 isUpdateUI: true,
                 order: 0,
-                validation: function (tree, v) {
+                validation: (tree, v) => {
                     return v.trim().length > 0;
                 },
-                callback: function (tree, object, name) {
-                    var file = tree.toSwfFile();
+                callback: (tree, object, name) => {
+                    const file = tree.toSwfFile();
                     file.name = name;
                     tree.updatePath(file);
                 }
             },
             {
                 key: 'description',
-                readonly: function () { return false; },
+                readonly: () => { return false; },
                 type: 'string',
                 order: 10,
-                callback: function (tree, object, description) {
-                    var file = tree.toSwfFile();
+                callback: (tree, object, description) => {
+                    const file = tree.toSwfFile();
                     file.description = description;
                     tree.updatePath(file);
                 }
             },
             {
                 key: 'path',
-                readonly: function () { return false; },
+                readonly: () => { return false; },
                 type: 'string',
                 order: 20,
-                validation: function (tree, v) {
+                validation: (tree, v) => {
                     return ClientUtility.isValidDirectoryName(v) && !tree.getParent().isDirnameDuplicate(v);
                 },
-                callback: function (tree, object, path) {
-                    var file = tree.toSwfFile();
+                callback: (tree, object, path) => {
+                    const file = tree.toSwfFile();
                     file.path = path;
                     tree.updatePath(file);
                 }
             },
             {
                 key: 'clean_up',
-                readonly: function () { return false; },
+                readonly: () => { return false; },
                 type: 'boolean',
                 order: 300
             },
             {
                 key: 'max_size_receive_file',
-                readonly: function () { return false; },
+                readonly: () => { return false; },
                 type: 'number',
                 order: 310
             }
@@ -80,27 +70,27 @@ var JsonFileTypeBase = (function () {
      * get extension string
      * @return get extension string
      */
-    JsonFileTypeBase.prototype.getExtension = function () {
+    getExtension() {
         return config.extension[this.type.toLowerCase()];
-    };
+    }
     /**
      * get json file type string
      * @return get json file type string
      */
-    JsonFileTypeBase.prototype.getType = function () {
+    getType() {
         return this.type;
-    };
+    }
     /**
      * get default json file name
      * @return get default json file name
      */
-    JsonFileTypeBase.prototype.getDefaultName = function () {
-        return "" + config.default_filename + this.getExtension();
-    };
+    getDefaultName() {
+        return `${config.default_filename}${this.getExtension()}`;
+    }
     /**
      * add script property information
      */
-    JsonFileTypeBase.prototype.addScript = function () {
+    addScript() {
         this.propertyInfo.push({
             key: 'script',
             ishash: true,
@@ -108,38 +98,38 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: function (tree) { return tree.isExistUploadScript(); },
+                    readonly: (tree) => { return tree.isExistUploadScript(); },
                     type: 'string',
                 }
             ],
             button: [{
                     key: 'Upload...',
                     title: 'script',
-                    callback: function (tree) {
+                    callback: (tree) => {
                         $(document).trigger('selectFile', {
                             isMultiple: false,
-                            callback: function (files) {
+                            callback: (files) => {
                                 tree.addScriptFile(files[0]);
                             }
                         });
                     }
                 }]
         });
-    };
+    }
     /**
      * add job script property information
      */
-    JsonFileTypeBase.prototype.addJobScript = function () {
+    addJobScript() {
         this.propertyInfo.push({
             key: 'job_script',
             ishash: true,
@@ -147,38 +137,38 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: function () { return true; },
+                    readonly: () => { return true; },
                     type: 'string'
                 }
             ],
             button: [{
                     key: 'Upload...',
                     title: 'job_script',
-                    callback: function (tree) {
+                    callback: (tree) => {
                         $(document).trigger('selectFile', {
                             isMultiple: false,
-                            callback: function (files) {
+                            callback: (files) => {
                                 tree.addJobScriptFile(files[0]);
                             }
                         });
                     }
                 }]
         });
-    };
+    }
     /**
      * add for loop property information
      */
-    JsonFileTypeBase.prototype.addForParam = function () {
+    addForParam() {
         this.propertyInfo.push({
             key: 'forParam',
             ishash: true,
@@ -186,11 +176,11 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'start',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'number',
-                    validation: function (tree, v) {
-                        var forWorkflow = tree;
-                        var num = parseInt(v);
+                    validation: (tree, v) => {
+                        const forWorkflow = tree;
+                        const num = parseInt(v);
                         if (forWorkflow.forParam !== undefined) {
                             return num < forWorkflow.forParam.end;
                         }
@@ -199,11 +189,11 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'end',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'number',
-                    validation: function (tree, v) {
-                        var forWorkflow = tree;
-                        var num = parseInt(v);
+                    validation: (tree, v) => {
+                        const forWorkflow = tree;
+                        const num = parseInt(v);
                         if (forWorkflow.forParam !== undefined) {
                             return forWorkflow.forParam.start < num;
                         }
@@ -212,19 +202,19 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'step',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'number',
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return parseInt(v) > 0;
                     }
                 }
             ]
         });
-    };
+    }
     /**
      * add input files property information
      */
-    JsonFileTypeBase.prototype.addInputFile = function () {
+    addInputFile() {
         this.propertyInfo.push({
             key: 'input_files',
             ishash: true,
@@ -233,9 +223,9 @@ var JsonFileTypeBase = (function () {
                     key: 'Add',
                     title: 'input_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
-                        var file = SwfFile.getDefault();
-                        var parent = tree.getParent();
+                    callback: (tree) => {
+                        const file = SwfFile.getDefault();
+                        const parent = tree.getParent();
                         tree.input_files.push(file);
                         parent.addInputFileToParent(tree, file.path);
                     }
@@ -248,41 +238,41 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
                     isUpdateUI: true,
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return v.trim().length > 0;
                     },
-                    callback: function (tree, object, name) {
-                        var file = new SwfFile(object);
+                    callback: (tree, object, name) => {
+                        const file = new SwfFile(object);
                         file.name = name;
                         tree.updateInputFile(object, file);
                     }
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
-                    callback: function (tree, object, description) {
-                        var file = new SwfFile(object);
+                    callback: (tree, object, description) => {
+                        const file = new SwfFile(object);
                         file.description = description;
                         tree.updateInputFile(object, file);
                     }
                 },
                 {
                     key: 'path',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
                     isUpdateUI: true,
-                    validation: function (tree, newData, oldData) {
+                    validation: (tree, newData, oldData) => {
                         if (ClientUtility.normalize(newData) === ClientUtility.normalize(oldData)) {
                             return true;
                         }
                         return !tree.isEnablePath(newData);
                     },
-                    callback: function (tree, object, path) {
-                        var newFile = new SwfFile(object);
+                    callback: (tree, object, path) => {
+                        const newFile = new SwfFile(object);
                         newFile.path = path;
                         newFile.type = SwfFileType.getFileType(newFile);
                         tree.updateInputFile(object, newFile);
@@ -291,10 +281,10 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'required',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'boolean',
-                    callback: function (tree, object, value) {
-                        var file = new SwfFile(object);
+                    callback: (tree, object, value) => {
+                        const file = new SwfFile(object);
                         file.required = value === 'true';
                         tree.updateInputFile(object, file);
                     }
@@ -304,20 +294,20 @@ var JsonFileTypeBase = (function () {
                     key: 'Delete',
                     title: 'input_file',
                     isUpdateUI: true,
-                    callback: function (tree, object) {
-                        var filepath = object.path;
-                        var parent = tree.getParent();
+                    callback: (tree, object) => {
+                        const filepath = object.path;
+                        const parent = tree.getParent();
                         parent.deleteInputFileFromParent(tree, filepath);
-                        var index = tree.input_files.indexOf(object);
+                        const index = tree.input_files.indexOf(object);
                         tree.input_files.splice(index, 1);
                     }
                 }]
         });
-    };
+    }
     /**
      * add output files property information
      */
-    JsonFileTypeBase.prototype.addOutputFile = function () {
+    addOutputFile() {
         this.propertyInfo.push({
             key: 'output_files',
             ishash: true,
@@ -326,9 +316,9 @@ var JsonFileTypeBase = (function () {
                     key: 'Add',
                     title: 'output_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
-                        var file = SwfFile.getDefault();
-                        var parent = tree.getParent();
+                    callback: (tree) => {
+                        const file = SwfFile.getDefault();
+                        const parent = tree.getParent();
                         tree.output_files.push(file);
                         parent.addOutputFileToParent(tree, file.path);
                     }
@@ -341,41 +331,41 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
                     isUpdateUI: true,
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return v.trim() ? true : false;
                     },
-                    callback: function (tree, object, name) {
-                        var file = new SwfFile(object);
+                    callback: (tree, object, name) => {
+                        const file = new SwfFile(object);
                         file.name = name;
                         tree.updateOutputFile(object, file);
                     }
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
-                    callback: function (tree, object, description) {
-                        var file = new SwfFile(object);
+                    callback: (tree, object, description) => {
+                        const file = new SwfFile(object);
                         file.description = description;
                         tree.updateOutputFile(object, file);
                     }
                 },
                 {
                     key: 'path',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
                     isUpdateUI: true,
-                    validation: function (tree, newData, oldData) {
+                    validation: (tree, newData, oldData) => {
                         if (ClientUtility.normalize(newData) === ClientUtility.normalize(oldData)) {
                             return true;
                         }
                         return !tree.isEnablePath(newData);
                     },
-                    callback: function (tree, object, path) {
-                        var newFile = new SwfFile(object);
+                    callback: (tree, object, path) => {
+                        const newFile = new SwfFile(object);
                         newFile.path = path;
                         newFile.type = SwfFileType.getFileType(newFile);
                         tree.updateOutputFile(object, newFile);
@@ -384,10 +374,10 @@ var JsonFileTypeBase = (function () {
                 },
                 {
                     key: 'required',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'boolean',
-                    callback: function (tree, object, value) {
-                        var file = new SwfFile(object);
+                    callback: (tree, object, value) => {
+                        const file = new SwfFile(object);
                         file.required = value === 'true';
                         tree.updateOutputFile(object, file);
                     }
@@ -397,20 +387,20 @@ var JsonFileTypeBase = (function () {
                     key: 'Delete',
                     title: 'output_file',
                     isUpdateUI: true,
-                    callback: function (tree, object) {
-                        var filepath = object.path;
-                        var parent = tree.getParent();
+                    callback: (tree, object) => {
+                        const filepath = object.path;
+                        const parent = tree.getParent();
                         parent.deleteOutputFileFromParent(tree, filepath);
-                        var index = tree.output_files.indexOf(object);
+                        const index = tree.output_files.indexOf(object);
                         tree.output_files.splice(index, 1);
                     }
                 }]
         });
-    };
+    }
     /**
      * add send files property information
      */
-    JsonFileTypeBase.prototype.addSendFile = function () {
+    addSendFile() {
         this.propertyInfo.push({
             key: 'send_files',
             ishash: true,
@@ -420,10 +410,10 @@ var JsonFileTypeBase = (function () {
                     key: 'Upload...',
                     title: 'send_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
+                    callback: (tree) => {
                         $(document).trigger('selectFile', {
                             isMultiple: true,
-                            callback: function (files) {
+                            callback: (files) => {
                                 tree.addSendFile(files);
                             }
                         });
@@ -433,9 +423,9 @@ var JsonFileTypeBase = (function () {
                     key: 'Add',
                     title: 'send_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
-                        var rtask = tree;
-                        var file = SwfFile.getDefault();
+                    callback: (tree) => {
+                        const rtask = tree;
+                        const file = SwfFile.getDefault();
                         rtask.send_files.push(file);
                     }
                 }
@@ -448,24 +438,24 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return v.trim() ? true : false;
                     }
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
                     type: 'string',
-                    readonly: function (tree, sendFile) {
+                    readonly: (tree, sendFile) => {
                         return tree.isExistSendfile(sendFile);
                     },
-                    callback: function (tree, object, path) {
+                    callback: (tree, object, path) => {
                         object.type = SwfFileType.getFileType(path);
                     }
                 }
@@ -474,16 +464,16 @@ var JsonFileTypeBase = (function () {
                     key: 'Delete',
                     title: 'send_file',
                     isUpdateUI: true,
-                    callback: function (tree, object, name) {
+                    callback: (tree, object, name) => {
                         tree.deleteSendfile(object);
                     }
                 }]
         });
-    };
+    }
     /**
      * add receive files property information
      */
-    JsonFileTypeBase.prototype.addReceiveFile = function () {
+    addReceiveFile() {
         this.propertyInfo.push({
             key: 'receive_files',
             ishash: true,
@@ -492,9 +482,9 @@ var JsonFileTypeBase = (function () {
                     key: 'Add',
                     title: 'receive_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
-                        var rtask = tree;
-                        var file = SwfFile.getDefault();
+                    callback: (tree) => {
+                        const rtask = tree;
+                        const file = SwfFile.getDefault();
                         rtask.receive_files.push(file);
                     }
                 }]
@@ -506,28 +496,28 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return v.trim() ? true : false;
                     }
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
-                    callback: function (tree, object, path) {
+                    callback: (tree, object, path) => {
                         object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
                     key: 'required',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'boolean'
                 }
             ],
@@ -535,18 +525,18 @@ var JsonFileTypeBase = (function () {
                     key: 'Delete',
                     title: 'receive_file',
                     isUpdateUI: true,
-                    callback: function (tree, object, name) {
-                        var rtask = tree;
-                        var index = rtask.receive_files.indexOf(object);
+                    callback: (tree, object, name) => {
+                        const rtask = tree;
+                        const index = rtask.receive_files.indexOf(object);
                         rtask.receive_files.splice(index, 1);
                     }
                 }]
         });
-    };
+    }
     /**
      * add script parameter property information
      */
-    JsonFileTypeBase.prototype.addScriptParam = function () {
+    addScriptParam() {
         this.propertyInfo.push({
             key: 'script_param',
             ishash: true,
@@ -554,27 +544,27 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'cores',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'number',
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return parseInt(v) > 0;
                     }
                 },
                 {
                     key: 'nodes',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'number',
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return parseInt(v) > 0;
                     }
                 }
             ]
         });
-    };
+    }
     /**
      * add parameter file property information
      */
-    JsonFileTypeBase.prototype.addParameterFile = function () {
+    addParameterFile() {
         this.propertyInfo.push({
             key: 'parameter_file',
             ishash: true,
@@ -582,38 +572,38 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: function () { return true; },
+                    readonly: () => { return true; },
                     type: 'string',
                 }
             ],
             button: [{
                     key: 'Upload...',
                     title: 'parameter_file',
-                    callback: function (tree) {
+                    callback: (tree) => {
                         $(document).trigger('selectFile', {
                             isMultiple: false,
-                            callback: function (files) {
+                            callback: (files) => {
                                 tree.addParameterFile(files[0]);
                             }
                         });
                     }
                 }]
         });
-    };
+    }
     /**
      * add host property information
      */
-    JsonFileTypeBase.prototype.addHost = function () {
+    addHost() {
         this.propertyInfo.push({
             key: 'remote',
             ishash: true,
@@ -621,16 +611,16 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'host',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'host'
                 }
             ]
         });
-    };
+    }
     /**
      * add upload property information
      */
-    JsonFileTypeBase.prototype.addUpload = function () {
+    addUpload() {
         this.propertyInfo.push({
             key: 'upload_files',
             ishash: true,
@@ -639,10 +629,10 @@ var JsonFileTypeBase = (function () {
                     key: 'Upload...',
                     title: 'upload_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
+                    callback: (tree) => {
                         $(document).trigger('selectFile', {
                             isMultiple: true,
-                            callback: function (files) {
+                            callback: (files) => {
                                 tree.addUploadFile(files);
                             }
                         });
@@ -656,106 +646,95 @@ var JsonFileTypeBase = (function () {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return true; }
+                    readonly: () => { return true; }
                 }
             ],
             button: [{
                     key: 'Delete',
                     title: 'upload_file',
                     isUpdateUI: true,
-                    callback: function (tree, object, name) {
+                    callback: (tree, object, name) => {
                         tree.deleteUploadfile(object);
                     }
                 }]
         });
-    };
+    }
     /**
      * sort property info
      */
-    JsonFileTypeBase.prototype.sortPropertyInfo = function () {
-        this.propertyInfo.sort(function (a, b) { return a.order < b.order ? -1 : 1; });
-    };
+    sortPropertyInfo() {
+        this.propertyInfo.sort((a, b) => a.order < b.order ? -1 : 1);
+    }
     /**
      * get property information
      * @returns property information
      */
-    JsonFileTypeBase.prototype.getPropertyInfo = function () {
+    getPropertyInfo() {
         return this.propertyInfo;
-    };
-    return JsonFileTypeBase;
-}());
+    }
+}
 /**
  * type of project class
  */
-var TypeProject = (function (_super) {
-    __extends(TypeProject, _super);
+class TypeProject extends JsonFileTypeBase {
     /**
      * create new instance for project
      */
-    function TypeProject() {
-        return _super.call(this, SwfType.PROJECT) || this;
+    constructor() {
+        super(SwfType.PROJECT);
     }
-    return TypeProject;
-}(JsonFileTypeBase));
+}
 /**
  * type of task class
  */
-var TypeTask = (function (_super) {
-    __extends(TypeTask, _super);
+class TypeTask extends JsonFileTypeBase {
     /**
      * create new instance for task
      */
-    function TypeTask() {
-        var _this = _super.call(this, SwfType.TASK) || this;
-        _this.addScript();
-        _this.addInputFile();
-        _this.addOutputFile();
-        _this.addUpload();
-        _this.sortPropertyInfo();
-        return _this;
+    constructor() {
+        super(SwfType.TASK);
+        this.addScript();
+        this.addInputFile();
+        this.addOutputFile();
+        this.addUpload();
+        this.sortPropertyInfo();
     }
-    return TypeTask;
-}(JsonFileTypeBase));
+}
 /**
  * type of workflow class
  */
-var TypeWorkflow = (function (_super) {
-    __extends(TypeWorkflow, _super);
+class TypeWorkflow extends JsonFileTypeBase {
     /**
      * create new instance for workflow
      */
-    function TypeWorkflow() {
-        var _this = _super.call(this, SwfType.WORKFLOW) || this;
-        _this.addUpload();
-        return _this;
+    constructor() {
+        super(SwfType.WORKFLOW);
+        this.addUpload();
     }
-    return TypeWorkflow;
-}(JsonFileTypeBase));
+}
 /**
  * type of job class
  */
-var TypeJob = (function (_super) {
-    __extends(TypeJob, _super);
+class TypeJob extends JsonFileTypeBase {
     /**
      * create new instance for job
      */
-    function TypeJob() {
-        var _this = _super.call(this, SwfType.JOB) || this;
-        _this.addScrip();
-        _this.addJobScript();
-        _this.addInputFile();
-        _this.addOutputFile();
-        _this.addSendFile();
-        _this.addReceiveFile();
-        _this.addScriptParam();
-        _this.addHost();
-        _this.sortPropertyInfo();
-        return _this;
+    constructor() {
+        super(SwfType.JOB);
+        this.addScrip();
+        this.addJobScript();
+        this.addInputFile();
+        this.addOutputFile();
+        this.addSendFile();
+        this.addReceiveFile();
+        this.addScriptParam();
+        this.addHost();
+        this.sortPropertyInfo();
     }
     /**
      * add script property information for job
      */
-    TypeJob.prototype.addScrip = function () {
+    addScrip() {
         this.propertyInfo.push({
             key: 'script',
             ishash: true,
@@ -763,25 +742,25 @@ var TypeJob = (function (_super) {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: function () { return true; },
+                    readonly: () => { return true; },
                     type: 'string'
                 }
             ],
             button: [{
                     key: 'Edit',
                     title: 'submit_script',
-                    validation: function (tree) {
-                        var jobTask = tree;
+                    validation: (tree) => {
+                        const jobTask = tree;
                         if (jobTask.job_script.path) {
                             return true;
                         }
@@ -789,16 +768,16 @@ var TypeJob = (function (_super) {
                             return false;
                         }
                     },
-                    callback: function (tree) {
+                    callback: (tree) => {
                         $(document).trigger('editScript');
                     }
                 }]
         });
-    };
+    }
     /**
      * add host property information for job
      */
-    TypeJob.prototype.addHost = function () {
+    addHost() {
         this.propertyInfo.push({
             key: 'remote',
             ishash: true,
@@ -806,108 +785,93 @@ var TypeJob = (function (_super) {
             item: [
                 {
                     key: 'host',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'host'
                 },
                 {
                     key: 'job_scheduler',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'scheduler'
                 }
             ]
         });
-    };
-    return TypeJob;
-}(JsonFileTypeBase));
+    }
+}
 /**
  * type of remote task class
  */
-var TypeRemoteTask = (function (_super) {
-    __extends(TypeRemoteTask, _super);
+class TypeRemoteTask extends JsonFileTypeBase {
     /**
      * create new instance for remote task
      */
-    function TypeRemoteTask() {
-        var _this = _super.call(this, SwfType.REMOTETASK) || this;
-        _this.addScript();
-        _this.addInputFile();
-        _this.addOutputFile();
-        _this.addSendFile();
-        _this.addReceiveFile();
-        _this.addHost();
-        _this.sortPropertyInfo();
-        return _this;
+    constructor() {
+        super(SwfType.REMOTETASK);
+        this.addScript();
+        this.addInputFile();
+        this.addOutputFile();
+        this.addSendFile();
+        this.addReceiveFile();
+        this.addHost();
+        this.sortPropertyInfo();
     }
-    return TypeRemoteTask;
-}(JsonFileTypeBase));
+}
 /**
  * type of for class
  */
-var TypeFor = (function (_super) {
-    __extends(TypeFor, _super);
+class TypeFor extends JsonFileTypeBase {
     /**
      * create new instance for loop
      */
-    function TypeFor() {
-        var _this = _super.call(this, SwfType.FOR) || this;
-        _this.addForParam();
-        _this.addUpload();
-        _this.sortPropertyInfo();
-        return _this;
+    constructor() {
+        super(SwfType.FOR);
+        this.addForParam();
+        this.addUpload();
+        this.sortPropertyInfo();
     }
-    return TypeFor;
-}(JsonFileTypeBase));
+}
 /**
  * type of if class
  */
-var TypeIf = (function (_super) {
-    __extends(TypeIf, _super);
+class TypeIf extends JsonFileTypeBase {
     /**
      * create new instance for if
      */
-    function TypeIf() {
-        var _this = _super.call(this, SwfType.IF) || this;
-        _this.addUpload();
-        return _this;
+    constructor() {
+        super(SwfType.IF);
+        this.addUpload();
     }
-    return TypeIf;
-}(JsonFileTypeBase));
+}
 /**
  * type of else class
  */
-var TypeElse = (function (_super) {
-    __extends(TypeElse, _super);
+class TypeElse extends JsonFileTypeBase {
     /**
      * create new instance for else
      */
-    function TypeElse() {
-        var _this = _super.call(this, SwfType.ELSE) || this;
-        _this.addUpload();
-        return _this;
+    constructor() {
+        super(SwfType.ELSE);
+        this.addUpload();
     }
-    return TypeElse;
-}(JsonFileTypeBase));
+}
 /**
  * type of condition class
  */
-var TypeCondition = (function (_super) {
-    __extends(TypeCondition, _super);
+class TypeCondition extends JsonFileTypeBase {
     /**
      * create new instance for condition
      */
-    function TypeCondition() {
-        var _this = _super.call(this, SwfType.CONDITION) || this;
-        _this.addScript();
-        _this.addInputFile();
-        _this.addOutputFile();
-        _this.addUpload();
-        _this.sortPropertyInfo();
-        return _this;
+    constructor() {
+        super(SwfType.CONDITION);
+        this.addScript();
+        this.addInputFile();
+        this.addOutputFile();
+        this.addUpload();
+        this.sortPropertyInfo();
     }
     /**
      * add output files property information for condition
      */
-    TypeCondition.prototype.addOutputFile = function () {
+    addOutputFile() {
         this.propertyInfo.push({
             key: 'output_files',
             ishash: true,
@@ -916,8 +880,8 @@ var TypeCondition = (function (_super) {
                     key: 'Add',
                     title: 'output_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
-                        var file = SwfFile.getDefault();
+                    callback: (tree) => {
+                        const file = SwfFile.getDefault();
                         tree.output_files.push(file);
                     }
                 }]
@@ -929,32 +893,32 @@ var TypeCondition = (function (_super) {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
                     isUpdateUI: true,
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return v.trim() ? true : false;
                     }
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return !tree.isEnablePath(v);
                     },
-                    callback: function (tree, object, path) {
+                    callback: (tree, object, path) => {
                         object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
                     key: 'required',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'boolean'
                 }
             ],
@@ -962,36 +926,33 @@ var TypeCondition = (function (_super) {
                     key: 'Delete',
                     title: 'output_file',
                     isUpdateUI: true,
-                    callback: function (tree, object) {
-                        var index = tree.output_files.indexOf(object);
+                    callback: (tree, object) => {
+                        const index = tree.output_files.indexOf(object);
                         tree.output_files.splice(index, 1);
                     }
                 }]
         });
-    };
-    return TypeCondition;
-}(JsonFileTypeBase));
+    }
+}
 /**
  * type of break class
  */
-var TypeBreak = (function (_super) {
-    __extends(TypeBreak, _super);
+class TypeBreak extends JsonFileTypeBase {
     /**
      * create new instance for break
      */
-    function TypeBreak() {
-        var _this = _super.call(this, SwfType.BREAK) || this;
-        _this.addScript();
-        _this.addInputFile();
-        _this.addOutputFile();
-        _this.addUpload();
-        _this.sortPropertyInfo();
-        return _this;
+    constructor() {
+        super(SwfType.BREAK);
+        this.addScript();
+        this.addInputFile();
+        this.addOutputFile();
+        this.addUpload();
+        this.sortPropertyInfo();
     }
     /**
      * add output files property information for break
      */
-    TypeBreak.prototype.addOutputFile = function () {
+    addOutputFile() {
         this.propertyInfo.push({
             key: 'output_files',
             ishash: true,
@@ -1000,8 +961,8 @@ var TypeBreak = (function (_super) {
                     key: 'Add',
                     title: 'output_files',
                     isUpdateUI: true,
-                    callback: function (tree) {
-                        var file = SwfFile.getDefault();
+                    callback: (tree) => {
+                        const file = SwfFile.getDefault();
                         tree.output_files.push(file);
                     }
                 }]
@@ -1013,32 +974,32 @@ var TypeBreak = (function (_super) {
             item: [
                 {
                     key: 'name',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
                     isUpdateUI: true,
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return v.trim() ? true : false;
                     }
                 },
                 {
                     key: 'description',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string'
                 },
                 {
                     key: 'path',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'string',
-                    validation: function (tree, v) {
+                    validation: (tree, v) => {
                         return !tree.isEnablePath(v);
                     },
-                    callback: function (tree, object, path) {
+                    callback: (tree, object, path) => {
                         object.type = SwfFileType.getFileType(path);
                     }
                 },
                 {
                     key: 'required',
-                    readonly: function () { return false; },
+                    readonly: () => { return false; },
                     type: 'boolean'
                 }
             ],
@@ -1046,30 +1007,26 @@ var TypeBreak = (function (_super) {
                     key: 'Delete',
                     title: 'output_file',
                     isUpdateUI: true,
-                    callback: function (tree, object) {
-                        var index = tree.output_files.indexOf(object);
+                    callback: (tree, object) => {
+                        const index = tree.output_files.indexOf(object);
                         tree.output_files.splice(index, 1);
                     }
                 }]
         });
-    };
-    return TypeBreak;
-}(JsonFileTypeBase));
+    }
+}
 /**
  * type of parameter study class
  */
-var TypePStudy = (function (_super) {
-    __extends(TypePStudy, _super);
+class TypePStudy extends JsonFileTypeBase {
     /**
      * create new instance for parameter study
      */
-    function TypePStudy() {
-        var _this = _super.call(this, SwfType.PSTUDY) || this;
-        _this.addParameterFile();
-        _this.addUpload();
-        _this.sortPropertyInfo();
-        return _this;
+    constructor() {
+        super(SwfType.PSTUDY);
+        this.addParameterFile();
+        this.addUpload();
+        this.sortPropertyInfo();
     }
-    return TypePStudy;
-}(JsonFileTypeBase));
+}
 //# sourceMappingURL=jsonFileType.js.map

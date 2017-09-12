@@ -1,6 +1,7 @@
 {
     "port": 8089,
     "remotehost": "./config/remotehost.json",
+    "projectList": "./config/projectList",
     "template": {
         "project": "./config/template.prj.json",
         "workflow": "./config/template.wf.json",

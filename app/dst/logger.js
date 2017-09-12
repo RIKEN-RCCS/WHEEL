@@ -1,5 +1,5 @@
 "use strict";
-var fs = require("fs");
+const fs = require("fs");
 /**
  * log lever
  */
@@ -30,127 +30,125 @@ var LogLevel;
 /**
  * logger class
  */
-var Logger = (function () {
-    function Logger() {
-    }
+class Logger {
     /**
      * set log lovel
      * @param level log level
      */
-    Logger.setLogLevel = function (level) {
+    static setLogLevel(level) {
         this.logLevel = level;
-    };
+    }
     /**
      * recieve socket and enable log output with io.emit
      */
-    Logger.setSocket = function (socket) {
+    static setSocket(socket) {
         this.socket = socket;
-    };
+    }
     /**
      * disable log output with io.emit
      */
-    Logger.disableSocket = function () {
+    static disableSocket() {
         this.socket = null;
-    };
+    }
     /**
      * enable log output to file and create output stream
      */
-    Logger.setLogfile = function (filename) {
+    static setLogfile(filename) {
         this.logfile = filename;
-        this.info("log file " + this.logfile + " open");
-    };
+        this.info(`log file ${this.logfile} open`);
+    }
     /**
      * disable log output to file
      */
-    Logger.disableLogfile = function () {
-        this.info("log file " + this.logfile + " closed");
+    static disableLogfile() {
+        this.info(`log file ${this.logfile} closed`);
         this.logfile = null;
-    };
+    }
     /**
      * output debug log
      * @param object display data
      */
-    Logger.debug = function (object) {
+    static debug(object) {
         if (this.logLevel <= LogLevel.debug) {
             this.print(object, 'DBG   ');
         }
-    };
+    }
     /**
      * output info log
      * @param object display data
      */
-    Logger.info = function (object) {
+    static info(object) {
         if (this.logLevel <= LogLevel.info) {
             this.print(object, 'INFO  ');
         }
-    };
+    }
     /**
      * output warning log
      * @param object display data
      */
-    Logger.warn = function (object) {
+    static warn(object) {
         if (this.logLevel <= LogLevel.warn) {
             this.print(object, 'WARN  ');
         }
-    };
+    }
     /**
      * output error log
      * @param object display data
      */
-    Logger.error = function (object) {
+    static error(object) {
         if (this.logLevel <= LogLevel.error) {
             this.print(object, 'ERR   ');
         }
-    };
+    }
     /**
      * output stdout from child_process
      * @param object display data
      */
-    Logger.stdout = function (object) {
+    static stdout(object) {
         this.print(object, 'Stdout');
-    };
+    }
     /**
      * output stderr from child_process
      * @param object display data
      */
-    Logger.stderr = function (object) {
+    static stderr(object) {
         this.print(object, 'Stderr');
-    };
+    }
     /**
      * output stdout from ssh
      * @param object display data
      */
-    Logger.SSHout = function (object) {
+    static SSHout(object) {
         this.print(object, 'SSHout');
-    };
+    }
     /**
      * output stderr from ssh
      * @param object display data
      */
-    Logger.SSHerr = function (object) {
+    static SSHerr(object) {
         this.print(object, 'SSHerr');
-    };
+    }
     /**
      * get date string
      * @return date string
      */
-    Logger.getDateString = function () {
-        var date = new Date();
-        return date.toLocaleDateString() + " " + date.toLocaleTimeString();
-    };
+    static getDateString() {
+        const date = new Date();
+        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    }
     /**
      * print actual log message
      *
      */
-    Logger.print = function (object, level) {
+    static print(object, level) {
         if (typeof object == 'object') {
-            console.log(this.getDateString() + " [" + level + "] ", object);
+            console.log(`${this.getDateString()} [${level}] `, object);
         }
         else {
-            console.log(this.getDateString() + " [" + level + "] " + object);
+            console.log(`${this.getDateString()} [${level}] ${object}`);
         }
         var line = this.getDateString();
-        line += " [" + level + "] ";
+        line += ` [${level}] `;
         line += JSON.stringify(object);
         if (this.socket != null) {
             var eventName = 'log' + level;
@@ -159,20 +157,19 @@ var Logger = (function () {
         if (this.logfile != null) {
             fs.appendFile(this.logfile, line + '\n', function () { return; });
         }
-    };
-    /**
-     * log level
-     */
-    Logger.logLevel = LogLevel.debug;
-    /**
-     * socket.io server
-     */
-    Logger.socket = null;
-    /**
-     * log file
-     */
-    Logger.logfile = null;
-    return Logger;
-}());
+    }
+}
+/**
+ * log level
+ */
+Logger.logLevel = LogLevel.debug;
+/**
+ * socket.io server
+ */
+Logger.socket = null;
+/**
+ * log file
+ */
+Logger.logfile = null;
 module.exports = Logger;
 //# sourceMappingURL=logger.js.map

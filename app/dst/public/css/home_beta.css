@@ -1,3 +1,4 @@
+/*display: none以外の指定は特に無くても動作に支障はありません*/
 #projectList{
   list-style-type: none;
 }
@@ -5,6 +6,10 @@
   cursor: move;
   width: 100%;
   text-align: center;
+}
+#fileList{
+  height: 400px;
+  overflow: auto;
 }
 #dialogue{
   display: none;

@@ -68,10 +68,10 @@ logger.setSocket(sio.of('/swf/project'));
 logger.setLogfile("./TestLogFile.txt");
 
 // register event listeners
-import EventListeners=require('./eventListeners');
-
 import home_beta=require('./home_beta');
 home_beta.setup(sio);
+
+import EventListeners=require('./eventListeners');
 
 EventListeners.add(sio.of('/swf/home'), [
     'onGetFileList',

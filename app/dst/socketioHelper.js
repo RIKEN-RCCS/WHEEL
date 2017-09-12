@@ -1,23 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var logger = require("./logger");
+const logger = require("./logger");
 /*
  * helper function for socketio.on()
- * @param sio      socket.io's namespace
- * @param listners dict which contains eventName and callback function pair
+ * @param sio       socket.io's namespace
+ * @param eventName event name
+ * @param callback  callback function
  *
  */
-function add(sio, listeners) {
-    sio.on('connect', function (socket) {
-        logger.debug("socket on connect " + sio.name);
-        for (var eventName in listeners) {
-            logger.debug("register event for " + eventName);
-            socket.on(eventName, listeners[eventName]);
-        }
-        socket.on('disconnect', function () {
-            logger.debug("socket on disconnect " + sio.name);
+function default_1(sio, eventName, callback) {
+    sio.on('connect', (socket) => {
+        logger.debug(`socket on connect ${sio.name}`);
+        socket.on(eventName, callback);
+        socket.on('disconnect', () => {
+            logger.debug(`socket on disconnect ${sio.name}`);
         });
     });
 }
-exports.add = add;
+exports.default = default_1;
 //# sourceMappingURL=socketioHelper.js.map

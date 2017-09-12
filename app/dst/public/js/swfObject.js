@@ -1,22 +1,12 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 /**
  * Swf File definition
  */
-var SwfFile = (function () {
+class SwfFile {
     /**
      * create new instance
      * @param swfFile swf file data
      */
-    function SwfFile(swfFile) {
+    constructor(swfFile) {
         if (swfFile == null) {
             throw new TypeError('parameter is null');
         }
@@ -30,77 +20,76 @@ var SwfFile = (function () {
      * get this instance name
      * @return this instance name
      */
-    SwfFile.prototype.toString = function () {
+    toString() {
         return this.name;
-    };
+    }
     /**
      * get normalized path
      * @return get normalized path
      */
-    SwfFile.prototype.getNormalPath = function () {
+    getNormalPath() {
         return ClientUtility.normalize(this.path);
-    };
+    }
     /**
      * clone this SwfFile instance
      */
-    SwfFile.prototype.clone = function () {
+    clone() {
         return new SwfFile(this);
-    };
+    }
     /**
      * set SwfFile data
      * @param file SwfFile instance
      */
-    SwfFile.prototype.set = function (file) {
+    set(file) {
         this.name = file.name;
         this.description = file.description;
         this.path = file.path;
         this.type = file.type;
         this.required = file.required;
-    };
+    }
     /**
      * get default setting SwfFile instance
      * @return default setting SwfFile instance
      */
-    SwfFile.getDefault = function () {
-        var rand = Math.floor(Date.now() / 100) % 100000;
-        var filename = "File" + ("00000" + rand).slice(-5);
+    static getDefault() {
+        const rand = Math.floor(Date.now() / 100) % 100000;
+        const filename = `File${`00000${rand}`.slice(-5)}`;
         return new SwfFile({
             name: 'name',
             description: '',
-            path: "./" + filename,
+            path: `./${filename}`,
             type: 'file',
             required: true
         });
-    };
+    }
     /**
      * rename file path
      * @param tree tree instance
      * @param oldDirectory old directory name
      * @param newDirectory new directory name
      */
-    SwfFile.prototype.renamePath = function (tree, oldDirectory, newDirectory) {
-        var oldFullpath = tree.getFullpath(this);
-        var newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+    renamePath(tree, oldDirectory, newDirectory) {
+        const oldFullpath = tree.getFullpath(this);
+        const newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
         this.path = tree.getRelativePath(newFullpath);
-    };
-    return SwfFile;
-}());
+    }
+}
 /**
  * Swf Task definition
  */
-var SwfTask = (function () {
+class SwfTask {
     /**
      * create new instance
      * @param swfTask task json data
      */
-    function SwfTask(swfTask) {
+    constructor(swfTask) {
         this.name = swfTask.name;
         this.description = swfTask.description;
         this.path = swfTask.path.replace(/[\\/]/g, '/');
         this.type = swfTask.type;
         this.script = swfTask.script == null ? null : new SwfFile(swfTask.script);
-        this.input_files = JSON.parse(JSON.stringify(swfTask.input_files)).map(function (file) { return new SwfFile(file); });
-        this.output_files = JSON.parse(JSON.stringify(swfTask.output_files)).map(function (file) { return new SwfFile(file); });
+        this.input_files = JSON.parse(JSON.stringify(swfTask.input_files)).map(file => new SwfFile(file));
+        this.output_files = JSON.parse(JSON.stringify(swfTask.output_files)).map(file => new SwfFile(file));
         this.clean_up = swfTask.clean_up;
         this.max_size_receive_file = swfTask.max_size_receive_file;
         this.birth = swfTask.birth;
@@ -110,39 +99,33 @@ var SwfTask = (function () {
      * @param path path name
      * @returns get the file with the same input file path name as the specified path name
      */
-    SwfTask.prototype.getInputFile = function (path) {
-        return this.input_files.filter(function (file) { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
-    };
+    getInputFile(path) {
+        return this.input_files.filter(file => { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
+    }
     /**
      * get the file with the same output file path name as the specified path name
      * @param path path name
      * @returns get the file with the same output file path name as the specified path name
      */
-    SwfTask.prototype.getOutputFile = function (path) {
-        return this.output_files.filter(function (file) { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
-    };
-    return SwfTask;
-}());
+    getOutputFile(path) {
+        return this.output_files.filter(file => { return file.getNormalPath() === ClientUtility.normalize(path); })[0];
+    }
+}
 /**
  * Swf Remote Task definition
  */
-var SwfRemoteTask = (function (_super) {
-    __extends(SwfRemoteTask, _super);
-    function SwfRemoteTask() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return SwfRemoteTask;
-}(SwfTask));
+class SwfRemoteTask extends SwfTask {
+}
 /**
  * Swf Relation definition
  */
-var SwfRelation = (function () {
+class SwfRelation {
     /**
      * create new instance
      * @param object befor task index or relation data
      * @param index_after_task after task index
      */
-    function SwfRelation(object, index_after_task) {
+    constructor(object, index_after_task) {
         if (typeof object === 'number') {
             this.index_before_task = object;
             this.index_after_task = index_after_task;
@@ -156,20 +139,19 @@ var SwfRelation = (function () {
      * get class string
      * @return class string
      */
-    SwfRelation.prototype.toString = function () {
-        return this.index_before_task + "_" + this.index_after_task;
-    };
-    return SwfRelation;
-}());
+    toString() {
+        return `${this.index_before_task}_${this.index_after_task}`;
+    }
+}
 /**
  * Swf Relation files definition
  */
-var SwfRelationFile = (function () {
+class SwfRelationFile {
     /**
      * create new instance
      * @param swfRelation relation data
      */
-    function SwfRelationFile(swfRelation) {
+    constructor(swfRelation) {
         this.index_before_task = swfRelation.index_before_task;
         this.path_output_file = swfRelation.path_output_file;
         this.index_after_task = swfRelation.index_after_task;
@@ -179,141 +161,137 @@ var SwfRelationFile = (function () {
      * get input file name
      * @return input file name
      */
-    SwfRelationFile.prototype.getOutputFileName = function () {
-        return this.index_before_task + "_" + ClientUtility.normalize(this.path_output_file);
-    };
+    getOutputFileName() {
+        return `${this.index_before_task}_${ClientUtility.normalize(this.path_output_file)}`;
+    }
     /**
      * get output file name
      * @return output file name
      */
-    SwfRelationFile.prototype.getInputFileName = function () {
-        return this.index_after_task + "_" + ClientUtility.normalize(this.path_input_file);
-    };
+    getInputFileName() {
+        return `${this.index_after_task}_${ClientUtility.normalize(this.path_input_file)}`;
+    }
     /**
      * get class string
      * @return class string
      */
-    SwfRelationFile.prototype.toString = function () {
-        return this.getOutputFileName() + "_" + this.getInputFileName();
-    };
+    toString() {
+        return `${this.getOutputFileName()}_${this.getInputFileName()}`;
+    }
     /**
      * rename output file path
      * @param tree tree instance
      * @param oldDirectory old directory name
      * @param newDirectory new directory name
      */
-    SwfRelationFile.prototype.renameOutputPath = function (tree, oldDirectory, newDirectory) {
-        var oldFullpath = tree.getFullpath(this.path_output_file);
-        var newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+    renameOutputPath(tree, oldDirectory, newDirectory) {
+        const oldFullpath = tree.getFullpath(this.path_output_file);
+        const newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
         this.path_output_file = tree.getRelativePath(newFullpath);
-    };
+    }
     /**
      * rename input file path
      * @param tree tree instance
      * @param oldDirectory old directory name
      * @param newDirectory new directory name
      */
-    SwfRelationFile.prototype.renameInputPath = function (tree, oldDirectory, newDirectory) {
-        var oldFullpath = tree.getFullpath(this.path_input_file);
-        var newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
+    renameInputPath(tree, oldDirectory, newDirectory) {
+        const oldFullpath = tree.getFullpath(this.path_input_file);
+        const newFullpath = oldFullpath.replace(oldDirectory, newDirectory);
         this.path_input_file = tree.getRelativePath(newFullpath);
-    };
-    return SwfRelationFile;
-}());
+    }
+}
 /**
  * Swf Workflow definition
  */
-var SwfWorkflow = (function (_super) {
-    __extends(SwfWorkflow, _super);
+class SwfWorkflow extends SwfTask {
     /**
      * create new instance
      * @param swfWorkflow workflow json data
      */
-    function SwfWorkflow(swfWorkflow) {
-        var _this = _super.call(this, swfWorkflow) || this;
+    constructor(swfWorkflow) {
+        super(swfWorkflow);
         /**
          * children files
          */
-        _this.children_file = [];
+        this.children_file = [];
         /**
          * task relations
          */
-        _this.relations = [];
+        this.relations = [];
         /**
          * file relations
          */
-        _this.file_relations = [];
+        this.file_relations = [];
         /**
          * task posistions
          */
-        _this.positions = [];
+        this.positions = [];
         if (swfWorkflow.file_relations) {
-            var relationFiles = JSON.parse(JSON.stringify(swfWorkflow.file_relations));
-            _this.file_relations = relationFiles.map(function (r) { return new SwfRelationFile(r); });
+            const relationFiles = JSON.parse(JSON.stringify(swfWorkflow.file_relations));
+            this.file_relations = relationFiles.map(r => new SwfRelationFile(r));
         }
         if (swfWorkflow.children_file) {
-            var files = JSON.parse(JSON.stringify(swfWorkflow.children_file));
-            _this.children_file = files.map(function (file) { return new SwfFile(file); });
+            const files = JSON.parse(JSON.stringify(swfWorkflow.children_file));
+            this.children_file = files.map(file => new SwfFile(file));
         }
         if (swfWorkflow.relations) {
-            var relations = JSON.parse(JSON.stringify(swfWorkflow.relations));
-            _this.relations = relations.map(function (relation) { return new SwfRelation(relation); });
+            const relations = JSON.parse(JSON.stringify(swfWorkflow.relations));
+            this.relations = relations.map(relation => new SwfRelation(relation));
         }
         if (swfWorkflow.positions) {
-            _this.positions = JSON.parse(JSON.stringify(swfWorkflow.positions));
+            this.positions = JSON.parse(JSON.stringify(swfWorkflow.positions));
         }
-        return _this;
     }
     /**
      * get the number with the same input file path name as the specified path name
      * @param path path name
      * @return the number with the same input file path name as the specified path name
      */
-    SwfWorkflow.prototype.inputFilePathCount = function (path) {
+    inputFilePathCount(path) {
         path = ClientUtility.normalize(path);
-        var counter = 0;
-        this.file_relations.forEach(function (relation) {
+        let counter = 0;
+        this.file_relations.forEach(relation => {
             if (ClientUtility.normalize(relation.path_input_file) === path) {
                 counter++;
             }
         });
         return counter;
-    };
+    }
     /**
      * get the number with the same output file path name as the specified path name
      * @param path path name
      * @return the number with the same input file path name as the specified path name
      */
-    SwfWorkflow.prototype.outputFilePathCount = function (path) {
+    outputFilePathCount(path) {
         path = ClientUtility.normalize(path);
-        var counter = 0;
-        this.file_relations.forEach(function (relation) {
+        let counter = 0;
+        this.file_relations.forEach(relation => {
             if (ClientUtility.normalize(relation.path_output_file) === path) {
                 counter++;
             }
         });
         return counter;
-    };
+    }
     /**
      * whether input file path is duplicate or not
      * @param path check path name
      * @return whether input file path is duplicate or not
      */
-    SwfWorkflow.prototype.isExistDuplicateInputFilePath = function (path) {
-        var counter = this.inputFilePathCount(path);
+    isExistDuplicateInputFilePath(path) {
+        const counter = this.inputFilePathCount(path);
         return counter > 1;
-    };
+    }
     /**
      * whether output file path is duplicate or not
      * @param path check path name
      * @return whether output file path is duplicate or not
      */
-    SwfWorkflow.prototype.isExistDuplicateOutputFilePath = function (path) {
-        var counter = this.outputFilePathCount(path);
+    isExistDuplicateOutputFilePath(path) {
+        const counter = this.outputFilePathCount(path);
         return counter > 1;
-    };
-    return SwfWorkflow;
-}(SwfTask));
+    }
+}
 // /**
 //  *
 //  */
@@ -342,19 +320,17 @@ var SwfWorkflow = (function (_super) {
 /**
  * Swf Host definition
  */
-var SwfHost = (function () {
+class SwfHost {
     /**
      * create new instance
      * @param host host json data
      */
-    function SwfHost(host) {
-        var _this = this;
-        Object.keys(host).forEach(function (key) {
-            _this[key] = host[key];
+    constructor(host) {
+        Object.keys(host).forEach(key => {
+            this[key] = host[key];
         });
     }
-    return SwfHost;
-}());
+}
 // /**
 //  * Swf Job definition
 //  */
@@ -374,12 +350,12 @@ var SwfHost = (function () {
 /**
  * log json class
  */
-var SwfLog = (function () {
+class SwfLog {
     /**
      * create new instance
      * @param logJson log json data
      */
-    function SwfLog(logJson) {
+    constructor(logJson) {
         /**
          * indexes are local task index array from root log
          */
@@ -394,8 +370,8 @@ var SwfLog = (function () {
         this.path = logJson.path;
         this.order = logJson.order;
         if (logJson.children) {
-            var children = JSON.parse(JSON.stringify(logJson.children));
-            this.children = children.map(function (child) { return new SwfLog(child); });
+            const children = JSON.parse(JSON.stringify(logJson.children));
+            this.children = children.map(child => new SwfLog(child));
         }
         if (logJson.remote) {
             this.remote = JSON.parse(JSON.stringify(logJson.remote));
@@ -405,134 +381,131 @@ var SwfLog = (function () {
      * get index string
      * @return index string
      */
-    SwfLog.prototype.getIndexString = function () {
+    getIndexString() {
         return this.indexes.join('_');
-    };
+    }
     /**
      * get hierarchy number
      * @return hierarchy number
      */
-    SwfLog.prototype.getHierarchy = function () {
+    getHierarchy() {
         return this.indexes.length - 1;
-    };
+    }
     /**
      * create SwfLog instance
      * @param logJson logJson
      * @return SwfLog instance
      */
-    SwfLog.create = function (logJson) {
+    static create(logJson) {
         this.root = new SwfLog(logJson);
         this.renumberingIndex(this.root);
         return this.root;
-    };
+    }
     /**
      * renumbering index
      * @param log SwfLog instance
      * @param indexes parent index array
      */
-    SwfLog.renumberingIndex = function (log, indexes) {
-        var _this = this;
-        if (indexes === void 0) { indexes = [0]; }
+    static renumberingIndex(log, indexes = [0]) {
         log.indexes = indexes;
-        log.children.forEach(function (child, index) {
-            var newIndexes = JSON.parse(JSON.stringify(indexes));
+        log.children.forEach((child, index) => {
+            const newIndexes = JSON.parse(JSON.stringify(indexes));
             newIndexes.push(index);
-            _this.renumberingIndex(child, newIndexes);
+            this.renumberingIndex(child, newIndexes);
         });
-    };
+    }
     /**
      * get SwfLog instance
      * @param index index string (ex '0_1_0')
      * @return SwfLog instance
      */
-    SwfLog.getSwfLogInstance = function (index) {
-        var notSeachedList = [this.root];
+    static getSwfLogInstance(index) {
+        const notSeachedList = [this.root];
         while (true) {
-            var log = notSeachedList.shift();
+            const log = notSeachedList.shift();
             if (!log) {
                 break;
             }
             if (log.getIndexString() === index) {
                 return log;
             }
-            log.children.forEach(function (child) {
+            log.children.forEach(child => {
                 notSeachedList.push(child);
             });
         }
         return null;
-    };
+    }
     /**
      * get max hierarchy number
      * @return max hierarchy number
      */
-    SwfLog.getMaxHierarchy = function () {
-        var max = 0;
-        var notSeachedList = [this.root];
+    static getMaxHierarchy() {
+        let max = 0;
+        const notSeachedList = [this.root];
         while (true) {
-            var tree = notSeachedList.shift();
+            const tree = notSeachedList.shift();
             if (!tree) {
                 break;
             }
             max = Math.max(max, tree.getHierarchy());
-            tree.children.forEach(function (child) {
+            tree.children.forEach(child => {
                 notSeachedList.push(child);
             });
         }
         return max;
-    };
+    }
     /**
      * get used host list
      * @return used host list
      */
-    SwfLog.getHostList = function () {
-        var hash = {};
-        var notSeachedList = [this.root];
+    static getHostList() {
+        const hash = {};
+        const notSeachedList = [this.root];
         while (true) {
-            var log = notSeachedList.shift();
+            const log = notSeachedList.shift();
             if (!log) {
                 break;
             }
             if (log.remote && !ClientUtility.isLocalHost(log.remote)) {
                 hash[log.remote.name] = log.remote;
             }
-            log.children.forEach(function (child) {
+            log.children.forEach(child => {
                 notSeachedList.push(child);
             });
         }
-        return Object.keys(hash).map(function (key) { return hash[key]; });
-    };
+        return Object.keys(hash).map(key => hash[key]);
+    }
     /**
      * whether this task is planning or not
      * @return whether this task is planning or not
      */
-    SwfLog.prototype.isPlanning = function () {
+    isPlanning() {
         return SwfState.isPlanning(this);
-    };
+    }
     /**
      * whether this task is finished or not
      * @return whether this task is finished or not
      */
-    SwfLog.prototype.isFinished = function () {
+    isFinished() {
         return SwfState.isFinished(this);
-    };
+    }
     /**
      * whether this task is running or not
      * @return whether this task is running or not
      */
-    SwfLog.prototype.isRunning = function () {
+    isRunning() {
         return !this.isFinished() && !this.isPlanning();
-    };
-    return SwfLog;
-}());
+    }
+}
 /**
  * project json class
  */
-var SwfProject = (function () {
+class SwfProject {
     /**
      * create project class instance
      * @param projectJson project json
      */
-    function SwfProject(projectJson) {
+    constructor(projectJson) {
         this.name = projectJson.name;
         this.description = projectJson.description;
         this.state = projectJson.state;
@@ -544,41 +517,41 @@ var SwfProject = (function () {
      * whether project is planning or not
      * @return whether project is planning or not
      */
-    SwfProject.prototype.isPlanning = function () {
+    isPlanning() {
         return SwfState.isPlanning(this);
-    };
+    }
     /**
      * whether project is finished or not
      * @return whether project is finished or not
      */
-    SwfProject.prototype.isFinished = function () {
+    isFinished() {
         return SwfState.isFinished(this);
-    };
+    }
     /**
      * whether project is running or not
      * @return whether project is running or not
      */
-    SwfProject.prototype.isRunning = function () {
+    isRunning() {
         return !this.isFinished() && !this.isPlanning();
-    };
+    }
     /**
      * get progress rate
      * @return progress rate
      */
-    SwfProject.prototype.getProgressRate = function () {
-        var finishedCount = 0;
-        var runningCount = 0;
-        var planningCount = 0;
+    getProgressRate() {
+        let finishedCount = 0;
+        let runningCount = 0;
+        let planningCount = 0;
         function getFinishedCount(log) {
-            var count = 0;
-            var notSearchedList = [log];
+            let count = 0;
+            const notSearchedList = [log];
             while (true) {
-                var shiftLog = notSearchedList.shift();
+                const shiftLog = notSearchedList.shift();
                 if (!shiftLog) {
                     break;
                 }
                 count++;
-                shiftLog.children.forEach(function (child) { return notSearchedList.push(child); });
+                shiftLog.children.forEach(child => notSearchedList.push(child));
             }
             return count;
         }
@@ -588,15 +561,14 @@ var SwfProject = (function () {
             }
             else if (log.isRunning()) {
                 runningCount++;
-                log.children.forEach(function (child) { return getStateCount(child); });
+                log.children.forEach(child => getStateCount(child));
             }
             else {
                 planningCount++;
-                log.children.forEach(function (child) { return getStateCount(child); });
+                log.children.forEach(child => getStateCount(child));
             }
         })(this.log);
         return (finishedCount * 2 + runningCount) * 100 / ((finishedCount + planningCount + runningCount) * 2);
-    };
-    return SwfProject;
-}());
+    }
+}
 //# sourceMappingURL=swfObject.js.map

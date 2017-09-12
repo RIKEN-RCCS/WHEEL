@@ -1,30 +1,30 @@
-$(function () {
+$(() => {
     // socket io
-    var socket = io('/swf/remotehost');
-    var getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
-    var sshConnectionSocket = new SshConnectionSocket(socket);
-    var addHostSocket = new AddHostSocket(socket);
-    var deleteHostSocket = new DeleteHostSocket(socket);
-    var getFileListSocket = new GetFileListSocket(socket, '');
+    const socket = io('/swf/remotehost');
+    const getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
+    const sshConnectionSocket = new SshConnectionSocket(socket);
+    const addHostSocket = new AddHostSocket(socket);
+    const deleteHostSocket = new DeleteHostSocket(socket);
+    const getFileListSocket = new GetFileListSocket(socket, '');
     // elements
-    var hostTable = $('#host_table');
-    var sshKeyRadio = $('#authtype_sshkey');
-    var browseButton = $('#browse_button');
-    var addHostButton = $('#add_host_button');
-    var addError = $('#add_error_area');
-    var inputText = $('#input_text_browse');
-    var textLabel = $('#text_label');
-    var textHost = $('#text_host');
-    var textPath = $('#text_path');
-    var textId = $('#text_id');
-    var sshKeyAddress = $('#sshkey_address');
-    var textBoxes = [textLabel, textHost, textPath, textId, sshKeyAddress];
+    const hostTable = $('#host_table');
+    const sshKeyRadio = $('#authtype_sshkey');
+    const browseButton = $('#browse_button');
+    const addHostButton = $('#add_host_button');
+    const addError = $('#add_error_area');
+    const inputText = $('#input_text_browse');
+    const textLabel = $('#text_label');
+    const textHost = $('#text_host');
+    const textPath = $('#text_path');
+    const textId = $('#text_id');
+    const sshKeyAddress = $('#sshkey_address');
+    const textBoxes = [textLabel, textHost, textPath, textId, sshKeyAddress];
     // romote host list
-    var remotHostList = [];
+    let remotHostList = [];
     // file dialog
-    var dialog = new FileDialog(getFileListSocket);
+    const dialog = new FileDialog(getFileListSocket);
     // connect flag to server
-    var isConnect = false;
+    let isConnect = false;
     /**
      * initialize
      */
@@ -41,7 +41,7 @@ $(function () {
      * set button click event to open file dialog
      */
     function setClickEventForBrowseButton() {
-        browseButton.on('click', function () {
+        browseButton.on('click', () => {
             dialog.updateDialog();
             dialog.show();
         });
@@ -50,15 +50,15 @@ $(function () {
      * set button click event to add host information
      */
     function setClickEventForAddButton() {
-        addHostButton.click(function () {
-            var isCheckedSshKey = sshKeyRadio.prop('checked');
-            var label = textLabel.val().trim();
-            var host = textHost.val().trim();
-            var path = textPath.val().trim();
-            var name = textId.val().trim();
-            var sshkey = sshKeyAddress.val().trim();
-            var errorText = '';
-            textBoxes.forEach(function (textbox) { return textbox.borderValid(); });
+        addHostButton.click(() => {
+            const isCheckedSshKey = sshKeyRadio.prop('checked');
+            const label = textLabel.val().trim();
+            const host = textHost.val().trim();
+            const path = textPath.val().trim();
+            const name = textId.val().trim();
+            const sshkey = sshKeyAddress.val().trim();
+            let errorText = '';
+            textBoxes.forEach(textbox => textbox.borderValid());
             if (!ClientUtility.isLocalHost(host)) {
                 if (isCheckedSshKey && !sshkey) {
                     sshKeyAddress.borderInvalid();
@@ -81,7 +81,7 @@ $(function () {
                 textLabel.borderInvalid();
                 errorText = 'Label is empty or white space';
             }
-            if (remotHostList.filter(function (host) { return host.name === label; }).length) {
+            if (remotHostList.filter(host => host.name === label).length) {
                 textLabel.borderInvalid();
                 errorText = 'Label is duplicate';
             }
@@ -90,7 +90,7 @@ $(function () {
                 return;
             }
             addError.text('Added');
-            var hostInfo = {
+            const hostInfo = {
                 name: label,
                 host: host,
                 path: path,
@@ -100,8 +100,8 @@ $(function () {
             if (isCheckedSshKey) {
                 hostInfo.privateKey = sshkey;
             }
-            textBoxes.forEach(function (textbox) { return textbox.val(''); });
-            addHostSocket.emit(hostInfo, function (isAdd) {
+            textBoxes.forEach(textbox => textbox.val(''));
+            addHostSocket.emit(hostInfo, (isAdd) => {
                 getHostList();
             });
         });
@@ -110,8 +110,8 @@ $(function () {
      * set several events for host list
      */
     function setHostListEvents() {
-        $(document).on('change', '.auth_type_radio', function () {
-            var isCheckedSshKey = sshKeyRadio.prop('checked');
+        $(document).on('change', '.auth_type_radio', () => {
+            const isCheckedSshKey = sshKeyRadio.prop('checked');
             if (!isCheckedSshKey) {
                 enableRadioButtonToPass();
             }
@@ -125,24 +125,24 @@ $(function () {
      */
     function setFileDialogEvents() {
         dialog
-            .onDirIconMouseup(function (directory) {
+            .onDirIconMouseup((directory) => {
             inputText.val('');
         })
-            .onDirIconDblClick(function (directory) {
+            .onDirIconDblClick((directory) => {
             inputText.val('');
         })
-            .onFileIconMouseup(function (filepath) {
+            .onFileIconMouseup((filepath) => {
             inputText.val(ClientUtility.basename(filepath));
         })
-            .onFileIconDblClick(function (filepath) {
+            .onFileIconDblClick((filepath) => {
             sshKeyAddress.val(filepath);
             dialog.hide();
         })
             .onChangeAddress()
             .onClickCancel()
-            .onClickOK(function () {
-            var filepath = dialog.getLastSelectFilepath();
-            var directory = dialog.getLastSelectDirectory();
+            .onClickOK(() => {
+            const filepath = dialog.getLastSelectFilepath();
+            const directory = dialog.getLastSelectDirectory();
             if (filepath) {
                 sshKeyAddress.val(filepath);
                 dialog.hide();
@@ -178,7 +178,7 @@ $(function () {
     function getHostList() {
         if (!isConnect) {
             isConnect = true;
-            getRemoteHostListSocket.onConnect(function (hostlist) {
+            getRemoteHostListSocket.onConnect((hostlist) => {
                 if (hostlist == null) {
                     console.error('remote host list file is not found');
                 }
@@ -194,7 +194,7 @@ $(function () {
      * clear input text
      */
     function clearInputText() {
-        textBoxes.forEach(function (text) { return text.val(''); });
+        textBoxes.forEach(text => text.val(''));
     }
     /**
      * create html content
@@ -203,16 +203,22 @@ $(function () {
      */
     function createHtmlContent(hostList) {
         initTestConnectEnvet();
-        var html = hostList.map(function (host) {
+        const html = hostList.map(host => {
             if (host.username === undefined) {
                 host.username = '';
             }
-            var passwordHtml = '';
+            let passwordHtml = '';
             if (!ClientUtility.isLocalHost(host)) {
-                passwordHtml = "<input type=\"password\" class=\"text_box\" id=\"" + host.name + "_password\" autocomplete=\"off\">";
+                passwordHtml = `<input type="password" class="text_box" id="${host.name}_password" autocomplete="off">`;
             }
             setTestConnectEnvet(host);
-            return "\n                <tr id=\"" + host.name + "\">\n                    <td class=\"hostlabel\">" + host.name + " : " + host.username + "@" + host.host + "</td>\n                    <td>" + passwordHtml + "</td>\n                    <td><button type=\"button\" class=\"test_connect_button button\" id=\"" + host.name + "_test_connect\">Test</button></td>\n                    <td><button type=\"button\" class=\"delete_button button\" id=\"" + host.name + "_delete\">Delete</button></td>\n                </tr>";
+            return `
+                <tr id="${host.name}">
+                    <td class="hostlabel">${host.name} : ${host.username}@${host.host}</td>
+                    <td>${passwordHtml}</td>
+                    <td><button type="button" class="test_connect_button button" id="${host.name}_test_connect">Test</button></td>
+                    <td><button type="button" class="delete_button button" id="${host.name}_delete">Delete</button></td>
+                </tr>`;
         });
         return html.join('');
     }
@@ -220,7 +226,7 @@ $(function () {
      * init test connect event
      */
     function initTestConnectEnvet() {
-        remotHostList.forEach(function (remote) {
+        remotHostList.forEach(remote => {
             $(document).off('keypress', '[id$=_password]');
             $(document).off('keyup', '[id$=_password]');
             $(document).off('click', '[id$=_test_connect]');
@@ -231,22 +237,22 @@ $(function () {
      * @param host host information
      */
     function setTestConnectEnvet(host) {
-        var ENTER_KEY = 0x0D;
-        var keyPressed = false;
-        $(document).on('keypress', "#" + host.name + "_password", function (eventObject) {
+        const ENTER_KEY = 0x0D;
+        let keyPressed = false;
+        $(document).on('keypress', `#${host.name}_password`, (eventObject) => {
             keyPressed = true;
         });
-        $(document).on('keyup', "#" + host.name + "_password", function (eventObject) {
+        $(document).on('keyup', `#${host.name}_password`, (eventObject) => {
             if (eventObject.which === ENTER_KEY) {
-                runConnect($("#" + host.name + "_test_connect"));
+                runConnect($(`#${host.name}_test_connect`));
             }
             keyPressed = false;
         });
-        $(document).on('click', "#" + host.name + "_test_connect", function () {
+        $(document).on('click', `#${host.name}_test_connect`, function () {
             runConnect($(this));
         });
-        $(document).one('click', "#" + host.name + "_delete", function () {
-            deleteHostSocket.emit(host.name, function (result) {
+        $(document).one('click', `#${host.name}_delete`, () => {
+            deleteHostSocket.emit(host.name, (result) => {
                 getHostList();
             });
         });
@@ -256,16 +262,16 @@ $(function () {
      * @param button cliced button element
      */
     function runConnect(button) {
-        var TEST_OK = 'OK';
-        var TEST_NG = 'NG';
-        var TESTING = 'Now Testing';
-        var label = button.parent().parent().id();
-        var password = $("#" + label + "_password").val();
+        const TEST_OK = 'OK';
+        const TEST_NG = 'NG';
+        const TESTING = 'Now Testing';
+        const label = button.parent().parent().id();
+        const password = $(`#${label}_password`).val();
         button
             .text(TESTING)
             .prop('disabled', true)
             .class('disable_button button');
-        sshConnectionSocket.emit(label, password, function (isConnect) {
+        sshConnectionSocket.emit(label, password, (isConnect) => {
             if (isConnect) {
                 button
                     .text(TEST_OK)

@@ -1,47 +1,47 @@
-$(function () {
+$(() => {
     // socket io
-    var socket = io('/swf/project');
-    var runProjectSocket = new RunProjectSocket(socket);
-    var openProjectJsonSocket = new OpenProjectJsonSocket(socket);
-    var getFileStatSocket = new GetFileStatSocket(socket);
-    var sshConnectionSocket = new SshConnectionSocket(socket);
-    var cleanProjectSocket = new CleanProjectSocket(socket);
+    const socket = io('/swf/project');
+    const runProjectSocket = new RunProjectSocket(socket);
+    const openProjectJsonSocket = new OpenProjectJsonSocket(socket);
+    const getFileStatSocket = new GetFileStatSocket(socket);
+    const sshConnectionSocket = new SshConnectionSocket(socket);
+    const cleanProjectSocket = new CleanProjectSocket(socket);
     // dialog
-    var passwordInputDialog = new InputTextDialog();
+    const passwordInputDialog = new InputTextDialog();
     // elements
-    var run_button = $('#run_button');
-    var run_menu = $('#run_menu');
-    var stop_button = $('#stop_button');
-    var stop_menu = $('#stop_menu');
-    var clean_button = $('#clean_button');
-    var clean_menu = $('#clean_menu');
-    var pause_button = $('#pause_button');
-    var pause_menu = $('#pause_menu');
-    var addressBar = $('#address_bar');
-    var projectTable = $('#project_table');
-    var projectTableHead = $('#project_table_head');
-    var projectTableBody = $('#project_table_body');
-    var projectSvg = $('#project_tree_svg');
-    var projectName = $('#project_name');
-    var projectProgress = $('#project_progress');
-    var projectBirth = $('#project_birthday');
-    var projectUpdate = $('#project_update');
+    const run_button = $('#run_button');
+    const run_menu = $('#run_menu');
+    const stop_button = $('#stop_button');
+    const stop_menu = $('#stop_menu');
+    const clean_button = $('#clean_button');
+    const clean_menu = $('#clean_menu');
+    const pause_button = $('#pause_button');
+    const pause_menu = $('#pause_menu');
+    const addressBar = $('#address_bar');
+    const projectTable = $('#project_table');
+    const projectTableHead = $('#project_table_head');
+    const projectTableBody = $('#project_table_body');
+    const projectSvg = $('#project_tree_svg');
+    const projectName = $('#project_name');
+    const projectProgress = $('#project_progress');
+    const projectBirth = $('#project_birthday');
+    const projectUpdate = $('#project_update');
     /**
      * project instance
      */
-    var swfProject;
+    let swfProject;
     /**
      * monitoring timer
      */
-    var timer;
+    let timer;
     /**
      * connect flag to server
      */
-    var isConnect = false;
+    let isConnect = false;
     /**
      * cookie
      */
-    var projectFilePath = ClientUtility.getCookies()['project'];
+    const projectFilePath = ClientUtility.getCookies()['project'];
     /**
      * initialize
      */
@@ -61,11 +61,11 @@ $(function () {
      * set button click event to run project
      */
     function setClickEventForRunButton() {
-        run_button.click(function () {
-            inputPasssword(function (passInfo) {
+        run_button.click(() => {
+            inputPasssword((passInfo) => {
                 ClientUtility.deleteCookie('root');
                 ClientUtility.deleteCookie('index');
-                runProjectSocket.emit(projectFilePath, passInfo, function (isSucceed) {
+                runProjectSocket.emit(projectFilePath, passInfo, (isSucceed) => {
                     if (isSucceed) {
                         startTimer();
                     }
@@ -80,9 +80,9 @@ $(function () {
      * set click event to stop project
      */
     function setClickEventForStopButton() {
-        stop_button.click(function () {
+        stop_button.click(() => {
             // TODO change function
-            cleanProjectSocket.emit(projectFilePath, function (isSucceed) {
+            cleanProjectSocket.emit(projectFilePath, (isSucceed) => {
                 stopTimer();
                 openProjectJsonSocket.emit(projectFilePath);
             });
@@ -92,8 +92,8 @@ $(function () {
      * set click event to clean project
      */
     function setClickEventForCleanButton() {
-        clean_button.click(function () {
-            cleanProjectSocket.emit(projectFilePath, function (isSucceed) {
+        clean_button.click(() => {
+            cleanProjectSocket.emit(projectFilePath, (isSucceed) => {
                 stopTimer();
                 openProjectJsonSocket.emit(projectFilePath);
             });
@@ -111,9 +111,9 @@ $(function () {
     function setTaskNameEvents() {
         $(document).on({
             click: function () {
-                var id = $(this).parent().id();
-                var target = SwfLog.getSwfLogInstance(id);
-                var rootFilepath = swfProject.log.path + "/" + ClientUtility.getTemplate(SwfType.WORKFLOW).getDefaultName();
+                const id = $(this).parent().id();
+                const target = SwfLog.getSwfLogInstance(id);
+                const rootFilepath = `${swfProject.log.path}/${ClientUtility.getTemplate(SwfType.WORKFLOW).getDefaultName()}`;
                 $(document).off('click').off('mouseover').off('mouseout');
                 $('<form/>', { action: '/swf/workflow_manager.html', method: 'post' })
                     .append($('<input/>', { type: 'hidden', name: 'root', value: rootFilepath }))
@@ -135,15 +135,15 @@ $(function () {
     function getProjectJson() {
         if (!isConnect) {
             isConnect = true;
-            openProjectJsonSocket.onConnect(projectFilePath, function (projectJson) {
+            openProjectJsonSocket.onConnect(projectFilePath, (projectJson) => {
                 swfProject = new SwfProject(projectJson);
                 addressBar.val(ClientUtility.normalize(projectFilePath));
                 projectName.text(projectJson.name);
                 projectSvg.empty();
                 updateIcon();
-                var tableDataHtml = createHtmlTable(swfProject.log);
+                const tableDataHtml = createHtmlTable(swfProject.log);
                 projectTableBody.html(tableDataHtml);
-                var draw = SVG('project_tree_svg');
+                const draw = SVG('project_tree_svg');
                 drawWorkflowTree(draw, swfProject.log);
                 draw.size((SwfLog.getMaxHierarchy() + 2) * 20, projectTable.height());
                 if (swfProject.isRunning()) {
@@ -161,18 +161,18 @@ $(function () {
      * get project json file stat
      */
     function getFileStat() {
-        var updateDate = function (stat) {
+        const updateDate = (stat) => {
             projectUpdate.text(new Date(stat.mtime).toLocaleString());
             projectBirth.text(new Date(stat.birthtime).toLocaleString());
         };
         if (!isConnect) {
             isConnect = true;
-            getFileStatSocket.onConnect(projectFilePath, function (stat) {
+            getFileStatSocket.onConnect(projectFilePath, (stat) => {
                 updateDate(stat);
             });
         }
         else {
-            getFileStatSocket.emit(projectFilePath, function (stat) {
+            getFileStatSocket.emit(projectFilePath, (stat) => {
                 updateDate(stat);
             });
         }
@@ -183,11 +183,11 @@ $(function () {
      * @return html string of table
      */
     function createHtmlTable(swfLog) {
-        var html = [];
+        const html = [];
         html.push(createSingleLineHtml(swfLog));
         swfLog.children
-            .sort(function (a, b) { return a.order > b.order ? 1 : -1; })
-            .forEach(function (child) { return html.push(createHtmlTable(child)); });
+            .sort((a, b) => a.order > b.order ? 1 : -1)
+            .forEach(child => html.push(createHtmlTable(child)));
         return html.join('');
     }
     /**
@@ -196,16 +196,23 @@ $(function () {
      * @return html string of single line
      */
     function createSingleLineHtml(swfLog) {
-        var attr;
+        let attr;
         if (swfProject.isPlanning() && SwfType.isImplimentsWorkflow(swfLog)) {
             attr = 'class="project_name_not_task" style="cursor: pointer"';
         }
         else {
             attr = 'class="project_name_task" style="cursor: default"';
         }
-        var start = swfLog.execution_start_date ? new Date(swfLog.execution_start_date).toLocaleString() : '----/--/-- --:--:--';
-        var end = swfLog.execution_end_date ? new Date(swfLog.execution_end_date).toLocaleString() : '----/--/-- --:--:--';
-        return "\n            <tr id=\"" + swfLog.getIndexString() + "\">\n                <td " + attr + ">" + swfLog.name + "</td>\n                <td>" + swfLog.state + "</td>\n                <td>" + start + "</td>\n                <td>" + end + "</td>\n                <td>" + swfLog.description + "</td>\n            </tr>";
+        const start = swfLog.execution_start_date ? new Date(swfLog.execution_start_date).toLocaleString() : '----/--/-- --:--:--';
+        const end = swfLog.execution_end_date ? new Date(swfLog.execution_end_date).toLocaleString() : '----/--/-- --:--:--';
+        return `
+            <tr id="${swfLog.getIndexString()}">
+                <td ${attr}>${swfLog.name}</td>
+                <td>${swfLog.state}</td>
+                <td>${start}</td>
+                <td>${end}</td>
+                <td>${swfLog.description}</td>
+            </tr>`;
     }
     /**
      * draw workflow hierarchy tree
@@ -213,16 +220,16 @@ $(function () {
      * @param swfLog SwfLog instance
      */
     function drawWorkflowTree(draw, swfLog) {
-        var group = draw.group();
-        var element = $("#" + swfLog.getIndexString());
-        var top = element.position().top;
-        var height = element.height();
-        var diameter = 14;
-        var offset = projectTableHead.height() * 3 / 2 - top - diameter / 2 + 1;
-        var x = 20 * (swfLog.getHierarchy() + 1);
-        var y = top + height / 2 + offset;
+        const group = draw.group();
+        const element = $(`#${swfLog.getIndexString()}`);
+        const top = element.position().top;
+        const height = element.height();
+        const diameter = 14;
+        const offset = projectTableHead.height() * 3 / 2 - top - diameter / 2 + 1;
+        const x = 20 * (swfLog.getHierarchy() + 1);
+        const y = top + height / 2 + offset;
         function drawCircle(swfLog, x, y) {
-            var circle = draw.circle(diameter)
+            const circle = draw.circle(diameter)
                 .attr({
                 'fill': SwfState.getStateColor(swfLog.state),
                 'stroke': config.node_color[swfLog.type.toLocaleLowerCase()],
@@ -232,13 +239,13 @@ $(function () {
             group.add(circle);
         }
         (function drawTree(swfLog, parentX, parentY) {
-            var element = $("#" + swfLog.getIndexString());
-            var top = element.position().top;
-            var x = 20 * (swfLog.getHierarchy() + 1);
-            var y = top + height / 2 + offset;
-            swfLog.children.forEach(function (child) { return drawTree(child, x, y); });
-            var vline = draw.line(parentX, parentY, parentX, y).attr({ stroke: 'white' });
-            var hline = draw.line(parentX, y, x, y).attr({ stroke: 'white' });
+            const element = $(`#${swfLog.getIndexString()}`);
+            const top = element.position().top;
+            const x = 20 * (swfLog.getHierarchy() + 1);
+            const y = top + height / 2 + offset;
+            swfLog.children.forEach(child => drawTree(child, x, y));
+            const vline = draw.line(parentX, parentY, parentX, y).attr({ stroke: 'white' });
+            const hline = draw.line(parentX, y, x, y).attr({ stroke: 'white' });
             group.add(vline).add(hline);
             drawCircle(swfLog, x, y);
         })(swfLog, x, y);
@@ -249,23 +256,23 @@ $(function () {
      * @param callback The function to call when finish input password
      */
     function inputPasssword(callback) {
-        var hostList = SwfLog.getHostList();
-        var passInfo = {};
-        var inputPass = function () {
-            var host = hostList.shift();
+        const hostList = SwfLog.getHostList();
+        const passInfo = {};
+        const inputPass = () => {
+            const host = hostList.shift();
             if (!host) {
                 callback(passInfo);
                 return;
             }
-            passwordInputDialog.onClickOK(function (inputTextElement) {
-                var text = inputTextElement.val().trim();
+            passwordInputDialog.onClickOK((inputTextElement) => {
+                const text = inputTextElement.val().trim();
                 if (!text) {
                     inputTextElement.borderInvalid();
                 }
                 else {
                     inputTextElement.borderValid();
                     passwordInputDialog.setBusy('Now Testing');
-                    sshConnectionSocket.emit(host.name, text, function (isConnect) {
+                    sshConnectionSocket.emit(host.name, text, (isConnect) => {
                         passwordInputDialog.clearBusy();
                         if (isConnect) {
                             passInfo[host.name] = text;
@@ -278,8 +285,8 @@ $(function () {
                     });
                 }
             });
-            var label = host.privateKey ? 'passphrase:' : 'password:';
-            passwordInputDialog.show("Enter password [" + host.name + ":" + host.username + "@" + host.host + "]", label);
+            const label = host.privateKey ? 'passphrase:' : 'password:';
+            passwordInputDialog.show(`Enter password [${host.name}:${host.username}@${host.host}]`, label);
         };
         inputPass();
     }
@@ -336,7 +343,7 @@ $(function () {
         }
         getProjectJson();
         console.log('start timer');
-        timer = setInterval(function () {
+        timer = setInterval(() => {
             if (!swfProject.isRunning()) {
                 stopTimer();
             }

@@ -1,12 +1,12 @@
 /**
  * socket io communication class for read file data from server
  */
-var ReadFileSocket = (function () {
+class ReadFileSocket {
     /**
      * create new instance
      * @param socket socket io instance
      */
-    function ReadFileSocket(socket) {
+    constructor(socket) {
         this.socket = socket;
     }
     /**
@@ -14,35 +14,32 @@ var ReadFileSocket = (function () {
      * @param filepath read file path
      * @param callback The function to call when we get the event
      */
-    ReadFileSocket.prototype.onConnect = function (filepath, callback) {
-        var _this = this;
+    onConnect(filepath, callback) {
         this.callback = callback;
         this.socket
-            .on('connect', function () {
-            _this.emit(filepath);
+            .on('connect', () => {
+            this.emit(filepath);
         });
-    };
+    }
     /**
      * Adds a listener for this event that will be invoked a single time before being automatically removed
      */
-    ReadFileSocket.prototype.onEvent = function () {
-        var _this = this;
-        this.socket.once(ReadFileSocket.eventName, function (data) {
-            _this.callback(data);
+    onEvent() {
+        this.socket.once(ReadFileSocket.eventName, (data) => {
+            this.callback(data);
         });
-    };
+    }
     /**
      * emit to server for read file data
      * @param filepath read file path
      */
-    ReadFileSocket.prototype.emit = function (filepath) {
+    emit(filepath) {
         this.onEvent();
         this.socket.emit(ReadFileSocket.eventName, filepath);
-    };
-    /**
-     * event name
-     */
-    ReadFileSocket.eventName = 'readFile';
-    return ReadFileSocket;
-}());
+    }
+}
+/**
+ * event name
+ */
+ReadFileSocket.eventName = 'readFile';
 //# sourceMappingURL=readFileSocket.js.map

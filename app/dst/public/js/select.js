@@ -1,9 +1,9 @@
-$(function () {
+$(() => {
     // socket io
-    var socket = io('/swf/select');
-    var getFileListSocket = new GetFileListSocket(socket, config.extension.project);
+    const socket = io('/swf/select');
+    const getFileListSocket = new GetFileListSocket(socket, config.extension.project);
     // file dialog
-    var dialog = new FileDialog(getFileListSocket);
+    const dialog = new FileDialog(getFileListSocket);
     /**
      * set dialog events
      */

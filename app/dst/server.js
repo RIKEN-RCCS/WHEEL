@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var path = require("path");
-var express = require("express");
-var cookieParser = require("cookie-parser");
-var bodyParser = require("body-parser");
-var http = require("http");
-var logger = require("./logger");
-var config = require('../dst/config/server');
+const path = require("path");
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
+const http = require("http");
+const logger = require("./logger");
+const config = require('../dst/config/server');
 /*
  * set up express, http and socket.io
  */
 var app = express();
-var server = http.createServer(app);
-var sio = require('socket.io')(server);
+const server = http.createServer(app);
+const sio = require('socket.io')(server);
 // middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -53,9 +53,9 @@ app.use(function (err, req, res, next) {
 logger.setSocket(sio.of('/swf/project'));
 logger.setLogfile("./TestLogFile.txt");
 // register event listeners
-var EventListeners = require("./eventListeners");
-var home_beta = require("./home_beta");
+const home_beta = require("./home_beta");
 home_beta.setup(sio);
+const EventListeners = require("./eventListeners");
 EventListeners.add(sio.of('/swf/home'), [
     'onGetFileList',
     'onCreateNewProject'

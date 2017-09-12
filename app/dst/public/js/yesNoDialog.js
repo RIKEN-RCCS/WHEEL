@@ -1,13 +1,12 @@
 /**
  * yes no dialog class
  */
-var YesNoDialog = (function () {
+class YesNoDialog {
     /**
      * create new instance
      * @param text title text
      */
-    function YesNoDialog(text) {
-        var _this = this;
+    constructor(text) {
         /**
          * gray panel element
          */
@@ -33,65 +32,63 @@ var YesNoDialog = (function () {
          */
         this.title = $('#dialog_title_yesno');
         this.text = text;
-        this.grayPanel.click(function () { return _this.hide(); });
+        this.grayPanel.click(() => this.hide());
     }
     /**
      * show dialog
      * @return YesNoDialog instance
      */
-    YesNoDialog.prototype.show = function () {
-        var _this = this;
+    show() {
         this.title.text(this.text);
         this.grayPanel.displayBlock();
         this.dialogArea.displayBlock();
-        this.buttonOK.on('click', function () {
-            if (_this.clickOkCallback) {
-                _this.clickOkCallback();
+        this.buttonOK.on('click', () => {
+            if (this.clickOkCallback) {
+                this.clickOkCallback();
             }
-            _this.hide();
+            this.hide();
         });
-        this.buttonCancel.one('click', function () {
-            if (_this.clickCancelCallback) {
-                _this.clickCancelCallback();
+        this.buttonCancel.one('click', () => {
+            if (this.clickCancelCallback) {
+                this.clickCancelCallback();
             }
-            _this.hide();
+            this.hide();
         });
         return this;
-    };
+    }
     /**
      *
      * hide dialog
      * @return YesNoDialog instance
      */
-    YesNoDialog.prototype.hide = function () {
+    hide() {
         this.grayPanel.displayNone();
         this.dialogArea.displayNone();
         this.buttonOK.off('click');
         this.buttonCancel.off('click');
         return this;
-    };
+    }
     /**
      * set callback function for click ok button
      * @param callback The function to call when we click ok button
      * @return YesNoDialog instance
      */
-    YesNoDialog.prototype.onClickOK = function (callback) {
+    onClickOK(callback) {
         if (!this.clickOkCallback) {
             this.clickOkCallback = callback;
         }
         return this;
-    };
+    }
     /**
      * set callback function for click cancel button
      * @param callback The function to call when we click cancel button
      * @return YesNoDialog instance
      */
-    YesNoDialog.prototype.onClickCancel = function (callback) {
+    onClickCancel(callback) {
         if (!this.clickCancelCallback) {
             this.clickCancelCallback = callback;
         }
         return this;
-    };
-    return YesNoDialog;
-}());
+    }
+}
 //# sourceMappingURL=yesNoDialog.js.map

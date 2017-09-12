@@ -1,19 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("fs");
-var ServerUtility = require("./serverUtility");
-var path = require("path");
-var os = require("os");
-var logger = require("./logger");
-var fileUtility = require("./fileUtility");
-var sshConnection = require("./sshConnection");
-var ProjectOperator = require("./projectOperator");
-var writeTreeJson = require("./writeTreeJson");
-var projectUtility = require("./projectUtility");
+const fs = require("fs");
+const ServerUtility = require("./serverUtility");
+const path = require("path");
+const os = require("os");
+const logger = require("./logger");
+const fileUtility = require("./fileUtility");
+const sshConnection = require("./sshConnection");
+const ProjectOperator = require("./projectOperator");
+const writeTreeJson = require("./writeTreeJson");
+const projectUtility = require("./projectUtility");
 var onAddHost = function (socket) {
-    var eventName = 'onAddHost';
-    socket.on(eventName, function (hostInfo) {
-        ServerUtility.addHostInfo(hostInfo, function (err) {
+    const eventName = 'onAddHost';
+    socket.on(eventName, (hostInfo) => {
+        ServerUtility.addHostInfo(hostInfo, (err) => {
             if (err) {
                 logger.error(err);
                 socket.emit(eventName, false);
@@ -25,9 +25,9 @@ var onAddHost = function (socket) {
     });
 };
 var onDeleteHost = function (socket) {
-    var eventName = 'onDeleteHost';
-    socket.on(eventName, function (name) {
-        ServerUtility.deleteHostInfo(name, function (err) {
+    const eventName = 'onDeleteHost';
+    socket.on(eventName, (name) => {
+        ServerUtility.deleteHostInfo(name, (err) => {
             if (err) {
                 logger.error(err);
                 socket.emit(eventName, false);
@@ -39,9 +39,9 @@ var onDeleteHost = function (socket) {
     });
 };
 var onGetRemoteHostList = function (socket) {
-    var eventName = 'onGetRemoteHostList';
-    socket.on(eventName, function () {
-        ServerUtility.getHostInfo(function (err, hostList) {
+    const eventName = 'onGetRemoteHostList';
+    socket.on(eventName, () => {
+        ServerUtility.getHostInfo((err, hostList) => {
             if (err) {
                 logger.error(err);
                 socket.emit(eventName);
@@ -57,19 +57,19 @@ var onGetRemoteHostList = function (socket) {
     });
 };
 var onGetFileList = function (socket) {
-    var eventName = 'onGetFileList';
-    socket.on(eventName, function (directoryPath, extension) {
+    const eventName = 'onGetFileList';
+    socket.on(eventName, (directoryPath, extension) => {
         directoryPath = directoryPath || os.homedir();
         if (!path.isAbsolute(directoryPath) || !fileUtility.isDir(directoryPath)) {
             socket.emit(eventName);
             return;
         }
-        var regex = extension == null ? null : new RegExp(extension.replace(/\./, '\\.') + "$");
+        const regex = extension == null ? null : new RegExp(`${extension.replace(/\./, '\\.')}$`);
         try {
-            var getFiles = fileUtility.getFiles(directoryPath, regex);
-            logger.debug("send file list " + JSON.stringify(getFiles));
-            var fileList = {
-                directory: directoryPath.replace(/[\\/]/g, '/') + "/",
+            const getFiles = fileUtility.getFiles(directoryPath, regex);
+            logger.debug(`send file list ${JSON.stringify(getFiles)}`);
+            const fileList = {
+                directory: `${directoryPath.replace(/[\\/]/g, '/')}/`,
                 files: getFiles
             };
             socket.json.emit(eventName, fileList);
@@ -81,9 +81,9 @@ var onGetFileList = function (socket) {
     });
 };
 var readFile = function (socket) {
-    var eventName = 'readFile';
-    socket.on(eventName, function (readFilePath) {
-        fs.readFile(readFilePath, function (err, data) {
+    const eventName = 'readFile';
+    socket.on(eventName, (readFilePath) => {
+        fs.readFile(readFilePath, (err, data) => {
             if (err) {
                 logger.error(err);
                 socket.emit(eventName);
@@ -94,9 +94,9 @@ var readFile = function (socket) {
     });
 };
 var writeFile = function (socket) {
-    var eventName = 'writeFile';
-    socket.on(eventName, function (filepath, data) {
-        fs.writeFile(filepath, data, function (err) {
+    const eventName = 'writeFile';
+    socket.on(eventName, (filepath, data) => {
+        fs.writeFile(filepath, data, (err) => {
             if (err) {
                 logger.error(err);
                 socket.emit(eventName, false);
@@ -107,32 +107,32 @@ var writeFile = function (socket) {
     });
 };
 var onCreateNewProject = function (socket) {
-    var eventName = 'onCreateNewProject';
-    socket.on(eventName, function (directoryPath) {
-        var config = require('../dst/config/server');
-        var projectFileName = config.system_name;
-        var workflowFileName = config.default_filename;
-        var projectJson = ServerUtility.readTemplateProjectJson();
-        var workflowJson = ServerUtility.readTemplateWorkflowJson();
-        projectJson.path = "./" + projectFileName + config.extension.project;
-        projectJson.path_workflow = "./" + workflowFileName + config.extension.workflow;
-        workflowJson.name = workflowJson.name + "1";
+    const eventName = 'onCreateNewProject';
+    socket.on(eventName, (directoryPath) => {
+        const config = require('../dst/config/server');
+        const projectFileName = config.system_name;
+        const workflowFileName = config.default_filename;
+        const projectJson = ServerUtility.readTemplateProjectJson();
+        const workflowJson = ServerUtility.readTemplateWorkflowJson();
+        projectJson.path = `./${projectFileName}${config.extension.project}`;
+        projectJson.path_workflow = `./${workflowFileName}${config.extension.workflow}`;
+        workflowJson.name = `${workflowJson.name}1`;
         workflowJson.path = path.basename(directoryPath);
-        var projectFilePath = path.join(directoryPath, projectJson.path);
-        var workflowFilePath = path.join(directoryPath, projectJson.path_workflow);
-        fs.mkdir(directoryPath, function (mkdirErr) {
+        const projectFilePath = path.join(directoryPath, projectJson.path);
+        const workflowFilePath = path.join(directoryPath, projectJson.path_workflow);
+        fs.mkdir(directoryPath, (mkdirErr) => {
             if (mkdirErr) {
                 logger.error(mkdirErr);
                 socket.emit(eventName);
                 return;
             }
-            ServerUtility.writeJson(projectFilePath, projectJson, function (err) {
+            ServerUtility.writeJson(projectFilePath, projectJson, (err) => {
                 if (err) {
                     logger.error(err);
                     socket.emit(eventName);
                     return;
                 }
-                ServerUtility.writeJson(workflowFilePath, workflowJson, function (err) {
+                ServerUtility.writeJson(workflowFilePath, workflowJson, (err) => {
                     if (err) {
                         logger.error(err);
                         socket.emit(eventName);
@@ -145,15 +145,15 @@ var onCreateNewProject = function (socket) {
     });
 };
 var onSshConnection = function (socket) {
-    var eventName = 'onSshConnection';
-    var succeed = function () {
+    const eventName = 'onSshConnection';
+    const succeed = () => {
         socket.emit(eventName, true);
     };
-    var failed = function () {
+    const failed = () => {
         socket.emit(eventName, false);
     };
-    socket.on(eventName, function (name, password) {
-        ServerUtility.getHostInfo(function (err, hostList) {
+    socket.on(eventName, (name, password) => {
+        ServerUtility.getHostInfo((err, hostList) => {
             if (err) {
                 logger.error(err);
                 failed();
@@ -164,16 +164,16 @@ var onSshConnection = function (socket) {
                 failed();
                 return;
             }
-            var host = hostList.filter(function (host) { return host.name === name; })[0];
+            const host = hostList.filter(host => host.name === name)[0];
             if (!host) {
-                logger.error(name + " is not found at host list conf");
+                logger.error(`${name} is not found at host list conf`);
                 failed();
             }
             if (ServerUtility.isLocalHost(host.host)) {
                 succeed();
                 return;
             }
-            sshConnection.sshConnectTest(host, password, function (err) {
+            sshConnection.sshConnectTest(host, password, (err) => {
                 if (err) {
                     logger.error(err);
                     failed();
@@ -186,10 +186,10 @@ var onSshConnection = function (socket) {
     });
 };
 var onRunProject = function (socket) {
-    var eventName = 'onRunProject';
-    socket.on(eventName, function (projectFilepath, host_passSet) {
-        var projectOperator = new ProjectOperator(projectFilepath);
-        projectOperator.updateProjectJson(projectFilepath, function (err) {
+    const eventName = 'onRunProject';
+    socket.on(eventName, (projectFilepath, host_passSet) => {
+        const projectOperator = new ProjectOperator(projectFilepath);
+        projectOperator.updateProjectJson(projectFilepath, (err) => {
             if (err) {
                 logger.error(err);
                 socket.emit(eventName, false);
@@ -201,9 +201,9 @@ var onRunProject = function (socket) {
     });
 };
 var onGetFileStat = function (socket) {
-    var eventName = 'onGetFileStat';
-    socket.on(eventName, function (filepath) {
-        fs.stat(filepath, function (err, stats) {
+    const eventName = 'onGetFileStat';
+    socket.on(eventName, (filepath) => {
+        fs.stat(filepath, (err, stats) => {
             if (err) {
                 socket.emit(eventName);
             }
@@ -214,12 +214,12 @@ var onGetFileStat = function (socket) {
     });
 };
 var readTreeJson = function (socket) {
-    var eventName = 'readTreeJson';
-    socket.on(eventName, function (workflowJsonFilePath) {
-        var roodDirectory = path.dirname(workflowJsonFilePath);
+    const eventName = 'readTreeJson';
+    socket.on(eventName, (workflowJsonFilePath) => {
+        const roodDirectory = path.dirname(workflowJsonFilePath);
         try {
-            logger.debug("tree json=" + workflowJsonFilePath);
-            var createJsonFile = ServerUtility.createTreeJson(workflowJsonFilePath);
+            logger.debug(`tree json=${workflowJsonFilePath}`);
+            const createJsonFile = ServerUtility.createTreeJson(workflowJsonFilePath);
             socket.json.emit(eventName, createJsonFile);
         }
         catch (error) {
@@ -229,20 +229,20 @@ var readTreeJson = function (socket) {
     });
 };
 var onWriteTreeJson = function (socket) {
-    var eventName = 'writeTreeJson';
-    socket.on(eventName, function (projectDirectory, json) {
-        var queue = [];
+    const eventName = 'writeTreeJson';
+    socket.on(eventName, (projectDirectory, json) => {
+        const queue = [];
         writeTreeJson.setQueue(queue, projectDirectory, json);
-        writeTreeJson.saveTreeJson(queue, function () {
+        writeTreeJson.saveTreeJson(queue, () => {
             socket.emit(eventName);
         });
     });
 };
 var onGetJsonFile = function (socket) {
-    var eventName = 'onGetJsonFile';
-    socket.on(eventName, function (filetype) {
-        var filepath = ServerUtility.getTypeOfJson(filetype).getTemplateFilePath();
-        fs.readFile(filepath, function (err, data) {
+    const eventName = 'onGetJsonFile';
+    socket.on(eventName, (filetype) => {
+        const filepath = ServerUtility.getTypeOfJson(filetype).getTemplateFilePath();
+        fs.readFile(filepath, (err, data) => {
             if (err) {
                 logger.error(err);
                 socket.emit(eventName);
@@ -254,17 +254,17 @@ var onGetJsonFile = function (socket) {
     });
 };
 var onDeleteDirectory = function (socket) {
-    var eventName = 'onDeleteDirectory';
-    socket.on(eventName, function (directorys) {
+    const eventName = 'onDeleteDirectory';
+    socket.on(eventName, (directorys) => {
         (function loop() {
-            var directory = directorys.shift();
+            const directory = directorys.shift();
             if (!directory) {
                 socket.emit(eventName);
                 return;
             }
-            ServerUtility.unlinkDirectoryAsync(directory, function (err) {
+            ServerUtility.unlinkDirectoryAsync(directory, (err) => {
                 if (!err) {
-                    logger.info("delete  dir=" + directory);
+                    logger.info(`delete  dir=${directory}`);
                 }
                 loop();
             });
@@ -272,11 +272,11 @@ var onDeleteDirectory = function (socket) {
     });
 };
 var cleanProject = function (socket) {
-    var eventName = 'cleanProject';
-    socket.on(eventName, function (projectFilePath) {
-        var operator = new ProjectOperator(projectFilePath);
-        operator.cleanAsync(function () {
-            projectUtility.cleanProject(projectFilePath, function (err) {
+    const eventName = 'cleanProject';
+    socket.on(eventName, (projectFilePath) => {
+        const operator = new ProjectOperator(projectFilePath);
+        operator.cleanAsync(() => {
+            projectUtility.cleanProject(projectFilePath, (err) => {
                 if (err) {
                     logger.error(err);
                     socket.emit(eventName, false);
@@ -288,8 +288,8 @@ var cleanProject = function (socket) {
     });
 };
 var openProjectJson = function (socket) {
-    var eventName = 'openProjectJson';
-    socket.on(eventName, function (projectFilepath) {
+    const eventName = 'openProjectJson';
+    socket.on(eventName, (projectFilepath) => {
         var projectJson = projectUtility.openProjectJson(projectFilepath);
         socket.json.emit(eventName, projectJson);
         try {
@@ -302,12 +302,12 @@ var openProjectJson = function (socket) {
 };
 var UploadFileEvent = function (socket) {
     var upload = {};
-    var writeThreshold = 32 * 1024 * 1024;
-    var readyEventName = 'onUploadReady';
-    var startEventName = 'onUploadStart';
-    var doneEventName = 'onUploadDone';
-    var openFile = function (filepath, size) {
-        fs.open(filepath, 'a', 755, function (err, fd) {
+    const writeThreshold = 32 * 1024 * 1024;
+    const readyEventName = 'onUploadReady';
+    const startEventName = 'onUploadStart';
+    const doneEventName = 'onUploadDone';
+    const openFile = (filepath, size) => {
+        fs.open(filepath, 'a', 755, (err, fd) => {
             if (err) {
                 logger.error(err);
                 socket.emit(doneEventName, false, filepath);
@@ -322,16 +322,16 @@ var UploadFileEvent = function (socket) {
             socket.emit(startEventName, upload[filepath].uploaded, filepath);
         });
     };
-    var closeFile = function (filepath, isSucceed) {
-        var file = upload[filepath];
-        fs.close(file.handler, function (err) {
+    const closeFile = (filepath, isSucceed) => {
+        const file = upload[filepath];
+        fs.close(file.handler, (err) => {
             if (err) {
                 logger.error(err);
                 socket.emit(doneEventName, isSucceed, filepath);
                 delete upload.filepath;
             }
             else {
-                fs.chmod(filepath, '664', function (err) {
+                fs.chmod(filepath, '664', (err) => {
                     if (err) {
                         logger.error(err);
                     }
@@ -341,10 +341,10 @@ var UploadFileEvent = function (socket) {
             }
         });
     };
-    var appendFile = function (filepath, callback) {
-        var file = upload[filepath];
-        fs.write(file.handler, file.data, null, 'Binary', function (err, witten, str) {
-            logger.info("progress:" + path.basename(filepath) + ":" + file.uploaded + "/" + file.size);
+    const appendFile = (filepath, callback) => {
+        const file = upload[filepath];
+        fs.write(file.handler, file.data, null, 'Binary', (err, witten, str) => {
+            logger.info(`progress:${path.basename(filepath)}:${file.uploaded}/${file.size}`);
             if (err) {
                 logger.error(err);
                 closeFile(filepath, false);
@@ -356,8 +356,8 @@ var UploadFileEvent = function (socket) {
             }
         });
     };
-    socket.on(startEventName, function (filepath, data) {
-        var file = upload[filepath];
+    socket.on(startEventName, (filepath, data) => {
+        const file = upload[filepath];
         file.uploaded += data.length;
         file.data += data;
         if (file.uploaded !== file.size) {
@@ -367,14 +367,14 @@ var UploadFileEvent = function (socket) {
             socket.emit(startEventName, file.uploaded, filepath);
         }
         else {
-            appendFile(filepath, function () {
+            appendFile(filepath, () => {
                 closeFile(filepath, true);
-                logger.info("upload file=" + filepath);
+                logger.info(`upload file=${filepath}`);
             });
         }
     });
-    socket.on(readyEventName, function (filepath, size) {
-        fs.unlink(filepath, function (err) {
+    socket.on(readyEventName, (filepath, size) => {
+        fs.unlink(filepath, (err) => {
             openFile(filepath, size);
         });
     });
@@ -399,14 +399,13 @@ var eventListeners = {
     'UploadFileEvent': UploadFileEvent
 };
 function add(sio, listeners) {
-    sio.on('connect', function (socket) {
-        logger.debug("socket on connect " + sio.name);
-        for (var _i = 0, listeners_1 = listeners; _i < listeners_1.length; _i++) {
-            var eventName = listeners_1[_i];
+    sio.on('connect', (socket) => {
+        logger.debug(`socket on connect ${sio.name}`);
+        for (var eventName of listeners) {
             eventListeners[eventName](socket);
         }
-        socket.on('disconnect', function () {
-            logger.debug("socket on disconnect " + sio.name);
+        socket.on('disconnect', () => {
+            logger.debug(`socket on disconnect ${sio.name}`);
         });
     });
 }

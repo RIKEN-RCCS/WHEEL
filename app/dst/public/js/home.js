@@ -1,12 +1,12 @@
-$(function () {
+$(() => {
     // socket io
-    var socket = io('/swf/home');
-    var getFileListSocket = new GetFileListSocket(socket);
-    var createNewProjectSocket = new CreateNewProjectSocket(socket);
+    const socket = io('/swf/home');
+    const getFileListSocket = new GetFileListSocket(socket);
+    const createNewProjectSocket = new CreateNewProjectSocket(socket);
     // menu
-    var createNew = $('#create_new_workflow');
+    const createNew = $('#create_new_workflow');
     // file dialog
-    var dialog = new FileDialog(getFileListSocket);
+    const dialog = new FileDialog(getFileListSocket);
     /**
      * initialize
      */
@@ -23,14 +23,14 @@ $(function () {
             .onDirIconDblClick()
             .onChangeAddress()
             .onClickCancel()
-            .onClickOK(function (inputTextElement) {
-            var dirname = inputTextElement.val().trim();
+            .onClickOK((inputTextElement) => {
+            const dirname = inputTextElement.val().trim();
             if (!dirname || !ClientUtility.isValidDirectoryName(dirname)) {
                 inputTextElement.borderInvalid();
                 return;
             }
-            var directoryPath = "" + dialog.getLastSelectDirectory() + dirname;
-            createNewProjectSocket.emit(directoryPath, function (rootFilePath) {
+            const directoryPath = `${dialog.getLastSelectDirectory()}${dirname}`;
+            createNewProjectSocket.emit(directoryPath, (rootFilePath) => {
                 if (!rootFilePath) {
                     inputTextElement.borderInvalid();
                     return;
@@ -45,7 +45,7 @@ $(function () {
      * set button click event to create a new project
      */
     function setClickEventForNewButton() {
-        createNew.click(function () {
+        createNew.click(() => {
             dialog.updateDialog();
             dialog.show();
         });

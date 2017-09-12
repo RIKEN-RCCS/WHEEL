@@ -38,7 +38,7 @@ var SwfFileType;
      * @return file type
      */
     function getFileType(target) {
-        var path;
+        let path;
         if (typeof target === 'string') {
             path = target;
         }

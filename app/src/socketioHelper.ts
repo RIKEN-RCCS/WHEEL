@@ -1,17 +1,15 @@
 import logger = require('./logger');
 /*
  * helper function for socketio.on()
- * @param sio      socket.io's namespace
- * @param listners dict which contains eventName and callback function pair
+ * @param sio       socket.io's namespace
+ * @param eventName event name
+ * @param callback  callback function
  *
  */
-export function add(sio: SocketIO.Namespace, listeners) {
+ export default function(sio: SocketIO.Namespace, eventName: string, callback: (msg: string)=>void) {
   sio.on('connect', (socket: SocketIO.Socket) => {
     logger.debug(`socket on connect ${sio.name}`);
-    for(var eventName in  listeners){
-      logger.debug(`register event for ${eventName}`);
-      socket.on(eventName, listeners[eventName]);
-    }
+    socket.on(eventName, callback);
     socket.on('disconnect', () => {
       logger.debug(`socket on disconnect ${sio.name}`);
     });

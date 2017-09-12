@@ -1,12 +1,12 @@
 /**
  * socket io communication class for upload file to server
  */
-var UploadFileSocket = (function () {
+class UploadFileSocket {
     /**
      * create new instance
      * @param socket socket io instance
      */
-    function UploadFileSocket(socket) {
+    constructor(socket) {
         /**
          * upload file data
          */
@@ -33,41 +33,38 @@ var UploadFileSocket = (function () {
      * Adds a listener for this event
      * @param callback The function to call when we get the event
      */
-    UploadFileSocket.prototype.onEvent = function (callback) {
-        var _this = this;
-        this.socket.on(this.doneEventName, function (isUpload, filepath) {
-            delete _this.upload[filepath];
+    onEvent(callback) {
+        this.socket.on(this.doneEventName, (isUpload, filepath) => {
+            delete this.upload[filepath];
             callback(isUpload, filepath);
         });
-        this.socket.on(this.startEventName, function (place, filepath) {
-            var data = _this.upload[filepath];
-            var newFile = data.file.slice(place, place + Math.min(_this.maxSendSize, data.file.size - place));
+        this.socket.on(this.startEventName, (place, filepath) => {
+            const data = this.upload[filepath];
+            const newFile = data.file.slice(place, place + Math.min(this.maxSendSize, data.file.size - place));
             data.fileReader.readAsBinaryString(newFile);
         });
-    };
+    }
     /**
      * remove all listeners on this socket
      */
-    UploadFileSocket.prototype.offEvent = function () {
+    offEvent() {
         this.socket.removeAllListeners();
-    };
+    }
     /**
      * emit to server for upload file
      * @param data uplodad file data
      */
-    UploadFileSocket.prototype.emit = function (data) {
-        var _this = this;
-        var fileReader = new FileReader();
+    emit(data) {
+        const fileReader = new FileReader();
         this.upload[data.filepath] = {
             file: data.file,
             filepath: data.filepath,
             fileReader: fileReader
         };
-        fileReader.onload = function (e) {
-            _this.socket.emit(_this.startEventName, data.filepath, e.target.result);
+        fileReader.onload = (e) => {
+            this.socket.emit(this.startEventName, data.filepath, e.target.result);
         };
         this.socket.emit(this.readyEventName, data.filepath, data.file.size);
-    };
-    return UploadFileSocket;
-}());
+    }
+}
 //# sourceMappingURL=uploadFileSocket.js.map

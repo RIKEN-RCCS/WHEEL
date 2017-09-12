@@ -1,44 +1,44 @@
-$(function () {
+$(() => {
     // socket io
-    var socket = io('/swf/workflow');
-    var readTreeJsonSocket = new ReadTreeJsonSocket(socket);
-    var writeTreeJsonSocket = new WriteTreeJsonSocket(socket);
-    var getFileStatSocket = new GetFileStatSocket(socket);
-    var getTemplateJsonFileSocket = new GetTemplateJsonFileSocket(socket);
-    var getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
-    var fileUploadSocket = new UploadFileSocket(socket);
-    var deleteDirectorySocket = new DeleteDirectorySocket(socket);
+    const socket = io('/swf/workflow');
+    const readTreeJsonSocket = new ReadTreeJsonSocket(socket);
+    const writeTreeJsonSocket = new WriteTreeJsonSocket(socket);
+    const getFileStatSocket = new GetFileStatSocket(socket);
+    const getTemplateJsonFileSocket = new GetTemplateJsonFileSocket(socket);
+    const getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
+    const fileUploadSocket = new UploadFileSocket(socket);
+    const deleteDirectorySocket = new DeleteDirectorySocket(socket);
     // property
-    var jsonProperty = new JsonProperty();
+    const jsonProperty = new JsonProperty();
     // yes no dialog
-    var revertDialog = new YesNoDialog('Are you sure you want to revert ?');
-    var saveDialog = new YesNoDialog('Are you sure you want to save ?');
-    var editDialog = new YesNoDialog('Are you sure you want to save for editing script ?');
+    const revertDialog = new YesNoDialog('Are you sure you want to revert ?');
+    const saveDialog = new YesNoDialog('Are you sure you want to save ?');
+    const editDialog = new YesNoDialog('Are you sure you want to save for editing script ?');
     // elements
-    var rootWorkflow = $('#root_workflow');
-    var addressBar = $('#address_bar');
-    var workflowName = $('#workflow_name');
-    var workflowBirth = $('#workflow_birthday');
-    var workflowUpdate = $('#workflow_update');
-    var workflowDesc = $('#workflow_desc');
-    var saveButton = $('#save_button');
-    var resetButton = $('#reset_button');
-    var fileSelect = $('#file_select');
+    const rootWorkflow = $('#root_workflow');
+    const addressBar = $('#address_bar');
+    const workflowName = $('#workflow_name');
+    const workflowBirth = $('#workflow_birthday');
+    const workflowUpdate = $('#workflow_update');
+    const workflowDesc = $('#workflow_desc');
+    const saveButton = $('#save_button');
+    const resetButton = $('#reset_button');
+    const fileSelect = $('#file_select');
     // svg
-    var treeSvg = $('#tree_svg');
-    var nodeSvg = $('#node_svg');
+    const treeSvg = $('#tree_svg');
+    const nodeSvg = $('#node_svg');
     // cookies
-    var cookies = ClientUtility.getCookies();
-    var projectFilePath = cookies['project'];
-    var rootFilePath = cookies['root'];
-    var projectDirectory = ClientUtility.dirname(ClientUtility.dirname(projectFilePath));
-    var taskIndex = cookies['index'];
-    var hostInfos;
-    var rootTree;
-    var parentTree;
-    var selectedTree;
+    const cookies = ClientUtility.getCookies();
+    const projectFilePath = cookies['project'];
+    const rootFilePath = cookies['root'];
+    const projectDirectory = ClientUtility.dirname(ClientUtility.dirname(projectFilePath));
+    let taskIndex = cookies['index'];
+    let hostInfos;
+    let rootTree;
+    let parentTree;
+    let selectedTree;
     // connect flag to server
-    var isConnect = false;
+    let isConnect = false;
     /**
      * initialize
      */
@@ -65,7 +65,7 @@ $(function () {
      * set update display event to recreate a new tree
      */
     function setUpdateDisplayEvent() {
-        $(document).on('updateDisplay', function () {
+        $(document).on('updateDisplay', () => {
             updateDisplay(taskIndex);
         });
     }
@@ -73,7 +73,7 @@ $(function () {
      * resize node svg width
      */
     function resizeNodeSvg() {
-        nodeSvg.css('width', "calc(100% - " + treeSvg.outerWidth() + "px");
+        nodeSvg.css('width', `calc(100% - ${treeSvg.outerWidth()}px`);
     }
     /**
      * set resize event to resize tree pane panel
@@ -103,7 +103,7 @@ $(function () {
      * set select file event by browse to upload file selection
      */
     function setSelectFileEvent() {
-        $(document).on('selectFile', function (eventObject, value) {
+        $(document).on('selectFile', (eventObject, value) => {
             if (value.isMultiple) {
                 fileSelect.prop('multiple', 'multiple');
             }
@@ -112,9 +112,9 @@ $(function () {
             }
             fileSelect.click();
             fileSelect.off('change');
-            fileSelect.one('change', function (eventObject) {
-                var target = eventObject.target;
-                var files = target.files;
+            fileSelect.one('change', (eventObject) => {
+                const target = eventObject.target;
+                const files = target.files;
                 value.callback(files);
                 showProperty(selectedTree);
             });
@@ -124,7 +124,7 @@ $(function () {
      * set edit script file event to modify submit job script
      */
     function setEditScriptEvent() {
-        $(document).on('editScript', function () {
+        $(document).on('editScript', () => {
             editDialog.show();
         });
     }
@@ -132,7 +132,7 @@ $(function () {
      * set click event to move to project manager page
      */
     function setClickEventForMoveToProjectManagePage() {
-        rootWorkflow.click(function () {
+        rootWorkflow.click(() => {
             ClientUtility.moveWorkflowLink(projectFilePath);
         });
     }
@@ -142,11 +142,11 @@ $(function () {
     function setSaveDialogEventsForScriptEdit() {
         editDialog
             .onClickCancel()
-            .onClickOK(function () {
+            .onClickOK(() => {
             window.open('', 'editor');
-            deleteDirectorys(function () {
-                writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
-                    uploadFiles(function () {
+            deleteDirectorys(() => {
+                writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
+                    uploadFiles(() => {
                         readTreeJson();
                         moveToScriptEditPage();
                     });
@@ -158,7 +158,7 @@ $(function () {
      * movet to script edit page
      */
     function moveToScriptEditPage() {
-        var fullpath = projectDirectory + "/" + selectedTree.getFullpath(config.submit_script);
+        const fullpath = `${projectDirectory}/${selectedTree.getFullpath(config.submit_script)}`;
         $('<form/>', { action: '/swf/editor.html', method: 'post', target: 'editor' })
             .append($('<input/>', { type: 'hidden', name: 'edit', value: fullpath }))
             .appendTo(document.body)
@@ -168,8 +168,8 @@ $(function () {
      * set key up event for rename workflow name
      */
     function setKeyupEventForRenameWorkflowName() {
-        workflowName.on('keyup', function (eventObject) {
-            var name = workflowName.val().trim();
+        workflowName.on('keyup', (eventObject) => {
+            const name = workflowName.val().trim();
             if (parentTree.name !== name) {
                 parentTree.name = name;
                 updateDisplay(taskIndex);
@@ -180,8 +180,8 @@ $(function () {
      * set key up event for rename description name
      */
     function setKeyupEventForRenameWorkflowDescription() {
-        workflowDesc.on('keyup', function (eventObject) {
-            var description = workflowDesc.val().trim();
+        workflowDesc.on('keyup', (eventObject) => {
+            const description = workflowDesc.val().trim();
             if (parentTree.description !== description) {
                 parentTree.description = description;
             }
@@ -193,10 +193,10 @@ $(function () {
     function setSaveDialogEvents() {
         saveDialog
             .onClickCancel()
-            .onClickOK(function () {
-            deleteDirectorys(function () {
-                writeTreeJsonSocket.emit(projectDirectory, rootTree, function () {
-                    uploadFiles(function () {
+            .onClickOK(() => {
+            deleteDirectorys(() => {
+                writeTreeJsonSocket.emit(projectDirectory, rootTree, () => {
+                    uploadFiles(() => {
                         readTreeJson();
                     });
                 });
@@ -208,9 +208,9 @@ $(function () {
      * @param callback The function to call when we delete directorys
      */
     function deleteDirectorys(callback) {
-        var directorys = SwfTree
+        const directorys = SwfTree
             .getDeleteDirectorys()
-            .map(function (dir) { return ClientUtility.normalize(projectDirectory, dir); });
+            .map(dir => ClientUtility.normalize(projectDirectory, dir));
         if (directorys[0]) {
             deleteDirectorySocket.emit(directorys, callback);
         }
@@ -224,7 +224,7 @@ $(function () {
     function setRevertDialogEvents() {
         revertDialog
             .onClickCancel()
-            .onClickOK(function () {
+            .onClickOK(() => {
             readTreeJson();
             revertDialog.hide();
         });
@@ -233,7 +233,7 @@ $(function () {
      * set click event for save workflow
      */
     function setClickEventForSaveWorkflow() {
-        saveButton.click(function () {
+        saveButton.click(() => {
             if (ClientUtility.isValidDirectoryName(parentTree.name)) {
                 saveDialog.show();
             }
@@ -243,7 +243,7 @@ $(function () {
      * set click event for reset workflow
      */
     function setClickEventForResetWorkflow() {
-        resetButton.click(function () {
+        resetButton.click(() => {
             revertDialog.show();
         });
     }
@@ -253,7 +253,7 @@ $(function () {
     function readTreeJson() {
         if (!isConnect) {
             isConnect = true;
-            readTreeJsonSocket.onConnect(rootFilePath, function (treeJson) {
+            readTreeJsonSocket.onConnect(rootFilePath, (treeJson) => {
                 rootTree = SwfTree.create(treeJson);
                 if (!SwfTree.getSwfTree(taskIndex)) {
                     taskIndex = SwfTree.getRootIndex();
@@ -270,9 +270,9 @@ $(function () {
      */
     function setContextMenuEvents() {
         function getClickPosition(option) {
-            var parentOffset = $(option.selector).offset();
-            var clickPosition = option.$menu.position();
-            var position = {
+            const parentOffset = $(option.selector).offset();
+            const clickPosition = option.$menu.position();
+            const position = {
                 x: Math.round(clickPosition.left - parentOffset.left),
                 y: Math.round(clickPosition.top - parentOffset.top)
             };
@@ -288,9 +288,9 @@ $(function () {
                     items: {
                         workflow: {
                             name: "Workflow",
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.WORKFLOW, parentTree, position, function (child) {
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.WORKFLOW, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             }
@@ -298,9 +298,9 @@ $(function () {
                         sep1: '---------',
                         task: {
                             name: 'Task',
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.TASK, parentTree, position, function (child) {
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.TASK, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             }
@@ -308,11 +308,11 @@ $(function () {
                         sep2: '---------',
                         rtask: {
                             name: 'Remote Task',
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.REMOTETASK, parentTree, position, function (child) {
-                                    getHostList(function () {
-                                        var rtask = child;
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.REMOTETASK, parentTree, position, (child) => {
+                                    getHostList(() => {
+                                        const rtask = child;
                                         rtask.remote = new SwfHost(hostInfos[0]);
                                     });
                                     hideProperty();
@@ -322,11 +322,11 @@ $(function () {
                         sep3: '---------',
                         job: {
                             name: 'Job',
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.JOB, parentTree, position, function (child) {
-                                    getHostList(function () {
-                                        var job = child;
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.JOB, parentTree, position, (child) => {
+                                    getHostList(() => {
+                                        const job = child;
                                         job.remote = new SwfHost(hostInfos[0]);
                                         job.remote.job_scheduler = SwfJobScheduler.TCS;
                                     });
@@ -337,9 +337,9 @@ $(function () {
                         sep4: '---------',
                         loop: {
                             name: 'For',
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.FOR, parentTree, position, function (child) {
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.FOR, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             }
@@ -347,12 +347,12 @@ $(function () {
                         sep5: '---------',
                         if: {
                             name: 'If',
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.IF, parentTree, position, function (ifChild) {
-                                    createChildTree(SwfType.CONDITION, ifChild, position, function (ifGrandson) {
-                                        createChildTree(SwfType.ELSE, parentTree, position, function (elseChild) {
-                                            createChildTree(SwfType.CONDITION, elseChild, position, function (elseGrandson) {
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.IF, parentTree, position, (ifChild) => {
+                                    createChildTree(SwfType.CONDITION, ifChild, position, (ifGrandson) => {
+                                        createChildTree(SwfType.ELSE, parentTree, position, (elseChild) => {
+                                            createChildTree(SwfType.CONDITION, elseChild, position, (elseGrandson) => {
                                                 parentTree.relations.push(new SwfRelation(ifChild.getHashCode(), elseChild.getHashCode()));
                                                 hideProperty();
                                             });
@@ -364,22 +364,22 @@ $(function () {
                         sep6: '---------',
                         break: {
                             name: 'Break',
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.BREAK, parentTree, position, function (child) {
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.BREAK, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             },
-                            disabled: function () {
+                            disabled: () => {
                                 return !parentTree.isExistForWorkflowAtParent();
                             }
                         },
                         sep7: '---------',
                         pstudy: {
                             name: 'Parameter Study',
-                            callback: function (name, option) {
-                                var position = getClickPosition(option);
-                                createChildTree(SwfType.PSTUDY, parentTree, position, function (child) {
+                            callback: (name, option) => {
+                                const position = getClickPosition(option);
+                                createChildTree(SwfType.PSTUDY, parentTree, position, (child) => {
                                     hideProperty();
                                 });
                             },
@@ -389,12 +389,12 @@ $(function () {
                 sep1: '---------',
                 delete: {
                     name: 'Delete',
-                    callback: function () {
+                    callback: () => {
                         selectedTree.remove();
                         hideProperty();
                         updateDisplay(taskIndex);
                     },
-                    disabled: function () {
+                    disabled: () => {
                         return selectedTree == null;
                     }
                 }
@@ -412,7 +412,7 @@ $(function () {
         else {
             taskIndex = object.getIndexString();
         }
-        SvgNodePane.create(rootTree, taskIndex, 'tree_svg', function (tree) {
+        SvgNodePane.create(rootTree, taskIndex, 'tree_svg', (tree) => {
             jsonProperty.hide();
             selectedTree = null;
             updateDisplay(tree);
@@ -424,13 +424,13 @@ $(function () {
      * create relation node
      */
     function createRelationNode() {
-        var tree = SwfTree.getSwfTree(taskIndex);
+        const tree = SwfTree.getSwfTree(taskIndex);
         parentTree = tree;
-        var filepath = getFullpath(tree);
+        const filepath = getFullpath(tree);
         addressBar.val(filepath);
         workflowName.val(tree.name);
         workflowDesc.val(tree.description);
-        SvgNodeUI.create(tree, selectedTree, 'node_svg', function (child) {
+        SvgNodeUI.create(tree, selectedTree, 'node_svg', (child) => {
             if (child == null) {
                 jsonProperty.hide();
                 selectedTree = null;
@@ -438,7 +438,7 @@ $(function () {
             }
             selectedTree = child;
             showProperty(child);
-        }, function (parent) {
+        }, (parent) => {
             parent = parent || parentTree.getParent();
             if (parent == null) {
                 return;
@@ -455,7 +455,7 @@ $(function () {
      * @param tree display tree
      */
     function showProperty(tree) {
-        getHostList(function () {
+        getHostList(() => {
             jsonProperty.show(tree, hostInfos);
         });
     }
@@ -474,8 +474,8 @@ $(function () {
      * @param callback The function to call when we create new child tree
      */
     function createChildTree(fileType, parent, position, callback) {
-        getTemplateJsonFileSocket.emit(fileType, function (json) {
-            var child = parent.addChild(json, fileType, position);
+        getTemplateJsonFileSocket.emit(fileType, (json) => {
+            const child = parent.addChild(json, fileType, position);
             if (callback) {
                 callback(child);
             }
@@ -486,7 +486,7 @@ $(function () {
      * @param filepath file path string
      */
     function getFileStat(filepath) {
-        getFileStatSocket.emit(filepath, function (stat) {
+        getFileStatSocket.emit(filepath, (stat) => {
             if (stat) {
                 workflowUpdate.text(new Date(stat.mtime).toLocaleString());
                 workflowBirth.text(new Date(stat.birthtime).toLocaleString());
@@ -503,7 +503,7 @@ $(function () {
      */
     function getHostList(callback) {
         if (hostInfos == null) {
-            getRemoteHostListSocket.emit(function (hosts) {
+            getRemoteHostListSocket.emit((hosts) => {
                 hostInfos = hosts;
                 callback();
             });
@@ -518,8 +518,8 @@ $(function () {
      * @return absolute path
      */
     function getFullpath(tree) {
-        var filename = ClientUtility.getTemplate(tree).getDefaultName();
-        var currentDirectory = tree.getCurrentDirectory();
+        const filename = ClientUtility.getTemplate(tree).getDefaultName();
+        const currentDirectory = tree.getCurrentDirectory();
         return ClientUtility.normalize(projectDirectory, currentDirectory, filename);
     }
     /**
@@ -527,21 +527,21 @@ $(function () {
      * @param callback function
      */
     function uploadFiles(callback) {
-        var files = SwfTree.getUploadFiles(projectDirectory);
-        var fileCount = files.length;
-        var sendCount = 0;
+        const files = SwfTree.getUploadFiles(projectDirectory);
+        const fileCount = files.length;
+        let sendCount = 0;
         if (fileCount === 0) {
             callback();
             return;
         }
-        fileUploadSocket.onEvent(function (isUpload, filepath) {
+        fileUploadSocket.onEvent((isUpload, filepath) => {
             sendCount++;
             if (sendCount === fileCount) {
                 fileUploadSocket.offEvent();
                 callback();
             }
         });
-        files.forEach(function (data) {
+        files.forEach(data => {
             fileUploadSocket.emit(data);
         });
     }

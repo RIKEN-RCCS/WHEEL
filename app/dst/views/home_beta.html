@@ -6,10 +6,13 @@
     <link type="text/css" rel="stylesheet" href="/css/jquery-ui-1.12.1.css" />
     <link type="text/css" rel="stylesheet" href="/css/jquery.contextMenu-2.4.4.css" />
     <link type="text/css" rel="stylesheet" href="/css/home_beta.css" />
+    <!-- 仮UI用にCDNで導入-->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <script type="text/javascript" src="/third_party/jquery/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/third_party/jquery/jquery-ui-1.12.1.min.js"></script>
     <script type="text/javascript" src="/third_party/jquery/jquery.contextMenu-2.4.4.min.js"></script>
     <script type="text/javascript" src="/third_party/socket.io/socket.io-1.7.3.min.js"></script>
+    <script type="text/javascript" src="/js/fileBrowser.js"></script>
     <script type="text/javascript" src="/js/home_beta.js"></script>
 
     <title>WHEEL</title>
@@ -27,13 +30,14 @@
       <button id="btnImport"> Import </button>
     </div>
     </div>
-    <div id=dialogue>
+    <div id="dialogue">
+      <p id="path"></p>
       <ul id=fileList>
-        <li> dummy file 1</li>
-        <li> dummy file 2</li>
-        <li> dummy file 3</li>
-        <li> dummy file 4</li>
       </ul>
+      <div id="projectNameInputArea">
+        New project name<input type="text" id="newProjectName">
+      </div>
+      <button id="btnOK"> OK </button>
       <button id="btnCancel"> Cancel </button>
     </div>
 </body>

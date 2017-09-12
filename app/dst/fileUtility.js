@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("fs");
-var SwfFileType = require("./swfFileType");
+const fs = require("fs");
+const SwfFileType = require("./swfFileType");
 /**
  * isDir
  * @param  dirPath directory path to check
@@ -18,15 +18,15 @@ exports.isDir = isDir;
  * @return file list
  */
 function getFiles(pathDirectory, fileRegex) {
-    var getFiles = [
+    let getFiles = [
         {
-            name: "../",
+            name: `../`,
             type: SwfFileType.DIRECTORY
         }
     ];
     fs.readdirSync(pathDirectory)
-        .forEach(function (file) {
-        var stat = fs.statSync(pathDirectory + "/" + file);
+        .forEach(file => {
+        const stat = fs.statSync(`${pathDirectory}/${file}`);
         if (stat.isFile() && (fileRegex != null && file.match(fileRegex))) {
             getFiles.push({
                 name: file,
@@ -35,7 +35,7 @@ function getFiles(pathDirectory, fileRegex) {
         }
         else if (stat.isDirectory()) {
             getFiles.push({
-                name: file + "/",
+                name: `${file}/`,
                 type: SwfFileType.DIRECTORY
             });
         }

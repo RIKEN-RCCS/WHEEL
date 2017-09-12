@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("fs");
-var ssh2 = require("ssh2");
-var logger = require("./logger");
+const fs = require("fs");
+const ssh2 = require("ssh2");
+const logger = require("./logger");
 /**
  * execute ssh connect
  * @param hostInfo host information
@@ -10,7 +10,7 @@ var logger = require("./logger");
  * @param callback The function to call when we end ssh connection test
  */
 function sshConnectTest(hostInfo, pass, callback) {
-    var config = {
+    const config = {
         host: hostInfo.host,
         port: 22,
         username: hostInfo.username
@@ -22,13 +22,13 @@ function sshConnectTest(hostInfo, pass, callback) {
     else {
         config.password = pass;
     }
-    var client = new ssh2.Client();
+    const client = new ssh2.Client();
     client
-        .on('connect', function () {
-        logger.debug("connected");
+        .on('connect', () => {
+        logger.debug(`connected`);
     })
-        .on('ready', function () {
-        client.sftp(function (err, sftp) {
+        .on('ready', () => {
+        client.sftp((err, sftp) => {
             if (err) {
                 callback(err);
             }
@@ -38,14 +38,14 @@ function sshConnectTest(hostInfo, pass, callback) {
             client.end();
         });
     })
-        .on('error', function (err) {
+        .on('error', (err) => {
         logger.error(err);
         callback(err);
     })
-        .on('close', function (had_error) {
+        .on('close', (had_error) => {
         logger.debug('connection close');
     })
-        .on('end', function () {
+        .on('end', () => {
         logger.debug('end remote session.');
     })
         .connect(config);

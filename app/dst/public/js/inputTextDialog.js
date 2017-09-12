@@ -1,13 +1,12 @@
 /**
  * text input dialog class
  */
-var InputTextDialog = (function () {
+class InputTextDialog {
     /**
      * create input text dialog instance
      * @param name dialog label name
      */
-    function InputTextDialog(name) {
-        var _this = this;
+    constructor(name) {
         /**
          * gray panel element
          */
@@ -44,9 +43,9 @@ var InputTextDialog = (function () {
          * key pressed flag
          */
         this.keyPressedFlag = false;
-        this.grayPanel.click(function () {
-            if (_this.isEnableEvent) {
-                _this.hide();
+        this.grayPanel.click(() => {
+            if (this.isEnableEvent) {
+                this.hide();
             }
         });
         this.defaultName = name === undefined ? '' : name;
@@ -57,38 +56,37 @@ var InputTextDialog = (function () {
      * @param label dialog label string
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.show = function (title, label) {
-        var _this = this;
+    show(title, label) {
         this.keyPressedFlag = false;
         this.grayPanel.displayBlock();
         this.dialogArea.displayBlock();
-        this.buttonOK.on('click', function () {
-            if (_this.isEnableEvent && _this.clickOkCallback) {
-                _this.clickOkCallback(_this.inputText);
+        this.buttonOK.on('click', () => {
+            if (this.isEnableEvent && this.clickOkCallback) {
+                this.clickOkCallback(this.inputText);
             }
         });
-        this.buttonCancel.one('click', function () {
-            if (_this.isEnableEvent) {
-                if (_this.clickCancelCallback) {
-                    _this.clickCancelCallback();
+        this.buttonCancel.one('click', () => {
+            if (this.isEnableEvent) {
+                if (this.clickCancelCallback) {
+                    this.clickCancelCallback();
                 }
-                _this.hide();
+                this.hide();
             }
         });
-        this.inputText.on('keypress', function () {
-            _this.keyPressedFlag = true;
+        this.inputText.on('keypress', () => {
+            this.keyPressedFlag = true;
         });
-        this.inputText.on('keyup', function (eventObject) {
-            var ENTER_KEY = 0x0D;
-            if (_this.isEnableEvent && _this.clickOkCallback && eventObject.which === ENTER_KEY) {
-                _this.clickOkCallback(_this.inputText);
+        this.inputText.on('keyup', (eventObject) => {
+            const ENTER_KEY = 0x0D;
+            if (this.isEnableEvent && this.clickOkCallback && eventObject.which === ENTER_KEY) {
+                this.clickOkCallback(this.inputText);
             }
         });
         if (title == null) {
-            title = "Please enter " + this.defaultName + " name";
+            title = `Please enter ${this.defaultName} name`;
         }
         if (label == null) {
-            label = this.defaultName + ":";
+            label = `${this.defaultName}:`;
         }
         this.clearBusy();
         this.title.text(title);
@@ -97,12 +95,12 @@ var InputTextDialog = (function () {
         this.inputText.val('');
         this.inputText.focus();
         return this;
-    };
+    }
     /**
      * hide dialog
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.hide = function () {
+    hide() {
         this.grayPanel.displayNone();
         this.dialogArea.displayNone();
         this.buttonOK.off('click');
@@ -110,49 +108,49 @@ var InputTextDialog = (function () {
         this.inputText.off('keyup');
         this.inputText.off('keypress');
         return this;
-    };
+    }
     /**
      * Adds a callback function for ok button click event
      * @param callback
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.onClickOK = function (callback) {
+    onClickOK(callback) {
         this.clickOkCallback = null;
         this.clickOkCallback = callback;
         return this;
-    };
+    }
     /**
      * Adds a callback function for cancel button click event
      * @param callback
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.onClickCancel = function (callback) {
+    onClickCancel(callback) {
         this.clickCancelCallback = null;
         this.clickCancelCallback = callback;
         return this;
-    };
+    }
     /**
      * set events enable
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.enableEvent = function () {
+    enableEvent() {
         this.isEnableEvent = true;
         return this;
-    };
+    }
     /**
      * set events disable
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.disableEvent = function () {
+    disableEvent() {
         this.isEnableEvent = false;
         return this;
-    };
+    }
     /**
      * set busy
      * @param name button name
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.setBusy = function (name) {
+    setBusy(name) {
         this.disableEvent();
         this.inputText
             .prop('disabled', true);
@@ -161,12 +159,12 @@ var InputTextDialog = (function () {
             .prop('disabled', true)
             .class('disable_button button');
         return this;
-    };
+    }
     /**
      * clear busy
      * @return InputTextDialog instance
      */
-    InputTextDialog.prototype.clearBusy = function () {
+    clearBusy() {
         this.enableEvent();
         this.inputText
             .prop('disabled', false);
@@ -175,7 +173,6 @@ var InputTextDialog = (function () {
             .prop('disabled', false)
             .class('dialog_button button');
         return this;
-    };
-    return InputTextDialog;
-}());
+    }
+}
 //# sourceMappingURL=inputTextDialog.js.map

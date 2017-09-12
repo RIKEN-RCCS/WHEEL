@@ -1,17 +1,17 @@
-$(function () {
+$(() => {
     // socket io
-    var socket = io('/swf/editor');
-    var readFile = new ReadFileSocket(socket);
-    var writeFile = new WriteFileSocket(socket);
+    const socket = io('/swf/editor');
+    const readFile = new ReadFileSocket(socket);
+    const writeFile = new WriteFileSocket(socket);
     // elements
-    var addressBar = $('#address_bar');
-    var textArea = $('#text_area');
-    var saveButton = $('#save_button');
-    var resetButton = $('#reset_button');
+    const addressBar = $('#address_bar');
+    const textArea = $('#text_area');
+    const saveButton = $('#save_button');
+    const resetButton = $('#reset_button');
     // cookie
-    var editFilePath = ClientUtility.getCookies()['edit'];
+    const editFilePath = ClientUtility.getCookies()['edit'];
     // connect flag to server
-    var isConnect = false;
+    let isConnect = false;
     /**
      * initialize
      */
@@ -28,7 +28,7 @@ $(function () {
      * set button click event to reset script
      */
     function setClickEventForReset() {
-        resetButton.click(function () {
+        resetButton.click(() => {
             readScriptFile();
         });
     }
@@ -36,7 +36,7 @@ $(function () {
      * set button click event to save script
      */
     function setClickEventForSave() {
-        saveButton.click(function () {
+        saveButton.click(() => {
             writeScriptFile();
         });
     }
@@ -46,7 +46,7 @@ $(function () {
     function readScriptFile() {
         if (!isConnect) {
             isConnect = true;
-            readFile.onConnect(editFilePath, function (data) {
+            readFile.onConnect(editFilePath, (data) => {
                 textArea.val(data);
                 addressBar.val(editFilePath);
             });
@@ -59,7 +59,7 @@ $(function () {
      * write script file to server
      */
     function writeScriptFile() {
-        writeFile.emit(editFilePath, textArea.val(), function (isSucceed) {
+        writeFile.emit(editFilePath, textArea.val(), (isSucceed) => {
         });
     }
 });

@@ -1,24 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("fs");
-var path = require("path");
-var ServerUtility = require("./serverUtility");
-var SwfState = require("./swfState");
-var SwfType = require("./swfType");
+const fs = require("fs");
+const path = require("path");
+const ServerUtility = require("./serverUtility");
+const SwfState = require("./swfState");
+const SwfType = require("./swfType");
 /**
  * clean project json
  * @param projectFilePath project json file path
  * @param callback The function to call when we clean project
  */
 function cleanProject(projectFilePath, callback) {
-    fs.readFile(projectFilePath, function (err, data) {
+    fs.readFile(projectFilePath, (err, data) => {
         if (err) {
             callback(err);
             return;
         }
-        var projectJson = JSON.parse(data.toString());
+        const projectJson = JSON.parse(data.toString());
         projectJson.state = SwfState.PLANNING;
-        fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), function (err) {
+        fs.writeFile(projectFilePath, JSON.stringify(projectJson, null, '\t'), (err) => {
             if (err) {
                 callback(err);
                 return;
@@ -36,7 +36,7 @@ exports.cleanProject = cleanProject;
  */
 function renameLogjsonPath(logJson, from, to) {
     logJson.path = logJson.path.replace(from, to);
-    logJson.children.forEach(function (child) {
+    logJson.children.forEach(child => {
         renameLogjsonPath(child, from, to);
     });
 }
@@ -49,21 +49,21 @@ exports.renameLogjsonPath = renameLogjsonPath;
  */
 function setQueue(queue, logJson) {
     queue.push(logJson);
-    var _loop_1 = function (index) {
-        var child = logJson.children[index];
+    for (let index = logJson.children.length - 1; index >= 0; index--) {
+        const child = logJson.children[index];
         if (child.type !== SwfType.FOR && child.type !== SwfType.PSTUDY) {
             setQueue(queue, child);
-            return "continue";
+            continue;
         }
-        var basename = path.basename(child.path);
-        var files = fs.readdirSync(logJson.path);
-        var newChildren = [];
-        var regexp = new RegExp("^" + basename + "_([0-9]+)$");
-        files.forEach(function (file) {
+        const basename = path.basename(child.path);
+        const files = fs.readdirSync(logJson.path);
+        const newChildren = [];
+        const regexp = new RegExp(`^${basename}_([0-9]+)$`);
+        files.forEach(file => {
             if (file.match(regexp)) {
-                var newLogJson_1 = {
-                    name: child.name + "_" + RegExp.$1,
-                    path: child.path + "_" + RegExp.$1,
+                const newLogJson = {
+                    name: `${child.name}_${RegExp.$1}`,
+                    path: `${child.path}_${RegExp.$1}`,
                     description: child.description,
                     type: child.type,
                     state: child.state,
@@ -72,17 +72,17 @@ function setQueue(queue, logJson) {
                     order: child.order,
                     children: JSON.parse(JSON.stringify(child.children))
                 };
-                newLogJson_1.children.forEach(function (newChild) {
-                    renameLogjsonPath(newChild, child.path, newLogJson_1.path);
+                newLogJson.children.forEach(newChild => {
+                    renameLogjsonPath(newChild, child.path, newLogJson.path);
                 });
-                newChildren.push(newLogJson_1);
+                newChildren.push(newLogJson);
             }
         });
         logJson.children.splice(index, 1);
         newChildren
-            .sort(function (a, b) {
-            var aIndex = parseInt(a.path.match(/([0-9]+)$/)[1]);
-            var bIndex = parseInt(b.path.match(/([0-9]+)$/)[1]);
+            .sort((a, b) => {
+            const aIndex = parseInt(a.path.match(/([0-9]+)$/)[1]);
+            const bIndex = parseInt(b.path.match(/([0-9]+)$/)[1]);
             if (aIndex < bIndex) {
                 return 1;
             }
@@ -90,13 +90,10 @@ function setQueue(queue, logJson) {
                 return -1;
             }
         })
-            .forEach(function (newChild) {
+            .forEach(newChild => {
             logJson.children.splice(index, 0, newChild);
             setQueue(queue, newChild);
         });
-    };
-    for (var index = logJson.children.length - 1; index >= 0; index--) {
-        _loop_1(index);
     }
 }
 exports.setQueue = setQueue;
@@ -106,7 +103,7 @@ exports.setQueue = setQueue;
  * @param callback The function to call when we have updated log json
  */
 function updateLogJson(queue, callback) {
-    var logJson = queue.shift();
+    const logJson = queue.shift();
     if (!logJson) {
         callback();
         return;
@@ -115,11 +112,11 @@ function updateLogJson(queue, callback) {
         updateLogJson(queue, callback);
         return;
     }
-    var config = require('../dst/config/server');
-    var logFilePath = path.join(logJson.path, config.system_name + ".log");
-    fs.readFile(logFilePath, function (err, data) {
+    const config = require('../dst/config/server');
+    const logFilePath = path.join(logJson.path, `${config.system_name}.log`);
+    fs.readFile(logFilePath, (err, data) => {
         if (!err) {
-            var readJson = JSON.parse(data.toString());
+            const readJson = JSON.parse(data.toString());
             logJson.state = readJson.state;
             logJson.execution_start_date = readJson.execution_start_date;
             logJson.execution_end_date = readJson.execution_end_date;
@@ -134,8 +131,8 @@ exports.updateLogJson = updateLogJson;
  * @param projectJson project json data
  */
 function createProjectJson(projectPath, projectJson) {
-    var dir_project = path.dirname(projectPath);
-    var path_workflow = path.resolve(dir_project, projectJson.path_workflow);
+    const dir_project = path.dirname(projectPath);
+    const path_workflow = path.resolve(dir_project, projectJson.path_workflow);
     projectJson.log = ServerUtility.createLogJson(path_workflow);
 }
 exports.createProjectJson = createProjectJson;
@@ -146,12 +143,12 @@ exports.createProjectJson = createProjectJson;
  */
 function openProjectJson(projectFilepath) {
     var data = fs.readFileSync(projectFilepath);
-    var projectJson = JSON.parse(data.toString());
+    const projectJson = JSON.parse(data.toString());
     createProjectJson(projectFilepath, projectJson);
     if (!SwfState.isPlanning(projectJson)) {
-        var queue = [];
+        const queue = [];
         setQueue(queue, projectJson.log);
-        updateLogJson(queue, function () {
+        updateLogJson(queue, () => {
             projectJson.state = projectJson.log.state;
         });
     }

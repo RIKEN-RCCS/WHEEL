@@ -1,12 +1,12 @@
 /**
  * socket io communication class for gettingfile status
  */
-var GetFileStatSocket = (function () {
+class GetFileStatSocket {
     /**
      * create new instance
      * @param socket socket io instance
      */
-    function GetFileStatSocket(socket) {
+    constructor(socket) {
         this.socket = socket;
     }
     /**
@@ -14,33 +14,31 @@ var GetFileStatSocket = (function () {
      * @param filename
      * @param callback The function to call when we get this event
      */
-    GetFileStatSocket.prototype.onConnect = function (filename, callback) {
-        var _this = this;
+    onConnect(filename, callback) {
         this.socket
-            .on('connect', function () {
-            _this.emit(filename, callback);
+            .on('connect', () => {
+            this.emit(filename, callback);
         });
-    };
+    }
     /**
      * Adds a listener for this event that will be invoked a single time before being automatically removed
      * @param callback The function to call when we get this event
      */
-    GetFileStatSocket.prototype.onEvent = function (callback) {
+    onEvent(callback) {
         this.socket.once(GetFileStatSocket.eventName, callback);
-    };
+    }
     /**
      * emit to server for gettingfile status
      * @param filepath
      * @param callback The function to call when we get this event
      */
-    GetFileStatSocket.prototype.emit = function (filepath, callback) {
+    emit(filepath, callback) {
         this.onEvent(callback);
         this.socket.emit(GetFileStatSocket.eventName, filepath);
-    };
-    /**
-     * event name
-     */
-    GetFileStatSocket.eventName = 'onGetFileStat';
-    return GetFileStatSocket;
-}());
+    }
+}
+/**
+ * event name
+ */
+GetFileStatSocket.eventName = 'onGetFileStat';
 //# sourceMappingURL=getFileStatSocket.js.map

@@ -53,12 +53,12 @@ var SwfType;
      * @return whether specified class has script or not
      */
     function isImplimentsWorkflow(target) {
-        var workflowType = SwfType.WORKFLOW;
-        var ForType = SwfType.FOR;
-        var ifType = SwfType.IF;
-        var elseType = SwfType.ELSE;
-        var pstudyType = SwfType.PSTUDY;
-        if (target.type.match(new RegExp("^(?:" + [workflowType, ForType, ifType, elseType, pstudyType].join('|') + ")$"))) {
+        const workflowType = SwfType.WORKFLOW;
+        const ForType = SwfType.FOR;
+        const ifType = SwfType.IF;
+        const elseType = SwfType.ELSE;
+        const pstudyType = SwfType.PSTUDY;
+        if (target.type.match(new RegExp(`^(?:${[workflowType, ForType, ifType, elseType, pstudyType].join('|')})$`))) {
             return true;
         }
         else {
@@ -72,9 +72,9 @@ var SwfType;
      * @return whether specified class is condition or not
      */
     function isImplimentsCondition(tree) {
-        var conditionType = SwfType.CONDITION;
-        var breakType = SwfType.BREAK;
-        if (tree.type.match(new RegExp("^(?:" + [conditionType, breakType].join('|') + ")$"))) {
+        const conditionType = SwfType.CONDITION;
+        const breakType = SwfType.BREAK;
+        if (tree.type.match(new RegExp(`^(?:${[conditionType, breakType].join('|')})$`))) {
             return true;
         }
         else {

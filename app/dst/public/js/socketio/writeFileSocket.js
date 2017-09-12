@@ -1,37 +1,36 @@
 /**
  * socket io communication class for write file to server
  */
-var WriteFileSocket = (function () {
+class WriteFileSocket {
     /**
      * create new instance
      * @param socket socket io instance
      */
-    function WriteFileSocket(socket) {
+    constructor(socket) {
         this.socket = socket;
     }
     /**
      * Adds a listener for this event that will be invoked a single time before being automatically removed
      * @param callback The function to call when we get the event
      */
-    WriteFileSocket.prototype.onEvent = function (callback) {
-        this.socket.once(WriteFileSocket.eventName, function (isSucceed) {
+    onEvent(callback) {
+        this.socket.once(WriteFileSocket.eventName, (isSucceed) => {
             callback(isSucceed);
         });
-    };
+    }
     /**
      * emit to server for write file
      * @param filepath write file path
      * @param data write data string
      * @param callback The function to call when we get the event
      */
-    WriteFileSocket.prototype.emit = function (filepath, data, callback) {
+    emit(filepath, data, callback) {
         this.onEvent(callback);
         this.socket.emit(WriteFileSocket.eventName, filepath, data);
-    };
-    /**
-     * event name
-     */
-    WriteFileSocket.eventName = 'writeFile';
-    return WriteFileSocket;
-}());
+    }
+}
+/**
+ * event name
+ */
+WriteFileSocket.eventName = 'writeFile';
 //# sourceMappingURL=writeFileSocket.js.map

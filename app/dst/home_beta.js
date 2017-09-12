@@ -1,31 +1,75 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var logger = require("./logger");
-var sioHelper = require("./socketioHelper");
-var onNew = function (msg) {
-    logger.debug(msg);
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const logger = require("./logger");
+const socketioHelper_1 = require("./socketioHelper");
+const sendFiles_1 = require("./sendFiles");
+const projectListManager = require("./projectListManager");
+const projectManager = require("./projectManager");
+const config = require('./config/server.json');
+const noDotFiles = /^[^\.].*$/;
+const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\.')}$`);
+var adaptorSendFiles = function (sio, withFile, msg) {
+    var target = msg ? path.normalize(msg) : config.rootDir || os.homedir() || '/';
+    sendFiles_1.default(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
 };
-var onImport = function (msg) {
-    logger.debug(msg);
+var onCreate = function (sio, msg) {
+    logger.debug("onCreate" + msg);
+    var pathDirectory = msg;
+    projectManager.create(pathDirectory);
+    var label = path.basename(pathDirectory);
+    projectListManager.add(label, pathDirectory);
+    //TODO prj.jsonのnameをlabelで書き換える
+    sio.emit('projectList', projectListManager.getAllProject());
 };
-var onRemove = function (msg) {
-    logger.debug(msg);
+var onAdd = function (sio, msg) {
+    logger.debug(`add: ${msg}`);
+    var tmp = JSON.parse(fs.readFileSync(msg).toString());
+    console.log(tmp.name);
+    projectListManager.add(tmp.name, msg);
+    sio.emit('projectList', projectListManager.getAllProject());
 };
-var onRename = function (msg) {
-    logger.debug(msg);
+var onRemove = function (sio, msg) {
+    logger.debug(`remove: ${msg}`);
+    projectListManager.remove(msg);
+    sio.emit('projectList', projectListManager.getAllProject());
 };
-var onReorder = function (msg) {
-    logger.debug(msg);
+var onRename = function (sio, msg) {
+    logger.debug(`rename: ${msg}`);
+    var data = JSON.parse(msg);
+    if (!(data.hasOwnProperty('oldLabel') && data.hasOenProperty('newLabel'))) {
+        logger.warn(`illegal request ${msg}`);
+        return;
+    }
+    projectListManager.rename(data.oldLabel, data.newLabel);
+    sio.emit('projectList', projectListManager.getAllProject());
 };
-var eventListeners = {
-    'new': onNew,
-    'import': onImport,
-    'remove': onRemove,
-    'rename': onRename,
-    'reorder': onReorder
+var onReorder = function (sio, msg) {
+    logger.debug(`reorder: ${msg}`);
+    var data = JSON.parse(msg);
+    projectListManager.reorder(data);
+    sio.emit('projectList', projectListManager.getAllProject());
 };
+/*
+ * helper function for socketio.on()
+ * @param sio       socket.io's namespace
+ * @param eventName event name
+ * @param callback  callback function
+ *
+ */
 function setup(sio) {
-    sioHelper.add(sio.of('/home'), eventListeners);
+    sio.of('/home').on('connect', (socket) => {
+        socket.emit('projectList', projectListManager.getAllProject());
+    });
+    socketioHelper_1.default(sio.of('/home'), 'new', adaptorSendFiles.bind(null, sio.of('/home'), false));
+    socketioHelper_1.default(sio.of('/home'), 'import', adaptorSendFiles.bind(null, sio.of('/home'), true));
+    socketioHelper_1.default(sio.of('/home'), 'create', onCreate.bind(null, sio.of('/home')));
+    socketioHelper_1.default(sio.of('/home'), 'add', onAdd.bind(null, sio.of('/home')));
+    socketioHelper_1.default(sio.of('/home'), 'remove', onRemove.bind(null, sio.of('/home')));
+    socketioHelper_1.default(sio.of('/home'), 'rename', onRename.bind(null, sio.of('/home')));
+    socketioHelper_1.default(sio.of('/home'), 'reorder', onReorder.bind(null, sio.of('/home')));
 }
 exports.setup = setup;
 //# sourceMappingURL=home_beta.js.map

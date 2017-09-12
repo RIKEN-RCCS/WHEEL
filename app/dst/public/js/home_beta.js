@@ -1,22 +1,18 @@
-$(function () {
+$(() => {
     // socket io
-    var socket = io('/home');
-    //サーバからのデータ受信時の処理
-    socket.on('projectList', function (data) {
-        if (!data.hasOwnProperty('label'))
-            return;
-        if (!data.hasOwnProperty('path'))
-            return;
-        $('#projectList').append("<li class=\"ui-state-default\" id = " + data.id + " ><span class=\"projectPath\">" + data.path + "</span>" + data.label + "</li>");
-    });
-    socket.on('files', function (data) {
-        if (!data.hasOwnProperty('name'))
-            return;
-        if (!data.hasOwnProperty('type'))
-            return;
-        if (!(data.type in ['file', 'dir', 'linkToFile', 'linkToDir']))
-            return;
-    });
+    const socket = io('/home');
+    var resetScreen = function () {
+        $('#normal').show();
+        $('#dialogue').hide();
+        $('#path').empty();
+        $('#newProjectName').val('');
+    };
+    var showFileDialogue = function () {
+        $('#fileList').empty();
+        $('#normal').hide();
+        $('#dialogue').show();
+        $('#projectNameInputArea').hide();
+    };
     //TODO 別のファイルへお引っ越し?
     var openProject = function (key, opt) {
         console.log('open project!');
@@ -49,25 +45,50 @@ $(function () {
     });
     // setup project list UI
     $('#projectList').sortable({
-        update: function (e, ui) {
+        update: (e, ui) => {
             socket.emit('reorder', $('#projectList').sortable('toArray'));
         }
     });
     $('#projectList').disableSelection();
-    // btn click event
-    $('#btnNew').on("click", function (event) {
-        socket.emit('new', true);
-        $('#normal').hide();
-        $('#dialogue').show();
+    // project list
+    socket.on('projectList', (data) => {
+        console.log(data);
+        $('#projectList').empty();
+        data.forEach(function (pj) {
+            $('#projectList').append(`<li class="ui-state-default" id = ${pj.id} ><span class="projectPath">${pj.path}</span>${pj.label}</li>`);
+        });
     });
-    $('#btnImport').on("click", function (event) {
-        socket.emit('import', true);
-        $('#normal').hide();
-        $('#dialogue').show();
+    //file browser
+    const fb = new FileBrowser(socket, '#fileList', 'fileList');
+    fb.onFileDblClick(function (target) {
+        socket.emit('add', target);
+        resetScreen();
     });
-    $('#btnCancel').on("click", function (event) {
-        $('#normal').show();
-        $('#dialogue').hide();
+    // register btn click event listeners
+    var eventName = null;
+    $('#btnNew').on("click", (event) => {
+        showFileDialogue();
+        $('#projectNameInputArea').show();
+        eventName = 'new';
+        fb.request(eventName, null);
+    });
+    $('#btnImport').on("click", (event) => {
+        showFileDialogue();
+        eventName = 'import';
+        fb.request(eventName, null);
+    });
+    $('#btnCancel').on("click", (event) => {
+        resetScreen();
+    });
+    $('#btnOK').on("click", (event) => {
+        if (eventName == 'import') {
+            socket.emit('add', fb.getRequestedPath() + '/' + fb.getSelectedFile());
+        }
+        else if (eventName == 'new') {
+            var label = $('#newProjectName').val();
+            socket.emit('create', fb.getRequestedPath() + '/' + label);
+        }
+        resetScreen();
     });
 });
 //# sourceMappingURL=home_beta.js.map

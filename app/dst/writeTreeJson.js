@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("fs");
-var path = require("path");
-var logger = require("./logger");
-var ServerUtility = require("./serverUtility");
-var SwfType = require("./swfType");
+const fs = require("fs");
+const path = require("path");
+const logger = require("./logger");
+const ServerUtility = require("./serverUtility");
+const SwfType = require("./swfType");
 /**
  * genereta submic script
  * @param data json data path
@@ -15,21 +15,21 @@ function generateSubmitScript(data, callback) {
         callback();
         return;
     }
-    var config = require('../dst/config/server');
-    var submitJobname = config.submit_script;
-    var jobJson = data.json;
-    var srcPath = path.join(__dirname, "../" + config.scheduler[jobJson.remote.job_scheduler]);
-    var dstPath = path.join(data.directory, data.json.path, submitJobname);
-    fs.stat(dstPath, function (err, stat) {
+    const config = require('../dst/config/server');
+    const submitJobname = config.submit_script;
+    const jobJson = data.json;
+    const srcPath = path.join(__dirname, `../${config.scheduler[jobJson.remote.job_scheduler]}`);
+    const dstPath = path.join(data.directory, data.json.path, submitJobname);
+    fs.stat(dstPath, (err, stat) => {
         if (err && jobJson.job_script.path) {
             jobJson.script.path = submitJobname;
-            var format = {
+            const format = {
                 '%%nodes%%': jobJson.script_param.nodes.toString(),
                 '%%cores%%': jobJson.script_param.cores.toString(),
                 '%%script%%': jobJson.job_script.path
             };
             ServerUtility.writeFileKeywordReplacedAsync(srcPath, dstPath, format, callback);
-            logger.info("create file=" + dstPath);
+            logger.info(`create file=${dstPath}`);
             return;
         }
         callback();
@@ -42,56 +42,56 @@ exports.generateSubmitScript = generateSubmitScript;
  * @param callback The function to call when we save tree json
  */
 function saveTreeJson(queue, callback) {
-    var data = queue.shift();
+    const data = queue.shift();
     if (!data) {
         callback();
         return;
     }
-    var filename = ServerUtility.getTypeOfJson(data.json).getDefaultName();
-    var oldDirectory = path.join(data.directory, data.json.oldPath);
-    var newDirectory = path.join(data.directory, data.json.path);
-    var filepath = path.join(newDirectory, filename);
-    var error = function (err) {
+    const filename = ServerUtility.getTypeOfJson(data.json).getDefaultName();
+    const oldDirectory = path.join(data.directory, data.json.oldPath);
+    const newDirectory = path.join(data.directory, data.json.path);
+    const filepath = path.join(newDirectory, filename);
+    const error = (err) => {
         logger.error(err);
         saveTreeJson(queue, callback);
     };
-    var update = function () {
-        generateSubmitScript(data, function (err) {
+    const update = () => {
+        generateSubmitScript(data, (err) => {
             if (err) {
                 error(err);
                 return;
             }
-            var copy = JSON.parse(JSON.stringify(data.json));
+            const copy = JSON.parse(JSON.stringify(data.json));
             delete copy.children;
             delete copy.oldPath;
             delete copy.script_param;
-            fs.writeFile(filepath, JSON.stringify(copy, null, '\t'), function (err) {
+            fs.writeFile(filepath, JSON.stringify(copy, null, '\t'), (err) => {
                 if (err) {
                     logger.error(err);
                 }
-                logger.info("update file=" + filepath);
+                logger.info(`update file=${filepath}`);
                 saveTreeJson(queue, callback);
             });
         });
     };
-    var add = function () {
-        fs.mkdir(newDirectory, function (err) {
+    const add = () => {
+        fs.mkdir(newDirectory, (err) => {
             if (err) {
                 error(err);
             }
             else {
-                logger.info("make    dir=" + newDirectory);
+                logger.info(`make    dir=${newDirectory}`);
                 update();
             }
         });
     };
-    var rename = function () {
-        fs.rename(oldDirectory, newDirectory, function (err) {
+    const rename = () => {
+        fs.rename(oldDirectory, newDirectory, (err) => {
             if (err) {
                 error(err);
             }
             else {
-                logger.info("rename  dir=" + oldDirectory + " to " + newDirectory);
+                logger.info(`rename  dir=${oldDirectory} to ${newDirectory}`);
                 update();
             }
         });
@@ -100,7 +100,7 @@ function saveTreeJson(queue, callback) {
         add();
     }
     else if (data.json.path !== data.json.oldPath) {
-        fs.stat(oldDirectory, function (err, stat) {
+        fs.stat(oldDirectory, (err, stat) => {
             if (err) {
                 error(err);
             }
@@ -113,7 +113,7 @@ function saveTreeJson(queue, callback) {
         });
     }
     else {
-        fs.stat(filepath, function (err, stat) {
+        fs.stat(filepath, (err, stat) => {
             if (err) {
                 add();
             }
@@ -138,9 +138,9 @@ function setQueue(queue, parentDirectory, json) {
         directory: parentDirectory,
         json: json
     });
-    var childDirectory = path.join(parentDirectory, json.path);
+    const childDirectory = path.join(parentDirectory, json.path);
     if (json.children) {
-        json.children.forEach(function (child) {
+        json.children.forEach(child => {
             setQueue(queue, childDirectory, child);
         });
     }

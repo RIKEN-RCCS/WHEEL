@@ -1,12 +1,12 @@
 /**
  * socket io communication class for read tree json from server
  */
-var ReadTreeJsonSocket = (function () {
+class ReadTreeJsonSocket {
     /**
      * create new instance
      * @param socket socket io instance
      */
-    function ReadTreeJsonSocket(socket) {
+    constructor(socket) {
         this.socket = socket;
     }
     /**
@@ -14,35 +14,32 @@ var ReadTreeJsonSocket = (function () {
      * @param treeJsonFilepath tree json file path
      * @param callback The function to call when we get the event
      */
-    ReadTreeJsonSocket.prototype.onConnect = function (treeJsonFilepath, callback) {
-        var _this = this;
+    onConnect(treeJsonFilepath, callback) {
         this.callback = callback;
         this.socket
-            .on('connect', function () {
-            _this.emit(treeJsonFilepath);
+            .on('connect', () => {
+            this.emit(treeJsonFilepath);
         });
-    };
+    }
     /**
      * Adds a listener for this event that will be invoked a single time before being automatically removed
      */
-    ReadTreeJsonSocket.prototype.onEvent = function () {
-        var _this = this;
-        this.socket.once(ReadTreeJsonSocket.eventName, function (treeJson) {
-            _this.callback(treeJson);
+    onEvent() {
+        this.socket.once(ReadTreeJsonSocket.eventName, (treeJson) => {
+            this.callback(treeJson);
         });
-    };
+    }
     /**
      * emit to server for read tree json
      * @param treeJsonFilepath tree json file path
      */
-    ReadTreeJsonSocket.prototype.emit = function (treeJsonFilepath) {
+    emit(treeJsonFilepath) {
         this.onEvent();
         this.socket.emit(ReadTreeJsonSocket.eventName, treeJsonFilepath);
-    };
-    /**
-     * event name
-     */
-    ReadTreeJsonSocket.eventName = 'readTreeJson';
-    return ReadTreeJsonSocket;
-}());
+    }
+}
+/**
+ * event name
+ */
+ReadTreeJsonSocket.eventName = 'readTreeJson';
 //# sourceMappingURL=readTreeJsonSocket.js.map
