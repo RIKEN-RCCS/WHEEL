@@ -48,6 +48,7 @@
     <script type="text/javascript" src="/js/inputTextDialog.js"></script>
     <script type="text/javascript" src="/js/yesNoDialog.js"></script>
     <script type="text/javascript" src="/js/commonParam.js"></script>
+    <script type="text/javascript" src="/js/fileBrowser.js"></script>
 
     <script type="text/javascript" src="/js/workflowManager.js"></script>
     <title>Scientific Workflow</title>
@@ -74,6 +75,11 @@
           <div class="address_bar_area">
             <img src="/image/icon_workflow.png" class="icon" id="root_workflow">
             <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly" style="background-color: rgb(70, 70, 65)">
+          </div>
+          <div id=fileBrowser>
+              <p id="path"></p>
+              <ul id="fileList" style="color: white;">
+              </ul>
           </div>
 
           <table class="selected_workflow">

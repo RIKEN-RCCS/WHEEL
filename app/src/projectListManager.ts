@@ -6,7 +6,6 @@ import logger=require('./logger');
 const config=require('./config/server');
 var projectList=[];
 var projectListFilename=path.resolve('dst', config.projectList)+'.json';
-console.log(projectListFilename);
 
 fs.readFile(projectListFilename, function(err, data){
   if(err) {
@@ -33,6 +32,19 @@ var writeProjectListFile = function() {
   fs.writeFile(projectListFilename, JSON.stringify(projectList, null, 4), function(){
     writing=false;
   });
+}
+
+/**
+ * 条件に一致するプロジェクトを返す
+ * @param query プロジェクトIDまたはpath
+ * labelは重複する可能性があるため、labelでは検索できないようにしている。
+ * 必要であれば、getAllProjectで取り出した後でfilterすること
+ */
+export function getProject(query: string){
+  return projectList.find(function(item){
+    if (item.id == query || item.path == query) return true;
+  });
+
 }
 
 export function getAllProject() {
@@ -69,6 +81,7 @@ export function rename(newLabel, oldLabel){
   });
   writeProjectListFile();
 }
+
 export function add(label: string, path: string)
 {
   var exists= projectList.some(function(item){
@@ -79,6 +92,3 @@ export function add(label: string, path: string)
   projectList.push({"label": label, "path": path, "id": uuid});
   writeProjectListFile();
 }
-
-
-

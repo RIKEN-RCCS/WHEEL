@@ -18,15 +18,22 @@ $(() => {
 
     //TODO 別のファイルへお引っ越し?
     var openProject=function(key, opt){
-      console.log('open project!')
-      //how to get project path from span element
-      console.log($(this).children('.projectPath').text());
+      var rootPath=$(this).data('path')
+      console.log(rootPath);
+      //project manager画面を呼び出すURLへアクセス
+        $('<form/>', { action: '/swf/project_manager.html', method: 'post' })
+            .append($('<input/>', { type: 'hidden', name: 'project', value: rootPath}))
+            .appendTo(document.body)
+            .submit();
     }
     var renameProject=function(key, opt){
-      console.log('rename project!')
+      console.log('rename project! not implemented yet !!')
+      //TODO ここでダイアログをポップアップさせてnewNameを受けとる
+      var oldName=$(this).data('label');
+      //socket.emit('rename', {"oldName": oldName, "newName": 'huga'});
     }
     var deleteProject=function(key, opt){
-      console.log('delete project!')
+      socket.emit('remove', $(this).data('id'));
     }
 
     // register context Menu for projectList
@@ -61,7 +68,7 @@ $(() => {
       console.log(data);
       $('#projectList').empty();
       data.forEach(function(pj){
-        $('#projectList').append(`<li class="ui-state-default" id = ${pj.id} ><span class="projectPath">${pj.path}</span>${pj.label}</li>`);
+        $('#projectList').append(`<li class="ui-state-default" data-path="${pj.path}" data-id="${pj.id}" data-label="${pj.label}">${pj.label}</li>`);
       });
     });
 

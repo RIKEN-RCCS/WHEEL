@@ -1,6 +1,7 @@
 import fs = require('fs');
 import os = require('os');
 import path=require('path');
+import del=require('del');
 
 import logger = require('./logger');
 import sioHelper from './socketioHelper';
@@ -38,7 +39,13 @@ const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\
 
 var onRemove=function(sio: SocketIO.Server, msg: string){
   logger.debug(`remove: ${msg}`);
+  var target=projectListManager.getProject(msg);
   projectListManager.remove(msg)
+
+  var targetDir=path.dirname(target.path);
+  del(targetDir,{force: true}).catch(function(){
+    logger.warn(`directory remove failed: ${targetDir}`);
+  });
   sio.emit('projectList', projectListManager.getAllProject());
 }
 
@@ -61,13 +68,6 @@ var onReorder=function(sio: SocketIO.Server, msg: string){
   sio.emit('projectList', projectListManager.getAllProject());
 }
 
-/*
- * helper function for socketio.on()
- * @param sio       socket.io's namespace
- * @param eventName event name
- * @param callback  callback function
- *
- */
 export function setup(sio: SocketIO.Server) {
     sio.of('/home').on('connect', (socket: SocketIO.Socket)=>{
       socket.emit('projectList', projectListManager.getAllProject());

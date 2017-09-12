@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const del = require("del");
 const logger = require("./logger");
 const socketioHelper_1 = require("./socketioHelper");
 const sendFiles_1 = require("./sendFiles");
@@ -33,7 +34,12 @@ var onAdd = function (sio, msg) {
 };
 var onRemove = function (sio, msg) {
     logger.debug(`remove: ${msg}`);
+    var target = projectListManager.getProject(msg);
     projectListManager.remove(msg);
+    var targetDir = path.dirname(target.path);
+    del(targetDir, { force: true }).catch(function () {
+        logger.warn(`directory remove failed: ${targetDir}`);
+    });
     sio.emit('projectList', projectListManager.getAllProject());
 };
 var onRename = function (sio, msg) {
@@ -52,13 +58,6 @@ var onReorder = function (sio, msg) {
     projectListManager.reorder(data);
     sio.emit('projectList', projectListManager.getAllProject());
 };
-/*
- * helper function for socketio.on()
- * @param sio       socket.io's namespace
- * @param eventName event name
- * @param callback  callback function
- *
- */
 function setup(sio) {
     sio.of('/home').on('connect', (socket) => {
         socket.emit('projectList', projectListManager.getAllProject());

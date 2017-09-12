@@ -7,7 +7,6 @@ const logger = require("./logger");
 const config = require('./config/server');
 var projectList = [];
 var projectListFilename = path.resolve('dst', config.projectList) + '.json';
-console.log(projectListFilename);
 fs.readFile(projectListFilename, function (err, data) {
     if (err) {
         logger.info(`project list file read failed. (${projectListFilename})`);
@@ -33,6 +32,19 @@ var writeProjectListFile = function () {
         writing = false;
     });
 };
+/**
+ * 条件に一致するプロジェクトを返す
+ * @param query プロジェクトIDまたはpath
+ * labelは重複する可能性があるため、labelでは検索できないようにしている。
+ * 必要であれば、getAllProjectで取り出した後でfilterすること
+ */
+function getProject(query) {
+    return projectList.find(function (item) {
+        if (item.id == query || item.path == query)
+            return true;
+    });
+}
+exports.getProject = getProject;
 function getAllProject() {
     return Array.from(projectList);
 }

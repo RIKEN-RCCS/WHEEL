@@ -5,6 +5,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const http = require("http");
+const sendFiles_1 = require("./sendFiles");
 const logger = require("./logger");
 const config = require('../dst/config/server');
 /*
@@ -55,6 +56,11 @@ logger.setLogfile("./TestLogFile.txt");
 // register event listeners
 const home_beta = require("./home_beta");
 home_beta.setup(sio);
+sio.of('/swf/workflow').on('connect', function (socket) {
+    socket.on('fileListRequest', function (target) {
+        sendFiles_1.default(sio.of('/swf/workflow'), 'fileList', target);
+    });
+});
 const EventListeners = require("./eventListeners");
 EventListeners.add(sio.of('/swf/home'), [
     'onGetFileList',
