@@ -17,13 +17,14 @@ var adaptorSendFiles = function (sio, withFile, msg) {
     sendFiles_1.default(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
 };
 var onCreate = function (sio, msg) {
-    logger.debug("onCreate" + msg);
+    logger.debug("onCreate " + msg);
     var pathDirectory = msg;
-    projectManager.create(pathDirectory);
     var label = path.basename(pathDirectory);
-    projectListManager.add(label, pathDirectory);
-    //TODO prj.jsonのnameをlabelで書き換える
-    sio.emit('projectList', projectListManager.getAllProject());
+    projectManager.create(pathDirectory, label)
+        .then(function (projectFileName) {
+        projectListManager.add(label, path.resolve(pathDirectory, projectFileName));
+        sio.emit('projectList', projectListManager.getAllProject());
+    });
 };
 var onAdd = function (sio, msg) {
     logger.debug(`add: ${msg}`);

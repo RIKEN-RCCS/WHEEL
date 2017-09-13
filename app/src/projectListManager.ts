@@ -5,6 +5,19 @@ import logger=require('./logger');
 
 const config=require('./config/server');
 var projectList=[];
+/*
+ *  projectList example
+ * 
+ * projectList=[ {'label': 'hoge',
+ *  'path' : '/home/foo/bar.proj.json',
+ *  'id'   : 'xxxxxxxx-xxxxxxxxx-xxxxxxxxxxxxxxxx'
+ *  },
+ * {'label': 'huga',
+ *  'path' : '/home/bar/baz.proj.json',
+ *  'id'   : 'xxxxxxxx-xxxxxxxxx-xxxxxxxxxxxxxxxx'
+ * }]
+ */
+
 var projectListFilename=path.resolve('dst', config.projectList)+'.json';
 
 fs.readFile(projectListFilename, function(err, data){

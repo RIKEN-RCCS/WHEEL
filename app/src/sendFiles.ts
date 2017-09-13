@@ -14,10 +14,8 @@ export default function(socket: SocketIO.Server, eventName: string, targetDir: s
     fs.readdir(targetDir, function (err, names){
       if(err) throw err;
       names.forEach(function(name){
-      console.log(name);
         if(filter!=null){
           if(!filter.hide.test(name)){
-      console.log("DEBUG 1");
             return;
           }
         }

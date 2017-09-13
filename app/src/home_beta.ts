@@ -20,13 +20,14 @@ const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\
  }
 
  var onCreate=function(sio: SocketIO.Server, msg: string){
-  logger.debug("onCreate"+msg);
+  logger.debug("onCreate "+msg);
   var pathDirectory=msg;
-  projectManager.create(pathDirectory);
   var label=path.basename(pathDirectory);
-  projectListManager.add(label, pathDirectory);
-  //TODO prj.jsonのnameをlabelで書き換える
-  sio.emit('projectList', projectListManager.getAllProject());
+  projectManager.create(pathDirectory, label)
+  .then(function(projectFileName){
+    projectListManager.add(label, path.resolve(pathDirectory, projectFileName));
+    sio.emit('projectList', projectListManager.getAllProject());
+  });
  }
 
  var onAdd=function(sio: SocketIO.Server, msg: string){
