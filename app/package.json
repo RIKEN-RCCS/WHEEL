@@ -22,6 +22,9 @@
     "uuid": "^3.1.0"
   },
   "devDependencies": {
+    "@types/socket.io": "^1.4.30",
+    "@types/socket.io-client": "^1.4.30",
+    "@types/ssh2": "^0.5.35",
     "typescript": "^2.4.2"
   }
 }

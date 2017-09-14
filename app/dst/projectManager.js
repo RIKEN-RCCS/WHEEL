@@ -2,6 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const path = require("path");
+// util.promisifyが何故か使えないのでwork aroundとして作成
+function readFile(filename) {
+    return new Promise(function (resolve, reject) {
+        fs.readFile(filename, function (err, data) {
+            if (err)
+                reject(err);
+            else
+                resolve(data);
+        });
+    });
+}
 function readJson(filepath) {
     return new Promise(function (resolve, reject) {
         fs.readFile(filepath, function (err, data) {
@@ -61,7 +72,8 @@ function create(directoryPath, projectName) {
         const projectFilePath = path.join(directoryPath, projectJsonPath);
         const workflowFilePath = path.join(directoryPath, projectJsonPathWorkflow);
         mkdir(directoryPath)
-            .then(readJson.bind(null, projectTemplateFilePath))
+            .then(readFile.bind(null, projectTemplateFilePath))
+            .then(JSON.parse)
             .then(modifyProjectJson.bind(null, projectName, projectJsonPath, projectJsonPathWorkflow))
             .then(writeJson.bind(null, projectFilePath))
             .then(readJson.bind(null, workflowTemplateFilePath))
