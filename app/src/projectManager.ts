@@ -1,51 +1,25 @@
 import fs=require('fs');
+import util=require('util');
 import path=require('path');
 import logger = require('./logger');
 
 
-// util.promisifyが何故か使えないのでwork aroundとして作成
-function readFile(filename){
-  return new Promise(function(resolve, reject){
-    fs.readFile(filename, function(err, data){
-      if (err) reject(err);
-      else resolve(data);
-    });
-  });
-}
-function readJson(filepath: string){
-  return new Promise(function(resolve, reject){
-    fs.readFile(filepath, function(err, data){
-      if (err) {
-        reject(err)
-      }else{
-        resolve(JSON.parse(data.toString()));
-      }
-    });
-  });
+// promise.thenの引数に渡す関数が、引数にvoidを持つことを期待しているようなので
+// こっちの関数定義の引数に型を指定するとコンパイルエラーになる・・・
+/*
+ * Buffer.toJSONをPromise.then()に渡すためのAdaptor
+ *
+ */
+function parseJSON(data): any{
+  return JSON.parse(data.toString());
 }
 
-function writeJson(filepath: string, json: any){
-  return new Promise(function(resolve, reject){
-    fs.writeFile(filepath, JSON.stringify(json, null, '\t'), (err) => {
-      if (err) {
-          reject(err);
-      }else{
-        resolve(filepath);
-      }
-    });
-  });
-}
-
-function mkdir(directoryPath){
- return new Promise(function(resolve, reject){
-   fs.mkdir(directoryPath, function(err){
-    if (err) {
-      reject(err)
-    }else{
-      resolve(directoryPath);
-    }
-   });
- });
+/*
+ * JSON.stringifyをtab区切りで呼び出すためのラッパー
+ *
+ */
+function stringifyJSON(json): string{
+  return JSON.stringify(json, null, '\t');
 }
 
 function modifyProjectJson(projectName, projectJsonPath, projectJsonPathWorkflow, projectJson){
@@ -75,14 +49,17 @@ export function create(directoryPath: string, projectName: string) {
     const projectFilePath = path.join(directoryPath, projectJsonPath);
     const workflowFilePath = path.join(directoryPath, projectJsonPathWorkflow);
 
-    mkdir(directoryPath)
-    .then(readFile.bind(null,projectTemplateFilePath))
-    .then(JSON.parse)
+    util.promisify(fs.mkdir)(directoryPath)
+    .then(util.promisify(fs.readFile).bind(null,projectTemplateFilePath))
+    .then(parseJSON)
     .then(modifyProjectJson.bind(null, projectName, projectJsonPath, projectJsonPathWorkflow))
-    .then(writeJson.bind(null, projectFilePath))
-    .then(readJson.bind(null, workflowTemplateFilePath))
+    .then(stringifyJSON)
+    .then(util.promisify(fs.writeFile).bind(null, projectFilePath))
+    .then(util.promisify(fs.readFile).bind(null, workflowTemplateFilePath))
+    .then(parseJSON)
     .then(modifyWorkflowJson.bind(null, directoryPath))
-    .then(writeJson.bind(null,workflowFilePath))
+    .then(stringifyJSON)
+    .then(util.promisify(fs.writeFile).bind(null, workflowFilePath))
     .then(resolve.bind(null, projectFilePath));
   });
 }
