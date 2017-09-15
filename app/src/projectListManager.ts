@@ -57,7 +57,6 @@ export function getProject(query: string){
   return projectList.find(function(item){
     if (item.id == query || item.path == query) return true;
   });
-
 }
 
 export function getAllProject() {
@@ -68,7 +67,6 @@ export function reorder(newOrder: number[]){
   if(projectList.length != newOrder.length){
     logger.warn(`illegal reorder array. original length: ${projectList.length} reorder array length: ${newOrder.length}`);
   }
-  //TODO newOrderが元と同じ順序だったらそのまま終了
   var tmp=[];
   var index=0;
   for( var i of newOrder){
@@ -83,15 +81,16 @@ export function remove(id: string){
   projectList=projectList.filter((item)=>{
     return(item.id != id);
   });
-  if(projectList.length!=numProjects){
+  if(projectList.length != numProjects){
     writeProjectListFile();
   }
 }
-export function rename(newLabel, oldLabel){
-  if(newLabel == oldLabel) return;
-  projectList=projectList.map((item)=>{
-    if(item.label == oldLabel) item.label = newLabel;
+export function rename(oldName, newName){
+  if(newName == oldName) return;
+  var index=projectList.findIndex((item)=>{
+    if(item.label == oldName) return true;
   });
+  projectList[index].label=newName
   writeProjectListFile();
 }
 

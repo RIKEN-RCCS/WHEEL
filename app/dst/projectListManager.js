@@ -65,7 +65,6 @@ function reorder(newOrder) {
     if (projectList.length != newOrder.length) {
         logger.warn(`illegal reorder array. original length: ${projectList.length} reorder array length: ${newOrder.length}`);
     }
-    //TODO newOrderが元と同じ順序だったらそのまま終了
     var tmp = [];
     var index = 0;
     for (var i of newOrder) {
@@ -86,13 +85,14 @@ function remove(id) {
     }
 }
 exports.remove = remove;
-function rename(newLabel, oldLabel) {
-    if (newLabel == oldLabel)
+function rename(oldName, newName) {
+    if (newName == oldName)
         return;
-    projectList = projectList.map((item) => {
-        if (item.label == oldLabel)
-            item.label = newLabel;
+    var index = projectList.findIndex((item) => {
+        if (item.label == oldName)
+            return true;
     });
+    projectList[index].label = newName;
     writeProjectListFile();
 }
 exports.rename = rename;

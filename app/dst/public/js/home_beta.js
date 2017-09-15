@@ -13,26 +13,46 @@ $(() => {
         $('#dialogue').show();
         $('#projectNameInputArea').hide();
     };
-    //TODO 別のファイルへお引っ越し?
     var openProject = function (key, opt) {
         var rootPath = $(this).data('path');
-        console.log(rootPath);
         //project manager画面を呼び出すURLへアクセス
         $('<form/>', { action: '/swf/project_manager.html', method: 'post' })
             .append($('<input/>', { type: 'hidden', name: 'project', value: rootPath }))
             .appendTo(document.body)
             .submit();
     };
-    var renameProject = function (key, opt) {
-        console.log('rename project! not implemented yet !!');
-        //TODO ここでダイアログをポップアップさせてnewNameを受けとる
-        var oldName = $(this).data('label');
-        //socket.emit('rename', {"oldName": oldName, "newName": 'huga'});
-    };
-    var deleteProject = function (key, opt) {
-        socket.emit('remove', $(this).data('id'));
-    };
-    // register context Menu for projectList
+    // setup dialog
+    $('#renameDialog').dialog({
+        autoOpen: false,
+        draggable: false,
+        modal: true,
+        title: "new name",
+        buttons: {
+            "OK": function (event) {
+                var oldName = $('#renameDialog').attr('data-oldName');
+                var newName = $('#renamedProjectName').val();
+                var obj = { 'oldName': oldName, 'newName': newName };
+                socket.emit('rename', JSON.stringify(obj));
+                $(this).dialog('close');
+            }
+        }
+    });
+    $('#removeDialog').dialog({
+        autoOpen: false,
+        draggable: false,
+        modal: true,
+        buttons: {
+            "OK": function (event) {
+                var targetID = $('#removeDialog').attr('data-targetId');
+                socket.emit('remove', targetID);
+                $(this).dialog('close');
+            },
+            "Cancel": function (event) {
+                $(this).dialog('close');
+            }
+        }
+    });
+    // setup contextMenu
     $.contextMenu({
         'selector': '#projectList li',
         'items': {
@@ -42,11 +62,19 @@ $(() => {
             },
             'rename': {
                 name: 'Rename',
-                callback: renameProject
+                callback: function () {
+                    var oldName = $(this).data('label');
+                    $('#renameDialog').attr('data-oldName', oldName);
+                    $('#renameDialog').dialog('open');
+                }
             },
             'delete': {
                 name: 'Delete',
-                callback: deleteProject
+                callback: function () {
+                    var targetID = $(this).data('id');
+                    $('#removeDialog').attr('data-targetId', targetID);
+                    $('#removeDialog').dialog('open');
+                }
             }
         }
     });
@@ -59,7 +87,6 @@ $(() => {
     $('#projectList').disableSelection();
     // project list
     socket.on('projectList', (data) => {
-        console.log(data);
         $('#projectList').empty();
         data.forEach(function (pj) {
             $('#projectList').append(`<li class="ui-state-default" data-path="${pj.path}" data-id="${pj.id}" data-label="${pj.label}">${pj.label}</li>`);
@@ -93,7 +120,12 @@ $(() => {
         }
         else if (eventName == 'new') {
             var label = $('#newProjectName').val();
-            socket.emit('create', fb.getRequestedPath() + '/' + label);
+            if (label) {
+                socket.emit('create', fb.getRequestedPath() + '/' + label);
+            }
+            else {
+                console.log('illegal label: ', label);
+            }
         }
         resetScreen();
     });

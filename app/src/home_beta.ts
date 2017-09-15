@@ -52,12 +52,12 @@ var onRemove=function(sio: SocketIO.Server, msg: string){
 
 var onRename=function(sio: SocketIO.Server, msg: string){
   logger.debug(`rename: ${msg}`);
-  var data=JSON.parse(msg);
-  if(! (data.hasOwnProperty('oldLabel') && data.hasOenProperty('newLabel'))){
+  var data=JSON.parse(msg.toString());
+  if(! (data.hasOwnProperty('oldName') && data.hasOwnProperty('newName'))){
     logger.warn(`illegal request ${msg}`);
     return;
   }
-  projectListManager.rename(data.oldLabel, data.newLabel)
+  projectListManager.rename(data.oldName, data.newName)
   sio.emit('projectList', projectListManager.getAllProject());
 }
 
