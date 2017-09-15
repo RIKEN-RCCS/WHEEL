@@ -20,7 +20,7 @@ $(() => {
     const sshKeyAddress = $('#sshkey_address');
     const textBoxes = [textLabel, textHost, textPath, textId, sshKeyAddress];
     // romote host list
-    let remotHostList = [];
+    let remoteHostList = [];
     // file dialog
     const dialog = new FileDialog(getFileListSocket);
     // connect flag to server
@@ -81,7 +81,7 @@ $(() => {
                 textLabel.borderInvalid();
                 errorText = 'Label is empty or white space';
             }
-            if (remotHostList.filter(host => host.name === label).length) {
+            if (remoteHostList.length > 0 && remoteHostList.filter(host => host.name === label).length) {
                 textLabel.borderInvalid();
                 errorText = 'Label is duplicate';
             }
@@ -179,11 +179,11 @@ $(() => {
         if (!isConnect) {
             isConnect = true;
             getRemoteHostListSocket.onConnect((hostlist) => {
-                if (hostlist == null) {
+                if (hostlist === null) {
                     console.error('remote host list file is not found');
                 }
                 hostTable.html(createHtmlContent(hostlist));
-                remotHostList = hostlist;
+                remoteHostList = hostlist;
             });
         }
         else {
@@ -203,6 +203,8 @@ $(() => {
      */
     function createHtmlContent(hostList) {
         initTestConnectEnvet();
+        if (hostList == null)
+            return;
         const html = hostList.map(host => {
             if (host.username === undefined) {
                 host.username = '';
@@ -226,7 +228,7 @@ $(() => {
      * init test connect event
      */
     function initTestConnectEnvet() {
-        remotHostList.forEach(remote => {
+        remoteHostList.forEach(remote => {
             $(document).off('keypress', '[id$=_password]');
             $(document).off('keyup', '[id$=_password]');
             $(document).off('click', '[id$=_test_connect]');

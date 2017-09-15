@@ -51,6 +51,7 @@ var onGetRemoteHostList = function (socket) {
                 socket.emit(eventName);
             }
             else {
+                logger.debug(hostList);
                 socket.json.emit(eventName, hostList);
             }
         });

@@ -22,7 +22,7 @@ $(() => {
     const textBoxes: JQuery[] = [textLabel, textHost, textPath, textId, sshKeyAddress];
 
     // romote host list
-    let remotHostList: SwfHostJson[] = [];
+    let remoteHostList: SwfHostJson[] = [];
 
     // file dialog
     const dialog = new FileDialog(getFileListSocket);
@@ -91,7 +91,7 @@ $(() => {
                 textLabel.borderInvalid();
                 errorText = 'Label is empty or white space';
             }
-            if (remotHostList.filter(host => host.name === label).length) {
+            if (remoteHostList.length > 0 && remoteHostList.filter(host => host.name === label).length) {
                 textLabel.borderInvalid();
                 errorText = 'Label is duplicate';
             }
@@ -199,11 +199,11 @@ $(() => {
         if (!isConnect) {
             isConnect = true;
             getRemoteHostListSocket.onConnect((hostlist: SwfHostJson[]) => {
-                if (hostlist == null) {
+                if (hostlist === null) {
                     console.error('remote host list file is not found');
                 }
                 hostTable.html(createHtmlContent(hostlist));
-                remotHostList = hostlist;
+                remoteHostList = hostlist;
             });
         }
         else {
@@ -225,6 +225,7 @@ $(() => {
      */
     function createHtmlContent(hostList: SwfHostJson[]): string {
         initTestConnectEnvet();
+        if(hostList == null) return;
         const html: string[] = hostList.map(host => {
             if (host.username === undefined) {
                 host.username = '';
@@ -253,7 +254,7 @@ $(() => {
      * init test connect event
      */
     function initTestConnectEnvet() {
-        remotHostList.forEach(remote => {
+        remoteHostList.forEach(remote => {
             $(document).off('keypress', '[id$=_password]');
             $(document).off('keyup', '[id$=_password]');
             $(document).off('click', '[id$=_test_connect]');

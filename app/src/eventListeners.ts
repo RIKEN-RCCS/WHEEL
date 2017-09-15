@@ -48,6 +48,7 @@ var onGetRemoteHostList= function (socket: SocketIO.Socket): void {
                     logger.error('host list does not exist');
                     socket.emit(eventName);
                 } else {
+                    logger.debug(hostList);
                     socket.json.emit(eventName, hostList);
                 }
             });

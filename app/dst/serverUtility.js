@@ -303,12 +303,15 @@ class ServerUtility {
      */
     static getHostInfo(callback) {
         fs.readFile(ServerUtility.getHostListPath(), (err, data) => {
-            if (err) {
+            if (err && err.code !== 'ENOENT') {
                 callback(err);
                 return;
             }
             try {
-                const hostListJson = JSON.parse(data.toString());
+                var hostListJson = [];
+                if (data != null) {
+                    hostListJson = JSON.parse(data.toString());
+                }
                 callback(undefined, hostListJson);
             }
             catch (err) {

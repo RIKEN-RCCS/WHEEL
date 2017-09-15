@@ -333,12 +333,15 @@ class ServerUtility {
      */
     public static getHostInfo(callback: ((err?: Error, hosts?: SwfHostJson[]) => void)) {
         fs.readFile(ServerUtility.getHostListPath(), (err, data) => {
-            if (err) {
+            if (err && err.code !== 'ENOENT') {
                 callback(err);
                 return;
             }
             try {
-                const hostListJson: SwfHostJson[] = JSON.parse(data.toString());
+                var hostListJson: SwfHostJson[] =[]
+                if(data != null){
+                  hostListJson =JSON.parse(data.toString());
+                }
                 callback(undefined, hostListJson);
             }
             catch (err) {
