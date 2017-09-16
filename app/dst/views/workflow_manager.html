@@ -76,12 +76,6 @@
             <img src="/image/icon_workflow.png" class="icon" id="root_workflow">
             <input type="text" id="address_bar" class="address_bar text_box" readonly="readonly" style="background-color: rgb(70, 70, 65)">
           </div>
-          <div id=fileBrowser>
-              <p id="path"></p>
-              <ul id="fileList" style="color: white;">
-              </ul>
-          </div>
-
           <table class="selected_workflow">
             <tr>
               <th>Name</th>
@@ -101,6 +95,10 @@
             <div id="tree_svg" class="workflow_tree_svg" onMouseDown="return false;"></div>
             <div id="node_svg" class="node_tree"></div>
             <div id="property" class="property"></div>
+            <div id=fileBrowser >
+                <p id="path"></p>
+                <ul id="fileList"></ul>
+            </div>
           </div>
 
           <input type="file" id="file_select" style="display:none">
