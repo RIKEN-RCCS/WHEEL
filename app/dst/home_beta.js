@@ -6,7 +6,7 @@ const path = require("path");
 const del = require("del");
 const logger = require("./logger");
 const socketioHelper_1 = require("./socketioHelper");
-const sendFiles_1 = require("./sendFiles");
+const fileBrowser_1 = require("./fileBrowser");
 const projectListManager = require("./projectListManager");
 const projectManager = require("./projectManager");
 const config = require('./config/server.json');
@@ -14,7 +14,7 @@ const noDotFiles = /^[^\.].*$/;
 const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\.')}$`);
 var adaptorSendFiles = function (sio, withFile, msg) {
     var target = msg ? path.normalize(msg) : config.rootDir || os.homedir() || '/';
-    sendFiles_1.default(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
+    fileBrowser_1.default(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
 };
 var onCreate = function (sio, msg) {
     logger.debug("onCreate " + msg);

@@ -2,7 +2,9 @@ import fs = require('fs');
 import path = require('path');
 /**
  * send directory contents via socket.io
+ *
  * @param socket socket.io's server instance
+ * @param eventName event name which is used sending directory contents
  * @param targetDir directory path to read
  * @param sendDirname  flag for send directory name or not
  * @param sendFilename flag for send file name or not
@@ -47,4 +49,25 @@ export default function(socket: SocketIO.Server, eventName: string, targetDir: s
         });
       });
     });
+}
+export function remove(target){
+// targetはfile又はディレクトリ又はlink
+// linkの時はlinkだけを消すこと(link先を消しちゃ駄目)
+}
+export function rename(oldName, newName)
+{
+  //oldNameは存在するファイル、newNameは文字列(path.normalizeとかかける必要あり?)
+}
+
+export function upload(socket: SocketIO.Server, eventName: string, targetFile: string)
+{
+  socket.on(eventName, function(data){
+  //  fs.writeFile(targetFile, data);
+  });
+}
+export function download(socket: SocketIO.Server, eventName: string, targetFile: string)
+{
+  fs.readFile(targetFile, function(data){
+    socket.emit(eventName, data);
+  });
 }

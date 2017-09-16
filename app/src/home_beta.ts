@@ -5,7 +5,7 @@ import del=require('del');
 
 import logger = require('./logger');
 import sioHelper from './socketioHelper';
-import sendFiles from './sendFiles';
+import fileBrowser from './fileBrowser';
 import * as projectListManager from './projectListManager';
 import * as projectManager from './projectManager';
 
@@ -16,7 +16,7 @@ const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\
 
  var adaptorSendFiles=function(sio: SocketIO.Server, withFile: boolean, msg: string){
   var target=msg ? path.normalize(msg) : config.rootDir||os.homedir()||'/';
-  sendFiles(sio, 'fileList', target, true, withFile, true, {'hide': noDotFiles, 'hideFile': ProjectJSON});
+  fileBrowser(sio, 'fileList', target, true, withFile, true, {'hide': noDotFiles, 'hideFile': ProjectJSON});
  }
 
  var onCreate=function(sio: SocketIO.Server, msg: string){

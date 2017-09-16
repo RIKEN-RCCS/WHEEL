@@ -7,7 +7,7 @@ import cookieParser = require('cookie-parser');
 import bodyParser = require('body-parser');
 import http = require('http');
 
-import sendFiles from './sendFiles';
+import fileBrowser from './fileBrowser';
 import logger = require('./logger');
 const config = require('../dst/config/server');
 
@@ -73,7 +73,7 @@ import home_beta=require('./home_beta');
 home_beta.setup(sio);
 sio.of('/swf/workflow').on('connect',function(socket){
   socket.on('fileListRequest', function(target){
-  sendFiles(sio.of('/swf/workflow'), 'fileList', target);
+  fileBrowser(sio.of('/swf/workflow'), 'fileList', target);
   });
 });
 
