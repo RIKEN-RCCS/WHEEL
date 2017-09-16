@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node dst/server",
     "build": "tsc",
-    "dev": "tsc -w"
+    "dev": "tsc-watch --onSuccess 'node dst/server'"
   },
   "dependencies": {
     "body-parser": "^1.17.2",
@@ -25,6 +25,7 @@
     "@types/socket.io": "^1.4.30",
     "@types/socket.io-client": "^1.4.30",
     "@types/ssh2": "^0.5.35",
+    "tsc-watch": "^1.0.8",
     "typescript": "^2.4.2"
   }
 }
