@@ -23,6 +23,7 @@ app.use(express.static(path.resolve('dst/public'), { index: false }));
 var routes = {
     "home": require('./routes/main'),
     "home_beta": require('./routes/home_beta'),
+    "workflow": require('./routes/workflow'),
     "PM": require('./routes/projectManager'),
     "WM": require('./routes/workflowManager'),
     "editor": require('./routes/editor'),
