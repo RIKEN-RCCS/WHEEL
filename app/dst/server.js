@@ -31,6 +31,7 @@ var routes = {
 };
 app.use('/', routes.home);
 app.use('/home_beta', routes.home_beta);
+app.use('/workflow', routes.workflow);
 app.use('/swf/project_manager.html', routes.PM);
 app.use('/swf/workflow_manager.html', routes.WM);
 app.use('/swf/editor.html', routes.editor);

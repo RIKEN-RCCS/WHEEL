@@ -69,7 +69,7 @@ $(() => {
                 callback: openProject
             },
             'open(beta)': {
-                name: 'Open',
+                name: 'Open beta version',
                 callback: openProjectBeta
             },
             'rename': {

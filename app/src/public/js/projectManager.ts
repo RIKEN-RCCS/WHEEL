@@ -127,7 +127,8 @@ $(() => {
                 const target: SwfLog = SwfLog.getSwfLogInstance(id);
                 const rootFilepath = `${swfProject.log.path}/${ClientUtility.getTemplate(SwfType.WORKFLOW).getDefaultName()}`;
                 $(document).off('click').off('mouseover').off('mouseout');
-                $('<form/>', { action: '/swf/workflow_manager.html', method: 'post' })
+                $('<form/>', { action: '/workflow', method: 'post' })
+                    .append($('<input/>', { type: 'hidden', name: 'project', value: projectFilePath }))
                     .append($('<input/>', { type: 'hidden', name: 'root', value: rootFilepath }))
                     .append($('<input/>', { type: 'hidden', name: 'index', value: id }))
                     .appendTo(document.body)
