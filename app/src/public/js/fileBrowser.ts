@@ -3,33 +3,30 @@ public constructor(socket: SocketIOClient.Socket, idFileList, recvEventName) {
   this.socket=socket;
   this.idFileList=idFileList;
   this.recvEventName=recvEventName;
-  this.selectedFile="";
+  this.lastClicked="";
   this.onRecvDefault();
   this.onClickDefault();
   this.onDirDblClickDefault();
 }
 
-public rename(oldName, newName){
-}
-public remove(name){
-}
-public upload(){
-}
-public download(){
-}
 
-public request(eventName, path){
-  this.socket.emit(eventName, path);
+public request(sendEventName, path, recvEventName){
+  this.socket.emit(sendEventName, path);
   this.requestedPath=path;
-  this.sendEventName=eventName;
+  this.sendEventName=sendEventName;
+  if(! recvEventName) this.recvEventName=recvEventName;
 }
 public getRequestedPath(){
   return this.requestedPath;
 }
 public getSelectedFile(){
-  return this.selectedFile;
+  return this.getLastClicked();
+}
+public getLastClicked(){
+  return this.lastClicked;
 }
 
+// additional event registers
 public onRecv(func){
     this.socket.on(this.recvEventName, (data)=>{
       func(data);
@@ -41,7 +38,6 @@ public onClick(func){
     func(target)
   });
 }
-
 public onFileClick(func){
     $(this.idFileList).on("click", 'li', (event)=>{
       if(! $(event.target).data('isdir')){
@@ -76,10 +72,11 @@ public onDirDblClick(func){
 }
 
 
+
 private defaultColor: string;
 private selectedItemColor: string='lightblue';
 private idFileList: string;
-private selectedFile: string;
+private lastClicked: string;
 private sendEventName: string;
 private recvEventName: string;
 private socket: SocketIOClient.Socket;
@@ -102,7 +99,7 @@ private onRecvDefault(){
 private onClickDefault(){
   $(this.idFileList).on("click", 'li', (event)=>{
     this.changeColorsWhenSelected();
-    this.selectedFile=$(event.target).text().trim();
+    this.lastClicked=$(event.target).text().trim();
   });
 }
 
@@ -110,7 +107,7 @@ private onDirDblClickDefault(){
     $(this.idFileList).on("dblclick", 'li', (event)=>{
       if($(event.target).data('isdir')){
         var target=$(event.target).data('path').trim()+'/'+$(event.target).text().trim();
-        this.request(this.sendEventName, target);
+        this.request(this.sendEventName, target, null);
         $(this.idFileList).empty();
       }
     });

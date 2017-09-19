@@ -5,30 +5,28 @@ class FileBrowser {
         this.socket = socket;
         this.idFileList = idFileList;
         this.recvEventName = recvEventName;
-        this.selectedFile = "";
+        this.lastClicked = "";
         this.onRecvDefault();
         this.onClickDefault();
         this.onDirDblClickDefault();
     }
-    rename(oldName, newName) {
-    }
-    remove(name) {
-    }
-    upload() {
-    }
-    download() {
-    }
-    request(eventName, path) {
-        this.socket.emit(eventName, path);
+    request(sendEventName, path, recvEventName) {
+        this.socket.emit(sendEventName, path);
         this.requestedPath = path;
-        this.sendEventName = eventName;
+        this.sendEventName = sendEventName;
+        if (!recvEventName)
+            this.recvEventName = recvEventName;
     }
     getRequestedPath() {
         return this.requestedPath;
     }
     getSelectedFile() {
-        return this.selectedFile;
+        return this.getLastClicked();
     }
+    getLastClicked() {
+        return this.lastClicked;
+    }
+    // additional event registers
     onRecv(func) {
         this.socket.on(this.recvEventName, (data) => {
             func(data);
@@ -88,14 +86,14 @@ class FileBrowser {
     onClickDefault() {
         $(this.idFileList).on("click", 'li', (event) => {
             this.changeColorsWhenSelected();
-            this.selectedFile = $(event.target).text().trim();
+            this.lastClicked = $(event.target).text().trim();
         });
     }
     onDirDblClickDefault() {
         $(this.idFileList).on("dblclick", 'li', (event) => {
             if ($(event.target).data('isdir')) {
                 var target = $(event.target).data('path').trim() + '/' + $(event.target).text().trim();
-                this.request(this.sendEventName, target);
+                this.request(this.sendEventName, target, null);
                 $(this.idFileList).empty();
             }
         });

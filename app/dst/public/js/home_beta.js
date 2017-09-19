@@ -116,19 +116,19 @@ $(() => {
         showFileDialogue();
         $('#projectNameInputArea').show();
         eventName = 'new';
-        fb.request(eventName, null);
+        fb.request(eventName, null, null);
     });
     $('#btnImport').on("click", (event) => {
         showFileDialogue();
         eventName = 'import';
-        fb.request(eventName, null);
+        fb.request(eventName, null, null);
     });
     $('#btnCancel').on("click", (event) => {
         resetScreen();
     });
     $('#btnOK').on("click", (event) => {
         if (eventName == 'import') {
-            socket.emit('add', fb.getRequestedPath() + '/' + fb.getSelectedFile());
+            socket.emit('add', fb.getRequestedPath() + '/' + fb.getLastClicked());
         }
         else if (eventName == 'new') {
             var label = $('#newProjectName').val();

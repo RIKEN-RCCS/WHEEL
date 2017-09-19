@@ -70,7 +70,7 @@ $(() => {
         setClickEventForResetWorkflow();
         const fb=new FileBrowser(socket, '#fileList', 'fileList');
         socket.on('connect',function(){
-          fb.request('fileListRequest', ClientUtility.dirname(projectFilePath));
+          fb.request('fileListRequest', ClientUtility.dirname(projectFilePath), null);
         });
     })();
 
