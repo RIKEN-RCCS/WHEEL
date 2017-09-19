@@ -1,15 +1,22 @@
 class FileBrowser {
     constructor(socket, idFileList, recvEventName) {
+        this.defaultColor = null;
         this.selectedItemColor = 'lightblue';
+        this.idFileList = null;
+        this.lastClicked = null;
+        this.sendEventName = null;
+        this.recvEventName = null;
+        this.socket = null;
         this.requestedPath = null;
         this.socket = socket;
         this.idFileList = idFileList;
         this.recvEventName = recvEventName;
-        this.lastClicked = "";
         this.onRecvDefault();
         this.onClickDefault();
         this.onDirDblClickDefault();
+        this.registerContextMenu();
     }
+    // mothods
     request(sendEventName, path, recvEventName) {
         this.socket.emit(sendEventName, path);
         this.requestedPath = path;
@@ -70,6 +77,29 @@ class FileBrowser {
             }
         });
     }
+    registerContextMenu() {
+        $.contextMenu({
+            'selector': `${this.idFileList} li`,
+            'items': {
+                'rename': {
+                    name: 'Rename',
+                    callback: function () {
+                        var oldName = $(this).data('label');
+                        $('#renameDialog').attr('data-oldName', oldName);
+                        $('#renameDialog').dialog('open');
+                    }
+                },
+                'delete': {
+                    name: 'Delete',
+                    callback: function () {
+                        var targetID = $(this).data('id');
+                        $('#removeDialog').attr('data-targetId', targetID);
+                        $('#removeDialog').dialog('open');
+                    }
+                }
+            }
+        });
+    }
     onRecvDefault() {
         this.socket.on(this.recvEventName, (data) => {
             if (!this.isValidData(data))
@@ -79,6 +109,9 @@ class FileBrowser {
                 : `<i class="fa ${iconClass} fa-2x" aria-hidden="true"></i>`;
             var item = $(`<li data-path="${data.path}" data-isdir="${data.isdir}" data-islink="${data.islink}">${icon} ${data.name}</li>`);
             $(this.idFileList).append(item);
+            $(`${this.idFileList} li`).sort(function (l, r) {
+                return $(l).text() > $(r).text() ? 1 : -1;
+            });
             this.defaultColor = $(`${this.idFileList} li`).css('background-color');
             this.requestedPath = data.path;
         });

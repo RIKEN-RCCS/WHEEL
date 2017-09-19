@@ -3,13 +3,13 @@ public constructor(socket: SocketIOClient.Socket, idFileList, recvEventName) {
   this.socket=socket;
   this.idFileList=idFileList;
   this.recvEventName=recvEventName;
-  this.lastClicked="";
   this.onRecvDefault();
   this.onClickDefault();
   this.onDirDblClickDefault();
+  this.registerContextMenu();
 }
 
-
+// mothods
 public request(sendEventName, path, recvEventName){
   this.socket.emit(sendEventName, path);
   this.requestedPath=path;
@@ -73,14 +73,38 @@ public onDirDblClick(func){
 
 
 
-private defaultColor: string;
+private defaultColor: string = null;
 private selectedItemColor: string='lightblue';
-private idFileList: string;
-private lastClicked: string;
-private sendEventName: string;
-private recvEventName: string;
-private socket: SocketIOClient.Socket;
+private idFileList: string = null;
+private lastClicked: string = null;
+private sendEventName: string = null;
+private recvEventName: string = null;
+private socket: SocketIOClient.Socket = null;
 private requestedPath=null;
+
+private registerContextMenu(){
+  $.contextMenu({
+    'selector': `${this.idFileList} li`,
+      'items': {
+        'rename':{
+          name: 'Rename',
+          callback: function (){
+            var oldName=$(this).data('label');
+            $('#renameDialog').attr('data-oldName', oldName)
+            $('#renameDialog').dialog('open');
+          }
+        },
+        'delete':{
+          name: 'Delete',
+          callback: function (){
+            var targetID=$(this).data('id');
+            $('#removeDialog').attr('data-targetId', targetID)
+            $('#removeDialog').dialog('open');
+          }
+        }
+      }
+  });
+}
 
 private onRecvDefault(){
     this.socket.on(this.recvEventName, (data)=>{
@@ -91,6 +115,9 @@ private onRecvDefault(){
 
                              var item = $(`<li data-path="${data.path}" data-isdir="${data.isdir}" data-islink="${data.islink}">${icon} ${data.name}</li>`);
       $(this.idFileList).append(item);
+      $(`${this.idFileList} li`).sort(function(l,r){
+        return $(l).text() > $(r).text()? 1:-1;
+      });
       this.defaultColor=$(`${this.idFileList} li`).css('background-color')
       this.requestedPath=data.path;
     });
