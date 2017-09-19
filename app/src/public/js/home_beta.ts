@@ -15,29 +15,6 @@ $(() => {
       $('#projectNameInputArea').hide();
     }
 
-    var dialogWrapper=function(dialogID, html){
-      $('.ui-dialog-titlebar').css({display: 'none'});
-      var def=$.Deferred();
-      $(dialogID).html(html).dialog({
-        autoOpen: false,
-        draggable: false,
-        resizable: false,
-        modal: true,
-        buttons:{
-        "OK":function(){
-            def.resolve();
-            $(this).dialog('close');
-          },
-          "Cancel": function(){
-            def.reject();
-            $(this).dialog('close');
-          }
-        }
-      });
-      $(dialogID).dialog('open');
-      return def.promise();
-    }
-
     // setup contextMenu
     var openProject=function(key, opt){
       var rootPath=$(this).data('path')
