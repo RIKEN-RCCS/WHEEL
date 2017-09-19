@@ -81,20 +81,6 @@
             <a href="/swf/home.html">Scientific Workflow</a>
           </header>
           <div class="subtitle">Project Manager</div>
-          <table class="selected_workflow">
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th></th>
-              <th></th>
-            </tr>
-            <tr>
-              <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px" spellcheck="false"></td>
-              <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);" spellcheck="false"></td>
-              <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
-              <td style="width: 90px"><button type="button" class="button" id="reset_button">Revert</button></td>
-            </tr>
-          </table>
           <div class="menu_area">
             <figure id="run_menu" class="menu_container">
               <img src="/image/icon_run.png" class="icon" id="run_button" />
@@ -133,6 +119,21 @@
               </td>
               <td id="project_birthday"></td>
               <td id="project_update"></td>
+            </tr>
+          </table>
+
+          <table class="selected_workflow">
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th></th>
+              <th></th>
+            </tr>
+            <tr>
+              <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px" spellcheck="false"></td>
+              <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);" spellcheck="false"></td>
+              <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
+              <td style="width: 90px"><button type="button" class="button" id="reset_button">Revert</button></td>
             </tr>
           </table>
 
