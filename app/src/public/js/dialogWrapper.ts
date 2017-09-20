@@ -1,4 +1,4 @@
-function dialogWrapper(dialogID, html){
+function dialogWrapper(dialogID, html, options=null){
   var def=$.Deferred();
   $(dialogID).html(html).dialog({
     autoOpen: false,
@@ -16,6 +16,7 @@ function dialogWrapper(dialogID, html){
       }
     }
   });
+  if(options != null) $(dialogID).dialog('option', options);
   $('.ui-dialog-titlebar').css({display: 'none'});
   $(dialogID).dialog('open');
   return def.promise();

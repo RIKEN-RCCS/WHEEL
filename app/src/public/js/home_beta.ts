@@ -2,19 +2,6 @@ $(() => {
     // socket io
     const socket = io('/home');
 
-    var resetScreen=function(){
-      $('#normal').show();
-      $('#dialogue').hide();
-      $('#path').empty();
-      $('#newProjectName').val('');
-    }
-    var showFileDialogue=function(){
-      $('#fileList').empty();
-      $('#normal').hide();
-      $('#dialogue').show();
-      $('#projectNameInputArea').hide();
-    }
-
     // setup contextMenu
     var openProject=function(key, opt){
       var rootPath=$(this).data('path')
@@ -32,6 +19,7 @@ $(() => {
             .appendTo(document.body)
             .submit();
     }
+
     $.contextMenu({
       'selector': '#projectList li',
       'items': {
@@ -52,9 +40,7 @@ $(() => {
             var newName=$('#renamedProjectName').val();
             var obj={'oldName': oldName, 'newName': newName};
             socket.emit('rename', JSON.stringify(obj));
-            }).fail(function(){
-              console.log("btn canceled!");
-            });
+            })
           }
         },
         'delete':{
@@ -63,9 +49,7 @@ $(() => {
             var targetID=$(this).data('id');
             dialogWrapper('#dialog', 'Are you sure you want to delete project?').done(function(){
               socket.emit('remove', targetID);
-            }).fail(function(){
-                console.log("btn canceled!");
-            });
+            })
           }
         }
       }
@@ -78,8 +62,6 @@ $(() => {
         }
     });
     $('#projectList').disableSelection();
-
-    // project list
     socket.on('projectList', (data)=>{
       $('#projectList').empty();
       data.forEach(function(pj){
@@ -87,45 +69,44 @@ $(() => {
       });
     });
 
-    //file browser
     const fb=new FileBrowser(socket, '#fileList', 'fileList');
-    fb.onFileDblClick(function(target){
-        socket.emit('add',target);
-        resetScreen();
-    });
+    const dialogOptions={
+      height: $(window).height()*0.98,
+      width: $(window).width()*0.98
+    }
 
     // register btn click event listeners
-    var eventName=null;
     $('#btnNew').on("click", (event)=>{
-      showFileDialogue();
-      $('#projectNameInputArea').show();
-      eventName='new';
-      fb.request(eventName, null, null);
-    });
-    $('#btnImport').on("click", (event)=>{
-      showFileDialogue();
-      eventName='import';
-      fb.request(eventName, null, null);
-    });
-
-
-
-    $('#btnCancel').on("click", (event)=>{
-      resetScreen();
-    });
-    $('#btnOK').on("click", (event)=>{
-      if(eventName == 'import'){
-        socket.emit('add',fb.getRequestedPath()+'/'+fb.getLastClicked())
-      }else if (eventName == 'new'){
+      var html='<p id="path"></p><ul id=fileList></ul><div>New project name<input type="text" id="newProjectName"></div>'
+      dialogWrapper('#dialog', html, dialogOptions).done(function(){
         var label =$('#newProjectName').val();
         if(label){
           socket.emit('create',fb.getRequestedPath()+'/'+label)
         }else{
           console.log('illegal label: ', label);
         }
-      }
-      resetScreen();
+      })
+      $('#fileList').empty();
+      fb.resetOnClickEvents();
+      fb.onRecv(function(){
+      console.log(fb.getRequestedPath());
+        $('#path').text(fb.getRequestedPath());
+      });
+      fb.request('new', null, null);
     });
-
-
+    $('#btnImport').on("click", (event)=>{
+      var html='<p id="path"></p><ul id=fileList></ul>'
+      dialogWrapper('#dialog', html, dialogOptions).done(function(){
+        socket.emit('add',fb.getRequestedPath()+'/'+fb.getLastClicked())
+      })
+      $('#fileList').empty();
+      fb.resetOnClickEvents();
+      fb.onRecv(function(){
+        $('#path').text(fb.getRequestedPath());
+      });
+      fb.onFileDblClick(function(target){
+          socket.emit('add',target);
+      });
+      fb.request('import', null, null);
+    });
 });

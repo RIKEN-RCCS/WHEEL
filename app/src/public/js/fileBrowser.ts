@@ -1,8 +1,12 @@
 class FileBrowser{
-public constructor(socket: SocketIOClient.Socket, idFileList, recvEventName) {
+public constructor(socket: SocketIOClient.Socket, idFileList: string, recvEventName: string, withContextMenu: boolean=false) {
   this.socket=socket;
   this.idFileList=idFileList;
   this.recvEventName=recvEventName;
+  if(! withContextMenu){
+    this.registerContextMenu=function(){};
+  }
+  
   this.onRecvDefault();
   this.onClickDefault();
   this.onDirDblClickDefault();
@@ -26,6 +30,10 @@ public getLastClicked(){
   return this.lastClicked;
 }
 
+public resetOnClickEvents(){
+  this.onClickDefault();
+  this.onDirDblClickDefault();
+}
 // additional event registers
 public onRecv(func){
     this.socket.on(this.recvEventName, (data)=>{
@@ -83,27 +91,6 @@ private socket: SocketIOClient.Socket = null;
 private requestedPath=null;
 
 private registerContextMenu(){
-  $.contextMenu({
-    'selector': `${this.idFileList} li`,
-      'items': {
-        'rename':{
-          name: 'Rename',
-          callback: function (){
-            var oldName=$(this).data('label');
-            $('#renameDialog').attr('data-oldName', oldName)
-            $('#renameDialog').dialog('open');
-          }
-        },
-        'delete':{
-          name: 'Delete',
-          callback: function (){
-            var targetID=$(this).data('id');
-            $('#removeDialog').attr('data-targetId', targetID)
-            $('#removeDialog').dialog('open');
-          }
-        }
-      }
-  });
 }
 
 private onRecvDefault(){

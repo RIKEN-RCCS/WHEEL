@@ -1,5 +1,5 @@
 class FileBrowser {
-    constructor(socket, idFileList, recvEventName) {
+    constructor(socket, idFileList, recvEventName, withContextMenu = false) {
         this.defaultColor = null;
         this.selectedItemColor = 'lightblue';
         this.idFileList = null;
@@ -11,6 +11,9 @@ class FileBrowser {
         this.socket = socket;
         this.idFileList = idFileList;
         this.recvEventName = recvEventName;
+        if (!withContextMenu) {
+            this.registerContextMenu = function () { };
+        }
         this.onRecvDefault();
         this.onClickDefault();
         this.onDirDblClickDefault();
@@ -32,6 +35,10 @@ class FileBrowser {
     }
     getLastClicked() {
         return this.lastClicked;
+    }
+    resetOnClickEvents() {
+        this.onClickDefault();
+        this.onDirDblClickDefault();
     }
     // additional event registers
     onRecv(func) {
@@ -78,27 +85,6 @@ class FileBrowser {
         });
     }
     registerContextMenu() {
-        $.contextMenu({
-            'selector': `${this.idFileList} li`,
-            'items': {
-                'rename': {
-                    name: 'Rename',
-                    callback: function () {
-                        var oldName = $(this).data('label');
-                        $('#renameDialog').attr('data-oldName', oldName);
-                        $('#renameDialog').dialog('open');
-                    }
-                },
-                'delete': {
-                    name: 'Delete',
-                    callback: function () {
-                        var targetID = $(this).data('id');
-                        $('#removeDialog').attr('data-targetId', targetID);
-                        $('#removeDialog').dialog('open');
-                    }
-                }
-            }
-        });
     }
     onRecvDefault() {
         this.socket.on(this.recvEventName, (data) => {
