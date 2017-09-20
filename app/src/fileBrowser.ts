@@ -50,24 +50,3 @@ export default function(socket: SocketIO.Server, eventName: string, targetDir: s
       });
     });
 }
-export function remove(target){
-// targetはfile又はディレクトリ又はlink
-// linkの時はlinkだけを消すこと(link先を消しちゃ駄目)
-}
-export function rename(oldName, newName)
-{
-  //oldNameは存在するファイル、newNameは文字列(path.normalizeとかかける必要あり?)
-}
-
-export function upload(socket: SocketIO.Server, eventName: string, targetFile: string)
-{
-  socket.on(eventName, function(data){
-  //  fs.writeFile(targetFile, data);
-  });
-}
-export function download(socket: SocketIO.Server, eventName: string, targetFile: string)
-{
-  fs.readFile(targetFile, function(data){
-    socket.emit(eventName, data);
-  });
-}

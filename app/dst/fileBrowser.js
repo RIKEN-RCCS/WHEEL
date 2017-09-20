@@ -56,25 +56,4 @@ function default_1(socket, eventName, targetDir, sendDirname = true, sendFilenam
     });
 }
 exports.default = default_1;
-function remove(target) {
-    // targetはfile又はディレクトリ又はlink
-    // linkの時はlinkだけを消すこと(link先を消しちゃ駄目)
-}
-exports.remove = remove;
-function rename(oldName, newName) {
-    //oldNameは存在するファイル、newNameは文字列(path.normalizeとかかける必要あり?)
-}
-exports.rename = rename;
-function upload(socket, eventName, targetFile) {
-    socket.on(eventName, function (data) {
-        //  fs.writeFile(targetFile, data);
-    });
-}
-exports.upload = upload;
-function download(socket, eventName, targetFile) {
-    fs.readFile(targetFile, function (data) {
-        socket.emit(eventName, data);
-    });
-}
-exports.download = download;
 //# sourceMappingURL=fileBrowser.js.map

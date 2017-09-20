@@ -40,8 +40,10 @@ var onRemove = function (sio, msg) {
     var targetDir = path.dirname(target.path);
     del(targetDir, { force: true }).catch(function () {
         logger.warn(`directory remove failed: ${targetDir}`);
+    })
+        .then(function () {
+        sio.emit('projectList', projectListManager.getAllProject());
     });
-    sio.emit('projectList', projectListManager.getAllProject());
 };
 var onRename = function (sio, msg) {
     logger.debug(`rename: ${msg}`);

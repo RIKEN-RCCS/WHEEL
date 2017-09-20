@@ -308,7 +308,6 @@ var cleanProject= function (socket: SocketIO.Socket) {
 var openProjectJson= function (socket: SocketIO.Socket): void {
     const eventName = 'openProjectJson';
         socket.on(eventName, (projectFilepath: string) => {
-        console.log('projectFilePath',projectFilepath);
           var projectJson = projectUtility.openProjectJson(projectFilepath);
           socket.json.emit(eventName, projectJson);
         try {

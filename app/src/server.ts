@@ -1,11 +1,14 @@
 import fs = require('fs');
 import path = require('path');
 import os = require('os');
+import util = require('util');
 
 import express = require('express');
 import cookieParser = require('cookie-parser');
 import bodyParser = require('body-parser');
 import http = require('http');
+import siofu = require('socketio-file-upload');
+import del=require('del');
 
 import fileBrowser from './fileBrowser';
 import logger = require('./logger');
@@ -24,6 +27,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.resolve('dst/public'), {index: false}));
+app.use(siofu.router);
 
 // routing
 var routes={
@@ -65,20 +69,74 @@ app.use(function(err, req, res, next) {
 }); 
 
 
+/**
+ * set up logger
+ */
 // TODO independent socket.io instance and filename should be passed
 // hand over socket.io to logger
 logger.setSocket(sio.of('/swf/project'));
 logger.setLogfile("./TestLogFile.txt");
 
-// register event listeners
+/**
+ * register event listeners
+ */
+// home 
 import home_beta=require('./home_beta');
 home_beta.setup(sio);
-sio.of('/swf/workflow').on('connect',function(socket){
+// workflow
+var sioNamespace='/swf/workflow';
+sio.of(sioNamespace).on('connect',function(socket){
+  var uploader=new siofu();
+  uploader.listen(socket);
+  uploader.dir=os.homedir();
+  uploader.on("saved", function(event){
+    logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
+    fileBrowser(sio.of(sioNamespace), 'fileList', uploader.dir);
+  });
+  uploader.on("error", function(event){
+    logger.error(`Error from uploader ${event}`);
+  });
   socket.on('fileListRequest', function(target){
-  fileBrowser(sio.of('/swf/workflow'), 'fileList', target);
+    logger.debug(`current dir = ${target}`)
+    fileBrowser(sio.of(sioNamespace), 'fileList', target);
+    uploader.dir=target;
+  });
+  socket.on('remove', function(target){
+    console.log(target);
+    var parentDir = path.dirname(target);
+    del(target,{force: true})
+    .then(function(){
+      fileBrowser(sio.of(sioNamespace), 'fileList', parentDir);
+    })
+    .catch(function(err){
+      logger.warn(`remove failed: ${err}`);
+      logger.debug(`remove target: ${target}`);
+    });
+  });
+  socket.on('rename', function(msg){
+    var data=JSON.parse(msg.toString());
+    if(! (data.hasOwnProperty('oldName') && data.hasOwnProperty('newName'))){
+      logger.warn(`illegal request ${msg}`);
+      return;
+    }
+    var parentDir = path.dirname(data.oldName);
+    util.promisify(fs.rename)(data.oldName, data.newName)
+    .then(function(){
+      fileBrowser(sio.of(sioNamespace), 'fileList', parentDir);
+    })
+    .catch(function(err){
+      logger.warn(`rename failed: ${err}`);
+      logger.debug(`oldName: ${data.oldName}`);
+      logger.debug(`newName: ${data.newName}`);
+    });
+  });
+  socket.on('download', function(msg){
+    //TODO 
+    logger.warn('download function is not implemented yet.');
   });
 });
 
+// others
 import EventListeners=require('./eventListeners');
 
 EventListeners.add(sio.of('/swf/home'), [

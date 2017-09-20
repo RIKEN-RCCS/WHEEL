@@ -291,7 +291,6 @@ var cleanProject = function (socket) {
 var openProjectJson = function (socket) {
     const eventName = 'openProjectJson';
     socket.on(eventName, (projectFilepath) => {
-        console.log('projectFilePath', projectFilepath);
         var projectJson = projectUtility.openProjectJson(projectFilepath);
         socket.json.emit(eventName, projectJson);
         try {

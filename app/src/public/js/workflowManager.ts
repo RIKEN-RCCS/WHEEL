@@ -1,3 +1,4 @@
+declare var  SocketIOFileUpload;
 $(() => {
     // socket io
     const socket = io('/swf/workflow');
@@ -68,10 +69,13 @@ $(() => {
         setRevertDialogEvents();
         setClickEventForSaveWorkflow();
         setClickEventForResetWorkflow();
-        const fb=new FileBrowser(socket, '#fileList', 'fileList');
+        const fb=new FileBrowser(socket, '#fileList', 'fileList', true);
         socket.on('connect',function(){
           fb.request('fileListRequest', ClientUtility.dirname(projectFilePath), null);
         });
+        const uploader = new SocketIOFileUpload(socket);
+        uploader.listenOnDrop(document.getElementById('fileBrowser'));
+        uploader.listenOnInput(document.getElementById('fileSelector'));
     })();
 
     /**
