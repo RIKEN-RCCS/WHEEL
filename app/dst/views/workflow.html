@@ -4,9 +4,9 @@
   <head>
     <meta charset="UTF-8">
     <link type="text/css" rel="stylesheet" href="/css/pure-drawer.min-1.0.2.css" />
-    <link type="text/css" rel="stylesheet" href="/css/style.css" />
     <link type="text/css" rel="stylesheet" href="/css/jquery-ui-1.12.1.css" />
     <link type="text/css" rel="stylesheet" href="/css/jquery.contextMenu-2.4.4.css" />
+    <link type="text/css" rel="stylesheet" href="/css/workflow.css" />
 
     <script type="text/javascript" src="/third_party/jquery/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/third_party/jquery/jquery-ui-1.12.1.min.js"></script>
@@ -62,6 +62,7 @@
 
     <script type="text/javascript" src="/js/workflowManager.js"></script>
     <script type="text/javascript" src="/js/projectManager.js"></script>
+    <script type="text/javascript" src="/js/workflow.js"></script>
     <title>Scientific Workflow</title>
   </head>
 
@@ -183,18 +184,21 @@
           </div>
 
           <div id='dialog'></div>
-        <div class="log_area">
-          <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug
-          <input type="checkbox" id="enableINFO"   checked="checked" value="node">Info
-          <input type="checkbox" id="enableWARN"   checked="checked" value="node">Warn
-          <input type="checkbox" id="enableERR"    checked="checked" value="node">Error
-          <input type="checkbox" id="enableStdout" checked="checked" value="node">stdout
-          <input type="checkbox" id="enableStderr" checked="checked" value="node">stderr
-          <input type="checkbox" id="enableSSHout" checked="checked" value="node">stdout(SSH)
-          <input type="checkbox" id="enableSSHerr" checked="checked" value="node">stderr(SSH)
-          <button id="clear_log">clear</button>
-          <pre id="log"></pre>
-        </div>
+            <input type="checkbox" id='displayLog' checked="checked"><label for="displayLog">Log</label>
+          <div id="log_area">
+            <div id="logFilter">
+              <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug
+              <input type="checkbox" id="enableINFO"   checked="checked" value="node">Info
+              <input type="checkbox" id="enableWARN"   checked="checked" value="node">Warn
+              <input type="checkbox" id="enableERR"    checked="checked" value="node">Error
+              <input type="checkbox" id="enableStdout" checked="checked" value="node">stdout
+              <input type="checkbox" id="enableStderr" checked="checked" value="node">stderr
+              <input type="checkbox" id="enableSSHout" checked="checked" value="node">stdout(SSH)
+              <input type="checkbox" id="enableSSHerr" checked="checked" value="node">stderr(SSH)
+            </div>
+            <button id="clear_log">clear</button>
+            <pre id="log"></pre>
+          </div>
 
           <input type="file" id="file_select" style="display:none">
           <div class="gray_panel" id="gray_panel"></div>

@@ -1,0 +1,423 @@
+html,
+body {
+    width: 100%;
+    height: 100%;
+    background-color: rgb(70, 70, 65);
+    font-family: "游ゴシック", "Hiragino Kaku Gothic ProN", "Meiryo UI", "Meiryo", "メイリオ", "sans-serif";
+    margin: 0;
+    white-space: nowrap;
+}
+
+header {
+    background-color: rgb(47, 47, 42);
+    color: rgb(237, 115, 66);
+    padding: 10px 0 0 10px;
+    font-size: 150%;
+    height: 40px;
+    font-weight: bold;
+}
+
+a:link,
+a:visited,
+a:hover,
+a:active {
+    color: rgb(214, 80, 40);
+    text-decoration: none;
+}
+
+.subtitle {
+    color: rgb(240, 240, 240);
+    padding: 10px 0 0 20px;
+    font-size: 120%;
+    font-weight: bold;
+    height: 40px;
+}
+
+.menu_container {
+    width: 100px;
+    margin: 0;
+    font-size: 80%;
+}
+
+.menu_area {
+    display: flex;
+    flex-direction: row;
+    color: rgb(105, 175, 45);
+    padding: 0 0 0 20px;
+    height: 60px;
+    font-size: 90%;
+    text-align: center;
+}
+
+.address_bar_area {
+    display: flex;
+    flex-direction: row;
+    color: rgb(240, 240, 240);
+    width: 95%;
+    margin: 5px auto;
+    font-size: 90%;
+    align-content: center;
+}
+
+.address_bar_area span {
+    width: 100px;
+    padding: 5px 5px;
+}
+
+.text_container {
+    display: flex;
+    flex-direction: row;
+    color: rgb(240, 240, 240);
+    width: 100%;
+    padding: 5px;
+    align-items: center;
+    width: 300px;
+    position: relative;
+    padding: 10px 0;
+}
+
+.text_label {
+    width: 60px;
+}
+
+.host_container {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.auth_type_area {
+    width: 600px;
+    margin: auto;
+    height: 90px;
+}
+
+.auth_type_radio_container {
+    width: 400px;
+    vertical-align: middle;
+}
+
+.auth_type_area div {
+    float: left;
+    padding: 0 10px 10px 0;
+}
+
+.text_box {
+    border: 0;
+    padding: 3px;
+    color: rgb(240, 240, 240);
+    border: solid 1px #111;
+    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1) inset;
+    background-color: rgb(60, 60, 55);
+}
+
+.remotehost_text,
+.address_bar {
+    margin: 0 0 0 5px;
+    width: 100%;
+}
+
+.dialog_text_box {
+    width: 100%;
+}
+
+.sub_content_area,
+.file_dialog {
+    color: rgb(240, 240, 240);
+    border: solid 1px #111;
+    background-color: rgb(70, 70, 65);
+    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    width: 49%;
+    margin: auto;
+    overflow: auto;
+    font-size: 90%;
+    user-select: none;
+}
+
+.text_area {
+    color: rgb(240, 240, 240);
+    min-width: 95%;
+    min-height: calc(100% - 160px);
+    resize: none;
+    border: solid 1px #111;
+    background-color: rgb(70, 70, 65);
+    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    background-image: linear-gradient(rgb(60, 60, 55) 50%, transparent 50%, transparent);
+    background-size: 40px 40px;
+    line-height: 20px;
+    font-size: 16px;
+    margin-left: 2.4%;
+    align-items: center;
+    vertical-align: middle;
+    position: relative;
+}
+
+.file_dialog {
+    height: calc(100% - 115px);
+}
+
+.register_list_area {
+    height: calc(100% - 300px);
+    width: 700px;
+    min-height: 100px;
+}
+
+.select_workflow_area {
+    height: calc(100% - 160px);
+}
+
+.project_manage_area {
+    height: calc(100% - 360px);
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.workflow_manage_area {
+    height: calc(100% - 360px);
+}
+
+.register_host_area {
+    height: calc(100% - 120px);
+    text-align: center;
+}
+
+.select_dir_container,
+.select_file_container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 25px;
+    cursor: pointer;
+    border: solid 1px rgba(0, 0, 0, 0);
+    margin: 0 5px;
+}
+
+.selected_workflow {
+    width: 95%;
+    margin: 5px auto;
+}
+
+.icon {
+    cursor: pointer;
+}
+
+.file_icon,
+.dir_icon,
+.icon {
+    height: 30px;
+}
+
+.project_icon {
+    height: 20px;
+    margin: 0 3px;
+}
+
+table {
+    margin: auto;
+    width: 100%;
+    font-size: 90%;
+    vertical-align: middle;
+    height: 35px;
+}
+
+th {
+    color: rgb(105, 175, 45);
+    text-align: left;
+}
+
+td {
+    color: rgb(240, 240, 240);
+}
+
+.button,
+.dialog_button {
+    width: 90px;
+    height: 25px;
+    box-shadow: 1px -1px 0px 0px rgba(105, 175, 45, 0.1);
+    border: solid 1px;
+    cursor: pointer;
+    margin: auto;
+    background-color: rgb(105, 175, 45);
+    color: black;
+}
+
+.disable_button {
+    cursor: auto;
+}
+
+.button:hover {
+    background-color: rgb(125, 195, 65);
+}
+
+.button:active {
+    background-color: rgb(105, 175, 45);
+}
+
+.button:disabled {
+    background-color: rgb(105, 175, 45);
+    opacity: 0.6;
+    cursor: default;
+}
+
+.ok_test_button,
+.ok_test_button:disabled {
+    background-color: rgb(20, 105, 250);
+    color: black;
+    cursor: auto;
+}
+
+.ng_test_button {
+    background-color: rgb(230, 55, 20);
+}
+
+.ng_test_button:hover {
+    background-color: rgb(250, 75, 40);
+}
+
+.hostlabel {
+    padding-left: 10px;
+    text-align: left;
+    width: 600px;
+}
+
+.gray_panel {
+    background: #000;
+    opacity: 0.4;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: none;
+    z-index: 50;
+}
+
+.dialog_area {
+    width: 1000px;
+    position: fixed;
+    border: solid 1px #111;
+    background-color: rgb(70, 70, 65);
+    box-shadow: 0px 0px 1px 1px rgba(250, 250, 250, 0.1);
+    margin: auto;
+    height: calc(100% - 120px);
+    top: 60px;
+    left: calc(50% - 500px);
+    z-index: 100;
+    display: none;
+    padding: 10px;
+}
+
+.dialog_title {
+    color: rgb(240, 240, 240);
+    font-size: larger;
+    padding-left: 20px;
+}
+
+.text_dialog_area {
+    width: 600px;
+    height: 140px;
+    top: calc(50% - 70px);
+    left: calc(50% - 300px);
+}
+
+.yesno_dialog_area {
+    width: 500px;
+    height: 100px;
+    top: calc(50% - 50px);
+    left: calc(50% - 250px);
+}
+
+.dialog_button_container {
+    float: right;
+    margin-right: 25px;
+}
+
+.workflow_tree_svg {
+    height: 50%;
+    width: 180px;
+    border-right: solid 1px #111;
+    box-shadow: -1px 0 0 0 rgba(250, 250, 250, 0.1) inset;
+    float: left;
+}
+
+.node_tree {
+    float: right;
+    height: 50%;
+    width: calc(100% - 181px);
+    overflow: hidden;
+}
+
+.property {
+    overflow: auto;
+    height: calc(100% - 234px);
+    width: 0px;
+    min-width: 0px;
+    border-left: solid 1px #111;
+    display: none;
+    z-index: 20;
+    padding: 5px;
+    border-collapse: collapse;
+    position: fixed;
+    right: 2.4%;
+    top: 201px;
+}
+
+.property_text {
+    width: calc(100% - 12px);
+}
+
+.property div {
+    color: rgb(105, 175, 45);
+    font-size: 110%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.property input {
+    margin-right: 6px;
+}
+#fileBrowser{
+  height: 50%;
+  width: 180px;
+  float: left;
+  overflow: auto;
+}
+
+.text_readonly {
+    color: rgb(240, 240, 240);
+    background-color: rgb(70, 70, 65);
+    opacity: 0.6;
+}
+
+.line {
+    border-bottom: 1px solid rgba(40, 40, 40, 1);
+    box-shadow: 0px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    margin: 3px 0;
+}
+.pure-pusher{
+    background-color: rgb(47, 47, 42);
+}
+#log_area{
+    color: rgb(240, 240, 240);
+}
+#project_tree{
+  float: left;
+}
+#log{
+  height: calc(50% - 280px);
+  overflow: auto;
+}
+
+input[type="text"],
+input[type="password"],
+textarea,
+select {
+    outline: none;
+}
+
+progress {
+    border: solid 1px #111;
+    box-shadow: 0px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    background-color: rgb(70, 70, 65);
+}
