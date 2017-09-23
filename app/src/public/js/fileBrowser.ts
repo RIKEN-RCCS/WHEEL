@@ -87,31 +87,31 @@ public onDirDblClick(func){
 // private methods
 private registerContextMenu(){
     const socket=this.socket;
+    const fileList=`${this.idFileList} li`;
     $.contextMenu({
-      'selector': `${this.idFileList} li`,
+      'selector': fileList,
       'items': {
         'rename':{
           name: 'Rename',
           callback: function (){
-          var path=$(this).data('path');
-          var oldName=$(this).data('name');
-          var html='<p>input new filename</p><input type="text" id="newName">'
-          dialogWrapper('#dialog', html).done(function(){
-            var newName=$('#newName').val();
-            var obj={'path': path, 'oldName': oldName, 'newName': newName};
-            // $(this).data('name')と一致する要素をidFileListから削除
-            //$(`${this.idFileList}`).append(item);
-            socket.emit('rename', JSON.stringify(obj));
+            var path=$(this).data('path');
+            var oldName=$(this).data('name');
+            var html='<p>input new filename</p><input type="text" id="newName">'
+            dialogWrapper('#dialog', html).done(function(){
+              var newName=$('#newName').val();
+              var obj={'path': path, 'oldName': oldName, 'newName': newName};
+              $(fileList).remove(`:contains(${oldName})`);
+              socket.emit('rename', JSON.stringify(obj));
             })
           }
         },
         'delete':{
           name: 'Delete',
           callback: function (){
-            var target=$(this).data('path')+'/'+$(this).data('name');
+            var filename=$(this).data('name');
+            var target=$(this).data('path')+'/'+filename;
             dialogWrapper('#dialog', 'Are you sure you want to delete this file?').done(function(){
-            // $(this).data('name')と一致する要素をidFileListから削除
-            //$(`${this.idFileList}`).append(item);
+              $(fileList).remove(`:contains(${filename})`);
               socket.emit('remove', target);
             })
           }

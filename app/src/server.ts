@@ -115,17 +115,19 @@ sio.of(sioNamespace).on('connect',function(socket){
   });
   socket.on('rename', function(msg){
     var data=JSON.parse(msg.toString());
-    if(! (data.hasOwnProperty('oldName') && data.hasOwnProperty('newName'))){
+    if(! (data.hasOwnProperty('oldName') && data.hasOwnProperty('newName') && data.hasOwnProperty('path'))){
       logger.warn(`illegal request ${msg}`);
       return;
     }
-    var parentDir = path.dirname(data.oldName);
-    util.promisify(fs.rename)(data.oldName, data.newName)
+    var oldName=path.resolve(data.path, data.oldName);
+    var newName=path.resolve(data.path, data.newName);
+    util.promisify(fs.rename)(oldName, newName)
     .then(function(){
-      fileBrowser(sio.of(sioNamespace), 'fileList', parentDir);
+      fileBrowser(sio.of(sioNamespace), 'fileList', data.path);
     })
     .catch(function(err){
       logger.warn(`rename failed: ${err}`);
+      logger.debug(`path:    ${data.path}`);
       logger.debug(`oldName: ${data.oldName}`);
       logger.debug(`newName: ${data.newName}`);
     });

@@ -93,8 +93,9 @@ class FileBrowser {
     // private methods
     registerContextMenu() {
         const socket = this.socket;
+        const fileList = `${this.idFileList} li`;
         $.contextMenu({
-            'selector': `${this.idFileList} li`,
+            'selector': fileList,
             'items': {
                 'rename': {
                     name: 'Rename',
@@ -105,8 +106,7 @@ class FileBrowser {
                         dialogWrapper('#dialog', html).done(function () {
                             var newName = $('#newName').val();
                             var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
-                            // $(this).data('name')と一致する要素をidFileListから削除
-                            //$(`${this.idFileList}`).append(item);
+                            $(fileList).remove(`:contains(${oldName})`);
                             socket.emit('rename', JSON.stringify(obj));
                         });
                     }
@@ -114,10 +114,10 @@ class FileBrowser {
                 'delete': {
                     name: 'Delete',
                     callback: function () {
-                        var target = $(this).data('path') + '/' + $(this).data('name');
+                        var filename = $(this).data('name');
+                        var target = $(this).data('path') + '/' + filename;
                         dialogWrapper('#dialog', 'Are you sure you want to delete this file?').done(function () {
-                            // $(this).data('name')と一致する要素をidFileListから削除
-                            //$(`${this.idFileList}`).append(item);
+                            $(fileList).remove(`:contains(${filename})`);
                             socket.emit('remove', target);
                         });
                     }
