@@ -101,6 +101,11 @@
               <img src="/image/icon_stop.png" class="icon" id="stop_button" />
               <figcaption>STOP</figcaption>
             </figure>
+            <input type="checkbox" id='displayLog'><label for="displayLog">Log</label>
+            <div id="viewSelector">
+              <input type="radio" name="view" value="list" checked="checked" id="listView"><label for="listView">List</label>
+              <input type="radio" name="view" value="graph" id="graphView"><label for="graphView">graph</label>
+            </div>
           </div>
 
           <div class="address_bar_area">
@@ -184,7 +189,6 @@
           </div>
 
           <div id='dialog'></div>
-            <input type="checkbox" id='displayLog' checked="checked"><label for="displayLog">Log</label>
           <div id="log_area">
             <div id="logFilter">
               <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug

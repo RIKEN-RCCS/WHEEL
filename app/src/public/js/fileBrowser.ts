@@ -99,6 +99,8 @@ private registerContextMenu(){
           dialogWrapper('#dialog', html).done(function(){
             var newName=$('#newName').val();
             var obj={'path': path, 'oldName': oldName, 'newName': newName};
+            // $(this).data('name')と一致する要素をidFileListから削除
+            //$(`${this.idFileList}`).append(item);
             socket.emit('rename', JSON.stringify(obj));
             })
           }
@@ -108,6 +110,8 @@ private registerContextMenu(){
           callback: function (){
             var target=$(this).data('path')+'/'+$(this).data('name');
             dialogWrapper('#dialog', 'Are you sure you want to delete this file?').done(function(){
+            // $(this).data('name')と一致する要素をidFileListから削除
+            //$(`${this.idFileList}`).append(item);
               socket.emit('remove', target);
             })
           }
