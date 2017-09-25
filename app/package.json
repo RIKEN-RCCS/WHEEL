@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node dst/server",
     "build": "tsc",
-    "dev": "tsc-watch --onSuccess 'node dst/server'"
+    "dev": "tsc-watch --onSuccess \"node dst/server\""
   },
   "dependencies": {
     "body-parser": "^1.17.2",
