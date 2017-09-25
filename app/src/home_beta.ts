@@ -33,7 +33,6 @@ const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\
  var onAdd=function(sio: SocketIO.Server, msg: string){
   logger.debug(`add: ${msg}`);
   var tmp = JSON.parse(fs.readFileSync(msg).toString());
-  console.log(tmp.name);
   projectListManager.add(tmp.name, msg);
   sio.emit('projectList', projectListManager.getAllProject());
  }

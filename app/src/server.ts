@@ -102,7 +102,6 @@ sio.of(sioNamespace).on('connect',function(socket){
     uploader.dir=target;
   });
   socket.on('remove', function(target){
-    console.log(target);
     var parentDir = path.dirname(target);
     del(target,{force: true})
     .then(function(){
