@@ -5,6 +5,8 @@ function dialogWrapper(dialogID, html, options = null) {
         draggable: false,
         resizable: false,
         modal: true,
+        width: 'auto',
+        height: 'auto',
         buttons: {
             "OK": function () {
                 def.resolve();

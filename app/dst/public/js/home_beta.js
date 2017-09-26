@@ -85,7 +85,6 @@ $(() => {
         $('#fileList').empty();
         fb.resetOnClickEvents();
         fb.onRecv(function () {
-            console.log(fb.getRequestedPath());
             $('#path').text(fb.getRequestedPath());
         });
         fb.request('new', null, null);

@@ -25,6 +25,7 @@ class FileBrowser {
     request(sendEventName, path, recvEventName) {
         this.socket.emit(sendEventName, path);
         this.requestedPath = path;
+        //TODO path をnormalizeしとかんとvalidation checkにひっかかる
         this.sendEventName = sendEventName;
         if (!recvEventName)
             this.recvEventName = recvEventName;
@@ -147,6 +148,7 @@ class FileBrowser {
     }
     onRecvDefault() {
         this.socket.on(this.recvEventName, (data) => {
+            console.log(data);
             if (!this.isValidData(data))
                 return;
             var iconClass = data.isdir ? 'fa-folder-o' : 'fa-file-o';
@@ -192,6 +194,11 @@ class FileBrowser {
         $(`${this.idFileList} li`).css('background-color', this.defaultColor);
         $(event.target).css('background-color', this.selectedItemColor);
     }
+    isValidPath(path1, path2) {
+        var path1 = path1.replace(/\\/g, '/');
+        var path2 = path2.replace(/\\/g, '/');
+        return path1 === path2;
+    }
     isValidData(data) {
         if (!data.hasOwnProperty('path'))
             return false;
@@ -201,9 +208,10 @@ class FileBrowser {
             return false;
         if (!data.hasOwnProperty('islink'))
             return false;
-        if (!(this.requestedPath === null || this.requestedPath === data.path)) {
+        if (this.requestedPath === null)
+            return true;
+        if (!this.isValidPath(this.requestedPath, data.path))
             return false;
-        }
         return true;
     }
 }

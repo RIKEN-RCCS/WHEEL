@@ -29,7 +29,6 @@ var onCreate = function (sio, msg) {
 var onAdd = function (sio, msg) {
     logger.debug(`add: ${msg}`);
     var tmp = JSON.parse(fs.readFileSync(msg).toString());
-    console.log(tmp.name);
     projectListManager.add(tmp.name, msg);
     sio.emit('projectList', projectListManager.getAllProject());
 };
