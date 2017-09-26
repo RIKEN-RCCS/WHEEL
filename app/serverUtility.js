@@ -628,7 +628,7 @@ class ServerUtility {
 /**
  * config parameter
  */
-ServerUtility.config = require('../dst/config/server');
+ServerUtility.config = require('./config/server');
 /**
  * type base
  */

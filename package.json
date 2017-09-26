@@ -1,6 +1,6 @@
 {
-  "name": "SWorkFlow",
-  "version": "1.1.1",
+  "name": "WHEEL",
+  "version": "1.2.0",
   "description": "Scientific Workflow system",
   "main": "server.js",
   "author": {
@@ -8,9 +8,7 @@
   },
   "license": "",
   "scripts": {
-    "start": "node dst/server",
-    "build": "tsc",
-    "dev": "tsc-watch --onSuccess \"node dst/server\""
+    "start": "node app/server"
   },
   "dependencies": {
     "body-parser": "^1.17.2",
@@ -23,10 +21,6 @@
     "uuid": "^3.1.0"
   },
   "devDependencies": {
-    "@types/socket.io": "^1.4.30",
-    "@types/socket.io-client": "^1.4.30",
-    "@types/ssh2": "^0.5.35",
-    "tsc-watch": "^1.0.8",
-    "typescript": "^2.4.2"
+    "eslint": "^4.7.2"
   }
 }

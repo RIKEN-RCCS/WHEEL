@@ -12,7 +12,7 @@ const siofu = require("socketio-file-upload");
 const del = require("del");
 const fileBrowser_1 = require("./fileBrowser");
 const logger = require("./logger");
-const config = require('../dst/config/server');
+const config = require('./config/server');
 /*
  * set up express, http and socket.io
  */

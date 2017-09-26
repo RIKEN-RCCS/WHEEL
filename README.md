@@ -1,26 +1,18 @@
-Scientific Workflow
+**W**orkflow in **H**ierarchical distribut**E**d parall**EL**
+
+#Prerequirements
+node.js v8.0.0 or later
+<https://nodejs.org/en/>
 
 #How to install
 ```
 > git clone
-> cd app
 > npm install
 ```
 
 #How to use
 ```
-> cd app
 > npm start
 ```
-
-#For developers
-we have two scripts which call typescript compiler
-
-- npm run build
-- npm run dev
-
-"build" call tsc just once, "dev" watch files and call tsc if any file change is detected
-
-
 
 
