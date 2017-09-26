@@ -23,23 +23,18 @@ const sio = require('socket.io')(server);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.resolve('dst/public'), { index: false }));
+app.use(express.static(path.resolve('./public'), { index: false }));
 app.use(siofu.router);
 // routing
 var routes = {
-    "home": require('./routes/main'),
-    "home_beta": require('./routes/home_beta'),
+    "home": require('./routes/home'),
     "workflow": require('./routes/workflow'),
-    "PM": require('./routes/projectManager'),
-    "WM": require('./routes/workflowManager'),
     "editor": require('./routes/editor'),
     "remoteHost": require('./routes/remoteHost')
 };
 app.use('/', routes.home);
-app.use('/home_beta', routes.home_beta);
+app.use('/home', routes.home);
 app.use('/workflow', routes.workflow);
-app.use('/swf/project_manager.html', routes.PM);
-app.use('/swf/workflow_manager.html', routes.WM);
 app.use('/swf/editor.html', routes.editor);
 app.use('/swf/remotehost.html', routes.remoteHost);
 // port number
@@ -68,7 +63,7 @@ logger.setLogfile("./TestLogFile.txt");
  * register event listeners
  */
 // home 
-const home_beta = require("./home_beta");
+const home_beta = require("./home");
 home_beta.setup(sio);
 // workflow
 var sioNamespace = '/swf/workflow';
