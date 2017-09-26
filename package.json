@@ -8,13 +8,18 @@
   },
   "license": "",
   "scripts": {
-    "start": "node app/server"
+    "start": "node app/server",
+    "dev": "node-dev app/server",
+    "debug": "cross-env DEBUG=* node-dev app/server"
   },
   "dependencies": {
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
+    "cross-env": "^5.0.5",
     "del": "^3.0.0",
     "express": "^4.15.4",
+    "node-dev": "^3.1.3",
+    "opener": "^1.4.3",
     "socket.io": "^1.7.4",
     "socketio-file-upload": "^0.6.0",
     "ssh2": "^0.5.5",
