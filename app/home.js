@@ -3,15 +3,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+
 const del = require("del");
+
 const logger = require("./logger");
 const socketioHelper_1 = require("./socketioHelper");
 const fileBrowser_1 = require("./fileBrowser");
 const projectListManager = require("./projectListManager");
 const projectManager = require("./projectManager");
 const config = require('./config/server.json');
+
 const noDotFiles = /^[^\.].*$/;
 const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\.')}$`);
+
 var adaptorSendFiles = function (sio, withFile, msg) {
     var target = msg ? path.normalize(msg) : config.rootDir || os.homedir() || '/';
     fileBrowser_1.default(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
@@ -72,5 +76,4 @@ function setup(sio) {
     socketioHelper_1.default(sio.of('/home'), 'rename', onRename.bind(null, sio.of('/home')));
     socketioHelper_1.default(sio.of('/home'), 'reorder', onReorder.bind(null, sio.of('/home')));
 }
-exports.setup = setup;
-//# sourceMappingURL=home_beta.js.map
+module.exports = setup;

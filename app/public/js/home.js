@@ -5,14 +5,6 @@ $(() => {
     var openProject = function (key, opt) {
         var rootPath = $(this).data('path');
         //project manager画面を呼び出すURLへアクセス
-        $('<form/>', { action: '/swf/project_manager.html', method: 'post' })
-            .append($('<input/>', { type: 'hidden', name: 'project', value: rootPath }))
-            .appendTo(document.body)
-            .submit();
-    };
-    var openProjectBeta = function (key, opt) {
-        var rootPath = $(this).data('path');
-        //project manager画面を呼び出すURLへアクセス
         $('<form/>', { action: '/workflow', method: 'post' })
             .append($('<input/>', { type: 'hidden', name: 'project', value: rootPath }))
             .appendTo(document.body)
@@ -24,10 +16,6 @@ $(() => {
             'open': {
                 name: 'Open',
                 callback: openProject
-            },
-            'open(beta)': {
-                name: 'Open beta version',
-                callback: openProjectBeta
             },
             'rename': {
                 name: 'Rename',
