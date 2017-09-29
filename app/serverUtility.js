@@ -641,7 +641,7 @@ class TypeBase {
         /**
          * config date
          */
-        this.config = require('../dst/config/server');
+        this.config = require('./config/server');
         this.type = type;
     }
     /**

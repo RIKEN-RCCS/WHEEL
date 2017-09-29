@@ -18,7 +18,7 @@ var projectList = [];
  *  'id'   : 'xxxxxxxx-xxxxxxxxx-xxxxxxxxxxxxxxxx'
  * }]
  */
-var projectListFilename = path.resolve('dst', config.projectList) + '.json';
+var projectListFilename = path.resolve('./app',config.projectList) + '.json';
 fs.readFile(projectListFilename, function (err, data) {
     if (err) {
         logger.info(`project list file read failed. (${projectListFilename})`);
