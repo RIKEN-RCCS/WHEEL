@@ -172,4 +172,3 @@ Logger.socket = null;
  */
 Logger.logfile = null;
 module.exports = Logger;
-//# sourceMappingURL=logger.js.map

@@ -1,5 +1,4 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -7,8 +6,7 @@ const path = require("path");
 const del = require("del");
 
 const logger = require("./logger");
-const socketioHelper_1 = require("./socketioHelper");
-const fileBrowser_1 = require("./fileBrowser");
+const fileBrowser = require("./fileBrowser");
 const projectListManager = require("./projectListManager");
 const projectManager = require("./projectManager");
 const config = require('./config/server.json');
@@ -16,9 +14,9 @@ const config = require('./config/server.json');
 const noDotFiles = /^[^\.].*$/;
 const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\.')}$`);
 
-var adaptorSendFiles = function (sio, withFile, msg) {
+var adaptorSendFiles = function (withFile, sio, msg) {
     var target = msg ? path.normalize(msg) : config.rootDir || os.homedir() || '/';
-    fileBrowser_1.default(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
+    fileBrowser(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
 };
 var onCreate = function (sio, msg) {
     logger.debug("onCreate " + msg);
@@ -65,15 +63,16 @@ var onReorder = function (sio, msg) {
     sio.emit('projectList', projectListManager.getAllProject());
 };
 function setup(sio) {
-    sio.of('/home').on('connect', (socket) => {
+    var sioHome=sio.of('/home');
+    sioHome.on('connect', (socket) => {
         socket.emit('projectList', projectListManager.getAllProject());
+        socket.on('new',    adaptorSendFiles.bind(null, false, sioHome));
+        socket.on('import', adaptorSendFiles.bind(null, true,  sioHome));
+        socket.on('create', onCreate.bind(null, sioHome));
+        socket.on('add',    onAdd.bind(null, sioHome));
+        socket.on('remove', onRemove.bind(null, sioHome));
+        socket.on('rename', onRename.bind(null, sioHome));
+        socket.on('reorder', onReorder.bind(null, sioHome));
     });
-    socketioHelper_1.default(sio.of('/home'), 'new', adaptorSendFiles.bind(null, sio.of('/home'), false));
-    socketioHelper_1.default(sio.of('/home'), 'import', adaptorSendFiles.bind(null, sio.of('/home'), true));
-    socketioHelper_1.default(sio.of('/home'), 'create', onCreate.bind(null, sio.of('/home')));
-    socketioHelper_1.default(sio.of('/home'), 'add', onAdd.bind(null, sio.of('/home')));
-    socketioHelper_1.default(sio.of('/home'), 'remove', onRemove.bind(null, sio.of('/home')));
-    socketioHelper_1.default(sio.of('/home'), 'rename', onRename.bind(null, sio.of('/home')));
-    socketioHelper_1.default(sio.of('/home'), 'reorder', onReorder.bind(null, sio.of('/home')));
 }
 module.exports = setup;

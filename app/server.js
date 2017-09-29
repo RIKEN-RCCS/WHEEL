@@ -1,18 +1,12 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const fs = require("fs");
 const path = require("path");
-const os = require("os");
-const util = require("util");
 const http = require("http");
 
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const siofu = require("socketio-file-upload");
-const del = require("del");
 
-const fileBrowser_1 = require("./fileBrowser");
 const logger = require("./logger");
 const config = require('./config/server');
 
@@ -39,10 +33,10 @@ var routes = {
     "editor": require('./routes/editor'),
     "remoteHost": require('./routes/remoteHost')
 };
-app.use('/', routes.home);
-app.use('/home', routes.home);
-app.use('/workflow', routes.workflow);
-app.use('/swf/editor.html', routes.editor);
+app.use('/',                    routes.home);
+app.use('/home',                routes.home);
+app.use('/workflow',            routes.workflow);
+app.use('/swf/editor.html',     routes.editor);
 app.use('/swf/remotehost.html', routes.remoteHost);
 // port number
 var defaultPort = 443;
@@ -59,6 +53,7 @@ app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.send('something broken!');
 });
+
 /**
  * set up logger
  */
@@ -140,4 +135,3 @@ function onListening() {
         : 'port ' + addr.port;
     logger.info('Listening on ' + bind);
 }
-//# sourceMappingURL=server.js.map

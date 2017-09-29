@@ -55,5 +55,4 @@ function default_1(socket, eventName, targetDir, sendDirname = true, sendFilenam
         });
     });
 }
-exports.default = default_1;
-//# sourceMappingURL=fileBrowser.js.map
+module.exports = default_1;
