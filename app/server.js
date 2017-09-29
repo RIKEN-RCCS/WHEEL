@@ -23,7 +23,6 @@ const sio = require('socket.io')(server);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-console.log(path.resolve('./app/public'));
 app.use(express.static(path.resolve('./app/public'), { index: false }));
 app.use(siofu.router);
 // routing
