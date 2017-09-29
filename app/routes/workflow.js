@@ -1,9 +1,19 @@
+const path = require('path');
+const fs = require('fs');
+const util = require('util');
 var express = require('express');
 var router = express.Router();
-var path = require('path');
+
 router.post('/', function (req, res, next) {
-    res.cookie('project', req.body.project);
-    res.cookie('root', req.body.root);
-    res.sendFile(path.resolve('app/views/workflow.html'));
+    var projectJSON=req.body.project;
+    var projectDir=path.dirname(projectJSON);
+    util.promisify(fs.readFile)(projectJSON)
+    .then(function(data){
+      var tmp = JSON.parse(data.toString());
+      var rootWorkflow=path.resolve(projectDir,tmp.path_workflow);
+      res.cookie('root', rootWorkflow);
+      res.cookie('project', projectJSON);
+      res.sendFile(path.resolve('app/views/workflow.html'));
+    })
 });
 module.exports = router;
