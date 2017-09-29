@@ -3,18 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const util = require("util");
 const path = require("path");
-// promise.thenの引数に渡す関数が、引数にvoidを持つことを期待しているようなので
-// こっちの関数定義の引数に型を指定するとコンパイルエラーになる・・・
+
 /*
  * Buffer.toJSONをPromise.then()に渡すためのAdaptor
- *
  */
 function parseJSON(data) {
     return JSON.parse(data.toString());
 }
 /*
  * JSON.stringifyをtab区切りで呼び出すためのラッパー
- *
  */
 function stringifyJSON(json) {
     return JSON.stringify(json, null, '\t');
@@ -56,4 +53,3 @@ function create(directoryPath, projectName) {
     });
 }
 exports.create = create;
-//# sourceMappingURL=projectManager.js.map
