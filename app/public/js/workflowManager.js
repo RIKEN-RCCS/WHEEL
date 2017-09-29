@@ -60,13 +60,6 @@ $(() => {
         setRevertDialogEvents();
         setClickEventForSaveWorkflow();
         setClickEventForResetWorkflow();
-        const fb = new FileBrowser(socket, '#fileList', 'fileList', true);
-        socket.on('connect', function () {
-            fb.request('fileListRequest', ClientUtility.dirname(projectFilePath), null);
-        });
-        const uploader = new SocketIOFileUpload(socket);
-        uploader.listenOnDrop(document.getElementById('fileBrowser'));
-        uploader.listenOnInput(document.getElementById('fileSelector'));
     })();
     /**
      * set update display event to recreate a new tree

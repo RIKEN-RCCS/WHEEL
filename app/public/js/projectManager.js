@@ -55,7 +55,6 @@ $(() => {
         setClickEventForCleanButton();
         setClickEventForPauseButton();
         setTaskNameEvents();
-        logReciever(socket);
     })();
     /**
      * set button click event to run project
