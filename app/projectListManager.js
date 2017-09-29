@@ -19,6 +19,7 @@ var projectList = [];
  * }]
  */
 var projectListFilename = path.resolve('./app',config.projectList) + '.json';
+
 fs.readFile(projectListFilename, function (err, data) {
     if (err) {
         logger.info(`project list file read failed. (${projectListFilename})`);
@@ -56,11 +57,9 @@ function getProject(query) {
             return true;
     });
 }
-exports.getProject = getProject;
 function getAllProject() {
     return Array.from(projectList);
 }
-exports.getAllProject = getAllProject;
 function reorder(newOrder) {
     if (projectList.length != newOrder.length) {
         logger.warn(`illegal reorder array. original length: ${projectList.length} reorder array length: ${newOrder.length}`);
@@ -74,7 +73,6 @@ function reorder(newOrder) {
     projectList = Array.from(tmp);
     writeProjectListFile();
 }
-exports.reorder = reorder;
 function remove(id) {
     var numProjects = projectList.length;
     projectList = projectList.filter((item) => {
@@ -84,7 +82,6 @@ function remove(id) {
         writeProjectListFile();
     }
 }
-exports.remove = remove;
 function rename(oldName, newName) {
     if (newName == oldName)
         return;
@@ -95,7 +92,11 @@ function rename(oldName, newName) {
     projectList[index].label = newName;
     writeProjectListFile();
 }
-exports.rename = rename;
+/*
+ * add new project Json file to project list
+ * @param label name of the project
+ * @param path  project Json file's path (must be absolute path but not checked for now)
+ */
 function add(label, path) {
     var exists = projectList.some(function (item) {
         return item.path == path;
@@ -106,5 +107,9 @@ function add(label, path) {
     projectList.push({ "label": label, "path": path, "id": uuid });
     writeProjectListFile();
 }
+exports.getProject = getProject;
+exports.getAllProject = getAllProject;
+exports.reorder = reorder;
+exports.remove = remove;
+exports.rename = rename;
 exports.add = add;
-//# sourceMappingURL=projectListManager.js.map
