@@ -48,12 +48,11 @@ var onRemove = function (sio, msg) {
 };
 var onRename = function (sio, msg) {
     logger.debug(`rename: ${msg}`);
-    var data = JSON.parse(msg.toString());
-    if (!(data.hasOwnProperty('oldName') && data.hasOwnProperty('newName'))) {
+    if (!(msg.hasOwnProperty('oldName') && msg.hasOwnProperty('newName'))) {
         logger.warn(`illegal request ${msg}`);
         return;
     }
-    projectListManager.rename(data.oldName, data.newName);
+    projectListManager.rename(msg.oldName, msg.newName);
     sio.emit('projectList', projectListManager.getAllProject());
 };
 var onReorder = function (sio, msg) {

@@ -14,20 +14,6 @@ class SvgPlugBase {
         this.plugWidth = bbox.width;
         this.plugHeight = bbox.height;
         this.index = SvgPlugBase.counter++;
-        this.taskIndex = config.tree.getTaskIndex();
-        this.hashcode = config.tree.getHashCode();
-    }
-    /**
-     * get plug name
-     * @return plug name
-     */
-    name() {
-        if (this.plugConfig.file) {
-            return `${this.index}_${this.hashcode}_${this.plugConfig.file.path}`;
-        }
-        else {
-            return `${this.index}_${this.hashcode}`;
-        }
     }
     /**
      * get file type
@@ -45,51 +31,6 @@ class SvgPlugBase {
             return this.plugConfig.file.path;
         }
         return '';
-    }
-    /**
-     * get file path from tree
-     * @return file path
-     */
-    getFilepathFromTree() {
-        if (this.plugConfig.file) {
-            if (this.plugConfig.tree) {
-                return `./${ClientUtility.normalize(this.plugConfig.tree.path, this.plugConfig.file.path)}`;
-            }
-            else {
-                return this.plugConfig.file.path;
-            }
-        }
-        return '';
-    }
-    /**
-     * get json file type (ex 'Task', 'Workflow' etc)
-     */
-    getType() {
-        return this.plugConfig.tree.type;
-    }
-    /**
-     * get parent directory name
-     * @return parent directory name
-     */
-    parentDirname() {
-        if (this.plugConfig.tree) {
-            return this.plugConfig.tree.path;
-        }
-        return '';
-    }
-    /**
-     * get task index
-     * @return task index
-     */
-    getTaskIndex() {
-        return this.taskIndex;
-    }
-    /**
-     * get hash code
-     * @return hash code
-     */
-    getHashCode() {
-        return this.hashcode;
     }
     /**
      * move to specified point
@@ -178,21 +119,8 @@ class SvgPlugBase {
             return svg.polygon([[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]]);
         }
     }
-    /**
-     * whether circular reference is occurred or not
-     * @param before before plug instancec
-     * @param after after plug instance
-     * @return whether circular reference is occurred or not
-     */
-    isCircularReference(before, after) {
-        const parent = this.plugConfig.tree.getParent();
-        const beforeIndex = before.getHashCode();
-        const afterIndex = after.getHashCode();
-        return parent.isExistCircularReference(beforeIndex, afterIndex);
-    }
 }
 /**
  * counter for definition unieue index number
  */
 SvgPlugBase.counter = 0;
-//# sourceMappingURL=svgPlugBase.js.map

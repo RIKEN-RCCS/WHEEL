@@ -108,7 +108,7 @@ class FileBrowser {
                             var newName = $('#newName').val();
                             var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
                             $(fileList).remove(`:contains(${oldName})`);
-                            socket.emit('rename', JSON.stringify(obj));
+                            socket.emit('rename', obj);
                         });
                     }
                 },

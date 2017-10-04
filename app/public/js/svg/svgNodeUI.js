@@ -5,10 +5,9 @@ class SvgNodeUI {
     /**
      * create new instance
      * @param svg draw canvas
-     * @param tree target display tree
      * @param position display position
      */
-    constructor(svg, tree, position) {
+    constructor(svg, position) {
         /**
          * has outout file plugs
          */
@@ -21,9 +20,12 @@ class SvgNodeUI {
          * has after task plug
          */
         this.lowers = new SvgContainer();
-        this.box = new SvgBox(svg, tree, position);
-        this.tree = tree;
-        this.parent = tree.getParent();
+        //TODO replace following values with workflowComponent object
+        var type='Task';
+        var title='new Task 1';
+        var inputFile=[];
+        var outputFile=[];
+        this.box = new SvgBox(svg, position, type, title, inputFiles, outputFiles);
         this.createConnector();
         this.createReceptor();
         this.createUpper();
@@ -78,12 +80,12 @@ class SvgNodeUI {
      * @param mousedown The function to call when we get the mousedown event
      * @param dblclick The function to call when we get the double click event
      */
-    static create(parent, selectTree, id, mousedown, dblclick) {
+    static create(position, id, mousedown, dblclick) {
         this.init(id, mousedown, dblclick);
         this.fileRelations = new SvgFileRelations(parent.file_relations);
         this.relations = new SvgRelations(parent.relations);
         parent.children.forEach((child, index) => {
-            const node = new SvgNodeUI(SvgNodeUI.draw, child, parent.positions[index]);
+            const node = new SvgNodeUI(SvgNodeUI.draw, child, position);
             this.allNodeUI.push(node);
             node.box.onMousedown(mousedown);
             node.box.onDblclick(dblclick);
@@ -111,9 +113,6 @@ class SvgNodeUI {
      * create before task plug
      */
     createUpper() {
-        if (SwfType.isCondition(this.tree)) {
-            return;
-        }
         const plugConfig = {
             svg: SvgNodeUI.draw,
             originX: this.box.x(),
@@ -121,7 +120,6 @@ class SvgNodeUI {
             offsetX: this.box.getWidth() / 2,
             offsetY: 0,
             color: config.plug_color.flow,
-            tree: this.tree
         };
         const upper = new SvgUpper(plugConfig)
             .onMouseup(() => {
@@ -136,11 +134,8 @@ class SvgNodeUI {
      * create after task plug
      */
     createLower() {
-        if (this.tree.type === SwfType.CONDITION) {
-            return;
-        }
         this.generateNewLower();
-        const count = SvgNodeUI.relations.getMatchedCount(this.tree.getHashCode());
+        const count = SvgNodeUI.relations.getMatchedCount(this.tree.getHashCode()); //TODO rewrite something
         for (let c = 0; c < count; c++) {
             this.generateNewLower();
         }
@@ -157,7 +152,6 @@ class SvgNodeUI {
             offsetX: this.box.getWidth() / 2,
             offsetY: this.box.getHeight(),
             color: config.plug_color.flow,
-            tree: this.tree
         };
         const lower = new SvgLower(plugConfig)
             .onDragstart(() => {
@@ -208,10 +202,7 @@ class SvgNodeUI {
      * create output file plug
      */
     createConnector() {
-        if (SwfType.isImplimentsCondition(this.tree)) {
-            return;
-        }
-        this.tree.output_files.forEach((output, index) => {
+        this.outputFiles.forEach((output, index) => {
             const y = SvgBox.caclPlugPosY(index);
             this.generateNewConnector(output, index);
             const count = SvgNodeUI.fileRelations.getMatchedCount(this.tree.getHashCode(), output.path, this.tree.path);
@@ -235,7 +226,6 @@ class SvgNodeUI {
             offsetY: SvgBox.caclPlugPosY(index),
             color: SwfFileType.getPlugColor(output),
             file: output,
-            tree: this.tree
         };
         const connector = new SvgConnector(plugConfig)
             .onDragstart(() => {
@@ -287,7 +277,7 @@ class SvgNodeUI {
      * create input file plug
      */
     createReceptor() {
-        this.tree.input_files.forEach((input, fileIndex) => {
+        this.inputFiles.forEach((input, fileIndex) => {
             const plugConfig = {
                 svg: SvgNodeUI.draw,
                 originX: this.box.x(),
@@ -296,7 +286,6 @@ class SvgNodeUI {
                 offsetY: SvgBox.caclPlugPosY(fileIndex),
                 color: SwfFileType.getPlugColor(input),
                 file: input,
-                tree: this.tree
             };
             const receptor = new SvgReceptor(plugConfig)
                 .onMouseup(() => {
@@ -307,46 +296,6 @@ class SvgNodeUI {
             this.receptors.add(receptor);
             SvgNodeUI.allReceptors.add(receptor);
         });
-    }
-    /**
-     * add file relation to parent
-     * @param connector output file plug
-     * @param receptor input file plug
-     */
-    addFileRelationToParent(connector, receptor) {
-        if (receptor == null) {
-            return;
-        }
-        const filepath = connector.getFilepathFromTree();
-        const count = this.connectors.count((plug) => {
-            return filepath === plug.getFilepathFromTree() && plug.isConnect();
-        });
-        if (count === 0) {
-            this.parent.addOutputFileToParent(connector.getTaskIndex(), connector.getFilepathFromTree());
-        }
-        this.parent.addInputFileToParent(receptor.getTaskIndex(), receptor.getFilepathFromTree());
-    }
-    /**
-     * delete file relation from parent
-     * @param connector output file plug
-     * @param receptor input file plug
-     */
-    deleteFileRelationFromParent(connector, receptor) {
-        if (connector != null) {
-            const taskIndex = connector.getTaskIndex();
-            const filepath = connector.getFilepathFromTree();
-            const count = this.connectors.count((plug) => {
-                return filepath === plug.getFilepathFromTree() && plug.isConnect();
-            });
-            if (count !== 0) {
-                this.parent.deleteOutputFileFromParent(taskIndex, filepath);
-            }
-        }
-        if (receptor != null) {
-            const taskIndex = receptor.getTaskIndex();
-            const filepath = receptor.getFilepathFromTree();
-            this.parent.deleteInputFileFromParent(taskIndex, filepath);
-        }
     }
     /**
      * move to front

@@ -25,7 +25,7 @@ $(() => {
                     dialogWrapper('#dialog', html).done(function () {
                         var newName = $('#renamedProjectName').val();
                         var obj = { 'oldName': oldName, 'newName': newName };
-                        socket.emit('rename', JSON.stringify(obj));
+                        socket.emit('rename', obj);
                     });
                 }
             },

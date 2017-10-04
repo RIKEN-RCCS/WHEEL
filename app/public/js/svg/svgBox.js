@@ -5,16 +5,20 @@ class SvgBox {
     /**
      * create new instance
      * @param draw draw canvas
-     * @param tree target tree instance
      * @param position init position
      */
-    constructor(draw, tree, position) {
-        this.draw = draw;
+    constructor(id, position, type, name, inputFiles, outputFiles) {
+        this.draw = SVG(id);
         this.group = this.draw.group();
         this.inputGroup = this.draw.group();
         this.outputGroup = this.draw.group();
-        this.tree = tree;
+
         this.position = position;
+        this.type=type.toLowerCase();
+        this.name=name;
+        this.inputFiles=inputFiles;
+        this.outputFiles=outputFiles;
+
         this.create();
     }
     /**
@@ -31,7 +35,6 @@ class SvgBox {
         const title = this.createTitle();
         this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, this.title.bbox().width)) + SvgBox.marginWidth;
         output.x(this.width + SvgBox.outputTextOffset);
-        this.createConditionFrame();
         this.group
             .add(this.createOuterFrame())
             .add(this.createInnerFrame())
@@ -56,7 +59,7 @@ class SvgBox {
             const key = e.button;
             if (key === MouseKeyType.LEFT) {
                 this.group.style('cursor', 'move');
-                callback(this.tree);
+                callback();
             }
         });
         return this;
@@ -70,7 +73,7 @@ class SvgBox {
         this.group.on('dblclick', (e) => {
             e.stopPropagation();
             e.preventDefault();
-            callback(this.tree);
+            callback();
         });
         return this;
     }
@@ -199,7 +202,7 @@ class SvgBox {
             [0, SvgBox.titleHeight],
             [0, SvgBox.titleHeight / 2]
         ])
-            .fill(config.node_color[this.tree.type.toLowerCase()]);
+            .fill(config.node_color[this.type]);
         return this.outerFrame;
     }
     /**
@@ -211,7 +214,7 @@ class SvgBox {
             .rect(0, 0)
             .attr({
             'fill': 'rgb(50, 50, 50)',
-            'stroke': config.node_color[this.tree.type.toLowerCase()],
+            'stroke': config.node_color[this.type],
             'stroke-width': SvgBox.strokeWidth
         })
             .move(SvgBox.strokeWidth / 2, SvgBox.titleHeight);
@@ -223,7 +226,7 @@ class SvgBox {
      */
     createTitle() {
         this.title = this.draw
-            .text(this.tree.name)
+            .text(this.name)
             .fill('#111')
             .x(SvgBox.titleHeight / 2)
             .cy(SvgBox.titleHeight / 2);
@@ -234,7 +237,7 @@ class SvgBox {
      * @return output file text
      */
     createOutput() {
-        this.tree.output_files.forEach((output, index) => {
+        this.outputFiles.forEach((output, index) => {
             const y = SvgBox.caclPlugPosY(index);
             const text = this.draw
                 .text(output.name)
@@ -250,7 +253,7 @@ class SvgBox {
      * @return input file text
      */
     createInput() {
-        this.tree.input_files.forEach((input, index) => {
+        this.inputFiles.forEach((input, index) => {
             const y = SvgBox.caclPlugPosY(index);
             const text = this.draw
                 .text(input.name)
@@ -259,23 +262,6 @@ class SvgBox {
             this.inputGroup.add(text);
         });
         return this.inputGroup;
-    }
-    /**
-     * create condition frame extension
-     */
-    createConditionFrame() {
-        if (SwfType.isImplimentsCondition(this.tree)) {
-            const polygon = this.draw
-                .polygon([
-                [this.width - 4, 0],
-                [this.width, 0],
-                [this.width + 16, this.height / 2],
-                [this.width, this.height + SvgBox.strokeWidth / 2],
-                [this.width - 4, this.height + SvgBox.strokeWidth / 2]
-            ])
-                .fill(config.node_color[this.tree.type.toLowerCase()]);
-            this.group.add(polygon);
-        }
     }
     /**
      * delete this box

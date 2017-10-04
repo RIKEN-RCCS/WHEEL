@@ -103,7 +103,6 @@ class SvgReceptor extends SvgPlugBase {
      */
     delete() {
         this.plugConfig.svg = null;
-        this.plugConfig.tree = null;
         this.plugConfig.file = null;
         if (this.plug != null) {
             this.plug.off('mouseup', null);

@@ -10,8 +10,8 @@ $(() => {
 
 
   // set default view
-  $('#listView').prop('checked', true);
-  $('.workflow_manage_area').hide();
+  $('.project_manage_area').hide();
+  $('#graphView').prop('checked', true);
   $('#log_area').hide();
 
 
@@ -67,6 +67,45 @@ $(() => {
     }
     else {
       $('.workflow_manage_area').hide();
+    }
+  });
+
+  function getClickPosition(option) {
+    const parentOffset = $(option.selector).offset();
+    const clickPosition = option.$menu.position();
+    const position = {
+      x: Math.round(clickPosition.left - parentOffset.left),
+      y: Math.round(clickPosition.top - parentOffset.top)
+    };
+    return position;
+  }
+  let selectedNode=null;
+  $.contextMenu({
+    selector: '#node_svg',
+    autoHide: true,
+    reposition: false,
+    items: {
+      test:{name: 'make box test',
+        callback: function(name, option){
+          const position = getClickPosition(option);
+        SvgNodeUI.create(position, 'node_svg', (child) => {
+            if (child == null) {
+                jsonProperty.hide();
+                selectedNode= null;
+                return;
+            }
+            selectedNode= child;
+            showProperty(child);
+        }, (parent) => {
+          //TODO
+          // workflow/ParameterStudyの時内部のサブグラフへ降りていく
+          //
+          // はたしてcallbackで渡す必要はあったのか?
+          // 普通に作ってから、こっちでon('click')
+          // すれば済む話ではなかろうか。
+        });
+        }
+      },
     }
   });
 
