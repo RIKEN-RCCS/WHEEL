@@ -80,32 +80,35 @@ $(() => {
     return position;
   }
   let selectedNode=null;
+  //TODO nodeの描画時にon clickでselectedNodeに何か入れる。
+  //と思ったけど関数にするべきか。
   $.contextMenu({
     selector: '#node_svg',
     autoHide: true,
     reposition: false,
+    callback: function(itemKey, opt){
+      var pos=getClickPosition(opt);
+      sioWF.emit('createNode', {"type": itemKey, "pos": pos});
+    },
     items: {
-      test:{name: 'make box test',
-        callback: function(name, option){
-          const position = getClickPosition(option);
-        SvgNodeUI.create(position, 'node_svg', (child) => {
-            if (child == null) {
-                jsonProperty.hide();
-                selectedNode= null;
-                return;
-            }
-            selectedNode= child;
-            showProperty(child);
-        }, (parent) => {
-          //TODO
-          // workflow/ParameterStudyの時内部のサブグラフへ降りていく
-          //
-          // はたしてcallbackで渡す必要はあったのか?
-          // 普通に作ってから、こっちでon('click')
-          // すれば済む話ではなかろうか。
-        });
-        }
+      "new": {
+        "name": "new",
+         "items":
+         {
+           "task":    {name: "task"},
+           "workflow":{name: "workflow"},
+           "PS":      {name: "parameter study"},
+           "if":      {name: "if"},
+           "for":     {name: "for"},
+           "foreach": {name: "foreach"}
+         }
       },
+      "delete": {
+        "name": "delete",
+        callback: function(){
+          sioWF.emit('removeNode', selectedNode);
+        }
+      }
     }
   });
 

@@ -68,10 +68,32 @@ function onEditWrokflow(sio, msg){
 }
 function onCreateNode(sio, msg){
   logger.debug(`create event recieved: ${msg}`);
+  switch(msg.type){
+    case 'task':
+      var node=new component.Task(msg.pos);
+      break;
+    case 'workflow':
+      var node=new component.Workflow(msg.pos);
+      break;
+    case 'PS':
+      var node=new component.ParameterStudy(msg.pos);
+      break;
+    case 'if':
+      var node=new component.If(msg.pos);
+      break;
+    case 'for':
+      var node=new component.Loop(msg.pos);
+      break;
+    case 'foreach':
+      var node=new component.Foreach(msg.pos);
+      break;
+  }
+  //TODO push to root workflow
+  console.log(node);
 }
 function onRemoveNode(sio, msg){
   logger.debug(`removeNode event recieved: ${msg}`);
-  logger.warn('deleteNode function is not implemented yet.');
+  logger.warn('removeNode function is not implemented yet.');
 }
 function onAddLink(sio, msg){
   logger.warn('AddLink function is not implemented yet.');
@@ -98,6 +120,8 @@ function setup(sio) {
     socket.on('remove',   onRemove.bind(null, sioWF));
     socket.on('rename',   onRename.bind(null, sioWF));
     socket.on('download', onDownload.bind(null, sioWF));
+    socket.on('createNode', onCreateNode.bind(null, sioWF));
+    socket.on('removeNode', onRemoveNode.bind(null, sioWF));
   });
 }
 module.exports = setup;

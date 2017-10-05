@@ -1,10 +1,9 @@
-
 /*
  * javascript representation of wheel's task 
  *
  */
 class Task{
-  constructor(){
+  constructor(pos){
     this._type='task';
     this.name=null;
     this.description=null;
@@ -26,14 +25,16 @@ class Task{
     this.next=[];
     this.host='localhost';
     this.jobScheduler=null;
-    this.state='pre runnnig'
+    this.state='pre runnnig';
+    this.x=pos.x;
+    this.y=pos.y;
   }
 }
 /*
  * task absrtuct class of task containers 
  */
 class BaseTaskGraph{
-  constructor(){
+  constructor(pos){
     this._type=null;
     this.description=null;
     this.path=null;
@@ -42,6 +43,8 @@ class BaseTaskGraph{
     this.inputFiles=[];
     this.outputFiles=[];
     this.cleanupFlag=null;
+    this.x=pos.x;
+    this.y=pos.y;
   }
 
   /**
@@ -52,14 +55,14 @@ class BaseTaskGraph{
   }
 }
 class Workflow extends BaseTaskGraph{
-  constructor(){
-    super();
+  constructor(pos){
+    super(pos);
     this._type='workflow';
   }
 }
 class ParameterStudy extends BaseTaskGraph{
-  constructor(){
-    super();
+  constructor(pos){
+    super(pos);
     this._type='parameterStudy';
     this.parameters=[];
   }
@@ -69,23 +72,25 @@ class ParameterStudy extends BaseTaskGraph{
  * control flow classes
  */
 class BaseControlFlow{
-  constructor(){
+  constructor(pos){
     this._type=null;
     this.previous=[];
     this.next=[];
     this.blockStart=null;
+    this.x=pos.x;
+    this.y=pos.y;
   }
 }
 class Loop extends BaseControlFlow{
-  constructor(){
-    super();
+  constructor(pos){
+    super(pos);
     this._type='loop';
     this.condition=null;
   }
 }
 class If extends BaseControlFlow{
-  constructor(){
-    super();
+  constructor(pos){
+    super(pos);
     this._type='if';
     this.condition=null;
     this.elseBlockStart=null;
@@ -95,11 +100,16 @@ class If extends BaseControlFlow{
  * loop over kind of array
  */
 class Foreach extends BaseControlFlow{
-  constructor(){
-    super();
+  constructor(pos){
+    super(pos);
     this._type='foreach';
     this.indexList=[];
   }
 }
 
-
+module.exports.Task=Task;
+module.exports.Workflow=Workflow;
+module.exports.ParameterStudy=ParameterStudy;
+module.exports.Loop=Loop;
+module.exports.If=If;
+module.exports.Foreach=Foreach;
