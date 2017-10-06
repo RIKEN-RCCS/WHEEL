@@ -1,3 +1,5 @@
+var $ = require('jquery');
+require('jquery-ui/ui/widgets/dialog');
 function dialogWrapper(dialogID, html, options = null) {
     var def = $.Deferred();
     $(dialogID).html(html).dialog({
@@ -24,3 +26,4 @@ function dialogWrapper(dialogID, html, options = null) {
     $(dialogID).dialog('open');
     return def.promise();
 }
+module.exports = dialogWrapper;

@@ -1,3 +1,4 @@
+var $ = require('jquery');
 class FileBrowser {
     // public methods
     constructor(socket, idFileList, recvEventName, withContextMenu = false) {
@@ -215,4 +216,4 @@ class FileBrowser {
         return true;
     }
 }
-//# sourceMappingURL=fileBrowser.js.map
+module.exports = FileBrowser;
