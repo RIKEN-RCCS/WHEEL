@@ -91,14 +91,12 @@ function remove(id) {
     }
     return this.getAllProject();
 }
-function rename(oldName, newName) {
-    if (newName == oldName)
-        return;
+function rename(id, projectJsonFilePath) {
     var index = projectList.findIndex((item) => {
-        if (item.label == oldName)
+        if (item.id === id)
             return true;
     });
-    projectList[index].label = newName;
+    projectList[index].path = projectJsonFilePath;
     writeProjectListFile();
     return this.getAllProject();
 }

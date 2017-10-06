@@ -20,12 +20,12 @@ $(() => {
             'rename': {
                 name: 'Rename',
                 callback: function () {
-                    var oldName = $(this).data('name');
+                    var id= $(this).data('id');
+                    var path= $(this).data('path');
                     var html = '<p>input new project name</p><input type="text" id="renamedProjectName">';
                     dialogWrapper('#dialog', html).done(function () {
                         var newName = $('#renamedProjectName').val();
-                        var obj = { 'oldName': oldName, 'newName': newName };
-                        socket.emit('rename', obj);
+                        socket.emit('rename', {'id': id, 'path': path, 'newName': newName });
                     });
                 }
             },

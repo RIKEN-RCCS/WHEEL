@@ -31,7 +31,7 @@ function create(projectDirectory, projectName) {
           };
           const projectJsonFileFullpath=path.join(projectDirectory, projectJsonFilename);
           logger.debug(projectJson);
-          util.promisify(fs.writeFile)(projectJsonFileFullpath, JSON.stringify(projectJson,null,4)).catch(reject);
+          util.promisify(fs.writeFile)(projectJsonFileFullpath, JSON.stringify(projectJson,null,4))
           resolve(projectJsonFileFullpath);
         })
         .catch(function(err){
@@ -39,4 +39,14 @@ function create(projectDirectory, projectName) {
         });
     });
 }
+function rename(projectJsonFilepath, newName){
+  return util.promisify(fs.readFile)(projectJsonFilepath)
+    .then(function(data){
+      var projectJson=JSON.parse(data);
+      projectJson.name=newName;
+      return JSON.stringify(projectJson, null, 4);
+    })
+    .then(util.promisify(fs.writeFile).bind(null, projectJsonFilepath))
+}
 exports.create = create;
+exports.rename= rename;
