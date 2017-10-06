@@ -100,10 +100,9 @@ var onRename = function (sio, msg) {
       sio.emit('projectList', results);
     });
 };
-var onReorder = function (sio, msg) {
-    logger.debug(`reorder: ${msg}`);
-    var data = JSON.parse(msg);
-    projectListManager.reorder(data)
+var onReorder = function (sio, orderList) {
+    logger.debug('reorder: ',orderList);
+    projectListManager.reorder(orderList)
     .then(function(results){
       sio.emit('projectList', results);
     });

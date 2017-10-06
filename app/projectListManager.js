@@ -69,13 +69,15 @@ function reorder(newOrder) {
     if (projectList.length != newOrder.length) {
         logger.warn(`illegal reorder array. original length: ${projectList.length} reorder array length: ${newOrder.length}`);
     }
-    var tmp = [];
-    var index = 0;
-    for (let i of newOrder) {
-        tmp[index] = projectList[i];
-        index++;
+    var oldIndexList = newOrder.map(function(id){
+      return projectList.findIndex(function(v,i){
+        if(id === v.id) return true
+      });
+    });
+    var tmp = Array.from(projectList);
+    for(let i=0; i<tmp.length; i++){
+      projectList[i] = tmp[oldIndexList[i]];
     }
-    projectList = Array.from(tmp);
     writeProjectListFile();
     return this.getAllProject();
 }

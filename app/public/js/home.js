@@ -43,7 +43,7 @@ $(() => {
     // setup project list UI
     $('#projectList').sortable({
         update: (e, ui) => {
-            socket.emit('reorder', $('#projectList').sortable('toArray'));
+            socket.emit('reorder', $('#projectList').sortable('toArray',{attribute: 'data-id'}));
         }
     });
     $('#projectList').disableSelection();
