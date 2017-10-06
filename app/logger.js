@@ -68,65 +68,65 @@ class Logger {
      * output debug log
      * @param object display data
      */
-    static debug(object) {
+    static debug(...args) {
         if (this.logLevel <= LogLevel.debug) {
-            this.print(object, 'DBG   ');
+            this.print('DBG   ', args);
         }
     }
     /**
      * output info log
      * @param object display data
      */
-    static info(object) {
+    static info(...args) {
         if (this.logLevel <= LogLevel.info) {
-            this.print(object, 'INFO  ');
+            this.print('INFO  ', args);
         }
     }
     /**
      * output warning log
      * @param object display data
      */
-    static warn(object) {
+    static warn(...args) {
         if (this.logLevel <= LogLevel.warn) {
-            this.print(object, 'WARN  ');
+            this.print('WARN  ', args);
         }
     }
     /**
      * output error log
      * @param object display data
      */
-    static error(object) {
+    static error(...args) {
         if (this.logLevel <= LogLevel.error) {
-            this.print(object, 'ERR   ');
+            this.print('ERR   ', args);
         }
     }
     /**
      * output stdout from child_process
      * @param object display data
      */
-    static stdout(object) {
-        this.print(object, 'Stdout');
+    static stdout(...args) {
+        this.print('Stdout', args);
     }
     /**
      * output stderr from child_process
      * @param object display data
      */
-    static stderr(object) {
-        this.print(object, 'Stderr');
+    static stderr(...args) {
+        this.print('Stderr', args);
     }
     /**
      * output stdout from ssh
      * @param object display data
      */
-    static SSHout(object) {
-        this.print(object, 'SSHout');
+    static SSHout(...args) {
+        this.print('SSHout', args);
     }
     /**
      * output stderr from ssh
      * @param object display data
      */
-    static SSHerr(object) {
-        this.print(object, 'SSHerr');
+    static SSHerr(...args) {
+        this.print('SSHerr', args);
     }
     /**
      * get date string
@@ -140,18 +140,15 @@ class Logger {
      * print actual log message
      *
      */
-    static print(object, level) {
-        if (typeof object == 'object') {
-            console.log(`${this.getDateString()} [${level}] `, object);
-        }
-        else {
-            console.log(`${this.getDateString()} [${level}] ${object}`);
-        }
+    static print(label, ...args) {
+        console.log(`${this.getDateString()} [${label}] `, args);
         var line = this.getDateString();
-        line += ` [${level}] `;
-        line += JSON.stringify(object);
+        line += ` [${label}] `;
+        for (var arg in args){
+          line += JSON.stringify(arg);
+        }
         if (this.socket != null) {
-            var eventName = 'log' + level;
+            var eventName = 'log' + label;
             this.socket.emit(eventName.trim(), line);
         }
         if (this.logfile != null) {
