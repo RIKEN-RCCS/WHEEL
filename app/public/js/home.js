@@ -20,7 +20,7 @@ $(() => {
             'rename': {
                 name: 'Rename',
                 callback: function () {
-                    var oldName = $(this).data('label');
+                    var oldName = $(this).data('name');
                     var html = '<p>input new project name</p><input type="text" id="renamedProjectName">';
                     dialogWrapper('#dialog', html).done(function () {
                         var newName = $('#renamedProjectName').val();
@@ -50,7 +50,7 @@ $(() => {
     socket.on('projectList', (data) => {
         $('#projectList').empty();
         data.forEach(function (pj) {
-            $('#projectList').append(`<li class="ui-state-default" data-path="${pj.path}" data-id="${pj.id}" data-label="${pj.label}">${pj.label}</li>`);
+            $('#projectList').append(`<li class="ui-state-default" data-path="${pj.path}" data-id="${pj.id}" data-name="${pj.name}">${pj.name}</li>`);
         });
     });
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
@@ -65,8 +65,7 @@ $(() => {
             var label = $('#newProjectName').val();
             if (label) {
                 socket.emit('create', fb.getRequestedPath() + '/' + label);
-            }
-            else {
+            } else {
                 console.log('illegal label: ', label);
             }
         });
@@ -78,19 +77,20 @@ $(() => {
         fb.request('new', null, null);
     });
     $('#btnImport').on("click", (event) => {
-        var html = '<p id="path"></p><ul id=fileList></ul>';
-        dialogWrapper('#dialog', html, dialogOptions).done(function () {
-            socket.emit('add', fb.getRequestedPath() + '/' + fb.getLastClicked());
-        });
-        $('#fileList').empty();
-        fb.resetOnClickEvents();
-        fb.onRecv(function () {
-            $('#path').text(fb.getRequestedPath());
-        });
-        fb.onFileDblClick(function (target) {
-            socket.emit('add', target);
-        });
-        fb.request('import', null, null);
+      var html = '<p id="path"></p><ul id=fileList></ul>';
+      dialogWrapper('#dialog', html, dialogOptions)
+      .done(function () {
+        socket.emit('add', fb.getRequestedPath() + '/' + fb.getLastClicked());
+      });
+      $('#fileList').empty();
+      fb.resetOnClickEvents();
+      fb.onRecv(function () {
+        $('#path').text(fb.getRequestedPath());
+      });
+      fb.onFileDblClick(function (target) {
+        $('#dialog').dialog('close');
+        socket.emit('add', target);
+      });
+      fb.request('import', null, null);
     });
 });
-//# sourceMappingURL=home_beta.js.map

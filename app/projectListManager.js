@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const path = require("path");
+const util = require('util');
 const uuidv1 = require("uuid/v1");
 const logger = require("./logger");
 const config = require('./config/server');
@@ -9,11 +10,11 @@ var projectList = [];
 /*
  *  projectList example
  *
- * projectList=[ {'label': 'hoge',
+ * projectList=[
  *  'path' : '/home/foo/bar.proj.json',
  *  'id'   : 'xxxxxxxx-xxxxxxxxx-xxxxxxxxxxxxxxxx'
  *  },
- * {'label': 'huga',
+ * {
  *  'path' : '/home/bar/baz.proj.json',
  *  'id'   : 'xxxxxxxx-xxxxxxxxx-xxxxxxxxxxxxxxxx'
  * }]
@@ -48,8 +49,6 @@ var writeProjectListFile = function () {
 /**
  * 条件に一致するプロジェクトを返す
  * @param query プロジェクトIDまたはpath
- * labelは重複する可能性があるため、labelでは検索できないようにしている。
- * 必要であれば、getAllProjectで取り出した後でfilterすること
  */
 function getProject(query) {
     return projectList.find(function (item) {
@@ -58,7 +57,13 @@ function getProject(query) {
     });
 }
 function getAllProject() {
-    return Array.from(projectList);
+  return Promise.all(projectList.map(function(v){
+    return util.promisify(fs.readFile)(v.path)
+            .then(function(projectJson){
+              var tmp = JSON.parse(projectJson);
+              return Object.assign(tmp,v)
+            });
+  }));
 }
 function reorder(newOrder) {
     if (projectList.length != newOrder.length) {
@@ -66,12 +71,13 @@ function reorder(newOrder) {
     }
     var tmp = [];
     var index = 0;
-    for (var i of newOrder) {
+    for (let i of newOrder) {
         tmp[index] = projectList[i];
         index++;
     }
     projectList = Array.from(tmp);
     writeProjectListFile();
+    return this.getAllProject();
 }
 function remove(id) {
     var numProjects = projectList.length;
@@ -81,6 +87,7 @@ function remove(id) {
     if (projectList.length != numProjects) {
         writeProjectListFile();
     }
+    return this.getAllProject();
 }
 function rename(oldName, newName) {
     if (newName == oldName)
@@ -91,21 +98,21 @@ function rename(oldName, newName) {
     });
     projectList[index].label = newName;
     writeProjectListFile();
+    return this.getAllProject();
 }
 /*
  * add new project Json file to project list
- * @param label name of the project
  * @param path  project Json file's path (must be absolute path but not checked for now)
  */
-function add(label, path) {
+function add(path) {
     var exists = projectList.some(function (item) {
         return item.path == path;
     });
-    if (exists)
-        return;
+    if (exists) return;
     var uuid = uuidv1();
-    projectList.push({ "label": label, "path": path, "id": uuid });
+    projectList.push({"path": path, "id": uuid });
     writeProjectListFile();
+    return this.getAllProject();
 }
 exports.getProject = getProject;
 exports.getAllProject = getAllProject;

@@ -36,6 +36,7 @@ class Task{
 class BaseTaskGraph{
   constructor(pos){
     this._type=null;
+    this.name=null;
     this.description=null;
     this.path=null;
     this.nodes=[];
@@ -56,7 +57,9 @@ class BaseTaskGraph{
 }
 class Workflow extends BaseTaskGraph{
   constructor(pos){
-    super(pos);
+    // define pseudo position to root workflow
+    var pos2=pos || {x:0, y:0};
+    super(pos2);
     this._type='workflow';
   }
 }
@@ -74,6 +77,7 @@ class ParameterStudy extends BaseTaskGraph{
 class BaseControlFlow{
   constructor(pos){
     this._type=null;
+    this.name=null;
     this.previous=[];
     this.next=[];
     this.blockStart=null;

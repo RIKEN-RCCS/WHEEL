@@ -24,4 +24,3 @@ function dialogWrapper(dialogID, html, options = null) {
     $(dialogID).dialog('open');
     return def.promise();
 }
-//# sourceMappingURL=dialogWrapper.js.map

@@ -89,7 +89,7 @@ function onCreateNode(sio, msg){
       break;
   }
   //TODO push to root workflow
-  console.log(node);
+  logger.debug('new node created: ',node);
 }
 function onRemoveNode(sio, msg){
   logger.debug(`removeNode event recieved: ${msg}`);

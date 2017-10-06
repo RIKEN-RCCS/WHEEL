@@ -2,19 +2,7 @@
     "port": 8089,
     "remotehost": "./config/remotehost.json",
     "projectList": "./config/projectList",
-    "template": {
-        "project": "./config/template.prj.json",
-        "workflow": "./config/template.wf.json",
-        "task": "./config/template.tsk.json",
-        "for": "./config/template.fr.json",
-        "if": "./config/template.if.json",
-        "break": "./config/template.brk.json",
-        "else": "./config/template.els.json",
-        "remotetask": "./config/template.rtsk.json",
-        "job": "./config/template.jb.json",
-        "condition": "./config/template.cnd.json",
-        "pstudy": "./config/template.ps.json"
-    },
+    "suffix": ".wheel",
     "scheduler": {
         "TCS": "./config/pjsub.sh",
         "TORQUE": "./config/qsub.sh"
