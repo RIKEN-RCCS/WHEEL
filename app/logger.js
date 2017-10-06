@@ -70,7 +70,7 @@ class Logger {
      */
     static debug(...args) {
         if (this.logLevel <= LogLevel.debug) {
-            this.print('DBG   ', args);
+            this.print('DBG   ', ...args);
         }
     }
     /**
@@ -79,7 +79,7 @@ class Logger {
      */
     static info(...args) {
         if (this.logLevel <= LogLevel.info) {
-            this.print('INFO  ', args);
+            this.print('INFO  ', ...args);
         }
     }
     /**
@@ -88,7 +88,7 @@ class Logger {
      */
     static warn(...args) {
         if (this.logLevel <= LogLevel.warn) {
-            this.print('WARN  ', args);
+            this.print('WARN  ', ...args);
         }
     }
     /**
@@ -97,7 +97,7 @@ class Logger {
      */
     static error(...args) {
         if (this.logLevel <= LogLevel.error) {
-            this.print('ERR   ', args);
+            this.print('ERR   ', ...args);
         }
     }
     /**
@@ -105,28 +105,28 @@ class Logger {
      * @param object display data
      */
     static stdout(...args) {
-        this.print('Stdout', args);
+        this.print('Stdout', ...args);
     }
     /**
      * output stderr from child_process
      * @param object display data
      */
     static stderr(...args) {
-        this.print('Stderr', args);
+        this.print('Stderr', ...args);
     }
     /**
      * output stdout from ssh
      * @param object display data
      */
     static SSHout(...args) {
-        this.print('SSHout', args);
+        this.print('SSHout', ...args);
     }
     /**
      * output stderr from ssh
      * @param object display data
      */
     static SSHerr(...args) {
-        this.print('SSHerr', args);
+        this.print('SSHerr', ...args);
     }
     /**
      * get date string
@@ -141,7 +141,9 @@ class Logger {
      *
      */
     static print(label, ...args) {
-        console.log(`${this.getDateString()} [${label}] `, args);
+      var argments=
+        console.log(`${this.getDateString()} [${label}] `, ...args);
+
         var line = this.getDateString();
         line += ` [${label}] `;
         for (var arg in args){
