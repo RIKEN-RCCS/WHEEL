@@ -9,7 +9,7 @@ router.post('/', function (req, res, next) {
     var projectDir=path.dirname(projectJSON);
     util.promisify(fs.readFile)(projectJSON)
     .then(function(data){
-      var tmp = JSON.parse(data.toString());
+      var tmp = JSON.parse(data);
       var rootWorkflow=path.resolve(projectDir,tmp.path_workflow);
       res.cookie('root', rootWorkflow);
       res.cookie('project', projectJSON);
