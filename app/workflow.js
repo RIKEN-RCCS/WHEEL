@@ -48,10 +48,26 @@ function onDownload(sio, msg){
   logger.warn('download function is not implemented yet.');
 }
 
-function onFileListRequest(uploader, sio, msg){
-  logger.debug(`current dir = ${msg}`);
-  fileBrowser(sio, 'fileList', msg);
-  uploader.dir = msg;
+function onFileListRequest(uploader, sio, request){
+  logger.debug(`current dir = ${request}`);
+  // work around
+  var targetDir=null
+  util.promisify(fs.stat)(request)
+    .then(function(stat){
+      if(stat.isFile()){
+        targetDir = path.dirname(request)
+      }else if(stat.isDirectory()){
+        targetDir = request;
+      }else{
+        return Promise.reject(new Error("illegal directory browse request"));
+      }
+      logger.debug('targetDir = ', targetDir);
+      fileBrowser(sio, 'fileList', targetDir, request);
+      uploader.dir = targetDir;
+    })
+    .catch(function(err){
+      logger.error('directory not found!');
+    })
 }
 
 function onRunProject(sio, msg){

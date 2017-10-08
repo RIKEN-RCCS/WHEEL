@@ -1,8 +1,12 @@
 var $ = require('jquery');
-require('jquery-ui/ui/widgets/sortable');
+require('jquery-ui/sortable');
 require('jquery-contextmenu');
-var FileBrowser = require('./fileBrowser');
-var dialogWrapper = require('./dialogWrapper');
+
+require('jquery-ui-css/all.css');
+require('jquery-contextmenu/dist/jquery.contextMenu.css')
+
+import FileBrowser from  './fileBrowser';
+import dialogWrapper from './dialogWrapper';
 $(() => {
     // socket io
     const socket = io('/home');

@@ -1,13 +1,23 @@
+var $ = require('jquery');
+require('jquery-ui/sortable');
+require('jquery-contextmenu');
+
+require('jquery-ui-css/all.css');
+require('jquery-contextmenu/dist/jquery.contextMenu.css')
+
+import Cookies from 'js-cookie';
+
+import FileBrowser from  './fileBrowser';
+import dialogWrapper from './dialogWrapper';
+import logReciever from './logReciever';
+import config from './config';
+
 $(() => {
-  // read cookies
-  const cookies = ClientUtility.getCookies();
-  const projectFilePath = cookies['project'];
+  // chek project Json file path
+  const projectFilePath = Cookies.get('project');
   if (projectFilePath == null) {
     throw new Error('illegal access');
   }
-  const rootFilePath = cookies['root']; //to be removed
-  let taskIndex = cookies['index'];     //to be removed
-
 
   // set default view
   $('.project_manage_area').hide();
@@ -22,8 +32,8 @@ $(() => {
   // setup FileBrowser
   const fb = new FileBrowser(sioWF, '#fileList', 'fileList', true);
   sioWF.on('connect', function () {
-    //TODO workflowの箱をクリックした時に対応するPathのrequestを投げるようにする
-    fb.request('fileListRequest', ClientUtility.dirname(projectFilePath), null);
+    //TODO project Jsonファイルのpathではなく表示するworkflowのpathを投げる
+    fb.request('fileListRequest', projectFilePath, null);
   });
 
   // setup file uploader

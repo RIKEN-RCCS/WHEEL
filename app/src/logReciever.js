@@ -1,4 +1,5 @@
-function logReciever(socket) {
+var $ = require('jquery');
+export default function (socket) {
     // enable all log
     socket.on('logDBG', addLog);
     socket.on('logINFO', addLog);
@@ -82,4 +83,3 @@ function addLog(msg) {
     var area = $('#log_area');
     area.scrollTop = area.scrollHeight;
 }
-//# sourceMappingURL=logReciever.js.map

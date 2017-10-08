@@ -17,7 +17,7 @@ const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\
 
 var adaptorSendFiles = function (withFile, sio, msg) {
     var target = msg ? path.normalize(msg) : config.rootDir || os.homedir() || '/';
-    fileBrowser(sio, 'fileList', target, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
+    fileBrowser(sio, 'fileList', target, null, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON });
 };
 
 var removeTrailingPathSep = function (filename){

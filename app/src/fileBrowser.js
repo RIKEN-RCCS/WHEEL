@@ -1,5 +1,6 @@
 var $ = require('jquery');
-class FileBrowser {
+import dialogWrapper from './dialogWrapper';
+export default class {
     // public methods
     constructor(socket, idFileList, recvEventName, withContextMenu = false) {
         // private properties
@@ -26,7 +27,6 @@ class FileBrowser {
     request(sendEventName, path, recvEventName) {
         this.socket.emit(sendEventName, path);
         this.requestedPath = path;
-        //TODO path をnormalizeしとかんとvalidation checkにひっかかる
         this.sendEventName = sendEventName;
         if (!recvEventName)
             this.recvEventName = recvEventName;
@@ -149,7 +149,6 @@ class FileBrowser {
     }
     onRecvDefault() {
         this.socket.on(this.recvEventName, (data) => {
-            console.log(data);
             if (!this.isValidData(data))
                 return;
             var iconClass = data.isdir ? 'fa-folder-o' : 'fa-file-o';
@@ -216,4 +215,3 @@ class FileBrowser {
         return true;
     }
 }
-module.exports = FileBrowser;
