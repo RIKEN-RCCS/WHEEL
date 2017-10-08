@@ -12,6 +12,8 @@ import dialogWrapper from './dialogWrapper';
 import logReciever from './logReciever';
 import config from './config';
 
+import svgNodeUI './svg/svgNodeUI';
+
 $(() => {
   // chek project Json file path
   const projectFilePath = Cookies.get('project');
@@ -34,6 +36,11 @@ $(() => {
   sioWF.on('connect', function () {
     //TODO project Jsonファイルのpathではなく表示するworkflowのpathを投げる
     fb.request('fileListRequest', projectFilePath, null);
+
+
+    //TODO workflow graphの受信と描画
+
+    //TODO project 進行状況の受信
   });
 
   // setup file uploader
@@ -80,6 +87,7 @@ $(() => {
     }
   });
 
+  // setup context menu
   function getClickPosition(option) {
     const parentOffset = $(option.selector).offset();
     const clickPosition = option.$menu.position();
@@ -90,8 +98,6 @@ $(() => {
     return position;
   }
   let selectedNode=null;
-  //TODO nodeの描画時にon clickでselectedNodeに何か入れる。
-  //と思ったけど関数にするべきか。
   $.contextMenu({
     selector: '#node_svg',
     autoHide: true,

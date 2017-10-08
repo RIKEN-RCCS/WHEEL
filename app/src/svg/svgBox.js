@@ -1,3 +1,4 @@
+import SVG from 'svgjs/dist/svg.js';
 /**
  * svg box class
  */
