@@ -12,7 +12,6 @@ import dialogWrapper from './dialogWrapper';
 import logReciever from './logReciever';
 import config from './config';
 
-import svgNodeUI './svg/svgNodeUI';
 
 $(() => {
   // chek project Json file path
