@@ -12,8 +12,10 @@ router.post('/', function (req, res, next) {
       var tmp = JSON.parse(data);
       var rootWorkflow=path.resolve(projectDir,tmp.path_workflow);
       res.cookie('root', rootWorkflow);
+      res.cookie('rootDir', projectDir);
       res.cookie('project', projectJSON);
       res.sendFile(path.resolve('app/views/workflow.html'));
     })
+
 });
 module.exports = router;

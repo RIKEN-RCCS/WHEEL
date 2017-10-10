@@ -44,7 +44,8 @@ router.get('/', function (req, res) {
       console.log('Error: fs1 ' + err.code);
       return;
     }
-    fs.readFile(req.query.source, 'utf-8', function(err, txt) {
+    var target = path.resolve(req.query.path, req.query.filename);
+    fs.readFile(target, 'utf-8', function(err, txt) {
       if (err) {
         console.log('Error: fs2 ' + err.code);
         return;

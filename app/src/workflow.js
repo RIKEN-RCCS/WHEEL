@@ -19,6 +19,8 @@ $(() => {
   if (projectFilePath == null) {
     throw new Error('illegal access');
   }
+  const rootWorkflow=Cookies.get('root');
+  let cwd=Cookies.get('rootDir');
 
   // set default view
   $('.project_manage_area').hide();
@@ -28,17 +30,16 @@ $(() => {
 
   // setup socket.io client
   const sio = io('/workflow');
-  let cwd=null;
-
   // setup FileBrowser
   const additionalMenu={
     'edit': {
       name: 'edit',
       callback: function() {
+        var path = $(this).data('path');
         var filename = $(this).data('name');
-        var target = $(this).data('path') + '/' + filename;
         $('<form/>', { action: '/editor', method: 'get' })
-            .append($('<input/>', { name: 'source', value: target}))
+            .append($('<input/>', { name: 'path',     value: path}))
+            .append($('<input/>', { name: 'filename', value: filename}))
             .appendTo(document.body)
             .submit();
       }
@@ -46,6 +47,8 @@ $(() => {
     'edit for parameter survey': {
       name: 'edit for PS',
       callback: function(){
+        var filename = $(this).data('name');
+        var target = $(this).data('path') + '/' + filename;
         $('<form/>', { action: '/editor', method: 'get' })
             .append($('<input/>', { name: 'source', value: target}))
             .appendTo(document.body)
@@ -55,8 +58,7 @@ $(() => {
   }
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true, additionalMenu);
   sio.on('connect', function () {
-    //TODO project Jsonファイルのpathではなく表示するworkflowのpathを投げる
-    fb.request('fileListRequest', projectFilePath, null);
+    fb.request('fileListRequest', cwd, null);
 
 
     //TODO workflow graphの受信と描画
