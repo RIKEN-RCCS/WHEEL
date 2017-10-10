@@ -1,6 +1,7 @@
 import $ from 'jquery';
-import config from './config';
 import './jqueryExtends';
+
+import FileDialog from './fileDialog';
 
 $(() => {
     // socket io
@@ -50,6 +51,7 @@ $(() => {
             dialog.show();
         });
     }
+
     /**
      * set button click event to add host information
      */
@@ -63,7 +65,7 @@ $(() => {
             const sshkey = sshKeyAddress.val().trim();
             let errorText = '';
             textBoxes.forEach(textbox => textbox.borderValid());
-            if (!ClientUtility.isLocalHost(host)) {
+            if (!isLocalHost(host)) {
                 if (isCheckedSshKey && !sshkey) {
                     sshKeyAddress.borderInvalid();
                     errorText = 'Key File is empty or white space';
@@ -124,6 +126,7 @@ $(() => {
             }
         });
     }
+
     /**
      * set several events for file dialog
      */
@@ -136,7 +139,7 @@ $(() => {
             inputText.val('');
         })
             .onFileIconMouseup((filepath) => {
-            inputText.val(ClientUtility.basename(filepath));
+            inputText.val(basename(filepath));
         })
             .onFileIconDblClick((filepath) => {
             sshKeyAddress.val(filepath);
@@ -214,7 +217,7 @@ $(() => {
                 host.username = '';
             }
             let passwordHtml = '';
-            if (!ClientUtility.isLocalHost(host)) {
+            if (!isLocalHost(host)) {
                 passwordHtml = `<input type="password" class="text_box" id="${host.name}_password" autocomplete="off">`;
             }
             setTestConnectEnvet(host);
@@ -290,5 +293,29 @@ $(() => {
                     .class('ng_test_button button');
             }
         });
+    }
+
+    /**
+     * whether specified hostname is localhost or not
+     * @param target hostname or host json data
+     * @return specified hostname is localhost or not
+     */
+    function isLocalHost(target) {
+        let hostname;
+        if (typeof target === 'string') {
+            hostname = target;
+        }
+        else {
+            hostname = target.host;
+        }
+        return (hostname === 'localhost') || (hostname === '127.0.0.1');
+    }
+    /**
+     * get basename of file path
+     * @param filepath file path string
+     * @return basename of file path
+     */
+    function basename(filepath) {
+        return filepath.replace(/\\/g, '/').replace(/\/$/, '').replace(/.*\//, '');
     }
 });

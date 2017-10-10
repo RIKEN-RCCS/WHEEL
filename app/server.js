@@ -10,8 +10,9 @@ const siofu = require("socketio-file-upload");
 const logger = require("./logger");
 const config = require('./config/server');
 
-const workflow=require("./workflow");
-const home= require("./home");
+const workflow   = require("./workflow");
+const home       = require("./home");
+const remotehost = require("./remotehost");
 
 /*
  * set up express, http and socket.io
@@ -31,15 +32,14 @@ app.use(siofu.router);
 var routes = {
     "home":       require('./routes/home'),
     "workflow":   require('./routes/workflow'),
-    "editor":     require('./routes/editor'),
-    "remoteHost": require('./routes/remoteHost'),
-    "rapid":      require('./route/raipd),
+    "remotehost": require('./routes/remotehost'),
+    "rapid":      require('./routes/rapid')
 };
 app.use('/',                    routes.home);
 app.use('/home',                routes.home);
 app.use('/workflow',            routes.workflow);
 app.use('/editor',              routes.rapid);
-app.use('/swf/remotehost.html', routes.remoteHost);
+app.use('/swf/remotehost.html', routes.remotehost);
 
 // port number
 var defaultPort = 443;
@@ -70,16 +70,8 @@ logger.setLogfile("./TestLogFile.txt");
  */
 home(sio);
 workflow(sio);
+remotehost(sio);
 
-// others
-const EventListeners = require("./eventListeners");
-EventListeners.add(sio.of('/remotehost'), [
-    'onGetRemoteHostList',
-    'onSshConnection',
-    'onAddHost',
-    'onDeleteHost',
-    'onGetFileList'
-]);
 // Listen on provided port, on all network interfaces.
 server.listen(port);
 server.on('error', onError);

@@ -1,7 +1,10 @@
+import $ from 'jquery';
+import config from './config';
+
 /**
  * File dialog class
  */
-class FileDialog {
+export default class {
     /**
      * create file dialog instance
      * @param socket socket io communication class for getting file list

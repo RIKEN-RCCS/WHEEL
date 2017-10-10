@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const ServerUtility = require("./serverUtility");
 const path = require("path");
@@ -22,6 +20,7 @@ var onAddHost = function (socket) {
         });
     });
 };
+
 var onDeleteHost = function (socket) {
     const eventName = 'onDeleteHost';
     socket.on(eventName, (name) => {
@@ -36,6 +35,7 @@ var onDeleteHost = function (socket) {
         });
     });
 };
+
 var onGetRemoteHostList = function (socket) {
     const eventName = 'onGetRemoteHostList';
     socket.on(eventName, () => {
@@ -55,6 +55,7 @@ var onGetRemoteHostList = function (socket) {
         });
     });
 };
+
 var onGetFileList = function (socket) {
     const eventName = 'onGetFileList';
     socket.on(eventName, (directoryPath, extension) => {
@@ -79,6 +80,7 @@ var onGetFileList = function (socket) {
         }
     });
 };
+
 var onSshConnection = function (socket) {
     const eventName = 'onSshConnection';
     const succeed = () => {
@@ -120,23 +122,19 @@ var onSshConnection = function (socket) {
         });
     });
 };
-var eventListeners = {
-    'onAddHost': onAddHost,
-    'onDeleteHost': onDeleteHost,
-    'onGetRemoteHostList': onGetRemoteHostList,
-    'onGetFileList': onGetFileList,
-    'onSshConnection': onSshConnection,
-};
-function add(sio, listeners) {
-    sio.on('connect', (socket) => {
-        logger.debug(`socket on connect ${sio.name}`);
-        for (var eventName of listeners) {
-            eventListeners[eventName](socket);
-        }
-        socket.on('disconnect', () => {
-            logger.debug(`socket on disconnect ${sio.name}`);
-        });
+
+function setup(sio){
+  sio.of('/remotehost').on('connect', (socket) => {
+    logger.debug(`socket on connect ${sio.name}`);
+    onAddHost(socket);
+    onDeleteHost(socket);
+    onGetRemoteHostList(socket);
+    onGetFileList(socket);
+    onSshConnection(socket);
+    socket.on('disconnect', () => {
+      logger.debug(`socket on disconnect ${sio.name}`);
     });
+  });
 }
-exports.add = add;
-//# sourceMappingURL=eventListeners.js.map
+
+module.exports = setup;

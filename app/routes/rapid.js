@@ -39,7 +39,7 @@ walk(__dirname, function() {
 
 // メイン（エディタに編集対象のソースを入れて返す）
 router.get('/', function (req, res) {
-  fs.readFile(path.resolve('app/views/rapid.html', 'utf-8', function(err, html) {
+  fs.readFile(path.resolve('app/views/rapid.html'), 'utf-8', function(err, html) {
     if (err) {
       console.log('Error: fs1 ' + err.code);
       return;
@@ -55,26 +55,26 @@ router.get('/', function (req, res) {
       res.send(html);
     });
   });
-      });
+});
 
 // 保存（アップロードされた編集結果をファイルとして保存）
-  router.post('/', function(req, res) {
-    if(req.body.mode == 'json') {
-      let fn = req.body.filename + '.json';
-      a = {
-        "target_file": './' + fn,
-        "target_param": req.body.param
-      }
-      fn = 'saved/' + fn;
-      fs.writeFileSync(fn, JSON.stringify(a, undefined, 1));
-      res.send('Ok: ' + fn + ' saved');
-      console.log(fn + ' saved.');
-    } else {
-      let fn = 'saved/' + req.body.filename + '.svy';
-      fs.writeFileSync(fn, req.body.text);
-      res.send('Ok: ' + fn + ' saved');
-      console.log(fn + ' saved.');
+router.post('/', function(req, res) {
+  if(req.body.mode == 'json') {
+    let fn = req.body.filename + '.json';
+    a = {
+      "target_file": './' + fn,
+      "target_param": req.body.param
     }
-  });
+    fn = 'saved/' + fn;
+    fs.writeFileSync(fn, JSON.stringify(a, undefined, 1));
+    res.send('Ok: ' + fn + ' saved');
+    console.log(fn + ' saved.');
+  } else {
+    let fn = 'saved/' + req.body.filename + '.svy';
+    fs.writeFileSync(fn, req.body.text);
+    res.send('Ok: ' + fn + ' saved');
+    console.log(fn + ' saved.');
+  }
+});
 
 module.exports = router;
