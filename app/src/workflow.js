@@ -28,9 +28,32 @@ $(() => {
 
   // setup socket.io client
   const sio = io('/workflow');
+  let cwd=null;
 
   // setup FileBrowser
-  const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
+  const additionalMenu={
+    'edit': {
+      name: 'edit',
+      callback: function() {
+        var filename = $(this).data('name');
+        var target = $(this).data('path') + '/' + filename;
+        $('<form/>', { action: '/editor', method: 'get' })
+            .append($('<input/>', { name: 'source', value: target}))
+            .appendTo(document.body)
+            .submit();
+      }
+    },
+    'edit for parameter survey': {
+      name: 'edit for PS',
+      callback: function(){
+        $('<form/>', { action: '/editor', method: 'get' })
+            .append($('<input/>', { name: 'source', value: target}))
+            .appendTo(document.body)
+            .submit();
+      }
+    }
+  }
+  const fb = new FileBrowser(sio, '#fileList', 'fileList', true, additionalMenu);
   sio.on('connect', function () {
     //TODO project Jsonファイルのpathではなく表示するworkflowのpathを投げる
     fb.request('fileListRequest', projectFilePath, null);
@@ -125,5 +148,4 @@ $(() => {
       }
     }
   });
-
 });
