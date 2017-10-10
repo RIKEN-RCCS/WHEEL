@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Editor</title>
+  <style type="text/css" media="screen">
+    html { height:100%; }
+    body { margin:0; height:100%; }
+    p { font-size:12px; margin: 10px; }
+    table { font-size:11px; border-collapse:collapse; margin: 12px; background:white; }
+    td { text-align: left; padding:3px; border-top:1px solid #c0c0f0; }
+    th { text-align: left; padding:3px; }
+    label.left_l { width:70px; display:block; float:left; }
+    input { border:1px solid gray }
+    button { font-size:12px; padding:2px 2px; border-radius:2px; }
+    button:hover { color:red; }
+    a { text-decoration:none; }
+    a:hover { color:red; }
+    input:disabled { background:#DCDCDC; cursor:not-allowed; }
+    textarea:disabled { background:#DCDCDC; cursor:not-allowed; }
+    ul { font-size:12px; }
+    .clickable:hover { cursor:pointer; background:#ffdddd; }
+    .container { display:flex; justify-content:flex-end; height:100%; }
+    .gutter.gutter-horizontal { cursor:ew-resize; background:#c0c0f0 }
+    #left_pane { width:100%; height:100%; }
+    #right_pane { width:480px; background:#e8e8ff; }
+    #editor { margin:0; height:100%; }
+    #wrapper { background:#f8f8ff; margin:0 18px; height:200px;
+      overflow:auto; border:1px dotted #c0c0ff;} 
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.2/themes/default/style.min.css">
+</head>
+
+<body>
+
+<div class="container">
+  <div id="left_pane">
+    <pre id="editor">INSERT_SOURCE_HERE</pre><!-- app.jsが送信時に置換 -->
+  </div>
+  <div id="right_pane">
+    <p style="border:1px solid white; padding:4px">
+      ファイル名：<span id="file_name">test</span>　　編集結果を保存→
+      <button id="button_save">Save files</button>
+    </p>
+    <p>
+      ↓エディタでキーワードを選択し、ターゲットとして登録<br>
+    </p><p>
+      <button id="button_new_target">New Survey Target</button>
+      　選択中のキーワード：<span id="selected_word"> </span>
+    </p><p>
+      <table id="target_list"> </table>
+    </p>
+    <form id="param_form">
+      <p style="padding-left:8px">
+        <label class="left_l">Target:</label>
+          <span id="label_target">-</span> 
+          <a href="javascript:void(0)" onClick="onClickRemove();return false;">[Remove]</a><br>
+          <input type="hidden" name="target" value="target">
+        <label class="left_l">Keyword:</label>
+          <input type="text" id="input_keyword" name="keyword" value="" size=24><br>
+        <label class="left_l">Type:</label> 
+          <input type="radio" name="type" value="integer" />
+          <label for="integer">Integer</label>
+          <input type="radio" name="type" value="float" />
+          <label for="float">Float</label>
+          <input type="radio" name="type" value="string" />
+          <label for="string">String</label>
+          <input type="radio" name="type" value="file" />
+          <label for="file">File</label>
+        <br>
+        <label class="left_l">Min value:</label>
+          <input type="text" name="min" id="input_min" value="" size=12><br>
+        <label class="left_l">Max value:</label>
+          <input type="text" name="max" value="" id="input_max" size=12><br>
+        <label class="left_l">Step:</label>
+          <input type="text" name="step" value="" id="input_step" size=12><br>
+        <label class="left_l">List:</label>
+          <textarea id="list" name="list" cols=32 rows=5 style="width:98%;"></textarea>
+        <div id="wrapper" >
+          <div id="file_selector"></div>
+        </div>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.2.0/split.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.2/jstree.min.js"></script>
+<script>
+  var param = [];
+  var currentTarget = 0;
+  var saved = false;
+  var old_keyword; // keyword欄の変更検知
+  const sourceFileName = 'INSERT_FILENAME_HERE'; // app.jsが送信時に置換
+
+  $('#file_name').text(sourceFileName);
+
+  // Aceエディタ初期化 see https://ace.c9.io/api/editor.html
+  var editor = ace.edit("editor");
+  editor.setTheme("ace/theme/idle_fingers");
+  editor.session.setMode("ace/mode/c_cpp");
+  editor.setAutoScrollEditorIntoView(true);
+  editor.setShowPrintMargin(false);
+  editor.setHighlightSelectedWord(false);
+  editor.setHighlightActiveLine(true);
+  editor.$blockScrolling = Infinity;
+
+  // リサイザブルペイン(https://github.com/nathancahill/Split.js)
+  Split(['#left_pane', '#right_pane'], {
+    'sizes': [67, 33],
+    'gutterSize': 7
+  });
+
+  // 選択したテキスト＝サーベイターゲット
+  editor.getSession().selection.on('changeSelection', function(e) {
+    $('#selected_word').text(editor.session.getTextRange(editor.getSelectionRange()));
+  });
+
+  // カーソル行に含まれるターゲットを表示
+  editor.getSession().selection.on('changeCursor', function(e) {
+    let t = editor.session.getLine(editor.selection.getCursor().row);
+    r = t.match(/%%(.+)%%/);
+    if(r != null) {
+      for(var i=0; i<param.length; i++) {
+        if(param[i].keyword == r[1]) {
+          currentTarget = i;
+          setForm(i);
+          targetList();
+          break;
+        }
+      }
+    }
+  });
+
+  // HTMLとの関連づけ
+  $(function(){ $('#button_new_target').click(function() { newTarget(); }); });
+  $(function(){ $('#button_save').click(function() { saveFile(); }); });
+
+  $('#wrapper').hide();
+  switchStrForm(false);
+
+
+
+  // 未保存でのページ遷移を警告
+  $(window).bind('beforeunload', function() {
+    if(!saved) {
+      return '入力したパラメータが保存されていません';
+    }
+  });
+
+
+  // ファイルのツリービュー
+  $('#file_selector').jstree({
+    'plugins':[],
+    'core':{
+      'themes':{},
+      'animation':0,
+      'data' : INSERT_JSON_HERE
+  } });
+
+
+  // nodeを呼んで保存（URL等ベタ書き注意
+  function saveFile() {
+    if(param.length == 0) {
+      errMsg('保存すべきデータがまだ入力されていません');
+      return
+    }
+
+    let p = $.extend(true, [], param); // jQueryを使って値渡し
+    p.forEach(function(v, i) {
+      if(p[i].list) p[i].list = p[i].list.split(/\r\n|\r|\n/); // 改行から配列へ
+    });
+
+    let postData = {
+      "mode":"json",
+      "filename":sourceFileName,
+      "param": p
+    };
+    // ./app.jsを参照
+    $.post('/editor', postData, function(r) { console.log(r); });
+
+    postData = {
+      "mode":"text",
+      "filename":sourceFileName,
+      "text": editor.getValue()
+    };
+    $.post('/editor', postData, function(r) { console.log(r); });
+  }
+
+
+  function readForm() {
+    let a = $('form'); // フォームの内容を配列化(jQuery使用)
+    let m = {};
+    a.serializeArray().forEach(function(v, i) {
+        m[v.name] = v.value;
+    });
+    param[currentTarget] = $.extend(true, {}, m); // jQueryを使って値渡し
+  }
+
+
+  // フォームの各要素が変更されるたび変数を更新
+  $('form').change(function() {
+    saved = false;
+    readForm();
+
+    if(old_keyword != param[currentTarget].keyword) {
+      editor.find(escapeChar(old_keyword));
+      editor.replace(escapeChar(param[currentTarget].keyword));
+      editor.clearSelection();
+      old_keyword = param[currentTarget].keyword;
+    }   
+
+    if(param[currentTarget].type == 'integer' || param[currentTarget].type == 'float' ) {
+      validateNumForm();
+    }
+    resetForm();
+    targetList();
+  });
+
+  function resetForm() {
+    if(param[currentTarget].type == 'string' || param[currentTarget].type == 'file') {
+      switchNumForm(false);
+      if(param[currentTarget].type == 'file') {
+        $('#wrapper').show();
+      } else {
+        $('#wrapper').hide();
+      }
+    } else {
+      switchNumForm(true);
+    }
+
+    if(param[currentTarget].type == 'integer' || param[currentTarget].type == 'float' ) {
+      $('#wrapper').hide();
+      switchStrForm(false);
+    } else {
+      switchStrForm(true);
+    }
+  }
+
+  // フォームのオンオフ valがfalseでオフ
+  function switchNumForm(val) {
+    $('#input_min').prop('disabled', !val);
+    $('#input_max').prop('disabled', !val);
+    $('#input_step').prop('disabled', !val);
+  }
+  function switchStrForm(val) {
+    $('#list').prop('disabled', !val);
+  }
+  
+  // 入力されたパラメータのチェック
+  function validateNumForm() {
+    let nums = {
+      'Min': param[currentTarget].min,
+      'Max': param[currentTarget].max,
+      'Step': param[currentTarget].step,
+    };
+
+    for(k in nums) {
+      if(nums[k] === undefined) break;
+      if(nums[k].trim() === '') break; // 空の場合は無視 スペースだけも無視
+
+      if(!isFinite(nums[k])) {
+        errMsg(k + 'の値が数値ではありません');
+      } else if(param[currentTarget].type == 'integer' && Math.round(nums[k]) !== +nums[k]) {
+        errMsg(k + 'の値が整数ではありません');
+      }
+    }
+  }
+
+
+  function errMsg(t) {
+    //console.log(t);
+    alert(t);
+  }
+
+
+  // ファイル名をテキストエリアへ
+  $('#file_selector').on("changed.jstree", function (e, data) {
+    $('#list').val($('#list').val() + data.node.id + '\n');
+    readForm();
+  });
+
+
+  function newTarget() {
+    if ($('#selected_word').text().trim() == '') {
+      errMsg('ターゲットとなる語が選択されていません(ERR01)');
+      return;
+    }
+    var currentIndex = param.length;
+    param[currentIndex] = {
+      target:$('#selected_word').text(),
+      keyword:`KEYWORD${currentIndex+1}`,
+      type:'integer'
+    };
+    editor.insert(escapeChar(param[currentIndex].keyword)); // 置換後にしないと選択が消える
+    currentTarget = currentIndex;
+    setForm(currentIndex);
+    resetForm();
+    targetList();
+  }
+
+
+  function escapeChar(t) {
+    return '%%' + t + '%%';
+  }
+
+
+  function targetList() {
+    $('#target_list').empty();
+    let t = '<tr><th></th><th>Target</th><th>Keyword</th><th>Type</th><th>Min</th><th>Max</th><th>Step</th></tr>';
+    $('#target_list').append(t);
+
+    param.forEach(function(v, i) {
+      if(currentTarget == i) { // 現在編集中のターゲット以外はリンクとして表示
+        t = '<tr><td>' + (i+1) + '</td>';
+        t += '<td><b>' + v['target'] + '</b></td>';
+      } else {
+        t = `<tr class="clickable"onClick="onClickTarget(${i});return false;">`;
+        t += '<td>' + (i+1) + '</td><td >' + v['target'] + '</td>';
+      }
+      t += '<td>' + v['keyword'] + '</td><td>' + v['type'] + '</td><td>';
+      t += v['min'] + '</td><td>' + v['max'] + '</td><td>' + v['step'] + '</td></tr>';
+      t = t.replace(/undefined/g, '-');
+      $('#target_list').append(t);
+    });
+  }
+
+
+  function onClickRemove() {
+    editor.find(escapeChar(param[currentTarget].keyword));
+    editor.replace(param[currentTarget].target);
+    editor.clearSelection();
+    param.splice(currentTarget);
+    if(--currentTarget == -1) {
+      currentTarget = 0;
+      $('#label_target').text('-');
+    }
+    targetList();
+    setForm(currentTarget);
+  }
+
+
+  function onClickTarget(n) {
+    currentTarget = n;
+    setForm(n);
+    resetForm();
+    targetList();
+    editor.find(escapeChar(param[n].keyword), {range:null});
+    editor.clearSelection();
+  }
+
+
+  function setForm(n) {
+    // using jQuery
+    $('#label_target').text(param[n]['target']);
+    $('input[name="target"]').val(param[n]['target']);
+    $('input[name="keyword"]').val(param[n]['keyword']);
+    old_keyword = param[n]['keyword'];
+    $('input[name="type"][value="' + param[n]['type'] + '"').prop('checked', true);
+    $('input[name="min"]').val(param[n]['min']);
+    $('input[name="max"]').val(param[n]['max']);
+    $('input[name="step"]').val(param[n]['step']);
+    $('#list').val(param[n]['list']);
+  }
+
+</script>
+</body>
+</html>

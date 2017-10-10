@@ -21,22 +21,26 @@ const server = http.createServer(app);
 const sio = require('socket.io')(server);
 // middlewares
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+// RAPiDでtrueだったので合わせている
+// TODO 実際にtrueにする必要があるかどうか調査
+app.use(bodyParser.urlencoded({ extended: true}));
 app.use(cookieParser());
 app.use(express.static(path.resolve('./app/public'), { index: false }));
 app.use(siofu.router);
 // routing
 var routes = {
-    "home": require('./routes/home'),
-    "workflow": require('./routes/workflow'),
-    "editor": require('./routes/editor'),
-    "remoteHost": require('./routes/remoteHost')
+    "home":       require('./routes/home'),
+    "workflow":   require('./routes/workflow'),
+    "editor":     require('./routes/editor'),
+    "remoteHost": require('./routes/remoteHost'),
+    "rapid":      require('./route/raipd),
 };
 app.use('/',                    routes.home);
 app.use('/home',                routes.home);
 app.use('/workflow',            routes.workflow);
-app.use('/swf/editor.html',     routes.editor);
+app.use('/editor',              routes.rapid);
 app.use('/swf/remotehost.html', routes.remoteHost);
+
 // port number
 var defaultPort = 443;
 var port = parseInt(process.env.PORT) || config.port || defaultPort;
@@ -75,10 +79,6 @@ EventListeners.add(sio.of('/remotehost'), [
     'onAddHost',
     'onDeleteHost',
     'onGetFileList'
-]);
-EventListeners.add(sio.of('/swf/editor'), [
-    'readFile',
-    'writeFile'
 ]);
 // Listen on provided port, on all network interfaces.
 server.listen(port);
