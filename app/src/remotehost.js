@@ -1,3 +1,7 @@
+var $ = require('jquery');
+import config from './config';
+require('./jqueryExtends');
+
 $(() => {
     // socket io
     const socket = io('/swf/remotehost');
@@ -288,4 +292,3 @@ $(() => {
         });
     }
 });
-//# sourceMappingURL=remotehost.js.map

@@ -1,14 +1,17 @@
 const path = require('path');
+const webpack = require('webpack');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports={
   entry: {
     home: "./app/src/home.js",
-    workflow: "./app/src/workflow.js"
+    workflow: "./app/src/workflow.js",
+    remotehost: "./app/src/remotehost.js"
   },
   devtool: 'inline-source-map',
   output: {
-    path: path.resolve(__dirname,  "app/public/js"),
-    filename: "[name].js"
+    path: path.resolve(__dirname,  "app/public"),
+    filename: "js/[name].js"
   },
   resolve: {
     alias: {
@@ -20,10 +23,10 @@ module.exports={
     rules: [
       {
         test: /\.css$/,
-        use: [
-          'style-loader',
-          'css-loader'
-        ]
+        use: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: 'css-loader'
+        })
       },
       {
         test: /\.json$/,
@@ -44,5 +47,12 @@ module.exports={
         ]
       }
     ]
-  }
+  },
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'common',
+      chunks: ['home', 'workflow', 'remotehost']
+    }),
+    new ExtractTextPlugin('css/libs.css')
+  ]
 };

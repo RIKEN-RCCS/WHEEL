@@ -1,3 +1,4 @@
+var $ = require('jquery');
 $.fn.extend({
     borderInvalid: function () {
         const that = this;
@@ -39,4 +40,3 @@ $.fn.extend({
         return that;
     }
 });
-//# sourceMappingURL=jqueryExtends.js.map

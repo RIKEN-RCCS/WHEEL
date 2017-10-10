@@ -1,9 +1,9 @@
 var $ = require('jquery');
-require('jquery-ui/sortable');
-require('jquery-contextmenu');
+import 'jquery-ui/sortable';
+import 'jquery-contextmenu';
 
-require('jquery-ui-css/all.css');
-require('jquery-contextmenu/dist/jquery.contextMenu.css')
+import 'jquery-ui-css/all.css';
+import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import FileBrowser from  './fileBrowser';
 import dialogWrapper from './dialogWrapper';
