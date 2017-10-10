@@ -27,7 +27,6 @@ $(() => {
   $('#graphView').prop('checked', true);
   $('#log_area').hide();
 
-
   // setup socket.io client
   const sio = io('/workflow');
   // setup FileBrowser
@@ -38,21 +37,22 @@ $(() => {
         var path = $(this).data('path');
         var filename = $(this).data('name');
         $('<form/>', { action: '/editor', method: 'get' })
-            .append($('<input/>', { name: 'path',     value: path}))
-            .append($('<input/>', { name: 'filename', value: filename}))
-            .appendTo(document.body)
-            .submit();
+          .append($('<input/>', { type: 'text', name: 'path',     value: path}))
+          .append($('<input/>', { type: 'text', name: 'filename', value: filename}))
+          .appendTo(document.body)
+          .submit();
       }
     },
     'edit for parameter survey': {
       name: 'edit for PS',
-      callback: function(){
+      callback: function() {
+        var path = $(this).data('path');
         var filename = $(this).data('name');
-        var target = $(this).data('path') + '/' + filename;
         $('<form/>', { action: '/editor', method: 'get' })
-            .append($('<input/>', { name: 'source', value: target}))
-            .appendTo(document.body)
-            .submit();
+          .append($('<input/>', { name: 'path',     value: path}))
+          .append($('<input/>', { name: 'filename', value: filename}))
+          .appendTo(document.body)
+          .submit();
       }
     }
   }

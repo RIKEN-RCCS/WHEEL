@@ -50,9 +50,10 @@ router.get('/', function (req, res) {
         console.log('Error: fs2 ' + err.code);
         return;
       }
-      html = html.replace('INSERT_JSON_HERE', JSON.stringify(tree));
+      //TODO  後からsocket通信で送る方向で修正
+//      html = html.replace('INSERT_JSON_HERE', JSON.stringify(tree));
       html = html.replace('INSERT_SOURCE_HERE', txt);
-      html = html.replace('INSERT_FILENAME_HERE', req.query.source);
+      html = html.replace('INSERT_FILENAME_HERE', req.query.filename);
       res.send(html);
     });
   });

@@ -6,6 +6,7 @@ module.exports={
   entry: {
     home: "./app/src/home.js",
     workflow: "./app/src/workflow.js",
+    rapid: "./app/src/rapid.js",
     remotehost: "./app/src/remotehost.js"
   },
   devtool: 'inline-source-map',
