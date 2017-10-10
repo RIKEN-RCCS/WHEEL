@@ -1,10 +1,10 @@
-var $ = require('jquery');
+import $ from 'jquery';
 import config from './config';
-require('./jqueryExtends');
+import './jqueryExtends';
 
 $(() => {
     // socket io
-    const socket = io('/swf/remotehost');
+    const socket = io('/remotehost');
     const getRemoteHostListSocket = new GetRemoteHostListSocket(socket);
     const sshConnectionSocket = new SshConnectionSocket(socket);
     const addHostSocket = new AddHostSocket(socket);

@@ -119,7 +119,7 @@ function onRemoveLink(sio, msg){
 }
 
 function setup(sio) {
-  var sioWF = sio.of('/swf/workflow');
+  var sioWF = sio.of('/workflow');
 
   sioWF.on('connect', function (socket) {
     var uploader = new siofu();

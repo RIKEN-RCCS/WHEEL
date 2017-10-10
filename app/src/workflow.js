@@ -1,9 +1,9 @@
-var $ = require('jquery');
-require('jquery-ui/sortable');
-require('jquery-contextmenu');
+import $ from 'jquery';
+import 'jquery-ui/sortable';
+import 'jquery-contextmenu';
 
-require('jquery-ui-css/all.css');
-require('jquery-contextmenu/dist/jquery.contextMenu.css')
+import 'jquery-ui-css/all.css';
+import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import Cookies from 'js-cookie';
 
@@ -27,12 +27,11 @@ $(() => {
 
 
   // setup socket.io client
-  const sioWF = io('/swf/workflow');
-  const sioPJ = io('/swf/project');
+  const sio = io('/workflow');
 
   // setup FileBrowser
-  const fb = new FileBrowser(sioWF, '#fileList', 'fileList', true);
-  sioWF.on('connect', function () {
+  const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
+  sio.on('connect', function () {
     //TODO project Jsonファイルのpathではなく表示するworkflowのpathを投げる
     fb.request('fileListRequest', projectFilePath, null);
 
@@ -43,12 +42,12 @@ $(() => {
   });
 
   // setup file uploader
-  const uploader = new SocketIOFileUpload(sioWF);
+  const uploader = new SocketIOFileUpload(sio);
   uploader.listenOnDrop(document.getElementById('fileBrowser'));
   uploader.listenOnInput(document.getElementById('fileSelector'));
 
   //setup log reciever
-  logReciever(sioPJ);
+  logReciever(sio);
 
   // show or hide log area
   var showLog = function () {
@@ -103,7 +102,7 @@ $(() => {
     reposition: false,
     callback: function(itemKey, opt){
       var pos=getClickPosition(opt);
-      sioWF.emit('createNode', {"type": itemKey, "pos": pos});
+      sio.emit('createNode', {"type": itemKey, "pos": pos});
     },
     items: {
       "new": {
@@ -121,7 +120,7 @@ $(() => {
       "delete": {
         "name": "delete",
         callback: function(){
-          sioWF.emit('removeNode', selectedNode);
+          sio.emit('removeNode', selectedNode);
         }
       }
     }

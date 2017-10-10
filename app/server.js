@@ -58,7 +58,7 @@ app.use(function (err, req, res, next) {
  */
 // TODO independent socket.io instance and filename should be passed
 // hand over socket.io to logger
-logger.setSocket(sio.of('/swf/project'));
+logger.setSocket(sio.of('/workflow'));
 logger.setLogfile("./TestLogFile.txt");
 
 /**
@@ -69,23 +69,7 @@ workflow(sio);
 
 // others
 const EventListeners = require("./eventListeners");
-EventListeners.add(sio.of('/swf/project'), [
-    'openProjectJson',
-    'onRunProject',
-    'onSshConnection',
-    'onGetFileStat',
-    'cleanProject'
-]);
-EventListeners.add(sio.of('/swf/workflow'), [
-    'readTreeJson',
-    'onGetFileStat',
-    'writeTreeJson',
-    'onGetJsonFile',
-    'onGetRemoteHostList',
-    'UploadFileEvent',
-    'onDeleteDirectory'
-]);
-EventListeners.add(sio.of('/swf/remotehost'), [
+EventListeners.add(sio.of('/remotehost'), [
     'onGetRemoteHostList',
     'onSshConnection',
     'onAddHost',
