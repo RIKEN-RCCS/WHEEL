@@ -33,7 +33,7 @@
   <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.2.0/split.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.2/jstree.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <script src="/js/rapid.js"></script>
 </head>
 
@@ -45,7 +45,7 @@
   </div>
   <div id="right_pane">
     <p style="border:1px solid white; padding:4px">
-      ファイル名：<span id="file_name">INSERT_FILENAME_HERE</span>　　編集結果を保存→
+      ファイル名：<span id="file_name"></span>　　編集結果を保存→
       <button id="button_save">Save files</button>
     </p>
     <p>

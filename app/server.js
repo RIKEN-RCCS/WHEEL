@@ -33,7 +33,7 @@ var routes = {
     "home":       require('./routes/home'),
     "workflow":   require('./routes/workflow'),
     "remotehost": require('./routes/remotehost'),
-    "rapid":      require('./routes/rapid')
+    "rapid":      require('./routes/rapid')(sio)
 };
 app.use('/',                    routes.home);
 app.use('/home',                routes.home);
