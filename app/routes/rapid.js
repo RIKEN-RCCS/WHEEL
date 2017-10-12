@@ -1,64 +1,65 @@
-var express = require('express');
-var router = express.Router();
+'use strict';
 const fs = require('fs');
 const path = require('path');
-const logger = require('../logger');
+const util = require('util');
 
+const  express = require('express');
+const  router = express.Router();
+
+const logger = require('../logger');
 
 var returnRouter = function(io){
   // メイン（エディタに編集対象のソースを入れて返す）
   router.get('/', function (req, res) {
-    var tree = [];
-    // 再帰的にjstree仕様のファイルツリーを作成
-    var walk = function(p) {
-      fs.readdir(p, function(err, files) {
-        if (err) {
-          logger.error('fs.readdir failed: ',err);
-          return;
-        }
-
-        files.forEach(function(f) {
-          let fp = path.join(p, f); // to full-path
-          let r = {'id':fp, 'parent':p, 'text':f};
-          if(fs.statSync(fp).isDirectory()) {
-            //r.icon = 'jstree-folder';
-            tree.push(r);
-            walk(fp); // ディレクトリなら再帰
-          } else {
-            r.icon = 'jstree-file';
-            tree.push(r);
-          }
-        });
-      });
-    };
-
     var cwd=req.query.path;
     var filename=req.query.filename;
-    tree.push( {'id':cwd, 'parent':'#', 'text':cwd, 'type':'dir'} );
-    // cwd 以下のファイルツリーを作成
-    walk(cwd);
-    fs.readFile(path.resolve('app/views/rapid.html'), 'utf-8', function(err, html) {
-      if (err) {
-        logger.error('Error: fs1 ', err.code);
-        return;
-      }
-      var target = path.resolve(cwd, filename);
-      fs.readFile(target, 'utf-8', function(err, txt) {
-        if (err) {
-          logger.error('Error: fs2 ', err.code);
-          return;
+    var parameterEdit=req.query.pm.toLowerCase()==="true";
+    var target = path.resolve(cwd, filename);
+    util.promisify(fs.readFile)(target, 'utf-8')
+      .then(function(txt){
+        var tree = [];
+        if(parameterEdit) {
+          var walk = function(p) {
+            fs.readdir(p, function(err, files) {
+              if (err) {
+                logger.error('fs.readdir failed: ',err);
+                return;
+              }
+
+              files.forEach(function(f) {
+                let fp = path.join(p, f); // to full-path
+                let r = {'id':fp, 'parent':p, 'text':f};
+                if(fs.statSync(fp).isDirectory()) {
+                  //r.icon = 'jstree-folder';
+                  tree.push(r);
+                  walk(fp); // ディレクトリなら再帰
+                } else {
+                  r.icon = 'jstree-file';
+                  tree.push(r);
+                }
+              });
+            });
+          };
+          tree.push( {'id':cwd, 'parent':'#', 'text':cwd, 'type':'dir'} );
+          walk(cwd);
         }
+        res.cookie('path', cwd);
+        res.cookie('filename', filename);
+        res.cookie('pm', parameterEdit);
+        res.render('rapid.ejs',{
+          target: txt,
+          filename: filename,
+          parameterEdit: parameterEdit
+        });
+        //TODO jstreeのhtml版を使ってsocket通信を削除
         io.of('/rapid').on('connect', function(socket){
           socket.emit('tree', tree);
         });
-        //TODO 適当なtemplate engineを導入してreplaceを置き換える
-        //ついでにparameter edit 機能のon/offも切り替える
-        html = html.replace('INSERT_SOURCE_HERE', txt);
-        res.cookie('path', cwd);
-        res.cookie('filename', filename);
-        res.send(html);
+      })
+      .catch(function(err){
+        logger.error('file open failed');
+        logger.error('reason: ', err);
       });
-    });
   });
 
   // 保存（アップロードされた編集結果をファイルとして保存）

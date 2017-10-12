@@ -1,18 +1,19 @@
-"use strict";
-const path = require("path");
-const http = require("http");
+'use strict';
+const path = require('path');
+const http = require('http');
 
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const bodyParser = require("body-parser");
-const siofu = require("socketio-file-upload");
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const siofu = require('socketio-file-upload');
+const ejs = require('ejs');
 
-const logger = require("./logger");
+const logger = require('./logger');
 const config = require('./config/server');
 
-const workflow   = require("./workflow");
-const home       = require("./home");
-const remotehost = require("./remotehost");
+const workflow   = require('./workflow');
+const home       = require('./home');
+const remotehost = require('./remotehost');
 
 /*
  * set up express, http and socket.io
@@ -20,6 +21,11 @@ const remotehost = require("./remotehost");
 var app = express();
 const server = http.createServer(app);
 const sio = require('socket.io')(server);
+
+// template engine
+app.set('views', path.resolve('./app/views'));
+app.set('view engine', 'ejs');
+
 // middlewares
 app.use(bodyParser.json());
 // RAPiDでtrueだったので合わせている
@@ -28,6 +34,7 @@ app.use(bodyParser.urlencoded({ extended: true}));
 app.use(cookieParser());
 app.use(express.static(path.resolve('./app/public'), { index: false }));
 app.use(siofu.router);
+
 // routing
 var routes = {
     "home":       require('./routes/home'),
@@ -48,8 +55,9 @@ if (port < 0) {
     port = defaultPort;
 }
 app.set('port', port);
-//TODO special error handler for 404 should be placed here
+
 // error handler
+//TODO special error handler for 404 should be placed here
 app.use(function (err, req, res, next) {
     logger.error(err);
     // render the error page

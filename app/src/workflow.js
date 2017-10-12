@@ -39,6 +39,7 @@ $(() => {
         $('<form/>', { action: '/editor', method: 'get' })
           .append($('<input/>', { type: 'text', name: 'path',     value: path}))
           .append($('<input/>', { type: 'text', name: 'filename', value: filename}))
+          .append($('<input/>', { name: 'pm', value: false}))
           .appendTo(document.body)
           .submit();
       }
@@ -51,6 +52,7 @@ $(() => {
         $('<form/>', { action: '/editor', method: 'get' })
           .append($('<input/>', { name: 'path',     value: path}))
           .append($('<input/>', { name: 'filename', value: filename}))
+          .append($('<input/>', { name: 'pm', value: true}))
           .appendTo(document.body)
           .submit();
       }

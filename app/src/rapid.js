@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import 'jstree/dist/jstree';
+import Split from 'split.js';
 
 $(() => {
   var param = [];
@@ -9,6 +10,7 @@ $(() => {
   var old_keyword; // keyword欄の変更検知
   const sourceFileName = Cookies.get('filename');
   const cwd = Cookies.get('path');
+  const parameterEdit = Cookies.getJSON('pm');
   $('#file_name').text(sourceFileName);
 
   // Aceエディタ初期化 see https://ace.c9.io/api/editor.html
@@ -21,43 +23,41 @@ $(() => {
   editor.setHighlightActiveLine(true);
   editor.$blockScrolling = Infinity;
 
+  if(parameterEdit){
+    // リサイザブルペイン(https://github.com/nathancahill/Split.js)
+    Split(['#left_pane', '#right_pane'], {
+      'sizes': [67, 33],
+      'gutterSize': 7
+    });
 
+    // 選択したテキスト＝サーベイターゲット
+    editor.getSession().selection.on('changeSelection', function(e) {
+      $('#selected_word').text(editor.session.getTextRange(editor.getSelectionRange()));
+    });
 
-  // リサイザブルペイン(https://github.com/nathancahill/Split.js)
-  Split(['#left_pane', '#right_pane'], {
-    'sizes': [67, 33],
-    'gutterSize': 7
-  });
-
-  // 選択したテキスト＝サーベイターゲット
-  editor.getSession().selection.on('changeSelection', function(e) {
-    $('#selected_word').text(editor.session.getTextRange(editor.getSelectionRange()));
-  });
-
-  // カーソル行に含まれるターゲットを表示
-  editor.getSession().selection.on('changeCursor', function(e) {
-    let t = editor.session.getLine(editor.selection.getCursor().row);
-    let r = t.match(/%%(.+)%%/);
-    if(r != null) {
-      for(var i=0; i<param.length; i++) {
-        if(param[i].keyword == r[1]) {
-          currentTarget = i;
-          setForm(i);
-          targetList();
-          break;
+    // カーソル行に含まれるターゲットを表示
+    editor.getSession().selection.on('changeCursor', function(e) {
+      let t = editor.session.getLine(editor.selection.getCursor().row);
+      let r = t.match(/%%(.+)%%/);
+      if(r != null) {
+        for(var i=0; i<param.length; i++) {
+          if(param[i].keyword == r[1]) {
+            currentTarget = i;
+            setForm(i);
+            targetList();
+            break;
+          }
         }
       }
-    }
-  });
+    });
 
-  // HTMLとの関連づけ
-  $(function(){ $('#button_new_target').click(function() { newTarget(); }); });
+    // HTMLとの関連づけ
+    $(function(){ $('#button_new_target').click(function() { newTarget(); }); });
+  }
   $(function(){ $('#button_save').click(function() { saveFile(); }); });
 
   $('#wrapper').hide();
   switchStrForm(false);
-
-
 
   // 未保存でのページ遷移を警告
   $(window).bind('beforeunload', function() {
@@ -66,64 +66,21 @@ $(() => {
     }
   });
 
-
-  // get json tree by socket.io
-  const sio = io('/rapid');
-  sio.on('tree', function(tree){
-    // ファイルのツリービュー
-    $('#file_selector').jstree({
-      'plugins':[],
-      'core':{
-        'themes':{},
-        'animation':0,
-        'data' : tree
-      } });
-  });
-
-
-  function saveParamJson(){
-    if(param.length == 0) {
-      errMsg('保存すべきデータがまだ入力されていません');
-      return
-    }
-
-    let p = $.extend(true, [], param); // jQueryを使って値渡し
-    p.forEach(function(v, i) {
-      if(p[i].list) p[i].list = p[i].list.split(/\r\n|\r|\n/); // 改行から配列へ
+  if(parameterEdit){
+    // get json tree by socket.io
+    const sio = io('/rapid');
+    sio.on('tree', function(tree){
+      console.log('tree: ',tree);
+      // ファイルのツリービュー
+      $('#file_selector').jstree({
+        'plugins':[],
+        'core':{
+          'themes':{},
+          'animation':0,
+          'data' : tree
+        } });
+      console.log('create tree done');
     });
-
-    let postData = {
-      "mode":"json",
-      "path": cwd,
-      "filename":sourceFileName,
-      "param": p
-    };
-    $.post('/editor', postData, function(r) { console.log(r); });
-  }
-
-  // nodeを呼んで保存（URL等ベタ書き注意
-  function saveFile() {
-    saveParamJson();
-    postData = {
-      "mode":"text",
-      "path": cwd,
-      "filename":sourceFileName,
-      "text": editor.getValue()
-    };
-    $.post('/editor', postData, function(r) { console.log(r); });
-  }
-
-
-  function readForm() {
-    let a = $('form'); // フォームの内容を配列化(jQuery使用)
-    let m = {};
-    a.serializeArray().forEach(function(v, i) {
-        m[v.name] = v.value;
-    });
-    param[currentTarget] = $.extend(true, {}, m); // jQueryを使って値渡し
-  }
-
-
   // フォームの各要素が変更されるたび変数を更新
   $('form').change(function() {
     saved = false;
@@ -142,6 +99,14 @@ $(() => {
     resetForm();
     targetList();
   });
+
+  // ファイル名をテキストエリアへ
+  $('#file_selector').on("changed.jstree", function (e, data) {
+    $('#list').val($('#list').val() + data.node.id + '\n');
+    readForm();
+  });
+  }
+
 
   function resetForm() {
     if(param[currentTarget].type == 'string' || param[currentTarget].type == 'file') {
@@ -181,7 +146,7 @@ $(() => {
       'Step': param[currentTarget].step,
     };
 
-    for(k in nums) {
+    for(let k in nums) {
       if(nums[k] === undefined) break;
       if(nums[k].trim() === '') break; // 空の場合は無視 スペースだけも無視
 
@@ -199,12 +164,6 @@ $(() => {
     alert(t);
   }
 
-
-  // ファイル名をテキストエリアへ
-  $('#file_selector').on("changed.jstree", function (e, data) {
-    $('#list').val($('#list').val() + data.node.id + '\n');
-    readForm();
-  });
 
 
   function newTarget() {
@@ -288,5 +247,52 @@ $(() => {
     $('input[name="step"]').val(param[n]['step']);
     $('#list').val(param[n]['list']);
   }
+
+  function saveParamJson(){
+    if(param.length == 0) {
+      errMsg('保存すべきデータがまだ入力されていません');
+      return
+    }
+
+    let p = $.extend(true, [], param); // jQueryを使って値渡し
+    p.forEach(function(v, i) {
+      if(p[i].list) p[i].list = p[i].list.split(/\r\n|\r|\n/); // 改行から配列へ
+    });
+
+    let postData = {
+      "mode":"json",
+      "path": cwd,
+      "filename":sourceFileName,
+      "param": p
+    };
+    $.post('/editor', postData, function(r) { console.log(r); });
+  }
+
+  // nodeを呼んで保存（URL等ベタ書き注意
+  function saveFile() {
+    if(parameterEdit){
+      saveParamJson();
+    }
+    let postData = {
+      "mode":"text",
+      "path": cwd,
+      "filename":sourceFileName,
+      "text": editor.getValue()
+    };
+    $.post('/editor', postData, function(r) { console.log(r); });
+    saved=true;
+  }
+
+
+  function readForm() {
+    let a = $('form'); // フォームの内容を配列化(jQuery使用)
+    let m = {};
+    a.serializeArray().forEach(function(v, i) {
+        m[v.name] = v.value;
+    });
+    param[currentTarget] = $.extend(true, {}, m); // jQueryを使って値渡し
+  }
+
+
 
 });
