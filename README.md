@@ -16,6 +16,18 @@ node.js v8.0.0 or later
 > npm start
 ```
 
-## For developers
-we have 2 useful scripts:
-`npm run dev` will watch files and automaticaly restart server when something changed. `npm run debug` is almost the same. but enable debugging feature included in express and socket.io.
+## important notice for developers
+we are using webpack for client-side code(under the "src" directory).
+please note that:
+
+ - do not change js files under public
+ - you have to run `npm run build` after you change somthing in 'src'
+
+
+## scripts
+
+- start launch wheel
+- dev   start server and automatically restart if some files are changed
+- debug dev with verbose debug log from express and socket.io
+- build call webpack and build client-side code
+- watch build and keep watching for changes in src files
