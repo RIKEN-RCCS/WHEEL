@@ -149,10 +149,11 @@ function onCreateNode(sio, msg){
     let dirName=path.resolve(path.dirname(rootWorkflowFilename),msg.type);
     makeDir(dirName, 0)
       .then(function(actualDirname){
-        console.log(dirName)
-        console.log(actualDirname)
         node.path=path.relative(path.dirname(rootWorkflowFilename),actualDirname);
         node.name=path.basename(actualDirname);
+        if(node.type === 'workflow' || node.type==='parameterStudy'){
+          node.parent=rootWorkflowFilename
+        }
         rootWorkflow.nodes.push(node);
         fs.writeFile(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4));
         sio.emit('workflow', rootWorkflow);

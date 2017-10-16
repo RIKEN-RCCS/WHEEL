@@ -4,7 +4,7 @@
  */
 class Task{
   constructor(pos){
-    this._type='task';
+    this.type='task';
     this.name=null;
     this.description=null;
     /** path for its directory */
@@ -35,7 +35,7 @@ class Task{
  */
 class BaseTaskGraph{
   constructor(pos){
-    this._type=null;
+    this.type=null;
     this.name=null;
     this.description=null;
     this.path=null;
@@ -44,6 +44,7 @@ class BaseTaskGraph{
     this.inputFiles=[];
     this.outputFiles=[];
     this.cleanupFlag=null;
+    this.parent=null;
     this.x=pos.x;
     this.y=pos.y;
   }
@@ -57,16 +58,16 @@ class BaseTaskGraph{
 }
 class Workflow extends BaseTaskGraph{
   constructor(pos){
-    // define pseudo position to root workflow
+    // define pseudo position for root workflow
     var pos2=pos || {x:0, y:0};
     super(pos2);
-    this._type='workflow';
+    this.type='workflow';
   }
 }
 class ParameterStudy extends BaseTaskGraph{
   constructor(pos){
     super(pos);
-    this._type='parameterStudy';
+    this.type='parameterStudy';
     this.parameters=[];
   }
 }
@@ -76,7 +77,7 @@ class ParameterStudy extends BaseTaskGraph{
  */
 class BaseControlFlow{
   constructor(pos){
-    this._type=null;
+    this.type=null;
     this.name=null;
     this.previous=[];
     this.next=[];
@@ -88,14 +89,14 @@ class BaseControlFlow{
 class Loop extends BaseControlFlow{
   constructor(pos){
     super(pos);
-    this._type='loop';
+    this.type='loop';
     this.condition=null;
   }
 }
 class If extends BaseControlFlow{
   constructor(pos){
     super(pos);
-    this._type='if';
+    this.type='if';
     this.condition=null;
     this.elseBlockStart=null;
   }
@@ -106,7 +107,7 @@ class If extends BaseControlFlow{
 class Foreach extends BaseControlFlow{
   constructor(pos){
     super(pos);
-    this._type='foreach';
+    this.type='foreach';
     this.indexList=[];
   }
 }
