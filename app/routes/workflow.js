@@ -16,6 +16,5 @@ router.post('/', function (req, res, next) {
       res.cookie('project', projectJSON);
       res.sendFile(path.resolve('app/views/workflow.html'));
     })
-
 });
 module.exports = router;

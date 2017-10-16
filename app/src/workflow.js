@@ -19,7 +19,7 @@ $(() => {
   if (projectFilePath == null) {
     throw new Error('illegal access');
   }
-  const rootWorkflow=Cookies.get('root');
+  let rootWorkflow=Cookies.get('root');
   let cwd=Cookies.get('rootDir');
 
   // set default view
@@ -61,9 +61,12 @@ $(() => {
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true, additionalMenu);
   sio.on('connect', function () {
     fb.request('fileListRequest', cwd, null);
+    sio.emit('workflowRequest', rootWorkflow);
 
-
-    //TODO workflow graphの受信と描画
+    sio.on('workflow', function(wf){
+      console.log(wf);
+    //workflow graphの描画処理
+    });
 
     //TODO project 進行状況の受信
   });

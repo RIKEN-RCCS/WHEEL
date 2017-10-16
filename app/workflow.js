@@ -10,7 +10,23 @@ const logger = require("./logger");
 const fileBrowser = require("./fileBrowser");
 const component = require('./workflowComponent');
 
-function onRemove(sio, msg){
+var rootWorkflow=null;
+var rootWorkflowFilename=null;
+
+function makeDir(basename, suffix){
+  let dirname=basename+suffix;
+  return util.promisify(fs.mkdir)(dirname)
+    .then(function(){
+      return dirname;
+    })
+    .catch(function(err){
+      if(err.code === 'EEXIST') {
+        return makeDir(basename, suffix+1);
+      }
+    });
+}
+
+function onRemoveFile(sio, msg){
   logger.debug(`remove event recieved: ${msg}`);
   var parentDir = path.dirname(msg);
   del(msg, { force: true })
@@ -21,31 +37,6 @@ function onRemove(sio, msg){
     logger.warn(`remove failed: ${err}`);
     logger.debug(`remove msg: ${msg}`);
   });
-}
-
-function onRename(sio, msg){
-  logger.debug(`rename event recieved: ${msg}`);
-  if (!(msg.hasOwnProperty('oldName') && msg.hasOwnProperty('newName') && msg.hasOwnProperty('path'))) {
-    logger.warn(`illegal request ${msg}`);
-    return;
-  }
-  var oldName = path.resolve(msg.path, msg.oldName);
-  var newName = path.resolve(msg.path, msg.newName);
-  util.promisify(fs.rename)(oldName, newName)
-  .then(function () {
-    fileBrowser(sio, 'fileList', msg.path);
-  })
-  .catch(function (err) {
-    logger.warn(`rename failed: ${err}`);
-    logger.debug(`path:    ${msg.path}`);
-    logger.debug(`oldName: ${msg.oldName}`);
-    logger.debug(`newName: ${msg.newName}`);
-  });
-}
-
-function onDownload(sio, msg){
-  logger.debug(`download event recieved: ${msg}`);
-  logger.warn('download function is not implemented yet.');
 }
 
 function onFileListRequest(uploader, sio, request){
@@ -70,6 +61,52 @@ function onFileListRequest(uploader, sio, request){
     })
 }
 
+function onWorkflowRequest(sio, msg){
+  logger.debug('Workflow Request event recieved: ', msg);
+  rootWorkflowFilename=msg;
+  util.promisify(fs.readFile)(rootWorkflowFilename)
+    .then(function(data){
+      rootWorkflow=JSON.parse(data);
+      sio.emit('workflow', rootWorkflow);
+    })
+  .catch(function(err){
+    logger.error('workflow file read error');
+    logger.error('reason: ',err);
+  });
+}
+
+function onRenameFile(sio, msg){
+  logger.debug(`rename event recieved: ${msg}`);
+  if (!(msg.hasOwnProperty('oldName') && msg.hasOwnProperty('newName') && msg.hasOwnProperty('path'))) {
+    logger.warn(`illegal request ${msg}`);
+    return;
+  }
+  var oldName = path.resolve(msg.path, msg.oldName);
+  var newName = path.resolve(msg.path, msg.newName);
+  util.promisify(fs.rename)(oldName, newName)
+  .then(function () {
+    fileBrowser(sio, 'fileList', msg.path);
+  })
+  .catch(function (err) {
+    logger.warn('rename failed: ',err);
+    logger.debug('path:    ', msg.path);
+    logger.debug('oldName: ', msg.oldName);
+    logger.debug('newName: ', msg.newName);
+  });
+}
+
+function onDownloadFile(sio, filename){
+  logger.debug('download event recieved: ',filename);
+  util.promisify(fs.readFile)(filename)
+    .then(function(data){
+      sio.emit('download', data);
+    })
+  .catch(function(err){
+    logger.error('file download failed', err);
+  });
+}
+
+
 function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
 }
@@ -83,7 +120,7 @@ function onEditWrokflow(sio, msg){
   logger.debug(`edit event recieved: ${msg}`);
 }
 function onCreateNode(sio, msg){
-  logger.debug(`create event recieved: ${msg}`);
+  logger.debug('create event recieved: ', msg);
   switch(msg.type){
     case 'task':
       var node=new component.Task(msg.pos);
@@ -103,9 +140,31 @@ function onCreateNode(sio, msg){
     case 'foreach':
       var node=new component.Foreach(msg.pos);
       break;
+    default:
+      logger.error('unkonw type node creation requested');
+      break;
   }
-  //TODO push to root workflow
   logger.debug('new node created: ',node);
+  if(node){
+    let dirName=path.resolve(path.dirname(rootWorkflowFilename),msg.type);
+    makeDir(dirName, 0)
+      .then(function(actualDirname){
+        console.log(dirName)
+        console.log(actualDirname)
+        node.path=path.relative(path.dirname(rootWorkflowFilename),actualDirname);
+        node.name=path.basename(actualDirname);
+        rootWorkflow.nodes.push(node);
+        fs.writeFile(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4));
+        sio.emit('workflow', rootWorkflow);
+      })
+    .catch(function(err){
+      logger.error('node create failed: ', err);
+    });
+  }
+}
+function onUpdateNode(sio, msg){
+  logger.debug(`updateNode event recieved: ${msg}`);
+  logger.warn('updateNode function is not implemented yet.');
 }
 function onRemoveNode(sio, msg){
   logger.debug(`removeNode event recieved: ${msg}`);
@@ -119,25 +178,25 @@ function onRemoveLink(sio, msg){
 }
 
 function setup(sio) {
-  var sioWF = sio.of('/workflow');
-
-  sioWF.on('connect', function (socket) {
+  sio.of('/workflow').on('connect', function (socket) {
     var uploader = new siofu();
     uploader.listen(socket);
     uploader.dir = os.homedir();
     uploader.on("saved", function (event) {
       logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
-      fileBrowser(sioWF, 'fileList', uploader.dir);
+      fileBrowser(socket, 'fileList', uploader.dir);
     });
     uploader.on("error", function (event) {
       logger.error(`Error from uploader ${event}`);
     });
-    socket.on('fileListRequest', onFileListRequest.bind(null, uploader, sioWF));
-    socket.on('remove',   onRemove.bind(null, sioWF));
-    socket.on('rename',   onRename.bind(null, sioWF));
-    socket.on('download', onDownload.bind(null, sioWF));
-    socket.on('createNode', onCreateNode.bind(null, sioWF));
-    socket.on('removeNode', onRemoveNode.bind(null, sioWF));
+    socket.on('fileListRequest', onFileListRequest.bind(null, uploader, socket));
+    socket.on('workflowRequest', onWorkflowRequest.bind(null, socket));
+    socket.on('remove',          onRemoveFile.bind(null, socket));
+    socket.on('rename',          onRenameFile.bind(null, socket));
+    socket.on('download',        onDownloadFile.bind(null, socket));
+    socket.on('createNode',      onCreateNode.bind(null, socket));
+    socket.on('updateNode',      onUpdateNode.bind(null, socket));
+    socket.on('removeNode',      onRemoveNode.bind(null, socket));
   });
 }
 module.exports = setup;
