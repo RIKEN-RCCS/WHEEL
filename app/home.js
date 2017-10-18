@@ -52,7 +52,7 @@ var fixProjectDirectory = function(projectJsonFilepath){
 }
 
 var onCreate = function (sio, msg) {
-    logger.debug("onCreate " + msg);
+    logger.debug("onCreate ", msg);
     var pathDirectory = removeTrailingPathSep(msg);
     if(!pathDirectory.endsWith(config.suffix)){
       pathDirectory += config.suffix;
@@ -86,11 +86,11 @@ var onAdd = function (sio, projectJsonFilepath) {
       });
 };
 var onRemove = function (sio, msg) {
-    logger.debug(`remove: ${msg}`);
+    logger.debug('remove: ',msg);
     var target = projectListManager.getProject(msg);
     var targetDir = path.dirname(target.path);
     del(targetDir, { force: true }).catch(function () {
-        logger.warn(`directory remove failed: ${targetDir}`);
+        logger.warn('directory remove failed: ', targetDir);
     })
     .then(function () {
       return projectListManager.remove(msg)
