@@ -1,3 +1,5 @@
+const config = require('./config/server');
+
 /*
  * javascript representation of wheel's task 
  *
@@ -26,6 +28,7 @@ class Task{
     this.host='localhost';
     this.jobScheduler=null;
     this.state='pre runnnig';
+    this.index=null;
     this.x=pos.x;
     this.y=pos.y;
   }
@@ -34,7 +37,7 @@ class Task{
  * task absrtuct class of task containers 
  */
 class BaseTaskGraph{
-  constructor(pos){
+  constructor(pos, parent){
     this.type=null;
     this.name=null;
     this.description=null;
@@ -44,7 +47,8 @@ class BaseTaskGraph{
     this.inputFiles=[];
     this.outputFiles=[];
     this.cleanupFlag=null;
-    this.parent=null;
+    this.parent=parent;
+    this.index=null;
     this.x=pos.x;
     this.y=pos.y;
   }
@@ -57,17 +61,19 @@ class BaseTaskGraph{
   }
 }
 class Workflow extends BaseTaskGraph{
-  constructor(pos){
+  constructor(pos, parent){
     // define pseudo position for root workflow
     var pos2=pos || {x:0, y:0};
-    super(pos2);
+    super(pos2, parent);
+    this.jsonFile= `${config.default_filename}${config.extension.workflow}`;
     this.type='workflow';
   }
 }
 class ParameterStudy extends BaseTaskGraph{
-  constructor(pos){
-    super(pos);
+  constructor(...args){
+    super(...args);
     this.type='parameterStudy';
+    this.jsonFile= `${config.default_filename}${config.extension.pstudy}`;
     this.parameters=[];
   }
 }
@@ -82,14 +88,24 @@ class BaseControlFlow{
     this.previous=[];
     this.next=[];
     this.blockStart=null;
+    this.inputFiles=[];
+    this.outputFiles=[];
+    this.index=null;
     this.x=pos.x;
     this.y=pos.y;
   }
 }
-class Loop extends BaseControlFlow{
-  constructor(pos){
-    super(pos);
-    this.type='loop';
+class For extends BaseControlFlow{
+  constructor(...args){
+    super(...args);
+    this.type='for';
+    this.condition=null;
+  }
+}
+class While extends BaseControlFlow{
+  constructor(...args){
+    super(...args);
+    this.type='while';
     this.condition=null;
   }
 }
@@ -112,9 +128,36 @@ class Foreach extends BaseControlFlow{
   }
 }
 
-module.exports.Task=Task;
+/*
+ * factory method for workflow component class
+ */
+function factory(type, ...args){
+  var node=null;
+  switch(type){
+    case 'task':
+      node=new Task(...args);
+      break;
+    case 'workflow':
+      node=new Workflow(...args);
+      break;
+    case 'PS':
+      node=new ParameterStudy(...args);
+      break;
+    case 'if':
+      node=new If(...args);
+      break;
+    case 'for':
+      node=new For(...args);
+      break;
+    case 'while':
+      node=new While(...args);
+      break;
+    case 'foreach':
+      node=new Foreach(...args);
+      break;
+  }
+  return node;
+}
+
+module.exports.factory=factory;
 module.exports.Workflow=Workflow;
-module.exports.ParameterStudy=ParameterStudy;
-module.exports.Loop=Loop;
-module.exports.If=If;
-module.exports.Foreach=Foreach;

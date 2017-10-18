@@ -15,7 +15,8 @@ function create(projectDirectory, projectName) {
             const rootWorkflowFilename = `${config.default_filename}${config.extension.workflow}`;
             var rootWorkflow = new compo.Workflow(null);
             rootWorkflow.name=projectName;
-            rootWorkflow.path=`./${rootWorkflowFilename}`;
+            rootWorkflow.path='./';
+            rootWorkflow.jsonFile='./'+rootWorkflowFilename;
             logger.debug(rootWorkflow);
             util.promisify(fs.writeFile)(path.join(projectDirectory, rootWorkflowFilename), JSON.stringify(rootWorkflow,null,4)).catch(reject);
             return(rootWorkflowFilename);
@@ -31,7 +32,7 @@ function create(projectDirectory, projectName) {
           };
           const projectJsonFileFullpath=path.join(projectDirectory, projectJsonFilename);
           logger.debug(projectJson);
-          util.promisify(fs.writeFile)(projectJsonFileFullpath, JSON.stringify(projectJson,null,4))
+          util.promisify(fs.writeFile)(projectJsonFileFullpath, JSON.stringify(projectJson,null,4)).catch(reject);
           resolve(projectJsonFileFullpath);
         })
         .catch(function(err){

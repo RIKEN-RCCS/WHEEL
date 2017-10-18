@@ -121,55 +121,55 @@ function onEditWrokflow(sio, msg){
 }
 function onCreateNode(sio, msg){
   logger.debug('create event recieved: ', msg);
-  switch(msg.type){
-    case 'task':
-      var node=new component.Task(msg.pos);
-      break;
-    case 'workflow':
-      var node=new component.Workflow(msg.pos);
-      break;
-    case 'PS':
-      var node=new component.ParameterStudy(msg.pos);
-      break;
-    case 'if':
-      var node=new component.If(msg.pos);
-      break;
-    case 'for':
-      var node=new component.Loop(msg.pos);
-      break;
-    case 'foreach':
-      var node=new component.Foreach(msg.pos);
-      break;
-    default:
-      logger.error('unkonw type node creation requested');
-      break;
-  }
-  logger.debug('new node created: ',node);
-  if(node){
-    let dirName=path.resolve(path.dirname(rootWorkflowFilename),msg.type);
-    makeDir(dirName, 0)
-      .then(function(actualDirname){
-        node.path=path.relative(path.dirname(rootWorkflowFilename),actualDirname);
-        node.name=path.basename(actualDirname);
-        if(node.type === 'workflow' || node.type==='parameterStudy'){
-          node.parent=rootWorkflowFilename
-        }
-        rootWorkflow.nodes.push(node);
-        fs.writeFile(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4));
-        sio.emit('workflow', rootWorkflow);
-      })
+  let dirName=path.resolve(path.dirname(rootWorkflowFilename),msg.type);
+  makeDir(dirName, 0)
+    .then(function(actualDirname){
+      let tmpPath=path.relative(path.dirname(rootWorkflowFilename),actualDirname);
+      if(! tmpPath.startsWith('.')){
+        tmpPath='./'+tmpPath;
+      }
+      var node=component.factory(msg.type, msg.pos, rootWorkflowFilename);
+      node.path=tmpPath;
+      node.name=path.basename(actualDirname);
+      node.index=rootWorkflow.nodes.push(node)-1;
+      logger.debug('node created: ',node);
+      return node;
+    })
+    .then(function(node){
+      if(node.type === 'workflow' || node.type === 'parameterStudy'){
+        const filename = path.resolve(path.dirname(rootWorkflowFilename),node.path,node.jsonFile)
+        return util.promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
+      }
+    })
+    .then(function(){
+      return util.promisify(fs.writeFile)(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4));
+    })
+    .then(function(){
+      sio.emit('workflow', rootWorkflow);
+    })
     .catch(function(err){
       logger.error('node create failed: ', err);
     });
-  }
 }
 function onUpdateNode(sio, msg){
   logger.debug(`updateNode event recieved: ${msg}`);
   logger.warn('updateNode function is not implemented yet.');
 }
-function onRemoveNode(sio, msg){
-  logger.debug(`removeNode event recieved: ${msg}`);
-  logger.warn('removeNode function is not implemented yet.');
+function onRemoveNode(sio, index){
+  logger.debug('removeNode event recieved: ', index);
+  let target=rootWorkflow.nodes[index];
+  let dirName=path.resolve(path.dirname(rootWorkflowFilename),target.path);
+  del(dirName, { force: true }).catch(function () {
+    logger.warn('directory remove failed: ', dirName);
+  })
+  .then(function(){
+    rootWorkflow.nodes[index]=null;
+    return util.promisify(fs.writeFile)(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4));
+  })
+  .then(function(){
+    sio.emit('workflow', rootWorkflow);
+  });
+
 }
 function onAddLink(sio, msg){
   logger.warn('AddLink function is not implemented yet.');
