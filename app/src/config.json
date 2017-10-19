@@ -28,7 +28,8 @@
     "file": "cyan",
     "files": "magenta",
     "directory": "yellow",
-    "flow": "orange"
+    "flow": "orange",
+    "elseFlow": "yellow"
   },
   "reload_project_ms": 2000
 }

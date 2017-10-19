@@ -1,16 +1,61 @@
 import ejs from 'ejs/ejs';
-//TODO jsonPropertyのvalidation checkをclassにつける
-//
-let template=`
-<h2> <% this.name %> </h2>
-<% if(this.description != null){ %>
-<input type="text" value="<% description %>" class="text_box property_text" spellcheck="false">;
+
+//TODO クライアントサイドでvalidationが必要なら jquery pluginを導入する
+//http://jqueryvalidation.org/
+function createStringInputField(varName){
+  return `
+<% if(typeof ${varName} !== 'undefined'){ %>
+  <p>${varName}</p>
+  <input type="text" value="<%= ${varName} %>" class="text_box property_text" spellcheck="false" id="${varName}InputFiled">;
 <% } %>
 `;
+}
+function createNumberInputField(varName, min){
+  var template=`
+<% if(typeof ${varName} !== 'undefined'){ %>
+  <p>${varName}</p>
+  <input type="number" value="<%= ${varName} %>" class="text_box property_text" id="${varName}InputFiled" `;
+  if(min != null){
+    template += `min=${min}`;
+  }
+  template += `>;
+<% } %>`;
+  return template;
+}
+function createInOutFilesSnipet(varName){
+  return `
+<p>${varName}</p>
+<% ${varName}.forEach(function(v, i){ %>
+  <input type="text" value="<%= v %>" class="text_box property_text  text_readonly" disabled><button id="delete_<%= i-%>">delete<button>
+<% }) %>
+<button id="${varName}AddBtn">add</button>
+`;
+}
+function createCleanupFlagSnipet(){
+  return `
+<p>
+  <input type="radio" name="cleanupFlag" value=0>clean up
+  <input type="radio" name="cleanupFlag" value=1>keep files
+  <input type="radio" name="cleanupFlag" value=2 checked=>follow parent setting
+</p>
+`;
+}
+
 
 export default function(node) {
   console.log(node);
+  let template = '<h2> <%= name %> </h2>';
+  template += createStringInputField('description');
+  template += createStringInputField('script');
+  template += createInOutFilesSnipet('inputFiles');
+  template += createInOutFilesSnipet('outputFiles');
+  template += createCleanupFlagSnipet();
+  template += createNumberInputField('maxSizeCollection', 0);
+  template += createNumberInputField('start');
+  template += createNumberInputField('end');
+  template += createNumberInputField('step');
+  template += createStringInputField('condition');
+
   let html = ejs.render(template, node);
-  console.log(html);
   return html;
 }
