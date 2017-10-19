@@ -116,6 +116,7 @@ function onPauseProject(sio, msg){
 function onCleanProject(sio, msg){
   logger.debug(`clean event recieved: ${msg}`);
 }
+
 function onEditWrokflow(sio, msg){
   logger.debug(`edit event recieved: ${msg}`);
 }
@@ -152,8 +153,40 @@ function onCreateNode(sio, msg){
     });
 }
 function onUpdateNode(sio, msg){
-  logger.debug(`updateNode event recieved: ${msg}`);
-  logger.warn('updateNode function is not implemented yet.');
+  logger.debug('updateNode event recieved: ', msg);
+  let index=msg.index;
+  let property=msg.property;
+  let value=msg.value;
+  let cmd=msg.cmd;
+
+  let targetNode=rootWorkflow.nodes[index];
+  if(property in targetNode){
+    switch(cmd){
+      case 'add':
+        if(Array.isArray(targetNode[property])){
+          targetNode[property].push(value);
+        }
+        break;
+      case 'del':
+        if(Array.isArray(targetNode[property])){
+          let targetIndex = targetNode[property].findIndex(function(e){
+            if(e===value) return true;
+          })
+          targetNode[property][targetIndex]=null;
+        }
+        break;
+      case 'update':
+        targetNode[property]=value;
+        break;
+    }
+    util.promisify(fs.writeFile)(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4))
+    .then(function(){
+      sio.emit('workflow', rootWorkflow);
+    })
+    .catch(function(err){
+      logger.error('node update failed: ', err);
+    });
+  }
 }
 function onRemoveNode(sio, index){
   logger.debug('removeNode event recieved: ', index);

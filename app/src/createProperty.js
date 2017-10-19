@@ -6,7 +6,7 @@ function createStringInputField(varName){
   return `
 <% if(typeof ${varName} !== 'undefined'){ %>
   <p>${varName}</p>
-  <input type="text" value="<%= ${varName} %>" class="text_box property_text" spellcheck="false" id="${varName}InputFiled">;
+  <input type="text" value="<%= ${varName} %>" spellcheck="false" id="${varName}InputFiled">
 <% } %>
 `;
 }
@@ -14,11 +14,11 @@ function createNumberInputField(varName, min){
   var template=`
 <% if(typeof ${varName} !== 'undefined'){ %>
   <p>${varName}</p>
-  <input type="number" value="<%= ${varName} %>" class="text_box property_text" id="${varName}InputFiled" `;
+  <input type="number" value="<%= ${varName} %>" id="${varName}InputFiled" `;
   if(min != null){
     template += `min=${min}`;
   }
-  template += `>;
+  template += `>
 <% } %>`;
   return template;
 }
@@ -26,9 +26,9 @@ function createInOutFilesSnipet(varName){
   return `
 <p>${varName}</p>
 <% ${varName}.forEach(function(v, i){ %>
-  <input type="text" value="<%= v %>" class="text_box property_text  text_readonly" disabled><button id="delete_<%= i-%>">delete<button>
+  <input type="text" value="<%= v %>" disabled><button class="${varName}DelBtn">delete<button>
 <% }) %>
-<button id="${varName}AddBtn">add</button>
+<input type="text" spellcheck="false" id="${varName}InputField"><button id="${varName}AddBtn">add</button>
 `;
 }
 function createCleanupFlagSnipet(){
