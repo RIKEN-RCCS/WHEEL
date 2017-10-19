@@ -52,13 +52,6 @@ class BaseTaskGraph{
     this.x=pos.x;
     this.y=pos.y;
   }
-
-  /**
-   * 指定されたindexの子要素を返します
-   */
-  getNode(index){
-    return this._nodes[index];
-  }
 }
 class Workflow extends BaseTaskGraph{
   constructor(pos, parent){
@@ -99,7 +92,9 @@ class For extends BaseControlFlow{
   constructor(...args){
     super(...args);
     this.type='for';
-    this.condition=null;
+    this.start=null;
+    this.end=null;
+    this.step=null;
   }
 }
 class While extends BaseControlFlow{
