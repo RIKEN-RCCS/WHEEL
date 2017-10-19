@@ -108,29 +108,14 @@
             </div>
           </div>
           <div class="workflow_manage_area sub_content_area">
+            <div id=fileBrowser >
+              <p id="path"></p>
+              <ul id="fileList"></ul>
+              <input type='file' id='fileSelector' name='uploadFiles' multiple />
+            </div>
             <div id="node_svg" class="node_tree"></div>
             <div id="property" class="property"></div>
-            <div id=fileBrowser >
-                <input type='file' id='fileSelector' name='uploadFiles' multiple />
-                <p id="path"></p>
-                <ul id="fileList"></ul>
-            </div>
           </div>
-
-          <div class="gray_panel" id="gray_panel"></div>
-          <div class="text_dialog_area dialog_area" id="dialog_area_input">
-            <p class="dialog_title" id="dialog_title_input"></p>
-            <div class="address_bar_area">
-              <span id="label_input"></span>
-              <input type="password" id="input_text_input" class="dialog_text_box text_box" autocomplete="off">
-            </div>
-            <div class="dialog_button_container">
-              <button type="button" class="dialog_button button" id="dialog_ok_button_input">OK</button>
-              <!--<button type="button" class="dialog_button button" id="dialog_cancel_button_input">Cancel</button>-->
-            </div>
-            <input type="file" id="file_select" style="display:none">
-          </div>
-
           <div id='dialog'></div>
           <div id="log_area">
             <div id="logFilter">
@@ -145,16 +130,6 @@
             </div>
             <button id="clear_log">clear</button>
             <pre id="log"></pre>
-          </div>
-
-          <input type="file" id="file_select" style="display:none">
-          <div class="gray_panel" id="gray_panel"></div>
-          <div class="yesno_dialog_area dialog_area" id="dialog_area_yesno">
-            <p class="dialog_title" id="dialog_title_yesno"></p>
-            <div style="display: flex; flex-direction: row;">
-              <button type="button" class="button" id="dialog_ok_button_yesno">OK</button>
-              <button type="button" class="button" id="dialog_cancel_button_yesno">Cancel</button>
-            </div>
           </div>
 
 

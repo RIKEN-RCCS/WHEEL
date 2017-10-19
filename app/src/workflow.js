@@ -6,12 +6,16 @@ import 'jquery-ui-css/all.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import Cookies from 'js-cookie';
+import SVG from 'svgjs/dist/svg.js';
+import 'svg.draggable.js/dist/svg.draggable.js';
 
 import FileBrowser from  './fileBrowser';
 import dialogWrapper from './dialogWrapper';
 import logReciever from './logReciever';
 import config from './config';
-
+import SvgNodeUI from './svgNodeUI';
+import Nodes from './svgNodeCollection';
+import createPropertyHtml from './createProperty';
 
 $(() => {
   // chek project Json file path
@@ -26,9 +30,11 @@ $(() => {
   $('.project_manage_area').hide();
   $('#graphView').prop('checked', true);
   $('#log_area').hide();
+  $('#property').hide();
 
   // setup socket.io client
   const sio = io('/workflow');
+
   // setup FileBrowser
   const additionalMenu={
     'edit': {
@@ -59,13 +65,26 @@ $(() => {
     }
   }
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true, additionalMenu);
+  const nodes = new Nodes();
+
+  const svg = SVG('node_svg');
   sio.on('connect', function () {
     fb.request('fileListRequest', cwd, null);
     sio.emit('workflowRequest', rootWorkflow);
 
     sio.on('workflow', function(wf){
-      console.log(wf);
-    //workflow graphの描画処理
+      nodes.removeAll();
+      wf.nodes.forEach(function(v,i){
+        if(v!==null){
+          let node=new SvgNodeUI(svg, v, nodes.setSelectedNode.bind(nodes));
+          node.onClick(function(e){
+            console.log(e);
+            $('#property').html(createPropertyHtml(v));
+            $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
+          });
+          nodes.add(node);
+        }
+      });
     });
 
     //TODO project 進行状況の受信
@@ -125,7 +144,6 @@ $(() => {
     };
     return position;
   }
-  let selectedNode=null;
   $.contextMenu({
     selector: '#node_svg',
     autoHide: true,
@@ -144,13 +162,14 @@ $(() => {
            "PS":      {name: "parameter study"},
            "if":      {name: "if"},
            "for":     {name: "for"},
+           "while":   {name: "while"},
            "foreach": {name: "foreach"}
          }
       },
       "delete": {
         "name": "delete",
         callback: function(){
-          sio.emit('removeNode', selectedNode);
+          sio.emit('removeNode', nodes.getSelectedNode());
         }
       }
     }

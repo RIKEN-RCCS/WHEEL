@@ -349,19 +349,16 @@ td {
     overflow: hidden;
 }
 
-.property {
+#property {
     overflow: auto;
-    height: calc(100% - 234px);
+    height: 100%;
     width: 0px;
     min-width: 0px;
     border-left: solid 1px #111;
     display: none;
     z-index: 20;
-    padding: 5px;
     border-collapse: collapse;
-    position: fixed;
     right: 2.4%;
-    top: 201px;
 }
 
 .property_text {
@@ -380,7 +377,7 @@ td {
     margin-right: 6px;
 }
 #fileBrowser{
-  height: 50%;
+  height: 100%;
   width: 180px;
   float: left;
   overflow: auto;
