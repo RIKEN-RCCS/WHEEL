@@ -15,7 +15,7 @@ const path = require("path");
  * @param filter dict which has 'hide', 'hideDir', 'hideFile' keys and each value must be RegExp.
  *               filenames does not emit if it does not much this filter
  */
-function default_1(socket, eventName, targetDir, request=null, sendDirname = true, sendFilename = true, sendSymlink = true, filter = null) {
+function default_1(socket, eventName, targetDir, request=null, sendDirname = true, sendFilename = true, sendSymlink = true, filter = null, withParentDir=false) {
   if(!request) request=targetDir;
   fs.readdir(targetDir, function (err, names) {
     if (err)
@@ -56,5 +56,8 @@ function default_1(socket, eventName, targetDir, request=null, sendDirname = tru
       });
     });
   });
+  if(withParentDir){
+    socket.emit(eventName, { "path": request, "name": '../', "isdir": true, "islink": false });
+  }
 }
 module.exports = default_1;
