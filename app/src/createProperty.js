@@ -1,6 +1,6 @@
 import ejs from 'ejs/ejs';
 
-//TODO クライアントサイドでvalidationが必要なら jquery pluginを導入する
+//TODO jquery plugin のvalidation機能を追加する (特にinputFiles/outputFiles)
 //http://jqueryvalidation.org/
 function createStringInputField(varName){
   return `
@@ -26,7 +26,7 @@ function createInOutFilesSnipet(varName){
   return `
 <p>${varName}</p>
 <% ${varName}.forEach(function(v, i){ %>
-  <input type="text" value="<%= v %>" disabled><button class="${varName}DelBtn">delete<button>
+  <input type="text" value="<%= v.name %>" disabled><button value="<%= i %>" class="${varName}DelBtn">delete<button>
 <% }) %>
 <input type="text" spellcheck="false" id="${varName}InputField"><button id="${varName}AddBtn">add</button>
 `;
@@ -40,7 +40,6 @@ function createCleanupFlagSnipet(){
 </p>
 `;
 }
-
 
 export default function(node) {
   console.log(node);

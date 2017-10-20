@@ -145,6 +145,7 @@ class SvgBox{
   createOutput() {
     this.outputGroup = this.draw.group();
     this.outputFiles.forEach((output, index) => {
+      if(!output) return;
       const y = this.caclPlugPosY(index);
       const text = this.draw
         .text(output.name)
@@ -162,6 +163,7 @@ class SvgBox{
   createInput() {
     this.inputGroup = this.draw.group();
     this.inputFiles.forEach((input, index) => {
+      if(!input) return;
       const y = this.caclPlugPosY(index);
       const text = this.draw
         .text(input.name)
@@ -176,7 +178,7 @@ class SvgBox{
    * @param index index number from top
    * @return y position
    */
-  static caclPlugPosY(index) {
+  caclPlugPosY(index) {
     return this.titleHeight + this.marginHeight / 2 + index * this.stepSize;
   }
 }

@@ -26,6 +26,23 @@ function makeDir(basename, suffix){
     });
 }
 
+/**
+ * remove null from inputFiles and outputFiles
+ * @param node workflow componet whic will be clean up
+ */
+function cleanUpNode(node){
+  if('inputFiles' in node){
+    node.inputFiles=node.inputFiles.filter(function(e){
+      return e != null;
+    });
+  }
+  if('outputFiles' in node){
+    node.outputFiles=node.outputFiles.filter(function(e){
+      return e != null;
+    });
+  }
+}
+
 function onRemoveFile(sio, msg){
   logger.debug(`remove event recieved: ${msg}`);
   var parentDir = path.dirname(msg);
@@ -170,7 +187,9 @@ function onUpdateNode(sio, msg){
       case 'del':
         if(Array.isArray(targetNode[property])){
           let targetIndex = targetNode[property].findIndex(function(e){
-            if(e===value) return true;
+            if(e===value) return true
+            // for input/outputFiles
+            if(e.hasOwnProperty('name') && value.hasOwnProperty('name') && e.name === value.name) return true
           })
           targetNode[property][targetIndex]=null;
         }
@@ -179,6 +198,7 @@ function onUpdateNode(sio, msg){
         targetNode[property]=value;
         break;
     }
+    cleanUpNode(targetNode);
     util.promisify(fs.writeFile)(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4))
     .then(function(){
       sio.emit('workflow', rootWorkflow);

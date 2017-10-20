@@ -13,7 +13,26 @@ class Task{
     this.path=null;
     /** filename of entry point of this task*/
     this.script=null;
+    /**
+     * input files from other node
+     * each element of inputFiles should be following
+     * {
+     *   name: "filename, dirname or regex",
+     *   srcNode: "index of src node",
+     *   srcName: "name in src node"
+     * }
+     */
     this.inputFiles=[];
+    /**
+     * output files which will be passed to other node
+     * each element of outputFiles should be following
+     * if name is null or white space, original file name will be used
+     * {
+     *   name: "filename, dirname or regex",
+     *   dstNode: "index of dst node",
+     *   dstName: "name in dst node"
+     * }
+     */
     this.outputFiles=[];
     /** 
      * flag for clean up temporary workspace on remote host

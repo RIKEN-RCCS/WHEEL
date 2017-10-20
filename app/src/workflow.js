@@ -83,20 +83,29 @@ $(() => {
             //TODO 箱のpathに対応したディレクトリのリクエストを投げる
             //fb.request('fileListRequest', cwd, null);
             //$('#path').val(cwd);
+            //TODO propertyを更新するような処理をした後で再度property画面を書き換える
             $('#property').html(createPropertyHtml(v));
             $('#inputFilesAddBtn').on('click',function(){
-              var newVal=$('#inputFilesInputField').val();
+              let inputVal=$('#inputFilesInputField').val();
+              if(isDupulicated(v.inputFiles, inputVal)) return;//TODO 入力時のvalidationを付ける
+              let newVal={name: inputVal, srcNode: null, srcName: null}
               sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
             });
             $('#outputFilesAddBtn').on('click',function(){
-              var newVal=$('#outputFilesInputField').val();
+              let inputVal=$('#outputFilesInputField').val();
+              if(isDupulicated(v.outputFiles, inputVal)) return;
+              let newVal={name: inputVal, dstNode: null, dstName: null}
               sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
             });
-            $('.inputFilesDelBtn').on('click',function(){
-              //TODO
+            $('.inputFilesDelBtn').on('click',function(btnEvent){
+              let index=btnEvent.target.value;
+              let val=v.inputFiles[index]
+              sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
             });
-            $('.outputFilesDelBtn').on('click',function(){
-              //TODO
+            $('.outputFilesDelBtn').on('click',function(btnEvent){
+              let index=btnEvent.target.value;
+              let val=v.outputFiles[index]
+              sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
             });
             $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
           });
@@ -195,6 +204,16 @@ $(() => {
       y: Math.round(clickPosition.top - parentOffset.top)
     };
     return position;
+  }
+  /**
+   * check if filename is already in inputFiles or outputFiles
+   * @param files inputFiles or outputFiles of any workflow component
+   * @param filename testee
+   */
+  function isDupulicated(files, filename){
+    return -1 !== files.findIndex(function(v){
+      return v.name === filename;
+    });
   }
 
 });
