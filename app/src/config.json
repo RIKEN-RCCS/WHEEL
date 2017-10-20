@@ -16,6 +16,15 @@
     "foreach": "#00FF00",
     "parameterstudy": "#6600FF"
   },
+  "box_appearance": {
+    "opacity":  0.6,
+    "strokeWidth":  2,
+    "titleHeight":  20,
+    "marginHeight":  12,
+    "outputTextOffset":  12,
+    "textHeightScale": 1.2,
+    "stepSize":  25
+  },
   "state_color": {
     "planning": "white",
     "running": "cyan",

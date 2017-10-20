@@ -2,28 +2,16 @@ import config from './config';
 let UDPlug=[[0, 0], [20, 0], [20, 5], [10, 10], [0, 5]];
 let LRPlug=[[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]];
 
-class SvgUpper{
-  constructor(svg, originX, originY, offsetX, offsetY){
-    this.plug = svg.polygon(UDPlug).fill(config.plug_color.flow);
-    const bbox = this.plug.bbox();
-    offsetX -= bbox.width / 2;
-    offsetY -= bbox.height / 2;
-    this.plug.move(originX, originY).translate(offsetX, offsetY);
-  }
+/**
+ * calc y coord of 1st input/output file from top of the box
+ * @return y coord
+ */
+function calcFileBasePosY() {
+  const titleHeight = config.box_appearance.titleHeight;
+  const marginHeight = config.box_appearance.marginHeight;
+  return titleHeight + marginHeight / 2;
 }
-class SvgReceptor {
-  constructor(svg, originX, originY, offsetX, offsetY){
-    this.plug = svg.polygon(LRPlug).fill(config.plug_color.file);
-    const bbox = this.plug.bbox();
-    /*
-                offsetX: -8,
-                offsetY: SvgBox.caclPlugPosY(fileIndex),
-                */
-    offsetX -= bbox.width / 2;
-    offsetY -= bbox.height / 2;
-    this.plug.move(originX, originY).translate(offsetX, offsetY);
-  }
-}
+
 class SvgLower{
   constructor(svg, originX, originY, offsetX, offsetY){
     this.plug = svg.polygon(UDPlug).fill(config.plug_color.flow);
@@ -48,36 +36,73 @@ class SvgLower{
     });
   }
 }
+class SvgConnector{
+  constructor(svg, originX, originY, offsetX, offsetY){
+    this.plug = svg.polygon(LRPlug).fill(config.plug_color.file);
+    const bbox = this.plug.bbox();
+    this.originX = originX + offsetX - bbox.width / 2;
+    this.originY = originY + offsetY;
+    this.plug.move(this.originX, this.originY).draggable();
+    this.firstTime=true;
+    this.cable = svg.path('').fill('none').stroke({ color: config.plug_color.file, width: 2 });
+    this.plug.on('dragstart', ()=>{
+      if(this.firstTime) this.plug.clone();
+      this.firstTime=false;
+    });
+    this.plug.on('dragmove', (e)=>{
+      let point=e.srcElement.animatedPoints[3];
+      const sx = this.originX + bbox.width / 2;
+      const sy = this.originY + bbox.height / 2;
+      const ex = point.x;
+      const ey = point.y;
+      const my = (sy + ey) / 2;
+      this.cable.plot(`M ${sx} ${sy} C ${sx} ${my} ${ex} ${my} ${ex} ${ey}`)
+    });
+  }
+}
+class SvgUpper{
+  constructor(svg, originX, originY, offsetX, offsetY){
+    this.plug = svg.polygon(UDPlug).fill(config.plug_color.flow);
+    const bbox = this.plug.bbox();
+    offsetX -= bbox.width / 2;
+    offsetY -= bbox.height / 2;
+    this.plug.move(originX, originY).translate(offsetX, offsetY);
+  }
+}
+class SvgReceptor {
+  constructor(svg, originX, originY, offsetX, offsetY){
+    this.plug = svg.polygon(LRPlug).fill(config.plug_color.file);
+    const bbox = this.plug.bbox();
+    offsetX -= bbox.width / 2;
+    this.plug.move(originX, originY).translate(offsetX, offsetY);
+  }
+}
 class SvgBox{
   constructor(svg, x, y, type, name, inputFiles, outputFiles){
     this.draw=svg;
     this.type=type.toLowerCase();
-    this.name=name;
-    this.inputFiles=inputFiles;
-    this.outputFiles=outputFiles;
 
-    // draw settings
-    this.opacity = 0.6;
-    this.strokeWidth = 2;
-    this.titleHeight = 20;
-    this.marginHeight = 12;
-    this.marginWidth = this.titleHeight * 2;
-    this.outputTextOffset = -8;
-    this.stepSize = 25;
-    this.nodeColor=config.node_color[this.type];
+    // read draw settings from config
+    const opacity = config.box_appearance['opacity'];
+    const strokeWidth = config.box_appearance['strokeWidth'];
+    const titleHeight = config.box_appearance['titleHeight'];
+    const marginHeight = config.box_appearance['marginHeight'];
+    const marginWidth = titleHeight * 2;
+    const outputTextOffset = config.box_appearance['outputTextOffset'];
+    const nodeColor=config.node_color[this.type];
 
     // create inner parts
-    const input = this.createInput();
-    const output = this.createOutput();
+    const input = this.createInputText(inputFiles);
+    const output = this.createOutputText(outputFiles);
 
     const outputBBox = output.bbox();
     const inputBBox =  input.bbox();
 
-    const bodyHeight = this.marginHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
-    this.height = bodyHeight + this.titleHeight;
+    const bodyHeight = marginHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
+    this.height = bodyHeight + titleHeight;
 
-    const title = this.createTitle();
-    this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, title.bbox().width)) + this.marginWidth;
+    const title = this.createTitle(name);
+    this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, title.bbox().width)) + marginWidth;
 
     const outerFrame = this.createOuterFrame();
     const innerFrame = this.createInnerFrame();
@@ -91,11 +116,11 @@ class SvgBox{
       .add(output)
       .move(x, y)
       .style('cursor', 'default')
-      .opacity(this.opacity);
+      .opacity(opacity);
 
     // adjust size
-    output.x(this.width + this.outputTextOffset);
-    innerFrame.size(this.width - this.strokeWidth, bodyHeight);
+    output.x(this.width);
+    innerFrame.size(this.width - strokeWidth, bodyHeight);
   }
 
   /**
@@ -103,55 +128,61 @@ class SvgBox{
    * @return outer frame element
    */
   createOuterFrame() {
+    const titleHeight = config.box_appearance['titleHeight'];
+    const nodeColor=config.node_color[this.type];
     return  this.draw
       .polygon([
-          [this.titleHeight / 2, 0],
+          [titleHeight / 2, 0],
           [this.width, 0],
-          [this.width, this.titleHeight],
-          [0, this.titleHeight],
-          [0, this.titleHeight / 2]
+          [this.width, titleHeight],
+          [0, titleHeight],
+          [0, titleHeight / 2]
       ])
-      .fill(this.nodeColor);
+      .fill(nodeColor);
   }
   /**
    * create inner frame
    * @return inner frame element
    */
   createInnerFrame() {
+    const titleHeight = config.box_appearance['titleHeight'];
+    const strokeWidth = config.box_appearance['strokeWidth'];
+    const nodeColor=config.node_color[this.type];
     return  this.draw
       .rect(0, 0)
       .attr({
         'fill': 'rgb(50, 50, 50)',
-        'stroke': this.nodeColor,
-        'stroke-width': this.strokeWidth
+        'stroke': nodeColor,
+        'stroke-width': strokeWidth
       })
-    .move(this.strokeWidth / 2, this.titleHeight);
+    .move(strokeWidth / 2, titleHeight);
   }
   /**
    * create title 
    * @return title element
    */
-  createTitle() {
+  createTitle(name) {
+    const titleHeight = config.box_appearance.titleHeight;
     return this.draw
-      .text(this.name)
+      .text(name)
       .fill('#111')
-      .x(this.titleHeight / 2)
-      .cy(this.titleHeight / 2);
+      .x(titleHeight / 2)
+      .cy(titleHeight / 2);
   }
   /**
    * create output file text
    * @return output file text
    */
-  createOutput() {
+  createOutputText(outputFiles) {
     this.outputGroup = this.draw.group();
-    this.outputFiles.forEach((output, index) => {
-      if(!output) return;
-      const y = this.caclPlugPosY(index);
+    outputFiles.forEach((output, index) => {
       const text = this.draw
         .text(output.name)
-        .fill('white')
-        .y(y);
-      text.x(-text.bbox().width);
+        .fill('white');
+      this.textHeight=text.bbox().height*config.box_appearance.textHeightScale;
+      const x = -text.bbox().width-config.box_appearance.outputTextOffset;
+      const y = calcFileBasePosY()+this.textHeight*index;
+      text.move(x, y);
       this.outputGroup.add(text);
     });
     return this.outputGroup;
@@ -160,37 +191,51 @@ class SvgBox{
    * create input file text
    * @return input file text
    */
-  createInput() {
+  createInputText(inputFiles) {
     this.inputGroup = this.draw.group();
-    this.inputFiles.forEach((input, index) => {
-      if(!input) return;
-      const y = this.caclPlugPosY(index);
+    inputFiles.forEach((input, index) => {
       const text = this.draw
         .text(input.name)
-        .fill('white')
-        .move(12, y);
+        .fill('white');
+      this.textHeight=text.bbox().height*config.box_appearance.textHeightScale;
+      const x = config.box_appearance.outputTextOffset;
+      const y = calcFileBasePosY()+this.textHeight*index;
+      text.move(x, y);
       this.inputGroup.add(text);
     });
     return this.inputGroup;
   }
-  /**
-   * calc y position from top
-   * @param index index number from top
-   * @return y position
-   */
-  caclPlugPosY(index) {
-    return this.titleHeight + this.marginHeight / 2 + index * this.stepSize;
-  }
 }
 
-export function createUpper(svg, originX, originY, offsetX, offsetY){
-  return new SvgUpper(svg, originX, originY, offsetX, offsetY).plug;
+export function createConnectors(outputFiles, svg, boxX, boxY, offsetX, offsetY){
+  let connectors=[];
+  const baseOffsetY=calcFileBasePosY();
+  outputFiles.forEach((output, fileIndex) => {
+    console.log(offsetY);
+    const connector = new SvgConnector(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex);
+    connectors.push(connector);
+  });
+  return connectors
 }
-export function createLower(svg, originX, originY, offsetX, offsetY){
-  const lower=new SvgLower(svg, originX, originY, offsetX, offsetY);
+export function createReceptors(inputFiles, svg, boxX, boxY, offsetX, offsetY){
+  let receptors=[];
+  const baseOffsetY=calcFileBasePosY();
+  inputFiles.forEach((input, fileIndex) => {
+    const receptor = new SvgReceptor(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex)
+    receptors.push(receptor);
+  });
+  return receptors;
+}
+
+export function createUpper(svg, boxX, boxY, offsetX, offsetY){
+  return new SvgUpper(svg, boxX, boxY, offsetX, offsetY);
+}
+export function createLower(svg, boxX, boxY, offsetX, offsetY){
+  const lower=new SvgLower(svg, boxX, boxY, offsetX, offsetY);
   return {plug: lower.plug, cable: lower.cable};
 }
 export function createBox (svg, x, y, type, name, inputFiles, outputFiles){
-  return new SvgBox(svg, x, y, type, name, inputFiles, outputFiles).box;
+  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles);
+  return {box: box.box, textHeight: box.textHeight};
 }
 
