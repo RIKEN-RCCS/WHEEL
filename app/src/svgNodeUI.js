@@ -57,7 +57,7 @@ export default class{
     }
   }
   /**
-   * delete this node
+   * delete svg of this node
    */
   remove(){
     this.group.remove();

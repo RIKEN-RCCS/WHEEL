@@ -91,7 +91,7 @@ $(() => {
       editor.replace(escapeChar(param[currentTarget].keyword));
       editor.clearSelection();
       old_keyword = param[currentTarget].keyword;
-    }   
+    }
 
     if(param[currentTarget].type == 'integer' || param[currentTarget].type == 'float' ) {
       validateNumForm();
@@ -137,7 +137,7 @@ $(() => {
   function switchStrForm(val) {
     $('#list').prop('disabled', !val);
   }
-  
+
   // 入力されたパラメータのチェック
   function validateNumForm() {
     let nums = {

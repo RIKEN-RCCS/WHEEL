@@ -158,7 +158,7 @@ class SvgBox{
     .move(strokeWidth / 2, titleHeight);
   }
   /**
-   * create title 
+   * create title
    * @return title element
    */
   createTitle(name) {
