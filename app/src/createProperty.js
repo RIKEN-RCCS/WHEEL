@@ -42,7 +42,6 @@ function createCleanupFlagSnipet(){
 }
 
 export default function(node) {
-  console.log(node);
   let template = '<h2> <%= name %> </h2>';
   template += createStringInputField('description');
   template += createStringInputField('script');

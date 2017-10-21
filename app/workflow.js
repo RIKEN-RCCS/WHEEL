@@ -28,7 +28,7 @@ function makeDir(basename, suffix){
 
 /**
  * remove null from inputFiles and outputFiles
- * @param node workflow componet whic will be clean up
+ * @param node workflow componet which will be clean up
  */
 function cleanUpNode(node){
   if('inputFiles' in node){
@@ -195,6 +195,7 @@ function onUpdateNode(sio, msg){
         }
         break;
       case 'update':
+        console.log(value);
         targetNode[property]=value;
         break;
     }

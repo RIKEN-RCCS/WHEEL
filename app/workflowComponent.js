@@ -48,8 +48,10 @@ class Task{
     this.jobScheduler=null;
     this.state='pre runnnig';
     this.index=null;
-    this.x=pos.x;
-    this.y=pos.y;
+    /** cordinate in workflow screen
+     * {pos.x: pageX, pos.y: pageY}
+     */
+    this.pos=pos;
   }
 }
 /*
@@ -68,8 +70,7 @@ class BaseTaskGraph{
     this.cleanupFlag=null;
     this.parent=parent;
     this.index=null;
-    this.x=pos.x;
-    this.y=pos.y;
+    this.pos=pos;
   }
 }
 class Workflow extends BaseTaskGraph{
@@ -103,8 +104,7 @@ class BaseControlFlow{
     this.inputFiles=[];
     this.outputFiles=[];
     this.index=null;
-    this.x=pos.x;
-    this.y=pos.y;
+    this.pos=pos;
   }
 }
 class For extends BaseControlFlow{

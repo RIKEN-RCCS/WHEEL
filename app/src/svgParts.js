@@ -13,26 +13,56 @@ function calcFileBasePosY() {
 }
 
 class SvgLower{
-  constructor(svg, originX, originY, offsetX, offsetY){
-    this.plug = svg.polygon(UDPlug).fill(config.plug_color.flow);
+  constructor(svg, originX, originY, offsetX, offsetY, color){
+    this.plug = svg.polygon(UDPlug).fill(color);
     const bbox = this.plug.bbox();
     this.originX = originX + offsetX - bbox.width / 2;
     this.originY = originY + offsetY - bbox.height / 2;
     this.plug.move(this.originX, this.originY).draggable();
     this.firstTime=true;
-    this.cable = svg.path('').fill('none').stroke({ color: config.plug_color.flow, width: 2 });
+    this.cable = svg.path('').fill('none').stroke({ color: color, width: 2 });
     this.plug.on('dragstart', ()=>{
       if(this.firstTime) this.plug.clone();
       this.firstTime=false;
-    });
-    this.plug.on('dragmove', (e)=>{
-      let point=e.srcElement.animatedPoints[3];
+    })
+    .on('dragmove', (e)=>{
+      let x =e.srcElement.animatedPoints[3].x;
+      let y =e.srcElement.animatedPoints[2].y;
       const sx = this.originX + bbox.width / 2;
       const sy = this.originY + bbox.height / 2;
-      const ex = point.x;
-      const ey = point.y;
+      const ex = x;
+      const ey = y;
       const my = (sy + ey) / 2;
       this.cable.plot(`M ${sx} ${sy} C ${sx} ${my} ${ex} ${my} ${ex} ${ey}`)
+    })
+    .on('dragend', (e)=>{
+      let lowerX =e.srcElement.animatedPoints[3].x;
+      let lowerY =e.srcElement.animatedPoints[2].y;
+      let minDistance2=Number.MAX_VALUE;
+      let minIndex=-1;
+      let minPoints=null;
+      svg.select('.upperPlug').each(function(i, v){
+        let index = v[i].parent().node.instance.data('index');
+        let points=v[i].node.points;
+        let x=points[3].x;
+        let y=points[2].y;
+        let distance2=(x-lowerX)*(x-lowerX)+(y-lowerY)*(y-lowerY);
+        if(minDistance2 > distance2){
+          minDistance2 = distance2;
+          minIndex = index;
+          minPoints = points;
+        }
+      });
+      if(minPoints[0].x < lowerX && lowerX < minPoints[1].x && minPoints[0].y < lowerY && lowerY < minPoints[3].y){
+        let myIndex=this.plug.parent().node.instance.data('index');
+        if(minIndex !== myIndex){
+          if(this.plug.hasClass('elsePlug')){
+            console.log("connected : else side of ", myIndex, " to ", minIndex);
+          }else{
+            console.log("connected :", myIndex, " to ", minIndex);
+          }
+        }
+      }
     });
   }
 }
@@ -62,19 +92,19 @@ class SvgConnector{
 }
 class SvgUpper{
   constructor(svg, originX, originY, offsetX, offsetY){
-    this.plug = svg.polygon(UDPlug).fill(config.plug_color.flow);
+    this.plug = svg.polygon(UDPlug).fill(config.plug_color.flow).addClass('upperPlug');
     const bbox = this.plug.bbox();
     offsetX -= bbox.width / 2;
     offsetY -= bbox.height / 2;
-    this.plug.move(originX, originY).translate(offsetX, offsetY);
+    this.plug.move(originX+offsetX, originY+offsetY);
   }
 }
 class SvgReceptor {
   constructor(svg, originX, originY, offsetX, offsetY){
-    this.plug = svg.polygon(LRPlug).fill(config.plug_color.file);
+    this.plug = svg.polygon(LRPlug).fill(config.plug_color.file).addClass('receptorPlug');
     const bbox = this.plug.bbox();
     offsetX -= bbox.width / 2;
-    this.plug.move(originX, originY).translate(offsetX, offsetY);
+    this.plug.move(originX+offsetX, originY+offsetY);
   }
 }
 class SvgBox{
@@ -83,12 +113,12 @@ class SvgBox{
     this.type=type.toLowerCase();
 
     // read draw settings from config
-    const opacity = config.box_appearance['opacity'];
-    const strokeWidth = config.box_appearance['strokeWidth'];
-    const titleHeight = config.box_appearance['titleHeight'];
-    const marginHeight = config.box_appearance['marginHeight'];
+    const opacity = config.box_appearance.opacity;
+    const strokeWidth = config.box_appearance.strokeWidth;
+    const titleHeight = config.box_appearance.titleHeight;
+    const marginHeight = config.box_appearance.marginHeight;
     const marginWidth = titleHeight * 2;
-    const outputTextOffset = config.box_appearance['outputTextOffset'];
+    const outputTextOffset = config.box_appearance.outputTextOffset;
     const nodeColor=config.node_color[this.type];
 
     // create inner parts
@@ -116,7 +146,8 @@ class SvgBox{
       .add(output)
       .move(x, y)
       .style('cursor', 'default')
-      .opacity(opacity);
+      .opacity(opacity)
+      .addClass('box');
 
     // adjust size
     output.x(this.width);
@@ -211,7 +242,6 @@ export function createConnectors(outputFiles, svg, boxX, boxY, offsetX, offsetY)
   let connectors=[];
   const baseOffsetY=calcFileBasePosY();
   outputFiles.forEach((output, fileIndex) => {
-    console.log(offsetY);
     const connector = new SvgConnector(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex);
     connectors.push(connector);
   });
@@ -230,8 +260,8 @@ export function createReceptors(inputFiles, svg, boxX, boxY, offsetX, offsetY){
 export function createUpper(svg, boxX, boxY, offsetX, offsetY){
   return new SvgUpper(svg, boxX, boxY, offsetX, offsetY);
 }
-export function createLower(svg, boxX, boxY, offsetX, offsetY){
-  const lower=new SvgLower(svg, boxX, boxY, offsetX, offsetY);
+export function createLower(svg, boxX, boxY, offsetX, offsetY, color){
+  const lower=new SvgLower(svg, boxX, boxY, offsetX, offsetY, color);
   return {plug: lower.plug, cable: lower.cable};
 }
 export function createBox (svg, x, y, type, name, inputFiles, outputFiles){

@@ -70,24 +70,29 @@ $(() => {
   const svg = SVG('node_svg');
   sio.on('connect', function () {
     fb.request('fileListRequest', cwd, null);
-    $('#path').val(cwd);
+    $('#path').text('root');
     sio.emit('workflowRequest', rootWorkflow);
 
     sio.on('workflow', function(wf){
       nodes.removeAll();
       wf.nodes.forEach(function(v,i){
         if(v!==null){
-          let node=new SvgNodeUI(svg, v, nodes.setSelectedNode.bind(nodes));
-          node.onClick(function(e){
-            console.log(e);
-            //TODO 箱のpathに対応したディレクトリのリクエストを投げる
-            //fb.request('fileListRequest', cwd, null);
-            //$('#path').val(cwd);
+          let node=new SvgNodeUI(svg, v);
+          let diffX=0;
+          let diffY=0;
+          node.onMousedown(function(e){
+            let nodeIndex=e.target.instance.parent('.node').data('index');
+            nodes.setSelectedNode(nodeIndex);
+            let nodePath = cwd+'/'+wf.nodes[nodeIndex].path;
+              console.log(wf.nodes[nodeIndex]);
+            fb.request('fileListRequest', nodePath, null);
+            let name = wf.nodes[nodeIndex].name;
+            $('#path').text(name);
             //TODO propertyを更新するような処理をした後で再度property画面を書き換える
             $('#property').html(createPropertyHtml(v));
             $('#inputFilesAddBtn').on('click',function(){
               let inputVal=$('#inputFilesInputField').val();
-              if(isDupulicated(v.inputFiles, inputVal)) return;//TODO 入力時のvalidationを付ける
+              if(isDupulicated(v.inputFiles, inputVal)) return;
               let newVal={name: inputVal, srcNode: null, srcName: null}
               sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
             });
@@ -108,6 +113,15 @@ $(() => {
               sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
             });
             $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
+          })
+          .onDragstart(function(e){
+            diffX=e.detail.p.x - e.target.instance.select('.box').first().x();
+            diffY=e.detail.p.y - e.target.instance.select('.box').first().y()
+          })
+          .onDragend(function(e){
+            let x = e.detail.p.x - diffX;
+            let y = e.detail.p.y - diffY;
+            sio.emit('updateNode', {index: i, property: 'pos', value: {'x': x, 'y': y}, cmd: 'update'});
           });
           nodes.add(node);
         }
