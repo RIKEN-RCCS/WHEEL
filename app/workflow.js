@@ -242,8 +242,6 @@ function onAddLink(sio, msg){
   let src=msg.src;
   let dst=msg.dst;
   let isElse=msg.isElse;
-  console.log(rootWorkflow.nodes[src]);
-  console.log(rootWorkflow.nodes[dst]);
   if(isElse){
     rootWorkflow.nodes[src].else.push(dst);
   }else{
@@ -255,8 +253,32 @@ function onAddLink(sio, msg){
       logger.error('add link failed: ', err);
     });
 }
+function onAddFileLink(sio, msg){
+  logger.debug('addFileLink event recieved: ', msg);
+  const src=msg.src;
+  const dst=msg.dst;
+  const srcName = msg.srcName
+  const dstName = msg.dstName
+  let srcEntry = rootWorkflow.nodes[src].outputFiles.find(function(e){
+    if(e.name === srcName) return true
+  });
+  srcEntry.dstNode=dst;
+  srcEntry.dstName=dstName;
+  let dstEntry = rootWorkflow.nodes[dst].inputFiles.find(function(e){
+    if(e.name === dstName) return true
+  });
+  dstEntry.srcNode=src;
+  dstEntry.srcName=srcName;
+  writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
+    .catch(function(err){
+      logger.error('add filelink failed: ', err);
+    });
+}
 function onRemoveLink(sio, msg){
   logger.warn('DeleteLink function is not implemented yet.');
+}
+function onRemoveFileLink(sio, msg){
+  logger.warn('DeleteFileLink function is not implemented yet.');
 }
 
 function setup(sio) {
@@ -280,6 +302,7 @@ function setup(sio) {
     socket.on('updateNode',      onUpdateNode.bind(null, socket));
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
     socket.on('addLink',         onAddLink.bind(null, socket));
+    socket.on('addFileLink',     onAddFileLink.bind(null, socket));
   });
 }
 module.exports = setup;

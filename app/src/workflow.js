@@ -254,16 +254,12 @@ $(() => {
    */
   function createLink(srcNode, dstNode, isElse=false){
     sio.emit('addLink', {src: srcNode, dst: dstNode, isElse: isElse});
-    if(isElse){
-      console.log("connected : else side of ", srcNode, " to ", dstNode);
-    }else{
-      console.log("connected :", srcNode, " to ", dstNode);
-    }
   }
 
   /**
    * call addFileLink API
    */
-  function createFileLink(srcNode, dstNode, name){
+  function createFileLink(srcNode, dstNode, srcName, dstName){
+    sio.emit('addFileLink', {src: srcNode, dst: dstNode, srcName: srcName, dstName: dstName});
   }
 });
