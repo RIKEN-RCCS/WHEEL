@@ -13,10 +13,18 @@ export default class{
    * @param svg draw canvas
    * @param node any node instance to draw
    */
-  constructor(svg, node) {
+  constructor(svg, node, createLink, createFileLink) {
     /** svg.js's instance*/
     this.draw=svg;
 
+    /** cable instance collection */
+    this.nextLinks=[];
+    this.elseLinks=[];
+    this.previousLinks=[];
+    this.outputFileLinks=[];
+    this.inputFileLinks=[];
+
+    // draw node
     const svgBox = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles);
     const box = svgBox.box;
     const textHeight=svgBox.textHeight;
@@ -27,9 +35,9 @@ export default class{
     const boxY=box.y();
     const upper = parts.createUpper(svg, boxX, boxY, boxWidth/2, 0);
     const numLower=node.type === 'if'? 3:2;
-    const lower = parts.createLower(svg, boxX, boxY, boxWidth/numLower, boxHeight, config.plug_color.flow);
+    const lower = parts.createLower(svg, boxX, boxY, boxWidth/numLower, boxHeight, config.plug_color.flow, createLink);
 
-    const connectors = parts.createConnectors(node.outputFiles, svg, boxX, boxY, boxWidth, textHeight);
+    const connectors = parts.createConnectors(node.outputFiles, svg, boxX, boxY, boxWidth, textHeight, createFileLink);
     const receptors = parts.createReceptors(node.inputFiles,    svg, boxX, boxY, 0, textHeight);
 
     this.group=this.draw.group();
@@ -49,7 +57,7 @@ export default class{
       this.group.add(receptor.plug);
     });
     if(numLower === 3){
-      const lower2 = parts.createLower(svg, boxX, boxY, boxWidth/numLower*2, boxHeight, config.plug_color.elseFlow);
+      const lower2 = parts.createLower(svg, boxX, boxY, boxWidth/numLower*2, boxHeight, config.plug_color.elseFlow, createLink);
       lower2.plug.addClass('elsePlug')
       this.group.add(lower2.plug).add(lower2.cable);
     }
@@ -72,6 +80,13 @@ export default class{
    */
   onDragstart(callback){
     this.group.on('dragstart', callback);
+    return this;
+  }
+  /**
+   * add dragmove event listener to this node
+   */
+  onDragmove(callback){
+    this.group.on('dragmove', callback);
     return this;
   }
   /**

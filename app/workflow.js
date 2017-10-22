@@ -13,6 +13,14 @@ const component = require('./workflowComponent');
 var rootWorkflow=null;
 var rootWorkflowFilename=null;
 
+/**
+ * make directory
+ * @param basename dirname
+ * @param suffix   number
+ * @return actual directory name
+ *
+ * makeDir create "basenme+suffix" direcotry. suffix is increased until the dirname is no longer duplicated.
+ */
 function makeDir(basename, suffix){
   let dirname=basename+suffix;
   return util.promisify(fs.mkdir)(dirname)
@@ -24,6 +32,20 @@ function makeDir(basename, suffix){
         return makeDir(basename, suffix+1);
       }
     });
+}
+
+/**
+ * save workflow and emit to client with promise
+ * @param workflow object
+ * @param filename workflow filename
+ * @param sio instance of socket.io
+ * @param eventName eventName to send workflow
+ */
+function writeAndEmit(wf, filename, sio, eventName){
+  return util.promisify(fs.writeFile)(filename, JSON.stringify(wf, null, 4))
+  .then(function(){
+    sio.emit(eventName, wf);
+  });
 }
 
 /**
@@ -134,9 +156,6 @@ function onCleanProject(sio, msg){
   logger.debug(`clean event recieved: ${msg}`);
 }
 
-function onEditWrokflow(sio, msg){
-  logger.debug(`edit event recieved: ${msg}`);
-}
 function onCreateNode(sio, msg){
   logger.debug('create event recieved: ', msg);
   let dirName=path.resolve(path.dirname(rootWorkflowFilename),msg.type);
@@ -160,10 +179,7 @@ function onCreateNode(sio, msg){
       }
     })
     .then(function(){
-      return util.promisify(fs.writeFile)(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4));
-    })
-    .then(function(){
-      sio.emit('workflow', rootWorkflow);
+      return writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
     })
     .catch(function(err){
       logger.error('node create failed: ', err);
@@ -200,13 +216,10 @@ function onUpdateNode(sio, msg){
         break;
     }
     cleanUpNode(targetNode);
-    util.promisify(fs.writeFile)(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4))
-    .then(function(){
-      sio.emit('workflow', rootWorkflow);
-    })
-    .catch(function(err){
-      logger.error('node update failed: ', err);
-    });
+    writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
+      .catch(function(err){
+        logger.error('node update failed: ', err);
+      });
   }
 }
 function onRemoveNode(sio, index){
@@ -218,15 +231,29 @@ function onRemoveNode(sio, index){
   })
   .then(function(){
     rootWorkflow.nodes[index]=null;
-    return util.promisify(fs.writeFile)(rootWorkflowFilename, JSON.stringify(rootWorkflow, null, 4));
+    return writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow');
   })
-  .then(function(){
-    sio.emit('workflow', rootWorkflow);
+  .catch(function(err){
+      logger.error('remove node failed: ', err);
   });
-
 }
 function onAddLink(sio, msg){
-  logger.warn('AddLink function is not implemented yet.');
+  logger.debug('addLink event recieved: ', msg);
+  let src=msg.src;
+  let dst=msg.dst;
+  let isElse=msg.isElse;
+  console.log(rootWorkflow.nodes[src]);
+  console.log(rootWorkflow.nodes[dst]);
+  if(isElse){
+    rootWorkflow.nodes[src].else.push(dst);
+  }else{
+    rootWorkflow.nodes[src].next.push(dst);
+  }
+  rootWorkflow.nodes[dst].previous.push(src);
+  writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
+    .catch(function(err){
+      logger.error('add link failed: ', err);
+    });
 }
 function onRemoveLink(sio, msg){
   logger.warn('DeleteLink function is not implemented yet.');
@@ -252,6 +279,7 @@ function setup(sio) {
     socket.on('createNode',      onCreateNode.bind(null, socket));
     socket.on('updateNode',      onUpdateNode.bind(null, socket));
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
+    socket.on('addLink',         onAddLink.bind(null, socket));
   });
 }
 module.exports = setup;

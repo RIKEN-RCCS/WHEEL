@@ -23,7 +23,7 @@
     "marginHeight":  12,
     "outputTextOffset":  12,
     "textHeightScale": 1.2,
-    "stepSize":  25
+    "plug_drop_area_scale": 2
   },
   "state_color": {
     "planning": "white",

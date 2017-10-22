@@ -77,7 +77,7 @@ $(() => {
       nodes.removeAll();
       wf.nodes.forEach(function(v,i){
         if(v!==null){
-          let node=new SvgNodeUI(svg, v);
+          let node=new SvgNodeUI(svg, v, createLink, createFileLink);
           let diffX=0;
           let diffY=0;
           node.onMousedown(function(e){
@@ -118,12 +118,31 @@ $(() => {
             diffX=e.detail.p.x - e.target.instance.select('.box').first().x();
             diffY=e.detail.p.y - e.target.instance.select('.box').first().y()
           })
+          .onDragmove(function(e){
+            //TODO 各plugの座標を取得する
+            console.log(e);
+
+            //TODO lower/upper/connector/receptorから出ているケーブルのリストを順に回ってアップデートする
+            node.nextLinks.forEach(function(e,i){
+            });
+            node.elseLinks.forEach(function(e,i){
+            });
+            node.previousLinks.forEach(function(e,i){
+            });
+            node.outputFileLinks.forEach(function(e,i){
+            });
+            node.inputFileLinks.forEach(function(e,i){
+            });
+          })
           .onDragend(function(e){
             let x = e.detail.p.x - diffX;
             let y = e.detail.p.y - diffY;
             sio.emit('updateNode', {index: i, property: 'pos', value: {'x': x, 'y': y}, cmd: 'update'});
           });
           nodes.add(node);
+        //TODO cableを作成(src to nextとoutpufFile to inputFile)
+
+        //TODO 作成したcableを前後のnodeのコンテナ(nextLinks, elseLinks, previousLinks, outputFileLinks, inputFileLinks)へpush
         }
       });
     });
@@ -230,4 +249,21 @@ $(() => {
     });
   }
 
+  /**
+   * call addLink API
+   */
+  function createLink(srcNode, dstNode, isElse=false){
+    sio.emit('addLink', {src: srcNode, dst: dstNode, isElse: isElse});
+    if(isElse){
+      console.log("connected : else side of ", srcNode, " to ", dstNode);
+    }else{
+      console.log("connected :", srcNode, " to ", dstNode);
+    }
+  }
+
+  /**
+   * call addFileLink API
+   */
+  function createFileLink(srcNode, dstNode, name){
+  }
 });

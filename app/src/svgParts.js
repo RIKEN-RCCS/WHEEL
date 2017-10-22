@@ -13,7 +13,7 @@ function calcFileBasePosY() {
 }
 
 class SvgLower{
-  constructor(svg, originX, originY, offsetX, offsetY, color){
+  constructor(svg, originX, originY, offsetX, offsetY, color, createLink){
     this.plug = svg.polygon(UDPlug).fill(color);
     const bbox = this.plug.bbox();
     this.originX = originX + offsetX - bbox.width / 2;
@@ -22,7 +22,11 @@ class SvgLower{
     this.firstTime=true;
     this.cable = svg.path('').fill('none').stroke({ color: color, width: 2 });
     this.plug.on('dragstart', ()=>{
-      if(this.firstTime) this.plug.clone();
+      if(this.firstTime){
+        let clone = this.plug.clone();
+        this.clonedPlug = this.plug;
+        this.plug=clone;
+      }
       this.firstTime=false;
     })
     .on('dragmove', (e)=>{
@@ -39,7 +43,7 @@ class SvgLower{
       let lowerX =e.srcElement.animatedPoints[3].x;
       let lowerY =e.srcElement.animatedPoints[2].y;
       let minDistance2=Number.MAX_VALUE;
-      let minIndex=-1;
+      let nearestNodeIndex=-1;
       let minPoints=null;
       svg.select('.upperPlug').each(function(i, v){
         let index = v[i].parent().node.instance.data('index');
@@ -49,18 +53,18 @@ class SvgLower{
         let distance2=(x-lowerX)*(x-lowerX)+(y-lowerY)*(y-lowerY);
         if(minDistance2 > distance2){
           minDistance2 = distance2;
-          minIndex = index;
+          nearestNodeIndex = index;
           minPoints = points;
         }
       });
-      if(minPoints[0].x < lowerX && lowerX < minPoints[1].x && minPoints[0].y < lowerY && lowerY < minPoints[3].y){
+      let extendX = (minPoints[1].x - minPoints[0].x)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
+      let extendY = (minPoints[3].y - minPoints[0].y)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
+      if(minPoints[0].x - extendX < lowerX && lowerX < minPoints[1].x +extendX && minPoints[0].y -extendY < lowerY && lowerY < minPoints[3].y +extendY){
         let myIndex=this.plug.parent().node.instance.data('index');
-        if(minIndex !== myIndex){
-          if(this.plug.hasClass('elsePlug')){
-            console.log("connected : else side of ", myIndex, " to ", minIndex);
-          }else{
-            console.log("connected :", myIndex, " to ", minIndex);
-          }
+        if(nearestNodeIndex !== myIndex){
+          createLink(myIndex, nearestNodeIndex, this.plug.hasClass('elsePlug'));
+          this.cable.remove();
+          this.clonedPlug.remove();
         }
       }
     });
@@ -80,11 +84,12 @@ class SvgConnector{
       this.firstTime=false;
     });
     this.plug.on('dragmove', (e)=>{
-      let point=e.srcElement.animatedPoints[3];
+      let x =e.srcElement.animatedPoints[3].x;
+      let y =e.srcElement.animatedPoints[2].y;
       const sx = this.originX + bbox.width / 2;
       const sy = this.originY + bbox.height / 2;
-      const ex = point.x;
-      const ey = point.y;
+      const ex = x;
+      const ey = y;
       const my = (sy + ey) / 2;
       this.cable.plot(`M ${sx} ${sy} C ${sx} ${my} ${ex} ${my} ${ex} ${ey}`)
     });
@@ -260,8 +265,8 @@ export function createReceptors(inputFiles, svg, boxX, boxY, offsetX, offsetY){
 export function createUpper(svg, boxX, boxY, offsetX, offsetY){
   return new SvgUpper(svg, boxX, boxY, offsetX, offsetY);
 }
-export function createLower(svg, boxX, boxY, offsetX, offsetY, color){
-  const lower=new SvgLower(svg, boxX, boxY, offsetX, offsetY, color);
+export function createLower(svg, boxX, boxY, offsetX, offsetY, color, createLink){
+  const lower=new SvgLower(svg, boxX, boxY, offsetX, offsetY, color, createLink);
   return {plug: lower.plug, cable: lower.cable};
 }
 export function createBox (svg, x, y, type, name, inputFiles, outputFiles){

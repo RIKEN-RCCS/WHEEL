@@ -1,7 +1,7 @@
 const config = require('./config/server');
 
 /*
- * javascript representation of wheel's task 
+ * javascript representation of wheel's task
  *
  */
 class Task{
@@ -34,7 +34,7 @@ class Task{
      * }
      */
     this.outputFiles=[];
-    /** 
+    /**
      * flag for clean up temporary workspace on remote host
      * 0: do clenup
      * 1: do not clenup
@@ -55,12 +55,14 @@ class Task{
   }
 }
 /*
- * task absrtuct class of task containers 
+ * task absrtuct class of task containers
  */
 class BaseTaskGraph{
   constructor(pos, parent){
     this.type=null;
     this.name=null;
+    this.previous=[];
+    this.next=[];
     this.description=null;
     this.path=null;
     this.nodes=[];
@@ -128,7 +130,7 @@ class If extends BaseControlFlow{
     super(pos);
     this.type='if';
     this.condition=null;
-    this.elseBlockStart=null;
+    this.else=[];
   }
 }
 /*
