@@ -1,6 +1,7 @@
-var $ = require('jquery');
-require('jquery-ui/dialog');
-export default function(dialogID, html, options = null) {
+import $ from 'jquery';
+import 'jquery-ui/dialog';
+
+export default function(dialogID, html, options) {
     var def = $.Deferred();
     $(dialogID).html(html).dialog({
         autoOpen: false,
