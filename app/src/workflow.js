@@ -14,7 +14,6 @@ import dialogWrapper from './dialogWrapper';
 import logReciever from './logReciever';
 import config from './config';
 import SvgNodeUI from './svgNodeUI';
-import Nodes from './svgNodeCollection';
 import createPropertyHtml from './createProperty';
 
 $(() => {
@@ -65,7 +64,10 @@ $(() => {
     }
   }
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true, additionalMenu);
-  const nodes = new Nodes();
+
+  // container of svg elements
+  let nodes = [];
+  let selectedNode;
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
@@ -74,17 +76,30 @@ $(() => {
     sio.emit('workflowRequest', rootWorkflow);
 
     sio.on('workflow', function(wf){
-      nodes.removeAll();
+      // remove all node from workflow editor
+      nodes.forEach(function(v){
+        if(v !== null) v.remove();
+      });
+      nodes=[];
+
+      // draw each node
       wf.nodes.forEach(function(v,i){
-        if(v!==null){
+        // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
+        if(v ===null){
+          nodes.push(null);
+        }else{
           let node=new SvgNodeUI(svg, v, createLink, createFileLink);
+          // difference between box origin and mouse pointer
           let diffX=0;
           let diffY=0;
+          // mouse pointer coordinate on dragstart
+          let startX=0;
+          let startY=0;
           node.onMousedown(function(e){
             let nodeIndex=e.target.instance.parent('.node').data('index');
-            nodes.setSelectedNode(nodeIndex);
+            selectedNode=nodeIndex;
             let nodePath = cwd+'/'+wf.nodes[nodeIndex].path;
-              console.log(wf.nodes[nodeIndex]);
+            console.log(wf.nodes[selectedNode]);
             fb.request('fileListRequest', nodePath, null);
             let name = wf.nodes[nodeIndex].name;
             $('#path').text(name);
@@ -114,35 +129,46 @@ $(() => {
             });
             $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
           })
-          .onDragstart(function(e){
-            diffX=e.detail.p.x - e.target.instance.select('.box').first().x();
-            diffY=e.detail.p.y - e.target.instance.select('.box').first().y()
-          })
-          .onDragmove(function(e){
-            //TODO 各plugの座標を取得する
-            console.log(e);
+            .onDragstart(function(e){
+              diffX=e.detail.p.x - e.target.instance.select('.box').first().x();
+              diffY=e.detail.p.y - e.target.instance.select('.box').first().y()
+              startX = e.detail.p.x;
+              startY = e.detail.p.y;
+            })
+            .onDragmove(function(e){
+              let dx = e.detail.p.x - startX;
+              let dy = e.detail.p.y - startY;
+              node.reDrawLinks(svg, v, dx, dy)
+            })
+            .onDragend(function(e){
+              let x = e.detail.p.x - diffX;
+              let y = e.detail.p.y - diffY;
+              sio.emit('updateNode', {index: i, property: 'pos', value: {'x': x, 'y': y}, cmd: 'update'});
+            });
+          nodes.push(node);
+        }
+      });
 
-            //TODO lower/upper/connector/receptorから出ているケーブルのリストを順に回ってアップデートする
-            node.nextLinks.forEach(function(e,i){
-            });
-            node.elseLinks.forEach(function(e,i){
-            });
-            node.previousLinks.forEach(function(e,i){
-            });
-            node.outputFileLinks.forEach(function(e,i){
-            });
-            node.inputFileLinks.forEach(function(e,i){
-            });
-          })
-          .onDragend(function(e){
-            let x = e.detail.p.x - diffX;
-            let y = e.detail.p.y - diffY;
-            sio.emit('updateNode', {index: i, property: 'pos', value: {'x': x, 'y': y}, cmd: 'update'});
+      //draw cables between Lower and Upper plug Connector and Receptor plug respectively
+      for(let i=0; i<wf.nodes.length; i++){
+        if(wf.nodes[i] !== null){
+          nodes[i].drawLinks(svg, wf.nodes[i]);
+        }
+      }
+      nodes.forEach(function(node){
+        if(node != null){
+          node.nextLinks.forEach(function(cable){
+            let dst = cable.cable.data('dst');
+            nodes[dst].previousLinks.push(cable);
           });
-          nodes.add(node);
-        //TODO cableを作成(src to nextとoutpufFile to inputFile)
-
-        //TODO 作成したcableを前後のnodeのコンテナ(nextLinks, elseLinks, previousLinks, outputFileLinks, inputFileLinks)へpush
+          node.elseLinks.forEach(function(cable){
+            let dst = cable.cable.data('dst');
+            nodes[dst].previousLinks.push(cable);
+          });
+          node.outputFileLinks.forEach(function(cable){
+            let dst = cable.cable.data('dst');
+            nodes[dst].inputFileLinks.push(cable);
+          });
         }
       });
     });
@@ -209,7 +235,7 @@ $(() => {
       "delete": {
         "name": "delete",
         callback: function(){
-          sio.emit('removeNode', nodes.getSelectedNode());
+          sio.emit('removeNode', selectedNode);
         }
       }
     }

@@ -13,24 +13,12 @@ function calcFileBasePosY() {
 }
 
 /**
- * plot cubic Bézier curve connecting between two points
- * @param svg.path object
- * @param sx x coordinate of start point
- * @param sy y coordinate of start point
- * @param ex x coordinate of end point
- * @param ey y coordinate of end point
- */
-function plotCable(cable, sx, sy, ex, ey){
-  const my = (sy + ey) / 2;
-  cable.plot(`M ${sx} ${sy} C ${sx} ${my} ${ex} ${my} ${ex} ${ey}`)
-}
-
-/**
- * calc coordinate of given path
+ * calc centroid coordinate of given path
  * @param points collection of vertex coordinate
+ * @return x,y coordinate of the centroid
  * please note that points must be convex polygon
  */
-function calcCenter(points){
+export function calcCenter(points){
   let sumX=0;
   let sumY=0;
   let numPoints=0;
@@ -39,28 +27,17 @@ function calcCenter(points){
     sumY+=v.y;
     numPoints++;
   }
-  return {x: sumX/numPoints, y: sumY/numPoints}
-}
-
-/**
- * plot cable between original and dragging plug
- * this function is for callback on dragmove event of SvgLower and SvgConnector 's plug
- * @param e argument of callback function of dragmove event
- */
-function plotLink(e){
-  const sx = this.originX + this.bbox.width / 2;
-  const sy = this.originY + this.bbox.height / 2;
-  const center = calcCenter(e.srcElement.animatedPoints);
-  plotCable(this.cable, sx, sy, center.x, center.y);
+  return [sumX/numPoints, sumY/numPoints]
 }
 
 /**
  * check if droped plug hit any other counterpart
  * @param svg instance of svg.js
  * @param counterpart selector of counterpart (e.g. '.upperPlut', '.receptorPlug')
- * @param point coordinate which will be checked
+ * @param x x coordinate of the point which will be checked
+ * @param y y coordinate of the point which will be checked
  */
-function collisionDetection(svg, counterpart, point){
+function collisionDetection(svg, counterpart, x, y){
   let minDistance2=Number.MAX_VALUE;
   let nearestNodeIndex=-1;
   let minPoints=null;
@@ -68,9 +45,9 @@ function collisionDetection(svg, counterpart, point){
   svg.select(counterpart).each(function(i, v){
     let index = v[i].parent().node.instance.data('index');
     let points=v[i].node.points;
-    let x=points[3].x;
-    let y=points[2].y;
-    let distance2=(x-point.x)*(x-point.x)+(y-point.y)*(y-point.y);
+    let targetX=points[3].x;
+    let targetY=points[2].y;
+    let distance2=(targetX-x)*(targetX-x)+(targetY-y)*(targetY-y);
     if(minDistance2 > distance2){
       minDistance2 = distance2;
       nearestNodeIndex = index;
@@ -80,13 +57,36 @@ function collisionDetection(svg, counterpart, point){
   });
   let extendX = (minPoints[1].x - minPoints[0].x)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
   let extendY = (minPoints[3].y - minPoints[0].y)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
-  if(minPoints[0].x - extendX < point.x && point.x< minPoints[1].x +extendX && minPoints[0].y -extendY < point.y&& point.y< minPoints[3].y +extendY){
+  if(minPoints[0].x - extendX < x && x< minPoints[1].x +extendX && minPoints[0].y -extendY < y&& y< minPoints[3].y +extendY){
     return [nearestNodeIndex, nearestPlug];
   }
   return [-1, -1];
 }
 
-
+export class SvgCable{
+  constructor(svg, color, startX, startY, endX, endY){
+    this.cable = svg.path('').fill('none').stroke({ color: color, width: config.box_appearance.strokeWidth});
+    this.startX = startX;
+    this.startY = startY;
+    this.endX = endX || startX;
+    this.endY = endY || startY;
+    this._draw(this.startX, this.startY, this.endX, this.endY);
+  }
+  _draw(sx, sy, ex, ey){
+    const my = (sy + ey) / 2;
+    this.cable.plot(`M ${sx} ${sy} C ${sx} ${my} ${ex} ${my} ${ex} ${ey}`)
+  }
+  dragEndPoint(dx,dy){
+    this._draw(this.startX, this.startY, this.endX+dx, this.endY+dy);
+  }
+  dragStartPoint(dx,dy){
+    this._draw(this.startX+dx, this.startY+dy, this.endX, this.endY);
+  }
+  remove(){
+    if(this.cable != null) this.cable.remove();
+    this.cable=null;
+  }
+}
 class SvgLower{
   constructor(svg, originX, originY, offsetX, offsetY, color, createLink){
     this.plug = svg.polygon(UDPlug).fill(color);
@@ -95,25 +95,34 @@ class SvgLower{
     this.originY = originY + offsetY - this.bbox.height / 2;
     this.plug.move(this.originX, this.originY).draggable();
     this.firstTime=true;
-    this.cable = svg.path('').fill('none').stroke({ color: color, width: 2 });
-    this.plug.on('dragstart', ()=>{
-      if(this.firstTime){
-        let clone = this.plug.clone();
-        this.clonedPlug = this.plug;
-        this.plug=clone;
-      }
-      this.firstTime=false;
-    })
-    .on('dragmove', plotLink.bind(this))
-      .on('dragend',  (e)=>{
-        const center = calcCenter(e.srcElement.animatedPoints);
-        const [hitIndex,] = collisionDetection(svg, '.upperPlug', center);
+    this.cable = new SvgCable(svg, color, this.originX + this.bbox.width / 2, this.originY+ this.bbox.height / 2);
+    this.plug
+      .on('dragstart', (e)=>{
+        if(this.firstTime){
+          let clone = this.plug.clone();
+          this.clonedPlug = clone;
+        }
+        this.firstTime=false;
+        this.dragStartX = e.detail.p.x;
+        this.dragStartY = e.detail.p.y;
+      })
+      .on('dragmove', (e)=>{
+        let dx = e.detail.p.x - this.dragStartX;
+        let dy = e.detail.p.y - this.dragStartY;
+        this.cable.dragEndPoint(dx,dy);
+      })
+      .on('dragend', (e)=>{
+        const [x, y]= calcCenter(e.srcElement.animatedPoints);
+        this.cable.endX=x;
+        this.cable.endY=y;
+        const [hitIndex,] = collisionDetection(svg, '.upperPlug', x, y);
         if(hitIndex === -1) return;
         const myIndex=this.plug.parent().node.instance.data('index');
         if(hitIndex!== myIndex){
           createLink(myIndex, hitIndex, this.plug.hasClass('elsePlug'));
           this.cable.remove();
-          this.clonedPlug.remove();
+          this.plug.remove();
+          this.plug = this.clonedPlug;
         }
       });
   }
@@ -126,30 +135,38 @@ class SvgConnector{
     this.originY = originY + offsetY;
     this.plug.move(this.originX, this.originY).draggable();
     this.firstTime=true;
-    this.cable = svg.path('').fill('none').stroke({ color: config.plug_color.file, width: 2 });
-    this.plug.on('dragstart', ()=>{
-      if(this.firstTime){
-        let clone = this.plug.clone();
-        this.clonedPlug = this.plug;
-        this.plug=clone;
-      }
-      this.firstTime=false;
-    })
-    .on('dragmove', plotLink.bind(this))
-    .on('dragend',  (e)=>{
-      const center = calcCenter(e.srcElement.animatedPoints);
-      const [hitIndex, hitPlug] = collisionDetection(svg, '.receptorPlug', center);
-      if(hitIndex === -1) return;
-      const myIndex=this.plug.parent().node.instance.data('index');
-      if(hitIndex!== myIndex){
-        //TODO to be fixed
-        let srcName = this.plug.data('name');
-        let dstName = hitPlug.data('name');
-        createFileLink(myIndex, hitIndex, srcName, dstName);
-        this.cable.remove();
-        this.clonedPlug.remove();
-      }
-    });
+    this.cable = new SvgCable(svg, config.plug_color.file, this.originX + this.bbox.width / 2, this.originY+ this.bbox.height / 2);
+    this.plug
+      .on('dragstart', (e)=>{
+        if(this.firstTime){
+          let clone = this.plug.clone();
+          this.clonedPlug = clone;
+        }
+        this.firstTime=false;
+        this.dragStartX = e.detail.p.x;
+        this.dragStartY = e.detail.p.y;
+      })
+      .on('dragmove', (e)=>{
+        let dx = e.detail.p.x - this.dragStartX;
+        let dy = e.detail.p.y - this.dragStartY;
+        this.cable.dragEndPoint(dx,dy);
+      })
+      .on('dragend',  (e)=>{
+        const [x, y]= calcCenter(e.srcElement.animatedPoints);
+        const [hitIndex, hitPlug] = collisionDetection(svg, '.receptorPlug', x, y);
+        this.cable.endX=x;
+        this.cable.endY=y;
+        if(hitIndex === -1) return;
+        const myIndex=this.plug.parent().node.instance.data('index');
+        if(hitIndex!== myIndex){
+          let srcName = this.plug.data('name');
+          let dstName = hitPlug.data('name');
+          createFileLink(myIndex, hitIndex, srcName, dstName);
+          this.cable.remove();
+          this.plug.remove();
+          this.plug = this.clonedPlug;
+        }
+      });
   }
 }
 class SvgUpper{
@@ -305,7 +322,7 @@ export function createConnectors(outputFiles, svg, boxX, boxY, offsetX, offsetY,
   const baseOffsetY=calcFileBasePosY();
   outputFiles.forEach((output, fileIndex) => {
     const connector = new SvgConnector(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex, createFileLink);
-    connector.plug.data('name', output.name);
+    connector.plug.data({'name': output.name, 'dstNode': output.dstNode, 'dstName': output.dstName});
     connectors.push(connector);
   });
   return connectors
@@ -315,18 +332,16 @@ export function createReceptors(inputFiles, svg, boxX, boxY, offsetX, offsetY){
   const baseOffsetY=calcFileBasePosY();
   inputFiles.forEach((input, fileIndex) => {
     const receptor = new SvgReceptor(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex)
-    receptor.plug.data('name', input.name);
+    receptor.plug.data({'name': input.name, 'srcNode': input.srcNode, 'srcName': input.srcName});
     receptors.push(receptor);
   });
   return receptors;
 }
-
 export function createUpper(svg, boxX, boxY, offsetX, offsetY){
   return new SvgUpper(svg, boxX, boxY, offsetX, offsetY);
 }
 export function createLower(svg, boxX, boxY, offsetX, offsetY, color, createLink){
-  const lower=new SvgLower(svg, boxX, boxY, offsetX, offsetY, color, createLink);
-  return {plug: lower.plug, cable: lower.cable};
+  return new SvgLower(svg, boxX, boxY, offsetX, offsetY, color, createLink);
 }
 export function createBox (svg, x, y, type, name, inputFiles, outputFiles){
   const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles);
