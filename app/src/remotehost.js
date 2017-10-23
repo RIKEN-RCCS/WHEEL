@@ -2,6 +2,11 @@ import $ from 'jquery';
 import './jqueryExtends';
 
 import FileDialog from './fileDialog';
+import GetRemoteHostListSocket from './socketio/getRemoteHostListSocket';
+import SshConnectionSocket from './socketio/sshConnectionSocket';
+import AddHostSocket from './socketio/addHostSocket';
+import DeleteHostSocket from './socketio/deleteHostSocket';
+import GetFileListSocket from './socketio/getFileListSocket';
 
 $(() => {
     // socket io

@@ -1,7 +1,7 @@
 /**
  * socket io communication class for get file list
  */
-class GetFileListSocket {
+export default class {
     /**
      * create new instance
      * @param socket socket io instance
@@ -10,13 +10,14 @@ class GetFileListSocket {
     constructor(socket, extension) {
         this.socket = socket;
         this.extension = extension;
+        this.eventName = 'onGetFileList';
     }
     /**
      * Adds a listener for this event that will be invoked a single time before being automatically removed
      * @param callback The function to call when we get this event
      */
     onEvent(callback) {
-        this.socket.once(GetFileListSocket.eventName, callback);
+        this.socket.once(this.eventName, callback);
     }
     /**
      * emit to server for get file list
@@ -28,8 +29,3 @@ class GetFileListSocket {
         this.socket.emit('onGetFileList', directory, this.extension);
     }
 }
-/**
- * event name
- */
-GetFileListSocket.eventName = 'onGetFileList';
-//# sourceMappingURL=getFileListSocket.js.map

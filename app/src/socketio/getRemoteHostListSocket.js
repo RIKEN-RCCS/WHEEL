@@ -1,13 +1,14 @@
 /**
  * socket io communication class for getting host information from server
  */
-class GetRemoteHostListSocket {
+export default class{
     /**
      * create new instance
      * @param socket socket io instance
      */
     constructor(socket) {
         this.socket = socket;
+        this.eventName = 'onGetRemoteHostList';
     }
     /**
      * Adds a listener for connect event that will be invoked a single time before being automatically removed
@@ -28,7 +29,7 @@ class GetRemoteHostListSocket {
         if (callback == null) {
             callback = this.callback;
         }
-        this.socket.once(GetRemoteHostListSocket.eventName, (hostInfos) => {
+        this.socket.once(this.eventName, (hostInfos) => {
             callback(hostInfos);
         });
     }
@@ -38,11 +39,6 @@ class GetRemoteHostListSocket {
      */
     emit(callback) {
         this.onEvent(callback);
-        this.socket.emit(GetRemoteHostListSocket.eventName);
+        this.socket.emit(this.eventName);
     }
 }
-/**
- * event name
- */
-GetRemoteHostListSocket.eventName = 'onGetRemoteHostList';
-//# sourceMappingURL=getRemoteHostListSocket.js.map

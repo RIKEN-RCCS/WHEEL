@@ -1,33 +1,30 @@
 /**
- * socket io communication class for delete host information from server
+ * socket io communication class for remote ssh connection test to server
  */
-class DeleteHostSocket {
+export default class{
     /**
      * create new instance
      * @param socket socket io instance
      */
     constructor(socket) {
         this.socket = socket;
+        this.eventName = 'onSshConnection';
     }
     /**
      * Adds a listener for this event that will be invoked a single time before being automatically removed
      * @param callback The function to call when we get the event
      */
     onEvent(callback) {
-        this.socket.once(DeleteHostSocket.eventName, callback);
+        this.socket.once(this.eventName, callback);
     }
     /**
-     * emit to server for delete host information
+     * emit to server for remote ssh connection test
      * @param name key name of registered host information
+     * @param password password string
      * @param callback The function to call when we get the event
      */
-    emit(name, callback) {
+    emit(name, password, callback) {
         this.onEvent(callback);
-        this.socket.emit(DeleteHostSocket.eventName, name);
+        this.socket.emit(this.eventName, name, password);
     }
 }
-/**
- * event name
- */
-DeleteHostSocket.eventName = 'onDeleteHost';
-//# sourceMappingURL=deleteHostSocket.js.map

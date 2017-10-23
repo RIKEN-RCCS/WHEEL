@@ -84,7 +84,7 @@ export default class {
     createHtml4FileIcon(fileTypes) {
         const regexp = new RegExp(`${config.extension.project.replace('.', '\\.')}$`);
         const htmls = fileTypes.files
-            .filter(file => file.type === SwfFileType.FILE)
+            .filter(file => file.type === 'file')
             .map(file => {
             let htmlImage;
             if (file.name.match(regexp)) {
@@ -108,7 +108,7 @@ export default class {
      */
     createHtml4DirIcon(fileTypes) {
         const htmls = fileTypes.files
-            .filter(file => file.type === SwfFileType.DIRECTORY)
+            .filter(file => file.type === 'directory')
             .map(file => {
             return `
                     <div class="select_dir_container" id="${fileTypes.directory}${file.name}_dir" onMouseDown="return false;">
