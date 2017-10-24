@@ -172,9 +172,10 @@ $(() => {
         }
       });
     });
-    //TODO property画面で入力されたデータの送信処理をどこかに入れる必要あり
-
-    //TODO project 進行状況の受信
+    //TODO project 進行状況の受信処理
+    //
+    //setup log reciever
+    logReciever(sio);
   });
 
   // setup file uploader
@@ -182,8 +183,6 @@ $(() => {
   uploader.listenOnDrop(document.getElementById('fileBrowser'));
   uploader.listenOnInput(document.getElementById('fileSelector'));
 
-  //setup log reciever
-  logReciever(sio);
 
   // show or hide log area
   $('#displayLog').change(function () {

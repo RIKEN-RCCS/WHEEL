@@ -146,9 +146,9 @@ class Logger {
 
         var line = this.getDateString();
         line += ` [${label}] `;
-        for (var arg in args){
+        args.forEach(function(arg){
           line += JSON.stringify(arg);
-        }
+        });
         if (this.socket != null) {
             var eventName = 'log' + label;
             this.socket.emit(eventName.trim(), line);
