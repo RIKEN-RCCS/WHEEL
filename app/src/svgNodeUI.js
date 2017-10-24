@@ -186,4 +186,11 @@ export default class{
     this.group.on('dragend', callback);
     return this;
   }
+  /**
+   * add dblclick event listener to this node
+   */
+  onDblclick(callback){
+    this.group.on('dblclick', callback);
+    return this;
+  }
 }
