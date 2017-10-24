@@ -25,7 +25,10 @@ module.exports={
       name: 'common',
       chunks: ['home', 'workflow', 'remotehost', 'rapid']
     }),
-    new ExtractTextPlugin('css/libs.css')
+    new ExtractTextPlugin({
+      filename: 'css/[name].bundled.css',
+      allChunks: true
+    })
   ],
   module:{
     rules: [
@@ -49,7 +52,7 @@ module.exports={
         ]
       },
       {
-        test: /\.(png|svg|jpg|git)$/,
+        test: /\.(png|svg|jpg|gif)$/,
         include: includePath,
         use: [
           'file-loader'

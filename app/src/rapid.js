@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import 'jstree/dist/jstree';
+import 'jstree/dist/themes/default/style.css';
 import Split from 'split.js';
 
 $(() => {
