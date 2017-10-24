@@ -1,4 +1,4 @@
-var $ = require('jquery');
+import $ from 'jquery';
 import dialogWrapper from './dialogWrapper';
 
 export default class {

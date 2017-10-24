@@ -1,4 +1,4 @@
-var $ = require('jquery');
+import $ from 'jquery';
 export default function (socket) {
     // enable all log
     socket.on('logDBG', addLog);

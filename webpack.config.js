@@ -3,28 +3,39 @@ const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 
+const includePath = [
+  path.resolve(__dirname, 'app/src'),
+  path.resolve(__dirname, 'node_modules')
+]
+
 module.exports={
   entry: {
-    home: "./app/src/home.js",
-    workflow: "./app/src/workflow.js",
-    rapid: "./app/src/rapid.js",
-    remotehost: "./app/src/remotehost.js"
+    home:       "./app/src/home.js",
+    workflow:   "./app/src/workflow.js",
+    rapid:      "./app/src/rapid.js",
+    remotehost: "./app/src/remotehost.js",
   },
-  devtool: 'inline-source-map',
   output: {
-    path: path.resolve(__dirname,  "app/public"),
+    path: path.resolve(__dirname, 'app/public'),
     filename: "js/[name].js"
   },
-  resolve: {
-    alias: {
-      'jquery-ui': 'jquery-ui/ui/widgets',
-      'jquery-ui-css': 'jquery-ui/../../themes/base'
-    }
-  },
+  devtool: 'eval-source-map',
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'common',
+      chunks: ['home', 'workflow', 'remotehost', 'rapid']
+    }),
+    new ExtractTextPlugin('css/libs.css')
+  ],
   module:{
     rules: [
       {
+        test: /\.js$/,
+        include: includePath,
+      },
+      {
         test: /\.css$/,
+        include: includePath,
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
           use: 'css-loader'
@@ -32,30 +43,25 @@ module.exports={
       },
       {
         test: /\.json$/,
+        include: includePath,
         use: [
           'json-loader'
         ]
       },
       {
         test: /\.(png|svg|jpg|git)$/,
+        include: includePath,
         use: [
           'file-loader'
         ]
       },
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/,
+        include: includePath,
         use: [
           'file-loader'
         ]
       }
     ]
-  },
-  plugins: [
-    new UglifyJSPlugin(),
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'common',
-      chunks: ['home', 'workflow', 'remotehost']
-    }),
-    new ExtractTextPlugin('css/libs.css')
-  ]
+  }
 };

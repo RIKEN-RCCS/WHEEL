@@ -1,4 +1,4 @@
-var $ = require('jquery');
+import $ from 'jquery';
 $.fn.extend({
     borderInvalid: function () {
         const that = this;

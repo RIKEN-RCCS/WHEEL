@@ -1,5 +1,8 @@
 import $ from 'jquery';
-import 'jquery-ui/dialog';
+import 'jquery-ui/ui/widgets/dialog';
+
+import 'jquery-ui/themes/base/theme.css';
+import 'jquery-ui/themes/base/dialog.css';
 
 export default function(dialogID, html, options) {
     var def = $.Deferred();

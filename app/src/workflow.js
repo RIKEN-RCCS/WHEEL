@@ -1,8 +1,9 @@
 import $ from 'jquery';
-import 'jquery-ui/sortable';
+import 'jquery-ui/ui/widgets/sortable';
 import 'jquery-contextmenu';
 
-import 'jquery-ui-css/all.css';
+import 'jquery-ui/themes/base/theme.css';
+import 'jquery-ui/themes/base/sortable.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import Cookies from 'js-cookie';
@@ -95,40 +96,41 @@ $(() => {
           // mouse pointer coordinate on dragstart
           let startX=0;
           let startY=0;
-          node.onMousedown(function(e){
-            let nodeIndex=e.target.instance.parent('.node').data('index');
-            selectedNode=nodeIndex;
-            let nodePath = cwd+'/'+wf.nodes[nodeIndex].path;
-            console.log(wf.nodes[selectedNode]);
-            fb.request('fileListRequest', nodePath, null);
-            let name = wf.nodes[nodeIndex].name;
-            $('#path').text(name);
-            //TODO propertyを更新するような処理をした後で再度property画面を書き換える
-            $('#property').html(createPropertyHtml(v));
-            $('#inputFilesAddBtn').on('click',function(){
-              let inputVal=$('#inputFilesInputField').val();
-              if(isDupulicated(v.inputFiles, inputVal)) return;
-              let newVal={name: inputVal, srcNode: null, srcName: null}
-              sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
-            });
-            $('#outputFilesAddBtn').on('click',function(){
-              let inputVal=$('#outputFilesInputField').val();
-              if(isDupulicated(v.outputFiles, inputVal)) return;
-              let newVal={name: inputVal, dstNode: null, dstName: null}
-              sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
-            });
-            $('.inputFilesDelBtn').on('click',function(btnEvent){
-              let index=btnEvent.target.value;
-              let val=v.inputFiles[index]
-              sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
-            });
-            $('.outputFilesDelBtn').on('click',function(btnEvent){
-              let index=btnEvent.target.value;
-              let val=v.outputFiles[index]
-              sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
-            });
-            $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
-          })
+          node
+            .onMousedown(function(e){
+              let nodeIndex=e.target.instance.parent('.node').data('index');
+              selectedNode=nodeIndex;
+              let nodePath = cwd+'/'+wf.nodes[nodeIndex].path;
+              console.log(wf.nodes[selectedNode]);
+              fb.request('fileListRequest', nodePath, null);
+              let name = wf.nodes[nodeIndex].name;
+              $('#path').text(name);
+              //TODO propertyを更新するような処理をした後で再度property画面を書き換える
+              $('#property').html(createPropertyHtml(v));
+              $('#inputFilesAddBtn').on('click',function(){
+                let inputVal=$('#inputFilesInputField').val();
+                if(isDupulicated(v.inputFiles, inputVal)) return;
+                let newVal={name: inputVal, srcNode: null, srcName: null}
+                sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
+              });
+              $('#outputFilesAddBtn').on('click',function(){
+                let inputVal=$('#outputFilesInputField').val();
+                if(isDupulicated(v.outputFiles, inputVal)) return;
+                let newVal={name: inputVal, dstNode: null, dstName: null}
+                sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
+              });
+              $('.inputFilesDelBtn').on('click',function(btnEvent){
+                let index=btnEvent.target.value;
+                let val=v.inputFiles[index]
+                sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
+              });
+              $('.outputFilesDelBtn').on('click',function(btnEvent){
+                let index=btnEvent.target.value;
+                let val=v.outputFiles[index]
+                sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
+              });
+              $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
+            })
             .onDragstart(function(e){
               diffX=e.detail.p.x - e.target.instance.select('.box').first().x();
               diffY=e.detail.p.y - e.target.instance.select('.box').first().y()
@@ -144,11 +146,10 @@ $(() => {
               let x = e.detail.p.x - diffX;
               let y = e.detail.p.y - diffY;
               sio.emit('updateNode', {index: i, property: 'pos', value: {'x': x, 'y': y}, cmd: 'update'});
-            });
+            })
           nodes.push(node);
         }
       });
-
       //draw cables between Lower and Upper plug Connector and Receptor plug respectively
       for(let i=0; i<wf.nodes.length; i++){
         if(wf.nodes[i] !== null){
