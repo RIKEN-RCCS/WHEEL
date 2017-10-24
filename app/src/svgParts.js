@@ -40,8 +40,9 @@ export function calcCenter(points){
 function collisionDetection(svg, counterpart, x, y){
   let minDistance2=Number.MAX_VALUE;
   let nearestNodeIndex=-1;
-  let minPoints=null;
+  let nearestPlugPoints=null;
   let nearestPlug = null;
+  // dropしたplugと対応する種類のplugのうち最も距離が近いものを探す
   svg.select(counterpart).each(function(i, v){
     let index = v[i].parent().node.instance.data('index');
     let points=v[i].node.points;
@@ -51,15 +52,33 @@ function collisionDetection(svg, counterpart, x, y){
     if(minDistance2 > distance2){
       minDistance2 = distance2;
       nearestNodeIndex = index;
-      minPoints = points;
+      nearestPlugPoints = points;
       nearestPlug = v[i];
     }
   });
-  let extendX = (minPoints[1].x - minPoints[0].x)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
-  let extendY = (minPoints[3].y - minPoints[0].y)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
-  if(minPoints[0].x - extendX < x && x< minPoints[1].x +extendX && minPoints[0].y -extendY < y&& y< minPoints[3].y +extendY){
+  // 最近傍plugの頂点座標から当たり領域を作成
+  let xPoints = nearestPlugPoints.map((p)=>{
+    return p.x;
+  });
+  let yPoints = nearestPlugPoints.map((p)=>{
+    return p.y;
+  });
+  let minX = Math.min(xPoints);
+  let maxX = Math.max(xPoints);
+  let minY = Math.min(yPoints);
+  let maxY = Math.max(yPoints);
+  let extendX = (maxX - minX)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
+  let extendY = (maxY - minY)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
+  minX -= extendX;
+  maxX += extendX;
+  minY -= extendY;
+  maxY += extendY;
+
+  // 最近傍plugが範囲内に入っていれば indexとそのplugを返す
+  if(minX < x && x< maxX && minY < y&& y< maxY ){
     return [nearestNodeIndex, nearestPlug];
   }
+  // 外れの時は -1を二つ(indexとplug)返す
   return [-1, -1];
 }
 
