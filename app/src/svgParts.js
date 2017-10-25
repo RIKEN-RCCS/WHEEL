@@ -57,22 +57,27 @@ function collisionDetection(svg, counterpart, x, y){
     }
   });
   // 最近傍plugの頂点座標から当たり領域を作成
-  let xPoints = nearestPlugPoints.map((p)=>{
+  let xPoints = Array.from(nearestPlugPoints).map((p)=>{
     return p.x;
   });
-  let yPoints = nearestPlugPoints.map((p)=>{
+  console.log(xPoints);
+  let yPoints = Array.from(nearestPlugPoints).map((p)=>{
     return p.y;
   });
-  let minX = Math.min(xPoints);
-  let maxX = Math.max(xPoints);
-  let minY = Math.min(yPoints);
-  let maxY = Math.max(yPoints);
+  console.log(yPoints);
+  let minX = Math.min(...xPoints);
+  let maxX = Math.max(...xPoints);
+  let minY = Math.min(...yPoints);
+  let maxY = Math.max(...yPoints);
+  console.log(minX, maxX, minY, maxY);
   let extendX = (maxX - minX)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
   let extendY = (maxY - minY)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
+  console.log(extendX, extendY);
   minX -= extendX;
   maxX += extendX;
   minY -= extendY;
   maxY += extendY;
+  console.log(minX, maxX, minY, maxY);
 
   // 最近傍plugが範囲内に入っていれば indexとそのplugを返す
   if(minX < x && x< maxX && minY < y&& y< maxY ){
