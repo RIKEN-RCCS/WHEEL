@@ -17,12 +17,12 @@ const includePath = [
 
 module.exports={
   entry: {
-    home:       "./app/src/home",
-    workflow:   "./app/src/workflow",
-    rapid:      "./app/src/rapid",
-    remotehost: "./app/src/remotehost",
+    home:       "./app/src/js/home",
+    workflow:   "./app/src/js/workflow",
+    rapid:      "./app/src/js/rapid",
+    remotehost: "./app/src/js/remotehost",
   },
-  stats: "normal",
+  stats: "detailed",
   devtool: "eval-source-map",
   output: {
     path: path.resolve(__dirname, 'app/public'),
@@ -44,7 +44,6 @@ module.exports={
     }),
     new ExtractTextPlugin({
       filename: (getPath)=>{
-        console.log(getPath('css/[name].css'));
         return getPath('css/[name].css').replace('css/js', 'css');
       },
       allChunks: true

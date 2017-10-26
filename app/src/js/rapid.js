@@ -4,7 +4,7 @@ import 'jstree/dist/jstree';
 import 'jstree/dist/themes/default/style.css';
 import Split from 'split.js';
 
-import './css/rapid.css';
+import '../css/rapid.css';
 
 $(() => {
   var param = [];
