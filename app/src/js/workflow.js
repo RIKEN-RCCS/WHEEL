@@ -43,27 +43,27 @@ $(() => {
     'edit': {
       name: 'edit',
       callback: function() {
-        var path = $(this).data('path');
-        var filename = $(this).data('name');
-        $('<form/>', { action: '/editor', method: 'get' })
-          .append($('<input/>', { type: 'text', name: 'path',     value: path}))
-          .append($('<input/>', { type: 'text', name: 'filename', value: filename}))
-          .append($('<input/>', { name: 'pm', value: false}))
-          .appendTo(document.body)
-          .submit();
+        const path = $(this).data('path');
+        const filename = $(this).data('name');
+        const params= $.param({
+          "path": path,
+          "filename": filename,
+          "pm": false
+        });
+        window.open(`/editor?${params}`);
       }
     },
     'edit for parameter survey': {
       name: 'edit for PS',
       callback: function() {
-        var path = $(this).data('path');
-        var filename = $(this).data('name');
-        $('<form/>', { action: '/editor', method: 'get' })
-          .append($('<input/>', { name: 'path',     value: path}))
-          .append($('<input/>', { name: 'filename', value: filename}))
-          .append($('<input/>', { name: 'pm', value: true}))
-          .appendTo(document.body)
-          .submit();
+        const path = $(this).data('path');
+        const filename = $(this).data('name');
+        const params= $.param({
+          "path": path,
+          "filename": filename,
+          "pm": true
+        });
+        window.open(`/editor?${params}`);
       }
     }
   }
