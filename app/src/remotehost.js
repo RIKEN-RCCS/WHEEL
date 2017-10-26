@@ -8,6 +8,8 @@ import AddHostSocket from './socketio/addHostSocket';
 import DeleteHostSocket from './socketio/deleteHostSocket';
 import GetFileListSocket from './socketio/getFileListSocket';
 
+import './css/style.css';
+
 $(() => {
     // socket io
     const socket = io('/remotehost');

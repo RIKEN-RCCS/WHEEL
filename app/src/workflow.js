@@ -10,6 +10,9 @@ import Cookies from 'js-cookie';
 import SVG from 'svgjs/dist/svg.js';
 import 'svg.draggable.js/dist/svg.draggable.js';
 
+import './css/workflow.css';
+import './css/pure-drawer.min-1.0.2.css';
+
 import FileBrowser from  './fileBrowser';
 import dialogWrapper from './dialogWrapper';
 import logReciever from './logReciever';

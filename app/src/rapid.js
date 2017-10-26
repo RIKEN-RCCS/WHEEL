@@ -4,6 +4,8 @@ import 'jstree/dist/jstree';
 import 'jstree/dist/themes/default/style.css';
 import Split from 'split.js';
 
+import './css/rapid.css';
+
 $(() => {
   var param = [];
   var currentTarget = 0;
@@ -71,7 +73,6 @@ $(() => {
     // get json tree by socket.io
     const sio = io('/rapid');
     sio.on('tree', function(tree){
-      console.log('tree: ',tree);
       // ファイルのツリービュー
       $('#file_selector').jstree({
         'plugins':[],
@@ -80,7 +81,6 @@ $(() => {
           'animation':0,
           'data' : tree
         } });
-      console.log('create tree done');
     });
   // フォームの各要素が変更されるたび変数を更新
   $('form').change(function() {

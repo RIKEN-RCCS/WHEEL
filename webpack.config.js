@@ -5,28 +5,48 @@ const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 
 const includePath = [
   path.resolve(__dirname, 'app/src'),
-  path.resolve(__dirname, 'node_modules')
+  path.resolve(__dirname, 'node_modules', 'jquery'),
+  path.resolve(__dirname, 'node_modules', 'jquery-ui'),
+  path.resolve(__dirname, 'node_modules', 'jquery-contextmenu'),
+  path.resolve(__dirname, 'node_modules', 'js-cookie'),
+  path.resolve(__dirname, 'node_modules', 'svgjs'),
+  path.resolve(__dirname, 'node_modules', 'svg.draggable.js'),
+  path.resolve(__dirname, 'node_modules', 'split.js'),
+  path.resolve(__dirname, 'node_modules', 'jstree')
 ]
 
 module.exports={
   entry: {
-    home:       "./app/src/home.js",
-    workflow:   "./app/src/workflow.js",
-    rapid:      "./app/src/rapid.js",
-    remotehost: "./app/src/remotehost.js",
+    home:       "./app/src/home",
+    workflow:   "./app/src/workflow",
+    rapid:      "./app/src/rapid",
+    remotehost: "./app/src/remotehost",
   },
+  stats: "normal",
+  devtool: "eval-source-map",
   output: {
     path: path.resolve(__dirname, 'app/public'),
     filename: "js/[name].js"
   },
-  devtool: 'eval-source-map',
   plugins: [
     new webpack.optimize.CommonsChunkPlugin({
       name: 'common',
-      chunks: ['home', 'workflow', 'remotehost', 'rapid']
+      chunks: ['home', 'workflow', 'remotehost', 'rapid'],
+      minChunks: function(module, count){
+        // extract all css from node_module
+        if(module.resource && module.context
+          && (/^.*\.(css|scss)$/).test(module.resource)
+          && module.context.indexOf("node_modules") !== -1){
+           return true;
+         }
+        return count >=2;
+      }
     }),
     new ExtractTextPlugin({
-      filename: 'css/[name].bundled.css',
+      filename: (getPath)=>{
+        console.log(getPath('css/[name].css'));
+        return getPath('css/[name].css').replace('css/js', 'css');
+      },
       allChunks: true
     })
   ],

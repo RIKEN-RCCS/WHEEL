@@ -130,7 +130,7 @@ function onRenameFile(sio, msg){
   var newName = path.resolve(msg.path, msg.newName);
   util.promisify(fs.rename)(oldName, newName)
   .then(function () {
-    fileBrowser(sio, 'fileList', msg.path, {"fileter": {file: systemFiles}});
+    fileBrowser(sio, 'fileList', msg.path, {"filter": {file: systemFiles}});
   })
   .catch(function (err) {
     logger.warn('rename failed: ',err);
@@ -294,7 +294,7 @@ function setup(sio) {
     uploader.dir = os.homedir();
     uploader.on("saved", function (event) {
       logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
-      fileBrowser(socket, 'fileList', uploader.dir, {"fileter": {file: systemFiles}});
+      fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: systemFiles}});
     });
     uploader.on("error", function (event) {
       logger.error(`Error from uploader ${event}`);
