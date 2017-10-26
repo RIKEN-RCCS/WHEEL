@@ -12,13 +12,24 @@ const projectListManager = require("./projectListManager");
 const projectManager = require("./projectManager");
 const config = require('./config/server.json');
 
+const escape = require('./utility').escapeRegExp;;
 const noDotFiles = /^[^\.].*$/;
-const ProjectJSON = new RegExp(`^.*${config.extension.project.replace(/\./g, '\\.')}$`);
+const ProjectJSON = new RegExp(`^.*${escape(config.extension.project)}$`);
+const noWheelDir = new RegExp(`^(?!^.*${escape(config.suffix)}$).*$`);
 
-var adaptorSendFiles = function (withFile, sio, msg) {
+var adaptorSendFiles = function (withFile, dirFilter, sio, msg) {
     var target = msg ? path.normalize(msg) : config.rootDir || os.homedir() || '/';
     var request = msg || target;
-    fileBrowser(sio, 'fileList', target, request, true, withFile, true, { 'hide': noDotFiles, 'hideFile': ProjectJSON }, true);
+    fileBrowser(sio, 'fileList', target, {
+      "request": request,
+      "sendFilename"  : withFile,
+      "filter"        : {
+        "all": noDotFiles,
+        "file": ProjectJSON,
+        "dir": dirFilter
+      },
+      "withParentDir" : true
+    });
 };
 
 var removeTrailingPathSep = function (filename){
@@ -140,8 +151,8 @@ function setup(sio) {
         projectListManager.getAllProject().then(function(results){
           socket.emit('projectList', results);
         });
-        socket.on('new',    adaptorSendFiles.bind(null, false, sioHome));
-        socket.on('import', adaptorSendFiles.bind(null, true,  sioHome));
+        socket.on('new',    adaptorSendFiles.bind(null, false, noWheelDir, sioHome));
+        socket.on('import', adaptorSendFiles.bind(null, true,  null, sioHome));
         socket.on('create', onCreate.bind(null, sioHome));
         socket.on('add',    onAdd.bind(null, sioHome));
         socket.on('remove', onRemove.bind(null, sioHome));

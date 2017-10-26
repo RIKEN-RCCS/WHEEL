@@ -9,9 +9,15 @@ const del = require("del");
 const logger = require("./logger");
 const fileBrowser = require("./fileBrowser");
 const component = require('./workflowComponent');
+const config = require('./config/server.json');
+const escape = require('./utility').escapeRegExp;;
 
+
+// Json data of workflow which is editting
 var rootWorkflow=null;
 var rootWorkflowFilename=null;
+
+const systemFiles = new RegExp(`^(?!^.*(${escape(config.extension.project)}|${escape(config.extension.workflow)}|${escape(config.extension.pstudy)})$).*$`);
 
 /**
  * make directory
@@ -70,7 +76,7 @@ function onRemoveFile(sio, msg){
   var parentDir = path.dirname(msg);
   del(msg, { force: true })
   .then(function () {
-      fileBrowser(sio, 'fileList', parentDir);
+      fileBrowser(sio, 'fileList', parentDir, {"filter": {file: systemFiles}});
   })
   .catch(function (err) {
     logger.warn(`remove failed: ${err}`);
@@ -92,7 +98,7 @@ function onFileListRequest(uploader, sio, request){
         return Promise.reject(new Error("illegal directory browse request"));
       }
       logger.debug('targetDir = ', targetDir);
-      fileBrowser(sio, 'fileList', targetDir, request);
+      fileBrowser(sio, 'fileList', targetDir, {"request": request, "filter": {file: systemFiles}});
       uploader.dir = targetDir;
     })
     .catch(function(err){
@@ -124,7 +130,7 @@ function onRenameFile(sio, msg){
   var newName = path.resolve(msg.path, msg.newName);
   util.promisify(fs.rename)(oldName, newName)
   .then(function () {
-    fileBrowser(sio, 'fileList', msg.path);
+    fileBrowser(sio, 'fileList', msg.path, {"fileter": {file: systemFiles}});
   })
   .catch(function (err) {
     logger.warn('rename failed: ',err);
@@ -288,7 +294,7 @@ function setup(sio) {
     uploader.dir = os.homedir();
     uploader.on("saved", function (event) {
       logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
-      fileBrowser(socket, 'fileList', uploader.dir);
+      fileBrowser(socket, 'fileList', uploader.dir, {"fileter": {file: systemFiles}});
     });
     uploader.on("error", function (event) {
       logger.error(`Error from uploader ${event}`);
