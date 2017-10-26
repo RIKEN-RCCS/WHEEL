@@ -100,7 +100,7 @@ export default class{
         this.elseLinks.push(cable);
       });
     }
-    //TODO fix me!  1つのconnectorから複数のreceptorへlinkされてるパターンを確認
+    //TODO fix me!  1つのconnectorから複数のreceptorへlinkされてるパターンに対応
     this.connectors.find((connector)=>{
       let dstNode=connector.plug.data('dstNode');
       let dstName=connector.plug.data('dstName');

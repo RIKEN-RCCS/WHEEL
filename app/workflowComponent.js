@@ -66,7 +66,6 @@ class BaseTaskGraph{
     this.description=null;
     this.path=null;
     this.nodes=[];
-    this.start=[];
     this.inputFiles=[];
     this.outputFiles=[];
     this.cleanupFlag=null;

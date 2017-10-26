@@ -236,6 +236,45 @@ function onRemoveNode(sio, index){
     logger.warn('directory remove failed: ', dirName);
   })
   .then(function(){
+    /*
+     *              previous
+     *                 |
+     * inputFiles -- index -- outputFiles
+     *                 |
+     *            next, else
+     */
+    rootWorkflow.nodes[index].previous.forEach((p)=>{
+      rootWorkflow.nodes[p].next=rootWorkflow.nodes[p].next.filter((e)=>{
+        return e!==index;
+      });
+      if(rootWorkflow.nodes[p].else != null){
+        rootWorkflow.nodes[p].else=rootWorkflow.nodes[p].else.filter((e)=>{
+          return e!==index;
+        });
+      }
+    });
+    rootWorkflow.nodes[index].next.forEach((p)=>{
+      rootWorkflow.nodes[p].previous=rootWorkflow.nodes[p].previous.filter((e)=>{
+        return e!==index;
+      });
+    });
+    if(rootWorkflow.nodes[index].else != null){
+      rootWorkflow.nodes[index].else.forEach((p)=>{
+        rootWorkflow.nodes[p].previous=rootWorkflow.nodes[p].previous.filter((e)=>{
+          return e!==index;
+        });
+      });
+    }
+    rootWorkflow.nodes[index].inputFiles.forEach((p)=>{
+        rootWorkflow.nodes[p].outputFiles=rootWorkflow.nodes[p].outputFiles.filter((e)=>{
+          return e.dstNode!==index;
+        });
+    });
+    rootWorkflow.nodes[index].outputFiles.forEach((p)=>{
+        rootWorkflow.nodes[p].inputFiles=rootWorkflow.nodes[p].inputFiles.filter((e)=>{
+          return e.srcNode!==index;
+        });
+    });
     rootWorkflow.nodes[index]=null;
     return writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow');
   })
