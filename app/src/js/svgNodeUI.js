@@ -13,7 +13,7 @@ export default class{
    * @param svg draw canvas
    * @param node any node instance to draw
    */
-  constructor(svg, node, createLink, createFileLink) {
+  constructor(svg, node, sio, createLink, createFileLink, onMousedown) {
     /** svg.js's instance*/
     this.draw=svg;
 
@@ -28,23 +28,21 @@ export default class{
     const svgBox = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles);
     const box = svgBox.box;
     const textHeight=svgBox.textHeight;
-    const bbox=box.bbox()
-    const boxWidth= bbox.width;
-    const boxHeight=bbox.height;
+    this.boxBbox=box.bbox()
     const boxX=box.x();
     const boxY=box.y();
-    const upper = parts.createUpper(svg, boxX, boxY, boxWidth/2, 0);
+    const upper = parts.createUpper(svg, boxX, boxY, this.boxBbox.width/2, 0);
     const numLower=node.type === 'if'? 3:2;
-    this.lower = parts.createLower(svg, boxX, boxY, boxWidth/numLower, boxHeight, config.plug_color.flow, createLink);
+    this.lower = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower, this.boxBbox.height, config.plug_color.flow, createLink);
 
-    this.connectors = parts.createConnectors(node.outputFiles, svg, boxX, boxY, boxWidth, textHeight, createFileLink);
+    this.connectors = parts.createConnectors(node.outputFiles, svg, boxX, boxY, this.boxBbox.width, textHeight, createFileLink);
     const receptors = parts.createReceptors(node.inputFiles,    svg, boxX, boxY, 0, textHeight);
 
     this.group=this.draw.group();
     this.group.data({'index': node.index});
     this.group
       .add(box)
-      .add(upper.plug)
+      .add(upper)
       .add(this.lower.plug)
       .add(this.lower.cable.cable)
       .draggable()
@@ -54,13 +52,36 @@ export default class{
       this.group.add(connector.cable.cable);
     });
     receptors.forEach((receptor)=>{
-      this.group.add(receptor.plug);
+      this.group.add(receptor);
     });
     if(numLower === 3){
-      this.lower2 = parts.createLower(svg, boxX, boxY, boxWidth/numLower*2, boxHeight, config.plug_color.elseFlow, createLink);
+      this.lower2 = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower*2, this.boxBbox.height, config.plug_color.elseFlow, createLink);
       this.lower2.plug.addClass('elsePlug')
       this.group.add(this.lower2.plug).add(this.lower2.cable.cable);
     }
+    // difference between box origin and mouse pointer
+    let diffX=0;
+    let diffY=0;
+    // mouse pointer coordinate on dragstart
+    let startX=0;
+    let startY=0;
+    this.group
+      .on('dragstart',(e)=>{
+        diffX=e.detail.p.x - e.target.instance.select('.box').first().x();
+        diffY=e.detail.p.y - e.target.instance.select('.box').first().y()
+        startX = e.detail.p.x;
+        startY = e.detail.p.y;
+      })
+      .on('dragmove', (e)=>{
+        let dx = e.detail.p.x - startX;
+        let dy = e.detail.p.y - startY;
+        this.reDrawLinks(svg, dx, dy)
+      })
+      .on('dragend', (e)=>{
+        let x = e.detail.p.x - diffX;
+        let y = e.detail.p.y - diffY;
+        sio.emit('updateNode', {index: node.index, property: 'pos', value: {'x': x, 'y': y}, cmd: 'update'});
+      });
   }
 
   /**
@@ -74,9 +95,9 @@ export default class{
         return false;
       }
     });
-    const [sx, sy] = parts.calcCenter(srcPlug.node.points);
-    const [ex, ey] = parts.calcCenter(dstPlug.node.points);
-    const cable = new parts.SvgCable(svg, color, sx, sy, ex, ey);
+    const direction = counterpart === '.upperPlug'? 'DU':'RL';
+    const cable = new parts.SvgCable(svg, color, direction, this.boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+    cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
     return cable;
   }
 
@@ -119,7 +140,7 @@ export default class{
    * @param offsetX x coordinate difference from dragstart
    * @param offsetY y coordinate difference from dragstart
    */
-  reDrawLinks(svg, node, offsetX, offsetY){
+  reDrawLinks(svg, offsetX, offsetY){
     this.nextLinks.forEach((v)=>{
       v.dragStartPoint(offsetX, offsetY);
     });
@@ -157,40 +178,5 @@ export default class{
     this.inputFileLinks.forEach((v)=>{
       v.cable.remove();
     });
-  }
-  /**
-   * add onClick event listener to this node
-   */
-  onMousedown(callback){
-    this.group.on('mousedown', callback);
-    return this;
-  }
-  /**
-   * add dragstart event listener to this node
-   */
-  onDragstart(callback){
-    this.group.on('dragstart', callback);
-    return this;
-  }
-  /**
-   * add dragmove event listener to this node
-   */
-  onDragmove(callback){
-    this.group.on('dragmove', callback);
-    return this;
-  }
-  /**
-   * add dragend event listener to this node
-   */
-  onDragend(callback){
-    this.group.on('dragend', callback);
-    return this;
-  }
-  /**
-   * add dblclick event listener to this node
-   */
-  onDblclick(callback){
-    this.group.on('dblclick', callback);
-    return this;
   }
 }
