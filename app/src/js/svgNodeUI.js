@@ -10,12 +10,13 @@ import * as parts from './svgParts';
 export default class{
   /**
    * create new instance
-   * @param svg draw canvas
+   * @param svg  svg.js's instance
+   * @param sio  socket.io's instance
    * @param node any node instance to draw
    */
-  constructor(svg, node, sio, createLink, createFileLink, onMousedown) {
+  constructor(svg, sio, node) {
     /** svg.js's instance*/
-    this.draw=svg;
+    this.svg=svg;
 
     /** cable instance container */
     this.nextLinks=[];
@@ -33,13 +34,13 @@ export default class{
     const boxY=box.y();
     const upper = parts.createUpper(svg, boxX, boxY, this.boxBbox.width/2, 0);
     const numLower=node.type === 'if'? 3:2;
-    this.lower = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower, this.boxBbox.height, config.plug_color.flow, createLink);
+    this.lower = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower, this.boxBbox.height, config.plug_color.flow, sio);
 
-    this.connectors = parts.createConnectors(node.outputFiles, svg, boxX, boxY, this.boxBbox.width, textHeight, createFileLink);
-    const receptors = parts.createReceptors(node.inputFiles,    svg, boxX, boxY, 0, textHeight);
+    this.connectors = parts.createConnectors(node.outputFiles, svg, boxX, boxY, this.boxBbox.width, textHeight, sio);
+    const receptors = parts.createReceptors(node.inputFiles,   svg, boxX, boxY, 0, textHeight);
 
-    this.group=this.draw.group();
-    this.group.data({'index': node.index});
+    this.group=svg.group();
+    this.group.data({"index": node.index, "type": node.type});
     this.group
       .add(box)
       .add(upper)
@@ -55,10 +56,14 @@ export default class{
       this.group.add(receptor);
     });
     if(numLower === 3){
-      this.lower2 = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower*2, this.boxBbox.height, config.plug_color.elseFlow, createLink);
+      this.lower2 = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower*2, this.boxBbox.height, config.plug_color.elseFlow, sio);
       this.lower2.plug.addClass('elsePlug')
       this.group.add(this.lower2.plug).add(this.lower2.cable.cable);
     }
+    if(node.type == 'workflow' || node.type == 'parameterStudy'){
+      this.group.data({"path": node.path, "jsonFile": node.jsonFile});
+    }
+
     // difference between box origin and mouse pointer
     let diffX=0;
     let diffY=0;
@@ -75,28 +80,30 @@ export default class{
       .on('dragmove', (e)=>{
         let dx = e.detail.p.x - startX;
         let dy = e.detail.p.y - startY;
-        this.reDrawLinks(svg, dx, dy)
+        this.reDrawLinks(dx, dy)
       })
       .on('dragend', (e)=>{
-        let x = e.detail.p.x - diffX;
-        let y = e.detail.p.y - diffY;
-        sio.emit('updateNode', {index: node.index, property: 'pos', value: {'x': x, 'y': y}, cmd: 'update'});
+        let x = e.detail.p.x;
+        let y = e.detail.p.y;
+        if(x !== startX || y !== startY){
+          sio.emit('updateNode', {index: node.index, property: 'pos', value: {'x': x-diffX, 'y': y-diffY}, cmd: 'update'});
+        }
       });
   }
 
   /**
    * helper function of drawLinks
    */
-  createLinkedCable(svg, srcPlug, color, counterpart, isThis){
+  createLinkedCable(srcPlug, color, counterpart, isThis){
     let dstPlug=null;
-    svg.select(counterpart).each(function(i, v){
+    this.svg.select(counterpart).each(function(i, v){
       if(isThis(this.parent().node.instance, this.node.instance)){
         dstPlug= this;
         return false;
       }
     });
     const direction = counterpart === '.upperPlug'? 'DU':'RL';
-    const cable = new parts.SvgCable(svg, color, direction, this.boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+    const cable = new parts.SvgCable(this.svg, color, direction, this.boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
     cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
     return cable;
   }
@@ -104,9 +111,9 @@ export default class{
   /**
    * draw cables between Lower-Upper and Connector-Receptor respectively
    */
-  drawLinks(svg, node){
+  drawLinks(node){
     node.next.forEach((v)=>{
-      const cable = this.createLinkedCable(svg, this.lower.plug, config.plug_color.flow, '.upperPlug', function(parent){
+      const cable = this.createLinkedCable(this.lower.plug, config.plug_color.flow, '.upperPlug', function(parent){
         return parent.data('index') === v;
       });
       cable.cable.data('dst', v);
@@ -114,7 +121,7 @@ export default class{
     });
     if(node.type === 'if'){
       node.else.forEach((v)=>{
-        const cable = this.createLinkedCable(svg, this.lower2.plug, config.plug_color.elseFlow, '.upperPlug', function(parent){
+        const cable = this.createLinkedCable(this.lower2.plug, config.plug_color.elseFlow, '.upperPlug', function(parent){
           return parent.data('index') === v;
         });
         cable.cable.data('dst', v);
@@ -127,7 +134,7 @@ export default class{
       let dstName=connector.plug.data('dstName');
       // svg.jsのdata()でnullをsetしてからgetするとundefinedが返ってくるので !== ではなく != で判定する必要がある
       if(dstNode != null && dstName != null){
-        const cable = this.createLinkedCable(svg, connector.plug, config.plug_color.file, '.receptorPlug', function(parent, dst){
+        const cable = this.createLinkedCable(connector.plug, config.plug_color.file, '.receptorPlug', function(parent, dst){
           return parent.data('index') === dstNode && dst.data('name') === dstName;
         });
         cable.cable.data({'dst': dstNode, 'dstName': dstName});
@@ -140,7 +147,7 @@ export default class{
    * @param offsetX x coordinate difference from dragstart
    * @param offsetY y coordinate difference from dragstart
    */
-  reDrawLinks(svg, offsetX, offsetY){
+  reDrawLinks(offsetX, offsetY){
     this.nextLinks.forEach((v)=>{
       v.dragStartPoint(offsetX, offsetY);
     });
@@ -159,7 +166,7 @@ export default class{
   }
 
   /**
-   * delete svg of this node
+   * delete svg element of this node
    */
   remove(){
     this.group.remove();
@@ -178,5 +185,21 @@ export default class{
     this.inputFileLinks.forEach((v)=>{
       v.cable.remove();
     });
+  }
+
+  /**
+   * register callback function to 'mousedown' event
+   */
+  onMousedown(callback){
+    this.group.on('mousedown', callback);
+    return this;
+  }
+
+  /**
+   * register callback function to 'dblclick' event
+   */
+  onDblclick(callback){
+    this.group.on('dblclick', callback);
+    return this;
   }
 }

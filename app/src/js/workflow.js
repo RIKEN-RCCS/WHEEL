@@ -27,19 +27,23 @@ $(() => {
     throw new Error('illegal access');
   }
   let rootWorkflow=Cookies.get('root');
-  let cwd=Cookies.get('rootDir');
+  let rootDir=Cookies.get('rootDir');
+  let cwf=rootWorkflow;
+  let cwd=rootDir;
+  let dirStack=[];
 
   // set default view
   $('.project_manage_area').hide();
   $('#graphView').prop('checked', true);
   $('#log_area').hide();
   $('#property').hide();
+  $('#parentDirBtn').hide();
 
   // setup socket.io client
   const sio = io('/workflow');
 
   // setup FileBrowser
-  const additionalMenu={
+  const fb = new FileBrowser(sio, '#fileList', 'fileList', true, {
     'edit': {
       name: 'edit',
       callback: function() {
@@ -66,8 +70,22 @@ $(() => {
         window.open(`/editor?${params}`);
       }
     }
-  }
-  const fb = new FileBrowser(sio, '#fileList', 'fileList', true, additionalMenu);
+  });
+
+  // set "got to parent dir" button behavior
+  $('#parentDirBtn').on('click',function(){
+    let tmp=dirStack.pop();
+    cwd=tmp.dir;
+    cwf=tmp.wf;
+    if(cwd !== rootDir){
+      $('#parentDirBtn').show();
+    }else{
+      $('#parentDirBtn').hide();
+    }
+    fb.request('fileListRequest', cwd, null);
+    sio.emit('workflowRequest', cwf);
+  });
+
 
   // container of svg elements
   let nodes = [];
@@ -76,10 +94,10 @@ $(() => {
   const svg = SVG('node_svg');
   sio.on('connect', function () {
     fb.request('fileListRequest', cwd, null);
-    $('#path').text('root');
-    sio.emit('workflowRequest', rootWorkflow);
+    sio.emit('workflowRequest', cwf);
 
     sio.on('workflow', function(wf){
+      $('#path').text(wf.path);
       // remove all node from workflow editor
       nodes.forEach(function(v){
         if(v !== null) v.remove();
@@ -92,7 +110,57 @@ $(() => {
         if(v ===null){
           nodes.push(null);
         }else{
-          let node=new SvgNodeUI(svg, v, sio, createLink, createFileLink, onMousedown);
+          let node=new SvgNodeUI(svg, sio, v);
+          node.onMousedown(function(e){
+            let nodeIndex=e.target.instance.parent('.node').data('index');
+            selectedNode=nodeIndex;
+            let nodePath = cwd+'/'+wf.nodes[nodeIndex].path;
+            fb.request('fileListRequest', nodePath, null);
+            let name = wf.nodes[nodeIndex].name;
+            $('#path').text(name);
+            //TODO propertyを更新するような処理をした後で再度property画面を書き換える
+            $('#property').html(createPropertyHtml(v));
+            $('#inputFilesAddBtn').on('click',function(){
+              let inputVal=$('#inputFilesInputField').val();
+              if(isDupulicated(v.inputFiles, inputVal)) return;
+              let newVal={name: inputVal, srcNode: null, srcName: null}
+              sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
+            });
+            $('#outputFilesAddBtn').on('click',function(){
+              let inputVal=$('#outputFilesInputField').val();
+              if(isDupulicated(v.outputFiles, inputVal)) return;
+              let newVal={name: inputVal, dstNode: null, dstName: null}
+              sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
+            });
+            $('.inputFilesDelBtn').on('click',function(btnEvent){
+              let index=btnEvent.target.value;
+              let val=v.inputFiles[index]
+              sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
+            });
+            $('.outputFilesDelBtn').on('click',function(btnEvent){
+              let index=btnEvent.target.value;
+              let val=v.outputFiles[index]
+              sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
+            });
+            $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
+          })
+          .onDblclick(function(e){
+            let nodeType=e.target.instance.parent('.node').data('type');
+            if(nodeType == 'workflow' ||nodeType == 'parameterStudy'){
+              let path=e.target.instance.parent('.node').data('path');
+              let json=e.target.instance.parent('.node').data('jsonFile');
+              dirStack.push({dir: cwd, wf: cwf});
+              cwd=cwd+'/'+path;
+              cwf=cwd+'/'+json
+              fb.request('fileListRequest', cwd, null);
+              sio.emit('workflowRequest', cwf);
+              if(cwd !== rootDir){
+                $('#parentDirBtn').show();
+              }else{
+                $('#parentDirBtn').hide();
+              }
+            }
+          });
           nodes.push(node);
         }
       });
@@ -100,7 +168,7 @@ $(() => {
       //draw cables between Lower and Upper plug Connector and Receptor plug respectively
       for(let i=0; i<wf.nodes.length; i++){
         if(wf.nodes[i] !== null){
-          nodes[i].drawLinks(svg, wf.nodes[i]);
+          nodes[i].drawLinks(wf.nodes[i]);
         }
       }
       nodes.forEach(function(node){
@@ -124,6 +192,11 @@ $(() => {
     //
     //setup log reciever
     logReciever(sio);
+  });
+
+  // hide property if background is clicked
+  $('#node_svg').on('mousedown', function(){
+    $('#property').hide();
   });
 
   // setup file uploader
@@ -202,7 +275,11 @@ $(() => {
     $('.sub_content_area').innerHeight(currentHeight + logHeight);
     $('#log_area').hide();
   };
-  function getClickPosition(option) {
+  /**
+   * get mouse positoin where contextmenu is created
+   * @param option second argument of callback function of jquery.contextMenu
+   */
+  var getClickPosition = function(option) {
     const parentOffset = $(option.selector).offset();
     const clickPosition = option.$menu.position();
     const position = {
@@ -216,62 +293,9 @@ $(() => {
    * @param files inputFiles or outputFiles of any workflow component
    * @param filename testee
    */
-  function isDupulicated(files, filename){
+  var isDupulicated = function(files, filename){
     return -1 !== files.findIndex(function(v){
       return v.name === filename;
     });
-  }
-
-  /**
-   * call addLink API
-   */
-  function createLink(srcNode, dstNode, isElse=false){
-    sio.emit('addLink', {src: srcNode, dst: dstNode, isElse: isElse});
-  }
-
-  /**
-   * call addFileLink API
-   */
-  function createFileLink(srcNode, dstNode, srcName, dstName){
-    sio.emit('addFileLink', {src: srcNode, dst: dstNode, srcName: srcName, dstName: dstName});
-  }
-
-  /**
-   * callback routin on 'mousedown' event on NodeUI
-   */
-
-  function onMousedown(e){
-    let nodeIndex=e.target.instance.parent('.node').data('index');
-    selectedNode=nodeIndex;
-    let nodePath = cwd+'/'+wf.nodes[nodeIndex].path;
-    console.log(wf.nodes[selectedNode]);
-    fb.request('fileListRequest', nodePath, null);
-    let name = wf.nodes[nodeIndex].name;
-    $('#path').text(name);
-    //TODO propertyを更新するような処理をした後で再度property画面を書き換える
-    $('#property').html(createPropertyHtml(v));
-    $('#inputFilesAddBtn').on('click',function(){
-      let inputVal=$('#inputFilesInputField').val();
-      if(isDupulicated(v.inputFiles, inputVal)) return;
-      let newVal={name: inputVal, srcNode: null, srcName: null}
-      sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
-    });
-    $('#outputFilesAddBtn').on('click',function(){
-      let inputVal=$('#outputFilesInputField').val();
-      if(isDupulicated(v.outputFiles, inputVal)) return;
-      let newVal={name: inputVal, dstNode: null, dstName: null}
-      sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
-    });
-    $('.inputFilesDelBtn').on('click',function(btnEvent){
-      let index=btnEvent.target.value;
-      let val=v.inputFiles[index]
-      sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
-    });
-    $('.outputFilesDelBtn').on('click',function(btnEvent){
-      let index=btnEvent.target.value;
-      let val=v.outputFiles[index]
-      sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
-    });
-    $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
   }
 });

@@ -155,7 +155,7 @@ export class SvgCable{
   }
 }
 class SvgLower{
-  constructor(svg, boxBbox, originX, originY, offsetX, offsetY, color, createLink){
+  constructor(svg, boxBbox, originX, originY, offsetX, offsetY, color, sio){
     this.plug = svg.polygon(UDPlug).fill(color);
     this.bbox = this.plug.bbox();
     this.originX = originX + offsetX - this.bbox.width / 2;
@@ -185,7 +185,7 @@ class SvgLower{
         if(hitIndex === -1) return;
         const myIndex=this.plug.parent().node.instance.data('index');
         if(hitIndex!== myIndex){
-          createLink(myIndex, hitIndex, this.plug.hasClass('elsePlug'));
+          sio.emit('addLink', {src: myIndex, dst: hitIndex, isElse: this.plug.hasClass('elsePlug')});
           this.cable.remove();
           this.plug.remove();
           this.plug = this.clonedPlug;
@@ -194,7 +194,7 @@ class SvgLower{
   }
 }
 class SvgConnector{
-  constructor(svg, originX, originY, offsetX, offsetY, createFileLink){
+  constructor(svg, originX, originY, offsetX, offsetY, sio){
     this.plug = svg.polygon(LRPlug).fill(config.plug_color.file);
     this.bbox = this.plug.bbox();
     this.originX = originX + offsetX - this.bbox.width / 2;
@@ -226,7 +226,7 @@ class SvgConnector{
         if(hitIndex!== myIndex){
           let srcName = this.plug.data('name');
           let dstName = hitPlug.data('name');
-          createFileLink(myIndex, hitIndex, srcName, dstName);
+          sio.emit('addFileLink', {src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName});
           this.cable.remove();
           this.plug.remove();
           this.plug = this.clonedPlug;
@@ -366,11 +366,11 @@ class SvgBox{
   }
 }
 
-export function createConnectors(outputFiles, svg, boxX, boxY, offsetX, offsetY, createFileLink){
+export function createConnectors(outputFiles, svg, boxX, boxY, offsetX, offsetY, sio){
   let connectors=[];
   const baseOffsetY=calcFileBasePosY();
   outputFiles.forEach((output, fileIndex) => {
-    const connector = new SvgConnector(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex, createFileLink);
+    const connector = new SvgConnector(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex, sio);
     connector.plug.data({'name': output.name, 'dstNode': output.dstNode, 'dstName': output.dstName});
     connectors.push(connector);
   });
@@ -394,8 +394,8 @@ export function createUpper(svg, boxX, boxY, offsetX, offsetY){
   plug.move(boxX+offsetX-bbox.width/2, boxY+offsetY-bbox.height / 2);
   return plug;
 }
-export function createLower(svg, bbox, boxX, boxY, offsetX, offsetY, color, createLink){
-  return new SvgLower(svg, bbox, boxX, boxY, offsetX, offsetY, color, createLink);
+export function createLower(svg, bbox, boxX, boxY, offsetX, offsetY, color, sio){
+  return new SvgLower(svg, bbox, boxX, boxY, offsetX, offsetY, color, sio);
 }
 export function createBox (svg, x, y, type, name, inputFiles, outputFiles){
   const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles);
