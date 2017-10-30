@@ -98,7 +98,6 @@ $(() => {
   sio.on('connect', function () {
     fb.request('fileListRequest', cwd, null);
     sio.emit('workflowRequest', cwf);
-
     sio.on('workflow', function(wf){
       $('#path').text(wf.path);
       // remove all node from workflow editor
@@ -106,90 +105,8 @@ $(() => {
         if(v !== null) v.remove();
       });
       nodes=[];
-
-      // draw each node
-      wf.nodes.forEach(function(v,i){
-        // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
-        if(v ===null){
-          nodes.push(null);
-        }else{
-          let node=new SvgNodeUI(svg, sio, v);
-          node.onMousedown(function(e){
-            let nodeIndex=e.target.instance.parent('.node').data('index');
-            selectedNode=nodeIndex;
-            let nodePath = cwd+'/'+wf.nodes[nodeIndex].path;
-            fb.request('fileListRequest', nodePath, null);
-            let name = wf.nodes[nodeIndex].name;
-            $('#path').text(name);
-            //TODO propertyを更新するような処理をした後で再度property画面を書き換える
-            $('#property').html(createPropertyHtml(v));
-            $('#inputFilesAddBtn').on('click',function(){
-              let inputVal=$('#inputFilesInputField').val();
-              if(isDupulicated(v.inputFiles, inputVal)) return;
-              let newVal={name: inputVal, srcNode: null, srcName: null}
-              sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
-            });
-            $('#outputFilesAddBtn').on('click',function(){
-              let inputVal=$('#outputFilesInputField').val();
-              if(isDupulicated(v.outputFiles, inputVal)) return;
-              let newVal={name: inputVal, dstNode: null, dstName: null}
-              sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
-            });
-            $('.inputFilesDelBtn').on('click',function(btnEvent){
-              let index=btnEvent.target.value;
-              let val=v.inputFiles[index]
-              sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
-            });
-            $('.outputFilesDelBtn').on('click',function(btnEvent){
-              let index=btnEvent.target.value;
-              let val=v.outputFiles[index]
-              sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
-            });
-            $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
-          })
-          .onDblclick(function(e){
-            let nodeType=e.target.instance.parent('.node').data('type');
-            if(nodeType == 'workflow' ||nodeType == 'parameterStudy'){
-              let path=e.target.instance.parent('.node').data('path');
-              let json=e.target.instance.parent('.node').data('jsonFile');
-              dirStack.push({dir: cwd, wf: cwf});
-              cwd=cwd+'/'+path;
-              cwf=cwd+'/'+json
-              fb.request('fileListRequest', cwd, null);
-              sio.emit('workflowRequest', cwf);
-              if(cwd !== rootDir){
-                $('#parentDirBtn').show();
-              }else{
-                $('#parentDirBtn').hide();
-              }
-            }
-          });
-          nodes.push(node);
-        }
-      });
-
-      //draw cables between Lower and Upper plug Connector and Receptor plug respectively
-      for(let i=0; i<wf.nodes.length; i++){
-        if(wf.nodes[i] !== null){
-          nodes[i].drawLinks(wf.nodes[i]);
-        }
-      }
-      nodes.forEach(function(node){
-        if(node != null){
-          node.nextLinks.forEach(function(cable){
-            let dst = cable.cable.data('dst');
-            nodes[dst].previousLinks.push(cable);
-          });
-          node.elseLinks.forEach(function(cable){
-            let dst = cable.cable.data('dst');
-            nodes[dst].previousLinks.push(cable);
-          });
-          node.outputFileLinks.forEach(function(cable){
-            let dst = cable.cable.data('dst');
-            nodes[dst].inputFileLinks.push(cable);
-          });
-        }
-      });
+      drawNodes(wf.nodes);
+      drawLinks(wf.nodes);
     });
     //TODO project 進行状況の受信処理
     //
@@ -271,13 +188,15 @@ $(() => {
     var logHeight = $('#log_area').outerHeight(true);
     $('.sub_content_area').innerHeight(currentHeight - logHeight);
     $('#log_area').show();
-  };
+  }
+
   var hideLog = function () {
     var currentHeight = $('.sub_content_area').innerHeight();
     var logHeight = $('#log_area').outerHeight(true);
     $('.sub_content_area').innerHeight(currentHeight + logHeight);
     $('#log_area').hide();
-  };
+  }
+
   /**
    * get mouse positoin where contextmenu is created
    * @param option second argument of callback function of jquery.contextMenu
@@ -291,6 +210,7 @@ $(() => {
     };
     return position;
   }
+
   /**
    * check if filename is already in inputFiles or outputFiles
    * @param files inputFiles or outputFiles of any workflow component
@@ -300,5 +220,97 @@ $(() => {
     return -1 !== files.findIndex(function(v){
       return v.name === filename;
     });
+  }
+
+  /**
+   * draw nodes
+   * @param nodeInWF node list in workflow Json
+   */
+  var drawNodes=function(nodesInWF){
+      nodesInWF.forEach(function(v,i){
+        // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
+        if(v ===null){
+          nodes.push(null);
+        }else{
+          let node=new SvgNodeUI(svg, sio, v);
+          node.onMousedown(function(e){
+            let nodeIndex=e.target.instance.parent('.node').data('index');
+            selectedNode=nodeIndex;
+            let nodePath = cwd+'/'+nodesInWF[nodeIndex].path;
+            fb.request('fileListRequest', nodePath, null);
+            let name = nodesInWF[nodeIndex].name;
+            $('#path').text(name);
+            $('#property').html(createPropertyHtml(v));
+            $('#inputFilesAddBtn').on('click',function(){
+              let inputVal=$('#inputFilesInputField').val();
+              if(isDupulicated(v.inputFiles, inputVal)) return;
+              let newVal={name: inputVal, srcNode: null, srcName: null}
+              sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
+            });
+            $('#outputFilesAddBtn').on('click',function(){
+              let inputVal=$('#outputFilesInputField').val();
+              if(isDupulicated(v.outputFiles, inputVal)) return;
+              let newVal={name: inputVal, dstNode: null, dstName: null}
+              sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
+            });
+            $('.inputFilesDelBtn').on('click',function(btnEvent){
+              let index=btnEvent.target.value;
+              let val=v.inputFiles[index]
+              sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
+            });
+            $('.outputFilesDelBtn').on('click',function(btnEvent){
+              let index=btnEvent.target.value;
+              let val=v.outputFiles[index]
+              sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
+            });
+            $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
+          })
+          .onDblclick(function(e){
+            let nodeType=e.target.instance.parent('.node').data('type');
+            if(nodeType == 'workflow' ||nodeType == 'parameterStudy'){
+              let path=e.target.instance.parent('.node').data('path');
+              let json=e.target.instance.parent('.node').data('jsonFile');
+              dirStack.push({dir: cwd, wf: cwf});
+              cwd=cwd+'/'+path;
+              cwf=cwd+'/'+json
+              fb.request('fileListRequest', cwd, null);
+              sio.emit('workflowRequest', cwf);
+              if(cwd !== rootDir){
+                $('#parentDirBtn').show();
+              }else{
+                $('#parentDirBtn').hide();
+              }
+            }
+          });
+          nodes.push(node);
+        }
+      });
+  }
+  /**
+   * draw cables between Lower and Upper plug Connector and Receptor plug respectively
+   * @param nodeInWF node list in workflow Json
+   */
+  var drawLinks=function(nodesInWF){
+      for(let i=0; i<nodesInWF.length; i++){
+        if(nodesInWF[i] !== null){
+          nodes[i].drawLinks(nodesInWF[i]);
+        }
+      }
+      nodes.forEach(function(node){
+        if(node != null){
+          node.nextLinks.forEach(function(cable){
+            let dst = cable.cable.data('dst');
+            nodes[dst].previousLinks.push(cable);
+          });
+          node.elseLinks.forEach(function(cable){
+            let dst = cable.cable.data('dst');
+            nodes[dst].previousLinks.push(cable);
+          });
+          node.outputFileLinks.forEach(function(cable){
+            let dst = cable.cable.data('dst');
+            nodes[dst].inputFileLinks.push(cable);
+          });
+        }
+      });
   }
 });
