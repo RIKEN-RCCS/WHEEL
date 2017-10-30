@@ -10,14 +10,14 @@
       <table id="target_list"> </table>
     </p>
     <form id="param_form">
-      <p style="padding-left:8px">
+      <p>
         <label class="left_l">Target:</label>
-          <span id="label_target">-</span> 
+          <span id="label_target">-</span>
           <a href="javascript:void(0)" onClick="onClickRemove();return false;">[Remove]</a><br>
           <input type="hidden" name="target" value="target">
         <label class="left_l">Keyword:</label>
           <input type="text" id="input_keyword" name="keyword" value="" size=24><br>
-        <label class="left_l">Type:</label> 
+        <label class="left_l">Type:</label>
           <input type="radio" name="type" value="integer" />
           <label for="integer">Integer</label>
           <input type="radio" name="type" value="float" />
@@ -34,7 +34,7 @@
         <label class="left_l">Step:</label>
           <input type="text" name="step" value="" id="input_step" size=12><br>
         <label class="left_l">List:</label>
-          <textarea id="list" name="list" cols=32 rows=5 style="width:98%;"></textarea>
+          <textarea id="list" name="list" cols=32 rows=5></textarea>
         <div id="wrapper" >
           <div id="file_selector"></div>
         </div>

@@ -32,15 +32,15 @@
               <img src="/image/icon_run.png" class="icon" id="run_button" />
               <figcaption>RUN</figcaption>
             </figure>
-            <figure id="pause_menu" class="menu_container" style="display: none">
+            <figure id="pause_menu" class="menu_container">
               <img src="/image/icon_pause.png" class="icon" id="run_button" />
               <figcaption>PAUSE</figcaption>
             </figure>
-            <figure id="clean_menu" class="menu_container" style="display: none">
+            <figure id="clean_menu" class="menu_container">
               <img src="/image/icon_clean.png" class="icon" id="clean_button" />
               <figcaption>CLEAN</figcaption>
             </figure>
-            <figure id="stop_menu" class="menu_container" style="display: none">
+            <figure id="stop_menu" class="menu_container">
               <img src="/image/icon_stop.png" class="icon" id="stop_button" />
               <figcaption>STOP</figcaption>
             </figure>
@@ -53,7 +53,7 @@
 
           <div class="address_bar_area">
             <img src="/image/icon_file.png" class="file_icon">
-            <input type="text" id="address_bar" class="address_bar text_box " readonly="readonly" style="background-color: rgb(70, 70, 65)">
+            <input type="text" id="address_bar" class="address_bar text_box " readonly="readonly">
           </div>
 
           <table class="selected_workflow">
@@ -81,16 +81,16 @@
               <th></th>
             </tr>
             <tr>
-              <td style="width: 180px"><input type="text" id="workflow_name" class="text_box" style="width: 165px" spellcheck="false"></td>
-              <td><input type="text" id="workflow_desc" class="text_box" style="width: calc(100% - 10px);" spellcheck="false"></td>
-              <td style="width: 90px"><button type="button" class="button" id="save_button">Save</button></td>
-              <td style="width: 90px"><button type="button" class="button" id="reset_button">Revert</button></td>
+              <td id="workflow_name_container"><input type="text" id="workflow_name" class="text_box" spellcheck="false"></td>
+              <td><input type="text" id="workflow_desc" class="text_box" spellcheck="false"></td>
+              <td class="buttons_container"><button type="button" class="button" id="save_button">Save</button></td>
+              <td class="buttons_container"><button type="button" class="button" id="reset_button">Revert</button></td>
             </tr>
           </table>
 
           <div class="project_manage_area sub_content_area" id="project_tree" onMouseDown="return false;">
             <div id="project_tree_svg"></div>
-            <div style="width: 40%">
+            <div id=project_table_container">
               <table id="project_table">
                 <thead id="project_table_head">
                   <tr>

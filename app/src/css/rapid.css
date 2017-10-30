@@ -7,7 +7,7 @@ body {
 }
 p {
   font-size:12px;
-  margin: 10px; 
+  margin: 10px;
 }
 table {
   font-size:11px;
@@ -38,13 +38,13 @@ button {
   border-radius:2px;
 }
 button:hover {
-  color:red; 
+  color:red;
 }
 a {
-  text-decoration:none; 
+  text-decoration:none;
 }
 a:hover {
-  color:red; 
+  color:red;
 }
 input:disabled {
   background:#DCDCDC;
@@ -73,7 +73,7 @@ ul {
 }
 .gutter.gutter-horizontal {
   cursor:ew-resize;
-  background:#c0c0f0 
+  background:#c0c0f0
 }
 #left_pane {
   width:100%;
@@ -93,5 +93,14 @@ ul {
   height:200px;
   overflow:auto;
   border:1px dotted #c0c0ff;
-} 
-
+}
+#header {
+ border:1px solid white;
+ padding:4px;
+}
+#list {
+  width: 98%;
+}
+#param_form {
+  padding-left: 8px;
+}

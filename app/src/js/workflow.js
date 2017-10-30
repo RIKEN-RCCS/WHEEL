@@ -38,6 +38,9 @@ $(() => {
   $('#log_area').hide();
   $('#property').hide();
   $('#parentDirBtn').hide();
+  $('#pause_menu').hide();
+  $('#clean_menu').hide();
+  $('#stop_menu').hide();
 
   // setup socket.io client
   const sio = io('/workflow');

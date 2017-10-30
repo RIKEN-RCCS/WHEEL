@@ -47,17 +47,17 @@
                     <input type="radio" name="authtype" class="auth_type_radio" id="authtype_password">
                     <label class="text_label">Password</label>
                 </div>
-                <div style="width: 300px">
+                <div id="sshkey_area">
                     <input type="radio" name="authtype" class="auth_type_radio" id="authtype_sshkey" checked>
                     <label class="text_label">Key File</label>
-                    <input type="text" id="sshkey_address" class="remotehost_text text_box" style="margin-left: 15px">
+                    <input type="text" id="sshkey_address" class="remotehost_text text_box">
                     <button type="button" class="button" id="browse_button">Browse...</button>
                 </div>
             </div>
         </div>
 
-        <button type="button" class="button" id="add_host_button" style="margin: auto">Add</button>
-        <div id="add_error_area" style="height: 30px"></div>
+        <button type="button" class="button" id="add_host_button">Add</button>
+        <div id="add_error_area"></div>
 
         <div class="register_list_area sub_content_area">
             <table id="host_table">

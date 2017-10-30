@@ -115,7 +115,9 @@ a:active {
     margin: 0 0 0 5px;
     width: 100%;
 }
-
+#address_bar {
+ background-color: rgb(70, 70, 65);
+}
 .dialog_text_box {
     width: 100%;
 }
@@ -171,13 +173,26 @@ a:active {
     flex-direction: row;
     position: relative;
 }
+#project_table_container{
+  width: 40%;
+}
 .workflow_manage_area {
     display: flex;
     flex-direction: row;
     position: relative;
 }
-
-
+#workflow_name_container{
+  width: 180px;
+}
+#workflow_name{
+  width: 165px;
+}
+#workflow_desc{
+ width: calc(100% - 10px);
+}
+.buttons_container{
+  width: 90px;
+}
 .register_host_area {
     height: calc(100% - 120px);
     text-align: center;
