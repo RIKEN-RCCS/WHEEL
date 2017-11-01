@@ -166,25 +166,27 @@ export class SvgCable{
 class SvgLower{
   constructor(svg, boxBbox, originX, originY, offsetX, offsetY, color, sio){
     this.plug = svg.polygon(UDPlug).fill(color);
-    this.bbox = this.plug.bbox();
-    this.originX = originX + offsetX - this.bbox.width / 2;
-    this.originY = originY + offsetY - this.bbox.height / 2;
-    this.plug.move(this.originX, this.originY).draggable();
-    this.firstTime=true;
-    this.cable = new SvgCable(svg, color, 'DU', boxBbox, this.originX + this.bbox.width / 2, this.originY+ this.bbox.height / 2);
+    const bbox = this.plug.bbox();
+    originX = originX + offsetX - bbox.width / 2;
+    originY = originY + offsetY - bbox.height / 2;
+    this.plug.move(originX, originY).draggable();
+    let firstTime=true;
+    this.cable = new SvgCable(svg, color, 'DU', boxBbox, originX + bbox.width / 2, originY+ bbox.height / 2);
+    let clone=null;
+    let dragStartPointX=null;
+    let dragStartPointY=null;
     this.plug
       .on('dragstart', (e)=>{
-        if(this.firstTime){
-          let clone = this.plug.clone();
-          this.clonedPlug = clone;
-          this.firstTime=false;
+        if(firstTime){
+          clone = this.plug.clone();
+          firstTime=false;
         }
-        this.dragStartX = e.detail.p.x;
-        this.dragStartY = e.detail.p.y;
+        dragStartPointX = e.detail.p.x;
+        dragStartPointY = e.detail.p.y;
       })
       .on('dragmove', (e)=>{
-        let dx = e.detail.p.x - this.dragStartX;
-        let dy = e.detail.p.y - this.dragStartY;
+        let dx = e.detail.p.x - dragStartPointX;
+        let dy = e.detail.p.y - dragStartPointY;
         this.cable.dragEndPoint(dx,dy);
       })
       .on('dragend', (e)=>{
@@ -197,7 +199,7 @@ class SvgLower{
           sio.emit('addLink', {src: myIndex, dst: hitIndex, isElse: this.plug.hasClass('elsePlug')});
           this.cable.remove();
           this.plug.remove();
-          this.plug = this.clonedPlug;
+          this.plug = clone
         }
       });
   }
@@ -392,8 +394,45 @@ export function createUpper(svg, boxX, boxY, offsetX, offsetY){
   plug.move(boxX+offsetX-bbox.width/2, boxY+offsetY-bbox.height / 2);
   return plug;
 }
-export function createLower(svg, bbox, boxX, boxY, offsetX, offsetY, color, sio){
-  return new SvgLower(svg, bbox, boxX, boxY, offsetX, offsetY, color, sio);
+export function createLower(svg, boxBbox, originX, originY, offsetX, offsetY, color, sio){
+    let plug = svg.polygon(UDPlug).fill(color);
+    const bbox = plug.bbox();
+    originX = originX + offsetX - bbox.width / 2;
+    originY = originY + offsetY - bbox.height / 2;
+    plug.move(originX, originY).draggable();
+    let firstTime=true;
+    const cable = new SvgCable(svg, color, 'DU', boxBbox, originX + bbox.width / 2, originY+ bbox.height / 2);
+    let clone=null;
+    let dragStartPointX=null;
+    let dragStartPointY=null;
+    plug
+      .on('dragstart', (e)=>{
+        if(firstTime){
+          clone = plug.clone();
+          firstTime=false;
+        }
+        dragStartPointX = e.detail.p.x;
+        dragStartPointY = e.detail.p.y;
+      })
+      .on('dragmove', (e)=>{
+        let dx = e.detail.p.x - dragStartPointX;
+        let dy = e.detail.p.y - dragStartPointY;
+        cable.dragEndPoint(dx,dy);
+      })
+      .on('dragend', (e)=>{
+        cable.endX=e.srcElement.instance.cx();
+        cable.endY=e.srcElement.instance.cy();
+        const [hitIndex,] = collisionDetection(svg, '.upperPlug', cable.endX, cable.endY);
+        if(hitIndex === -1) return;
+        const myIndex=plug.parent().node.instance.data('index');
+        if(hitIndex!== myIndex){
+          sio.emit('addLink', {src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug')});
+          cable.remove();
+          plug.remove();
+          plug = clone
+        }
+      });
+  return {plug: plug, cable: cable};
 }
 export function createBox (svg, x, y, type, name, inputFiles, outputFiles){
   const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles);
