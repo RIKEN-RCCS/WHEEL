@@ -91,7 +91,7 @@ export class SvgCable{
   }
   _calcControlPoint(sx, sy, ex, ey) {
     const scaleRange=1.5;
-    const scaleControlPoint=2;
+    const scaleControlPoint=1.8;
     const mx = (sx + ex) / 2;
     const my = (sy + ey) / 2;
     let cp1x=0;
@@ -128,7 +128,7 @@ export class SvgCable{
     }else if(this.direction === 'RL'){
       const offset = this.boxBbox.height*scaleControlPoint;
       if(ex<sx){
-        if(sy-this.boxBbox.height*scaleRange < ey && ey <sy+this.boxBbox.width*scaleRange){
+        if(sy-this.boxBbox.height*scaleRange < ey && ey <sy+this.boxBbox.height*scaleRange){
           cp1x=sx+offset;
           cp1y=sy-offset;
           cp2x=ex-offset;
@@ -295,69 +295,13 @@ class SvgBox{
   }
 }
 
-export function createConnector(svg, originX, originY, offsetX, offsetY, sio){
-  offsetY +=calcFileBasePosY();
-  let plug = svg.polygon(LRPlug).fill(config.plug_color.file);
-  const bbox = plug.bbox();
-  originX += offsetX - bbox.width / 2;
-  originY += offsetY;
-  plug.move(originX, originY).draggable();
-  const cable = new SvgCable(svg, config.plug_color.file, 'RL', bbox, originX + bbox.width / 2, originY+ bbox.height / 2);
-  let firstTime=true;
-  let clone=null;
-  let dragStartPointX=null;
-  let dragStartPointY=null;
-  plug
-    .on('dragstart', (e)=>{
-      if(firstTime){
-        clone = plug.clone();
-      }
-      firstTime=false;
-      dragStartPointX = e.detail.p.x;
-      dragStartPointY = e.detail.p.y;
-    })
-    .on('dragmove', (e)=>{
-      let dx = e.detail.p.x - dragStartPointX;
-      let dy = e.detail.p.y - dragStartPointY;
-      cable.dragEndPoint(dx,dy);
-    })
-    .on('dragend',  (e)=>{
-      cable.endX=e.srcElement.instance.cx();
-      cable.endY=e.srcElement.instance.cy();
-      const [hitIndex, hitPlug] = collisionDetection(svg, '.receptorPlug', cable.endX, cable.endY);
-      if(hitIndex === -1) return;
-      const myIndex=plug.parent().node.instance.data('index');
-      if(hitIndex!== myIndex){
-        let srcName = plug.data('name');
-        let dstName = hitPlug.data('name');
-        sio.emit('addFileLink', {src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName});
-        cable.remove();
-        plug.remove();
-        plug = clone;
-      }
-    });
-  return [plug, cable.cable];
-}
-export function createReceptor(svg, originX, originY, offsetX, offsetY){
-  offsetY +=calcFileBasePosY();
-  const plug = svg.polygon(LRPlug).fill(config.plug_color.file).addClass('receptorPlug');
-  const bbox = plug.bbox();
-  plug.move(originX+offsetX-bbox.width / 2, originY + offsetY);
-  return plug;
-}
-export function createUpper(svg, originX, originY, offsetX, offsetY){
-  const plug = svg.polygon(UDPlug).fill(config.plug_color.flow).addClass('upperPlug');
-  const bbox = plug.bbox();
-  plug.move(originX+offsetX-bbox.width/2, originY+offsetY-bbox.height / 2);
-  return plug;
-}
-export function createLower(svg, boxBbox, originX, originY, offsetX, offsetY, color, sio){
-    let plug = svg.polygon(UDPlug).fill(color);
+function createLCPlugAndCable(svg, boxBbox, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback){
+    let plug = svg.polygon(plugShape).fill(color);
     const bbox = plug.bbox();
-    originX += offsetX - bbox.width / 2;
-    originY += offsetY - bbox.height / 2;
+    originX -= bbox.width/2;
+    if(moveY) originY -= bbox.height/2;
     plug.move(originX, originY).draggable();
-    const cable = new SvgCable(svg, color, 'DU', boxBbox, originX + bbox.width / 2, originY+ bbox.height / 2);
+    const cable = new SvgCable(svg, color, cableDirection, boxBbox, originX + bbox.width / 2, originY+ bbox.height / 2);
     let firstTime=true;
     let clone=null;
     let dragStartPointX=null;
@@ -379,18 +323,45 @@ export function createLower(svg, boxBbox, originX, originY, offsetX, offsetY, co
       .on('dragend', (e)=>{
         cable.endX=e.srcElement.instance.cx();
         cable.endY=e.srcElement.instance.cy();
-        const [hitIndex,] = collisionDetection(svg, '.upperPlug', cable.endX, cable.endY);
+        const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
         if(hitIndex === -1) return;
         const myIndex=plug.parent().node.instance.data('index');
         if(hitIndex!== myIndex){
-          sio.emit('addLink', {src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug')});
-          cable.remove();
-          plug.remove();
-          plug = clone
+          callback(myIndex, hitIndex, plug, hitPlug);
         }
+        cable.remove();
+        plug.remove();
+        plug = clone
       });
   return [plug, cable.cable];
 }
+
+export function createLower(svg, boxBbox, originX, originY, offsetX, offsetY, color, sio){
+  return createLCPlugAndCable(svg, boxBbox, originX+offsetX, originY+offsetY, true, color, UDPlug, 'DU', '.upperPlug', function(myIndex, hitIndex, plug){
+    sio.emit('addLink', {src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug')});
+  });
+}
+export function createConnector(svg, boxBbox, originX, originY, offsetX, offsetY, sio){
+  offsetY +=calcFileBasePosY();
+  return createLCPlugAndCable(svg, boxBbox, originX+offsetX, originY+offsetY, false, config.plug_color.file, LRPlug, 'RL', '.receptorPlug', function(myIndex, hitIndex, plug, hitPlug){
+    let srcName = plug.data('name');
+    let dstName = hitPlug.data('name');
+    sio.emit('addFileLink', {src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName});
+  });
+}
+export function createReceptor(svg, originX, originY, offsetX, offsetY){
+  const plug = svg.polygon(LRPlug).fill(config.plug_color.file).addClass('receptorPlug');
+  const bbox = plug.bbox();
+  plug.move(originX+offsetX-bbox.width/2, originY+offsetY+calcFileBasePosY());
+  return plug;
+}
+export function createUpper(svg, originX, originY, offsetX, offsetY){
+  const plug = svg.polygon(UDPlug).fill(config.plug_color.flow).addClass('upperPlug');
+  const bbox = plug.bbox();
+  plug.move(originX+offsetX-bbox.width/2, originY+offsetY-bbox.height/2);
+  return plug;
+}
+
 export function createBox (svg, x, y, type, name, inputFiles, outputFiles){
   const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles);
   return [box.box, box.textHeight];

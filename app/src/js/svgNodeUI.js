@@ -47,7 +47,7 @@ export default class{
 
     this.connectors=[];
     node.outputFiles.forEach((output, fileIndex) => {
-      let [plug, cable]= parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight*fileIndex, sio);
+      let [plug, cable]= parts.createConnector(svg, boxBbox, boxX, boxY, boxBbox.width, textHeight*fileIndex, sio);
       plug.data({"name": output.name, "dst": output.dst});
       this.group.add(plug);
       this.group.add(cable);
