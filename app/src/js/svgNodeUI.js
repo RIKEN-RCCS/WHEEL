@@ -28,10 +28,8 @@ export default class{
     // draw node
     this.group=svg.group();
     this.group.data({"index": node.index, "type": node.type}).draggable().addClass('node');
-    const svgBox = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles);
-    const box = svgBox.box;
-    const textHeight=svgBox.textHeight;
-    let boxBbox=box.bbox()
+    const [box, textHeight]= parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles);
+    const boxBbox=box.bbox()
     const boxX=box.x();
     const boxY=box.y();
     this.group.add(box);
@@ -42,17 +40,18 @@ export default class{
     this.group.add(upper);
 
     const numLower=node.type === 'if'? 3:2;
-    this.lower = parts.createLower(svg, boxBbox, boxX, boxY, boxBbox.width/numLower, boxBbox.height, config.plug_color.flow, sio);
-    this.lower.plug.data({"next": node.next});
-    this.group.add(this.lower.plug).add(this.lower.cable.cable);
+    let tmp=null;
+    [this.lowerPlug, tmp] = parts.createLower(svg, boxBbox, boxX, boxY, boxBbox.width/numLower, boxBbox.height, config.plug_color.flow, sio);
+    this.lowerPlug.data({"next": node.next});
+    this.group.add(this.lowerPlug).add(tmp);
 
     this.connectors=[];
     node.outputFiles.forEach((output, fileIndex) => {
-      const connector = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight*fileIndex, sio);
-      connector.plug.data({"name": output.name, "dst": output.dst});
-      this.group.add(connector.plug);
-      this.group.add(connector.cable.cable);
-      this.connectors.push(connector);
+      let [plug, cable]= parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight*fileIndex, sio);
+      plug.data({"name": output.name, "dst": output.dst});
+      this.group.add(plug);
+      this.group.add(cable);
+      this.connectors.push(plug);
     });
 
     node.inputFiles.forEach((input, fileIndex) => {
@@ -62,9 +61,9 @@ export default class{
     });
 
     if(numLower === 3){
-      this.lower2 = parts.createLower(svg, boxBbox, boxX, boxY, boxBbox.width/numLower*2, boxBbox.height, config.plug_color.elseFlow, sio)
-      this.lower2.plug.addClass('elsePlug').data({"else": node.else});
-      this.group.add(this.lower2.plug).add(this.lower2.cable.cable);
+      [this.lower2Plug, tmp] = parts.createLower(svg, boxBbox, boxX, boxY, boxBbox.width/numLower*2, boxBbox.height, config.plug_color.elseFlow, sio)
+      this.lower2Plug.addClass('elsePlug').data({"else": node.else});
+      this.group.add(this.lower2Plug).add(tmp);
     }
 
     if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'For' || node.type === 'If' || node.type === 'Foreach'){
@@ -104,7 +103,7 @@ export default class{
   drawLinks(){
     let boxBbox=this.group.data('boxBbox');
     let upperPlugs=this.svg.select('.upperPlug');
-    let srcPlug=this.lower.plug;
+    let srcPlug=this.lowerPlug;
     srcPlug.data('next').forEach((dstIndex)=>{
       let dstPlug = upperPlugs.members.find((plug)=>{
         return plug.data('index') === dstIndex;
@@ -115,7 +114,7 @@ export default class{
       this.nextLinks.push(cable);
     });
     if(this.hasOwnProperty('lower2')){
-      let srcPlug=this.lower2.plug;
+      let srcPlug=this.lower2Plug;
       srcPlug.data('else').forEach((dstIndex)=>{
         let dstPlug = upperPlugs.members.find((plug)=>{
           return plug.data('index') === dstIndex;
@@ -127,8 +126,7 @@ export default class{
       });
     }
     let receptorPlugs=this.svg.select('.receptorPlug');
-    this.connectors.forEach((connector)=>{
-      let srcPlug = connector.plug;
+    this.connectors.forEach((srcPlug)=>{
       srcPlug.data('dst').forEach((dst)=>{
         let dstPlug = receptorPlugs.members.find((plug)=>{
           return plug.data('index') === dst.dstNode;
