@@ -90,21 +90,29 @@ export class SvgCable{
     this.boxBbox = bbox;
   }
   _calcControlPoint(sx, sy, ex, ey) {
-    const scale=2;
+    const scaleRange=1.5;
+    const scaleControlPoint=2;
     const mx = (sx + ex) / 2;
     const my = (sy + ey) / 2;
-    const offset = Math.max(this.boxBbox.width, this.boxBbox.height)*3;
     let cp1x=0;
     let cp1y=0;
     let cp2x=0;
     let cp2y=0;
     if(this.direction === 'DU'){
+      const offset = this.boxBbox.width*scaleControlPoint;
       if(ey<sy){
-        if( sx-this.boxBbox.width*scale < ex && ex < sx+this.boxBbox.width*scale){
-          cp1x=sx-offset;
-          cp1y=sy+offset;
-          cp2x=ex-offset;
-          cp2y=ey-offset;
+        if( sx-this.boxBbox.width*scaleRange < ex && ex < sx+this.boxBbox.width*scaleRange){
+          if(sx > ex){
+            cp1x=sx+offset;
+            cp1y=sy+offset;
+            cp2x=ex+offset;
+            cp2y=ey-offset;
+          }else{
+            cp1x=sx-offset;
+            cp1y=sy+offset;
+            cp2x=ex-offset;
+            cp2y=ey-offset;
+          }
         }else{
           cp1x=mx;
           cp1y=sy+offset;
@@ -118,8 +126,9 @@ export class SvgCable{
         cp2y=my;
       }
     }else if(this.direction === 'RL'){
+      const offset = this.boxBbox.height*scaleControlPoint;
       if(ex<sx){
-        if(sy-this.boxBbox.height*scale < ey && ey <sy+this.boxBbox.width*scale){
+        if(sy-this.boxBbox.height*scaleRange < ey && ey <sy+this.boxBbox.width*scaleRange){
           cp1x=sx+offset;
           cp1y=sy-offset;
           cp2x=ex-offset;
@@ -366,27 +375,16 @@ class SvgBox{
   }
 }
 
-export function createConnectors(outputFiles, svg, boxX, boxY, offsetX, offsetY, sio){
-  let connectors=[];
+export function createConnector(svg, boxX, boxY, offsetX, offsetY, sio){
   const baseOffsetY=calcFileBasePosY();
-  outputFiles.forEach((output, fileIndex) => {
-    const connector = new SvgConnector(svg, boxX, boxY, offsetX, baseOffsetY + offsetY*fileIndex, sio);
-    connector.plug.data({'name': output.name, 'dstNode': output.dstNode, 'dstName': output.dstName});
-    connectors.push(connector);
-  });
-  return connectors
+  return  new SvgConnector(svg, boxX, boxY, offsetX, baseOffsetY + offsetY, sio);
 }
-export function createReceptors(inputFiles, svg, boxX, boxY, offsetX, offsetY){
-  let receptors=[];
+export function createReceptor(svg, boxX, boxY, offsetX, offsetY){
   const baseOffsetY=calcFileBasePosY();
-  inputFiles.forEach((input, fileIndex) => {
-    const plug = svg.polygon(LRPlug).fill(config.plug_color.file).addClass('receptorPlug');
-    const bbox = plug.bbox();
-    plug.move(boxX+offsetX-bbox.width / 2, boxY+baseOffsetY + offsetY*fileIndex);
-    plug.data({'name': input.name, 'srcNode': input.srcNode, 'srcName': input.srcName});
-    receptors.push(plug);
-  });
-  return receptors;
+  const plug = svg.polygon(LRPlug).fill(config.plug_color.file).addClass('receptorPlug');
+  const bbox = plug.bbox();
+  plug.move(boxX+offsetX-bbox.width / 2, boxY+baseOffsetY + offsetY);
+  return plug;
 }
 export function createUpper(svg, boxX, boxY, offsetX, offsetY){
   const plug = svg.polygon(UDPlug).fill(config.plug_color.flow).addClass('upperPlug');

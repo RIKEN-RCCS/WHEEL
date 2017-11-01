@@ -241,6 +241,7 @@ $(() => {
             let name = nodesInWF[nodeIndex].name;
             $('#path').text(name);
             $('#property').html(createPropertyHtml(v));
+            //TODO Input/OutputFiles propertyの追加/削除はそれぞれ専用のAPIを作成する
             $('#inputFilesAddBtn').on('click',function(){
               let inputVal=$('#inputFilesInputField').val();
               if(isDupulicated(v.inputFiles, inputVal)) return;
@@ -250,7 +251,7 @@ $(() => {
             $('#outputFilesAddBtn').on('click',function(){
               let inputVal=$('#outputFilesInputField').val();
               if(isDupulicated(v.outputFiles, inputVal)) return;
-              let newVal={name: inputVal, dstNode: null, dstName: null}
+              let newVal={name: inputVal, dst: []}
               sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
             });
             $('.inputFilesDelBtn').on('click',function(btnEvent){
@@ -293,7 +294,7 @@ $(() => {
   var drawLinks=function(nodesInWF){
       for(let i=0; i<nodesInWF.length; i++){
         if(nodesInWF[i] !== null){
-          nodes[i].drawLinks(nodesInWF[i]);
+          nodes[i].drawLinks();
         }
       }
       nodes.forEach(function(node){

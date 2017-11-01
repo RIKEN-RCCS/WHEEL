@@ -26,41 +26,47 @@ export default class{
     this.inputFileLinks=[];
 
     // draw node
+    this.group=svg.group();
+    this.group.data({"index": node.index, "type": node.type}).draggable().addClass('node');
     const svgBox = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles);
     const box = svgBox.box;
     const textHeight=svgBox.textHeight;
     this.boxBbox=box.bbox()
     const boxX=box.x();
     const boxY=box.y();
+    this.group.add(box);
+
     const upper = parts.createUpper(svg, boxX, boxY, this.boxBbox.width/2, 0);
+    upper.data({"index": node.index});
+    this.group.add(upper);
+
     const numLower=node.type === 'if'? 3:2;
     this.lower = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower, this.boxBbox.height, config.plug_color.flow, sio);
+    this.lower.plug.data({"next": node.next});
+    this.group.add(this.lower.plug).add(this.lower.cable.cable);
 
-    this.connectors = parts.createConnectors(node.outputFiles, svg, boxX, boxY, this.boxBbox.width, textHeight, sio);
-    const receptors = parts.createReceptors(node.inputFiles,   svg, boxX, boxY, 0, textHeight);
-
-    this.group=svg.group();
-    this.group.data({"index": node.index, "type": node.type});
-    this.group
-      .add(box)
-      .add(upper)
-      .add(this.lower.plug)
-      .add(this.lower.cable.cable)
-      .draggable()
-      .addClass('node');
-    this.connectors.forEach((connector)=>{
+    this.connectors=[];
+    node.outputFiles.forEach((output, fileIndex) => {
+      const connector = parts.createConnector(svg, boxX, boxY, this.boxBbox.width, textHeight*fileIndex, sio);
+      connector.plug.data({"name": output.name, "dst": output.dst});
       this.group.add(connector.plug);
       this.group.add(connector.cable.cable);
+      this.connectors.push(connector);
     });
-    receptors.forEach((receptor)=>{
+
+    node.inputFiles.forEach((input, fileIndex) => {
+      const receptor = parts.createReceptor(svg, boxX, boxY, 0, textHeight*fileIndex);
+      receptor.data({"index": node.index, "name": input.name});
       this.group.add(receptor);
     });
+
     if(numLower === 3){
-      this.lower2 = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower*2, this.boxBbox.height, config.plug_color.elseFlow, sio);
-      this.lower2.plug.addClass('elsePlug')
+      this.lower2 = parts.createLower(svg, this.boxBbox, boxX, boxY, this.boxBbox.width/numLower*2, this.boxBbox.height, config.plug_color.elseFlow, sio)
+      this.lower2.plug.addClass('elsePlug').data({"else": node.else});
       this.group.add(this.lower2.plug).add(this.lower2.cable.cable);
     }
-    if(node.type == 'workflow' || node.type == 'parameterStudy'){
+
+    if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'For' || node.type === 'If' || node.type === 'Foreach'){
       this.group.data({"path": node.path, "jsonFile": node.jsonFile});
     }
 
@@ -92,54 +98,44 @@ export default class{
   }
 
   /**
-   * helper function of drawLinks
-   */
-  createLinkedCable(srcPlug, color, counterpart, isThis){
-    let dstPlug=null;
-    this.svg.select(counterpart).each(function(i, v){
-      if(isThis(this.parent().node.instance, this.node.instance)){
-        dstPlug= this;
-        return false;
-      }
-    });
-    const direction = counterpart === '.upperPlug'? 'DU':'RL';
-    const cable = new parts.SvgCable(this.svg, color, direction, this.boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
-    cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
-    return cable;
-  }
-
-  /**
    * draw cables between Lower-Upper and Connector-Receptor respectively
    */
-  drawLinks(node){
-    node.next.forEach((v)=>{
-      const cable = this.createLinkedCable(this.lower.plug, config.plug_color.flow, '.upperPlug', function(parent){
-        return parent.data('index') === v;
+  drawLinks(){
+    let upperPlugs=this.svg.select('.upperPlug');
+    this.lower.plug.data('next').forEach((dstIndex)=>{
+      let dstPlug = upperPlugs.members.find((plug)=>{
+        return plug.data('index') === dstIndex;
       });
-      cable.cable.data('dst', v);
+      let srcPlug=this.lower.plug;
+      const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', this.boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+      cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
+      cable.cable.data('dst', dstIndex);
       this.nextLinks.push(cable);
     });
-    if(node.type === 'if'){
-      node.else.forEach((v)=>{
-        const cable = this.createLinkedCable(this.lower2.plug, config.plug_color.elseFlow, '.upperPlug', function(parent){
-          return parent.data('index') === v;
+    if(this.hasOwnProperty('lower2')){
+      this.lower2.plug.data('else').forEach((dstIndex)=>{
+        let dstPlug = upperPlugs.members.find((plug)=>{
+          return plug.data('index') === dstIndex;
         });
-        cable.cable.data('dst', v);
+        let srcPlug=this.lower2.plug;
+        const cable = new parts.SvgCable(this.svg, config.plug_color.elseFlow, 'DU', this.boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
+        cable.cable.data('dst', dstIndex);
         this.elseLinks.push(cable);
       });
     }
-    //TODO fix me!  1つのconnectorから複数のreceptorへlinkされてるパターンに対応
-    this.connectors.find((connector)=>{
-      let dstNode=connector.plug.data('dstNode');
-      let dstName=connector.plug.data('dstName');
-      // svg.jsのdata()でnullをsetしてからgetするとundefinedが返ってくるので !== ではなく != で判定する必要がある
-      if(dstNode != null && dstName != null){
-        const cable = this.createLinkedCable(connector.plug, config.plug_color.file, '.receptorPlug', function(parent, dst){
-          return parent.data('index') === dstNode && dst.data('name') === dstName;
+    let receptorPlugs=this.svg.select('.receptorPlug');
+    this.connectors.forEach((connector)=>{
+      connector.plug.data('dst').forEach((dst)=>{
+        let dstPlug = receptorPlugs.members.find((plug)=>{
+          return plug.data('index') === dst.dstNode;
         });
-        cable.cable.data({'dst': dstNode, 'dstName': dstName});
+        let srcPlug = connector.plug;
+        const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', this.boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
+        cable.cable.data('dst', dst.dstNode);
         this.outputFileLinks.push(cable);
-      }
+      });
     });
   }
   /**

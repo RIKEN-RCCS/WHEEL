@@ -29,8 +29,10 @@ class Task{
      * if name is null or white space, original file name will be used
      * {
      *   name: "filename, dirname or regex",
-     *   dstNode: "index of dst node",
-     *   dstName: "name in dst node"
+     *   dst:[
+     *     {dstNode: "index of dst node1", dstName: "name in dst node1"},
+     *     {dstNode: "index of dst node2", dstName: "name in dst node2"}
+     *   ]
      * }
      */
     this.outputFiles=[];

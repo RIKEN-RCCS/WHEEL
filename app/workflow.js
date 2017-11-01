@@ -13,8 +13,9 @@ const config = require('./config/server.json');
 const escape = require('./utility').escapeRegExp;;
 
 
-// Json data of workflow which is editting
+// workflow object which is editting
 var rootWorkflow=null;
+// workflow filename which is editting
 var rootWorkflowFilename=null;
 
 const systemFiles = new RegExp(`^(?!^.*(${escape(config.extension.project)}|${escape(config.extension.workflow)}|${escape(config.extension.pstudy)})$).*$`);
@@ -191,6 +192,7 @@ function onCreateNode(sio, msg){
       logger.error('node create failed: ', err);
     });
 }
+
 function onUpdateNode(sio, msg){
   logger.debug('updateNode event recieved: ', msg);
   let index=msg.index;
@@ -217,7 +219,6 @@ function onUpdateNode(sio, msg){
         }
         break;
       case 'update':
-        console.log(value);
         targetNode[property]=value;
         break;
     }
@@ -243,7 +244,8 @@ function onRemoveNode(sio, index){
      *                 |
      *            next, else
      */
-    rootWorkflow.nodes[index].previous.forEach((p)=>{
+    // remove index from next property of previous tasks
+    target.previous.forEach((p)=>{
       rootWorkflow.nodes[p].next=rootWorkflow.nodes[p].next.filter((e)=>{
         return e!==index;
       });
@@ -253,29 +255,40 @@ function onRemoveNode(sio, index){
         });
       }
     });
-    rootWorkflow.nodes[index].next.forEach((p)=>{
+    // remove index from previous property of next tasks
+    target.next.forEach((p)=>{
       rootWorkflow.nodes[p].previous=rootWorkflow.nodes[p].previous.filter((e)=>{
         return e!==index;
       });
     });
-    if(rootWorkflow.nodes[index].else != null){
-      rootWorkflow.nodes[index].else.forEach((p)=>{
+    // remove index from previous property of next tasks (else)
+    if(target.else != null){
+      target.else.forEach((p)=>{
         rootWorkflow.nodes[p].previous=rootWorkflow.nodes[p].previous.filter((e)=>{
           return e!==index;
         });
       });
     }
-    rootWorkflow.nodes[index].inputFiles.forEach((p)=>{
-        rootWorkflow.nodes[p].outputFiles=rootWorkflow.nodes[p].outputFiles.filter((e)=>{
+    // remove index from outputFiles property of tasks which have file dependency
+    target.inputFiles.forEach((p)=>{
+      rootWorkflow.nodes[p.srcNode].outputFiles.forEach((outputFile)=>{
+        outputFile.dst=outputFile.dst.filter((e)=>{
           return e.dstNode!==index;
         });
+      });
     });
-    rootWorkflow.nodes[index].outputFiles.forEach((p)=>{
-        rootWorkflow.nodes[p].inputFiles=rootWorkflow.nodes[p].inputFiles.filter((e)=>{
+    // remove index from inputFiles property of tasks which have file dependency
+    target.outputFiles.forEach((outputFile)=>{
+      outputFile.dst.forEach((dst)=>{
+        rootWorkflow.nodes[dst.dstNode].inputFiles=rootWorkflow.nodes[dst.dstNode].inputFiles.filter((e)=>{
           return e.srcNode!==index;
         });
+      });
     });
-    rootWorkflow.nodes[index]=null;
+
+    //remove target node
+    target=null;
+
     return writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow');
   })
   .catch(function(err){
@@ -304,14 +317,28 @@ function onAddFileLink(sio, msg){
   const dst=msg.dst;
   const srcName = msg.srcName
   const dstName = msg.dstName
+
+  // add outputFile entry on src node.
   let srcEntry = rootWorkflow.nodes[src].outputFiles.find(function(e){
-    if(e.name === srcName) return true
+    return e.name === srcName;
   });
-  srcEntry.dstNode=dst;
-  srcEntry.dstName=dstName;
+  srcEntry.dst.push({"dstNode": dst, "dstName": dstName});
+
+  // get inputFile entry on dst node.
   let dstEntry = rootWorkflow.nodes[dst].inputFiles.find(function(e){
-    if(e.name === dstName) return true
+    return e.name === dstName;
   });
+
+  // remove outputFiles entry from former src node
+  let formerSrcNode = rootWorkflow.nodes[dstEntry.srcNode];
+  let formerSrcEntry = formerSrcNode.outputFiles.find(function(e){
+    return e.name === dstEntry.srcName
+  });
+  formerSrcEntry.dst = formerSrcEntry.dst.filter(function(e){
+    return !(e.dstNode === dst && e.dstName === dstName);
+  });
+
+  // replace inputFiles entry on dst node.
   dstEntry.srcNode=src;
   dstEntry.srcName=srcName;
   writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
