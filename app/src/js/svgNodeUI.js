@@ -25,9 +25,11 @@ export default class{
     this.outputFileLinks=[];
     this.inputFileLinks=[];
 
-    // draw node
+    /** svg representation of this node */
     this.group=svg.group();
     this.group.data({"index": node.index, "type": node.type}).draggable().addClass('node');
+
+    // draw node
     const [box, textHeight]= parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles);
     const boxBbox=box.bbox()
     const boxX=box.x();
@@ -41,13 +43,13 @@ export default class{
 
     const numLower=node.type === 'if'? 3:2;
     let tmp=null;
-    [this.lowerPlug, tmp] = parts.createLower(svg, boxBbox, boxX, boxY, boxBbox.width/numLower, boxBbox.height, config.plug_color.flow, sio);
+    [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width/numLower, boxBbox.height, config.plug_color.flow, sio);
     this.lowerPlug.data({"next": node.next});
     this.group.add(this.lowerPlug).add(tmp);
 
     this.connectors=[];
     node.outputFiles.forEach((output, fileIndex) => {
-      let [plug, cable]= parts.createConnector(svg, boxBbox, boxX, boxY, boxBbox.width, textHeight*fileIndex, sio);
+      let [plug, cable]= parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight*fileIndex, sio);
       plug.data({"name": output.name, "dst": output.dst});
       this.group.add(plug);
       this.group.add(cable);
@@ -61,7 +63,7 @@ export default class{
     });
 
     if(numLower === 3){
-      [this.lower2Plug, tmp] = parts.createLower(svg, boxBbox, boxX, boxY, boxBbox.width/numLower*2, boxBbox.height, config.plug_color.elseFlow, sio)
+      [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width/numLower*2, boxBbox.height, config.plug_color.elseFlow, sio)
       this.lower2Plug.addClass('elsePlug').data({"else": node.else});
       this.group.add(this.lower2Plug).add(tmp);
     }
@@ -76,6 +78,7 @@ export default class{
     // mouse pointer coordinate on dragstart
     let startX=0;
     let startY=0;
+    // register drag and drop behavior
     this.group
       .on('dragstart',(e)=>{
         diffX=e.detail.p.x - e.target.instance.select('.box').first().x();
@@ -108,8 +111,8 @@ export default class{
       let dstPlug = upperPlugs.members.find((plug)=>{
         return plug.data('index') === dstIndex;
       });
-      const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
-      cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
+      const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+      cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
       cable.cable.data('dst', dstIndex);
       this.nextLinks.push(cable);
     });
@@ -119,8 +122,8 @@ export default class{
         let dstPlug = upperPlugs.members.find((plug)=>{
           return plug.data('index') === dstIndex;
         });
-        const cable = new parts.SvgCable(this.svg, config.plug_color.elseFlow, 'DU', boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
-        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
+        const cable = new parts.SvgCable(this.svg, config.plug_color.elseFlow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dstIndex);
         this.elseLinks.push(cable);
       });
@@ -131,8 +134,8 @@ export default class{
         let dstPlug = receptorPlugs.members.find((plug)=>{
           return plug.data('index') === dst.dstNode;
         });
-        const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', boxBbox, srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
-        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY);
+        const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dst.dstNode);
         this.outputFileLinks.push(cable);
       });
@@ -144,20 +147,21 @@ export default class{
    * @param offsetY y coordinate difference from dragstart
    */
   reDrawLinks(offsetX, offsetY){
+    let boxBbox=this.group.data('boxBbox');
     this.nextLinks.forEach((v)=>{
-      v.dragStartPoint(offsetX, offsetY);
+      v.dragStartPoint(offsetX, offsetY, boxBbox);
     });
     this.elseLinks.forEach((v)=>{
-      v.dragStartPoint(offsetX, offsetY);
+      v.dragStartPoint(offsetX, offsetY, boxBbox);
     });
     this.outputFileLinks.forEach((v)=>{
-      v.dragStartPoint(offsetX, offsetY);
+      v.dragStartPoint(offsetX, offsetY, boxBbox);
     });
     this.previousLinks.forEach((v)=>{
-      v.dragEndPoint(offsetX, offsetY);
+      v.dragEndPoint(offsetX, offsetY, boxBbox);
     });
     this.inputFileLinks.forEach((v)=>{
-      v.dragEndPoint(offsetX, offsetY);
+      v.dragEndPoint(offsetX, offsetY, boxBbox);
     });
   }
 

@@ -69,13 +69,12 @@ export class SvgCable{
    * @param svg instance of svg.js
    * @param color color of the cable
    * @param direction direction of the cable. DU(Down to Up) or RL(Right to Legt)
-   * @param bbox bouding box of parent
    * @param startX x coordinate of initial start point
    * @param startY y coordinate of initial start point
    * @param endtX x coordinate of initial end point
    * @param endtY y coordinate of initial end point
    */
-  constructor(svg, color, direction, bbox, startX, startY, endX, endY){
+  constructor(svg, color, direction, startX, startY, endX, endY){
     this.tmpSvg=svg; //for debug calcControlPoint
     this.cable = svg.path('').fill('none').stroke({ color: color, width: config.box_appearance.strokeWidth});
     this.startX = startX;
@@ -87,9 +86,8 @@ export class SvgCable{
     }else{
       console.log('illegal direction: ', direction);
     }
-    this.boxBbox = bbox;
   }
-  _calcControlPoint(sx, sy, ex, ey) {
+  _calcControlPoint(sx, sy, ex, ey, boxBbox) {
     const scaleRange=1.5;
     const scaleControlPoint=1.8;
     const mx = (sx + ex) / 2;
@@ -99,9 +97,10 @@ export class SvgCable{
     let cp2x=0;
     let cp2y=0;
     if(this.direction === 'DU'){
-      const offset = this.boxBbox.width*scaleControlPoint;
+      const boxWidth = boxBbox.width;
+      const offset = boxWidth*scaleControlPoint;
       if(ey<sy){
-        if( sx-this.boxBbox.width*scaleRange < ex && ex < sx+this.boxBbox.width*scaleRange){
+        if( sx-boxWidth*scaleRange < ex && ex < sx+boxWidth*scaleRange){
           if(sx > ex){
             cp1x=sx+offset;
             cp1y=sy+offset;
@@ -126,9 +125,10 @@ export class SvgCable{
         cp2y=my;
       }
     }else if(this.direction === 'RL'){
-      const offset = this.boxBbox.height*scaleControlPoint;
+      const boxHeight= boxBbox.height;
+      const offset = boxHeight*scaleControlPoint;
       if(ex<sx){
-        if(sy-this.boxBbox.height*scaleRange < ey && ey <sy+this.boxBbox.height*scaleRange){
+        if(sy-boxHeight*scaleRange < ey && ey <sy+boxHeight*scaleRange){
           cp1x=sx+offset;
           cp1y=sy-offset;
           cp2x=ex-offset;
@@ -148,15 +148,18 @@ export class SvgCable{
     }
     return [cp1x, cp1y, cp2x, cp2y];
   }
-  _draw(sx, sy, ex, ey){
-    const [cp1x, cp1y, cp2x, cp2y]=this._calcControlPoint(sx, sy, ex, ey);
+  _draw(sx, sy, ex, ey, boxBbox){
+    if(boxBbox == null){
+      boxBbox=this.cable.parent().node.instance.data('boxBbox');
+    }
+    const [cp1x, cp1y, cp2x, cp2y]=this._calcControlPoint(sx, sy, ex, ey, boxBbox);
     this.cable.plot(`M ${sx} ${sy} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${ex} ${ey}`)
   }
-  dragEndPoint(dx,dy){
-    this._draw(this.startX, this.startY, this.endX+dx, this.endY+dy);
+  dragEndPoint(dx,dy, boxBbox){
+    this._draw(this.startX, this.startY, this.endX+dx, this.endY+dy, boxBbox);
   }
-  dragStartPoint(dx,dy){
-    this._draw(this.startX+dx, this.startY+dy, this.endX, this.endY);
+  dragStartPoint(dx,dy, boxBbox){
+    this._draw(this.startX+dx, this.startY+dy, this.endX, this.endY, boxBbox);
   }
   remove(){
     if(this.cable != null) this.cable.remove();
@@ -295,13 +298,13 @@ class SvgBox{
   }
 }
 
-function createLCPlugAndCable(svg, boxBbox, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback){
+function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback){
     let plug = svg.polygon(plugShape).fill(color);
     const bbox = plug.bbox();
     originX -= bbox.width/2;
     if(moveY) originY -= bbox.height/2;
     plug.move(originX, originY).draggable();
-    const cable = new SvgCable(svg, color, cableDirection, boxBbox, originX + bbox.width / 2, originY+ bbox.height / 2);
+    const cable = new SvgCable(svg, color, cableDirection, originX + bbox.width / 2, originY+ bbox.height / 2);
     let firstTime=true;
     let clone=null;
     let dragStartPointX=null;
@@ -336,14 +339,14 @@ function createLCPlugAndCable(svg, boxBbox, originX, originY, moveY, color, plug
   return [plug, cable.cable];
 }
 
-export function createLower(svg, boxBbox, originX, originY, offsetX, offsetY, color, sio){
-  return createLCPlugAndCable(svg, boxBbox, originX+offsetX, originY+offsetY, true, color, UDPlug, 'DU', '.upperPlug', function(myIndex, hitIndex, plug){
+export function createLower(svg, originX, originY, offsetX, offsetY, color, sio){
+  return createLCPlugAndCable(svg, originX+offsetX, originY+offsetY, true, color, UDPlug, 'DU', '.upperPlug', function(myIndex, hitIndex, plug){
     sio.emit('addLink', {src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug')});
   });
 }
-export function createConnector(svg, boxBbox, originX, originY, offsetX, offsetY, sio){
+export function createConnector(svg, originX, originY, offsetX, offsetY, sio){
   offsetY +=calcFileBasePosY();
-  return createLCPlugAndCable(svg, boxBbox, originX+offsetX, originY+offsetY, false, config.plug_color.file, LRPlug, 'RL', '.receptorPlug', function(myIndex, hitIndex, plug, hitPlug){
+  return createLCPlugAndCable(svg, originX+offsetX, originY+offsetY, false, config.plug_color.file, LRPlug, 'RL', '.receptorPlug', function(myIndex, hitIndex, plug, hitPlug){
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
     sio.emit('addFileLink', {src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName});

@@ -106,7 +106,7 @@ $(() => {
       });
       nodes=[];
       drawNodes(wf.nodes);
-      drawLinks(wf.nodes);
+      drawLinks(nodes);
     });
     //TODO project 進行状況の受信処理
     //
@@ -291,27 +291,25 @@ $(() => {
    * draw cables between Lower and Upper plug Connector and Receptor plug respectively
    * @param nodeInWF node list in workflow Json
    */
-  var drawLinks=function(nodesInWF){
-      for(let i=0; i<nodesInWF.length; i++){
-        if(nodesInWF[i] !== null){
-          nodes[i].drawLinks();
-        }
+  var drawLinks=function(nodes){
+    nodes.forEach(function(node){
+      node.drawLinks();
+    });
+    nodes.forEach(function(node){
+      if(node != null){
+        node.nextLinks.forEach(function(cable){
+          let dst = cable.cable.data('dst');
+          nodes[dst].previousLinks.push(cable);
+        });
+        node.elseLinks.forEach(function(cable){
+          let dst = cable.cable.data('dst');
+          nodes[dst].previousLinks.push(cable);
+        });
+        node.outputFileLinks.forEach(function(cable){
+          let dst = cable.cable.data('dst');
+          nodes[dst].inputFileLinks.push(cable);
+        });
       }
-      nodes.forEach(function(node){
-        if(node != null){
-          node.nextLinks.forEach(function(cable){
-            let dst = cable.cable.data('dst');
-            nodes[dst].previousLinks.push(cable);
-          });
-          node.elseLinks.forEach(function(cable){
-            let dst = cable.cable.data('dst');
-            nodes[dst].previousLinks.push(cable);
-          });
-          node.outputFileLinks.forEach(function(cable){
-            let dst = cable.cable.data('dst');
-            nodes[dst].inputFileLinks.push(cable);
-          });
-        }
-      });
+    });
   }
 });
