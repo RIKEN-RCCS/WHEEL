@@ -52,7 +52,7 @@ var writeProjectListFile = function () {
  */
 function getProject(query) {
     return projectList.find(function (item) {
-        if (item.id == query || item.path == query)
+        if (item.id === query || item.path === query)
             return true;
     });
 }

@@ -1,18 +1,22 @@
 const config = require('./config/server');
-
-/*
- * javascript representation of wheel's task
- *
- */
-class Task{
-  constructor(pos){
-    this.type='task';
+class BaseWorkflowComponent {
+  constructor(pos, parent){
+    this.type=null;
     this.name=null;
     this.description=null;
-    /** path for its directory */
+
+    /** relative path of its directory */
     this.path=null;
-    /** filename of entry point of this task*/
-    this.script=null;
+
+    /** position in parent workflow.nodes[] */
+    this.index=null;
+
+    /** pointers to previous node */
+    this.previous=[];
+
+    /** pointers to next node */
+    this.next=[];
+
     /**
      * input files from other node
      * each element of inputFiles should be following
@@ -23,6 +27,7 @@ class Task{
      * }
      */
     this.inputFiles=[];
+
     /**
      * output files which will be passed to other node
      * each element of outputFiles should be following
@@ -36,46 +41,88 @@ class Task{
      * }
      */
     this.outputFiles=[];
+
     /**
-     * flag for clean up temporary workspace on remote host
+     * flag for clean up temporary working directory
      * 0: do clenup
      * 1: do not clenup
      * 2: same as parent
      */
     this.cleanupFlag=null;
-    this.maxSizeCollection=null;
-    this.previous=[];
-    this.next=[];
-    this.host='localhost';
-    this.jobScheduler=null;
-    this.state='pre runnnig';
-    this.index=null;
-    /** cordinate in workflow screen
+
+    /** cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
      */
     this.pos=pos;
-  }
-}
-/*
- * task absrtuct class of task containers
- */
-class BaseTaskGraph{
-  constructor(pos, parent){
-    this.type=null;
-    this.name=null;
-    this.previous=[];
-    this.next=[];
-    this.description=null;
-    this.path=null;
-    this.nodes=[];
-    this.inputFiles=[];
-    this.outputFiles=[];
-    this.cleanupFlag=null;
+
+    /**
+     * parent node
+     */
     this.parent=parent;
-    this.index=null;
-    this.pos=pos;
   }
 }
+
+/*
+ * absrtuct class of workflow graph
+ */
+class BaseTaskGraph extends BaseWorkflowComponent{
+  constructor(pos, parent){
+    super(pos, parent);
+    this.nodes=[];
+    this.jsonFile=null;
+  }
+}
+
+/**
+ * javascript representation of wheel's task
+ */
+class Task extends BaseWorkflowComponent{
+  constructor(pos, parent){
+    super(pos, parent);
+    this.type='task';
+    /** filename of entry point of this task */
+    this.script=null;
+    /** disk quota of this task directory */
+    this.maxSizeCollection=null;
+    /** hostname where this task will execute on */
+    this.host='localhost';
+    /** */
+    this.jobScheduler=null;
+    /**
+     * task state
+     * possible value is one of
+     *  - 'not-started'
+     *  - 'stage-in'   transfering files to remote host
+     *  - 'waiting'    waiting to run due to job submit number limitation
+     *  - 'running'    running
+     *  - 'queued'     submit to batch system
+     *  - 'stage-out'  transfering files from  remote host
+     *  - 'finished'   finished
+     *  - 'failed'     error occurred before task finish
+     */
+    this.state='not-started';
+  }
+}
+
+/**
+ * representation of conditional branch
+ */
+class If extends BaseWorkflowComponent{
+  constructor(pos){
+    super(pos);
+    this.type='if';
+    /**
+     * shell script file name or javascript expression to determin condifion
+     * If script returns 0 or expression evaluted to truthy value,
+     * next tasks will be executed, otherwise else tasks will be executed
+     */
+    this.condition=null;
+
+    /** task pointers which will be executed if condition is false */
+    this.else=[];
+  }
+}
+
 class Workflow extends BaseTaskGraph{
   constructor(pos, parent){
     // define pseudo position for root workflow
@@ -94,53 +141,32 @@ class ParameterStudy extends BaseTaskGraph{
   }
 }
 
-/*
- * control flow classes
- */
-class BaseControlFlow{
-  constructor(pos){
-    this.type=null;
-    this.name=null;
-    this.previous=[];
-    this.next=[];
-    this.blockStart=null;
-    this.inputFiles=[];
-    this.outputFiles=[];
-    this.index=null;
-    this.pos=pos;
-  }
-}
-class For extends BaseControlFlow{
+class For extends BaseTaskGraph{
   constructor(...args){
     super(...args);
     this.type='for';
+    this.jsonFile= `${config.default_filename}${config.extension.for}`;
     this.start=null;
     this.end=null;
     this.step=null;
   }
 }
-class While extends BaseControlFlow{
+class While extends BaseTaskGraph{
   constructor(...args){
     super(...args);
     this.type='while';
+    this.jsonFile= `${config.default_filename}${config.extension.while}`;
     this.condition=null;
-  }
-}
-class If extends BaseControlFlow{
-  constructor(pos){
-    super(pos);
-    this.type='if';
-    this.condition=null;
-    this.else=[];
   }
 }
 /*
  * loop over kind of array
  */
-class Foreach extends BaseControlFlow{
+class Foreach extends BaseTaskGraph{
   constructor(pos){
     super(pos);
     this.type='foreach';
+    this.jsonFile= `${config.default_filename}${config.extension.foreach}`;
     this.indexList=[];
   }
 }
@@ -177,4 +203,3 @@ function factory(type, ...args){
 }
 
 module.exports.factory=factory;
-module.exports.Workflow=Workflow;

@@ -11,12 +11,14 @@ const fileBrowser = require("./fileBrowser");
 const component = require('./workflowComponent');
 const config = require('./config/server.json');
 const escape = require('./utility').escapeRegExp;;
+const Dispatcher = require('./dispatcher');
 
-
+//TODO move these resource to resourceManager
 // workflow object which is editting
 var rootWorkflow=null;
 // workflow filename which is editting
 var rootWorkflowFilename=null;
+
 
 const systemFiles = new RegExp(`^(?!^.*(${escape(config.extension.project)}|${escape(config.extension.workflow)}|${escape(config.extension.pstudy)})$).*$`);
 
@@ -141,8 +143,10 @@ function onRenameFile(sio, msg){
   });
 }
 
-function onDownloadFile(sio, filename){
-  logger.debug('download event recieved: ',filename);
+function onDownloadFile(sio, msg){
+  logger.debug('download event recieved: ', msg);
+  let filename = path.resolve(msg.path, msg.name);
+  //TODO ディレクトリが要求された時に対応する
   util.promisify(fs.readFile)(filename)
     .then(function(data){
       sio.emit('download', data);
@@ -155,6 +159,14 @@ function onDownloadFile(sio, filename){
 
 function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
+  let d = new Dispatcher(rootWorkflow);
+  d.dispatch();
+  setInterval(function(){
+    if(d.isFinished()){
+      d.remove();
+    }
+    //TODO project 終了処理
+  }, config.interval);
 }
 function onPauseProject(sio, msg){
   logger.debug(`pause event recieved: ${msg}`);
@@ -180,7 +192,7 @@ function onCreateNode(sio, msg){
       return node;
     })
     .then(function(node){
-      if(node.type === 'workflow' || node.type === 'parameterStudy'){
+      if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
         const filename = path.resolve(path.dirname(rootWorkflowFilename),node.path,node.jsonFile)
         return util.promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
       }
@@ -246,32 +258,36 @@ function onRemoveNode(sio, index){
      */
     // remove index from next property of previous tasks
     target.previous.forEach((p)=>{
-      rootWorkflow.nodes[p].next=rootWorkflow.nodes[p].next.filter((e)=>{
+      let pNode=rootWorkflow.nodes[p];
+      pNode.next=pNode.next.filter((e)=>{
         return e!==index;
       });
-      if(rootWorkflow.nodes[p].else != null){
-        rootWorkflow.nodes[p].else=rootWorkflow.nodes[p].else.filter((e)=>{
+      if(pNode.else != null){
+         pNode.else=pNode.else.filter((e)=>{
           return e!==index;
         });
       }
     });
     // remove index from previous property of next tasks
     target.next.forEach((p)=>{
-      rootWorkflow.nodes[p].previous=rootWorkflow.nodes[p].previous.filter((e)=>{
+      let nNode=rootWorkflow.nodes[p];
+      nNode.previous=nNode.previous.filter((e)=>{
         return e!==index;
       });
     });
     // remove index from previous property of next tasks (else)
     if(target.else != null){
       target.else.forEach((p)=>{
-        rootWorkflow.nodes[p].previous=rootWorkflow.nodes[p].previous.filter((e)=>{
+        let nNode=rootWorkflow.nodes[p];
+        nNode.previous=nNode.previous.filter((e)=>{
           return e!==index;
         });
       });
     }
     // remove index from outputFiles property of tasks which have file dependency
     target.inputFiles.forEach((p)=>{
-      rootWorkflow.nodes[p.srcNode].outputFiles.forEach((outputFile)=>{
+      let pFNode=rootWorkflow.nodes[p.srcNode];
+      pFNode.outputFiles.forEach((outputFile)=>{
         outputFile.dst=outputFile.dst.filter((e)=>{
           return e.dstNode!==index;
         });
@@ -280,14 +296,18 @@ function onRemoveNode(sio, index){
     // remove index from inputFiles property of tasks which have file dependency
     target.outputFiles.forEach((outputFile)=>{
       outputFile.dst.forEach((dst)=>{
-        rootWorkflow.nodes[dst.dstNode].inputFiles=rootWorkflow.nodes[dst.dstNode].inputFiles.filter((e)=>{
-          return e.srcNode!==index;
+        let nFNode=rootWorkflow.nodes[dst.dstNode];
+        nFNode.inputFiles.forEach((e)=>{
+          if(e.srcNode === index){
+            e.srcNode = null;
+            e.srcName = null;
+          }
         });
       });
     });
 
     //remove target node
-    target=null;
+    rootWorkflow.nodes[index]=null;
 
     return writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow');
   })
@@ -330,13 +350,15 @@ function onAddFileLink(sio, msg){
   });
 
   // remove outputFiles entry from former src node
-  let formerSrcNode = rootWorkflow.nodes[dstEntry.srcNode];
-  let formerSrcEntry = formerSrcNode.outputFiles.find(function(e){
-    return e.name === dstEntry.srcName
-  });
-  formerSrcEntry.dst = formerSrcEntry.dst.filter(function(e){
-    return !(e.dstNode === dst && e.dstName === dstName);
-  });
+  if(dstEntry.srcNode != null){
+    let formerSrcNode = rootWorkflow.nodes[dstEntry.srcNode];
+    let formerSrcEntry = formerSrcNode.outputFiles.find(function(e){
+      return e.name === dstEntry.srcName
+    });
+    formerSrcEntry.dst = formerSrcEntry.dst.filter(function(e){
+      return !(e.dstNode === dst && e.dstName === dstName);
+    });
+  }
 
   // replace inputFiles entry on dst node.
   dstEntry.srcNode=src;
@@ -375,6 +397,13 @@ function setup(sio) {
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
     socket.on('addLink',         onAddLink.bind(null, socket));
     socket.on('addFileLink',     onAddFileLink.bind(null, socket));
+    socket.on('runProject',      onRunProject.bind(null, socket));
+    socket.on('pauseProject',    onPauseProject.bind(null, socket));
+    socket.on('cleanProject',    onCleanProject.bind(null, socket));
+    socket.on('stopProject',     (msg)=>{
+      onPauseProject(socket,msg);
+      onCleanProject(socket,msg);
+    });
   });
 }
 module.exports = setup;

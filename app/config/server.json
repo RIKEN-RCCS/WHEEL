@@ -3,6 +3,7 @@
     "remotehost": "./config/remotehost.json",
     "projectList": "./config/projectList",
     "suffix": ".wheel",
+    "interval": 100,
     "scheduler": {
         "TCS": "./config/pjsub.sh",
         "TORQUE": "./config/qsub.sh"
@@ -15,6 +16,8 @@
         "job": ".jb.json",
         "tree": ".tree.json",
         "for": ".fr.json",
+        "while": ".wl.json",
+        "foreach": ".fe.json",
         "if": ".if.json",
         "else": ".els.json",
         "break": ".brk.json",

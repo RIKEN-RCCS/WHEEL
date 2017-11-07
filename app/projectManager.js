@@ -13,7 +13,7 @@ function create(projectDirectory, projectName) {
         util.promisify(fs.mkdir)(projectDirectory)
           .then(function(){
             const rootWorkflowFilename = `${config.default_filename}${config.extension.workflow}`;
-            var rootWorkflow = new compo.Workflow(null);
+            var rootWorkflow = new compo.factory('workflow');
             rootWorkflow.name=projectName;
             rootWorkflow.path='./';
             rootWorkflow.jsonFile='./'+rootWorkflowFilename;

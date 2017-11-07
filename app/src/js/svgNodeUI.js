@@ -68,7 +68,7 @@ export default class{
       this.group.add(this.lower2Plug).add(tmp);
     }
 
-    if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'For' || node.type === 'If' || node.type === 'Foreach'){
+    if(node != null && node.jsonFile != null){
       this.group.data({"path": node.path, "jsonFile": node.jsonFile});
     }
 
@@ -116,7 +116,7 @@ export default class{
       cable.cable.data('dst', dstIndex);
       this.nextLinks.push(cable);
     });
-    if(this.hasOwnProperty('lower2')){
+    if(this.hasOwnProperty('lower2Plug')){
       let srcPlug=this.lower2Plug;
       srcPlug.data('else').forEach((dstIndex)=>{
         let dstPlug = upperPlugs.members.find((plug)=>{
@@ -132,7 +132,7 @@ export default class{
     this.connectors.forEach((srcPlug)=>{
       srcPlug.data('dst').forEach((dst)=>{
         let dstPlug = receptorPlugs.members.find((plug)=>{
-          return plug.data('index') === dst.dstNode;
+          return plug.data('index') === dst.dstNode && plug.data('name') === dst.dstName;
         });
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);

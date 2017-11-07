@@ -112,6 +112,36 @@ $(() => {
     //
     //setup log reciever
     logReciever(sio);
+
+    // register btn click event listeners
+    $('#run_menu').on('click',function(){
+      sio.emit('runProject', true);
+      $('#run_menu').hide();
+      $('#pause_menu').show();
+      $('#clean_menu').show();
+      $('#stop_menu').show();
+    });
+    $('#pause_menu').on('click',function(){
+      sio.emit('pauseProject', true);
+      $('#run_menu').show();
+      $('#pause_menu').hide();
+      $('#clean_menu').show();
+      $('#stop_menu').show();
+    });
+    $('#clean_menu').on('click',function(){
+      sio.emit('cleanProject', true);
+      $('#run_menu').show();
+      $('#pause_menu').hide();
+      $('#clean_menu').hide();
+      $('#stop_menu').hide();
+    });
+    $('#stop_menu').on('click',function(){
+      sio.emit('stopProject', true);
+      $('#run_menu').show();
+      $('#pause_menu').hide();
+      $('#clean_menu').hide();
+      $('#stop_menu').hide();
+    });
   });
 
   // hide property if background is clicked
@@ -268,12 +298,16 @@ $(() => {
           })
           .onDblclick(function(e){
             let nodeType=e.target.instance.parent('.node').data('type');
-            if(nodeType == 'workflow' ||nodeType == 'parameterStudy'){
+            if(nodeType === 'workflow' ||nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach'){
               let path=e.target.instance.parent('.node').data('path');
               let json=e.target.instance.parent('.node').data('jsonFile');
+              console.log(path);
+              console.log(json);
               dirStack.push({dir: cwd, wf: cwf});
               cwd=cwd+'/'+path;
               cwf=cwd+'/'+json
+              console.log(cwd);
+              console.log(cwf);
               fb.request('fileListRequest', cwd, null);
               sio.emit('workflowRequest', cwf);
               if(cwd !== rootDir){
@@ -293,7 +327,9 @@ $(() => {
    */
   var drawLinks=function(nodes){
     nodes.forEach(function(node){
-      node.drawLinks();
+      if(node != null){
+        node.drawLinks();
+      }
     });
     nodes.forEach(function(node){
       if(node != null){
