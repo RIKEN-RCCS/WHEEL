@@ -1,6 +1,9 @@
 import $ from 'jquery';
 import dialogWrapper from './dialogWrapper';
 
+import 'font-awesome/css/font-awesome.css';
+import '../css/fileBrowser.css';
+
 export default class {
   // public methods
   constructor(socket, idFileList, recvEventName, withContextMenu = false, additionalMenu={}) {
@@ -153,9 +156,10 @@ export default class {
     this.socket.on(this.recvEventName, (data) => {
       if (!this.isValidData(data))
         return;
-      var iconClass = data.isdir ? 'fa-folder-o' : 'fa-file-o';
-      var icon = data.islink ? `<span class="fa-stack fa-lg"><i class="fa ${iconClass} fa-stack-2x"></i><i class="fa fa-share fa-stack-1x"></i></span>`
-        : `<i class="fa ${iconClass} fa-2x" aria-hidden="true"></i>`;
+      const iconClass = data.isdir ? 'fa-folder-o' : 'fa-file-o';
+      const normalIcon = `<i class="fa ${iconClass} fa-2x" aria-hidden="true"></i>`;
+      const symlinkIcon = `<span class="fa-stack"><i class="fa ${iconClass} fa-stack-2x"></i><i class="fa fa-share fa-stack-1x"></i></span>`;
+      let icon = data.islink ? symlinkIcon : normalIcon;
       var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}">${icon} ${data.name}</li>`);
       var compare = this.compare;
       var lengthBefore = $(`${this.idFileList} li`).length;
