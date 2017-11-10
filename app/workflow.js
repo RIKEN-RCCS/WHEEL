@@ -11,6 +11,7 @@ const fileBrowser = require("./fileBrowser");
 const component = require('./workflowComponent');
 const config = require('./config/server.json');
 const escape = require('./utility').escapeRegExp;;
+const { writeAndEmit } = require("./utility");
 const Dispatcher = require('./dispatcher');
 
 //TODO move these resource to resourceManager
@@ -41,20 +42,6 @@ function makeDir(basename, suffix){
         return makeDir(basename, suffix+1);
       }
     });
-}
-
-/**
- * save workflow and emit to client with promise
- * @param workflow object
- * @param filename workflow filename
- * @param sio instance of socket.io
- * @param eventName eventName to send workflow
- */
-function writeAndEmit(wf, filename, sio, eventName){
-  return util.promisify(fs.writeFile)(filename, JSON.stringify(wf, null, 4))
-  .then(function(){
-    sio.emit(eventName, wf);
-  });
 }
 
 /**

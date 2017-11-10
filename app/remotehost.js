@@ -1,139 +1,132 @@
 const fs = require("fs");
-const ServerUtility = require("./serverUtility");
 const path = require("path");
 const os = require("os");
+const util = require("util");
+
 const logger = require("./logger");
-const fileUtility = require("./fileUtility");
+const fileBrowser = require("./fileBrowser");
+const rootDir = require('./config/server.json').rootDir;
+const configRemotehostFilename = require('./config/server.json').remotehost;
+const remotehost = path.resolve('./app', configRemotehostFilename);
+const { writeAndEmit } = require("./utility");
+
+
+const ServerUtility = require("./serverUtility");
 const sshConnection = require("./sshConnection");
 
-var onAddHost = function (socket) {
-    const eventName = 'onAddHost';
-    socket.on(eventName, (hostInfo) => {
-        ServerUtility.addHostInfo(hostInfo, (err) => {
-            if (err) {
-                logger.error(err);
-                socket.emit(eventName, false);
-            }
-            else {
-                socket.emit(eventName, true);
-            }
-        });
-    });
-};
-
-var onDeleteHost = function (socket) {
-    const eventName = 'onDeleteHost';
-    socket.on(eventName, (name) => {
-        ServerUtility.deleteHostInfo(name, (err) => {
-            if (err) {
-                logger.error(err);
-                socket.emit(eventName, false);
-            }
-            else {
-                socket.emit(eventName, true);
-            }
-        });
-    });
-};
-
-var onGetRemoteHostList = function (socket) {
-    const eventName = 'onGetRemoteHostList';
-    socket.on(eventName, () => {
-        ServerUtility.getHostInfo((err, hostList) => {
-            if (err) {
-                logger.error(err);
-                socket.emit(eventName);
-            }
-            else if (!hostList) {
-                logger.error('host list does not exist');
-                socket.emit(eventName);
-            }
-            else {
-                logger.debug(hostList);
-                socket.json.emit(eventName, hostList);
-            }
-        });
-    });
-};
-
-var onGetFileList = function (socket) {
-    const eventName = 'onGetFileList';
-    socket.on(eventName, (directoryPath, extension) => {
-        directoryPath = directoryPath || os.homedir();
-        if (!path.isAbsolute(directoryPath) || !fileUtility.isDir(directoryPath)) {
-            socket.emit(eventName);
-            return;
-        }
-        const regex = extension == null ? null : new RegExp(`${extension.replace(/\./, '\\.')}$`);
-        try {
-            const getFiles = fileUtility.getFiles(directoryPath, regex);
-            logger.debug(`send file list ${JSON.stringify(getFiles)}`);
-            const fileList = {
-                directory: `${directoryPath.replace(/[\\/]/g, '/')}/`,
-                files: getFiles
-            };
-            socket.json.emit(eventName, fileList);
-        }
-        catch (err) {
+function onSshConnection (sio, name, password, fn) {
+  ServerUtility.getHostInfo((err, hostList) => {
+    let result=false;
+    if (err) {
+      logger.error(err);
+    }else if (!hostList) {
+      logger.error('host list does not exist');
+    } else{
+      const host = hostList.filter(host => host.name === name)[0];
+      if (!host) {
+        logger.error(`${name} is not found at host list conf`);
+      }else if (ServerUtility.isLocalHost(host.host)) {
+        logger.info('skip ssh connection test to localhost');
+        result=true;
+      }else{
+        sshConnection.sshConnectTest(host, password, (err) => {
+          if (err) {
             logger.error(err);
-            socket.emit(eventName);
-        }
-    });
-};
-
-var onSshConnection = function (socket) {
-    const eventName = 'onSshConnection';
-    const succeed = () => {
-        socket.emit(eventName, true);
-    };
-    const failed = () => {
-        socket.emit(eventName, false);
-    };
-    socket.on(eventName, (name, password) => {
-        ServerUtility.getHostInfo((err, hostList) => {
-            if (err) {
-                logger.error(err);
-                failed();
-                return;
-            }
-            if (!hostList) {
-                logger.error('host list does not exist');
-                failed();
-                return;
-            }
-            const host = hostList.filter(host => host.name === name)[0];
-            if (!host) {
-                logger.error(`${name} is not found at host list conf`);
-                failed();
-            }
-            if (ServerUtility.isLocalHost(host.host)) {
-                succeed();
-                return;
-            }
-            sshConnection.sshConnectTest(host, password, (err) => {
-                if (err) {
-                    logger.error(err);
-                    failed();
-                }
-                else {
-                    succeed();
-                }
-            });
+          } else {
+            result=true
+          }
         });
-    });
+      }
+    }
+    fn(result);
+  });
 };
+function sendFileList(sio, request){
+  logger.debug(`current dir = ${request}`);
+  var target = request ? path.normalize(request) : rootDir || os.homedir() || '/';
+  fileBrowser(sio, 'fileList', target, {
+    "request": request,
+    "withParentDir" : true
+  });
+}
+
+async function readRemoteHost(){
+  let remoteHostList = await util.promisify(fs.readFile)(remotehost)
+    .catch((err)=>{
+      logger.error('remotehost list flie read error', err);
+    });
+  return JSON.parse(remoteHostList.toString());
+}
+
+/**
+ * add new remote host info
+ * @param {string} hostinfo.name - unique id string
+ * @param {string} hostinfo.host - hostname of IP address
+ * @param {string} hostinfo.path - work directory path on remote host
+ * @param {string} hostinfo.usename - username on remote host
+ * @param {string} [hostinfo.keyFile] - secret key file (to use password login instead, set null to this property)
+ */
+async function addHost (sio, hostinfo) {
+  let remoteHostList = await readRemoteHost();
+  if(hostinfo.name in remoteHostList ){
+    logger.error(hostinfo.name, ' is already exists');
+  }
+  remoteHostList.push(hostinfo);
+  writeAndEmit(remoteHostList, remotehost, sio, 'hostList');
+}
+
+/**
+ * remove entry from remote host list
+ * @param {string} name - id of target entry
+ */
+async function removeHost(sio, name){
+  let remoteHostList = await readRemoteHost();
+  remoteHostList=remoteHostList.filter((e)=>{
+    return e.name !== name;
+  });
+  writeAndEmit(remoteHostList, remotehost, sio, 'hostList')
+}
+
+/**
+ * update entry in remote host list
+ * @param {string} hostinfo.name - unique id string
+ * @param {string} [hostinfo.host] - hostname of IP address
+ * @param {string} [hostinfo.path] - work directory path on remote host
+ * @param {string} [hostinfo.usename] - username on remote host
+ * @param {string} [hostinfo.keyFile] - secret key file (to use password login instead, set null to this property)
+ */
+async function updateHost(sio, hostinfo){
+  if (! name in hostinfo){
+    logger.error('illegal hostinfo parameter ', hostinfo);
+  }
+  let remoteHostList = await readRemoteHost();
+  let targetIndex=remoteHostList.indexOf((e)=>{
+    return e.name === hostinfo.name;
+  });
+  Object.assign(remoteHostList[targetIndex], hostinfo);
+  writeAndEmit(remoteHostList, remotehost, sio, 'hostList');
+}
+
+/**
+ * read and send remote host list
+ * @param {Object} sio - socekt.io instance
+ */
+async function sendHostList(sio){
+  logger.debug('recieve hostList Request');
+  let remoteHostList = await readRemoteHost();
+  console.log(remoteHostList);
+  sio.emit('hostList', remoteHostList);
+}
 
 function setup(sio){
-  sio.of('/remotehost').on('connect', (socket) => {
-    logger.debug(`socket on connect ${sio.name}`);
-    onAddHost(socket);
-    onDeleteHost(socket);
-    onGetRemoteHostList(socket);
-    onGetFileList(socket);
-    onSshConnection(socket);
-    socket.on('disconnect', () => {
-      logger.debug(`socket on disconnect ${sio.name}`);
-    });
+  var sioRemoteHost=sio.of('/remotehost');
+  sioRemoteHost.on('connect', (socket) => {
+    socket.on('addHost',    addHost.bind(null, sioRemoteHost));
+    socket.on('removeHost', removeHost.bind(null, sioRemoteHost));
+    socket.on('updateHost', updateHost.bind(null, sioRemoteHost));
+    socket.on('fileListRequest', sendFileList.bind(null, sioRemoteHost));
+    socket.on('hostListRequest', sendHostList.bind(null, sioRemoteHost));
+    socket.on('testSshConnection', onSshConnection.bind(null, sioRemoteHost));
   });
 }
 

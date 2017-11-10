@@ -3,89 +3,75 @@
 
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="/css/style.css" />
-
-    <script src="/socket.io/socket.io.js"></script>
-
-    <script type="text/javascript" src="/js/common.js"></script>
-    <script type="text/javascript" src="/js/remotehost.js"></script>
-    <title>Scientific Workflow</title>
+  <link rel="stylesheet" href="/css/common.css"/>
+  <link rel="stylesheet" href="/css/remotehost.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="/js/common.js"></script>
+  <script type="text/javascript" src="/js/remotehost.js"></script>
+  <title>Scientific Workflow</title>
 </head>
 
 <body>
-    <header>
-        <a href="/swf/home.html">Scientific Workflow</a>
-    </header>
-    <div class="subtitle">Register Host</div>
-
-    <div class="register_host_area sub_content_area">
-        <div class="host_container">
-            <div class="text_container">
-                <label class="text_label">Label</label>
-                <input type="text" id="text_label" class="remotehost_text text_box">
-            </div>
-            <div class="text_container">
-                <label class="text_label">Host</label>
-                <input type="text" id="text_host" class="remotehost_text text_box">
-            </div>
-            <div class="text_container">
-                <label class="text_label">ID</label>
-                <input type="text" id="text_id" class="remotehost_text text_box">
-            </div>
+    <div>Register Host</div>
+    <div id="view">
+      <div id="inputArea" v-show="showInputArea">
+        <div>
+          <label>label</label>
+          <input type="text" v-model.lazy.trim="hostinfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
+          <p v-if="isDuplicate"  class="ui-state-error">duplicated label</p>
+          <p v-if="!validation.name" class="ui-state-error">empty name is not allowed</p>
         </div>
-        <div class="host_container">
-            <div class="text_container">
-                <label class="text_label">Path</label>
-                <input type="text" id="text_path" class="remotehost_text text_box">
-            </div>
+        <div>
+          <label>Host Name</label>
+          <input type="text" v-model.lazy.trim="hostinfo.host" v-bind:class="{'ui-state-error': !validation.host}">
+          <p v-if="!validation.host" class="ui-state-error">empty hostname is not allowed</p>
         </div>
-
-        <div class="auth_type_area">
-            <div>Auth Type</div>
-            <div class="auth_type_radio_container">
-                <div>
-                    <input type="radio" name="authtype" class="auth_type_radio" id="authtype_password">
-                    <label class="text_label">Password</label>
-                </div>
-                <div id="sshkey_area">
-                    <input type="radio" name="authtype" class="auth_type_radio" id="authtype_sshkey" checked>
-                    <label class="text_label">Key File</label>
-                    <input type="text" id="sshkey_address" class="remotehost_text text_box">
-                    <button type="button" class="button" id="browse_button">Browse...</button>
-                </div>
-            </div>
+        <div>
+          <label>User ID</label>
+          <input type="text" v-model.lazy.trim="hostinfo.username" v-bind:class="{'ui-state-error': !validation.username}">
+          <p v-if="!validation.username" class="ui-state-error">empty user ID is not allowed</p>
         </div>
-
-        <button type="button" class="button" id="add_host_button">Add</button>
-        <div id="add_error_area"></div>
-
-        <div class="register_list_area sub_content_area">
-            <table id="host_table">
-            </table>
+        <div>
+          <label>Remote Host Dir Path</label>
+          <input type="text" v-model.lazy.trim="hostinfo.path" v-bind:class="{'ui-state-error': !validation.path}">
+          <p v-if="!validation.path" class="ui-state-error">empty path is not allowed</p>
         </div>
+        <div>Auth Type
+          <input type="radio" name="authType" v-model="authType" value="1">
+          <label>password</label>
+          <input type="radio" name="authType" v-model="authType" value="2">
+          <label>public key</label>
+        </div>
+        <div v-show="authType === '2'">
+          <label>KeyFile</label>
+          <input type="text" v-model="hostinfo.keyFile" disabled>
+          <button v-on:click="browse">Browse</button>
+        </div>
+        <div>
+          <label>Default Job submission limit</label>
+          <input type="number" v-model.number="hostinfo.numJob">
+        </div>
+        <div>
+          <label>Default queue name</label>
+          <input type="text" v-model.lazy="hostinfo.queue">
+        </div>
+        <div>
+          <label>ssh port number</label>
+          <input type="number" v-model.number="hostinfo.port">
+        </div>
+        <button id="okBtn" v-on:click="emitHost" v-bind:disabled="hasError">OK</button>
+        <button v-on:click="quitInput">Cancel</button>
+      </div>
+      <div id=hostListArea v-show="! showInputArea">
+        <ul id=hostList>
+          <li v-for="host in hostList" v-bind:key="host.name" v-bind:data-name="host.name" v-on:click="toggleSelected"> {{ host.name }} <button v-on:click="test">TEST</button></li>
+        </ul>
+        <button v-on:click="mode='addHost';showInputArea=true;">Add</button>
+        <button v-on:click="mode='updateHost';showInputArea=true;">Edit</button>
+        <button v-on:click="removeHost">Delete</button>
+      </div>
     </div>
-
-    <div class="gray_panel" id="gray_panel"></div>
-    <div class="file_dialog_area dialog_area" id="dialog_area_browse">
-        <div class="address_bar_area">
-            <img src="/image/icon_dir.png" class="dir_icon">
-            <input type="text" id="address_bar" class="address_bar text_box">
-        </div>
-        <div class="file_dialog" id="file_dialog">
-        </div>
-
-        <div class="address_bar_area">
-            <span>key file</span>
-            <input type="text" id="input_text_browse" class="dialog_text_box text_box">
-        </div>
-        <div class="dialog_button_container">
-            <button type="button" class="dialog_button button" id="dialog_ok_button_browse">OK</button>
-            <button type="button" class="dialog_button button" id="dialog_cancel_button_browse">Cancel</button>
-        </div>
-    </div>
-
-    <div class="file_dialog_area dialog_area" id="dialog_area_yesno">
-    </div>
+    <div id="dialog"></div>
 </body>
 
 </html>

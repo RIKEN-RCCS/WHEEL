@@ -17,6 +17,10 @@ header {
     font-weight: bold;
 }
 
+li {
+  list-style: none;
+}
+
 a:link,
 a:visited,
 a:hover,
@@ -439,3 +443,4 @@ progress {
 .ui-dialog {
   z-index: 200;
 }
+

@@ -3,18 +3,6 @@ const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 
-const includePath = [
-  path.resolve(__dirname, 'app/src'),
-  path.resolve(__dirname, 'node_modules', 'jquery'),
-  path.resolve(__dirname, 'node_modules', 'jquery-ui'),
-  path.resolve(__dirname, 'node_modules', 'jquery-contextmenu'),
-  path.resolve(__dirname, 'node_modules', 'js-cookie'),
-  path.resolve(__dirname, 'node_modules', 'svgjs'),
-  path.resolve(__dirname, 'node_modules', 'svg.draggable.js'),
-  path.resolve(__dirname, 'node_modules', 'split.js'),
-  path.resolve(__dirname, 'node_modules', 'jstree')
-]
-
 module.exports={
   entry: {
     home:       "./app/src/js/home",
@@ -53,11 +41,9 @@ module.exports={
     rules: [
       {
         test: /\.js$/,
-        include: includePath,
       },
       {
         test: /\.css$/,
-        include: includePath,
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
           use: 'css-loader'
@@ -65,23 +51,20 @@ module.exports={
       },
       {
         test: /\.json$/,
-        include: includePath,
         use: [
           'json-loader'
         ]
       },
       {
         test: /\.(png|svg|jpg|gif)$/,
-        include: includePath,
         use: [
           'file-loader'
         ]
       },
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/,
-        include: includePath,
         use: [
-          'file-loader'
+          'url-loader'
         ]
       }
     ]
