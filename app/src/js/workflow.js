@@ -108,6 +108,31 @@ $(() => {
       drawNodes(wf.nodes);
       drawLinks(nodes);
     });
+
+    sio.on('projectState', (state)=>{
+      if(state === 'running'){
+        $('#run_menu').hide();
+        $('#pause_menu').show();
+        $('#clean_menu').show();
+        $('#stop_menu').show();
+      }else if(state === 'paused'){
+        $('#run_menu').show();
+        $('#pause_menu').hide();
+        $('#clean_menu').show();
+        $('#stop_menu').show();
+      }else if(state === 'finished'){
+        $('#run_menu').hide();
+        $('#pause_menu').hide();
+        $('#clean_menu').show();
+        $('#stop_menu').hide();
+      }else{
+        $('#run_menu').show();
+        $('#pause_menu').hide();
+        $('#clean_menu').hide();
+        $('#stop_menu').hide();
+      }
+    });
+
     //TODO project 進行状況の受信処理
     //
     //setup log reciever
@@ -116,31 +141,15 @@ $(() => {
     // register btn click event listeners
     $('#run_menu').on('click',function(){
       sio.emit('runProject', true);
-      $('#run_menu').hide();
-      $('#pause_menu').show();
-      $('#clean_menu').show();
-      $('#stop_menu').show();
     });
     $('#pause_menu').on('click',function(){
       sio.emit('pauseProject', true);
-      $('#run_menu').show();
-      $('#pause_menu').hide();
-      $('#clean_menu').show();
-      $('#stop_menu').show();
     });
     $('#clean_menu').on('click',function(){
       sio.emit('cleanProject', true);
-      $('#run_menu').show();
-      $('#pause_menu').hide();
-      $('#clean_menu').hide();
-      $('#stop_menu').hide();
     });
     $('#stop_menu').on('click',function(){
       sio.emit('stopProject', true);
-      $('#run_menu').show();
-      $('#pause_menu').hide();
-      $('#clean_menu').hide();
-      $('#stop_menu').hide();
     });
   });
 

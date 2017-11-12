@@ -1,10 +1,11 @@
 const fs= require('fs');
+const path= require('path');
 const util= require('util');
-//const { exec } = require('child_process');
-const exec = util.promisify(require('child_process').exec);
+const child_process = require('child_process');
 
 const config = require('./config/server.json');
 const logger=require('./logger');
+
 const executer = require('./executer');
 
 
@@ -33,49 +34,58 @@ function _foreachIsFinished(node){
   return node.currentIndex >= node.indexList.length;
 }
 
-async function _evalScript(script){
-  var rt=false;
-  exec(script).on('exit',(code)=>{
-    rt = code === 0;
-  });
-  return rt;
-}
-
-async function _evalCondition(condition){
+/**
+ * evalute condition by executing external command or evalute JS expression
+ * @param {string} condition - command name or javascript expression
+ */
+async function evalCondition(condition, cwd){
   let rt=false;
-  try {
-    await util.promisify(fs.access)(condition, fs.constants.X_OK);
-    rt = await _evalScript(condition);
+  if( !(typeof condition === 'string' || typeof condition === 'boolean') ){
+    logger.error('condition must be string or boolean');
+    return false;
   }
-  catch (err){
-    if(err.code ===  'ENOENT' ){
-      rt = eval(condition);
-    }
-  }
+  let script = path.resolve(cwd, condition);
+  await util.promisify(fs.access)(script)
+    .then(()=>{
+      logger.debug('execute ', script);
+      //TODO script を引数にしてshを呼び出すか、実行権を無理矢理付ける
+      rt = child_process.spawnSync(script).status === 0;
+    })
+    .catch((err)=>{
+      if(err.code ===  'ENOENT' ){
+        logger.debug('evalute ', condition);
+        rt = eval(condition)
+      }else{
+        logger.error('condition is neither executable nor javascript expression ', err);
+      }
+    });
   return rt;
 }
-
-
 
 /**
  * parse workflow graph and dispatch ready tasks to executer
  */
 class Dispatcher{
-  constructor(workflow){
+  constructor(workflow, rootDir){
+    this.rootDir=rootDir;
+    this.children=[];
     this.currentSearchList=[];
     this.nextSearchList=[];
-    this.children=[];
     this.nodes=workflow.nodes;
     this.nodes.forEach((v,i)=>{
       if(v.previous.length===0 && v.inputFiles.length===0){
         this.currentSearchList.push(i);
       }
     });
-    logger.debug('initial task index: ',this.currentSearchList);
+    logger.debug('initial task indeces: ',this.currentSearchList);
+    this.running=false;
   }
 
-  dispatch(){
-    this.timeout = setInterval(async ()=>{
+  async dispatch(){
+    this.timeout = setInterval(()=>{
+      if(this.running) return
+      this.running=true;
+      logger.debug('currneSearchList : ', this.currentSearchList)
       let promises=[];
       while(this.currentSearchList.length>0){
         let target = this.currentSearchList.shift();
@@ -85,54 +95,57 @@ class Dispatcher{
         }
         let node=this.nodes[target]
         let cmd = this._cmdFactory(node.type.toLowerCase());
-        promisees.push(cmd.call(this, node));
+        promises.push(cmd.call(this, node));
       }
-      await Promise.all(promises)
-      this.currentSearchList=this.nextSearchList;
-      this.nextSearchList=[];
+      Promise.all(promises)
+        .then(()=>{
+          this.currentSearchList=this.nextSearchList;
+          this.nextSearchList=[];
+          this.running=false;
+          if(this.currentSearchList.length === 0){
+            clearInterval(this.timeout);
+          }
+        })
+        .catch((err)=>{
+          logger.error('Error occurred while parsing workflow: ',err)
+        });
     }, config.interval);
   }
-
-  isFinished(){
-    let finished=true;
+  pause(){
     this.children.forEach((child)=>{
-      if(!child.isFinished()){
-        finished=false;
-      }
+      child.pause();
     });
-    if(this.currentSearchList.length > 0) finished=false;
-    if(this.nextSearchList.length > 0) finished=false;
-    return finished;
+    clearInterval(this.timeout);
   }
-
   remove(){
+    this.pause();
     this.children.forEach((child)=>{
       child.remove();
     });
-    if(this.timeout != null){
-      clearInterval(this.timeout);
-      this.timeout=null;
-    }
+    this.currentSearchList=[];
+    this.nextSearchList=[];
+    this.nodes=[];
   }
 
-
-
-  _dispatchTask(task){
+  async _dispatchTask(task){
+    logger.debug('_dispatchTask called');
+    //TODO add uuid to task
     executer.enqueue(task);
-    task.next.forEach((next)=>{
-      this.nextSearchList.push(next);
-    });
+    //TODO register task to TaskStateManager
+    Array.prototype.push.apply(this.nextSearchList, task.next);
   }
 
-  _checkIf(node){
-    async ()=>{
-      let condition = await _evalCondition(node.condition);
-      let next = condition? node.next: node.else;
-      Array.prototype.push.apply(this.nextSearchList, next);
-    }
+  async _checkIf(node){
+    logger.debug('_checkIf called', node);
+    let cwd= path.resolve(this.rootDir, node.path);
+    let condition = await evalCondition(node.condition, cwd);
+    let next = condition? node.next: node.else;
+    Array.prototype.push.apply(this.nextSearchList, next);
+    node.state='finished';
   }
 
-  _loopHandler(getCurrentIndex, isFinished, node){
+  async _loopHandler(getCurrentIndex, isFinished, node){
+    logger.debug('_loopHandler called', node);
     let oldIndex=node.currentIndex;
     node.currentIndex = getCurrentIndex(node);
     if(isFinished(node)){
@@ -143,6 +156,36 @@ class Dispatcher{
         this._delegate(newWorkflow);
       }
     }
+  }
+
+  async _delegate(node){
+    logger.debug('_delegate called', node);
+    let cwd= path.resolve(this.rootDir, node.path);
+    let child = new Dispatcher(newWorkflow, cwd);
+    this.children.push(child);
+  }
+
+
+  // resolveはWFを読み込んで返すこと
+  _copyLoopDir(oldIndex, node){
+    console.log(node.path);
+    let cwd= path.resolve(this.rootDir, node.path);
+  }
+
+  _isReady(index){
+    let ready = true
+    this.nodes[index].previous.forEach((i)=>{
+      if(!(this.nodes[i].state === 'finished' || this.nodes[i].state === 'failed')){
+        ready = false;
+      }
+    });
+    this.nodes[index].inputFiles.forEach((inputFile)=>{
+      let i = inputFile.srcNode;
+      if(!(this.nodes[i].state === 'finished' || this.nodes[i].state === 'failed')){
+        ready = false;
+      }
+    });
+    return ready;
   }
 
   _cmdFactory(type){
@@ -164,7 +207,7 @@ class Dispatcher{
         cmd = this._loopHandler.bind(this, _foreachGetCurrentIndex, _foreachIsFinished);
         break;
       case 'workflow':
-        console.log('not implemented yet !');
+        cmd = this._delegate;
         break;
       case 'parameterstudy':
         console.log('not implemented yet !');
@@ -172,30 +215,5 @@ class Dispatcher{
     }
     return cmd;
   }
-  _isReady(index){
-    let ready = true
-    this.nodes[index].previous.forEach((i)=>{
-      if(!(this.nodes[i].state === 'done' || this.nodes[i].state === 'failed')){
-        ready = false;
-      }
-    });
-    this.nodes[index].inputFiles.forEach((inputFile)=>{
-      let i = inputFile.srcNode;
-      if(!(this.nodes[i].state === 'done' || this.nodes[i].state === 'failed')){
-        ready = false;
-      }
-    });
-    return ready;
-  }
-
-  // resolveはWFを読み込んで返すこと
-  _copyLoopDir(oldIndex, node){
-  }
-
-  _delegate(newWorkflow){
-    let d = new Dispatcher(newWorkflow);
-    d.dispatch();
-    this.children.push(d);
-  }
 }
-module.exports = Dispatcher
+module.exports = Dispatcher;

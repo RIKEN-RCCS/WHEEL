@@ -16,9 +16,11 @@ const Dispatcher = require('./dispatcher');
 
 //TODO move these resource to resourceManager
 // workflow object which is editting
-var rootWorkflow=null;
+let rootWorkflow=null;
 // workflow filename which is editting
-var rootWorkflowFilename=null;
+let rootWorkflowFilename=null;
+// dispatcher for root workflow
+let rootWorkflowDispatcher=null
 
 
 const systemFiles = new RegExp(`^(?!^.*(${escape(config.extension.project)}|${escape(config.extension.workflow)}|${escape(config.extension.pstudy)})$).*$`);
@@ -143,23 +145,25 @@ function onDownloadFile(sio, msg){
   });
 }
 
-
 function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
-  let d = new Dispatcher(rootWorkflow);
-  d.dispatch();
-  setInterval(function(){
-    if(d.isFinished()){
-      d.remove();
-    }
-    //TODO project 終了処理
-  }, config.interval);
+  rootWorkflowDispatcher = new Dispatcher(rootWorkflow, path.dirname(rootWorkflowFilename));
+  sio.emit('projectState', 'running');
+  rootWorkflowDispatcher.dispatch()
+  .catch((err)=>{
+    logger.error('fatal occurred while parseing tasks: ',err);
+  });
 }
 function onPauseProject(sio, msg){
   logger.debug(`pause event recieved: ${msg}`);
+  rootWorkflowDispatcher.pause();
+  sio.emit('projectState', 'paused');
 }
 function onCleanProject(sio, msg){
   logger.debug(`clean event recieved: ${msg}`);
+  rootWorkflowDispatcher.remove();
+  //TODO 途中経過ファイルなども削除する(TaskStateManagerの責務)
+  sio.emit('projectState', 'cleared');
 }
 
 function onCreateNode(sio, msg){
