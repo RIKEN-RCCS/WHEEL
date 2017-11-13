@@ -3,9 +3,11 @@ const path= require('path');
 const util= require('util');
 const child_process = require('child_process');
 
+const uuidv1 = require('uuid/v1');
+const ncp = require('ncp');
+
 const config = require('./config/server.json');
 const logger=require('./logger');
-
 const executer = require('./executer');
 
 
@@ -129,9 +131,8 @@ class Dispatcher{
 
   async _dispatchTask(task){
     logger.debug('_dispatchTask called');
-    //TODO add uuid to task
+    task.id=uuidv1();
     executer.enqueue(task);
-    //TODO register task to TaskStateManager
     Array.prototype.push.apply(this.nextSearchList, task.next);
   }
 
