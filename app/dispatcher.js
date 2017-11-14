@@ -132,7 +132,7 @@ class Dispatcher{
   async _dispatchTask(task){
     logger.debug('_dispatchTask called');
     task.id=uuidv1();
-    executer.enqueue(task);
+    executer.exec(task);
     Array.prototype.push.apply(this.nextSearchList, task.next);
   }
 
@@ -164,6 +164,14 @@ class Dispatcher{
     let cwd= path.resolve(this.rootDir, node.path);
     let child = new Dispatcher(newWorkflow, cwd);
     this.children.push(child);
+    child.dispatch()
+      .then(()=>{
+        //TODO 子WFからdispatchされた全てのTaskの終了を確認する必要がある
+        TaskStateManager.register(node)
+      })
+      .catch((err)=>{
+        logger.error("fatal error occurred while parsing sub workflow",err);
+      });
   }
 
 

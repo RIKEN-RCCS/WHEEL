@@ -151,7 +151,7 @@ function onRunProject(sio, msg){
   sio.emit('projectState', 'running');
   rootWorkflowDispatcher.dispatch()
   .catch((err)=>{
-    logger.error('fatal occurred while parseing tasks: ',err);
+    logger.error('fatal occurred while parseing root workflow: ',err);
   });
 }
 function onPauseProject(sio, msg){
