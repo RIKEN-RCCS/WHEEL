@@ -1,22 +1,22 @@
 'use strict';
+const express = require('express');
+let router = express.Router();
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const util = require("util");
 
-const logger = require("./logger");
-const fileBrowser = require("./fileBrowser");
+const logger = require("../logger");
+const fileBrowser = require("../fileBrowser");
 
-const config = require('./config/server.json')
+const config = require('../config/server.json')
 const rootDir = config.rootDir;
 
 const remotehostFilename = path.resolve('./app', config.remotehost);
-const { writeAndEmit } = require("./utility");
+const jsonArrayManager = require("../jsonArrayManager");
 
-const jsonArrayManager = require("./jsonArrayManager");
-
-const ServerUtility = require("./serverUtility");
-const sshConnection = require("./sshConnection");
+const ServerUtility = require("../serverUtility");
+const sshConnection = require("../sshConnection");
 
 function onSshConnection (sio, name, password, fn) {
   ServerUtility.getHostInfo((err, hostList) => {
@@ -54,19 +54,10 @@ function sendFileList(sio, request){
   });
 }
 
-/**
- * add new remote host info
- * @param {Object} hostinfo         - remote host information object
- * @param {string} hostinfo.name    - label of host info
- * @param {string} hostinfo.id      - unique id string
- * @param {string} hostinfo.host    - hostname of IP address
- * @param {string} hostinfo.path    - work directory path on remote host
- * @param {string} hostinfo.usename - username on remote host
- * @param {string} hostinfo.keyFile - secret key file (to use password login, set null to this property)
- */
 
-function setup(sio2){
-  var sio=sio2.of('/remotehost');
+
+module.exports = function(io){
+  var sio=io.of('/remotehost');
   let remoteHost= new jsonArrayManager(remotehostFilename, sio, 'hostList');
   let doAndEmit = function(func, msg){
     func(msg).then(()=>{
@@ -86,6 +77,9 @@ function setup(sio2){
     socket.on('fileListRequest', sendFileList.bind(null, sio));
     socket.on('testSshConnection', onSshConnection.bind(null, sio));
   });
-}
 
-module.exports = setup;
+  router.get('/', function (req, res, next) {
+    res.sendFile(path.resolve('app/views/remoteHost.html'));
+  });
+  return router
+}
