@@ -8,18 +8,18 @@ const  router = express.Router();
 
 const logger = require('../logger');
 
-var returnRouter = function(io){
+module.exports = function(io){
   // メイン（エディタに編集対象のソースを入れて返す）
   router.get('/', function (req, res) {
-    var cwd=req.query.path;
-    var filename=req.query.filename;
-    var parameterEdit=req.query.pm.toLowerCase()==="true";
-    var target = path.resolve(cwd, filename);
+    let cwd=req.query.path;
+    let filename=req.query.filename;
+    let parameterEdit=req.query.pm.toLowerCase()==="true";
+    let target = path.resolve(cwd, filename);
     util.promisify(fs.readFile)(target, 'utf-8')
       .then(function(txt){
-        var tree = [];
+        let tree = [];
         if(parameterEdit) {
-          var walk = function(p) {
+          let walk = function(p) {
             fs.readdir(p, function(err, files) {
               if (err) {
                 logger.error('fs.readdir failed: ',err);
@@ -51,7 +51,6 @@ var returnRouter = function(io){
           filename: filename,
           parameterEdit: parameterEdit
         });
-        //TODO jstreeのhtml版を使ってsocket通信を削除
         io.of('/rapid').on('connect', function(socket){
           socket.emit('tree', tree);
         });
@@ -97,4 +96,3 @@ var returnRouter = function(io){
   return router;
 }
 
-module.exports = returnRouter;
