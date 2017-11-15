@@ -18,7 +18,8 @@ $(() => {
     keyFile: '',
     numJob: 5,
     queue: '',
-    port: 22
+    port: 22,
+    id: ''
   }
 
   // create vue.js instance and render
@@ -35,8 +36,10 @@ $(() => {
     },
     methods:{
       toggleSelected: function(e){
-        let selectedItem = e.target.getAttribute('data-name');
-        let index=this.selectedHost.indexOf(selectedItem);
+        let selectedItem = JSON.parse(e.target.getAttribute('data-host'));
+        let index=this.selectedHost.findIndex((e)=>{
+          return e.id === selectedItem.id;
+        });
         if(index === -1){
           this.selectedHost.push(selectedItem);
           $(e.target).addClass('ui-state-highlight');
@@ -49,10 +52,19 @@ $(() => {
         socket.emit(this.mode, vm.hostinfo);
         resetInputArea();
       },
+      editHost: function(){
+        this.mode='updateHost';
+        let lastSelected=this.selectedHost[this.selectedHost.length-1];
+        let index=this.hostList.findIndex((e)=>{
+          return e.id === lastSelected.id;
+        });
+        this.hostinfo=this.hostList[index];
+        this.showInputArea=true;
+      },
       quitInput: resetInputArea,
       removeHost: function(){
         this.selectedHost.forEach((e)=>{
-          socket.emit('removeHost', e);
+          socket.emit('removeHost', e.id);
         })
       },
       browse: browseServerFiles,

@@ -1,3 +1,4 @@
+'use strict';
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -5,11 +6,14 @@ const util = require("util");
 
 const logger = require("./logger");
 const fileBrowser = require("./fileBrowser");
-const rootDir = require('./config/server.json').rootDir;
-const configRemotehostFilename = require('./config/server.json').remotehost;
-const remotehost = path.resolve('./app', configRemotehostFilename);
+
+const config = require('./config/server.json')
+const rootDir = config.rootDir;
+
+const remotehostFilename = path.resolve('./app', config.remotehost);
 const { writeAndEmit } = require("./utility");
 
+const jsonArrayManager = require("./jsonArrayManager");
 
 const ServerUtility = require("./serverUtility");
 const sshConnection = require("./sshConnection");
@@ -50,83 +54,36 @@ function sendFileList(sio, request){
   });
 }
 
-async function readRemoteHost(){
-  let remoteHostList = await util.promisify(fs.readFile)(remotehost)
-    .catch((err)=>{
-      logger.error('remotehost list flie read error', err);
-    });
-  return JSON.parse(remoteHostList.toString());
-}
-
 /**
  * add new remote host info
- * @param {string} hostinfo.name - unique id string
- * @param {string} hostinfo.host - hostname of IP address
- * @param {string} hostinfo.path - work directory path on remote host
+ * @param {Object} hostinfo         - remote host information object
+ * @param {string} hostinfo.name    - label of host info
+ * @param {string} hostinfo.id      - unique id string
+ * @param {string} hostinfo.host    - hostname of IP address
+ * @param {string} hostinfo.path    - work directory path on remote host
  * @param {string} hostinfo.usename - username on remote host
- * @param {string} [hostinfo.keyFile] - secret key file (to use password login instead, set null to this property)
+ * @param {string} hostinfo.keyFile - secret key file (to use password login, set null to this property)
  */
-async function addHost (sio, hostinfo) {
-  let remoteHostList = await readRemoteHost();
-  if(hostinfo.name in remoteHostList ){
-    logger.error(hostinfo.name, ' is already exists');
+
+function setup(sio2){
+  var sio=sio2.of('/remotehost');
+  let remoteHost= new jsonArrayManager(remotehostFilename, sio, 'hostList');
+  let doAndEmit = function(func, msg){
+    func(msg).then(()=>{
+      sio.emit('hostList', remoteHost.getAll());
+    });
   }
-  remoteHostList.push(hostinfo);
-  writeAndEmit(remoteHostList, remotehost, sio, 'hostList');
-}
 
-/**
- * remove entry from remote host list
- * @param {string} name - id of target entry
- */
-async function removeHost(sio, name){
-  let remoteHostList = await readRemoteHost();
-  remoteHostList=remoteHostList.filter((e)=>{
-    return e.name !== name;
-  });
-  writeAndEmit(remoteHostList, remotehost, sio, 'hostList')
-}
+  sio.on('connect', (socket) => {
+    socket.on('hostListRequest', ()=>{
+      sio.emit('hostList', remoteHost.getAll());
+    });
+    socket.on('addHost', doAndEmit.bind(null, remoteHost.add.bind(remoteHost)));
+    socket.on('removeHost', doAndEmit.bind(null, remoteHost.remove.bind(remoteHost)));
+    socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
 
-/**
- * update entry in remote host list
- * @param {string} hostinfo.name - unique id string
- * @param {string} [hostinfo.host] - hostname of IP address
- * @param {string} [hostinfo.path] - work directory path on remote host
- * @param {string} [hostinfo.usename] - username on remote host
- * @param {string} [hostinfo.keyFile] - secret key file (to use password login instead, set null to this property)
- */
-async function updateHost(sio, hostinfo){
-  if (! name in hostinfo){
-    logger.error('illegal hostinfo parameter ', hostinfo);
-  }
-  let remoteHostList = await readRemoteHost();
-  let targetIndex=remoteHostList.indexOf((e)=>{
-    return e.name === hostinfo.name;
-  });
-  Object.assign(remoteHostList[targetIndex], hostinfo);
-  writeAndEmit(remoteHostList, remotehost, sio, 'hostList');
-}
-
-/**
- * read and send remote host list
- * @param {Object} sio - socekt.io instance
- */
-async function sendHostList(sio){
-  logger.debug('recieve hostList Request');
-  let remoteHostList = await readRemoteHost();
-  console.log(remoteHostList);
-  sio.emit('hostList', remoteHostList);
-}
-
-function setup(sio){
-  var sioRemoteHost=sio.of('/remotehost');
-  sioRemoteHost.on('connect', (socket) => {
-    socket.on('addHost',    addHost.bind(null, sioRemoteHost));
-    socket.on('removeHost', removeHost.bind(null, sioRemoteHost));
-    socket.on('updateHost', updateHost.bind(null, sioRemoteHost));
-    socket.on('fileListRequest', sendFileList.bind(null, sioRemoteHost));
-    socket.on('hostListRequest', sendHostList.bind(null, sioRemoteHost));
-    socket.on('testSshConnection', onSshConnection.bind(null, sioRemoteHost));
+    socket.on('fileListRequest', sendFileList.bind(null, sio));
+    socket.on('testSshConnection', onSshConnection.bind(null, sio));
   });
 }
 
