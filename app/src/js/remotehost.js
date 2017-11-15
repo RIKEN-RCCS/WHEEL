@@ -32,19 +32,19 @@ $(() => {
       oldKeyFile: '',
       mode: 'addHost',
       hostList: [],
-      selectedHost: []
+      selectedHosts: []
     },
     methods:{
       toggleSelected: function(e){
         let selectedItem = JSON.parse(e.target.getAttribute('data-host'));
-        let index=this.selectedHost.findIndex((e)=>{
+        let index=this.selectedHosts.findIndex((e)=>{
           return e.id === selectedItem.id;
         });
         if(index === -1){
-          this.selectedHost.push(selectedItem);
+          this.selectedHosts.push(selectedItem);
           $(e.target).addClass('ui-state-highlight');
         }else{
-          this.selectedHost.splice(index,1);
+          this.selectedHosts.splice(index,1);
           $(e.target).removeClass('ui-state-highlight');
         }
       },
@@ -54,7 +54,7 @@ $(() => {
       },
       editHost: function(){
         this.mode='updateHost';
-        let lastSelected=this.selectedHost[this.selectedHost.length-1];
+        let lastSelected=this.selectedHosts[this.selectedHosts.length-1];
         let index=this.hostList.findIndex((e)=>{
           return e.id === lastSelected.id;
         });
@@ -63,8 +63,13 @@ $(() => {
       },
       quitInput: resetInputArea,
       removeHost: function(){
-        this.selectedHost.forEach((e)=>{
+        this.selectedHosts.forEach((e)=>{
           socket.emit('removeHost', e.id);
+        })
+      },
+      copyHost: function(){
+        this.selectedHosts.forEach((e)=>{
+          socket.emit('copyHost', e.id);
         })
       },
       browse: browseServerFiles,

@@ -7,7 +7,7 @@ const logger = require("./logger");
 const { writeAndEmit } = require("./utility");
 
 class JsonArrayManager{
-  constructor(filename, sio, eventName){
+  constructor(filename){
     this.filename=filename;
     this.data=[];
     util.promisify(fs.readFile)(this.filename)
@@ -19,29 +19,45 @@ class JsonArrayManager{
           logger.error('JSON flie read error', err);
         }
       });
-    this.sio=sio;
-    this.eventName=eventName;
   }
-  writeAndEmit(){
-    writeAndEmit(this.data, this.filename, this.sio, this.eventName);
+  write(){
+    return util.promisify(fs.writeFile)(this.filename, JSON.stringify(this.data, null, 4))
   }
   add(entry){
     entry.id=uuidv1();
     this.data.push(entry)
-    this.writeAndEmit();
+    return this.write();
   }
   update(entry){
     let targetIndex=this.data.findIndex((e)=>{
       return e.id === entry.id;
     });
     this.data[targetIndex] = entry;
-    this.writeAndEmit();
+    return this.write();
   }
   remove(id){
     this.data=this.data.filter((e)=>{
       return e.id !== id;
     });
-    this.writeAndEmit();
+    return this.write();
+  }
+  copy(id){
+    let target=this.data.find((e)=>{
+      return e.id === id;
+    });
+    let duplicate = Object.assign({}, target);
+    duplicate.id = uuidv1();
+    this.data.push(duplicate);
+    return this.write();
+  }
+  get(id){
+    return this.data.find((e)=>{
+        if (e.id === id)
+            return true;
+    });
+  }
+  getAll(){
+    return this.data;
   }
 }
 

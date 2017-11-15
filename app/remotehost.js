@@ -81,6 +81,7 @@ function setup(sio2){
     socket.on('addHost', doAndEmit.bind(null, remoteHost.add.bind(remoteHost)));
     socket.on('removeHost', doAndEmit.bind(null, remoteHost.remove.bind(remoteHost)));
     socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
+    socket.on('copyHost', doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
 
     socket.on('fileListRequest', sendFileList.bind(null, sio));
     socket.on('testSshConnection', onSshConnection.bind(null, sio));
