@@ -4,15 +4,12 @@ const fs = require("fs");
 const util = require("util");
 
 let express = require('express');
-const siofu = require("socketio-file-upload");
 const del = require("del");
 
 const logger = require("../logger");
-const fileBrowser = require("./fileBrowser");
 const component = require('./workflowComponent');
-const config = require('../config/server.json');
-const escape = require('./utility').escapeRegExp;;
 const Dispatcher = require('./dispatcher');
+const fileManager = require('./fileManager');
 
 //TODO move these resource to resourceManager
 // workflow object which is editting
@@ -21,8 +18,6 @@ let rootWorkflow=null;
 let rootWorkflowFilename=null;
 // dispatcher for root workflow
 let rootWorkflowDispatcher=null
-
-const systemFiles = new RegExp(`^(?!^.*(${escape(config.extension.project)}|${escape(config.extension.workflow)}|${escape(config.extension.pstudy)})$).*$`);
 
 /**
  * write data and emit to client with promise
@@ -76,41 +71,6 @@ function cleanUpNode(node){
   }
 }
 
-function onRemoveFile(sio, msg){
-  logger.debug(`remove event recieved: ${msg}`);
-  var parentDir = path.dirname(msg);
-  del(msg, { force: true })
-  .then(function () {
-      fileBrowser(sio, 'fileList', parentDir, {"filter": {file: systemFiles}});
-  })
-  .catch(function (err) {
-    logger.warn(`remove failed: ${err}`);
-    logger.debug(`remove msg: ${msg}`);
-  });
-}
-
-function onFileListRequest(uploader, sio, request){
-  logger.debug(`current dir = ${request}`);
-  // work around
-  var targetDir=null
-  util.promisify(fs.stat)(request)
-    .then(function(stat){
-      if(stat.isFile()){
-        targetDir = path.dirname(request)
-      }else if(stat.isDirectory()){
-        targetDir = request;
-      }else{
-        return Promise.reject(new Error("illegal directory browse request"));
-      }
-      logger.debug('targetDir = ', targetDir);
-      fileBrowser(sio, 'fileList', targetDir, {"request": request, "filter": {file: systemFiles}});
-      uploader.dir = targetDir;
-    })
-    .catch(function(err){
-      logger.error('directory not found!');
-    })
-}
-
 function onWorkflowRequest(sio, msg){
   logger.debug('Workflow Request event recieved: ', msg);
   rootWorkflowFilename=msg;
@@ -123,60 +83,6 @@ function onWorkflowRequest(sio, msg){
     logger.error('workflow file read error');
     logger.error('reason: ',err);
   });
-}
-
-function onRenameFile(sio, msg){
-  logger.debug(`rename event recieved: ${msg}`);
-  if (!(msg.hasOwnProperty('oldName') && msg.hasOwnProperty('newName') && msg.hasOwnProperty('path'))) {
-    logger.warn(`illegal request ${msg}`);
-    return;
-  }
-  var oldName = path.resolve(msg.path, msg.oldName);
-  var newName = path.resolve(msg.path, msg.newName);
-  util.promisify(fs.rename)(oldName, newName)
-  .then(function () {
-    fileBrowser(sio, 'fileList', msg.path, {"filter": {file: systemFiles}});
-  })
-  .catch(function (err) {
-    logger.warn('rename failed: ',err);
-    logger.debug('path:    ', msg.path);
-    logger.debug('oldName: ', msg.oldName);
-    logger.debug('newName: ', msg.newName);
-  });
-}
-
-function onDownloadFile(sio, msg){
-  logger.debug('download event recieved: ', msg);
-  let filename = path.resolve(msg.path, msg.name);
-  //TODO ディレクトリが要求された時に対応する
-  util.promisify(fs.readFile)(filename)
-    .then(function(data){
-      sio.emit('download', data);
-    })
-  .catch(function(err){
-    logger.error('file download failed', err);
-  });
-}
-
-function onRunProject(sio, msg){
-  logger.debug(`run event recieved: ${msg}`);
-  rootWorkflowDispatcher = new Dispatcher(rootWorkflow, path.dirname(rootWorkflowFilename));
-  sio.emit('projectState', 'running');
-  rootWorkflowDispatcher.dispatch()
-  .catch((err)=>{
-    logger.error('fatal occurred while parseing root workflow: ',err);
-  });
-}
-function onPauseProject(sio, msg){
-  logger.debug(`pause event recieved: ${msg}`);
-  rootWorkflowDispatcher.pause();
-  sio.emit('projectState', 'paused');
-}
-function onCleanProject(sio, msg){
-  logger.debug(`clean event recieved: ${msg}`);
-  rootWorkflowDispatcher.remove();
-  //TODO 途中経過ファイルなども削除する(TaskStateManagerの責務)
-  sio.emit('projectState', 'cleared');
 }
 
 function onCreateNode(sio, msg){
@@ -379,40 +285,42 @@ function onRemoveFileLink(sio, msg){
   logger.warn('DeleteFileLink function is not implemented yet.');
 }
 
+
+
+function onRunProject(sio, msg){
+  logger.debug(`run event recieved: ${msg}`);
+  rootWorkflowDispatcher = new Dispatcher(rootWorkflow, path.dirname(rootWorkflowFilename));
+  sio.emit('projectState', 'running');
+  rootWorkflowDispatcher.dispatch()
+  .catch((err)=>{
+    logger.error('fatal occurred while parseing root workflow: ',err);
+  });
+}
+function onPauseProject(sio, msg){
+  logger.debug(`pause event recieved: ${msg}`);
+  rootWorkflowDispatcher.pause();
+  sio.emit('projectState', 'paused');
+}
+function onCleanProject(sio, msg){
+  logger.debug(`clean event recieved: ${msg}`);
+  rootWorkflowDispatcher.remove();
+  //TODO 途中経過ファイルなども削除する(TaskStateManagerの責務)
+  sio.emit('projectState', 'cleared');
+}
+
+
 module.exports = function(io){
   const sio = io.of('/workflow');
-
-
-
-
-
-
-
-
-
-
-
   sio.on('connect', function (socket) {
-    var uploader = new siofu();
-    uploader.listen(socket);
-    uploader.dir = os.homedir();
-    uploader.on("saved", function (event) {
-      logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
-      fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: systemFiles}});
-    });
-    uploader.on("error", function (event) {
-      logger.error(`Error from uploader ${event}`);
-    });
-    socket.on('fileListRequest', onFileListRequest.bind(null, uploader, socket));
+    fileManager(socket);
+
     socket.on('workflowRequest', onWorkflowRequest.bind(null, socket));
-    socket.on('remove',          onRemoveFile.bind(null, socket));
-    socket.on('rename',          onRenameFile.bind(null, socket));
-    socket.on('download',        onDownloadFile.bind(null, socket));
     socket.on('createNode',      onCreateNode.bind(null, socket));
     socket.on('updateNode',      onUpdateNode.bind(null, socket));
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
     socket.on('addLink',         onAddLink.bind(null, socket));
     socket.on('addFileLink',     onAddFileLink.bind(null, socket));
+
     socket.on('runProject',      onRunProject.bind(null, socket));
     socket.on('pauseProject',    onPauseProject.bind(null, socket));
     socket.on('cleanProject',    onCleanProject.bind(null, socket));
