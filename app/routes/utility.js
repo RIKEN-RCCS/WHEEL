@@ -10,19 +10,6 @@ class Utility {
     return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
   }
 
-  /**
-   * write data and emit to client with promise
-   * @param {object} data - object to be writen and emitted
-   * @param {string} filename
-   * @param {object} sio  - instance of socket.io
-   * @param {string} eventName - eventName to send workflow
-   */
-  writeAndEmit(data, filename, sio, eventName){
-    return util.promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4))
-      .then(function(){
-        sio.emit(eventName, data);
-      });
-  }
 }
 
 

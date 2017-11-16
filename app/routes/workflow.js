@@ -12,7 +12,6 @@ const fileBrowser = require("./fileBrowser");
 const component = require('./workflowComponent');
 const config = require('../config/server.json');
 const escape = require('./utility').escapeRegExp;;
-const { writeAndEmit } = require("./utility");
 const Dispatcher = require('./dispatcher');
 
 //TODO move these resource to resourceManager
@@ -24,6 +23,20 @@ let rootWorkflowFilename=null;
 let rootWorkflowDispatcher=null
 
 const systemFiles = new RegExp(`^(?!^.*(${escape(config.extension.project)}|${escape(config.extension.workflow)}|${escape(config.extension.pstudy)})$).*$`);
+
+/**
+ * write data and emit to client with promise
+ * @param {object} data - object to be writen and emitted
+ * @param {string} filename
+ * @param {object} sio  - instance of socket.io
+ * @param {string} eventName - eventName to send workflow
+ */
+function writeAndEmit(data, filename, sio, eventName){
+  return util.promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4))
+    .then(function(){
+      sio.emit(eventName, data);
+    });
+}
 
 /**
  * make directory
@@ -47,7 +60,7 @@ function makeDir(basename, suffix){
 }
 
 /**
- * remove null from inputFiles and outputFiles
+ * remove null entry from inputFiles and outputFiles
  * @param node workflow componet which will be clean up
  */
 function cleanUpNode(node){
@@ -366,11 +379,19 @@ function onRemoveFileLink(sio, msg){
   logger.warn('DeleteFileLink function is not implemented yet.');
 }
 
-function setup(sio) {
-}
-
 module.exports = function(io){
   const sio = io.of('/workflow');
+
+
+
+
+
+
+
+
+
+
+
   sio.on('connect', function (socket) {
     var uploader = new siofu();
     uploader.listen(socket);
