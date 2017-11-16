@@ -24,8 +24,6 @@ app.set('view engine', 'ejs');
 
 // middlewares
 app.use(bodyParser.json());
-// RAPiDでtrueだったので合わせている
-// TODO 実際にtrueにする必要があるかどうか調査
 app.use(bodyParser.urlencoded({ extended: true}));
 app.use(cookieParser());
 app.use(express.static(path.resolve('./app/public'), { index: false }));
@@ -36,13 +34,17 @@ var routes = {
     "home":       require('./routes/home')(sio),
     "workflow":   require('./routes/workflow')(sio),
     "remotehost": require('./routes/remotehost')(sio),
+    "login":      require('./routes/login')(sio),
+    "admin":      require('./routes/admin')(sio),
     "rapid":      require('./routes/rapid')(sio)
 };
 app.use('/',                    routes.home);
 app.use('/home',                routes.home);
+app.use('/login',               routes.login);
+app.use('/admin',               routes.admin);
 app.use('/workflow',            routes.workflow);
 app.use('/editor',              routes.rapid);
-app.use('/swf/remotehost.html', routes.remotehost);
+app.use('/remotehost', routes.remotehost);
 
 // port number
 var defaultPort = 443;
