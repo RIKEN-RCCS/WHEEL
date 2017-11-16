@@ -1,6 +1,7 @@
 {
     "port": 8089,
     "remotehost": "./config/remotehost.json",
+    "useraccount": "./config/useraccount.json",
     "projectList": "./config/projectList",
     "suffix": ".wheel",
     "interval": 100,

@@ -9,7 +9,6 @@ class Utility {
   escapeRegExp(string) {
     return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
   }
-
 }
 
 

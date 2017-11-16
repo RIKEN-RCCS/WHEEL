@@ -9,6 +9,7 @@ const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
 const config = require('../config/server.json')
 const jsonArrayManager = require("./jsonArrayManager");
+const doAndEmit = require('./utility').doAndEmit;;
 
 const sshConnection = require("../sshConnection");
 
@@ -23,17 +24,15 @@ function sendFileList(sio, request){
 }
 
 module.exports = function(io){
-  var sio=io.of('/remotehost');
-
   const remotehostFilename = path.resolve('./app', config.remotehost);
   let remoteHost= new jsonArrayManager(remotehostFilename);
 
+  var sio=io.of('/remotehost');
   let doAndEmit = function(func, msg){
     func(msg).then(()=>{
       sio.emit('hostList', remoteHost.getAll());
     });
   }
-
   sio.on('connect', (socket) => {
     socket.on('hostListRequest', ()=>{
       socket.emit('hostList', remoteHost.getAll());
