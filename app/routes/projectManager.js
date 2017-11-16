@@ -5,11 +5,11 @@ const util = require("util");
 const path = require("path");
 
 const compo = require("./workflowComponent");
-const logger = require("./logger");
+const logger = require("../logger");
 
 function create(projectDirectory, projectName) {
     return new Promise(function (resolve, reject) {
-        const config = require('./config/server.json');
+        const config = require('../config/server.json');
         util.promisify(fs.mkdir)(projectDirectory)
           .then(function(){
             const rootWorkflowFilename = `${config.default_filename}${config.extension.workflow}`;

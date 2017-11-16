@@ -8,12 +8,12 @@ let express = require('express');
 const del = require("del");
 
 const logger = require("../logger");
-const fileBrowser = require("../fileBrowser");
-const projectListManager = require("../projectListManager");
-const projectManager = require("../projectManager");
+const fileBrowser = require("./fileBrowser");
+const projectListManager = require("./projectListManager");
+const projectManager = require("./projectManager");
 const config = require('../config/server.json');
 
-const escape = require('../utility').escapeRegExp;;
+const escape = require('./utility').escapeRegExp;;
 const noDotFiles = /^[^\.].*$/;
 const ProjectJSON = new RegExp(`^.*${escape(config.extension.project)}$`);
 const noWheelDir = new RegExp(`^(?!^.*${escape(config.suffix)}$).*$`);
@@ -148,20 +148,20 @@ var onReorder = function (sio, orderList) {
 };
 
 module.exports = function(io){
-  const router = express.Router();
   let sio=io.of('/home');
   sio.on('connect', (socket) => {
     projectListManager.getAllProject().then(function(results){
       socket.emit('projectList', results);
     });
-    socket.on('new',    adaptorSendFiles.bind(null, false, noWheelDir, sio));
-    socket.on('import', adaptorSendFiles.bind(null, true,  null, sio));
-    socket.on('create', onCreate.bind(null, sio));
-    socket.on('add',    onAdd.bind(null, sio));
-    socket.on('remove', onRemove.bind(null, sio));
-    socket.on('rename', onRename.bind(null, sio));
-    socket.on('reorder', onReorder.bind(null, sio));
+    socket.on('new',    adaptorSendFiles.bind(null, false, noWheelDir, socket));
+    socket.on('import', adaptorSendFiles.bind(null, true,  null, socket));
+    socket.on('create', onCreate.bind(null, socket));
+    socket.on('add',    onAdd.bind(null, socket));
+    socket.on('remove', onRemove.bind(null, socket));
+    socket.on('rename', onRename.bind(null, socket));
+    socket.on('reorder', onReorder.bind(null, socket));
   });
+  const router = express.Router();
   router.get('/', function (req, res, next) {
     res.sendFile(path.resolve('app/views/home.html'));
   });

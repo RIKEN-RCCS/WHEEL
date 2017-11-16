@@ -3,8 +3,7 @@ const util = require("util");
 
 const uuidv1 = require("uuid/v1");
 
-const logger = require("./logger");
-const { writeAndEmit } = require("./utility");
+const logger = require("../logger");
 
 class JsonArrayManager{
   constructor(filename){

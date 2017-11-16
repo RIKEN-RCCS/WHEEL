@@ -6,9 +6,9 @@ const os = require("os");
 const util = require("util");
 
 const logger = require("../logger");
-const fileBrowser = require("../fileBrowser");
+const fileBrowser = require("./fileBrowser");
 const config = require('../config/server.json')
-const jsonArrayManager = require("../jsonArrayManager");
+const jsonArrayManager = require("./jsonArrayManager");
 
 const sshConnection = require("../sshConnection");
 
@@ -36,14 +36,14 @@ module.exports = function(io){
 
   sio.on('connect', (socket) => {
     socket.on('hostListRequest', ()=>{
-      sio.emit('hostList', remoteHost.getAll());
+      socket.emit('hostList', remoteHost.getAll());
     });
     socket.on('addHost',    doAndEmit.bind(null, remoteHost.add.bind(remoteHost)));
     socket.on('removeHost', doAndEmit.bind(null, remoteHost.remove.bind(remoteHost)));
     socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
     socket.on('copyHost',   doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
 
-    socket.on('fileListRequest', sendFileList.bind(null, sio));
+    socket.on('fileListRequest', sendFileList.bind(null, socket));
     socket.on('testSshConnection', (id, password, fn)=>{
       const host = remoteHost.get(id);
       sshConnection.sshConnectTest(host, password, (err) => {

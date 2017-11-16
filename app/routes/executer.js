@@ -1,7 +1,7 @@
 const cp = require('child_process');
 
-const config = require('./config/server.json');
-const logger = require("./logger");
+const config = require('../config/server.json');
+const logger = require("../logger");
 
 function localExec(task){
   return cp.exec(cmdline,(err, stdout, stderr)=>{
@@ -32,13 +32,13 @@ class Executer{
     this.queue=[];
     this.currentNumJob=0;
     setInterval(()=>{
-      if(queue.length >0 && this.currentNumJob < this.maxNumJob-1){
+      if(queue.length >0 && this.currentNumJob < this.maxNumJob){
         let task = queue.pop()
         //TODO バッチに投げた時にJobIDを取得して返す
         let pid = this.exec(task);
         this.currentNumJob++;
-        task.state=this.stat(task);
       }
+      task.state=this.stat(task);
     }, config.interval);
   }
   submit(task){

@@ -1,12 +1,16 @@
 class TCS {
-  getQsubCmnd(){
+  getQsubCmd(){
     return 'pjsub';
   }
   getQstatCmd(){
-    return 'pjstat';
+    return 'pjstat --format=|sed';
   }
   getQdelCmd(){
     return 'pjdel';
+  }
+  parseQstat(string){
+    //TODO
+    return status;
   }
 }
 

@@ -1,4 +1,4 @@
-const config = require('./config/server');
+const config = require('../config/server');
 class BaseWorkflowComponent {
   constructor(pos, parent){
     this.type=null;

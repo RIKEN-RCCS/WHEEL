@@ -6,8 +6,8 @@ const child_process = require('child_process');
 const uuidv1 = require('uuid/v1');
 const ncp = require('ncp');
 
-const config = require('./config/server.json');
-const logger=require('./logger');
+const config = require('../config/server.json');
+const logger=require('../logger');
 const executer = require('./executer');
 
 
