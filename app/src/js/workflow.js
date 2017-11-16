@@ -153,8 +153,9 @@ $(() => {
     });
   });
 
-  // hide property if background is clicked
+  // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function(){
+    fb.request('fileListRequest', cwd, null);
     $('#property').hide();
   });
 
@@ -310,13 +311,9 @@ $(() => {
             if(nodeType === 'workflow' ||nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach'){
               let path=e.target.instance.parent('.node').data('path');
               let json=e.target.instance.parent('.node').data('jsonFile');
-              console.log(path);
-              console.log(json);
               dirStack.push({dir: cwd, wf: cwf});
               cwd=cwd+'/'+path;
               cwf=cwd+'/'+json
-              console.log(cwd);
-              console.log(cwf);
               fb.request('fileListRequest', cwd, null);
               sio.emit('workflowRequest', cwf);
               if(cwd !== rootDir){
