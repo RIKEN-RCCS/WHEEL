@@ -12,7 +12,7 @@ class Utility {
 
   /**
    * write data and emit to client with promise
-   * @param {object} data - json object to be writen and emitted
+   * @param {object} data - object to be writen and emitted
    * @param {string} filename
    * @param {object} sio  - instance of socket.io
    * @param {string} eventName - eventName to send workflow
