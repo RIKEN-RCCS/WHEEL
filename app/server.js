@@ -12,7 +12,6 @@ const logger = require('./logger');
 const config = require('./config/server');
 
 const workflow   = require('./workflow');
-const home       = require('./home');
 
 /*
  * set up express, http and socket.io
@@ -36,7 +35,7 @@ app.use(siofu.router);
 
 // routing
 var routes = {
-    "home":       require('./routes/home'),
+    "home":       require('./routes/home')(sio),
     "workflow":   require('./routes/workflow'),
     "remotehost": require('./routes/remotehost')(sio),
     "rapid":      require('./routes/rapid')(sio)
@@ -75,7 +74,6 @@ logger.setLogfile("./TestLogFile.txt");
 /**
  * register event listeners
  */
-home(sio);
 workflow(sio);
 
 // Listen on provided port, on all network interfaces.

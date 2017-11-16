@@ -1,6 +1,5 @@
 'use strict';
 const express = require('express');
-let router = express.Router();
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -8,11 +7,7 @@ const util = require("util");
 
 const logger = require("../logger");
 const fileBrowser = require("../fileBrowser");
-
 const config = require('../config/server.json')
-const rootDir = config.rootDir;
-
-const remotehostFilename = path.resolve('./app', config.remotehost);
 const jsonArrayManager = require("../jsonArrayManager");
 
 const ServerUtility = require("../serverUtility");
@@ -47,6 +42,7 @@ function onSshConnection (sio, name, password, fn) {
 };
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
+  const rootDir = config.rootDir;
   var target = request ? path.normalize(request) : rootDir || os.homedir() || '/';
   fileBrowser(sio, 'fileList', target, {
     "request": request,
@@ -58,6 +54,7 @@ function sendFileList(sio, request){
 
 module.exports = function(io){
   var sio=io.of('/remotehost');
+  const remotehostFilename = path.resolve('./app', config.remotehost);
   let remoteHost= new jsonArrayManager(remotehostFilename, sio, 'hostList');
   let doAndEmit = function(func, msg){
     func(msg).then(()=>{
@@ -78,8 +75,9 @@ module.exports = function(io){
     socket.on('testSshConnection', onSshConnection.bind(null, sio));
   });
 
+  let router = express.Router();
   router.get('/', function (req, res, next) {
     res.sendFile(path.resolve('app/views/remoteHost.html'));
   });
-  return router
+  return router;
 }
