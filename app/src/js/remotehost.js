@@ -143,12 +143,13 @@ $(() => {
   function testSshConnection(e){
     let button = $(e.target);
     button.text('Testing');
-    let label = e.target.parentElement.getAttribute('data-name');
+    let host = JSON.parse(e.target.parentElement.getAttribute('data-host'));
+    console.log(host);
     const html='<p>input password</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
         let password=$('#password').val();
-        socket.emit('testSshConnection', label, password, (isConnect) => {
+        socket.emit('testSshConnection', host.id, password, (isConnect) => {
           if (isConnect) {
             button.text('OK');
           } else {

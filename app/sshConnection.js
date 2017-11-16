@@ -12,12 +12,12 @@ const logger = require("./logger");
 function sshConnectTest(hostInfo, pass, callback) {
     const config = {
         host: hostInfo.host,
-        port: 22,
+        port: hostInfo.port,
         username: hostInfo.username
     };
-    if (hostInfo.privateKey) {
+    if (hostInfo.keyFile) {
         config.passphrase = pass;
-        config.privateKey = fs.readFileSync(hostInfo.privateKey);
+        config.privateKey = fs.readFileSync(hostInfo.keyFile);
     }
     else {
         config.password = pass;

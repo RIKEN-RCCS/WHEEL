@@ -10,36 +10,8 @@ const fileBrowser = require("../fileBrowser");
 const config = require('../config/server.json')
 const jsonArrayManager = require("../jsonArrayManager");
 
-const ServerUtility = require("../serverUtility");
 const sshConnection = require("../sshConnection");
 
-function onSshConnection (sio, name, password, fn) {
-  ServerUtility.getHostInfo((err, hostList) => {
-    let result=false;
-    if (err) {
-      logger.error(err);
-    }else if (!hostList) {
-      logger.error('host list does not exist');
-    } else{
-      const host = hostList.filter(host => host.name === name)[0];
-      if (!host) {
-        logger.error(`${name} is not found at host list conf`);
-      }else if (ServerUtility.isLocalHost(host.host)) {
-        logger.info('skip ssh connection test to localhost');
-        result=true;
-      }else{
-        sshConnection.sshConnectTest(host, password, (err) => {
-          if (err) {
-            logger.error(err);
-          } else {
-            result=true
-          }
-        });
-      }
-    }
-    fn(result);
-  });
-};
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
   const rootDir = config.rootDir;
@@ -50,12 +22,12 @@ function sendFileList(sio, request){
   });
 }
 
-
-
 module.exports = function(io){
   var sio=io.of('/remotehost');
+
   const remotehostFilename = path.resolve('./app', config.remotehost);
-  let remoteHost= new jsonArrayManager(remotehostFilename, sio, 'hostList');
+  let remoteHost= new jsonArrayManager(remotehostFilename);
+
   let doAndEmit = function(func, msg){
     func(msg).then(()=>{
       sio.emit('hostList', remoteHost.getAll());
@@ -66,13 +38,23 @@ module.exports = function(io){
     socket.on('hostListRequest', ()=>{
       sio.emit('hostList', remoteHost.getAll());
     });
-    socket.on('addHost', doAndEmit.bind(null, remoteHost.add.bind(remoteHost)));
+    socket.on('addHost',    doAndEmit.bind(null, remoteHost.add.bind(remoteHost)));
     socket.on('removeHost', doAndEmit.bind(null, remoteHost.remove.bind(remoteHost)));
     socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
-    socket.on('copyHost', doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
+    socket.on('copyHost',   doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
 
     socket.on('fileListRequest', sendFileList.bind(null, sio));
-    socket.on('testSshConnection', onSshConnection.bind(null, sio));
+    socket.on('testSshConnection', (id, password, fn)=>{
+      const host = remoteHost.get(id);
+      sshConnection.sshConnectTest(host, password, (err) => {
+        if (err) {
+          logger.error(err);
+          fn(false);
+        } else {
+          fn(true);
+        }
+      });
+    });
   });
 
   let router = express.Router();
