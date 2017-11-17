@@ -79,7 +79,7 @@ function download(sio, msg){
   });
 }
 
-function registerListners(socket){
+function registerListeners(socket){
     let uploader = new siofu();
     uploader.listen(socket);
     uploader.dir = os.homedir();
@@ -96,4 +96,4 @@ function registerListners(socket){
     socket.on('download',        download.bind(null, socket));
 }
 
-module.exports = registerListners;
+module.exports = registerListeners;
