@@ -1,15 +1,46 @@
-const cp = require('child_process');
+const child_process = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
 const config = require('../config/server.json');
-const logger = require("../logger");
+const logger = require('../logger');
+const jsonArrayManager= require('./jsonArrayManager');
+const { addX } = require('./utility');
 
+const remotehostFilename = path.resolve('./app', config.remotehost);
+const remoteHost= new jsonArrayManager(remotehostFilename);
+
+
+
+let executers=[];
+
+/**
+ * execute task on localhost(which is running node.js)
+ * @param {Task} task - task instance
+ * @return pid - process id of child process
+ */
 function localExec(task){
-  return cp.exec(cmdline,(err, stdout, stderr)=>{
+  let script = path.resolve(task.workingDir, task.script);
+  addX(script);
+  //TODO env, uid, gidを設定する
+  let options = {
+    "cwd": task.workingDir
+  }
+  let cp = child_process.exec(script, options, (err, stdout, stderr)=>{
     if(err) throw err;
     logger.stdout(stdout);
     logger.stderr(stderr);
-  }).pid;
+  })
+    .on('exit', (code) =>{
+      if(code === 0){
+        task.state = 'finished';
+      }else{
+        task.state = 'failed';
+      }
+    });
+  return cp.pid;
 }
+
 function localSubmit(qsub, task){
   console.log('localSubmit function is not implimented yet');
 }
@@ -21,24 +52,26 @@ function remoteSubmitAdaptor(sshExec, qsub, task){
 }
 
 class Executer{
-  constructor(exec, stat, maxNumJob, host, jobScheduler){
-    this.host=host;
+  constructor(exec, maxNumJob, remotehostID, jobScheduler){
+    this.remotehostID=remotehostID;
     this.jobScheduler=jobScheduler;
 
     this.exec=exec;
-    this.stat=stat;
     this.maxNumJob=maxNumJob;
 
     this.queue=[];
     this.currentNumJob=0;
+    this.executing=false;
     setInterval(()=>{
-      if(queue.length >0 && this.currentNumJob < this.maxNumJob){
-        let task = queue.pop()
-        //TODO バッチに投げた時にJobIDを取得して返す
-        let pid = this.exec(task);
+      if(this.executing) return;
+      this.executing=true;
+      if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
+        let task = this.queue.pop()
+        console.log('DEBUG: execute \n',task.workingDir,'\n',task.name);
+        task.handler = this.exec(task);
         this.currentNumJob++;
       }
-      task.state=this.stat(task);
+      this.executing=false;
     }, config.interval);
   }
   submit(task){
@@ -55,32 +88,29 @@ class Executer{
 function createExecuter(task){
   let maxNumJob=1;
   let exec = localExec;
-  let scheduler = createJobScheduler(task.jobScheduler);
-  let qsub = scheduler.getQsubCmd();
-  let qstat = scheduler.getQstatCmd();
   if(task.jobScheduler !== null){
     exec = localSubmit.bind(qsub);
   }
-  if(task.host !== 'localhost'){
-    //TODO remotehost.jsonを読み込む
-    //TODO task.hostとhostnameが一致する設定を取り出す
+  if(task.remotehostID!== 'localhost'){
+    let hostinfo = remoteHost.get(task.remotehostID);
+    maxNumJob = hostinfo.maxNumJob;
     //TODO tableからsshProxyのインスタンスを取り出す(無ければ新規作成してTableに入れる)
     //TODO return sshProxyのexecメソッドを返す
     //TODO maxNumJobをremotehostの設定で上書き
   }
-  return new Executer(exec, qstat, maxNumJob, host, jobScheduler);
+  return new Executer(exec, maxNumJob, task.remotehostID, task.jobScheduler);
 }
 
-let executers=[];
 /**
  * enqueue task
  * @param {Task} task - instance of Task class (dfined in workflowComponent.js)
  */
 function exec(task){
+  task.remotehostID=remoteHost.getID('host', task.host) || 'localhost';
   let executer = executers.find((e)=>{
-    return e.host === task.host && e.jobScheduler=== task.jobScheduler
+    return e.remotehostID=== task.remotehostID && e.jobScheduler=== task.jobScheduler
   });
-  if( executer === undfined){
+  if( executer === undefined){
     executer = createExecuter(task);
   }
   executer.submit(task);

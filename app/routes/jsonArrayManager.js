@@ -71,9 +71,26 @@ class JsonArrayManager{
    * @param {string} id - id
    */
   get(id){
+    return this.query('id', id);
+  }
+  /**
+   * return entry id with specific key:value pair
+   * @param {string} - key
+   * @param {string} - value
+   */
+  getID(key, value){
+    let entry = this.query(key, value);
+    return entry? entry.id: undefined;
+  }
+  /**
+   * return entry with specific key:value pair
+   * @param {string} - key
+   * @param {string} - value
+   */
+  query(key, value){
     return this.data.find((e)=>{
-        if (e.id === id)
-            return true;
+      if(e[key] === value)
+        return true;
     });
   }
   /**

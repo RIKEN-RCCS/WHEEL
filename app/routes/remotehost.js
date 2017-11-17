@@ -9,7 +9,7 @@ const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
 const config = require('../config/server.json')
 const jsonArrayManager = require("./jsonArrayManager");
-const doAndEmit = require('./utility').doAndEmit;;
+const doAndEmit = require('./utility').doAndEmit;
 
 const sshConnection = require("../sshConnection");
 

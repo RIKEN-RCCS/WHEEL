@@ -9,7 +9,7 @@ const ncp = require('ncp');
 const config = require('../config/server.json');
 const logger=require('../logger');
 const executer = require('./executer');
-
+const { addX } = require('./utility');
 
 // utility functions
 function _forGetCurrentIndex(node){
@@ -50,7 +50,7 @@ async function evalCondition(condition, cwd){
   await util.promisify(fs.access)(script)
     .then(()=>{
       logger.debug('execute ', script);
-      //TODO script を引数にしてshを呼び出すか、実行権を無理矢理付ける
+      addX(script);
       rt = child_process.spawnSync(script).status === 0;
     })
     .catch((err)=>{
@@ -73,45 +73,60 @@ class Dispatcher{
     this.children=[];
     this.currentSearchList=[];
     this.nextSearchList=[];
+    this.dispatchedTaskList=[]
     this.nodes=workflow.nodes;
     this.nodes.forEach((v,i)=>{
       if(v.previous.length===0 && v.inputFiles.length===0){
         this.currentSearchList.push(i);
       }
     });
-    logger.debug('initial task indeces: ',this.currentSearchList);
-    this.running=false;
+    logger.debug('initial tasks : ',this.currentSearchList);
+    this.dispatching=false;
   }
 
-  async dispatch(){
-    this.timeout = setInterval(()=>{
-      if(this.running) return
-      this.running=true;
-      logger.debug('currneSearchList : ', this.currentSearchList)
-      let promises=[];
-      while(this.currentSearchList.length>0){
-        let target = this.currentSearchList.shift();
-        if(! this._isReady(target)){
-          this.nextSearchList.push(target);
-          return;
-        }
-        let node=this.nodes[target]
-        let cmd = this._cmdFactory(node.type.toLowerCase());
-        promises.push(cmd.call(this, node));
-      }
-      Promise.all(promises)
-        .then(()=>{
-          this.currentSearchList=this.nextSearchList;
-          this.nextSearchList=[];
-          this.running=false;
-          if(this.currentSearchList.length === 0){
-            clearInterval(this.timeout);
+  dispatch(){
+    return new Promise((resolve, reject)=>{
+      this.timeout = setInterval(()=>{
+        if(this.dispatching) return
+        this.dispatching=true;
+        logger.debug('currnetSearchList : ', this.currentSearchList)
+        let promises=[];
+        while(this.currentSearchList.length>0){
+          let target = this.currentSearchList.shift();
+          if(this._isReady(target)){
+            let node=this.nodes[target]
+            let cmd = this._cmdFactory(node.type);
+            promises.push(cmd.call(this, node));
+          }else{
+            this.nextSearchList.push(target);
           }
-        })
-        .catch((err)=>{
-          logger.error('Error occurred while parsing workflow: ',err)
-        });
-    }, config.interval);
+        }
+        Promise.all(promises)
+          .then(()=>{
+            this.currentSearchList=this.nextSearchList;
+            this.nextSearchList=[];
+            // check task state
+            if(this.currentSearchList.length === 0){
+              let isDone=this.dispatchedTaskList.every((task)=>{
+                return task.state === 'finished' || task.state === 'failed'
+              });
+              let hasFailed=this.dispatchedTaskList.some((task)=>{
+                return task.state === 'failed';
+              });
+              if(isDone){
+                clearInterval(this.timeout);
+                let projectState = hasFailed? 'failed':'finished';
+                resolve(projectState);
+              }
+            }
+            this.dispatching=false;
+          })
+          .catch((err)=>{
+            logger.error('Error occurred while parsing workflow: ',err)
+            reject(err);
+          });
+      }, config.interval);
+    });
   }
   pause(){
     this.children.forEach((child)=>{
@@ -131,8 +146,10 @@ class Dispatcher{
 
   async _dispatchTask(task){
     logger.debug('_dispatchTask called');
-    task.id=uuidv1();
+    task.id=uuidv1(); //TODO 要らんかったかもしれんので後で確認
+    task.workingDir=path.resolve(this.rootDir, task.path);
     executer.exec(task);
+    this.dispatchedTaskList.push(task);
     Array.prototype.push.apply(this.nextSearchList, task.next);
   }
 
@@ -199,7 +216,7 @@ class Dispatcher{
 
   _cmdFactory(type){
     let cmd=function(){};
-    switch(type){
+    switch(type.toLowerCase()){
       case 'task':
         cmd = this._dispatchTask;
         break;

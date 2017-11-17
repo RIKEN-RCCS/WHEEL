@@ -71,6 +71,23 @@ function cleanUpNode(node){
   }
 }
 
+/**
+ * check if all scripts are available or not
+ */
+function validationCheck(workflow, dir){
+  let promises=[]
+  workflow.nodes.forEach((node)=>{
+    if(node.type === 'task'){
+      promises.push(util.promisify(fs.access)(path.resolve(dir, node.path, node.script)));
+    }else if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
+      let childDir = path.resolve(dir, node.path);
+      let childWF = path.resolve(childDir, node.jsonFile);
+      promises.push(vaildationCheck(childWF, childDir));
+    }
+  });
+  return Promise.all(promises);
+}
+
 function onWorkflowRequest(sio, msg){
   logger.debug('Workflow Request event recieved: ', msg);
   rootWorkflowFilename=msg;
@@ -289,12 +306,21 @@ function onRemoveFileLink(sio, msg){
 
 function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
-  rootWorkflowDispatcher = new Dispatcher(rootWorkflow, path.dirname(rootWorkflowFilename));
-  sio.emit('projectState', 'running');
-  rootWorkflowDispatcher.dispatch()
-  .catch((err)=>{
-    logger.error('fatal occurred while parseing root workflow: ',err);
-  });
+  validationCheck(rootWorkflow, path.dirname(rootWorkflowFilename))
+    .then(()=>{
+      rootWorkflowDispatcher = new Dispatcher(rootWorkflow, path.dirname(rootWorkflowFilename));
+      sio.emit('projectState', 'running');
+      rootWorkflowDispatcher.dispatch()
+        .then((state)=>{
+          sio.emit('projectState', state);
+        })
+        .catch((err)=>{
+          logger.error('fatal occurred while parseing root workflow: \n',err);
+        });
+    })
+    .catch((err)=>{
+      logger.error('project validation failed: \n', err);
+    });
 }
 function onPauseProject(sio, msg){
   logger.debug(`pause event recieved: ${msg}`);
@@ -304,7 +330,7 @@ function onPauseProject(sio, msg){
 function onCleanProject(sio, msg){
   logger.debug(`clean event recieved: ${msg}`);
   rootWorkflowDispatcher.remove();
-  //TODO 途中経過ファイルなども削除する(TaskStateManagerの責務)
+  //TODO 途中経過ファイルなども削除する
   sio.emit('projectState', 'cleared');
 }
 

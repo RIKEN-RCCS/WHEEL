@@ -1,29 +1,36 @@
 let runningTasks=[];
-let finishedTasks=[];
-let failedTasks=[];
 
-function add(task){
-  runningTasks.push(task);
-};
-
-function isDone(task){
-  return finish
-  let ready=true;
-  task.previous.forEach((p)=>{
+let running=false;
+setInterval(()=>{
+  if(running) return;
+  running=true;
+  runningTasks.forEach((e)=>{
+    // locally executed task's state is checkd by event emitter
+    if(! e.task.jobScheduler){
+      let checTask=createChecker(e.task, e.handler);
+      e.task.state = checkTask(e.task, e.handler);
+    }
   });
+  running=false;
+}, config.interval);
+
+function createChecker(task){
+  if(task.jobScheduler === null){
+    return remoteProcessChecker.bind(task.remotehostID);
+  }else{
+    //TODO local でqsubした時の対応
+    return remoteQstat.bind(task.remotehostID);
+  }
 }
 
-class TaskStateManager{
-  isReady(task){
-  }
-  add(task){
-    runningTasks.add(task);
-  }
-  checkStats(){
-    runningTasks.forEach((task)=>{
-      //stub
-      console.log(task);
-    });
-  }
+function remoteProcessChecker(remotehostID, pid){
 }
-module.exports=TaskStateManager;
+function remoteQstat(remotehostID, jobID){
+}
+
+
+function register(task, handler){
+  runningTasks.push({"task": task, "handler": handler});
+}
+
+module.exports.register=register
