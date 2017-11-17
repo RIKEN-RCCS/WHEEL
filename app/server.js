@@ -38,12 +38,12 @@ var routes = {
     "admin":      require('./routes/admin')(sio),
     "rapid":      require('./routes/rapid')(sio)
 };
-app.use('/',                    routes.home);
-app.use('/home',                routes.home);
-app.use('/login',               routes.login);
-app.use('/admin',               routes.admin);
-app.use('/workflow',            routes.workflow);
-app.use('/editor',              routes.rapid);
+app.use('/',           routes.home);
+app.use('/home',       routes.home);
+app.use('/login',      routes.login);
+app.use('/admin',      routes.admin);
+app.use('/workflow',   routes.workflow);
+app.use('/editor',     routes.rapid);
 app.use('/remotehost', routes.remotehost);
 
 // port number

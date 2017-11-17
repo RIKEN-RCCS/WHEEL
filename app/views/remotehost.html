@@ -64,7 +64,11 @@
       </div>
       <div id=hostListArea v-show="! showInputArea">
         <ul id=hostList>
-          <li v-for="host in hostList" v-bind:key="host.id" v-bind:data-host="JSON.stringify(host)" v-on:click="toggleSelected"> {{ host.name }} <button v-on:click="test">TEST</button></li>
+          <template v-for="(host, index) in hostList" >
+            <li v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.name }}
+              <button v-on:click="test(index)">{{ buttonState(index) }}</button>
+            </li>
+          </template >
         </ul>
         <button v-on:click="mode='addHost';showInputArea=true;">Add</button>
         <button v-on:click="editHost">Edit</button>

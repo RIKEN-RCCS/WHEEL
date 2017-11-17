@@ -29,51 +29,61 @@ $(() => {
       hostinfo: Object.assign({},defaultHostinfo),
       showInputArea: false,
       authType: '2',
-      oldKeyFile: '',
       mode: 'addHost',
       hostList: [],
-      selectedHosts: []
+      selectedHosts: [],
+      testing: null,
+      OK: [],
+      NG: []
     },
     methods:{
-      toggleSelected: function(e){
-        let selectedItem = JSON.parse(e.target.getAttribute('data-host'));
-        let index=this.selectedHosts.findIndex((e)=>{
-          return e.id === selectedItem.id;
-        });
+      toggleSelected: function(i){
+        let index=this.selectedHosts.indexOf(i);
         if(index === -1){
-          this.selectedHosts.push(selectedItem);
-          $(e.target).addClass('ui-state-highlight');
+          this.selectedHosts.push(i);
         }else{
           this.selectedHosts.splice(index,1);
-          $(e.target).removeClass('ui-state-highlight');
         }
       },
       emitHost: function(){
-        socket.emit(this.mode, vm.hostinfo);
+        if(this.authType === '1'){
+          this.hostinfo.keyFile=null;
+        }
+        socket.emit(this.mode, this.hostinfo);
         resetInputArea();
       },
       editHost: function(){
         this.mode='updateHost';
-        let lastSelected=this.selectedHosts[this.selectedHosts.length-1];
-        let index=this.hostList.findIndex((e)=>{
-          return e.id === lastSelected.id;
-        });
-        this.hostinfo=this.hostList[index];
+        this.hostinfo=this.hostList[this.selectedHosts[this.selectedHosts.length-1]];
         this.showInputArea=true;
       },
       quitInput: resetInputArea,
       removeHost: function(){
         this.selectedHosts.forEach((e)=>{
-          socket.emit('removeHost', e.id);
+          socket.emit('removeHost', this.hostList[e].id);
         })
       },
       copyHost: function(){
         this.selectedHosts.forEach((e)=>{
-          socket.emit('copyHost', e.id);
+          socket.emit('copyHost', this.hostList[e].id);
         })
       },
       browse: browseServerFiles,
-      test: testSshConnection
+      test: testSshConnection,
+      buttonState: function(index){
+        let state = 'Test';
+        if(index === this.testing){
+          state ='Testing';
+        }else if(this.OK.includes(index)){
+          state = 'OK';
+        }else if(this.NG.includes(index)){
+          state = 'NG';
+        }
+        return state
+      },
+      isSelected: function(index){
+        return this.selectedHosts.includes(index);
+      }
     },
     computed:{
       isDuplicate: function(){
@@ -98,15 +108,6 @@ $(() => {
           return this.validation[key];
         });
       }
-    },
-    watch: {
-      authType: function(val){
-        if(val === 1){
-          vm.hostinfo.keyFile=null;
-        }else if(val === 2){
-          vm.hostinfo.keyFile=vm.oldKeyFile;
-        }
-      }
     }
   });
 
@@ -114,6 +115,7 @@ $(() => {
   socket.emit('hostListRequest', true);
   socket.on('hostList', (hostList)=>{
     vm.hostList = hostList;
+    vm.selectedHosts=[];
   });
 
 
@@ -140,20 +142,20 @@ $(() => {
     fb.request('fileListRequest', null, null);
   }
 
-  function testSshConnection(e){
-    let button = $(e.target);
-    button.text('Testing');
-    let host = JSON.parse(e.target.parentElement.getAttribute('data-host'));
-    console.log(host);
+  function testSshConnection(index){
+    vm.testing=index;
+    let host = vm.hostList[index];
     const html='<p>input password</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
         let password=$('#password').val();
         socket.emit('testSshConnection', host.id, password, (isConnect) => {
+          vm.testing=null;
+          vm.selectedHosts=[];
           if (isConnect) {
-            button.text('OK');
+            vm.OK.push(index);
           } else {
-            button.text('NG');
+            vm.NG.push(index);
           }
         });
       });
