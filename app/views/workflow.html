@@ -114,7 +114,80 @@
             </div>
             <div id="parentDirBtn"><button>../</button></div>
             <div id="node_svg" class="node_tree"></div>
-            <div id="property" class="property"></div>
+            <div id="property" class="property">
+              <div>
+                <label for="nameInputField">name</label>
+                <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField">
+              </div>
+              <div>
+                <label for="descriptionInputField">description</label>
+              </div>
+              <div>
+                <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField"></textarea>
+              </div>
+              <div v-if="node.hasOwnProperty('script')">
+                <label for="scriptInputField">script</label>
+                <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField">
+              </div>
+              <div>
+                <p>inputFiles</p>
+              </div>
+              <template  v-for="(inputFile, index) in node.inputFiles" >
+                <div>
+                  <input type="text" v-model.lazy.trim="inputFile.name">
+                  <button v-on:click="delInputFile(index)">del</button>
+                </div>
+              </template>
+              <div>
+                <input type="text" v-model.lazy.trim="newInputFilename">
+                <button v-on:click="addInputFile">add</button>
+              </div>
+              <div>
+                <label>outputFiles</label>
+              </div>
+              <template  v-for="(outputFile, index) in node.outputFiles" >
+                <div>
+                  <input type="text" v-model.lazy.trim="outputFile.name">
+                  <button v-on:click="delOutputFile(index)">del</button>
+                </div>
+              </template>
+              <div>
+                <input type="text" v-model.lazy.trim="newOutputFilename">
+                <button v-on:click="addOutputFile">add</button>
+              </div>
+              <div v-if="node.hasOwnProperty('condition')">
+                <label for="conditionInputField">condition</label>
+                <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField">
+              </div>
+              <div v-if="node.hasOwnProperty('start')">
+                <label for="startInputField">start</label>
+                <input type="number" v-model.lazy.trim="node.start"  id="startInputField">
+                <label for="stopInputField">stop</label>
+                <input type="number" v-model.lazy.trim="node.stop"  id="stopInputField">
+                <label for="stepInputField">step</label>
+                <input type="number" v-model.lazy.trim="node.step"  id="stepInputField">
+              </div>
+              <div>
+                <p>remote file transfer setting</p>
+              </div>
+              <div>
+                <label>clean up flag</label>
+              </div>
+              <div>
+                <input type="radio" name="cleanupFlag" value=0>clean up
+                <input type="radio" name="cleanupFlag" value=1>keep files
+                <input type="radio" name="cleanupFlag" value=2 checked=>follow parent setting
+              </div>
+              <div>
+                <label for="includeInputField">  include</label>
+                <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField">
+              </div>
+              <div>
+                <label for="excludeInputField">  exclude</label>
+                <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField">
+              </div>
+              <div>
+            </div>
           </div>
           <div id='dialog'></div>
           <div id="log_area">

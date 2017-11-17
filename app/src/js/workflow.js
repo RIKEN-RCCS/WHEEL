@@ -6,6 +6,7 @@ import 'jquery-ui/themes/base/theme.css';
 import 'jquery-ui/themes/base/sortable.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
+import Vue from 'vue/dist/vue.esm.js';
 import Cookies from 'js-cookie';
 import SVG from 'svgjs/dist/svg.js';
 import 'svg.draggable.js/dist/svg.draggable.js';
@@ -18,7 +19,6 @@ import dialogWrapper from './dialogWrapper';
 import logReciever from './logReciever';
 import config from './config';
 import SvgNodeUI from './svgNodeUI';
-import createPropertyHtml from './createProperty';
 
 $(() => {
   // chek project Json file path
@@ -31,6 +31,48 @@ $(() => {
   let cwf=rootWorkflow;
   let cwd=rootDir;
   let dirStack=[];
+
+  // create vue.js instance for property subscreen
+  let vm = new Vue({
+    el: '#property',
+    data: {
+      node: {},
+      newInputFilename: "",
+      newOutputFilename: "",
+    },
+    methods:{
+      addInputFile: function(){
+        let filename=this.newInputFilename;
+        if(filename === "") return
+        let duplicate = this.node.inputFiles.some((e)=>{
+          return e.name === filename;
+        });
+        if(duplicate) return
+        this.newInputFilename="";
+        let newVal={name: filename, srcNode: null, srcName: null}
+        sio.emit('updateNode', {index: this.node.index, property: 'inputFiles', value: newVal, cmd: 'add'});
+      },
+      addOutputFile: function(){
+        let filename=this.newOutputFilename;
+        if(filename === "") return
+        let duplicate = this.node.outputFiles.some((e)=>{
+          return e.name === filename;
+        });
+        if(duplicate) return
+        this.newOutputFilename="";
+        let newVal={name: filename, dst: []}
+        sio.emit('updateNode', {index: this.node.index, property: 'outputFiles', value: newVal, cmd: 'add'});
+      },
+      delInputFile: function(i){
+        let val=this.node.inputFiles[i]
+        sio.emit('updateNode', {index: this.node.index, property: 'inputFiles', value: val, cmd: 'del'});
+      },
+      delOutputFile: function(i){
+        let val=this.node.outputFiles[i]
+        sio.emit('updateNode', {index: this.node.index, property: 'outputFiles', value: val, cmd: 'del'});
+      }
+    }
+  });
 
   // set default view
   $('.project_manage_area').hide();
@@ -92,7 +134,7 @@ $(() => {
 
   // container of svg elements
   let nodes = [];
-  let selectedNode;
+  let selectedNode=0;
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
@@ -106,6 +148,7 @@ $(() => {
       });
       nodes=[];
       drawNodes(wf.nodes);
+      vm.node=wf.nodes[selectedNode];
       drawLinks(nodes);
     });
 
@@ -280,30 +323,6 @@ $(() => {
             fb.request('fileListRequest', nodePath, null);
             let name = nodesInWF[nodeIndex].name;
             $('#path').text(name);
-            $('#property').html(createPropertyHtml(v));
-            //TODO Input/OutputFiles propertyの追加/削除はそれぞれ専用のAPIを作成する
-            $('#inputFilesAddBtn').on('click',function(){
-              let inputVal=$('#inputFilesInputField').val();
-              if(isDupulicated(v.inputFiles, inputVal)) return;
-              let newVal={name: inputVal, srcNode: null, srcName: null}
-              sio.emit('updateNode', {index: i, property: 'inputFiles', value: newVal, cmd: 'add'});
-            });
-            $('#outputFilesAddBtn').on('click',function(){
-              let inputVal=$('#outputFilesInputField').val();
-              if(isDupulicated(v.outputFiles, inputVal)) return;
-              let newVal={name: inputVal, dst: []}
-              sio.emit('updateNode', {index: i, property: 'outputFiles', value: newVal, cmd: 'add'});
-            });
-            $('.inputFilesDelBtn').on('click',function(btnEvent){
-              let index=btnEvent.target.value;
-              let val=v.inputFiles[index]
-              sio.emit('updateNode', {index: i, property: 'inputFiles', value: val, cmd: 'del'});
-            });
-            $('.outputFilesDelBtn').on('click',function(btnEvent){
-              let index=btnEvent.target.value;
-              let val=v.outputFiles[index]
-              sio.emit('updateNode', {index: i, property: 'outputFiles', value: val, cmd: 'del'});
-            });
             $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
           })
           .onDblclick(function(e){

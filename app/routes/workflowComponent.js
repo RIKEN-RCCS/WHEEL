@@ -43,12 +43,24 @@ class BaseWorkflowComponent {
     this.outputFiles=[];
 
     /**
-     * flag for clean up temporary working directory
+     * flag for clean up temporary working directory on remote host
      * 0: do clenup
      * 1: do not clenup
      * 2: same as parent
      */
     this.cleanupFlag=null;
+
+    // note on filters
+    // if include filter is set, matched files are transferd whther it also match exclude filter
+    /**
+     * include filter for recieve files from remote host
+     */
+    this.include=null;
+
+    /**
+     * exclude filter for recieve files from remote host
+     */
+    this.exclude=null;
 
     /** cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
@@ -82,8 +94,6 @@ class Task extends BaseWorkflowComponent{
     this.type='task';
     /** filename of entry point of this task */
     this.script=null;
-    /** disk quota of this task directory */
-    this.maxSizeCollection=null;
     /** hostname where this task will execute on */
     this.host='localhost';
     /** */
