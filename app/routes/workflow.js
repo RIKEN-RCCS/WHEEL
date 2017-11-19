@@ -78,11 +78,24 @@ function validationCheck(workflow, dir){
   let promises=[]
   workflow.nodes.forEach((node)=>{
     if(node.type === 'task'){
-      promises.push(util.promisify(fs.access)(path.resolve(dir, node.path, node.script)));
+      if(dir == null ){
+        promises.push(Promise.reject(new Error('Project dir is null or undefined')));
+      }else if(node.path == null){
+        promises.push(Promise.reject(new Error(`node.path is null or undefined ${node.name}`)));
+      }else if( node.script == null){
+        promises.push(Promise.reject(new Error(`script is null or undefined ${node.name}`)));
+      }else{
+        promises.push(util.promisify(fs.access)(path.resolve(dir, node.path, node.script)));
+      }
     }else if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
       let childDir = path.resolve(dir, node.path);
-      let childWF = path.resolve(childDir, node.jsonFile);
-      promises.push(vaildationCheck(childWF, childDir));
+      let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
+      let tmp = util.promisify(fs.readFile)(childWorkflowFilename)
+      .then((data)=>{
+        let childWF=JSON.parse(data);
+        validationCheck(childWF, childDir)
+      });
+      promises.push(tmp);
     }
   });
   return Promise.all(promises);

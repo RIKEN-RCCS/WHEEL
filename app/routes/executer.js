@@ -46,6 +46,9 @@ function localSubmit(qsub, task){
 }
 function remoteExecAdaptor(sshExec, task){
   console.log('remoteExec function is not implimented yet');
+  // ssh2.execもchild_process.exec同様にevent emitter経由でexit codeを返してくるので
+  // それを見てtask.stateを更新する。
+  // 返ってきたコードが正しいかどうかは要検証
 }
 function remoteSubmitAdaptor(sshExec, qsub, task){
   console.log('remoteSubmit function is not implimented yet');

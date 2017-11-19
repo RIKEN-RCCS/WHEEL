@@ -4,7 +4,7 @@ const util= require('util');
 const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
-const ncp = require('ncp');
+const ncp = require('ncp').ncp;
 
 const config = require('../config/server.json');
 const logger=require('../logger');
@@ -145,7 +145,7 @@ class Dispatcher{
   }
 
   async _dispatchTask(task){
-    logger.debug('_dispatchTask called');
+    logger.debug('_dispatchTask called', task.name);
     task.id=uuidv1(); //TODO 要らんかったかもしれんので後で確認
     task.workingDir=path.resolve(this.rootDir, task.path);
     executer.exec(task);
@@ -154,7 +154,7 @@ class Dispatcher{
   }
 
   async _checkIf(node){
-    logger.debug('_checkIf called', node);
+    logger.debug('_checkIf called', node.name);
     let cwd= path.resolve(this.rootDir, node.path);
     let condition = await evalCondition(node.condition, cwd);
     let next = condition? node.next: node.else;
@@ -162,41 +162,60 @@ class Dispatcher{
     node.state='finished';
   }
 
-  async _loopHandler(getCurrentIndex, isFinished, node){
-    logger.debug('_loopHandler called', node);
-    let oldIndex=node.currentIndex;
-    node.currentIndex = getCurrentIndex(node);
-    if(isFinished(node)){
-      Array.prototype.push.apply(this.nextSearchList, node.next);
-    }else{
-      async ()=>{
-        let newWorkflow = await this._copyLoopDir(oldIndex, node);
-        this._delegate(newWorkflow);
-      }
-    }
-  }
-
   async _delegate(node){
-    logger.debug('_delegate called', node);
-    let cwd= path.resolve(this.rootDir, node.path);
-    let child = new Dispatcher(newWorkflow, cwd);
+    logger.debug('_delegate called', node.name);
+    let childDir= path.resolve(this.rootDir, node.path);
+    let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
+    let childWF = await util.promisify(fs.readFile)(childWorkflowFilename)
+      .then((data)=>{
+        return JSON.parse(data);
+      })
+      .catch((err)=>{
+        logger.error('fatal error occurred while loading sub workflow', err);
+      });
+    let child = new Dispatcher(childWF, childDir);
     this.children.push(child);
     child.dispatch()
-      .then(()=>{
-        //TODO 子WFからdispatchされた全てのTaskの終了を確認する必要がある
-        TaskStateManager.register(node)
+      .then((tmp)=>{
+        node.state='finished';
       })
       .catch((err)=>{
         logger.error("fatal error occurred while parsing sub workflow",err);
       });
+    // next nodes will be hold because _isReady(child) return false
+    Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
-
-  // resolveはWFを読み込んで返すこと
-  _copyLoopDir(oldIndex, node){
-    console.log(node.path);
-    let cwd= path.resolve(this.rootDir, node.path);
+  async _loopHandler(getCurrentIndex, isFinished, node){
+    logger.debug('_loopHandler called', node.name);
+    let oldIndex=node.currentIndex;
+    console.log('DEBUG: oldIndex = ',oldIndex);
+    node.currentIndex = getCurrentIndex(node);
+    console.log('DEBUG: node.currentIndex= ',node.currentIndex);
+    if(isFinished(node)){
+      console.log('DEBUG: finished!');
+      Array.prototype.push.apply(this.nextSearchList, node.next);
+    }else{
+      console.log('DEBUG: _copyLoopDir called!');
+      let srcDir = oldIndex === undefined? node.path : `${node.path}_${node.oldIndex}`
+      srcDir = path.resolve(this.rootDir, srcDir);
+      let dstDir = `${node.path}_${node.currentIndex}`
+      let newNode = Object.assign({}, node);
+      newNode.path = dstDir;
+      dstDir = path.resolve(this.rootDir, dstDir);
+      console.log('DEBUG srcDir=', srcDir);
+      console.log('DEBUG dstDir=', dstDir);
+      util.promisify(ncp)(srcDir, dstDir)
+        .then(()=>{
+          this._delegate(newNode);
+        })
+      .catch((err)=>{
+        console.error('fatal error occurred while copying loop dir\n', err);
+      });
+      this.nextSearchList.push(node);
+    }
   }
+
 
   _isReady(index){
     let ready = true

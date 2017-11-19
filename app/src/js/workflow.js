@@ -39,6 +39,7 @@ $(() => {
       node: {},
       newInputFilename: "",
       newOutputFilename: "",
+      names: []
     },
     methods:{
       addInputFile: function(){
@@ -70,6 +71,21 @@ $(() => {
       delOutputFile: function(i){
         let val=this.node.outputFiles[i]
         sio.emit('updateNode', {index: this.node.index, property: 'outputFiles', value: val, cmd: 'del'});
+      },
+      updateNodeName: function(){
+        let val=this.node.name;
+        let dup = this.names.some((name)=>{
+          return name === val;
+        })
+        if(! dup){
+          sio.emit('updateNode', {index: this.node.index, property: 'name', value: this.node.name, cmd: 'update'});
+        }else{
+          console.log('duplicated name is not allowd!');
+        }
+      },
+      updateProperty: function(property){
+        let val=this.node[property];
+        sio.emit('updateNode', {index: this.node.index, property: property, value: val, cmd: 'update'});
       }
     }
   });
@@ -117,7 +133,7 @@ $(() => {
     }
   });
 
-  // set "got to parent dir" button behavior
+  // set "go to parent dir" button behavior
   $('#parentDirBtn').on('click',function(){
     let tmp=dirStack.pop();
     cwd=tmp.dir;
@@ -147,8 +163,14 @@ $(() => {
         if(v !== null) v.remove();
       });
       nodes=[];
+      if(wf.nodes.length > 0){
+        let names=wf.nodes.map((e)=>{
+          return e.name;
+        });
+        vm.names=names;
+        vm.node=wf.nodes[selectedNode];
+      }
       drawNodes(wf.nodes);
-      vm.node=wf.nodes[selectedNode];
       drawLinks(nodes);
     });
 
@@ -163,11 +185,6 @@ $(() => {
         $('#pause_menu').hide();
         $('#clean_menu').show();
         $('#stop_menu').show();
-      }else if(state === 'finished'){
-        $('#run_menu').hide();
-        $('#pause_menu').hide();
-        $('#clean_menu').show();
-        $('#stop_menu').hide();
       }else{
         $('#run_menu').show();
         $('#pause_menu').hide();
@@ -176,8 +193,6 @@ $(() => {
       }
     });
 
-    //TODO project 進行状況の受信処理
-    //
     //setup log reciever
     logReciever(sio);
 
@@ -322,6 +337,7 @@ $(() => {
             let nodePath = cwd+'/'+nodesInWF[nodeIndex].path;
             fb.request('fileListRequest', nodePath, null);
             let name = nodesInWF[nodeIndex].name;
+            vm.node=v;
             $('#path').text(name);
             $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
           })

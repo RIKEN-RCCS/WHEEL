@@ -40,22 +40,28 @@ function getProject(id) {
     return projectList.get(id)
 }
 function remove(id) {
-  projectList.remove(id);
-  return this.getAllProject();
+  return projectList.remove(id)
+    .then(()=>{
+      return this.getAllProject();
+    });
 }
 function rename(id, projectJsonFilePath) {
   let tmp = projectList.get(id);
   tmp.path = projectJsonFilePath;
-  projectList.update(tmp);
-  return this.getAllProject();
+  return projectList.update(tmp)
+    .then(()=>{
+      return this.getAllProject();
+    });
 }
 /*
  * add new project Json file to project list
  * @param path  project Json file's path (must be absolute path but not checked for now)
  */
 function add(path) {
-  projectList.add({"path": path});
-  return this.getAllProject();
+  return projectList.add({"path": path})
+    .then(()=>{
+      return this.getAllProject();
+    });
 }
 exports.getProject = getProject;
 exports.getAllProject = getAllProject;

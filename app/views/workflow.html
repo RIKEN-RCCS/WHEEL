@@ -117,17 +117,17 @@
             <div id="property" class="property">
               <div>
                 <label for="nameInputField">name</label>
-                <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField">
+                <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
               </div>
               <div>
                 <label for="descriptionInputField">description</label>
               </div>
               <div>
-                <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField"></textarea>
+                <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField" v-on:blur="updateProperty('description')"></textarea>
               </div>
               <div v-if="node.hasOwnProperty('script')">
                 <label for="scriptInputField">script</label>
-                <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField">
+                <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
               </div>
               <div>
                 <p>inputFiles</p>
@@ -157,15 +157,15 @@
               </div>
               <div v-if="node.hasOwnProperty('condition')">
                 <label for="conditionInputField">condition</label>
-                <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField">
+                <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
               </div>
               <div v-if="node.hasOwnProperty('start')">
                 <label for="startInputField">start</label>
-                <input type="number" v-model.lazy.trim="node.start"  id="startInputField">
-                <label for="stopInputField">stop</label>
-                <input type="number" v-model.lazy.trim="node.stop"  id="stopInputField">
+                <input type="number" v-model.number.lazy.trim="node.start"  id="startInputField" v-on:blur="updateProperty('start')">
+                <label for="endInputField">end</label>
+                <input type="number" v-model.number.lazy.trim="node.end"  id="endInputField" v-on:blur="updateProperty('end')">
                 <label for="stepInputField">step</label>
-                <input type="number" v-model.lazy.trim="node.step"  id="stepInputField">
+                <input type="number" v-model.number.lazy.trim="node.step"  id="stepInputField" v-on:blur="updateProperty('step')">
               </div>
               <div>
                 <p>remote file transfer setting</p>
@@ -180,11 +180,11 @@
               </div>
               <div>
                 <label for="includeInputField">  include</label>
-                <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField">
+                <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField" v-on:blur="updateProperty('include')">
               </div>
               <div>
                 <label for="excludeInputField">  exclude</label>
-                <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField">
+                <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('exclude')">
               </div>
               <div>
             </div>
