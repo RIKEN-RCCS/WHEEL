@@ -12,20 +12,20 @@ const executer = require('./executer');
 const { addX } = require('./utility');
 
 // utility functions
-function _forGetCurrentIndex(node){
-  return node.currentIndex? node.currentIndex + node.step : node.start;
+function _forGetNextIndex(node){
+  return node.hasOwnProperty('currentIndex') ? node.currentIndex + node.step : node.start;
 }
 function _forIsFinished(node){
   return (node.currentIndex > node.end && node.step > 0 ) || (node.currentIndex < node.end && node.step < 0);
 }
-function _whileGetCurrentIndex(node){
-  return node.currentIndex? ++(node.currentIndex) : 0;
+function _whileGetNextIndex(node){
+  return node.hasOwnProperty('currentIndex')? ++(node.currentIndex) : 0;
 }
 function _whileIsFinished(node){
   return _evalCondition(node.condition);
 }
-function _foreachGetCurrentIndex(node){
-  if(node.currentIndex){
+function _foreachGetNextIndex(node){
+  if(node.hasOwnProperty('currentIndex')){
     let i = node.indexList.indexOf(node.currentIndex);
     return node.indexList[i+1];
   }else{
@@ -89,7 +89,7 @@ class Dispatcher{
       this.timeout = setInterval(()=>{
         if(this.dispatching) return
         this.dispatching=true;
-        logger.debug('currnetSearchList : ', this.currentSearchList)
+        logger.debug('currentSearchList : ', this.currentSearchList)
         let promises=[];
         while(this.currentSearchList.length>0){
           let target = this.currentSearchList.shift();
@@ -186,34 +186,61 @@ class Dispatcher{
     Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
-  async _loopHandler(getCurrentIndex, isFinished, node){
+  async _loopHandler(getNextIndex, isFinished, node){
     logger.debug('_loopHandler called', node.name);
+    //check if the node is running or not
+    if(node.delegated){
+      console.log('DEBUG: this node is delegated to child WF');
+      return
+    }
+
+    node.delegated=true;
+    // keep old index and update index variable(node.currentIndex)
     let oldIndex=node.currentIndex;
-    console.log('DEBUG: oldIndex = ',oldIndex);
-    node.currentIndex = getCurrentIndex(node);
-    console.log('DEBUG: node.currentIndex= ',node.currentIndex);
+    node.currentIndex = getNextIndex(node);
+
+    // end determination
     if(isFinished(node)){
       console.log('DEBUG: finished!');
       Array.prototype.push.apply(this.nextSearchList, node.next);
+      delete node.delegated;
+      delete node.currentIndex;
+      node.path = node.originalPath;
+      return
+    }
+
+    // copy old dir
+    let srcDir=null
+    if(!node.hasOwnProperty('originalPath')){
+      node.originalPath = node.path;
+      srcDir = node.originalPath;
     }else{
-      console.log('DEBUG: _copyLoopDir called!');
-      let srcDir = oldIndex === undefined? node.path : `${node.path}_${node.oldIndex}`
-      srcDir = path.resolve(this.rootDir, srcDir);
-      let dstDir = `${node.path}_${node.currentIndex}`
-      let newNode = Object.assign({}, node);
-      newNode.path = dstDir;
-      dstDir = path.resolve(this.rootDir, dstDir);
-      console.log('DEBUG srcDir=', srcDir);
-      console.log('DEBUG dstDir=', dstDir);
-      util.promisify(ncp)(srcDir, dstDir)
-        .then(()=>{
-          this._delegate(newNode);
-        })
+      srcDir = `${node.originalPath}_${oldIndex}`;
+    }
+    let dstDir = `${node.originalPath}_${node.currentIndex}`
+    node.path = dstDir;
+
+    srcDir = path.resolve(this.rootDir, srcDir);
+    dstDir = path.resolve(this.rootDir, dstDir);
+    await util.promisify(ncp)(srcDir, dstDir)
       .catch((err)=>{
         console.error('fatal error occurred while copying loop dir\n', err);
       });
-      this.nextSearchList.push(node);
-    }
+
+    // delegate loop block
+    this._delegate(node)
+      .then(()=>{
+        logger.debug('loop trip end index= ',node.currentIndex);
+        node.delegated=false;
+      })
+      .catch((err)=>{
+        logger.error('delegate loop block failed');
+        logger.error('current index = ',node.currentIndex);
+        logger.error(err);
+      });
+
+    // send back itself to searchList for next loop trip
+    this.nextSearchList.push(node.index);
   }
 
 
@@ -243,13 +270,13 @@ class Dispatcher{
         cmd = this._checkIf;
         break;
       case 'for':
-        cmd = this._loopHandler.bind(this, _forGetCurrentIndex, _forIsFinished);
+        cmd = this._loopHandler.bind(this, _forGetNextIndex, _forIsFinished);
         break;
       case 'while':
-        cmd = this._loopHandler.bind(this, _whileGetCurrentIndex, _whileIsFinished);
+        cmd = this._loopHandler.bind(this, _whileGetNextIndex, _whileIsFinished);
         break;
       case 'foreach':
-        cmd = this._loopHandler.bind(this, _foreachGetCurrentIndex, _foreachIsFinished);
+        cmd = this._loopHandler.bind(this, _foreachGetNextIndex, _foreachIsFinished);
         break;
       case 'workflow':
         cmd = this._delegate;
