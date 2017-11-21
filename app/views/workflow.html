@@ -134,7 +134,7 @@
               </div>
               <template  v-for="(inputFile, index) in node.inputFiles" >
                 <div>
-                  <input type="text" v-model.lazy.trim="inputFile.name">
+                  <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="updateProperty('inputFiles')">
                   <button v-on:click="delInputFile(index)">del</button>
                 </div>
               </template>
@@ -145,9 +145,9 @@
               <div>
                 <label>outputFiles</label>
               </div>
-              <template  v-for="(outputFile, index) in node.outputFiles" >
+              <template  v-for="(outputFile, index) in node.outputFiles">
                 <div>
-                  <input type="text" v-model.lazy.trim="outputFile.name">
+                  <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="updateProperty('outputFiles')">
                   <button v-on:click="delOutputFile(index)">del</button>
                 </div>
               </template>
@@ -158,6 +158,19 @@
               <div v-if="node.hasOwnProperty('condition')">
                 <label for="conditionInputField">condition</label>
                 <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
+              </div>
+              <div>
+                <label>index list</label>
+              </div>
+              <template v-for="(v, i) in node.indexList">
+                <div>
+                  <input type="text" v-model.lazy.trim="v.label" v-on:blur="updateProperty('indexList')">
+                  <button v-on:click="delIndexOfForeach(i)">del</button>
+                </div>
+              </template>
+              <div v-if="node.hasOwnProperty('indexList')" >
+                <input type="text" v-model.lazy.trim="newIndexOfForeach">
+                <button v-on:click="addIndexOfForeach">add</button>
               </div>
               <div v-if="node.hasOwnProperty('start')">
                 <label for="startInputField">start</label>

@@ -1,6 +1,7 @@
 const util = require('util');
 const fs = require('fs');
 
+const ncp = require('ncp').ncp;
 const Mode = require('stat-mode');
 
 class Utility {
@@ -32,7 +33,21 @@ class Utility {
     let modeString = u.toString()+g.toString()+o.toString();
     fs.chmodSync(file, modeString);
   }
-}
 
+  /**
+   * promise version of ncp
+   * @param {string} src - src directory
+   * @param {string} dst - dst directory
+   * @param {Object} options - see ncp's npm page 
+   */
+  asyncNcp(...args){
+    return new Promise((resolve, reject)=>{
+      ncp(...args, (err)=>{
+        if(err) reject(err);
+        resolve(null);
+      });
+    });
+  }
+}
 
 module.exports=new Utility;

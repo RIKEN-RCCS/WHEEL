@@ -70,7 +70,6 @@ class Executer{
       this.executing=true;
       if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
         let task = this.queue.pop()
-        console.log('DEBUG: execute \n',task.workingDir,'\n',task.name);
         task.handler = this.exec(task);
         this.currentNumJob++;
       }

@@ -50,18 +50,6 @@ class BaseWorkflowComponent {
      */
     this.cleanupFlag=null;
 
-    // note on filters
-    // if include filter is set, matched files are transferd whther it also match exclude filter
-    /**
-     * include filter for recieve files from remote host
-     */
-    this.include=null;
-
-    /**
-     * exclude filter for recieve files from remote host
-     */
-    this.exclude=null;
-
     /** cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
      */
@@ -111,6 +99,19 @@ class Task extends BaseWorkflowComponent{
      *  - 'failed'     error occurred before task finish
      */
     this.state='not-started';
+
+    // note on filters
+    // if include filter is set, matched files are transferd whther it also match exclude filter
+    /**
+     * include filter for recieve files from remote host
+     */
+    this.include=null;
+
+    /**
+     * exclude filter for recieve files from remote host
+     */
+    this.exclude=null;
+
   }
 }
 

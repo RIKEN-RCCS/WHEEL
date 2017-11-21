@@ -39,6 +39,7 @@ $(() => {
       node: {},
       newInputFilename: "",
       newOutputFilename: "",
+      newIndexOfForeach: "",
       names: []
     },
     methods:{
@@ -64,6 +65,17 @@ $(() => {
         let newVal={name: filename, dst: []}
         sio.emit('updateNode', {index: this.node.index, property: 'outputFiles', value: newVal, cmd: 'add'});
       },
+      addIndexOfForeach: function(){
+        let val =this.newIndexOfForeach;
+        if(val === "") return
+        let duplicate = this.node.indexList.some((e)=>{
+          return e.label === val;
+        });
+        if(duplicate) return
+        this.newIndexOfForeach="";
+        let newVal = {label: val};
+        sio.emit('updateNode', {index: this.node.index, property: 'indexList', value: newVal, cmd: 'add'});
+      },
       delInputFile: function(i){
         let val=this.node.inputFiles[i]
         sio.emit('updateNode', {index: this.node.index, property: 'inputFiles', value: val, cmd: 'del'});
@@ -71,6 +83,10 @@ $(() => {
       delOutputFile: function(i){
         let val=this.node.outputFiles[i]
         sio.emit('updateNode', {index: this.node.index, property: 'outputFiles', value: val, cmd: 'del'});
+      },
+      delIndexOfForeach: function(i){
+        let val=this.node.indexList[i]
+        sio.emit('updateNode', {index: this.node.index, property: 'indexList', value: val, cmd: 'del'});
       },
       updateNodeName: function(){
         let val=this.node.name;
@@ -83,9 +99,10 @@ $(() => {
           console.log('duplicated name is not allowd!');
         }
       },
-      updateProperty: function(property){
+      updateProperty: function(property, arrayFlag){
         let val=this.node[property];
-        sio.emit('updateNode', {index: this.node.index, property: property, value: val, cmd: 'update'});
+        let cmd = arrayFlag ? 'updataArrayProperty': 'update';
+        sio.emit('updateNode', {index: this.node.index, property: property, value: val, cmd: cmd});
       }
     }
   });
@@ -165,7 +182,7 @@ $(() => {
       nodes=[];
       if(wf.nodes.length > 0){
         let names=wf.nodes.map((e)=>{
-          return e.name;
+          return e != null? e.name : null;
         });
         vm.names=names;
         vm.node=wf.nodes[selectedNode];
@@ -185,6 +202,11 @@ $(() => {
         $('#pause_menu').hide();
         $('#clean_menu').show();
         $('#stop_menu').show();
+      }else if(state === 'finished'){
+        $('#run_menu').hide();
+        $('#pause_menu').hide();
+        $('#clean_menu').show();
+        $('#stop_menu').hide();
       }else{
         $('#run_menu').show();
         $('#pause_menu').hide();

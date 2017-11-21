@@ -4,12 +4,12 @@ const util= require('util');
 const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
-const ncp = require('ncp').ncp;
 
 const config = require('../config/server.json');
 const logger=require('../logger');
 const executer = require('./executer');
 const { addX } = require('./utility');
+const { asyncNcp } = require('./utility');
 
 // utility functions
 function _forGetNextIndex(node){
@@ -21,60 +21,71 @@ function _forIsFinished(node){
 function _whileGetNextIndex(node){
   return node.hasOwnProperty('currentIndex')? ++(node.currentIndex) : 0;
 }
-function _whileIsFinished(node){
-  return _evalCondition(node.condition);
+function _whileIsFinished(rootDir, node){
+  let cwd= path.resolve(rootDir, node.path);
+  let condition = evalCondition(node.condition, cwd);
+  return condition
 }
 function _foreachGetNextIndex(node){
   if(node.hasOwnProperty('currentIndex')){
-    let i = node.indexList.indexOf(node.currentIndex);
-    return node.indexList[i+1];
+    let i = node.indexList.findIndex((e)=>{
+      return e.label ===  node.currentIndex;
+    });
+    if( i === -1 || i === node.indexList.length-1){
+      return undefined;
+    }else{
+      return node.indexList[i+1].label;
+    }
   }else{
-    return node.indexList[0];
+    return node.indexList[0].label;
   }
 }
 function _foreachIsFinished(node){
-  return node.currentIndex >= node.indexList.length;
+  return node.currentIndex === undefined;
+}
+
+function _isFinishedState(state){
+  return state === 'finished' || state === 'failed';
 }
 
 /**
  * evalute condition by executing external command or evalute JS expression
  * @param {string} condition - command name or javascript expression
  */
-async function evalCondition(condition, cwd){
-  let rt=false;
+function evalCondition(condition, cwd){
   if( !(typeof condition === 'string' || typeof condition === 'boolean') ){
     logger.error('condition must be string or boolean');
     return false;
   }
   let script = path.resolve(cwd, condition);
-  await util.promisify(fs.access)(script)
-    .then(()=>{
-      logger.debug('execute ', script);
-      addX(script);
-      rt = child_process.spawnSync(script).status === 0;
-    })
-    .catch((err)=>{
-      if(err.code ===  'ENOENT' ){
-        logger.debug('evalute ', condition);
-        rt = eval(condition)
-      }else{
-        logger.error('condition is neither executable nor javascript expression ', err);
-      }
-    });
-  return rt;
+  try{
+    fs.accessSync(script);
+  }catch(e){
+    if(e.code ===  'ENOENT' ){
+      logger.debug('evalute ', condition);
+      return eval(condition);
+    }
+  }
+  logger.debug('execute ', script);
+  addX(script);
+  let dir = path.dirname(script)
+  let options = {
+    "cwd": dir
+  }
+  return child_process.spawnSync(script, options).status === 0;
 }
 
 /**
  * parse workflow graph and dispatch ready tasks to executer
  */
 class Dispatcher{
-  constructor(workflow, rootDir){
+  constructor(nodes, rootDir){
     this.rootDir=rootDir;
-    this.children=[];
     this.currentSearchList=[];
     this.nextSearchList=[];
+    this.children=[];
     this.dispatchedTaskList=[]
-    this.nodes=workflow.nodes;
+    this.nodes=nodes;
     this.nodes.forEach((v,i)=>{
       if(v.previous.length===0 && v.inputFiles.length===0){
         this.currentSearchList.push(i);
@@ -89,13 +100,12 @@ class Dispatcher{
       this.timeout = setInterval(()=>{
         if(this.dispatching) return
         this.dispatching=true;
-        logger.debug('currentSearchList : ', this.currentSearchList)
         let promises=[];
         while(this.currentSearchList.length>0){
           let target = this.currentSearchList.shift();
           if(this._isReady(target)){
-            let node=this.nodes[target]
-            let cmd = this._cmdFactory(node.type);
+            let node = this.nodes[target]
+            let cmd  = this._cmdFactory(node.type);
             promises.push(cmd.call(this, node));
           }else{
             this.nextSearchList.push(target);
@@ -103,21 +113,17 @@ class Dispatcher{
         }
         Promise.all(promises)
           .then(()=>{
-            this.currentSearchList=this.nextSearchList;
+            let tmp = new Set(this.nextSearchList);
+            this.currentSearchList=Array.from(tmp.values());
             this.nextSearchList=[];
             // check task state
-            if(this.currentSearchList.length === 0){
-              let isDone=this.dispatchedTaskList.every((task)=>{
-                return task.state === 'finished' || task.state === 'failed'
-              });
+            if(! this.isRunning()){
+              clearInterval(this.timeout);
               let hasFailed=this.dispatchedTaskList.some((task)=>{
                 return task.state === 'failed';
               });
-              if(isDone){
-                clearInterval(this.timeout);
-                let projectState = hasFailed? 'failed':'finished';
-                resolve(projectState);
-              }
+              let projectState = hasFailed? 'failed':'finished';
+              resolve(projectState);
             }
             this.dispatching=false;
           })
@@ -127,6 +133,15 @@ class Dispatcher{
           });
       }, config.interval);
     });
+  }
+
+  isRunning(){
+    if(this.currentSearchList.length > 0) return true;
+    if(this.nextSearchList.length > 0) return true;
+    let hasTask=this.dispatchedTaskList.some((task)=>{
+      return ! _isFinishedState(task.state);
+    });
+    return hasTask;
   }
   pause(){
     this.children.forEach((child)=>{
@@ -146,7 +161,7 @@ class Dispatcher{
 
   async _dispatchTask(task){
     logger.debug('_dispatchTask called', task.name);
-    task.id=uuidv1(); //TODO 要らんかったかもしれんので後で確認
+    task.id=uuidv1(); // use this id to cancel task
     task.workingDir=path.resolve(this.rootDir, task.path);
     executer.exec(task);
     this.dispatchedTaskList.push(task);
@@ -156,14 +171,13 @@ class Dispatcher{
   async _checkIf(node){
     logger.debug('_checkIf called', node.name);
     let cwd= path.resolve(this.rootDir, node.path);
-    let condition = await evalCondition(node.condition, cwd);
+    let condition = evalCondition(node.condition, cwd);
     let next = condition? node.next: node.else;
     Array.prototype.push.apply(this.nextSearchList, next);
     node.state='finished';
   }
 
-  async _delegate(node){
-    logger.debug('_delegate called', node.name);
+  async _createChild(node){
     let childDir= path.resolve(this.rootDir, node.path);
     let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
     let childWF = await util.promisify(fs.readFile)(childWorkflowFilename)
@@ -173,87 +187,103 @@ class Dispatcher{
       .catch((err)=>{
         logger.error('fatal error occurred while loading sub workflow', err);
       });
-    let child = new Dispatcher(childWF, childDir);
+    return new Dispatcher(childWF.nodes, childDir);
+  }
+  async _delegate(node){
+    logger.debug('_delegate called', node.name);
+    let child = await this._createChild(node);
     this.children.push(child);
     child.dispatch()
       .then((tmp)=>{
         node.state='finished';
       })
       .catch((err)=>{
-        logger.error("fatal error occurred while parsing sub workflow",err);
+        logger.error("fatal error occurred while dispatching sub workflow",err);
       });
-    // next nodes will be hold because _isReady(child) return false
     Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
+  _loopInitialize(node){
+    node.initialized=true;
+    node.originalPath=node.path;
+    node.originalName=node.name;
+    node.state='running'
+  }
+  _loopFinalize(node){
+    delete node.initialized;
+    delete node.currentIndex;
+    node.path=node.originalPath;
+    node.name=node.originalName;
+    Array.prototype.push.apply(this.nextSearchList, node.next);
+    node.state='finished'
+  }
+
   async _loopHandler(getNextIndex, isFinished, node){
+    if(node.childLoopRunning){
+      // send back itself to searchList for next loop trip
+      this.nextSearchList.push(node.index);
+      return;
+    }
     logger.debug('_loopHandler called', node.name);
-    //check if the node is running or not
-    if(node.delegated){
-      console.log('DEBUG: this node is delegated to child WF');
-      return
+    node.childLoopRunning=true;
+    if(! node.initialized){
+      this._loopInitialize(node)
     }
 
-    node.delegated=true;
-    // keep old index and update index variable(node.currentIndex)
-    let oldIndex=node.currentIndex;
+    // determine old loop block directory
+    let srcDir= node.currentIndex? `${node.originalPath}_${node.currentIndex}` : node.path;
+    srcDir = path.resolve(this.rootDir, srcDir);
+
+    // update index variable(node.currentIndex)
     node.currentIndex = getNextIndex(node);
 
     // end determination
     if(isFinished(node)){
-      console.log('DEBUG: finished!');
-      Array.prototype.push.apply(this.nextSearchList, node.next);
-      delete node.delegated;
-      delete node.currentIndex;
-      node.path = node.originalPath;
+      this._loopFinalize(node)
       return
     }
-
-    // copy old dir
-    let srcDir=null
-    if(!node.hasOwnProperty('originalPath')){
-      node.originalPath = node.path;
-      srcDir = node.originalPath;
-    }else{
-      srcDir = `${node.originalPath}_${oldIndex}`;
-    }
-    let dstDir = `${node.originalPath}_${node.currentIndex}`
-    node.path = dstDir;
-
-    srcDir = path.resolve(this.rootDir, srcDir);
-    dstDir = path.resolve(this.rootDir, dstDir);
-    await util.promisify(ncp)(srcDir, dstDir)
-      .catch((err)=>{
-        console.error('fatal error occurred while copying loop dir\n', err);
-      });
-
-    // delegate loop block
-    this._delegate(node)
-      .then(()=>{
-        logger.debug('loop trip end index= ',node.currentIndex);
-        node.delegated=false;
-      })
-      .catch((err)=>{
-        logger.error('delegate loop block failed');
-        logger.error('current index = ',node.currentIndex);
-        logger.error(err);
-      });
-
     // send back itself to searchList for next loop trip
     this.nextSearchList.push(node.index);
-  }
 
+    // temporaly rename node.name
+    node.name = `${node.originalName}_${node.currentIndex}`;
+
+    // copy loop dir
+    let dstDir = `${node.originalPath}_${node.currentIndex}`;
+    // temporaly overwrite node.path by child's
+    node.path=dstDir;
+    dstDir = path.resolve(this.rootDir, dstDir);
+
+
+    await asyncNcp(srcDir, dstDir)
+      .catch((err)=>{
+        logger.error('fatal error occurred while copying loop dir\n', err);
+      });
+
+    // delegate new loop block
+    let child = await this._createChild(node);
+    this.children.push(child);
+    child.dispatch()
+      .then(()=>{
+        logger.debug('loop trip end index = ', node.currentIndex);
+        node.childLoopRunning=false;
+      })
+      .catch((err)=>{
+        logger.error('fatal error occurred during loop child dispatching. index = ', node.currentIndex);
+        logger.error(err);
+      });
+  }
 
   _isReady(index){
     let ready = true
     this.nodes[index].previous.forEach((i)=>{
-      if(!(this.nodes[i].state === 'finished' || this.nodes[i].state === 'failed')){
+      if(! _isFinishedState(this.nodes[i].state)){
         ready = false;
       }
     });
     this.nodes[index].inputFiles.forEach((inputFile)=>{
       let i = inputFile.srcNode;
-      if(!(this.nodes[i].state === 'finished' || this.nodes[i].state === 'failed')){
+      if(! _isFinishedState(this.nodes[i].state)){
         ready = false;
       }
     });
@@ -273,7 +303,7 @@ class Dispatcher{
         cmd = this._loopHandler.bind(this, _forGetNextIndex, _forIsFinished);
         break;
       case 'while':
-        cmd = this._loopHandler.bind(this, _whileGetNextIndex, _whileIsFinished);
+        cmd = this._loopHandler.bind(this, _whileGetNextIndex, _whileIsFinished.bind(null, this.rootDir));
         break;
       case 'foreach':
         cmd = this._loopHandler.bind(this, _foreachGetNextIndex, _foreachIsFinished);

@@ -173,6 +173,9 @@ function onUpdateNode(sio, msg){
       case 'update':
         targetNode[property]=value;
         break;
+      case 'updateArrayProperty':
+        targetNode[property]=value;
+        break;
     }
     cleanUpNode(targetNode);
     writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
@@ -321,7 +324,7 @@ function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
   validationCheck(rootWorkflow, path.dirname(rootWorkflowFilename))
     .then(()=>{
-      rootWorkflowDispatcher = new Dispatcher(rootWorkflow, path.dirname(rootWorkflowFilename));
+      rootWorkflowDispatcher = new Dispatcher(rootWorkflow.nodes, path.dirname(rootWorkflowFilename));
       sio.emit('projectState', 'running');
       rootWorkflowDispatcher.dispatch()
         .then((state)=>{
@@ -344,6 +347,7 @@ function onCleanProject(sio, msg){
   logger.debug(`clean event recieved: ${msg}`);
   rootWorkflowDispatcher.remove();
   //TODO 途中経過ファイルなども削除する
+  onWorkflowRequest(sio, rootWorkflowFilename);
   sio.emit('projectState', 'cleared');
 }
 
