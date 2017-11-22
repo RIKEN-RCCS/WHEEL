@@ -163,7 +163,7 @@
                 <label for="conditionInputField">condition</label>
                 <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
               </div>
-              <div>
+              <div v-if="node.hasOwnProperty('indexList')">
                 <label>index list</label>
               </div>
               <template v-for="(v, i) in node.indexList">
