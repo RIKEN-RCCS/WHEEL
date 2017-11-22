@@ -155,6 +155,10 @@
                 <input type="text" v-model.lazy.trim="newOutputFilename">
                 <button v-on:click="addOutputFile">add</button>
               </div>
+              <div v-if="node.hasOwnProperty('parameterFile')">
+                <label for="parameterFileInputField">parameter setting file</label>
+                <input type="text" v-model.lazy.trim="node.parameterFile" spellcheck="false" id="parameterFileInputField" v-on:blur="updateProperty('parameterFile')">
+              </div>
               <div v-if="node.hasOwnProperty('condition')">
                 <label for="conditionInputField">condition</label>
                 <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">

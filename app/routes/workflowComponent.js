@@ -148,7 +148,7 @@ class ParameterStudy extends BaseTaskGraph{
     super(...args);
     this.type='parameterStudy';
     this.jsonFile= `${config.default_filename}${config.extension.pstudy}`;
-    this.parameters=[];
+    this.parameterFile=null;
   }
 }
 
