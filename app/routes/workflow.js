@@ -76,13 +76,20 @@ function cleanUpNode(node){
  */
 function validationCheck(workflow, dir){
   let promises=[]
+  if(dir == null ){
+    promises.push(Promise.reject(new Error('Project dir is null or undefined')));
+  }
   workflow.nodes.forEach((node)=>{
+    if(node == null) return;
     if(node.type === 'task'){
-      if(dir == null ){
-        promises.push(Promise.reject(new Error('Project dir is null or undefined')));
-      }else if(node.path == null){
+      if(node.path == null){
         promises.push(Promise.reject(new Error(`node.path is null or undefined ${node.name}`)));
-      }else if( node.script == null){
+      }
+      if(node.host !== 'localhost'){
+        console.log(node.host);
+        //TODO remote host設定が存在することを確認
+      }
+      if( node.script == null){
         promises.push(Promise.reject(new Error(`script is null or undefined ${node.name}`)));
       }else{
         promises.push(util.promisify(fs.access)(path.resolve(dir, node.path, node.script)));
@@ -322,6 +329,7 @@ function onRemoveFileLink(sio, msg){
 
 function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
+  //TODO  rootWorkflowがparentを持ってたら、rootまで登っていって置き換える
   validationCheck(rootWorkflow, path.dirname(rootWorkflowFilename))
     .then(()=>{
       rootWorkflowDispatcher = new Dispatcher(rootWorkflow.nodes, path.dirname(rootWorkflowFilename));
@@ -331,7 +339,7 @@ function onRunProject(sio, msg){
           sio.emit('projectState', state);
         })
         .catch((err)=>{
-          logger.error('fatal occurred while parseing root workflow: \n',err);
+          logger.error('fatal error occurred while parseing root workflow: \n',err);
         });
     })
     .catch((err)=>{
@@ -345,7 +353,7 @@ function onPauseProject(sio, msg){
 }
 function onCleanProject(sio, msg){
   logger.debug(`clean event recieved: ${msg}`);
-  rootWorkflowDispatcher.remove();
+  if(rootWorkflowDispatcher != null) rootWorkflowDispatcher.remove();
   //TODO 途中経過ファイルなども削除する
   onWorkflowRequest(sio, rootWorkflowFilename);
   sio.emit('projectState', 'cleared');

@@ -8,8 +8,8 @@ const uuidv1 = require('uuid/v1');
 const config = require('../config/server.json');
 const logger=require('../logger');
 const executer = require('./executer');
-const { addX } = require('./utility');
-const { asyncNcp } = require('./utility');
+const { addXSync, asyncNcp } = require('./utility');
+const { paramVecGenerator, getFilenames, removeInvalid}  = require('./parameterParser');
 
 // utility functions
 function _forGetNextIndex(node){
@@ -23,7 +23,7 @@ function _whileGetNextIndex(node){
 }
 function _whileIsFinished(rootDir, node){
   let cwd= path.resolve(rootDir, node.path);
-  let condition = evalCondition(node.condition, cwd);
+  let condition = evalConditionSync(node.condition, cwd);
   return condition
 }
 function _foreachGetNextIndex(node){
@@ -48,11 +48,13 @@ function _isFinishedState(state){
   return state === 'finished' || state === 'failed';
 }
 
+
+
 /**
  * evalute condition by executing external command or evalute JS expression
  * @param {string} condition - command name or javascript expression
  */
-function evalCondition(condition, cwd){
+function evalConditionSync(condition, cwd){
   if( !(typeof condition === 'string' || typeof condition === 'boolean') ){
     logger.error('condition must be string or boolean');
     return false;
@@ -67,7 +69,7 @@ function evalCondition(condition, cwd){
     }
   }
   logger.debug('execute ', script);
-  addX(script);
+  addXSync(script);
   let dir = path.dirname(script)
   let options = {
     "cwd": dir
@@ -86,8 +88,9 @@ class Dispatcher{
     this.children=[];
     this.dispatchedTaskList=[]
     this.nodes=nodes;
-    this.nodes.forEach((v,i)=>{
-      if(v.previous.length===0 && v.inputFiles.length===0){
+    this.nodes.forEach((node,i)=>{
+      if(node == null) return;
+      if(node.previous.length===0 && node.inputFiles.length===0){
         this.currentSearchList.push(i);
       }
     });
@@ -171,7 +174,7 @@ class Dispatcher{
   async _checkIf(node){
     logger.debug('_checkIf called', node.name);
     let cwd= path.resolve(this.rootDir, node.path);
-    let condition = evalCondition(node.condition, cwd);
+    let condition = evalConditionSync(node.condition, cwd);
     let next = condition? node.next: node.else;
     Array.prototype.push.apply(this.nextSearchList, next);
     node.state='finished';
@@ -193,13 +196,11 @@ class Dispatcher{
     logger.debug('_delegate called', node.name);
     let child = await this._createChild(node);
     this.children.push(child);
-    child.dispatch()
-      .then((tmp)=>{
-        node.state='finished';
-      })
+    await child.dispatch()
       .catch((err)=>{
         logger.error("fatal error occurred while dispatching sub workflow",err);
       });
+    node.state='finished';
     Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
@@ -260,6 +261,7 @@ class Dispatcher{
         logger.error('fatal error occurred while copying loop dir\n', err);
       });
 
+    //TODO nodeをコピーしてthis._delegateを呼び出す方式に変更
     // delegate new loop block
     let child = await this._createChild(node);
     this.children.push(child);
@@ -271,6 +273,65 @@ class Dispatcher{
       .catch((err)=>{
         logger.error('fatal error occurred during loop child dispatching. index = ', node.currentIndex);
         logger.error(err);
+      });
+  }
+  async _PSHandler(node){
+    logger.debug('_PSHandler called', node.name);
+    let srcDir = path.resolve(this.rootDir, node.path);
+    let paramSettingsFilename = path.resolve(srcDir, node.parameterFile);
+    let paramSettings = JSON.parse(await util.promisify(fs.readFile)(paramSettingsFilename));
+
+    let targetFile = paramSettings.target_file;
+    let paramSpace = removeInvalid(paramSettings.target_param);
+    let ignoreFiles=getFilenames(paramSpace).map((e)=>{
+      // return path.resolve(srcDir, e) //TODO should be used after rapid client-side was modified
+      return e;
+    });
+    ignoreFiles.push(paramSettingsFilename);
+
+    let promises=[]
+    for(let paramVec of paramVecGenerator(paramSpace)){
+      let dstDir=paramVec.reduce((p,e)=>{
+        let v = e.value;
+        if(e.type === "file" ){
+          v = path.basename(e.value);
+        }
+        return `${p}__${e.key}_${v}`;
+      }, node.path);
+      dstDir = path.resolve(this.rootDir, dstDir);
+      let includeFiles=paramVec
+        .filter((e)=>{
+          return e.type === "file";
+        })
+        .map((e)=>{
+          // e.value is absolute path for now
+          // but it will be relative path in the near future
+          return e.value;
+        });
+      let options={};
+      options.filter = function(filename){
+        return ! ignoreFiles.filter((e)=>{
+          return !includeFiles.includes(e);
+        }).includes(filename);
+      }
+      await asyncNcp(srcDir, dstDir, options);
+
+      let data = await util.promisify(fs.readFile)(path.resolve(srcDir, targetFile));
+      data = data.toString();
+      paramVec.forEach((e)=>{
+        data=data.replace(`%%${e.key}%%`, e.value.toString());
+      });
+      let rewriteFile= path.resolve(dstDir, targetFile)
+      await util.promisify(fs.writeFile)(rewriteFile, data);
+
+      let newNode = Object.assign({}, node);
+      newNode.path = path.relative(this.rootDir, dstDir);
+      newNode.parent = path.resolve(path.dirname(node.parent), node.path, node.jsonFile);
+      promises.push(this._delegate(newNode));
+    }
+    return Promise.all(promises)
+      .then(()=>{
+        node.state='finished'
       });
   }
 
@@ -312,7 +373,7 @@ class Dispatcher{
         cmd = this._delegate;
         break;
       case 'parameterstudy':
-        console.log('not implemented yet !');
+        cmd = this._PSHandler;
         break;
     }
     return cmd;

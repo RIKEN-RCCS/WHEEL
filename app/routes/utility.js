@@ -18,7 +18,7 @@ class Utility {
    * add execute permission to file
    * @param {string} file - filename in absolute path
    */
-  addX(file){
+  addXSync(file){
     let stat = fs.statSync(file);
     let mode = new Mode(stat);
     let u=4;

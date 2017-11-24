@@ -67,8 +67,8 @@ module.exports = function(io){
     let filename=req.body.filename;
     let fn = path.resolve(cwd, filename);
     if(req.body.mode == 'json') {
-      a = {
-        "target_file": './' + fn,
+      let a = {
+        "target_file": filename,
         "target_param": req.body.param
       }
       fn = fn+'.json';

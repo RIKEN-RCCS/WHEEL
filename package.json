@@ -2,18 +2,19 @@
   "name": "WHEEL",
   "version": "1.2.0",
   "description": "Scientific Workflow system",
-  "main": "server.js",
+  "main": "app/server.js",
   "author": {
     "name": "tsuruta.kazuya"
   },
-  "license": "",
+  "license": "BSD-3-Clause",
   "scripts": {
     "start": "node app/server",
     "dev": "run-p node-dev watch",
     "node-dev": "node-dev app/server",
     "debug": "cross-env DEBUG=* node-dev app/server",
     "build": "webpack",
-    "watch": "webpack -w"
+    "watch": "webpack -w",
+    "license-report": "license-report"
   },
   "dependencies": {
     "body-parser": "^1.17.2",
@@ -48,6 +49,8 @@
     "file-loader": "^1.1.5",
     "jsdoc-to-markdown": "^3.0.1",
     "json-loader": "^0.5.7",
+    "license-report": "^2.1.0",
+    "nlf": "^2.0.0",
     "node-dev": "^3.1.3",
     "npm-run-all": "^4.1.2",
     "style-loader": "^0.19.0",

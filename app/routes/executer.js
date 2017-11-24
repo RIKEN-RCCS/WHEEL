@@ -5,7 +5,7 @@ const fs = require('fs');
 const config = require('../config/server.json');
 const logger = require('../logger');
 const jsonArrayManager= require('./jsonArrayManager');
-const { addX } = require('./utility');
+const { addXSync } = require('./utility');
 
 const remotehostFilename = path.resolve('./app', config.remotehost);
 const remoteHost= new jsonArrayManager(remotehostFilename);
@@ -21,7 +21,7 @@ let executers=[];
  */
 function localExec(task){
   let script = path.resolve(task.workingDir, task.script);
-  addX(script);
+  addXSync(script);
   //TODO env, uid, gidを設定する
   let options = {
     "cwd": task.workingDir
