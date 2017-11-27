@@ -1,18 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <link rel="stylesheet" href="/css/common.css"/>
-  <link rel="stylesheet" href="/css/login.css" />
-  <script type="text/javascript" src="/js/common.js"></script>
-  <script type="text/javascript" src="/js/login.js"></script>
-  <title>WHEEL</title>
+<meta charset="UTF-8">
+<title>WHEEL Login</title>
+<link href="https://fonts.googleapis.com/css?family=Bitter:400,700" rel="stylesheet">
+<link href="../css/style.css" rel="stylesheet">
 </head>
+<body id="login">
+  
+  <!-- Next Generation Scientific Workflow -->
+  <div class="subtitle">
+      <h3>Next Generation Scientific Workflow</h3>
+  </div>
+  <!--終わり -->
 
-<body>
-  login page 
+  <!-- wrap始まり -->
+  <div id="wrap">
+    <div class="content">
+      <h1>WHEEL</h1>
+      <div class="form">
+        <form action="/login" method="POST">
+          <dl>
+            <dt><span class="logininfo">User Name</span></dt>
+            <dd><input type="text" name="username" class="username" required></dd>
+            <dt><span class="logininfo">Pass Word</span></dt>
+            <dd><input type="password" name="password" class="password" required></dd>
+          </dl>
+          <button type="submit" class="login_button">Log In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- wrap終わり -->
+  
+  <!-- footer始まり -->
+  <footer>
+    <small>(C)2017 国立研究開発法人理化学研究所</small>
+  </footer>
+  <!-- footer終わり -->
+  
 </body>
-
 </html>
-
-
