@@ -10,7 +10,7 @@ import '../css/remotehost.css';
 $(() => {
   // create socket.io instance
   const socket= io('/remotehost');
-  const defaultHostinfo={
+  const defaultHostInfo={
     name: '',
     host: '',
     path: '',
@@ -26,47 +26,69 @@ $(() => {
   let vm = new Vue({
     el: '#view',
     data: {
-      hostinfo: Object.assign({},defaultHostinfo),
-      showInputArea: false,
+      newHostInfo: Object.assign({},defaultHostInfo),
       authType: '2',
       mode: 'addHost',
       hostList: [],
-      selectedHosts: [],
+      selectedHostList: [],
       testing: null,
       OK: [],
-      NG: []
+      NG: [],
+      errorMessage: ''
     },
     methods:{
       toggleSelected: function(i){
-        let index=this.selectedHosts.indexOf(i);
+        let index=this.selectedHostList.indexOf(i);
         if(index === -1){
-          this.selectedHosts.push(i);
+          this.selectedHostList.push(i);
         }else{
-          this.selectedHosts.splice(index,1);
+          this.selectedHostList.splice(index,1);
         }
       },
-      emitHost: function(){
-        if(this.authType === '1'){
-          this.hostinfo.keyFile=null;
-        }
-        socket.emit(this.mode, this.hostinfo);
-        resetInputArea();
+      onAddButton:function(){
+        this.mode='addHost';
+        this.errorMessage = '';
+        resetNewHostInfo();
+
+        $("#newHostDialog").dialog({title: 'Add Host', modal: true});
       },
-      editHost: function(){
+      onUpdateButton: function(){
         this.mode='updateHost';
-        this.hostinfo=this.hostList[this.selectedHosts[this.selectedHosts.length-1]];
-        this.showInputArea=true;
+        this.errorMessage = '';
+
+        if (this.selectedHostList.length < 1) {
+          this.errorMessage = 'Please select Account';
+          return;
+        }
+
+        Object.assign(this.newHostInfo, this.hostList[this.selectedHostList[this.selectedHostList.length - 1]]);
+        $("#newHostDialog").dialog();
       },
-      quitInput: resetInputArea,
-      removeHost: function(){
-        this.selectedHosts.forEach((e)=>{
-          socket.emit('removeHost', this.hostList[e].id);
+      onCopyButton: function(){
+        this.selectedHostList.forEach((index)=>{
+          socket.emit('copyHost', this.hostList[index].id);
         })
       },
-      copyHost: function(){
-        this.selectedHosts.forEach((e)=>{
-          socket.emit('copyHost', this.hostList[e].id);
+      onRemoveButton: function(){
+        this.errorMessage = '';
+        if (this.selectedHostList.length < 1) {
+          this.errorMessage = 'Please select Account';
+          return;
+        }
+
+        this.selectedHostList.forEach((index)=>{
+          socket.emit('removeHost', this.hostList[index].id);
         })
+      },
+      onDialogOKButton: function(){
+        if(this.authType === '1'){
+          this.newHostInfo.keyFile = null;
+        }
+        socket.emit(this.mode, this.newHostInfo);
+        $("#newHostDialog").dialog('close');
+      },
+      onDialogCancelButton: function(){
+        $("#newHostDialog").dialog('close');
       },
       browse: browseServerFiles,
       test: testSshConnection,
@@ -82,42 +104,38 @@ $(() => {
         return state
       },
       isSelected: function(index){
-        return this.selectedHosts.includes(index);
+        return this.selectedHostList.includes(index);
       }
     },
     computed:{
       isDuplicate: function(){
-        if(this.mode === 'updateHost'){
-          return false;
-        }else{
-          return this.hostList.some((e)=>{
-            return e.name === this.hostinfo.name;
-          });
-        }
+        return this.hostList.some((element) => {
+          return element.name === this.newHostInfo.name && 
+                 element.id !== this.newHostInfo.id;
+        });
       },
       validation: function(){
         return{
-          name: !isEmpty(this.hostinfo.name),
-          host: !isEmpty(this.hostinfo.host),
-          username: !isEmpty(this.hostinfo.username),
-          path: !isEmpty(this.hostinfo.path)
+          name: !isEmpty(this.newHostInfo.name),
+          host: !isEmpty(this.newHostInfo.host),
+          username: !isEmpty(this.newHostInfo.username),
+          path: !isEmpty(this.newHostInfo.path)
         }
       },
       hasError: function(){
-        return !Object.keys(this.validation).every((key)=>{
+        return this.isDuplicate || !Object.keys(this.validation).every((key)=>{
           return this.validation[key];
         });
       }
     }
   });
-
+  
   // request host list
   socket.emit('hostListRequest', true);
   socket.on('hostList', (hostList)=>{
     vm.hostList = hostList;
-    vm.selectedHosts=[];
+    vm.selectedHostList=[];
   });
-
 
   function browseServerFiles(){
     const html = '<p id="path"></p><ul id=fileList></ul>';
@@ -137,7 +155,7 @@ $(() => {
     });
     fb.onFileDblClick(function (target) {
       $('#dialog').dialog('close');
-      vm.hostinfo.keyFile=target;
+      vm.newHostInfo.keyFile=target;
     });
     fb.request('fileListRequest', null, null);
   }
@@ -151,7 +169,7 @@ $(() => {
         let password=$('#password').val();
         socket.emit('testSshConnection', host.id, password, (isConnect) => {
           vm.testing=null;
-          vm.selectedHosts=[];
+          vm.selectedHostList=[];
           if (isConnect) {
             vm.OK.push(index);
           } else {
@@ -161,10 +179,10 @@ $(() => {
       });
   }
 
-  function resetInputArea(){
-    vm.showInputArea=false;
-    vm.hostinfo=Object.assign({},defaultHostinfo);
+  function resetNewHostInfo() {
+    Object.assign(vm.newHostInfo, defaultHostInfo);
   }
+
   function isEmpty(string){
     return string === '';
   }

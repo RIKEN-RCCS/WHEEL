@@ -12,71 +12,82 @@
 </head>
 
 <body>
-    <div>Register Host</div>
-    <div id="view">
-      <div id="inputArea" v-show="showInputArea">
-        <div>
-          <label>label</label>
-          <input type="text" v-model.lazy.trim="hostinfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
-          <p v-if="isDuplicate"  class="ui-state-error">duplicated label</p>
-          <p v-if="!validation.name" class="ui-state-error">empty name is not allowed</p>
-        </div>
-        <div>
-          <label>Host Name</label>
-          <input type="text" v-model.lazy.trim="hostinfo.host" v-bind:class="{'ui-state-error': !validation.host}">
-          <p v-if="!validation.host" class="ui-state-error">empty hostname is not allowed</p>
-        </div>
-        <div>
-          <label>User ID</label>
-          <input type="text" v-model.lazy.trim="hostinfo.username" v-bind:class="{'ui-state-error': !validation.username}">
-          <p v-if="!validation.username" class="ui-state-error">empty user ID is not allowed</p>
-        </div>
-        <div>
-          <label>Remote Host Dir Path</label>
-          <input type="text" v-model.lazy.trim="hostinfo.path" v-bind:class="{'ui-state-error': !validation.path}">
-          <p v-if="!validation.path" class="ui-state-error">empty path is not allowed</p>
-        </div>
-        <div>Auth Type
-          <input type="radio" name="authType" v-model="authType" value="1">
-          <label>password</label>
-          <input type="radio" name="authType" v-model="authType" value="2">
-          <label>public key</label>
-        </div>
-        <div v-show="authType === '2'">
-          <label>KeyFile</label>
-          <input type="text" v-model="hostinfo.keyFile" disabled>
-          <button v-on:click="browse">Browse</button>
-        </div>
-        <div>
-          <label>Default Job submission limit</label>
-          <input type="number" v-model.number="hostinfo.numJob">
-        </div>
-        <div>
-          <label>Default queue name</label>
-          <input type="text" v-model.lazy="hostinfo.queue">
-        </div>
-        <div>
-          <label>ssh port number</label>
-          <input type="number" v-model.number="hostinfo.port">
-        </div>
-        <button id="okBtn" v-on:click="emitHost" v-bind:disabled="hasError">OK</button>
-        <button v-on:click="quitInput">Cancel</button>
-      </div>
-      <div id=hostListArea v-show="! showInputArea">
-        <ul id=hostList>
-          <template v-for="(host, index) in hostList" >
-            <li v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.name }}
-              <button v-on:click="test(index)">{{ buttonState(index) }}</button>
-            </li>
-          </template >
-        </ul>
-        <button v-on:click="mode='addHost';showInputArea=true;">Add</button>
-        <button v-on:click="editHost">Edit</button>
-        <button v-on:click="copyHost">Copy</button>
-        <button v-on:click="removeHost">Delete</button>
-      </div>
+  <div>Register Host</div>
+  <div id="view">
+
+    <!-- Remote Host List Area -->
+    <div>
+      <ul>
+        <template v-for="(host, index) in hostList" >
+          <li v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.name }}
+            <button v-on:click="test(index)">{{ buttonState(index) }}</button>
+          </li>
+        </template >
+      </ul>
     </div>
-    <div id="dialog"></div>
+  
+    <!-- Error Message Area -->
+    <div v-show="errorMessage != ''">{{errorMessage}}</div>
+
+    <!-- Button Area -->
+    <div>
+      <button v-on:click="onAddButton">Add</button>
+      <button v-on:click="onUpdateButton">Edit</button>
+      <button v-on:click="onCopyButton">Copy</button>
+      <button v-on:click="onRemoveButton">Delete</button>
+    </div>
+
+    <!-- New Remote Host Dialog -->
+    <div id="newHostDialog" style="display:none;">
+      <div>
+        <label>label</label>
+        <input type="text" v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
+        <p v-if="isDuplicate"  class="ui-state-error">duplicated label</p>
+        <p v-if="!validation.name" class="ui-state-error">empty name is not allowed</p>
+      </div>
+      <div>
+        <label>Host Name</label>
+        <input type="text" v-model.lazy.trim="newHostInfo.host" v-bind:class="{'ui-state-error': !validation.host}">
+        <p v-if="!validation.host" class="ui-state-error">empty hostname is not allowed</p>
+      </div>
+      <div>
+        <label>User ID</label>
+        <input type="text" v-model.lazy.trim="newHostInfo.username" v-bind:class="{'ui-state-error': !validation.username}">
+        <p v-if="!validation.username" class="ui-state-error">empty user ID is not allowed</p>
+      </div>
+      <div>
+        <label>Remote Host Dir Path</label>
+        <input type="text" v-model.lazy.trim="newHostInfo.path" v-bind:class="{'ui-state-error': !validation.path}">
+        <p v-if="!validation.path" class="ui-state-error">empty path is not allowed</p>
+      </div>
+      <div>Auth Type
+        <input type="radio" name="authType" v-model="authType" value="1">
+        <label>password</label>
+        <input type="radio" name="authType" v-model="authType" value="2">
+        <label>public key</label>
+      </div>
+      <div v-show="authType === '2'">
+        <label>KeyFile</label>
+        <input type="text" v-model="newHostInfo.keyFile" disabled>
+        <button v-on:click="browse">Browse</button>
+      </div>
+      <div>
+        <label>Default Job submission limit</label>
+        <input type="number" v-model.number="newHostInfo.numJob">
+      </div>
+      <div>
+        <label>Default queue name</label>
+        <input type="text" v-model.lazy="newHostInfo.queue">
+      </div>
+      <div>
+        <label>ssh port number</label>
+        <input type="number" v-model.number="newHostInfo.port">
+      </div>
+      <button v-on:click="onDialogOKButton" v-bind:disabled="hasError">OK</button>
+      <button v-on:click="onDialogCancelButton">Cancel</button>
+    </div>
+  </div>
+  <div id="dialog"></div>
 </body>
 
 </html>
