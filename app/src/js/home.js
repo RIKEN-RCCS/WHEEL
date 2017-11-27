@@ -72,7 +72,7 @@ $(() => {
         width: $(window).width() * 0.98
     };
     // register btn click event listeners
-    $('#btnNew').on("click", (event) => {
+    $('#newButton').on("click", (event) => {
         var html = '<p id="path"></p><ul id=fileList></ul><div>New project name<input type="text" id="newProjectName"></div>';
         dialogWrapper('#dialog', html, dialogOptions).done(function () {
             var label = $('#newProjectName').val();
@@ -89,7 +89,7 @@ $(() => {
         });
         fb.request('new', null, null);
     });
-    $('#btnImport').on("click", (event) => {
+    $('#importButton').on("click", (event) => {
       var html = '<p id="path"></p><ul id=fileList></ul>';
       dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {

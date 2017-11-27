@@ -3,6 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/reset.css" />
+    <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="/css/common.css"/>
     <link rel="stylesheet" href="/css/home.css"/>
 
@@ -14,17 +16,70 @@
 </head>
 
 <body>
-    <div class="subtitle">Home</div>
-    <div id=normal>
-    <div>
-      <ul id=projectList></ul>
-    </div>
-    <div class="jquery-ui-button" id=buttons>
-      <button id="btnNew"> New </button>
-      <button id="btnImport"> Import </button>
-    </div>
-    </div>
-    <div id="dialog"></div>
+  <!-- header始まり -->
+  <header>
+      <a href="login" class="title">WHEEL</a>
+      <h3 class="title_username">Yuki Tanaka</h3>
+      <button type="button" class="title_button"><img src="../img/button_kari.png" alt="config"></button>
+    </header>
+    <!-- header終わり -->
+
+    <!-- sidebar始まり-->
+    <aside class="home_sidebar">
+      <section>
+        <ul>
+          <li><a id="newButton" class="fileNew">New</a></li>
+          <li><a id="importButton" class="fileImport">Import</a></li>
+        </ul>
+      </section>
+    </aside>
+
+    <!-- slidebar始まり -->
+    <nav class="home_slidebar">
+      <ul>
+        <li><a href="#" id="configmenu1">Setting Menu</a></li>        
+        <li><a href="#" id="configmenu2">Host Info</a></li>
+        <li><a href="login.html" id="configmenu3">Log out</a></li>
+      </ul>
+    </nav>
+    <!-- slidebar終わり -->
+
+    <main>
+      <article>
+        <section>
+          <div id="normal">
+            <div>
+              <ul id="projectList"></ul>
+            </div>
+          </div>
+        </section>
+      </article>
+    </main>
+    
+    <!-- NewDialog始まり -->
+    <!-- <div class="dialogBackGround">
+      <div class="DialogArea">
+        <div class="addressBarArea">
+          <img src="../img/icon_dir.png" class="dir_icon">
+          <input type="text" id="addressBar" class="addressBarTextBox">
+        </div>
+
+        <div class="fileDialog" id="fileDialog">
+        </div>
+        
+        <div class="addressBarArea">
+          <span>Project Name</span>
+          <input type="text" id="inputTextBrowse" class="dialogTextBox">
+        </div>
+
+        <div class="dialogButton">
+          <button type="button" id="dialogOKbutton">OK</button>
+          <button type="button" id="dialogCancelbutton">Cancel</button>   
+        </div>  
+      </div>
+    </div> -->
+  </div>
+  <div id="dialog"></div>
 </body>
 
 </html>
