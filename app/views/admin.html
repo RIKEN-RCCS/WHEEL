@@ -11,7 +11,56 @@
 </head>
 
 <body>
-  Admin page 
+  <div>Account Manager</div>
+  <div id="view">
+    
+    <!-- Account List Area -->
+    <div>
+      <ul>
+        <template v-for="(account, index) in accountList">
+          <li v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >
+            {{ account.name }}
+          </li>
+        </template>
+      </ul>
+    </div>
+
+    <!-- Error Message Area -->
+    <div v-show="errorMessage != ''">{{errorMessage}}</div>
+
+    <!-- Button Area -->
+    <div>
+      <button v-on:click="onAddButton">Add</button>
+      <button v-on:click="onUpdateButton">Edit</button>
+      <button v-on:click="onRemoveButton">Delete</button>
+    </div>
+  
+    <!-- New Account Dialog -->
+    <div id="newAccountDialog" style="display:none;">
+      <div>
+        <label>Account Name</label>
+        <input type="text" v-model.lazy.trim="newAccount.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
+        <p v-if="isDuplicate"  class="ui-state-error">duplicated Account Name</p>
+        <p v-if="!validation.name" class="ui-state-error">empty Account Name is not allowed</p>
+      </div>
+      <div>
+        <label>Password</label>
+        <input type="password" v-model.lazy.trim="newAccount.password" v-bind:class="{'ui-state-error': !validation.password}">
+        <p v-if="!validation.password" class="ui-state-error">empty user Name is not allowed</p>
+      </div>
+      <div>
+        <label>Work Directory</label>
+        <input type="text" v-model.lazy.trim="newAccount.workDirectory" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
+        <p v-if="!validation.workDirectory" class="ui-state-error">empty Work Directory is not allowed</p>
+      </div>
+      <div>
+        <label>Description</label>
+        <input type="text" v-model.lazy.trim="newAccount.description" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
+      </div>
+      <button v-on:click="onDialogOKButton" v-bind:disabled="hasError">OK</button>
+      <button v-on:click="onDialogCancelButton">Cancel</button>
+    </div>
+  </div>
 </body>
 
 </html>
