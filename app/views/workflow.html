@@ -1,233 +1,217 @@
 ﻿<!DOCTYPE html>
 <html>
 
-  <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="/css/common.css"/>
-    <link rel="stylesheet" href="/css/workflow.css" />
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/siofu/client.js"></script>
-    <script type="text/javascript" src="/js/common.js"></script>
-    <script type="text/javascript" src="/js/workflow.js"></script>
-    <title>WHEEL</title>
-  </head>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/css/common.css"/>
+  <link rel="stylesheet" href="/css/workflow.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/siofu/client.js"></script>
+  <script type="text/javascript" src="/js/common.js"></script>
+  <script type="text/javascript" src="/js/workflow.js"></script>
+  <title>WHEEL</title>
+</head>
 
-  <body>
-    <div class="pure-container" data-effect="pure-effect-slide">
-      <input type="checkbox" id="pure-toggle-right" class="pure-toggle" data-toggle="right">
-      <label class="pure-toggle-label" for="pure-toggle-right" data-toggle-label="right">
-        <span class="pure-toggle-icon"></span>
-      </label>
-
-      <div class="pure-drawer" data-position="right">
-        <!-- Put your off canvas content here -->
-        <a href="/remotehost">remote host</a>
-      </div>
-      <div class="pure-pusher-container">
-        <div class="pure-pusher">
-          <!-- Put your site content here -->
-          <header>WHEEL</header>
-          <div class="menu_area">
-            <figure id="run_menu" class="menu_container">
-              <img src="/image/icon_run.png" class="icon" id="run_button" />
-              <figcaption>RUN</figcaption>
-            </figure>
-            <figure id="pause_menu" class="menu_container">
-              <img src="/image/icon_pause.png" class="icon" id="run_button" />
-              <figcaption>PAUSE</figcaption>
-            </figure>
-            <figure id="clean_menu" class="menu_container">
-              <img src="/image/icon_clean.png" class="icon" id="clean_button" />
-              <figcaption>CLEAN</figcaption>
-            </figure>
-            <figure id="stop_menu" class="menu_container">
-              <img src="/image/icon_stop.png" class="icon" id="stop_button" />
-              <figcaption>STOP</figcaption>
-            </figure>
-            <input type="checkbox" id='displayLog'><label for="displayLog">Log</label>
-            <div id="viewSelector">
-              <input type="radio" name="view" value="list"  id="listView"><label for="listView">List</label>
-              <input type="radio" name="view" value="graph" id="graphView"><label for="graphView">graph</label>
-            </div>
-          </div>
-
-          <div class="address_bar_area">
-            <img src="/image/icon_file.png" class="file_icon">
-            <input type="text" id="address_bar" class="address_bar text_box " readonly="readonly">
-          </div>
-
-          <table class="selected_workflow">
-            <tr>
-              <th>Name</th>
-              <th>Progress</th>
-              <th>Create Date</th>
-              <th>Update Date</th>
-            </tr>
-            <tr>
-              <td id="project_name"></td>
-              <td>
-                <progress value="0" max="100" id="project_progress"></progress>
-              </td>
-              <td id="project_birthday"></td>
-              <td id="project_update"></td>
-            </tr>
-          </table>
-
-          <table class="selected_workflow">
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th></th>
-              <th></th>
-            </tr>
-            <tr>
-              <td id="workflow_name_container"><input type="text" id="workflow_name" class="text_box" spellcheck="false"></td>
-              <td><input type="text" id="workflow_desc" class="text_box" spellcheck="false"></td>
-              <td class="buttons_container"><button type="button" class="button" id="save_button">Save</button></td>
-              <td class="buttons_container"><button type="button" class="button" id="reset_button">Revert</button></td>
-            </tr>
-          </table>
-
-          <div class="project_manage_area sub_content_area" id="project_tree" onMouseDown="return false;">
-            <div id="project_tree_svg"></div>
-            <div id=project_table_container">
-              <table id="project_table">
-                <thead id="project_table_head">
-                  <tr>
-                    <th>Name</th>
-                    <th>State</th>
-                    <th>Execution Date</th>
-                    <th>Finish Date</th>
-                    <th>Description</th>
-                  </tr>
-                </thead>
-                <tbody id="project_table_body">
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="workflow_manage_area sub_content_area">
-            <div id=fileBrowser >
-              <p id="path"></p>
-              <ul id="fileList"></ul>
-              <input type='file' id='fileSelector' name='uploadFiles' multiple />
-            </div>
-            <div id="parentDirBtn"><button>../</button></div>
-            <div id="node_svg" class="node_tree"></div>
-            <div id="property" class="property">
-              <div>
-                <label for="nameInputField">name</label>
-                <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
-              </div>
-              <div>
-                <label for="descriptionInputField">description</label>
-              </div>
-              <div>
-                <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField" v-on:blur="updateProperty('description')"></textarea>
-              </div>
-              <div v-if="node.hasOwnProperty('script')">
-                <label for="scriptInputField">script</label>
-                <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
-              </div>
-              <div>
-                <p>inputFiles</p>
-              </div>
-              <template  v-for="(inputFile, index) in node.inputFiles" >
-                <div>
-                  <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="updateProperty('inputFiles')">
-                  <button v-on:click="delInputFile(index)">del</button>
-                </div>
-              </template>
-              <div>
-                <input type="text" v-model.lazy.trim="newInputFilename">
-                <button v-on:click="addInputFile">add</button>
-              </div>
-              <div>
-                <label>outputFiles</label>
-              </div>
-              <template  v-for="(outputFile, index) in node.outputFiles">
-                <div>
-                  <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="updateProperty('outputFiles')">
-                  <button v-on:click="delOutputFile(index)">del</button>
-                </div>
-              </template>
-              <div>
-                <input type="text" v-model.lazy.trim="newOutputFilename">
-                <button v-on:click="addOutputFile">add</button>
-              </div>
-              <div v-if="node.hasOwnProperty('parameterFile')">
-                <label for="parameterFileInputField">parameter setting file</label>
-                <input type="text" v-model.lazy.trim="node.parameterFile" spellcheck="false" id="parameterFileInputField" v-on:blur="updateProperty('parameterFile')">
-              </div>
-              <div v-if="node.hasOwnProperty('condition')">
-                <label for="conditionInputField">condition</label>
-                <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
-              </div>
-              <div>
-                <label>index list</label>
-              </div>
-              <template v-for="(v, i) in node.indexList">
-                <div>
-                  <input type="text" v-model.lazy.trim="v.label" v-on:blur="updateProperty('indexList')">
-                  <button v-on:click="delIndexOfForeach(i)">del</button>
-                </div>
-              </template>
-              <div v-if="node.hasOwnProperty('indexList')" >
-                <input type="text" v-model.lazy.trim="newIndexOfForeach">
-                <button v-on:click="addIndexOfForeach">add</button>
-              </div>
-              <div v-if="node.hasOwnProperty('start')">
-                <label for="startInputField">start</label>
-                <input type="number" v-model.number.lazy.trim="node.start"  id="startInputField" v-on:blur="updateProperty('start')">
-                <label for="endInputField">end</label>
-                <input type="number" v-model.number.lazy.trim="node.end"  id="endInputField" v-on:blur="updateProperty('end')">
-                <label for="stepInputField">step</label>
-                <input type="number" v-model.number.lazy.trim="node.step"  id="stepInputField" v-on:blur="updateProperty('step')">
-              </div>
-              <div>
-                <p>remote file transfer setting</p>
-              </div>
-              <div>
-                <label>clean up flag</label>
-              </div>
-              <div>
-                <input type="radio" name="cleanupFlag" value=0>clean up
-                <input type="radio" name="cleanupFlag" value=1>keep files
-                <input type="radio" name="cleanupFlag" value=2 checked=>follow parent setting
-              </div>
-              <div>
-                <label for="includeInputField">  include</label>
-                <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField" v-on:blur="updateProperty('include')">
-              </div>
-              <div>
-                <label for="excludeInputField">  exclude</label>
-                <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('exclude')">
-              </div>
-              <div>
-            </div>
-          </div>
-          <div id='dialog'></div>
-          <div id="log_area">
-            <div id="logFilter">
-              <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug
-              <input type="checkbox" id="enableINFO"   checked="checked" value="node">Info
-              <input type="checkbox" id="enableWARN"   checked="checked" value="node">Warn
-              <input type="checkbox" id="enableERR"    checked="checked" value="node">Error
-              <input type="checkbox" id="enableStdout" checked="checked" value="node">stdout
-              <input type="checkbox" id="enableStderr" checked="checked" value="node">stderr
-              <input type="checkbox" id="enableSSHout" checked="checked" value="node">stdout(SSH)
-              <input type="checkbox" id="enableSSHerr" checked="checked" value="node">stderr(SSH)
-            </div>
-            <button id="clear_log">clear</button>
-            <pre id="log"></pre>
-          </div>
-
-
-        </div>
-      </div>
-      <label class="pure-overlay" for="pure-toggle-right" data-overlay="right"></label>
+<body>
+  <!-- header始まり -->
+  <header>
+    <a href="login" class="title">WHEEL</a>
+    <div class="title_right_area">
+      <span class="title_username">Yuki Tanaka</span>
+      <button type="button" id="drawer_button" class="drawer_button"><img src="/image/button_kari.png" alt="config"></button>
     </div>
+  </header>
+  <!-- header終わり -->
 
-  </body>
+  <!-- コントローラバー -->
+  <dev class="controler_bar_area">
+    <div id="project_name" class="controler_item"></div>
+    <div id="project_state" class="controler_item"></div>
+    <figure id="run_menu" class="controler_item">
+      <img src="/image/icon_run.png" class="icon" id="run_button" />
+    </figure>
+    <figure id="pause_menu" class="controler_item">
+      <img src="/image/icon_pause.png" class="icon" id="run_button" />
+    </figure>
+    <figure id="stop_menu" class="controler_item">
+      <img src="/image/icon_stop.png" class="icon" id="stop_button" />
+    </figure>
+    <figure id="clean_menu" class="controler_item">
+      <img src="/image/icon_clean.png" class="icon" id="clean_button" />
+    </figure>
+    <dev class="controler_bar_right_area">
+      <div class="controler_item">Create Date:</div>
+      <div id="project_create_date" class="controler_item"></div>
+      <div class="controler_item">Update Date:</div>
+      <div id="project_update_date" class="controler_item"></div>
+      <figure id="save_button" class="figure_button">
+        <img src="/image/icon_pause.png" class="icon" />
+        <figcaption class="figure_caption">Save</figcaption>
+      </figure>
+      <figure id="save_button" class="figure_button">
+        <img src="/image/icon_pause.png" class="icon" />
+        <figcaption class="figure_caption">Reset</figcaption>
+      </figure>
+    </dev>
+  </dev>
+
+  <!-- ビューコントローラ -->
+  <div class="view_controler_area">
+    <div id="breadcrumb"></div>
+    <input type="button" value="File" id="fileBrowseButton">
+    <div class="view_controler_right_area">
+      <div id="viewSelector">
+        <input type="radio" name="view" value="list"  id="listView"><label for="listView">List</label>
+        <input type="radio" name="view" value="graph" id="graphView"><label for="graphView">graph</label>
+      </div>
+    </div>
+  </div>
+  
+  <!-- リストビュー -->
+  <div id="project_manage_area" class="sub_content_area" id="project_tree" onMouseDown="return false;">
+    <div id="project_tree_svg"></div>
+    <div id="project_table_container">
+      <table id="project_table">
+        <thead id="project_table_head">
+          <tr>
+            <th>Name</th>
+            <th>State</th>
+            <th>Execution Date</th>
+            <th>Finish Date</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody id="project_table_body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- グラフビュー -->
+  <div id="workflow_manage_area" class="workflow_manage_area">
+    <div id="parentDirBtn"><button>../</button></div>
+    <div id="node_svg" class="node_svg"></div>
+    <div id="property" class="property">
+      <div>
+        <label for="nameInputField">name</label>
+        <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
+      </div>
+      <div>
+        <label for="descriptionInputField">description</label>
+      </div>
+      <div>
+        <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField" v-on:blur="updateProperty('description')"></textarea>
+      </div>
+      <div v-if="node.hasOwnProperty('script')">
+        <label for="scriptInputField">script</label>
+        <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
+      </div>
+      <div>
+        <p>inputFiles</p>
+      </div>
+      <template  v-for="(inputFile, index) in node.inputFiles" >
+        <div>
+          <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="updateProperty('inputFiles')">
+          <button v-on:click="delInputFile(index)">del</button>
+        </div>
+      </template>
+      <div>
+        <input type="text" v-model.lazy.trim="newInputFilename">
+        <button v-on:click="addInputFile">add</button>
+      </div>
+      <div>
+        <label>outputFiles</label>
+      </div>
+      <template  v-for="(outputFile, index) in node.outputFiles">
+        <div>
+          <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="updateProperty('outputFiles')">
+          <button v-on:click="delOutputFile(index)">del</button>
+        </div>
+      </template>
+      <div>
+        <input type="text" v-model.lazy.trim="newOutputFilename">
+        <button v-on:click="addOutputFile">add</button>
+      </div>
+      <div v-if="node.hasOwnProperty('parameterFile')">
+        <label for="parameterFileInputField">parameter setting file</label>
+        <input type="text" v-model.lazy.trim="node.parameterFile" spellcheck="false" id="parameterFileInputField" v-on:blur="updateProperty('parameterFile')">
+      </div>
+      <div v-if="node.hasOwnProperty('condition')">
+        <label for="conditionInputField">condition</label>
+        <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
+      </div>
+      <div>
+        <label>index list</label>
+      </div>
+      <template v-for="(v, i) in node.indexList">
+        <div>
+          <input type="text" v-model.lazy.trim="v.label" v-on:blur="updateProperty('indexList')">
+          <button v-on:click="delIndexOfForeach(i)">del</button>
+        </div>
+      </template>
+      <div v-if="node.hasOwnProperty('indexList')" >
+        <input type="text" v-model.lazy.trim="newIndexOfForeach">
+        <button v-on:click="addIndexOfForeach">add</button>
+      </div>
+      <div v-if="node.hasOwnProperty('start')">
+        <label for="startInputField">start</label>
+        <input type="number" v-model.number.lazy.trim="node.start"  id="startInputField" v-on:blur="updateProperty('start')">
+        <label for="endInputField">end</label>
+        <input type="number" v-model.number.lazy.trim="node.end"  id="endInputField" v-on:blur="updateProperty('end')">
+        <label for="stepInputField">step</label>
+        <input type="number" v-model.number.lazy.trim="node.step"  id="stepInputField" v-on:blur="updateProperty('step')">
+      </div>
+      <div>
+        <p>remote file transfer setting</p>
+      </div>
+      <div>
+        <label>clean up flag</label>
+      </div>
+      <div>
+        <input type="radio" name="cleanupFlag" value=0>clean up
+        <input type="radio" name="cleanupFlag" value=1>keep files
+        <input type="radio" name="cleanupFlag" value=2 checked=>follow parent setting
+      </div>
+      <div>
+        <label for="includeInputField">  include</label>
+        <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField" v-on:blur="updateProperty('include')">
+      </div>
+      <div>
+        <label for="excludeInputField">  exclude</label>
+        <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('exclude')">
+      </div>
+    </div>
+  </div>
+
+  <!-- 右ドロアーメニュー -->
+  <div id="drawer_menu" class="drawer_menu" data-position="right">
+    <!-- Put your off canvas content here -->
+    <a class="drawer_menu_item" href="/remotehost">remote host</a>
+  </div>
+
+  <input type="button" id="displayLogButton" class="displayLogButton" value="Log">
+  <div id="logArea" class="logArea">
+    <div id="logFilter">
+      <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug
+      <input type="checkbox" id="enableINFO"   checked="checked" value="node">Info
+      <input type="checkbox" id="enableWARN"   checked="checked" value="node">Warn
+      <input type="checkbox" id="enableERR"    checked="checked" value="node">Error
+      <input type="checkbox" id="enableStdout" checked="checked" value="node">stdout
+      <input type="checkbox" id="enableStderr" checked="checked" value="node">stderr
+      <input type="checkbox" id="enableSSHout" checked="checked" value="node">stdout(SSH)
+      <input type="checkbox" id="enableSSHerr" checked="checked" value="node">stderr(SSH)
+    </div>
+    <button id="clear_log">clear</button>
+    <pre id="logText" class="logText"></pre>
+  </div>
+
+  <!-- File Browser Dialog -->
+  <div id="fileBrowser" class="fileBrowser">
+    <p id="path"></p>
+    <ul id="fileList"></ul>
+    <input type='file' id='fileSelector' name='uploadFiles' multiple />
+    <input type="button" id='fileBrowserCancelButton' value="Cancel" />
+  </div>
+</body>
 
 </html>

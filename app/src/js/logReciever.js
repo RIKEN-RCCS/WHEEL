@@ -75,11 +75,11 @@ export default function (socket) {
         }
     });
     $("#clear_log").click(function () {
-        $("#log").empty();
+        $("#logText").empty();
     });
 }
 function addLog(msg) {
-    $('#log').append(msg.toString() + '\n');
+    $('#logText').append(msg.toString() + '\n');
     var area = $('#log_area');
     area.scrollTop = area.scrollHeight;
 }
