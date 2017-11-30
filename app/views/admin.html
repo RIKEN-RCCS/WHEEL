@@ -2,8 +2,11 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="/css/common.css"/>
   <link rel="stylesheet" href="/css/admin.css" />
+  
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="/js/common.js"></script>
   <script type="text/javascript" src="/js/admin.js"></script>
@@ -11,7 +14,20 @@
 </head>
 
 <body>
-  <div>Account Manager</div>
+  <header>
+    <a href="login" class="title">WHEEL</a>
+    <h3 class="title_username">Yuki Tanaka</h3>
+  </header>
+
+  <main>
+      <div id="html_name">
+        <div class="admin">Account Manager</div>
+      </div>
+      <div id="fieldName">
+        <div class="accountField">Account List</p>
+      </div>
+  </main>
+
   <div id="view">
     
     <!-- Account List Area -->
@@ -19,7 +35,7 @@
       <ul>
         <template v-for="(account, index) in accountList">
           <li v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >
-            {{ account.name }}
+            {{ account.name }} / {{ account.password }} / {{ account.workDirectory}} / {{ account.description }}
           </li>
         </template>
       </ul>
@@ -38,28 +54,29 @@
     <!-- New Account Dialog -->
     <div id="newAccountDialog" style="display:none;">
       <div>
-        <label>Account Name</label>
+        <p><label>Account Name</label></p>
         <input type="text" v-model.lazy.trim="newAccount.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
         <p v-if="isDuplicate"  class="ui-state-error">duplicated Account Name</p>
         <p v-if="!validation.name" class="ui-state-error">empty Account Name is not allowed</p>
       </div>
       <div>
-        <label>Password</label>
+        <p><label>Password</label></p>
         <input type="password" v-model.lazy.trim="newAccount.password" v-bind:class="{'ui-state-error': !validation.password}">
         <p v-if="!validation.password" class="ui-state-error">empty user Name is not allowed</p>
       </div>
       <div>
-        <label>Work Directory</label>
+        <p><label>Work Directory</label></p>
         <input type="text" v-model.lazy.trim="newAccount.workDirectory" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
         <p v-if="!validation.workDirectory" class="ui-state-error">empty Work Directory is not allowed</p>
       </div>
       <div>
-        <label>Description</label>
-        <input type="text" v-model.lazy.trim="newAccount.description" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
+        <p><label>Description</label></p>
+        <textarea v-model.lazy.trim="newAccount.description" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" ></textarea>
       </div>
       <button v-on:click="onDialogOKButton" v-bind:disabled="hasError">OK</button>
       <button v-on:click="onDialogCancelButton">Cancel</button>
     </div>
+
   </div>
 </body>
 

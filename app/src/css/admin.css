@@ -1,4 +1,89 @@
+@charset "utf-8";
+
 ul{
   list-style-type: none;
+  margin: 0 30px 20px 30px;
+  padding: 5px 5px 5px 15px;
+  background: #252525;
+  border: 1px solid;
 }
 
+#html_name{
+  position: relative;
+  background:#252525;
+  height: 30px;  
+}
+
+div .admin{
+  position: absolute;
+  background:#252525;
+  left:20px;  
+}
+
+#fieldName{
+  position: relative;
+  height: 50px;
+  left: 20px;
+}
+
+div .accountField{
+  position: absolute;
+  top: 10px;
+  left:10px;
+  font-size: 1.3em;  
+}
+
+button{
+  background-color: rgb(105, 175, 45);
+  color: #ffffff;
+  font-size: 15px;
+  font-family: 'Bitter', serif;
+  width:100px;
+  border-radius: 3px; 
+  border: 3px solid rgb(105, 175, 45);
+  cursor: pointer;
+}
+
+button:hover{
+  text-decoration: none;
+  background-color: #ffffff;
+  color: rgb(105, 175, 45);
+}
+
+li:hover{
+  cursor: pointer;
+	background:#56676F;
+}
+
+#newAccountDialog div{
+  width:500px;
+	margin:0 auto 25px;
+} 
+
+p{
+	font-size:1.3em;
+	color:#EC8519;
+	margin-bottom:0px;
+	font-weight:bold;
+}
+
+.ui-state-error{
+  font-size:1.0em;
+	color:#DC2900;
+	margin-bottom:5px;
+	font-weight:bold;
+}
+
+input[type="text"]{
+	width:300px;
+}
+
+textarea{
+	padding:5px;
+	font-size:1.3em;
+	color:#333;
+	border:1px solid #CCC;
+  background:#EFEFEF;
+  width:500px;
+	height:100px;
+}
