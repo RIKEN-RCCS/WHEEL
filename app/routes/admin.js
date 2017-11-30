@@ -8,6 +8,7 @@ let express = require('express');
 
 const config = require('../config/server.json')
 const jsonArrayManager = require("./jsonArrayManager");
+//const doAndEmit = require('./utility').doAndEmit;
 
 module.exports = function(io){
   const userAccountFilename= path.resolve('./app', config.useraccount);
@@ -20,12 +21,13 @@ module.exports = function(io){
     });
   }
   sio.on('connect', (socket) => {
-    userAccounts.getAllProject().then(function(results){
-      socket.emit('accountList', results);
+    console.log(userAccounts.getAll());
+    socket.on('getAccountList', ()=>{
+      socket.emit('accountList', userAccounts.getAll());
     });
-    socket.on('add',    doAndEmit.bind(null, userAccounts.add.bind(remoteHost)));
-    socket.on('remove', doAndEmit.bind(null, userAccounts.remove.bind(remoteHost)));
-    socket.on('update', doAndEmit.bind(null, userAccounts.update.bind(remoteHost)));
+    socket.on('addAccount',    doAndEmit.bind(null, userAccounts.add.bind(userAccounts)));
+    socket.on('removeAccount', doAndEmit.bind(null, userAccounts.remove.bind(userAccounts)));
+    socket.on('updateAccount', doAndEmit.bind(null, userAccounts.update.bind(userAccounts)));
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {
