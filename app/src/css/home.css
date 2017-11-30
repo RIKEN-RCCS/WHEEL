@@ -1,11 +1,155 @@
+@charset "utf-8";
+
 #projectList{
+  position: absolute;
+  top: 136px;
+  left: 150px;
+  width: 100%;
   list-style-type: none;
 }
+
 #projectList li{
   cursor: move;
+  cursor: pointer;
   width: 100%;
   text-align: center;
+  background: #1f1f1f;
+  color: #FFFFFF;
+  border: 0.1px solid #1f1f1f;
+  border-bottom: 0.1px solid #3e3e3e;
 }
+
+#projectList li:hover{
+  text-decoration: none;
+  background: #1f1f1f;
+  border: 0.1px solid rgb(105, 175, 45);
+}
+
 #fileList{
   overflow: auto;
+}
+
+/* Home画面 */
+#html_name{
+  position: relative;
+  background:#252525;
+  height: 30px;  
+}
+
+.home{
+  position: absolute;
+  background:#252525;
+  left:20px;  
+}
+
+#fieldName{
+  position: relative;
+  height: 30px;
+  left: 150px;
+}
+
+.projectField{
+  position: absolute;
+  top: 10px;
+  left:10px;
+  font-size: 1.3em;  
+}
+
+.home_sidebar{
+  position:absolute;
+  top:85px;
+  width:150px;
+  height:100%;
+  background:#252525;
+}
+
+.home_sidebar li{
+list-style-type:none;
+}
+
+.home_sidebar li a{
+  text-decoration:none;    
+  border-bottom:1px solid #40555F; 
+  display:block;
+  padding:25px;
+  color:#ffffff;
+}
+
+.home_sidebar li a.current{
+color:#ffffff;
+}
+
+.home_sidebar li a:hover{
+background:#56676F;
+}
+
+.home_slidebar{
+position:fixed;
+top:50px;
+bottom:0;
+width:250px;
+right:-250px;
+background:#5C7079;
+}
+
+.home_slidebar li{
+  list-style-type:none;
+  font-weight:bold;
+  font-size: 18px;
+}
+
+.home_slidebar li a{
+text-decoration:none;
+display:block;
+padding:5px 25px;
+color:#FFF;
+border-bottom:1px solid #40555F;
+}
+
+.home_slidebar li a:hover{
+background:#56676F;
+}
+
+#configmenu1{
+  font-weight:bold;
+  font-size: 20px;
+}
+
+.btn_action{
+  position: fixed;
+  width: 500px;
+}
+
+.dialogBackGround{
+  position:fixed;
+  left:0;
+  top:0;
+  height:100%;
+  width:100%;
+  background:rgba(0, 0, 0, .4);
+}
+
+.DialogArea{
+  width: 960px;
+  position: fixed;
+  border: solid 1px #111;
+  background-color: rgb(70, 70, 65);
+  box-shadow: 0px 0px 1px 1px rgba(250, 250, 250, 0.1);
+  margin: auto;
+  height: calc(100% - 120px);
+  top: 60px;
+  left: calc(50% - 500px);
+  z-index: 100;
+  display: none;
+  padding: 10px;
+}
+
+.DialogArea p{
+  font-size:1.4em;
+  margin-bottom:20px;
+}
+
+.DialogArea #dialogOKbutton{
+  padding:5px 20px;
+  font-size:1em;
 }
