@@ -148,7 +148,24 @@ $(() => {
         window.open(`/editor?${params}`);
       }
     }
+    // TODO download 
+    // ,'download file': {
+    //   name: 'Download',
+    //   callback: function() {
+    //     const path = $(this).data('path');
+    //     const filename = $(this).data('name');
+    //     const message= {
+    //       "path": path,
+    //       "name": filename
+    //     };
+    //     sio.emit('download', message);
+    //   }
+    // }
   });
+
+  // sio.on('download', (message) => {
+  //   console.log(message.toString());
+  // });
 
   // set "go to parent dir" button behavior
   $('#parentDirBtn').on('click',function(){
@@ -176,7 +193,6 @@ $(() => {
     sio.on('workflow', function(wf) {
       $('#path').text(wf.path);
       nodeStack[nodeStack.length - 1] = wf.name;
-      console.log(wf);
       updateBreadrumb();
 
       // remove all node from workflow editor
@@ -194,6 +210,10 @@ $(() => {
       drawNodes(wf.nodes);
       drawLinks(nodes);
     });
+
+    sio.on('taskStateList', (taskStateList) => {
+      updateTaskStateTable(taskStateList);
+    })
 
     // TODO 現在のプロジェクト状態の取得をサーバにリクエストする
     $('#project_name').text('No Name Project');
@@ -276,6 +296,7 @@ $(() => {
   $('input[name=view]').change(function () {
     if ($('#listView').prop('checked')) {
       $('#project_manage_area').show();
+      sio.emit('getTaskStateList', null);
     }
     else {
       $('#project_manage_area').hide();
@@ -460,8 +481,14 @@ $(() => {
         }
         fb.request('fileListRequest', currentWorkDir, null);
         sio.emit('workflowRequest', currentWorkFlow);
-        console.log(e);
       });
+    }
+  }
+
+  function updateTaskStateTable(taskStateList) {
+    let taskStateTable = $('#project_table_body');
+    for (let i = 0; i < taskStateList.length; i++) {
+      taskStateTable.append(`<tr><td>${taskStateList[i].name}</td><td>${taskStateList[i].state}</td><td>${taskStateList[i].startTime}</td><td>${taskStateList[i].endTime}</td></tr>`);
     }
   }
 
