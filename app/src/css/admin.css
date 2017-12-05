@@ -1,11 +1,33 @@
 @charset "utf-8";
 
-ul{
-  list-style-type: none;
-  margin: 0 30px 20px 30px;
-  padding: 5px 5px 5px 15px;
+#accountTitleArea{
+  /* list-style-type: none;
+  margin: 0 10px 10px 10px;
+  padding: 5px 5px 5px 15px; */
+  position: relative;
+  left:20px;
+}
+
+#accountPropertyArea
+{
+  position: relative;
+  top: 5px;
+  height: 465px;
+  width: 919px;
+  left: 20px;
+  overflow-y: scroll;
+  overflow-x: hidden;
   background: #252525;
   border: 1px solid;
+}
+
+#accountListInfo{
+  background: #252525;
+  border: 1px solid;
+}
+
+#accountListInfo:hover{
+  background: green;
 }
 
 #html_name{
@@ -17,13 +39,13 @@ ul{
 div .admin{
   position: absolute;
   background:#252525;
-  left:20px;  
+  left:10px;  
 }
 
 #fieldName{
   position: relative;
   height: 50px;
-  left: 20px;
+  left: 10px;
 }
 
 div .accountField{
@@ -31,6 +53,48 @@ div .accountField{
   top: 10px;
   left:10px;
   font-size: 1.3em;  
+}
+
+#titleTable
+{
+  table-layout: fixed;
+  width: 900px;
+  word-wrap: break-word;  
+}
+
+#propertyTable
+{
+  table-layout: fixed;
+  width: 900px;
+  word-wrap: break-word;  
+}
+
+tr th
+{
+  text-align: left;
+}
+
+td
+{
+  text-overflow:ellipsis;
+  overflow:hidden;
+  white-space:nowrap;
+  cursor: pointer;
+}
+
+td:hover {
+  overflow: visible;
+  white-space:normal;    
+}
+
+.userName,.workDir
+{
+ width: 200px;
+}
+
+.description
+{
+  width: 500px;
 }
 
 button{
@@ -50,15 +114,15 @@ button:hover{
   color: rgb(105, 175, 45);
 }
 
+#buttonArea
+{
+  padding: 10px;
+}
+
 li:hover{
   cursor: pointer;
 	background:#56676F;
 }
-
-#newAccountDialog div{
-  width:500px;
-	margin:0 auto 25px;
-} 
 
 p{
 	font-size:1.3em;
@@ -69,7 +133,7 @@ p{
 
 .ui-state-error{
   font-size:1.0em;
-	color:#DC2900;
+	color:#ffffff;
 	margin-bottom:5px;
 	font-weight:bold;
 }
@@ -84,6 +148,21 @@ textarea{
 	color:#333;
 	border:1px solid #CCC;
   background:#EFEFEF;
-  width:500px;
+  width:400px;
 	height:100px;
+}
+
+#errorMessage
+{
+  position: relative;
+  left: 10px;
+  visibility: hidden;
+}
+
+.dialogStateError
+{
+  font-size:0.5em;  
+	border: 1px solid #ffffff;
+	background: #ffffff;
+	color: red;
 }

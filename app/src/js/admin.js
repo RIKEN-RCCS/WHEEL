@@ -26,7 +26,7 @@ $(() => {
       mode: 'addAccount',
       accountList: [],
       selectedAccountList: [],
-      errorMessage: ''
+      errorMessage: 'temp'
     },
     methods:{
       toggleSelected: function(i) {
@@ -39,40 +39,66 @@ $(() => {
       },
       onAddButton:function() {
         this.mode = 'addAccount';
-        this.errorMessage = '';
+        $("#errorMessage").css("visibility", "hidden");                            
+        // this.errorMessage = '';
         resetNewAccount();
         
-        $("#newAccountDialog").dialog({title: 'Add Account', modal: true});
+        $("#newAccountDialog").dialog({width:450, height:540, title: 'Add Account', modal: true});
       },
       onUpdateButton: function(){
         this.mode = 'updateAccount';
-        this.errorMessage = '';
+        // this.errorMessage = '';
+        $("#errorMessage").css("visibility", "hidden");                            
+        
 
         if (this.selectedAccountList.length < 1) {
-          this.errorMessage = 'Please select Account';
+           this.errorMessage = 'Please select Account';
+          $("#errorMessage").css("visibility", "visible");                    
           return;
         }
 
         Object.assign(this.newAccount, this.accountList[this.selectedAccountList[this.selectedAccountList.length - 1]]);
-        $("#newAccountDialog").dialog({title: 'Update Account', modal: true});
+        $("#newAccountDialog").dialog({width:560, title: 'Update Account', modal: true});
       },
       onRemoveButton: function(){
-        this.errorMessage = '';
+        this.mode = 'removeAccount';
+        $("#errorMessage").css("visibility", "hidden");                                    
+        // this.errorMessage = '';
         if (this.selectedAccountList.length < 1) {
           this.errorMessage = 'Please select Account';
+          $("#errorMessage").css("visibility", "visible");                              
           return;
         }
 
-        this.selectedAccountList.forEach((index) => {
-          socket.emit('removeAccount', this.accountList[index].id);
-        })
+        $("#deleteCheckDialog").dialog({width:300, title: 'Delete Account', modal: true});       
+
+        // this.selectedAccountList.forEach((index) => {
+        //   socket.emit('removeAccount', this.accountList[index].id);
+        // })
       },
       onDialogOKButton: function(){
-        socket.emit(this.mode, this.newAccount);
-        $("#newAccountDialog").dialog('close');
+        if(this.mode == 'removeAccount')
+        {
+          this.selectedAccountList.forEach((index) => {
+            socket.emit('removeAccount', this.accountList[index].id);
+          })
+          $("#deleteCheckDialog").dialog('close');          
+        } else {
+          socket.emit(this.mode, this.newAccount);
+          $("#newAccountDialog").dialog('close');
+        }
       },
       onDialogCancelButton: function(){
-        $("#newAccountDialog").dialog('close');
+        if(this.mode == 'removeAccount')
+        {
+          $("#deleteCheckDialog").dialog('close');                      
+        } if(this.mode =='updateAccount')
+        {
+          $("#newAccountDialog").dialog('close');          
+          resetNewAccount();          
+        } else {
+          $("#newAccountDialog").dialog('close');
+        }
       },
       isSelected: function(index) {
         return this.selectedAccountList.includes(index);

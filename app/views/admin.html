@@ -15,7 +15,7 @@
 
 <body>
   <header>
-    <a href="login" class="title">WHEEL</a>
+    <a href="home" class="title">WHEEL</a>
     <h3 class="title_username">Yuki Tanaka</h3>
   </header>
 
@@ -24,28 +24,46 @@
         <div class="admin">Account Manager</div>
       </div>
       <div id="fieldName">
-        <div class="accountField">Account List</p>
+        <div class="accountField">Account List</div>
       </div>
   </main>
 
   <div id="view">
     
     <!-- Account List Area -->
-    <div>
-      <ul>
-        <template v-for="(account, index) in accountList">
-          <li v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >
-            {{ account.name }} / {{ account.password }} / {{ account.workDirectory}} / {{ account.description }}
-          </li>
+    <div id="accountTitleArea">
+      <table id="titleTable">
+        <tr id="accountInfo">
+          <th class="userName">User Name</th>
+          <th class="workDir">Work Dir</th>
+          <th class="description">Description</th>
+        </tr>
+      </table>
+    </div>
+    <div id="accountPropertyArea">
+      <table id="propertyTable">
+        <template v-for="(account, index) in accountList">            
+          <tr id="accountListInfo">
+            <td class="userName" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >
+                {{ account.name }}
+            </td>
+            <td class="workDir" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >
+                {{ account.workDirectory}}
+            </td>
+            <td class="description" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >
+                {{ account.description }}
+            </td>
+          </tr>         
         </template>
-      </ul>
+      </table>
     </div>
 
     <!-- Error Message Area -->
-    <div v-show="errorMessage != ''">{{errorMessage}}</div>
+    <div id="errorMessage">{{errorMessage}}</div>
+    <!-- <div id="errorMessage" v-show="errorMessage != ''">{{errorMessage}}</div> -->
 
     <!-- Button Area -->
-    <div>
+    <div id="buttonArea">
       <button v-on:click="onAddButton">Add</button>
       <button v-on:click="onUpdateButton">Edit</button>
       <button v-on:click="onRemoveButton">Delete</button>
@@ -56,27 +74,36 @@
       <div>
         <p><label>Account Name</label></p>
         <input type="text" v-model.lazy.trim="newAccount.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
-        <p v-if="isDuplicate"  class="ui-state-error">duplicated Account Name</p>
-        <p v-if="!validation.name" class="ui-state-error">empty Account Name is not allowed</p>
+        <p v-if="isDuplicate"  class="dialogStateError">duplicated Account Name</p>
+        <p v-if="!validation.name" class="dialogStateError">empty is not allowed.</p>
       </div>
       <div>
         <p><label>Password</label></p>
         <input type="password" v-model.lazy.trim="newAccount.password" v-bind:class="{'ui-state-error': !validation.password}">
-        <p v-if="!validation.password" class="ui-state-error">empty user Name is not allowed</p>
+        <p v-if="!validation.password" class="dialogStateError">empty is not allowed.</p>
       </div>
       <div>
         <p><label>Work Directory</label></p>
-        <input type="text" v-model.lazy.trim="newAccount.workDirectory" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" >
-        <p v-if="!validation.workDirectory" class="ui-state-error">empty Work Directory is not allowed</p>
+        <input type="text" v-model.lazy.trim="newAccount.workDirectory" v-bind:class="{'ui-state-error': !validation.name}" >
+        <p v-if="!validation.workDirectory" class="dialogStateError">empty is not allowed.</p>
       </div>
       <div>
         <p><label>Description</label></p>
-        <textarea v-model.lazy.trim="newAccount.description" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" ></textarea>
+        <textarea v-model.lazy.trim="newAccount.description" v-bind:class="{'ui-state-error': !validation.name}" ></textarea>
       </div>
       <button v-on:click="onDialogOKButton" v-bind:disabled="hasError">OK</button>
       <button v-on:click="onDialogCancelButton">Cancel</button>
     </div>
-
+    <!-- Delete Check Dialog -->
+    <div id="deleteCheckDialog" style="display:none;">
+      <div>
+        <div class="deleteCheckMessage">
+          Are you sure want to completely delete this account?
+        </div>
+        <button v-on:click="onDialogOKButton">OK</button>
+        <button v-on:click="onDialogCancelButton">Cancel</button>
+      </div>
+    </div>
   </div>
 </body>
 
