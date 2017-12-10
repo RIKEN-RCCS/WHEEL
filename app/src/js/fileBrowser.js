@@ -105,7 +105,7 @@ export default class {
               var newName = $('#newName').val();
               var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
               $(fileList).remove(`:contains(${oldName})`);
-              socket.emit('rename', obj);
+              socket.emit('renameFile', obj);
             });
           }
         },
@@ -117,7 +117,7 @@ export default class {
             var html = 'Are you sure you want to delete this file?';
             dialogWrapper('#dialog', html).done(function () {
               $(fileList).remove(`:contains(${filename})`);
-              socket.emit('remove', target);
+              socket.emit('removeFile', target);
             });
           }
         }

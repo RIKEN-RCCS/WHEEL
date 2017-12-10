@@ -14,6 +14,7 @@ import dialogWrapper from './dialogWrapper';
 $(() => {
     // socket io
     const socket = io('/home');
+  socket.emit('getProjectList', true);
     // setup contextMenu
     var openProject = function (key, opt) {
         var rootPath = $(this).data('path');
@@ -38,7 +39,7 @@ $(() => {
                     var html = '<p>input new project name</p><input type="text" id="renamedProjectName">';
                     dialogWrapper('#dialog', html).done(function () {
                         var newName = $('#renamedProjectName').val();
-                        socket.emit('rename', {'id': id, 'path': path, 'newName': newName });
+                        socket.emit('renameProject', {'id': id, 'path': path, 'newName': newName });
                     });
                 }
             },
@@ -47,7 +48,7 @@ $(() => {
                 callback: function () {
                     var targetID = $(this).data('id');
                     dialogWrapper('#dialog', 'Are you sure you want to delete project?').done(function () {
-                        socket.emit('remove', targetID);
+                        socket.emit('removeProject', targetID);
                     });
                 }
             }
@@ -56,7 +57,7 @@ $(() => {
     // setup project list UI
     $('#projectList').sortable({
         update: (e, ui) => {
-            socket.emit('reorder', $('#projectList').sortable('toArray',{attribute: 'data-id'}));
+            socket.emit('reorderProject', $('#projectList').sortable('toArray',{attribute: 'data-id'}));
         }
     });
     $('#projectList').disableSelection();
@@ -77,7 +78,7 @@ $(() => {
         dialogWrapper('#dialog', html, dialogOptions).done(function () {
             var label = $('#newProjectName').val();
             if (label) {
-                socket.emit('create', fb.getRequestedPath() + '/' + label);
+                socket.emit('addProject', fb.getRequestedPath() + '/' + label);
             } else {
                 console.log('illegal label: ', label);
             }
@@ -87,13 +88,13 @@ $(() => {
         fb.onRecv(function () {
             $('#path').text(fb.getRequestedPath());
         });
-        fb.request('new', null, null);
+        fb.request('getDirList', null, null);
     });
     $('#btnImport').on("click", (event) => {
       var html = '<p id="path"></p><ul id=fileList></ul>';
       dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {
-        socket.emit('add', fb.getRequestedPath() + '/' + fb.getLastClicked());
+        socket.emit('importProject', fb.getRequestedPath() + '/' + fb.getLastClicked());
       });
       $('#fileList').empty();
       fb.resetOnClickEvents();
@@ -102,8 +103,8 @@ $(() => {
       });
       fb.onFileDblClick(function (target) {
         $('#dialog').dialog('close');
-        socket.emit('add', target);
+        socket.emit('importProject', target);
       });
-      fb.request('import', null, null);
+      fb.request('getDirListAndProjectJson', null, null);
     });
 });

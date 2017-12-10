@@ -160,8 +160,8 @@ $(() => {
     }else{
       $('#parentDirBtn').hide();
     }
-    fb.request('fileListRequest', cwd, null);
-    sio.emit('workflowRequest', cwf);
+    fb.request('getFileList', cwd, null);
+    sio.emit('getWorkflow', cwf);
   });
 
 
@@ -171,8 +171,8 @@ $(() => {
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
-    fb.request('fileListRequest', cwd, null);
-    sio.emit('workflowRequest', cwf);
+    fb.request('getFileList', cwd, null);
+    sio.emit('getWorkflow', cwf);
     sio.on('workflow', function(wf){
       $('#path').text(wf.path);
       // remove all node from workflow editor
@@ -235,7 +235,7 @@ $(() => {
 
   // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function(){
-    fb.request('fileListRequest', cwd, null);
+    fb.request('getFileList', cwd, null);
     $('#property').hide();
   });
 
@@ -357,7 +357,7 @@ $(() => {
             let nodeIndex=e.target.instance.parent('.node').data('index');
             selectedNode=nodeIndex;
             let nodePath = cwd+'/'+nodesInWF[nodeIndex].path;
-            fb.request('fileListRequest', nodePath, null);
+            fb.request('getFileList', nodePath, null);
             let name = nodesInWF[nodeIndex].name;
             vm.node=v;
             $('#path').text(name);
@@ -371,8 +371,8 @@ $(() => {
               dirStack.push({dir: cwd, wf: cwf});
               cwd=cwd+'/'+path;
               cwf=cwd+'/'+json
-              fb.request('fileListRequest', cwd, null);
-              sio.emit('workflowRequest', cwf);
+              fb.request('getFileList', cwd, null);
+              sio.emit('getWorkflow', cwf);
               if(cwd !== rootDir){
                 $('#parentDirBtn').show();
               }else{

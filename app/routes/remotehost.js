@@ -34,7 +34,7 @@ module.exports = function(io){
     });
   }
   sio.on('connect', (socket) => {
-    socket.on('hostListRequest', ()=>{
+    socket.on('getHostList', ()=>{
       socket.emit('hostList', remoteHost.getAll());
     });
     socket.on('addHost',    doAndEmit.bind(null, remoteHost.add.bind(remoteHost)));
@@ -42,8 +42,8 @@ module.exports = function(io){
     socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
     socket.on('copyHost',   doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
 
-    socket.on('fileListRequest', sendFileList.bind(null, socket));
-    socket.on('testSshConnection', (id, password, fn)=>{
+    socket.on('getFileList', sendFileList.bind(null, socket));
+    socket.on('tryConnectHost', (id, password, fn)=>{
       const host = remoteHost.get(id);
       sshConnection.sshConnectTest(host, password, (err) => {
         if (err) {

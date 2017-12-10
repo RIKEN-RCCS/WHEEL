@@ -20,12 +20,15 @@ module.exports = function(io){
     });
   }
   sio.on('connect', (socket) => {
-    userAccounts.getAllProject().then(function(results){
-      socket.emit('accountList', results);
+    socket.on('getAccountList', ()=>{
+      userAccounts.getAllProject()
+        .then((results)=>{
+          socket.emit('accountList', results);
+        });
     });
-    socket.on('add',    doAndEmit.bind(null, userAccounts.add.bind(remoteHost)));
-    socket.on('remove', doAndEmit.bind(null, userAccounts.remove.bind(remoteHost)));
-    socket.on('update', doAndEmit.bind(null, userAccounts.update.bind(remoteHost)));
+    socket.on('addAccount',    doAndEmit.bind(null, userAccounts.add.bind(remoteHost)));
+    socket.on('removeAccount', doAndEmit.bind(null, userAccounts.remove.bind(remoteHost)));
+    socket.on('updateAccount', doAndEmit.bind(null, userAccounts.update.bind(remoteHost)));
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {

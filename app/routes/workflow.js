@@ -365,7 +365,7 @@ module.exports = function(io){
   sio.on('connect', function (socket) {
     fileManager(socket);
 
-    socket.on('workflowRequest', onWorkflowRequest.bind(null, socket));
+    socket.on('getWorkflow', onWorkflowRequest.bind(null, socket));
     socket.on('createNode',      onCreateNode.bind(null, socket));
     socket.on('updateNode',      onUpdateNode.bind(null, socket));
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
