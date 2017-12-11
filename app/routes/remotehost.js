@@ -3,15 +3,15 @@ const express = require('express');
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const util = require("util");
+const {promisify} = require("util");
+
+const ARsshClient = require('arssh2-client');
 
 const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
 const config = require('../config/server.json')
 const jsonArrayManager = require("./jsonArrayManager");
-const doAndEmit = require('./utility').doAndEmit;
-
-const sshConnection = require("../sshConnection");
+const {doAndEmit} = require('./utility');
 
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
@@ -43,16 +43,36 @@ module.exports = function(io){
     socket.on('copyHost',   doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
 
     socket.on('getFileList', sendFileList.bind(null, socket));
-    socket.on('tryConnectHost', (id, password, fn)=>{
-      const host = remoteHost.get(id);
-      sshConnection.sshConnectTest(host, password, (err) => {
-        if (err) {
-          logger.error(err);
+    socket.on('tryConnectHost', async (id, password, fn)=>{
+      debugger;
+      const hostInfo = remoteHost.get(id);
+      let config={
+        host: hostInfo.host,
+        port: hostInfo.port,
+        username: hostInfo.username
+      }
+      if(hostInfo.keyFile){
+        try{
+          let tmp = await promisify(fs.readFile)(hostInfo.keyFile);
+          config.privateKey = tmp.toString();
+        }catch(err){
+          logger.error('private key read failed', err);
           fn(false);
-        } else {
-          fn(true);
+          return
         }
-      });
+        config.passphrase = password;
+      }else{
+        config.password = password;
+      }
+      let arssh = new ARsshClient(config, {connectionRetryDelay: 100});
+      arssh.canConnect()
+        .then(fn)
+        .catch((err)=>{
+          logger.error('connection failed');
+          logger.error('config:',config);
+          logger.error('err:',err);
+          fn(false);
+        });
     });
   });
 

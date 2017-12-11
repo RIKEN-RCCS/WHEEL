@@ -9,14 +9,15 @@
   "license": "BSD-3-Clause",
   "scripts": {
     "start": "node app/server",
+    "prepare": "webpack",
     "dev": "run-p node-dev watch",
     "node-dev": "node-dev app/server",
-    "debug": "cross-env DEBUG=* node-dev app/server",
-    "build": "webpack",
     "watch": "webpack -w",
+    "debug": "cross-env DEBUG=* node-dev app/server",
     "license-report": "license-report"
   },
   "dependencies": {
+    "arssh2-client": "^0.1.2",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "cross-env": "^5.0.5",
