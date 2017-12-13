@@ -1,12 +1,21 @@
 {
   "name": "WHEEL",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Scientific Workflow system",
-  "main": "app/server.js",
-  "author": {
-    "name": "tsuruta.kazuya"
+  "main": "app/index.js",
+  "bin": {
+    "wheel": "app/wheel.js"
   },
-  "license": "BSD-3-Clause",
+  "author": {
+    "name": "Kenji Ono"
+  },
+  "contributer": {
+    "name": "Naoyuki Sogo"
+  },
+  "license": "BSD-2-Clause",
+  "engines": {
+    "node": ">=8"
+  },
   "scripts": {
     "start": "node app/server",
     "prepare": "webpack",
@@ -17,7 +26,7 @@
     "license-report": "license-report"
   },
   "dependencies": {
-    "arssh2-client": "^0.1.2",
+    "arssh2-client": "^0.2.3",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "cross-env": "^5.0.5",
@@ -46,6 +55,7 @@
   "devDependencies": {
     "css-loader": "^0.28.7",
     "eslint": "^4.7.2",
+    "eslint-plugin-node": "^5.2.1",
     "extract-text-webpack-plugin": "^3.0.1",
     "file-loader": "^1.1.5",
     "jsdoc-to-markdown": "^3.0.1",

@@ -7,7 +7,7 @@ const logger = require('../logger');
 const jsonArrayManager= require('./jsonArrayManager');
 const { addXSync } = require('./utility');
 
-const remotehostFilename = path.resolve('./app', config.remotehost);
+const remotehostFilename = path.resolve(__dirname, config.remotehost);
 const remoteHost= new jsonArrayManager(remotehostFilename);
 
 

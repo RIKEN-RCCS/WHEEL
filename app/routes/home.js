@@ -168,7 +168,7 @@ module.exports = function(io){
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {
-    res.sendFile(path.resolve('app/views/home.html'));
+    res.sendFile(path.join(__dirname, '../views/home.html'));
   });
   return router;
 }

@@ -78,7 +78,7 @@ module.exports = function(io){
 
   let router = express.Router();
   router.get('/', function (req, res, next) {
-    res.sendFile(path.resolve('app/views/remoteHost.html'));
+    res.sendFile(path.resolve(__dirname, '../views/remoteHost.html'));
   });
   return router;
 }

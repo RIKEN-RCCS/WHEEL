@@ -129,6 +129,10 @@
                 <label for="scriptInputField">script</label>
                 <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
               </div>
+              <div v-if="node.hasOwnProperty('host')">
+                <label for="hostInputField">host</label>
+                <input type="text" v-model.lazy.trim="node.host" spellcheck="false" id="hostInputField" v-on:blur="updateProperty('host')">
+              </div>
               <div>
                 <p>inputFiles</p>
               </div>

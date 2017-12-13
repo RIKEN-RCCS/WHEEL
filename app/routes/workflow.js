@@ -392,7 +392,7 @@ module.exports = function(io){
         res.cookie('root', rootWorkflow);
         res.cookie('rootDir', projectDir);
         res.cookie('project', projectJSON);
-        res.sendFile(path.resolve('app/views/workflow.html'));
+        res.sendFile(path.resolve(__dirname, '../views/workflow.html'));
       })
   });
   return router;

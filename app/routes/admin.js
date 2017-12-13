@@ -1,8 +1,5 @@
 "use strict";
-const fs = require("fs");
-const os = require("os");
 const path = require("path");
-const util = require('util');
 
 let express = require('express');
 
@@ -26,13 +23,13 @@ module.exports = function(io){
           socket.emit('accountList', results);
         });
     });
-    socket.on('addAccount',    doAndEmit.bind(null, userAccounts.add.bind(remoteHost)));
-    socket.on('removeAccount', doAndEmit.bind(null, userAccounts.remove.bind(remoteHost)));
-    socket.on('updateAccount', doAndEmit.bind(null, userAccounts.update.bind(remoteHost)));
+    socket.on('addAccount',    doAndEmit.bind(null, userAccounts.add.bind(userAccounts)));
+    socket.on('removeAccount', doAndEmit.bind(null, userAccounts.remove.bind(userAccounts)));
+    socket.on('updateAccount', doAndEmit.bind(null, userAccounts.update.bind(userAccounts)));
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {
-    res.sendFile(path.resolve('app/views/admin.html'));
+    res.sendFile(path.resolve(__dirname,'../views/admin.html'));
   });
   return router;
 }
