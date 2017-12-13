@@ -52,7 +52,8 @@
     "svg.draggable.js": "^2.2.1",
     "svgjs": "^2.6.2",
     "uuid": "^3.1.0",
-    "vue": "^2.5.3"
+    "vue": "^2.5.3",
+    "wait-on": "^2.0.2"
   },
   "devDependencies": {
     "css-loader": "^0.28.7",
