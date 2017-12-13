@@ -1,4 +1,4 @@
-const util = require('util');
+const {promisify} = require('util');
 const fs = require('fs');
 
 const ncp = require('ncp').ncp;
@@ -38,7 +38,7 @@ class Utility {
    * promise version of ncp
    * @param {string} src - src directory
    * @param {string} dst - dst directory
-   * @param {Object} options - see ncp's npm page 
+   * @param {Object} options - see ncp's npm page
    */
   asyncNcp(...args){
     return new Promise((resolve, reject)=>{
@@ -47,6 +47,19 @@ class Utility {
         resolve(null);
       });
     });
+  }
+
+  async readPrivateKey(keyFile, config, password){
+    if(keyFile){
+      let tmp = await promisify(fs.readFile)(keyFile);
+      config.privateKey = tmp.toString();
+      config.passphrase = password;
+      config.password = undefined;
+    }else{
+      config.privateKey = undefined;
+      config.passphrase = undefined;
+      config.password = password;
+    }
   }
 }
 

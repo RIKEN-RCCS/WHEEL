@@ -2,17 +2,28 @@ const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+const getSsh = require('./sshManager');
 const config = require('../config/server.json');
 const logger = require('../logger');
 const jsonArrayManager= require('./jsonArrayManager');
-const { addXSync } = require('./utility');
+const { addXSync, readPrivateKey } = require('./utility');
 
-const remotehostFilename = path.resolve(__dirname, config.remotehost);
+const remotehostFilename = path.resolve(__dirname, '../', config.remotehost);
 const remoteHost= new jsonArrayManager(remotehostFilename);
 
-
-
 let executers=[];
+
+let getDateString = ()=>{
+  let now = new Date;
+  let yyyy = `0000${now.getFullYear()}`.slice(-4);
+  let mm = `00${now.getMonth()}`.slice(-2);
+  let dd = `00${now.getDate()}`.slice(-2);
+  let HH = `00${now.getHours()}`.slice(-2);
+  let MM = `00${now.getMinutes()}`.slice(-2);
+  let ss = `00${now.getSeconds()}`.slice(-2);
+
+  return `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
+}
 
 /**
  * execute task on localhost(which is running node.js)
@@ -41,16 +52,33 @@ function localExec(task){
   return cp.pid;
 }
 
+async function remoteExecAdaptor(ssh, task){
+  let script = path.resolve(task.workingDir, task.script);
+  addXSync(script);
+  await ssh.mkdir_p(task.remoteWorkingDir);
+  await ssh.send(task.workingDir, task.remoteWorkingDir);
+  let cmd = path.posix.join(task.remoteWorkingDir, task.script);
+  let opt = {
+    env: {
+      PWD: task.remoteWorkingDir
+    }
+  }
+
+  debugger;
+  let rt = await ssh.exec(cmd, opt);
+  if(rt === 0){
+    task.state = 'finished';
+  }else{
+    task.state = 'failed';
+  }
+  await ssh.recv(task.remoteWorkingDir, task.workingDir);
+  //TODO cleanup flagを確認してremoteWorkingDirを全削除なんだけどrm-rfが無いな・・・
+}
+
 function localSubmit(qsub, task){
   console.log('localSubmit function is not implimented yet');
 }
-function remoteExecAdaptor(sshExec, task){
-  console.log('remoteExec function is not implimented yet');
-  // ssh2.execもchild_process.exec同様にevent emitter経由でexit codeを返してくるので
-  // それを見てtask.stateを更新する。
-  // 返ってきたコードが正しいかどうかは要検証
-}
-function remoteSubmitAdaptor(sshExec, qsub, task){
+function remoteSubmitAdaptor(sshExec, prepare, cleanup, qsub, task){
   console.log('remoteSubmit function is not implimented yet');
 }
 
@@ -87,7 +115,7 @@ class Executer{
   }
 }
 
-function createExecuter(task){
+async function createExecuter(task){
   let maxNumJob=1;
   let exec = localExec;
   if(task.jobScheduler !== null){
@@ -95,11 +123,33 @@ function createExecuter(task){
   }
   if(task.remotehostID!== 'localhost'){
     let hostinfo = remoteHost.get(task.remotehostID);
-    maxNumJob = hostinfo.maxNumJob;
-    //TODO tableからsshProxyのインスタンスを取り出す(無ければ新規作成してTableに入れる)
-    //TODO return sshProxyのexecメソッドを返す
-    //TODO maxNumJobをremotehostの設定で上書き
+    let config = {
+      host: hostinfo.host,
+      port: hostinfo.port,
+      username: hostinfo.username,
+    }
+    //TODO task.workingDirをプロジェクトrootからの相対パスに変更
+    task.remoteWorkingDir = path.posix.join(hostinfo.path, getDateString(),task.workingDir);
+
+    //TODO ask password
+
+    await readPrivateKey(hostinfo.keyFile, config, pass);
+    debugger;
+    let arssh = getSsh(config, {connectionRetryDelay: 1000});
+    arssh.on('stdout', (data)=>{
+      logger.SSHout(data.toString());
+    });
+    arssh.on('stderr', (data)=>{
+      logger.SSHerr(data.toString());
+    });
+    exec = remoteExecAdaptor.bind(null, arssh)
+    maxNumJob = hostinfo.numJob;
   }
+  maxNumJob = parseInt(maxNumJob, 10);
+  if (Number.isNaN(maxNumJob) || maxNumJob < 1){
+    maxNumJob = 1;
+  }
+
   return new Executer(exec, maxNumJob, task.remotehostID, task.jobScheduler);
 }
 
@@ -107,13 +157,13 @@ function createExecuter(task){
  * enqueue task
  * @param {Task} task - instance of Task class (dfined in workflowComponent.js)
  */
-function exec(task){
-  task.remotehostID=remoteHost.getID('host', task.host) || 'localhost';
+async function exec(task){
+  task.remotehostID=remoteHost.getID('name', task.host) || 'localhost'; //TODO to be replaced by id search
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.jobScheduler=== task.jobScheduler
   });
   if( executer === undefined){
-    executer = createExecuter(task);
+    executer = await createExecuter(task);
   }
   executer.submit(task);
 }

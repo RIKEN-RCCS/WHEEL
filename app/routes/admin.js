@@ -7,7 +7,7 @@ const config = require('../config/server.json')
 const jsonArrayManager = require("./jsonArrayManager");
 
 module.exports = function(io){
-  const userAccountFilename= path.resolve('./app', config.useraccount);
+  const userAccountFilename= path.resolve(__dirname, '../', config.useraccount);
   let userAccounts= new jsonArrayManager(userAccountFilename);
 
   let sio=io.of('/admin');

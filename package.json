@@ -17,16 +17,18 @@
     "node": ">=8"
   },
   "scripts": {
-    "start": "node app/server",
+    "start": "node app/index",
     "prepare": "webpack",
     "dev": "run-p node-dev watch",
-    "node-dev": "node-dev app/server",
+    "dev-inspect": "run-p node-dev-inspect watch",
+    "node-dev": "node-dev app/index",
+    "node-dev-inspect": "node-dev --inspect app/index",
     "watch": "webpack -w",
-    "debug": "cross-env DEBUG=* node-dev app/server",
+    "verbose": "cross-env DEBUG=* node-dev --inspect app/index",
     "license-report": "license-report"
   },
   "dependencies": {
-    "arssh2-client": "^0.2.3",
+    "arssh2-client": "^0.2.5",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "cross-env": "^5.0.5",

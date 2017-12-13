@@ -166,7 +166,7 @@ class Dispatcher{
     logger.debug('_dispatchTask called', task.name);
     task.id=uuidv1(); // use this id to cancel task
     task.workingDir=path.resolve(this.rootDir, task.path);
-    executer.exec(task);
+    await executer.exec(task);
     this.dispatchedTaskList.push(task);
     Array.prototype.push.apply(this.nextSearchList, task.next);
   }

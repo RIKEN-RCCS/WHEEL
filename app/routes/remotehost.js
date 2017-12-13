@@ -5,13 +5,12 @@ const path = require("path");
 const os = require("os");
 const {promisify} = require("util");
 
-const ARsshClient = require('arssh2-client');
-
 const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
 const config = require('../config/server.json')
 const jsonArrayManager = require("./jsonArrayManager");
-const {doAndEmit} = require('./utility');
+const {doAndEmit, readPrivateKey} = require('./utility');
+const getSsh = require('./sshManager');
 
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
@@ -44,31 +43,30 @@ module.exports = function(io){
 
     socket.on('getFileList', sendFileList.bind(null, socket));
     socket.on('tryConnectHost', async (id, password, fn)=>{
-      debugger;
       const hostInfo = remoteHost.get(id);
       let config={
         host: hostInfo.host,
         port: hostInfo.port,
         username: hostInfo.username
       }
-      if(hostInfo.keyFile){
-        try{
-          let tmp = await promisify(fs.readFile)(hostInfo.keyFile);
-          config.privateKey = tmp.toString();
-        }catch(err){
+      debugger;
+      await readPrivateKey(hostInfo.keyFile, config, password)
+        .catch((err)=>{
           logger.error('private key read failed', err);
           fn(false);
           return
-        }
-        config.passphrase = password;
-      }else{
-        config.password = password;
-      }
-      let arssh = new ARsshClient(config, {connectionRetryDelay: 100});
+        });
+
+      let arssh = getSsh(config, {connectionRetryDelay: 100});
       arssh.canConnect()
-        .then(fn)
+        .then((rt)=>{
+          fn(true);
+        })
         .catch((err)=>{
           logger.error('connection failed');
+          if(config.hasOwnProperty('privateKey')) config.privateKey='privateKey was defined but omitted'
+          if(config.hasOwnProperty('password')) config.password='password  was defined but omitted'
+          if(config.hasOwnProperty('passphrase')) config.passphrase='passphrase  was defined but omitted'
           logger.error('config:',config);
           logger.error('err:',err);
           fn(false);
