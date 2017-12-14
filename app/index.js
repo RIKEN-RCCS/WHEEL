@@ -19,24 +19,24 @@ const server = http.createServer(app);
 const sio = require('socket.io')(server);
 
 // template engine
-app.set('views', path.resolve('./app/views'));
+app.set('views', path.resolve(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 app.use(cookieParser());
-app.use(express.static(path.resolve('./app/public'), { index: false }));
+app.use(express.static(path.resolve(__dirname, 'public'), { index: false }));
 app.use(siofu.router);
 
 // routing
 var routes = {
-    "home":       require('./routes/home')(sio),
-    "workflow":   require('./routes/workflow')(sio),
-    "remotehost": require('./routes/remotehost')(sio),
-    "login":      require('./routes/login')(sio),
-    "admin":      require('./routes/admin')(sio),
-    "rapid":      require('./routes/rapid')(sio)
+    "home":       require(path.resolve(__dirname, 'routes/home'))(sio),
+    "workflow":   require(path.resolve(__dirname, 'routes/workflow'))(sio),
+    "remotehost": require(path.resolve(__dirname, 'routes/remotehost'))(sio),
+    "login":      require(path.resolve(__dirname, 'routes/login'))(sio),
+    "admin":      require(path.resolve(__dirname, 'routes/admin'))(sio),
+    "rapid":      require(path.resolve(__dirname, 'routes/rapid'))(sio)
 };
 app.use('/',           routes.home);
 app.use('/home',       routes.home);
