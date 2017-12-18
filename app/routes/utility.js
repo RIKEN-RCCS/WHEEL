@@ -4,6 +4,8 @@ const fs = require('fs');
 const ncp = require('ncp').ncp;
 const Mode = require('stat-mode');
 
+const getSsh = require('./sshManager');
+
 class Utility {
   /**
    * escape meta character of regex (from MDN)
@@ -47,19 +49,6 @@ class Utility {
         resolve(null);
       });
     });
-  }
-
-  async readPrivateKey(keyFile, config, password){
-    if(keyFile){
-      let tmp = await promisify(fs.readFile)(keyFile);
-      config.privateKey = tmp.toString();
-      config.passphrase = password;
-      config.password = undefined;
-    }else{
-      config.privateKey = undefined;
-      config.passphrase = undefined;
-      config.password = password;
-    }
   }
 }
 

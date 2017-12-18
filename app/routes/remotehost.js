@@ -9,8 +9,8 @@ const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
 const config = require('../config/server.json')
 const jsonArrayManager = require("./jsonArrayManager");
-const {doAndEmit, readPrivateKey} = require('./utility');
-const getSsh = require('./sshManager');
+const {doAndEmit} = require('./utility');
+const {canConnect} = require('./sshManager');
 
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
@@ -40,37 +40,17 @@ module.exports = function(io){
     socket.on('removeHost', doAndEmit.bind(null, remoteHost.remove.bind(remoteHost)));
     socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
     socket.on('copyHost',   doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
-
     socket.on('getFileList', sendFileList.bind(null, socket));
     socket.on('tryConnectHost', async (id, password, fn)=>{
       const hostInfo = remoteHost.get(id);
-      let config={
-        host: hostInfo.host,
-        port: hostInfo.port,
-        username: hostInfo.username
-      }
-      debugger;
-      await readPrivateKey(hostInfo.keyFile, config, password)
-        .catch((err)=>{
-          logger.error('private key read failed', err);
-          fn(false);
-          return
-        });
-
-      let arssh = getSsh(config, {connectionRetryDelay: 100});
-      arssh.canConnect()
-        .then((rt)=>{
+      canConnect(hostInfo, password)
+        .then(()=>{
           fn(true);
         })
         .catch((err)=>{
-          logger.error('connection failed');
-          if(config.hasOwnProperty('privateKey')) config.privateKey='privateKey was defined but omitted'
-          if(config.hasOwnProperty('password')) config.password='password  was defined but omitted'
-          if(config.hasOwnProperty('passphrase')) config.passphrase='passphrase  was defined but omitted'
-          logger.error('config:',config);
-          logger.error('err:',err);
+          logger.error('connection failed\n',err);
           fn(false);
-        });
+        })
     });
   });
 

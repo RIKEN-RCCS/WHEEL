@@ -1,12 +1,13 @@
 const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const {promisify} = require('util');
 
-const getSsh = require('./sshManager');
+const {getSsh} = require('./sshManager');
 const config = require('../config/server.json');
 const logger = require('../logger');
 const jsonArrayManager= require('./jsonArrayManager');
-const { addXSync, readPrivateKey } = require('./utility');
+const {addXSync} = require('./utility');
 
 const remotehostFilename = path.resolve(__dirname, '../', config.remotehost);
 const remoteHost= new jsonArrayManager(remotehostFilename);
@@ -23,6 +24,27 @@ let getDateString = ()=>{
   let ss = `00${now.getSeconds()}`.slice(-2);
 
   return `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
+}
+
+
+async function deliverOutputFiles(task){
+  let promises=[]
+  task.outputFiles.forEach((e)=>{
+    let src = path.posix.join(task.workingDir, e.name);
+    promises = e.dst.map(async (dst)=>{
+      let dstPath=path.resolve(dst.path, dst.dstName);
+      try{
+        let stats = await promisify(fs.stat)(dstPath)
+        if(stats.isFile()){
+          return promisify(fs.unlink)(dstPath);
+        }
+      }catch(e){
+        if(e.code !== 'ENOENT') return Promise.reject(e);
+      }
+      return promisify(fs.symlink)(src, dstPath)
+    });
+  });
+  return Promise.all(promises);
 }
 
 /**
@@ -43,11 +65,14 @@ function localExec(task){
     logger.stderr(stderr);
   })
     .on('exit', (code) =>{
-      if(code === 0){
-        task.state = 'finished';
-      }else{
-        task.state = 'failed';
-      }
+      deliverOutputFiles(task)
+        .then(()=>{
+          if(code === 0){
+            task.state = 'finished';
+          }else{
+            task.state = 'failed';
+          }
+        });
     });
   return cp.pid;
 }
@@ -57,22 +82,29 @@ async function remoteExecAdaptor(ssh, task){
   addXSync(script);
   await ssh.mkdir_p(task.remoteWorkingDir);
   await ssh.send(task.workingDir, task.remoteWorkingDir);
-  let cmd = path.posix.join(task.remoteWorkingDir, task.script);
-  let opt = {
-    env: {
-      PWD: task.remoteWorkingDir
+  let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
+  let workdir=path.posix.dirname(scriptAbsPath);
+  let cmd = `cd ${workdir} && ${scriptAbsPath}`;
+  let rt = await ssh.exec(cmd);
+  let promises=task.outputFiles.map((e)=>{
+    let src = path.posix.join(task.remoteWorkingDir, e.name);
+    let dst = e.name;
+    if(! path.posix.isAbsolute(e.name)){
+      dst = path.posix.join(task.workingDir, path.posix.dirname(e.name));
     }
-  }
-
-  debugger;
-  let rt = await ssh.exec(cmd, opt);
+    ssh.recv(src, dst);
+  });
+  await Promise.all(promises);
   if(rt === 0){
     task.state = 'finished';
   }else{
     task.state = 'failed';
   }
-  await ssh.recv(task.remoteWorkingDir, task.workingDir);
-  //TODO cleanup flagを確認してremoteWorkingDirを全削除なんだけどrm-rfが無いな・・・
+  //TODO cleanup flagを確認する
+  if(task.doCleanup){
+    await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
+  }
+  return deliverOutputFiles(task);
 }
 
 function localSubmit(qsub, task){
@@ -128,13 +160,9 @@ async function createExecuter(task){
       port: hostinfo.port,
       username: hostinfo.username,
     }
-    //TODO task.workingDirをプロジェクトrootからの相対パスに変更
-    task.remoteWorkingDir = path.posix.join(hostinfo.path, getDateString(),task.workingDir);
+    let localWorkingDir = path.relative(task.rwfDir, task.workingDir);
+    task.remoteWorkingDir = path.posix.join(hostinfo.path, getDateString(), localWorkingDir);
 
-    //TODO ask password
-
-    await readPrivateKey(hostinfo.keyFile, config, pass);
-    debugger;
     let arssh = getSsh(config, {connectionRetryDelay: 1000});
     arssh.on('stdout', (data)=>{
       logger.SSHout(data.toString());
