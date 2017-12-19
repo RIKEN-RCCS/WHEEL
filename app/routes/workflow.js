@@ -150,6 +150,7 @@ async function readWorkflow(filename){
 async function onWorkflowRequest(sio, msg){
   logger.debug('Workflow Request event recieved: ', msg);
   cwfFilename=msg;
+  cwfDir = path.dirname(cwfFilename);
   cwf = await readWorkflow(cwfFilename)
     .catch(function(err){
       logger.error('workflow file read error\n', err);
@@ -187,7 +188,16 @@ function onCreateNode(sio, msg){
     });
 }
 
-function onUpdateNode(sio, msg){
+function updateNode(node, property, value){
+  node[property]=value;
+  if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
+    let childDir = path.resolve(cwfDir, node.path);
+    let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
+    promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(node, null, 4));
+  }
+}
+
+async function onUpdateNode(sio, msg){
   logger.debug('updateNode event recieved: ', msg);
   let index=msg.index;
   let property=msg.property;
@@ -213,7 +223,7 @@ function onUpdateNode(sio, msg){
         }
         break;
       case 'update':
-        targetNode[property]=value;
+        await updateNode(targetNode, property, value);
         break;
       case 'updateArrayProperty':
         targetNode[property]=value;
@@ -445,7 +455,7 @@ module.exports = function(io){
     rwfDir=path.dirname(projectJsonFilename);
     promisify(fs.readFile)(projectJsonFilename)
       .then(function(data){
-        const projectJson = JSON.parse(data);
+        projectJson = JSON.parse(data);
         rwfFilename=path.resolve(rwfDir, projectJson.path_workflow);
         res.cookie('root', rwfFilename);
         res.cookie('rootDir', rwfDir);
