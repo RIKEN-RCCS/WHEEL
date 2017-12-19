@@ -131,8 +131,8 @@ $(() => {
   });
   
   // request host list
-  socket.emit('hostListRequest', true);
-  socket.on('hostList', (hostList) => {
+  socket.emit('getHostList', true);
+  socket.on('hostList', (hostList)=>{
     vm.hostList = hostList;
     vm.selectedHostList = [];
   });
@@ -165,11 +165,11 @@ $(() => {
     let host = vm.hostList[index];
     const html = '<p>input password</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
-      .done(function() {
-        let password = $('#password').val();
-        socket.emit('testSshConnection', host.id, password, (isConnect) => {
-          vm.testing = null;
-          vm.selectedHostList=[];
+      .done(function () {
+        let password=$('#password').val();
+        socket.emit('tryConnectHost', host.id, password, (isConnect) => {
+          vm.testing=null;
+          vm.selectedHosts=[];
           if (isConnect) {
             vm.OK.push(index);
           } else {

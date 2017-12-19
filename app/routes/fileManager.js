@@ -34,20 +34,20 @@ function list(uploader, sio, requestDir){
     })
 }
 
-function remove(sio, target){
-  logger.debug(`remove event recieved: ${target}`);
+function removeFile(sio, target){
+  logger.debug(`removeFile event recieved: ${target}`);
   var parentDir = path.dirname(target);
   del(target, { force: true })
   .then(function () {
       fileBrowser(sio, 'fileList', parentDir, {"filter": {file: systemFiles}});
   })
   .catch(function (err) {
-    logger.warn(`remove failed: ${err}`);
+    logger.warn(`removeFile failed: ${err}`);
   });
 }
 
-function rename(sio, msg){
-  logger.debug(`rename event recieved: ${msg}`);
+function renameFile(sio, msg){
+  logger.debug(`renameFile event recieved: ${msg}`);
   if (!(msg.hasOwnProperty('oldName') && msg.hasOwnProperty('newName') && msg.hasOwnProperty('path'))) {
     logger.warn(`illegal request ${msg}`);
     return;
@@ -59,15 +59,15 @@ function rename(sio, msg){
     fileBrowser(sio, 'fileList', msg.path, {"filter": {file: systemFiles}});
   })
   .catch(function (err) {
-    logger.warn('rename failed: ',err);
+    logger.warn('renameFile failed: ',err);
     logger.debug('path:    ', msg.path);
     logger.debug('oldName: ', msg.oldName);
     logger.debug('newName: ', msg.newName);
   });
 }
 
-function download(sio, msg){
-  logger.debug('download event recieved: ', msg);
+function downloadFile(sio, msg){
+  logger.debug('downloadFile event recieved: ', msg);
   let filename = path.resolve(msg.path, msg.name);
   //TODO ディレクトリが要求された時に対応する
   util.promisify(fs.readFile)(filename)
@@ -90,10 +90,10 @@ function registerListeners(socket){
     uploader.on("error", function (event) {
       logger.error(`Error from uploader ${event}`);
     });
-    socket.on('fileListRequest', list.bind(null, uploader, socket));
-    socket.on('remove',          remove.bind(null, socket));
-    socket.on('rename',          rename.bind(null, socket));
-    socket.on('download',        download.bind(null, socket));
+    socket.on('getFileList', list.bind(null, uploader, socket));
+    socket.on('removeFile',          removeFile.bind(null, socket));
+    socket.on('renameFile',          renameFile.bind(null, socket));
+    socket.on('downloadFile',        downloadFile.bind(null, socket));
 }
 
 module.exports = registerListeners;

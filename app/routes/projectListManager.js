@@ -18,7 +18,7 @@ const JsonArrayManager = require("./jsonArrayManager");
  *  'id'   : 'xxxxxxxx-xxxxxxxxx-xxxxxxxxxxxxxxxx'
  * }]
  */
-const projectListFilename = path.resolve('./app',config.projectList) + '.json';
+const projectListFilename = path.resolve(__dirname, '../',config.projectList) + '.json';
 let projectList = new JsonArrayManager(projectListFilename);
 
 function getAllProject() {

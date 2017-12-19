@@ -1,9 +1,9 @@
-class TCS {
+class ParallelNavi {
   getQsubCmd(){
     return 'pjsub';
   }
   getQstatCmd(){
-    return 'pjstat --format=|sed';
+    return 'pjstat';
   }
   getQdelCmd(){
     return 'pjdel';
@@ -14,7 +14,7 @@ class TCS {
   }
 }
 
-class K extends TCS{
+class K extends ParallelNavi{
   getOptions(){
     return [
       '

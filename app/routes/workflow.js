@@ -1,7 +1,7 @@
 const path = require("path");
 const os = require("os");
 const fs = require("fs");
-const util = require("util");
+const {promisify} = require("util");
 
 let express = require('express');
 const del = require("del");
@@ -10,14 +10,26 @@ const logger = require("../logger");
 const component = require('./workflowComponent');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
+const {canConnect} = require('./sshManager');
+
+const config = require('../config/server.json')
+const jsonArrayManager = require("./jsonArrayManager");
+const remotehostFilename = path.resolve(__dirname, '../', config.remotehost);
+const remoteHost= new jsonArrayManager(remotehostFilename);
 
 //TODO move these resource to resourceManager
-// workflow object which is editting
-let rootWorkflow=null;
-// workflow filename which is editting
-let rootWorkflowFilename=null;
+// current workflow object which is editting
+let cwf=null;
+// current workflow dir
+let cwfDir=null;
+// current workflow filename
+let cwfFilename=null;
+// project root workflow dir
+let rwfDir=null;
+// project root workflow file
+let rwfFilename=null;
 // dispatcher for root workflow
-let rootWorkflowDispatcher=null
+let rwfDispatcher=null
 
 /**
  * write data and emit to client with promise
@@ -27,7 +39,7 @@ let rootWorkflowDispatcher=null
  * @param {string} eventName - eventName to send workflow
  */
 function writeAndEmit(data, filename, sio, eventName){
-  return util.promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4))
+  return promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4))
     .then(function(){
       sio.emit(eventName, data);
     });
@@ -43,7 +55,7 @@ function writeAndEmit(data, filename, sio, eventName){
  */
 function makeDir(basename, suffix){
   let dirname=basename+suffix;
-  return util.promisify(fs.mkdir)(dirname)
+  return promisify(fs.mkdir)(dirname)
     .then(function(){
       return dirname;
     })
@@ -71,74 +83,104 @@ function cleanUpNode(node){
   }
 }
 
+function askPassword(sio){
+  return new Promise((resolve, reject)=>{
+    sio.on('password', (data)=>{
+      resolve(data);
+    });
+    sio.emit('askPassword');
+  });
+}
+
 /**
  * check if all scripts are available or not
  */
-function validationCheck(workflow, dir){
+function validationCheck(workflow, dir, sio){
   let promises=[]
+  if(dir == null ){
+    promises.push(Promise.reject(new Error('Project dir is null or undefined')));
+  }
+  let hosts=[];
   workflow.nodes.forEach((node)=>{
+    if(node == null) return;
     if(node.type === 'task'){
-      if(dir == null ){
-        promises.push(Promise.reject(new Error('Project dir is null or undefined')));
-      }else if(node.path == null){
+      if(node.path == null){
         promises.push(Promise.reject(new Error(`node.path is null or undefined ${node.name}`)));
-      }else if( node.script == null){
+      }
+      if(node.host !== 'localhost'){
+        hosts.push(node.host);
+      }
+      if( node.script == null){
         promises.push(Promise.reject(new Error(`script is null or undefined ${node.name}`)));
       }else{
-        promises.push(util.promisify(fs.access)(path.resolve(dir, node.path, node.script)));
+        promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
     }else if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
       let childDir = path.resolve(dir, node.path);
       let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
-      let tmp = util.promisify(fs.readFile)(childWorkflowFilename)
+      let tmp = promisify(fs.readFile)(childWorkflowFilename)
       .then((data)=>{
         let childWF=JSON.parse(data);
-        validationCheck(childWF, childDir)
+        validationCheck(childWF, childDir, sio)
       });
       promises.push(tmp);
     }
   });
-  return Promise.all(promises);
+
+  hosts = Array.from(new Set(hosts));
+  let hostPromises = hosts.map((e)=>{
+    let id=remoteHost.getID('name', e);
+    const hostInfo = remoteHost.get(id);
+    return canConnect(hostInfo)
+      .catch((err)=>{
+        return askPassword(sio, e)
+          .then((password)=>{
+            canConnect(hostInfo, password);
+          });
+      });
+  });
+
+  return Promise.all(promises.concat(hostPromises));
 }
 
-function onWorkflowRequest(sio, msg){
+async function readWorkflow(filename){
+  return JSON.parse(await promisify(fs.readFile)(filename));
+}
+
+async function onWorkflowRequest(sio, msg){
   logger.debug('Workflow Request event recieved: ', msg);
-  rootWorkflowFilename=msg;
-  util.promisify(fs.readFile)(rootWorkflowFilename)
-    .then(function(data){
-      rootWorkflow=JSON.parse(data);
-      sio.emit('workflow', rootWorkflow);
-    })
-  .catch(function(err){
-    logger.error('workflow file read error');
-    logger.error('reason: ',err);
-  });
+  cwfFilename=msg;
+  cwf = await readWorkflow(cwfFilename)
+    .catch(function(err){
+      logger.error('workflow file read error\n', err);
+    });
+  sio.emit('workflow', cwf);
 }
 
 function onCreateNode(sio, msg){
   logger.debug('create event recieved: ', msg);
-  let dirName=path.resolve(path.dirname(rootWorkflowFilename),msg.type);
+  let dirName=path.resolve(path.dirname(cwfFilename),msg.type);
   makeDir(dirName, 0)
     .then(function(actualDirname){
-      let tmpPath=path.relative(path.dirname(rootWorkflowFilename),actualDirname);
+      let tmpPath=path.relative(path.dirname(cwfFilename),actualDirname);
       if(! tmpPath.startsWith('.')){
         tmpPath='./'+tmpPath;
       }
-      var node=component.factory(msg.type, msg.pos, rootWorkflowFilename);
+      var node=component.factory(msg.type, msg.pos, cwfFilename);
       node.path=tmpPath;
       node.name=path.basename(actualDirname);
-      node.index=rootWorkflow.nodes.push(node)-1;
+      node.index=cwf.nodes.push(node)-1;
       logger.debug('node created: ',node);
       return node;
     })
     .then(function(node){
       if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
-        const filename = path.resolve(path.dirname(rootWorkflowFilename),node.path,node.jsonFile)
-        return util.promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
+        const filename = path.resolve(path.dirname(cwfFilename),node.path,node.jsonFile)
+        return promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
       }
     })
     .then(function(){
-      return writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
+      return writeAndEmit(cwf, cwfFilename, sio, 'workflow')
     })
     .catch(function(err){
       logger.error('node create failed: ', err);
@@ -152,7 +194,7 @@ function onUpdateNode(sio, msg){
   let value=msg.value;
   let cmd=msg.cmd;
 
-  let targetNode=rootWorkflow.nodes[index];
+  let targetNode=cwf.nodes[index];
   if(property in targetNode){
     switch(cmd){
       case 'add':
@@ -178,7 +220,7 @@ function onUpdateNode(sio, msg){
         break;
     }
     cleanUpNode(targetNode);
-    writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
+    writeAndEmit(cwf, cwfFilename, sio, 'workflow')
       .catch(function(err){
         logger.error('node update failed: ', err);
       });
@@ -186,8 +228,8 @@ function onUpdateNode(sio, msg){
 }
 function onRemoveNode(sio, index){
   logger.debug('removeNode event recieved: ', index);
-  let target=rootWorkflow.nodes[index];
-  let dirName=path.resolve(path.dirname(rootWorkflowFilename),target.path);
+  let target=cwf.nodes[index];
+  let dirName=path.resolve(path.dirname(cwfFilename),target.path);
   del(dirName, { force: true }).catch(function () {
     logger.warn('directory remove failed: ', dirName);
   })
@@ -201,7 +243,7 @@ function onRemoveNode(sio, index){
      */
     // remove index from next property of previous tasks
     target.previous.forEach((p)=>{
-      let pNode=rootWorkflow.nodes[p];
+      let pNode=cwf.nodes[p];
       pNode.next=pNode.next.filter((e)=>{
         return e!==index;
       });
@@ -213,7 +255,7 @@ function onRemoveNode(sio, index){
     });
     // remove index from previous property of next tasks
     target.next.forEach((p)=>{
-      let nNode=rootWorkflow.nodes[p];
+      let nNode=cwf.nodes[p];
       nNode.previous=nNode.previous.filter((e)=>{
         return e!==index;
       });
@@ -221,7 +263,7 @@ function onRemoveNode(sio, index){
     // remove index from previous property of next tasks (else)
     if(target.else != null){
       target.else.forEach((p)=>{
-        let nNode=rootWorkflow.nodes[p];
+        let nNode=cwf.nodes[p];
         nNode.previous=nNode.previous.filter((e)=>{
           return e!==index;
         });
@@ -229,7 +271,7 @@ function onRemoveNode(sio, index){
     }
     // remove index from outputFiles property of tasks which have file dependency
     target.inputFiles.forEach((p)=>{
-      let pFNode=rootWorkflow.nodes[p.srcNode];
+      let pFNode=cwf.nodes[p.srcNode];
       pFNode.outputFiles.forEach((outputFile)=>{
         outputFile.dst=outputFile.dst.filter((e)=>{
           return e.dstNode!==index;
@@ -239,7 +281,7 @@ function onRemoveNode(sio, index){
     // remove index from inputFiles property of tasks which have file dependency
     target.outputFiles.forEach((outputFile)=>{
       outputFile.dst.forEach((dst)=>{
-        let nFNode=rootWorkflow.nodes[dst.dstNode];
+        let nFNode=cwf.nodes[dst.dstNode];
         nFNode.inputFiles.forEach((e)=>{
           if(e.srcNode === index){
             e.srcNode = null;
@@ -250,9 +292,9 @@ function onRemoveNode(sio, index){
     });
 
     //remove target node
-    rootWorkflow.nodes[index]=null;
+    cwf.nodes[index]=null;
 
-    return writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow');
+    return writeAndEmit(cwf, cwfFilename, sio, 'workflow');
   })
   .catch(function(err){
       logger.error('remove node failed: ', err);
@@ -264,12 +306,12 @@ function onAddLink(sio, msg){
   let dst=msg.dst;
   let isElse=msg.isElse;
   if(isElse){
-    rootWorkflow.nodes[src].else.push(dst);
+    cwf.nodes[src].else.push(dst);
   }else{
-    rootWorkflow.nodes[src].next.push(dst);
+    cwf.nodes[src].next.push(dst);
   }
-  rootWorkflow.nodes[dst].previous.push(src);
-  writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
+  cwf.nodes[dst].previous.push(src);
+  writeAndEmit(cwf, cwfFilename, sio, 'workflow')
     .catch(function(err){
       logger.error('add link failed: ', err);
     });
@@ -282,19 +324,19 @@ function onAddFileLink(sio, msg){
   const dstName = msg.dstName
 
   // add outputFile entry on src node.
-  let srcEntry = rootWorkflow.nodes[src].outputFiles.find(function(e){
+  let srcEntry = cwf.nodes[src].outputFiles.find(function(e){
     return e.name === srcName;
   });
   srcEntry.dst.push({"dstNode": dst, "dstName": dstName});
 
   // get inputFile entry on dst node.
-  let dstEntry = rootWorkflow.nodes[dst].inputFiles.find(function(e){
+  let dstEntry = cwf.nodes[dst].inputFiles.find(function(e){
     return e.name === dstName;
   });
 
   // remove outputFiles entry from former src node
   if(dstEntry.srcNode != null){
-    let formerSrcNode = rootWorkflow.nodes[dstEntry.srcNode];
+    let formerSrcNode = cwf.nodes[dstEntry.srcNode];
     let formerSrcEntry = formerSrcNode.outputFiles.find(function(e){
       return e.name === dstEntry.srcName
     });
@@ -306,7 +348,7 @@ function onAddFileLink(sio, msg){
   // replace inputFiles entry on dst node.
   dstEntry.srcNode=src;
   dstEntry.srcName=srcName;
-  writeAndEmit(rootWorkflow, rootWorkflowFilename, sio, 'workflow')
+  writeAndEmit(cwf, cwfFilename, sio, 'workflow')
     .catch(function(err){
       logger.error('add filelink failed: ', err);
     });
@@ -318,36 +360,37 @@ function onRemoveFileLink(sio, msg){
   logger.warn('DeleteFileLink function is not implemented yet.');
 }
 
-
-
-function onRunProject(sio, msg){
+async function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
-  validationCheck(rootWorkflow, path.dirname(rootWorkflowFilename))
-    .then(()=>{
-      rootWorkflowDispatcher = new Dispatcher(rootWorkflow.nodes, path.dirname(rootWorkflowFilename));
-      sio.emit('projectState', 'running');
-      rootWorkflowDispatcher.dispatch()
-        .then((state)=>{
-          sio.emit('projectState', state);
-        })
-        .catch((err)=>{
-          logger.error('fatal occurred while parseing root workflow: \n',err);
-        });
-    })
-    .catch((err)=>{
-      logger.error('project validation failed: \n', err);
-    });
+  let rwf = await readWorkflow(rwfFilename)
+  try{
+    await validationCheck(rwf, path.dirname(rwfFilename), sio)
+  }catch(e){
+    logger.error('project validation failed: \n', err);
+    return false
+  }
+  let state = 'running'
+  rwfDispatcher = new Dispatcher(rwf, path.dirname(rwfFilename), rwfDir);
+  sio.emit('projectState', state);
+
+  try{
+    state = await rwfDispatcher.dispatch()
+  }catch(e){
+    logger.error('fatal error occurred while parseing root workflow: \n',err);
+    return false;
+  }
+  sio.emit('projectState', state);
 }
 function onPauseProject(sio, msg){
   logger.debug(`pause event recieved: ${msg}`);
-  rootWorkflowDispatcher.pause();
+  rwfDispatcher.pause();
   sio.emit('projectState', 'paused');
 }
 function onCleanProject(sio, msg){
   logger.debug(`clean event recieved: ${msg}`);
-  rootWorkflowDispatcher.remove();
+  if(rwfDispatcher != null) rwfDispatcher.remove();
   //TODO 途中経過ファイルなども削除する
-  onWorkflowRequest(sio, rootWorkflowFilename);
+  onWorkflowRequest(sio, cwfFilename);
   sio.emit('projectState', 'cleared');
 }
 
@@ -357,7 +400,7 @@ module.exports = function(io){
   sio.on('connect', function (socket) {
     fileManager(socket);
 
-    socket.on('workflowRequest', onWorkflowRequest.bind(null, socket));
+    socket.on('getWorkflow', onWorkflowRequest.bind(null, socket));
     socket.on('createNode',      onCreateNode.bind(null, socket));
     socket.on('updateNode',      onUpdateNode.bind(null, socket));
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
@@ -376,15 +419,15 @@ module.exports = function(io){
   let router = express.Router();
   router.post('/', function (req, res, next) {
     const projectJSON=req.body.project;
-    const projectDir=path.dirname(projectJSON);
-    util.promisify(fs.readFile)(projectJSON)
+    rwfDir=path.dirname(projectJSON);
+    promisify(fs.readFile)(projectJSON)
       .then(function(data){
         const tmp = JSON.parse(data);
-        const rootWorkflow=path.resolve(projectDir,tmp.path_workflow);
-        res.cookie('root', rootWorkflow);
-        res.cookie('rootDir', projectDir);
+        rwfFilename=path.resolve(rwfDir, tmp.path_workflow);
+        res.cookie('root', rwfFilename);
+        res.cookie('rootDir', rwfDir);
         res.cookie('project', projectJSON);
-        res.sendFile(path.resolve('app/views/workflow.html'));
+        res.sendFile(path.resolve(__dirname, '../views/workflow.html'));
       })
   });
   return router;

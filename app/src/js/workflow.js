@@ -180,8 +180,8 @@ $(() => {
     }else{
       $('#parentDirBtn').hide();
     }
-    fb.request('fileListRequest', currentWorkDir, null);
-    sio.emit('workflowRequest', currentWorkFlow);
+    fb.request('getFileList', cwd, null);
+    sio.emit('getWorkflow', cwf);
   });
 
 
@@ -191,9 +191,9 @@ $(() => {
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
-    fb.request('fileListRequest', currentWorkDir, null);
-    sio.emit('workflowRequest', currentWorkFlow);
-    sio.on('workflow', function(wf) {
+    fb.request('getFileList', cwd, null);
+    sio.emit('getWorkflow', cwf);
+    sio.on('workflow', function(wf){
       $('#path').text(wf.path);
       nodeStack[nodeStack.length - 1] = wf.name;
       updateBreadrumb();
@@ -275,7 +275,7 @@ $(() => {
 
   // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function(){
-    fb.request('fileListRequest', currentWorkDir, null);
+    fb.request('getFileList', cwd, null);
     $('#property').hide();
   });
 
@@ -454,8 +454,8 @@ $(() => {
           node.onMousedown(function(e){
             let nodeIndex=e.target.instance.parent('.node').data('index');
             selectedNode=nodeIndex;
-            let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].path;
-            fb.request('fileListRequest', nodePath, null);
+            let nodePath = cwd+'/'+nodesInWF[nodeIndex].path;
+            fb.request('getFileList', nodePath, null);
             let name = nodesInWF[nodeIndex].name;
             vm.node=v;
             $('#path').text(name);
@@ -468,14 +468,12 @@ $(() => {
               let name = nodesInWF[nodeIndex].name;
               let path=e.target.instance.parent('.node').data('path');
               let json=e.target.instance.parent('.node').data('jsonFile');
-              nodeStack.push(name);
-              dirStack.push(currentWorkDir);
-              updateBreadrumb();
-              currentWorkDir=currentWorkDir+'/'+path;
-              currentWorkFlow=currentWorkDir+'/'+json
-              fb.request('fileListRequest', currentWorkDir, null);
-              sio.emit('workflowRequest', currentWorkFlow);
-              if(currentWorkDir !== rootDir){
+              dirStack.push({dir: cwd, wf: cwf});
+              cwd=cwd+'/'+path;
+              cwf=cwd+'/'+json
+              fb.request('getFileList', cwd, null);
+              sio.emit('getWorkflow', cwf);
+              if(cwd !== rootDir){
                 $('#parentDirBtn').show();
               }else{
                 $('#parentDirBtn').hide();

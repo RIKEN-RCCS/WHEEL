@@ -1,8 +1,10 @@
-const util = require('util');
+const {promisify} = require('util');
 const fs = require('fs');
 
 const ncp = require('ncp').ncp;
 const Mode = require('stat-mode');
+
+const getSsh = require('./sshManager');
 
 class Utility {
   /**
@@ -18,7 +20,7 @@ class Utility {
    * add execute permission to file
    * @param {string} file - filename in absolute path
    */
-  addX(file){
+  addXSync(file){
     let stat = fs.statSync(file);
     let mode = new Mode(stat);
     let u=4;
@@ -38,7 +40,7 @@ class Utility {
    * promise version of ncp
    * @param {string} src - src directory
    * @param {string} dst - dst directory
-   * @param {Object} options - see ncp's npm page 
+   * @param {Object} options - see ncp's npm page
    */
   asyncNcp(...args){
     return new Promise((resolve, reject)=>{

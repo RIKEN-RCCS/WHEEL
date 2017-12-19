@@ -1,8 +1,5 @@
 "use strict";
-const fs = require("fs");
-const os = require("os");
 const path = require("path");
-const util = require('util');
 
 let express = require('express');
 
@@ -11,7 +8,7 @@ const jsonArrayManager = require("./jsonArrayManager");
 //const doAndEmit = require('./utility').doAndEmit;
 
 module.exports = function(io){
-  const userAccountFilename= path.resolve('./app', config.useraccount);
+  const userAccountFilename= path.resolve(__dirname, '../', config.useraccount);
   let userAccounts= new jsonArrayManager(userAccountFilename);
 
   let sio=io.of('/admin');
@@ -21,9 +18,11 @@ module.exports = function(io){
     });
   }
   sio.on('connect', (socket) => {
-    console.log(userAccounts.getAll());
     socket.on('getAccountList', ()=>{
-      socket.emit('accountList', userAccounts.getAll());
+      userAccounts.getAllProject()
+        .then((results)=>{
+          socket.emit('accountList', results);
+        });
     });
     socket.on('addAccount',    doAndEmit.bind(null, userAccounts.add.bind(userAccounts)));
     socket.on('removeAccount', doAndEmit.bind(null, userAccounts.remove.bind(userAccounts)));
@@ -31,7 +30,7 @@ module.exports = function(io){
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {
-    res.sendFile(path.resolve('app/views/admin.html'));
+    res.sendFile(path.resolve(__dirname,'../views/admin.html'));
   });
   return router;
 }

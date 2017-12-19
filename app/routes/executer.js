@@ -1,18 +1,51 @@
 const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const {promisify} = require('util');
 
+const {getSsh} = require('./sshManager');
 const config = require('../config/server.json');
 const logger = require('../logger');
 const jsonArrayManager= require('./jsonArrayManager');
-const { addX } = require('./utility');
+const {addXSync} = require('./utility');
 
-const remotehostFilename = path.resolve('./app', config.remotehost);
+const remotehostFilename = path.resolve(__dirname, '../', config.remotehost);
 const remoteHost= new jsonArrayManager(remotehostFilename);
 
-
-
 let executers=[];
+
+let getDateString = ()=>{
+  let now = new Date;
+  let yyyy = `0000${now.getFullYear()}`.slice(-4);
+  let mm = `00${now.getMonth()}`.slice(-2);
+  let dd = `00${now.getDate()}`.slice(-2);
+  let HH = `00${now.getHours()}`.slice(-2);
+  let MM = `00${now.getMinutes()}`.slice(-2);
+  let ss = `00${now.getSeconds()}`.slice(-2);
+
+  return `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
+}
+
+
+async function deliverOutputFiles(task){
+  let promises=[]
+  task.outputFiles.forEach((e)=>{
+    let src = path.posix.join(task.workingDir, e.name);
+    promises = e.dst.map(async (dst)=>{
+      let dstPath=path.resolve(dst.path, dst.dstName);
+      try{
+        let stats = await promisify(fs.stat)(dstPath)
+        if(stats.isFile()){
+          return promisify(fs.unlink)(dstPath);
+        }
+      }catch(e){
+        if(e.code !== 'ENOENT') return Promise.reject(e);
+      }
+      return promisify(fs.symlink)(src, dstPath)
+    });
+  });
+  return Promise.all(promises);
+}
 
 /**
  * execute task on localhost(which is running node.js)
@@ -21,7 +54,7 @@ let executers=[];
  */
 function localExec(task){
   let script = path.resolve(task.workingDir, task.script);
-  addX(script);
+  addXSync(script);
   //TODO env, uid, gidを設定する
   let options = {
     "cwd": task.workingDir
@@ -32,25 +65,52 @@ function localExec(task){
     logger.stderr(stderr);
   })
     .on('exit', (code) =>{
-      if(code === 0){
-        task.state = 'finished';
-      }else{
-        task.state = 'failed';
-      }
+      deliverOutputFiles(task)
+        .then(()=>{
+          if(code === 0){
+            task.state = 'finished';
+          }else{
+            task.state = 'failed';
+          }
+        });
     });
   return cp.pid;
+}
+
+async function remoteExecAdaptor(ssh, task){
+  let script = path.resolve(task.workingDir, task.script);
+  addXSync(script);
+  await ssh.mkdir_p(task.remoteWorkingDir);
+  await ssh.send(task.workingDir, task.remoteWorkingDir);
+  let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
+  let workdir=path.posix.dirname(scriptAbsPath);
+  let cmd = `cd ${workdir} && ${scriptAbsPath}`;
+  let rt = await ssh.exec(cmd);
+  let promises=task.outputFiles.map((e)=>{
+    let src = path.posix.join(task.remoteWorkingDir, e.name);
+    let dst = e.name;
+    if(! path.posix.isAbsolute(e.name)){
+      dst = path.posix.join(task.workingDir, path.posix.dirname(e.name));
+    }
+    ssh.recv(src, dst);
+  });
+  await Promise.all(promises);
+  if(rt === 0){
+    task.state = 'finished';
+  }else{
+    task.state = 'failed';
+  }
+  //TODO cleanup flagを確認する
+  if(task.doCleanup){
+    await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
+  }
+  return deliverOutputFiles(task);
 }
 
 function localSubmit(qsub, task){
   console.log('localSubmit function is not implimented yet');
 }
-function remoteExecAdaptor(sshExec, task){
-  console.log('remoteExec function is not implimented yet');
-  // ssh2.execもchild_process.exec同様にevent emitter経由でexit codeを返してくるので
-  // それを見てtask.stateを更新する。
-  // 返ってきたコードが正しいかどうかは要検証
-}
-function remoteSubmitAdaptor(sshExec, qsub, task){
+function remoteSubmitAdaptor(sshExec, prepare, cleanup, qsub, task){
   console.log('remoteSubmit function is not implimented yet');
 }
 
@@ -87,7 +147,7 @@ class Executer{
   }
 }
 
-function createExecuter(task){
+async function createExecuter(task){
   let maxNumJob=1;
   let exec = localExec;
   if(task.jobScheduler !== null){
@@ -95,11 +155,29 @@ function createExecuter(task){
   }
   if(task.remotehostID!== 'localhost'){
     let hostinfo = remoteHost.get(task.remotehostID);
-    maxNumJob = hostinfo.maxNumJob;
-    //TODO tableからsshProxyのインスタンスを取り出す(無ければ新規作成してTableに入れる)
-    //TODO return sshProxyのexecメソッドを返す
-    //TODO maxNumJobをremotehostの設定で上書き
+    let config = {
+      host: hostinfo.host,
+      port: hostinfo.port,
+      username: hostinfo.username,
+    }
+    let localWorkingDir = path.relative(task.rwfDir, task.workingDir);
+    task.remoteWorkingDir = path.posix.join(hostinfo.path, getDateString(), localWorkingDir);
+
+    let arssh = getSsh(config, {connectionRetryDelay: 1000});
+    arssh.on('stdout', (data)=>{
+      logger.SSHout(data.toString());
+    });
+    arssh.on('stderr', (data)=>{
+      logger.SSHerr(data.toString());
+    });
+    exec = remoteExecAdaptor.bind(null, arssh)
+    maxNumJob = hostinfo.numJob;
   }
+  maxNumJob = parseInt(maxNumJob, 10);
+  if (Number.isNaN(maxNumJob) || maxNumJob < 1){
+    maxNumJob = 1;
+  }
+
   return new Executer(exec, maxNumJob, task.remotehostID, task.jobScheduler);
 }
 
@@ -107,13 +185,13 @@ function createExecuter(task){
  * enqueue task
  * @param {Task} task - instance of Task class (dfined in workflowComponent.js)
  */
-function exec(task){
-  task.remotehostID=remoteHost.getID('host', task.host) || 'localhost';
+async function exec(task){
+  task.remotehostID=remoteHost.getID('name', task.host) || 'localhost'; //TODO to be replaced by id search
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.jobScheduler=== task.jobScheduler
   });
   if( executer === undefined){
-    executer = createExecuter(task);
+    executer = await createExecuter(task);
   }
   executer.submit(task);
 }

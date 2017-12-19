@@ -64,8 +64,8 @@ let fixProjectDirectory = function(projectJsonFilepath){
       });
 }
 
-let onCreate = function (sio, msg) {
-    logger.debug("onCreate ", msg);
+let onAdd = function (sio, msg) {
+    logger.debug("onAdd", msg);
     let pathDirectory = removeTrailingPathSep(msg);
     if(!pathDirectory.endsWith(config.suffix)){
       pathDirectory += config.suffix;
@@ -83,8 +83,8 @@ let onCreate = function (sio, msg) {
       logger.error('reason: ',err);
     });
 };
-let onAdd = function (sio, projectJsonFilepath) {
-    logger.debug('add: ',projectJsonFilepath);
+let onImport= function (sio, projectJsonFilepath) {
+    logger.debug('import: ',projectJsonFilepath);
     fixProjectDirectory(projectJsonFilepath)
       .then(function(newProjectDirectory){
         const filename=path.basename(projectJsonFilepath);
@@ -147,23 +147,28 @@ var onReorder = function (sio, orderList) {
     });
 };
 
+let onGetProjectList = function(sio){
+    projectListManager.getAllProject()
+    .then((results)=>{
+      sio.emit('projectList', results);
+    });
+}
+
 module.exports = function(io){
   let sio=io.of('/home');
   sio.on('connect', (socket) => {
-    projectListManager.getAllProject().then(function(results){
-      socket.emit('projectList', results);
-    });
-    socket.on('new',    adaptorSendFiles.bind(null, false, noWheelDir, socket));
-    socket.on('import', adaptorSendFiles.bind(null, true,  null, socket));
-    socket.on('create', onCreate.bind(null, socket));
-    socket.on('add',    onAdd.bind(null, socket));
-    socket.on('remove', onRemove.bind(null, socket));
-    socket.on('rename', onRename.bind(null, socket));
-    socket.on('reorder', onReorder.bind(null, socket));
+    socket.on('getProjectList', onGetProjectList.bind(null, socket));
+    socket.on('getDirList',     adaptorSendFiles.bind(null, false, noWheelDir, socket));
+    socket.on('getDirListAndProjectJson', adaptorSendFiles.bind(null, true,  null, socket));
+    socket.on('addProject',     onAdd.bind(null, socket));
+    socket.on('importProject',  onImport.bind(null, socket));
+    socket.on('removeProject',  onRemove.bind(null, socket));
+    socket.on('renameProject',  onRename.bind(null, socket));
+    socket.on('reorderProject', onReorder.bind(null, socket));
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {
-    res.sendFile(path.resolve('app/views/home.html'));
+    res.sendFile(path.join(__dirname, '../views/home.html'));
   });
   return router;
 }
