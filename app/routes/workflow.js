@@ -395,6 +395,10 @@ function onCleanProject(sio, msg){
   sio.emit('projectState', 'cleared');
 }
 
+function onTaskStateListRequest(sio){
+  logger.debug(`getTaskStateList event recieved: ${msg}`);
+  logger.debug('not implimented yet !!');
+}
 
 module.exports = function(io){
   const sio = io.of('/workflow');
@@ -407,7 +411,7 @@ module.exports = function(io){
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
     socket.on('addLink',         onAddLink.bind(null, socket));
     socket.on('addFileLink',     onAddFileLink.bind(null, socket));
-
+    socket.on('getTaskStateList', onTaskStateListRequest.bind(null, socket));
     socket.on('runProject',      onRunProject.bind(null, socket));
     socket.on('pauseProject',    onPauseProject.bind(null, socket));
     socket.on('cleanProject',    onCleanProject.bind(null, socket));
@@ -415,6 +419,10 @@ module.exports = function(io){
       onPauseProject(socket,msg);
       onCleanProject(socket,msg);
     });
+    socket.on('getHostList', ()=>{
+      socket.emit('hostList', remoteHost.getAll());
+    });
+
   });
 
   let router = express.Router();
