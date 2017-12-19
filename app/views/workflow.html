@@ -161,7 +161,7 @@
       <div v-if="node.hasOwnProperty('condition')">
         <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
       </div>
-      <div>
+      <div v-if="node.hasOwnProperty('indexList')" >
         <label>index list</label>
       </div>
       <template v-for="(v, i) in node.indexList">
@@ -206,7 +206,9 @@
         <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('exclude')">
       </div>
       <!--ファイル編集 -->
-      <div>File edit</div>
+      <div id="filesEdit">
+        <label>Files edit</label>
+      </div>
       <div><input type="button" value="File" id="fileBrowseButton"></div>   
     </div>
   </div>

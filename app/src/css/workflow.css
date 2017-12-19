@@ -507,6 +507,7 @@ td {
     overflow: hidden;
 }
 
+/*プロパティ*/
 #property {
     position: relative;
     overflow: auto;
@@ -533,6 +534,11 @@ td {
 
 .property input {
     margin-right: 6px;
+}
+
+#filesEdit{
+    margin-top: 10px;
+    border-top: solid 2px black;
 }
 
 #startInputField, #endInputField, #stepInputField
