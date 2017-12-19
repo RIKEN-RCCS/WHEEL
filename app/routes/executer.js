@@ -6,22 +6,9 @@ const {promisify} = require('util');
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost} = require('../db/db');
 const logger = require('../logger');
-const {addXSync} = require('./utility');
+const {addXSync, getDateString} = require('./utility');
 
 let executers=[];
-
-let getDateString = ()=>{
-  let now = new Date;
-  let yyyy = `0000${now.getFullYear()}`.slice(-4);
-  let mm = `00${now.getMonth()}`.slice(-2);
-  let dd = `00${now.getDate()}`.slice(-2);
-  let HH = `00${now.getHours()}`.slice(-2);
-  let MM = `00${now.getMinutes()}`.slice(-2);
-  let ss = `00${now.getSeconds()}`.slice(-2);
-
-  return `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
-}
-
 
 async function deliverOutputFiles(task){
   let promises=[]

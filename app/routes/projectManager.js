@@ -5,6 +5,7 @@ const path = require("path");
 
 const compo = require("./workflowComponent");
 const logger = require("../logger");
+const {getDateString} = require('./utility');
 const {extProject, extWF, systemName, defaultFilename} = require('../db/db');
 
 function create(projectDirectory, projectName) {
@@ -22,12 +23,15 @@ function create(projectDirectory, projectName) {
         })
         .then(function(rootWorkflowFilename){
           const projectJsonFilename = `${systemName}${extProject}`;
+          let timestamp=getDateString();
           const projectJson= {
             "name": `${projectName}`,
             "description": "This is new Project.",
             "state": "Planning",
             "path": `./${projectJsonFilename}`,
-            "path_workflow": `./${rootWorkflowFilename}`
+            "path_workflow": `./${rootWorkflowFilename}`,
+            "ctime": timestamp,
+            "mtime": timestamp
           };
           const projectJsonFileFullpath=path.join(projectDirectory, projectJsonFilename);
           logger.debug(projectJson);

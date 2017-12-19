@@ -11,7 +11,7 @@ const component = require('./workflowComponent');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
-
+const {getDateString} = require('./utility');
 const {remoteHost} = require('../db/db');
 
 //TODO move these resource to resourceManager
@@ -28,6 +28,8 @@ let rwfFilename=null;
 // dispatcher for root workflow
 let rwfDispatcher=null
 
+let projectJson=null;
+
 /**
  * write data and emit to client with promise
  * @param {object} data - object to be writen and emitted
@@ -36,6 +38,7 @@ let rwfDispatcher=null
  * @param {string} eventName - eventName to send workflow
  */
 function writeAndEmit(data, filename, sio, eventName){
+  projectJson.mtime=getDateString();
   return promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4))
     .then(function(){
       sio.emit(eventName, data);
@@ -400,6 +403,14 @@ function onTaskStateListRequest(sio){
   logger.debug('not implimented yet !!');
 }
 
+function onUpdateProjectJson(sio, data){
+  for(let key in projectJson){
+    if(data.hasOwnProperty(key)){
+      projectJson[key] = data[key];
+    }
+  }
+}
+
 module.exports = function(io){
   const sio = io.of('/workflow');
   sio.on('connect', function (socket) {
@@ -415,6 +426,7 @@ module.exports = function(io){
     socket.on('runProject',      onRunProject.bind(null, socket));
     socket.on('pauseProject',    onPauseProject.bind(null, socket));
     socket.on('cleanProject',    onCleanProject.bind(null, socket));
+    socket.on('updateProjectJson', onUpdateProjectJson.bind(null, socket));
     socket.on('stopProject',     (msg)=>{
       onPauseProject(socket,msg);
       onCleanProject(socket,msg);
@@ -422,20 +434,22 @@ module.exports = function(io){
     socket.on('getHostList', ()=>{
       socket.emit('hostList', remoteHost.getAll());
     });
-
+    socket.on('getProjectJson', ()=>{
+      socket.emit('projectJson', projectJson);
+    });
   });
 
   let router = express.Router();
   router.post('/', function (req, res, next) {
-    const projectJSON=req.body.project;
-    rwfDir=path.dirname(projectJSON);
-    promisify(fs.readFile)(projectJSON)
+    const projectJsonFilename=req.body.project;
+    rwfDir=path.dirname(projectJsonFilename);
+    promisify(fs.readFile)(projectJsonFilename)
       .then(function(data){
-        const tmp = JSON.parse(data);
-        rwfFilename=path.resolve(rwfDir, tmp.path_workflow);
+        const projectJson = JSON.parse(data);
+        rwfFilename=path.resolve(rwfDir, projectJson.path_workflow);
         res.cookie('root', rwfFilename);
         res.cookie('rootDir', rwfDir);
-        res.cookie('project', projectJSON);
+        res.cookie('project', projectJsonFilename);
         res.sendFile(path.resolve(__dirname, '../views/workflow.html'));
       })
   });
