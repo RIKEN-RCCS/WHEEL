@@ -4,8 +4,7 @@ const path = require("path");
 const util = require('util');
 
 const logger = require("../logger");
-const config = require('../config/server');
-const JsonArrayManager = require("./jsonArrayManager");
+const {projectList} = require('../db/db');
 /*
  *  projectList example
  *
@@ -18,10 +17,9 @@ const JsonArrayManager = require("./jsonArrayManager");
  *  'id'   : 'xxxxxxxx-xxxxxxxxx-xxxxxxxxxxxxxxxx'
  * }]
  */
-const projectListFilename = path.resolve(__dirname, '../',config.projectList) + '.json';
-let projectList = new JsonArrayManager(projectListFilename);
 
 function getAllProject() {
+  debugger;
   return Promise.all(projectList.getAll().map(function(v){
     return util.promisify(fs.readFile)(v.path)
             .then(function(projectJson){

@@ -1,5 +1,5 @@
 const fs = require("fs");
-const util = require("util");
+const {promisify} = require("util");
 
 const uuidv1 = require("uuid/v1");
 
@@ -9,7 +9,7 @@ class JsonArrayManager{
   constructor(filename){
     this.filename=filename;
     this.data=[];
-    util.promisify(fs.readFile)(this.filename)
+    promisify(fs.readFile)(this.filename)
       .then((data)=>{
         this.data=JSON.parse(data.toString());
       })
@@ -20,7 +20,7 @@ class JsonArrayManager{
       });
   }
   write(){
-    return util.promisify(fs.writeFile)(this.filename, JSON.stringify(this.data, null, 4))
+    return promisify(fs.writeFile)(this.filename, JSON.stringify(this.data, null, 4))
   }
   /**
    * add new entry

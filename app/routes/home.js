@@ -11,15 +11,15 @@ const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
 const projectListManager = require("./projectListManager");
 const projectManager = require("./projectManager");
-const config = require('../config/server.json');
+const {extProject, suffix, rootDir} = require('../db/db');
 
 const escape = require('./utility').escapeRegExp;;
 const noDotFiles = /^[^\.].*$/;
-const ProjectJSON = new RegExp(`^.*${escape(config.extension.project)}$`);
-const noWheelDir = new RegExp(`^(?!^.*${escape(config.suffix)}$).*$`);
+const ProjectJSON = new RegExp(`^.*${escape(extProject)}$`);
+const noWheelDir = new RegExp(`^(?!^.*${escape(suffix)}$).*$`);
 
 let adaptorSendFiles = function (withFile, dirFilter, sio, msg) {
-    const target = msg ? path.normalize(msg) : config.rootDir || os.homedir() || '/';
+    const target = msg ? path.normalize(msg) : rootDir || os.homedir() || '/';
     const request = msg || target;
     fileBrowser(sio, 'fileList', target, {
       "request": request,
@@ -59,7 +59,7 @@ let fixProjectDirectory = function(projectJsonFilepath){
         const projectRootDir=path.dirname(projectJsonFilepath);
         const dirName=path.basename(projectRootDir);
         const parentDir=path.dirname(projectRootDir);
-        const expectedDirName=projectName+config.suffix;
+        const expectedDirName=projectName+suffix;
         return renameAsync(path.resolve(parentDir,dirName), path.resolve(parentDir,expectedDirName));
       });
 }
@@ -67,10 +67,10 @@ let fixProjectDirectory = function(projectJsonFilepath){
 let onAdd = function (sio, msg) {
     logger.debug("onAdd", msg);
     let pathDirectory = removeTrailingPathSep(msg);
-    if(!pathDirectory.endsWith(config.suffix)){
-      pathDirectory += config.suffix;
+    if(!pathDirectory.endsWith(suffix)){
+      pathDirectory += suffix;
     }
-    let projectName = path.basename(pathDirectory.slice(0,-config.suffix.length));
+    let projectName = path.basename(pathDirectory.slice(0,- suffix.length));
     projectManager.create(pathDirectory, projectName)
     .then(function (projectFileName) {
       return projectListManager.add(projectFileName);

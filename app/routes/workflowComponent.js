@@ -1,4 +1,4 @@
-const config = require('../config/server');
+const {defaultFilename, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
 class BaseWorkflowComponent {
   constructor(pos, parent){
     this.type=null;
@@ -139,7 +139,7 @@ class Workflow extends BaseTaskGraph{
     // define pseudo position for root workflow
     var pos2=pos || {x:0, y:0};
     super(pos2, parent);
-    this.jsonFile= `${config.default_filename}${config.extension.workflow}`;
+    this.jsonFile= `${defaultFilename}${extWF}`;
     this.type='workflow';
   }
 }
@@ -147,7 +147,7 @@ class ParameterStudy extends BaseTaskGraph{
   constructor(...args){
     super(...args);
     this.type='parameterStudy';
-    this.jsonFile= `${config.default_filename}${config.extension.pstudy}`;
+    this.jsonFile= `${defaultFilename}${extPS}`;
     this.parameterFile=null;
     this.numTotal=null;
     this.numFinished=null;
@@ -159,7 +159,7 @@ class For extends BaseTaskGraph{
   constructor(...args){
     super(...args);
     this.type='for';
-    this.jsonFile= `${config.default_filename}${config.extension.for}`;
+    this.jsonFile= `${defaultFilename}${extFor}`;
     this.start=null;
     this.end=null;
     this.step=null;
@@ -169,7 +169,7 @@ class While extends BaseTaskGraph{
   constructor(...args){
     super(...args);
     this.type='while';
-    this.jsonFile= `${config.default_filename}${config.extension.while}`;
+    this.jsonFile= `${defaultFilename}${extWhile}`;
     this.condition=null;
   }
 }
@@ -180,7 +180,7 @@ class Foreach extends BaseTaskGraph{
   constructor(pos){
     super(pos);
     this.type='foreach';
-    this.jsonFile= `${config.default_filename}${config.extension.foreach}`;
+    this.jsonFile= `${defaultFilename}${extForeach}`;
     this.indexList=[];
   }
 }

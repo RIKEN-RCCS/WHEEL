@@ -5,7 +5,7 @@ const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
 
-const config = require('../config/server.json');
+const {interval} = require('../db/db');
 const logger=require('../logger');
 const executer = require('./executer');
 const { addXSync, asyncNcp } = require('./utility');
@@ -105,6 +105,7 @@ class Dispatcher{
 
   dispatch(){
     return new Promise((resolve, reject)=>{
+      console.log("interval:",interval);
       this.timeout = setInterval(()=>{
         if(this.dispatching) return
         this.dispatching=true;
@@ -140,7 +141,7 @@ class Dispatcher{
             logger.error('Error occurred while parsing workflow: ',err)
             reject(err);
           });
-      }, config.interval);
+      }, interval);
     });
   }
 

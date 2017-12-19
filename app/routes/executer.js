@@ -4,13 +4,9 @@ const fs = require('fs');
 const {promisify} = require('util');
 
 const {getSsh} = require('./sshManager');
-const config = require('../config/server.json');
+const {interval, remoteHost} = require('../db/db');
 const logger = require('../logger');
-const jsonArrayManager= require('./jsonArrayManager');
 const {addXSync} = require('./utility');
-
-const remotehostFilename = path.resolve(__dirname, '../', config.remotehost);
-const remoteHost= new jsonArrayManager(remotehostFilename);
 
 let executers=[];
 
@@ -134,7 +130,7 @@ class Executer{
         this.currentNumJob++;
       }
       this.executing=false;
-    }, config.interval);
+    }, interval);
   }
   submit(task){
     this.queue.push(task);

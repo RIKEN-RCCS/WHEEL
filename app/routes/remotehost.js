@@ -7,8 +7,7 @@ const {promisify} = require("util");
 
 const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
-const config = require('../config/server.json')
-const jsonArrayManager = require("./jsonArrayManager");
+const {remoteHost} = require('../db/db');
 const {doAndEmit} = require('./utility');
 const {canConnect} = require('./sshManager');
 
@@ -23,9 +22,6 @@ function sendFileList(sio, request){
 }
 
 module.exports = function(io){
-  const remotehostFilename = path.resolve('./app', config.remotehost);
-  let remoteHost= new jsonArrayManager(remotehostFilename);
-
   var sio=io.of('/remotehost');
   let doAndEmit = function(func, msg){
     func(msg).then(()=>{

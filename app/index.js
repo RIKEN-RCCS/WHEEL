@@ -1,21 +1,24 @@
 'use strict';
 const path = require('path');
-const http = require('http');
 
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const siofu = require('socketio-file-upload');
 const ejs = require('ejs');
+const passport = require('passport');
 
 const logger = require('./logger');
-const config = require('./config/server');
+const {port} = require('./db/db');
+
+process.on('unhandledRejection', console.dir);// for DEBUG
 
 /*
  * set up express, http and socket.io
  */
 var app = express();
-const server = http.createServer(app);
+//TODO if certification setting is available, use https instead
+const server = require('http').createServer(app);
 const sio = require('socket.io')(server);
 
 // template engine
@@ -28,16 +31,19 @@ app.use(bodyParser.urlencoded({ extended: true}));
 app.use(cookieParser());
 app.use(express.static(path.resolve(__dirname, 'public'), { index: false }));
 app.use(siofu.router);
+app.use(passport.initialize());
 
 // routing
 var routes = {
     "home":       require(path.resolve(__dirname, 'routes/home'))(sio),
     "workflow":   require(path.resolve(__dirname, 'routes/workflow'))(sio),
     "remotehost": require(path.resolve(__dirname, 'routes/remotehost'))(sio),
-    "login":      require(path.resolve(__dirname, 'routes/login'))(sio),
+    "login":      require(path.resolve(__dirname, 'routes/login')),
     "admin":      require(path.resolve(__dirname, 'routes/admin'))(sio),
     "rapid":      require(path.resolve(__dirname, 'routes/rapid'))(sio)
 };
+
+//TODO 起動時のオプションに応じて/に対するroutingをhomeとloginで切り替える
 app.use('/',           routes.home);
 app.use('/home',       routes.home);
 app.use('/login',      routes.login);
@@ -48,9 +54,9 @@ app.use('/remotehost', routes.remotehost);
 
 // port number
 var defaultPort = 443;
-var port = parseInt(process.env.PORT) || config.port || defaultPort;
-if (port < 0) {
-    port = defaultPort;
+var portNumber = parseInt(process.env.PORT) || port || defaultPort;
+if (portNumber < 0) {
+    portNumber = defaultPort;
 }
 app.set('port', port);
 

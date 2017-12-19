@@ -12,10 +12,7 @@ const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
 
-const config = require('../config/server.json')
-const jsonArrayManager = require("./jsonArrayManager");
-const remotehostFilename = path.resolve(__dirname, '../', config.remotehost);
-const remoteHost= new jsonArrayManager(remotehostFilename);
+const {remoteHost} = require('../db/db');
 
 //TODO move these resource to resourceManager
 // current workflow object which is editting
@@ -363,10 +360,14 @@ function onRemoveFileLink(sio, msg){
 async function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
   let rwf = await readWorkflow(rwfFilename)
+    .catch((err)=>{
+      err.wf=rwfFilename;
+      logger.error('read root workflow failure:\n',err);
+    });
   try{
     await validationCheck(rwf, path.dirname(rwfFilename), sio)
-  }catch(e){
-    logger.error('project validation failed: \n', err);
+  }catch(err){
+    logger.error('invalid root workflow:\n', err);
     return false
   }
   let state = 'running'
@@ -375,7 +376,7 @@ async function onRunProject(sio, msg){
 
   try{
     state = await rwfDispatcher.dispatch()
-  }catch(e){
+  }catch(err){
     logger.error('fatal error occurred while parseing root workflow: \n',err);
     return false;
   }
