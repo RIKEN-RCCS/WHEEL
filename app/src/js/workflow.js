@@ -113,6 +113,9 @@ $(() => {
   $('#log_area').hide();
   $('#property').hide();
   $('#parentDirBtn').hide();
+
+  $('#taskLibraryMenu').hide();
+  
   // $('#pause_menu').hide();
   // $('#clean_menu').hide();
   // $('#stop_menu').hide();
@@ -316,6 +319,7 @@ $(() => {
     reposition: false,
     callback: function(itemKey, opt){
       var pos=getClickPosition(opt);
+      
       sio.emit('createNode', {"type": itemKey, "pos": pos});
     },
     items: {
@@ -341,6 +345,58 @@ $(() => {
     }
   });
 
+  //タスクのドラッグアンドドロップ操作
+  window.onload = function(){
+    $('#taskcontents .type').mouseover(function () {      
+      var target = $(this).attr("href");
+      //console.log(target);
+    
+      var objectDrag = document.getElementById(target); 
+      var objectDrop = document.getElementById("node_svg");
+
+      objectDrag.ondragstart = function(event){
+        event.dataTransfer.setData("text", event.target.id);
+      };
+
+      objectDrop.ondragover = function(event){
+        event.preventDefault();
+      };
+
+      objectDrop.ondrop = function(event){
+        event.preventDefault();
+        var objectName = event.dataTransfer.getData("text");
+
+        var xCoordinate = event.offsetX;
+        var yCoordinate = event.offsetY;
+  
+        const pos = {x: xCoordinate, y: yCoordinate};
+        sio.emit('createNode', {"type": objectName, "pos": pos});    
+      };
+    });
+  }
+
+  //タスクライブラリーの表示非表示
+  // function definition
+  function showTaskLibrary() {
+    $('#taskLibraryButton').show().animate({left: '140px'},50);
+    $('#taskLibraryMenu').show().animate({width: '140px', 'min-width': '140px'}, 50);
+  }
+
+  function hideTaskLibrary() {
+    $('#taskLibraryButton').show().animate({left: '-=140px'},100);    
+    $('#taskLibraryMenu').hide();
+  }
+
+  // show or hide log area
+  var isDisplayLog = false;
+  $('#taskLibraryButton').click(function () {
+    isDisplayLog = !isDisplayLog;
+    if (isDisplayLog) {
+      showTaskLibrary();
+    } else {
+      hideTaskLibrary();
+    }
+  });
 
   // function definition
   function showLog() {
@@ -403,7 +459,7 @@ $(() => {
             let name = nodesInWF[nodeIndex].name;
             vm.node=v;
             $('#path').text(name);
-            $('#property').show().animate({width: '350px', 'min-width': '350px'}, 100);
+            $('#property').show().animate({width: '360px', 'min-width': '360px'}, 100);
           })
           .onDblclick(function(e){
             let nodeType=e.target.instance.parent('.node').data('type');

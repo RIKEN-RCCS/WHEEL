@@ -45,9 +45,9 @@ header {
 }
 
 /*名前の長さに注意する必要有*/
-.title_username{
+#title_username{
 	position: absolute;
-	right: 80px;
+	right: 150px;
     top: 10px;
     color: white;
 }
@@ -56,13 +56,46 @@ header {
 	position:absolute;
 	right:25px;
 	top:10px;
-    background-color:transparent;
-	border:none;
+    /* background-color:transparent;
+	border:none; */
 	cursor: pointer;
-	width:35px;
+	/* width:35px;
 	height:35px;
     -webkit-transition:ease .5s;
-    transition:ease .5s;
+    transition:ease .5s; */
+}
+
+/* タスクライブラリー*/
+#taskLibraryButtonArea{
+    position: absolute;
+    z-index: 40;
+}
+
+#taskLibraryButton{
+    position: absolute;
+    left: 0;
+    z-index: 40;
+	/* left:25px;
+	top:10px; */
+    background-color:black;
+    color: white;
+    border-color: black;
+	cursor: pointer;
+    border-collapse: collapse; 
+}
+
+#taskLibraryMenu{
+    position: absolute;    
+    overflow: auto;
+    height: 100%;
+    background-color: black;
+    border-right: solid 1px green;
+    display: none;
+    border-collapse: collapse;
+}
+
+#taskcontents{
+ padding: 10px; 
 }
 
 .drawer_button img{
@@ -76,11 +109,9 @@ header {
 .drawer_menu {
     width:180px;
     height:100%;
-    -webkit-transform:translateX(180px);
+    -webkit-transform:translateX(180px);    
     transform:translateX(180px);
-    -webkit-transition:ease .5s;
     transition:ease .5s;
-    position:absolute;
     position:fixed;
     top:0;
     right:0;
@@ -109,21 +140,22 @@ header {
 .controler_bar_area {
     display: flex;
     flex-direction: row;
-    padding: 0 0 0 20px;
-    height: 60px;
+    padding: 0 0 0 0;
+    height: 50px;
     font-size: 90%;
     text-align: center;
 }
 
 .controler_item {
     margin: 10px;
-    font-size: 20px;
+    font-size: 15px;
 }
 
 .controler_bar_right_area {
     display: flex;
     flex-direction: row;
     margin-left: auto;
+    margin-right: 30px;
 }
 
 .breadcrumbButton {
@@ -140,14 +172,14 @@ header {
 
 .figure_button {
     margin: 10px;
-    padding-right: 80px;
-    font-size: 20px;
+    padding-right: 40px;
+    font-size: 15px;
 }
 
 .figure_caption {
     position: relative;
     left: 50px;
-    bottom: 40px;
+    bottom: 38px;
 }
 
 .address_bar_area {
@@ -476,15 +508,15 @@ td {
 }
 
 #property {
+    position: relative;
     overflow: auto;
     height: 100%;
-    width: 0px;
-    min-width: 0px;
+    /* width: 360px;
+    min-width: 360px; */
     border-left: solid 1px #111;
     display: none;
-    z-index: 20;
+    z-index: 40;
     border-collapse: collapse;
-    right: 2.4%;
 }
 
 .property_text {
@@ -496,11 +528,16 @@ td {
     font-size: 110%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    /* justify-content: space-between; */
 }
 
 .property input {
     margin-right: 6px;
+}
+
+#startInputField, #endInputField, #stepInputField
+{
+    width: 75px;
 }
 
 .fileBrowser{

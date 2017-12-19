@@ -1,4 +1,43 @@
+@charset "utf-8";
+
 ul{
   list-style-type: none;
 }
 
+#html_name{
+  position: relative;
+  background:#252525;
+  height: 30px;  
+}
+
+div .remotehost{
+  position: absolute;
+  background:#252525;
+  left:10px;  
+}
+
+#fieldName{
+  position: relative;
+  height: 50px;
+  left: 10px;
+}
+
+div .HostField{
+  position: absolute;
+  top: 10px;
+  left:10px;
+  font-size: 1.3em;  
+}
+
+#hostTitleArea
+{
+  position: relative;
+  left:20px;
+}
+
+#titleTable
+{
+  table-layout: fixed;
+  width: 900px;
+  word-wrap: break-word;  
+}

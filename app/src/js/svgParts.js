@@ -1,6 +1,6 @@
 import config from './config';
-let UDPlug=[[0, 0], [20, 0], [20, 5], [10, 10], [0, 5]];
-let LRPlug=[[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]];
+let UDPlug = [[0, 0], [20, 0], [20, 5], [10, 10], [0, 5]];
+let LRPlug = [[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]];
 
 /**
  * calc y coord of 1st input/output file from top of the box
@@ -19,19 +19,19 @@ function calcFileBasePosY() {
  * @param x x coordinate of the point which will be checked
  * @param y y coordinate of the point which will be checked
  */
-function collisionDetection(svg, counterpart, x, y){
-  let minDistance2=Number.MAX_VALUE;
-  let nearestNodeIndex=-1;
-  let nearestPlugPoints=null;
+function collisionDetection(svg, counterpart, x, y) {
+  let minDistance2 = Number.MAX_VALUE;
+  let nearestNodeIndex = -1;
+  let nearestPlugPoints = null;
   let nearestPlug = null;
   // dropしたplugと対応する種類のplugのうち最も距離が近いものを探す
-  svg.select(counterpart).each(function(i, v){
+  svg.select(counterpart).each(function (i, v) {
     let index = v[i].parent().node.instance.data('index');
-    let points=v[i].node.points;
-    let targetX=points[3].x;
-    let targetY=points[2].y;
-    let distance2=(targetX-x)*(targetX-x)+(targetY-y)*(targetY-y);
-    if(minDistance2 > distance2){
+    let points = v[i].node.points;
+    let targetX = points[3].x;
+    let targetY = points[2].y;
+    let distance2 = (targetX - x) * (targetX - x) + (targetY - y) * (targetY - y);
+    if (minDistance2 > distance2) {
       minDistance2 = distance2;
       nearestNodeIndex = index;
       nearestPlugPoints = points;
@@ -39,32 +39,32 @@ function collisionDetection(svg, counterpart, x, y){
     }
   });
   // 最近傍plugの頂点座標から当たり領域を作成
-  let xPoints = Array.from(nearestPlugPoints).map((p)=>{
+  let xPoints = Array.from(nearestPlugPoints).map((p) => {
     return p.x;
   });
-  let yPoints = Array.from(nearestPlugPoints).map((p)=>{
+  let yPoints = Array.from(nearestPlugPoints).map((p) => {
     return p.y;
   });
   let minX = Math.min(...xPoints);
   let maxX = Math.max(...xPoints);
   let minY = Math.min(...yPoints);
   let maxY = Math.max(...yPoints);
-  let extendX = (maxX - minX)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
-  let extendY = (maxY - minY)*(config.box_appearance.plug_drop_area_scale - 1.0)/2;
+  let extendX = (maxX - minX) * (config.box_appearance.plug_drop_area_scale - 1.0) / 2;
+  let extendY = (maxY - minY) * (config.box_appearance.plug_drop_area_scale - 1.0) / 2;
   minX -= extendX;
   maxX += extendX;
   minY -= extendY;
   maxY += extendY;
 
   // 最近傍plugが範囲内に入っていれば indexとそのplugを返す
-  if(minX < x && x< maxX && minY < y&& y< maxY ){
+  if (minX < x && x < maxX && minY < y && y < maxY) {
     return [nearestNodeIndex, nearestPlug];
   }
   // 外れの時は -1を二つ(indexとplug)返す
   return [-1, -1];
 }
 
-export class SvgCable{
+export class SvgCable {
   /**
    * @param svg instance of svg.js
    * @param color color of the cable
@@ -74,103 +74,112 @@ export class SvgCable{
    * @param endtX x coordinate of initial end point
    * @param endtY y coordinate of initial end point
    */
-  constructor(svg, color, direction, startX, startY, endX, endY){
-    this.tmpSvg=svg; //for debug calcControlPoint
-    this.cable = svg.path('').fill('none').stroke({ color: color, width: config.box_appearance.strokeWidth});
+  constructor(svg, color, direction, startX, startY, endX, endY) {
+    this.tmpSvg = svg; //for debug calcControlPoint
+    this.cable = svg.path('').fill('none').stroke({ color: color, width: config.box_appearance.strokeWidth });
     this.startX = startX;
     this.startY = startY;
     this.endX = endX || startX;
     this.endY = endY || startY;
-    if(direction === 'DU' || direction === 'RL'){
+    if (direction === 'DU' || direction === 'RL') {
       this.direction = direction;
-    }else{
+    } else {
       console.log('illegal direction: ', direction);
     }
   }
   _calcControlPoint(sx, sy, ex, ey, boxBbox) {
-    const scaleRange=1.5;
-    const scaleControlPoint=1.8;
+    const scaleRange = 1.5;
+    const scaleControlPoint = 1.8;
     const mx = (sx + ex) / 2;
     const my = (sy + ey) / 2;
-    let cp1x=0;
-    let cp1y=0;
-    let cp2x=0;
-    let cp2y=0;
-    if(this.direction === 'DU'){
+    let cp1x = 0;
+    let cp1y = 0;
+    let cp2x = 0;
+    let cp2y = 0;
+    if (this.direction === 'DU') {
       const boxWidth = boxBbox.width;
-      const offset = boxWidth*scaleControlPoint;
-      if(ey<sy){
-        if( sx-boxWidth*scaleRange < ex && ex < sx+boxWidth*scaleRange){
-          if(sx > ex){
-            cp1x=sx+offset;
-            cp1y=sy+offset;
-            cp2x=ex+offset;
-            cp2y=ey-offset;
-          }else{
-            cp1x=sx-offset;
-            cp1y=sy+offset;
-            cp2x=ex-offset;
-            cp2y=ey-offset;
+      const offset = boxWidth * scaleControlPoint;
+      if (ey < sy) {
+        if (sx - boxWidth * scaleRange < ex && ex < sx + boxWidth * scaleRange) {
+          if (sx > ex) {
+            cp1x = sx + offset;
+            cp1y = sy + offset;
+            cp2x = ex + offset;
+            cp2y = ey - offset;
+          } else {
+            cp1x = sx - offset;
+            cp1y = sy + offset;
+            cp2x = ex - offset;
+            cp2y = ey - offset;
           }
-        }else{
-          cp1x=mx;
-          cp1y=sy+offset;
-          cp2x=mx;
-          cp2y=ey-offset;
+        } else {
+          cp1x = mx;
+          cp1y = sy + offset;
+          cp2x = mx;
+          cp2y = ey - offset;
         }
-      }else{
-        cp1x=sx;
-        cp1y=my;
-        cp2x=ex;
-        cp2y=my;
+      } else {
+        cp1x = sx;
+        cp1y = my;
+        cp2x = ex;
+        cp2y = my;
       }
-    }else if(this.direction === 'RL'){
-      const boxHeight= boxBbox.height;
-      const offset = boxHeight*scaleControlPoint;
-      if(ex<sx){
-        if(sy-boxHeight*scaleRange < ey && ey <sy+boxHeight*scaleRange){
-          cp1x=sx+offset;
-          cp1y=sy-offset;
-          cp2x=ex-offset;
-          cp2y=ey-offset;
-        }else{
-          cp1x=sx+offset;
-          cp1y=my;
-          cp2x=ex-offset;
-          cp2y=my;
+    } else if (this.direction === 'RL') {
+      const boxHeight = boxBbox.height;
+      const offset = boxHeight * scaleControlPoint;
+      if (ex < sx) {
+        if (sy - boxHeight * scaleRange < ey && ey < sy + boxHeight * scaleRange) {
+          cp1x = sx + offset;
+          cp1y = sy - offset;
+          cp2x = ex - offset;
+          cp2y = ey - offset;
+        } else {
+          cp1x = sx + offset;
+          cp1y = my;
+          cp2x = ex - offset;
+          cp2y = my;
         }
-      }else{
-        cp1x=mx;
-        cp1y=sy;
-        cp2x=mx;
-        cp2y=ey;
+      } else {
+        cp1x = mx;
+        cp1y = sy;
+        cp2x = mx;
+        cp2y = ey;
       }
     }
     return [cp1x, cp1y, cp2x, cp2y];
   }
-  _draw(sx, sy, ex, ey, boxBbox){
-    if(boxBbox == null){
-      boxBbox=this.cable.parent().node.instance.data('boxBbox');
+  _draw(sx, sy, ex, ey, boxBbox) {
+    if (boxBbox == null) {
+      boxBbox = this.cable.parent().node.instance.data('boxBbox');
     }
-    const [cp1x, cp1y, cp2x, cp2y]=this._calcControlPoint(sx, sy, ex, ey, boxBbox);
+    const [cp1x, cp1y, cp2x, cp2y] = this._calcControlPoint(sx, sy, ex, ey, boxBbox);
     this.cable.plot(`M ${sx} ${sy} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${ex} ${ey}`)
+    // if (this.direction === 'DU') {
+    //   // const t = 2 * Math.abs(Math.atan((ex - sx) / (ey - sy))) / Math.PI;
+    //   // this.cable.plot(`M ${sx} ${sy} V ${t * sy + (1 - t) * ey} H ${ex} L ${ex} ${ey}`)
+    //   this.cable.plot(`M ${sx} ${sy} V ${(sy + ey) / 2} H ${ex} L ${ex} ${ey}`)
+    // } else {
+    //   // const t = 2 * Math.abs(Math.atan((ey - sy) / (ex - sx))) / Math.PI;
+    //   // this.cable.plot(`M ${sx} ${sy} H ${t * sx + (1 - t) * ex} V ${ey} L ${ex} ${ey}`)
+    //   this.cable.plot(`M ${sx} ${sy} H ${(sx+ex) / 2} L ${ex} ${ey}`)
+    // }
   }
-  dragEndPoint(dx,dy, boxBbox){
-    this._draw(this.startX, this.startY, this.endX+dx, this.endY+dy, boxBbox);
+  dragEndPoint(dx, dy, boxBbox) {
+    this._draw(this.startX, this.startY, this.endX + dx, this.endY + dy, boxBbox);
   }
-  dragStartPoint(dx,dy, boxBbox){
-    this._draw(this.startX+dx, this.startY+dy, this.endX, this.endY, boxBbox);
+  dragStartPoint(dx, dy, boxBbox) {
+    this._draw(this.startX + dx, this.startY + dy, this.endX, this.endY, boxBbox);
   }
-  remove(){
-    if(this.cable != null) this.cable.remove();
-    this.cable=null;
+  remove() {
+    if (this.cable != null) this.cable.remove();
+    this.cable = null;
   }
 }
 
-class SvgBox{
-  constructor(svg, x, y, type, name, inputFiles, outputFiles){
-    this.draw=svg;
-    this.type=type.toLowerCase();
+class SvgBox {
+  constructor(svg, x, y, type, name, inputFiles, outputFiles) {
+    this.draw = svg;
+    this.type = type.toLowerCase();
 
     // read draw settings from config
     const opacity = config.box_appearance.opacity;
@@ -179,14 +188,14 @@ class SvgBox{
     const marginHeight = config.box_appearance.marginHeight;
     const marginWidth = titleHeight * 2;
     const outputTextOffset = config.box_appearance.outputTextOffset;
-    const nodeColor=config.node_color[this.type];
+    const nodeColor = config.node_color[this.type];
 
     // create inner parts
     const input = this.createInputText(inputFiles);
     const output = this.createOutputText(outputFiles);
 
     const outputBBox = output.bbox();
-    const inputBBox =  input.bbox();
+    const inputBBox = input.bbox();
 
     const bodyHeight = marginHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
     this.height = bodyHeight + titleHeight;
@@ -220,14 +229,14 @@ class SvgBox{
    */
   createOuterFrame() {
     const titleHeight = config.box_appearance['titleHeight'];
-    const nodeColor=config.node_color[this.type];
-    return  this.draw
+    const nodeColor = config.node_color[this.type];
+    return this.draw
       .polygon([
-          [titleHeight / 2, 0],
-          [this.width, 0],
-          [this.width, titleHeight],
-          [0, titleHeight],
-          [0, titleHeight / 2]
+        [titleHeight / 2, 0],
+        [this.width, 0],
+        [this.width, titleHeight],
+        [0, titleHeight],
+        [0, titleHeight / 2]
       ])
       .fill(nodeColor);
   }
@@ -238,15 +247,15 @@ class SvgBox{
   createInnerFrame() {
     const titleHeight = config.box_appearance['titleHeight'];
     const strokeWidth = config.box_appearance['strokeWidth'];
-    const nodeColor=config.node_color[this.type];
-    return  this.draw
+    const nodeColor = config.node_color[this.type];
+    return this.draw
       .rect(0, 0)
       .attr({
         'fill': 'rgb(50, 50, 50)',
         'stroke': nodeColor,
         'stroke-width': strokeWidth
       })
-    .move(strokeWidth / 2, titleHeight);
+      .move(strokeWidth / 2, titleHeight);
   }
   /**
    * create title
@@ -270,9 +279,9 @@ class SvgBox{
       const text = this.draw
         .text(output.name)
         .fill('white');
-      this.textHeight=text.bbox().height*config.box_appearance.textHeightScale;
-      const x = -text.bbox().width-config.box_appearance.outputTextOffset;
-      const y = calcFileBasePosY()+this.textHeight*index;
+      this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
+      const x = -text.bbox().width - config.box_appearance.outputTextOffset;
+      const y = calcFileBasePosY() + this.textHeight * index;
       text.move(x, y);
       this.outputGroup.add(text);
     });
@@ -288,9 +297,9 @@ class SvgBox{
       const text = this.draw
         .text(input.name)
         .fill('white');
-      this.textHeight=text.bbox().height*config.box_appearance.textHeightScale;
+      this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
       const x = config.box_appearance.outputTextOffset;
-      const y = calcFileBasePosY()+this.textHeight*index;
+      const y = calcFileBasePosY() + this.textHeight * index;
       text.move(x, y);
       this.inputGroup.add(text);
     });
@@ -298,74 +307,75 @@ class SvgBox{
   }
 }
 
-function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback){
-    let plug = svg.polygon(plugShape).fill(color);
-    const bbox = plug.bbox();
-    originX -= bbox.width/2;
-    if(moveY) originY -= bbox.height/2;
-    plug.move(originX, originY).draggable();
-    const cable = new SvgCable(svg, color, cableDirection, originX + bbox.width / 2, originY+ bbox.height / 2);
-    let firstTime=true;
-    let clone=null;
-    let dragStartPointX=null;
-    let dragStartPointY=null;
-    plug
-      .on('dragstart', (e)=>{
-        if(firstTime){
-          clone = plug.clone();
-          firstTime=false;
-        }
-        dragStartPointX = e.detail.p.x;
-        dragStartPointY = e.detail.p.y;
-      })
-      .on('dragmove', (e)=>{
-        let dx = e.detail.p.x - dragStartPointX;
-        let dy = e.detail.p.y - dragStartPointY;
-        cable.dragEndPoint(dx,dy);
-      })
-      .on('dragend', (e)=>{
-        cable.endX=e.srcElement.instance.cx();
-        cable.endY=e.srcElement.instance.cy();
-        const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
-        if(hitIndex === -1) return;
-        const myIndex=plug.parent().node.instance.data('index');
-        if(hitIndex!== myIndex){
-          callback(myIndex, hitIndex, plug, hitPlug);
-        }
-        cable.remove();
-        plug.remove();
-        plug = clone
-      });
+function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback) {
+  let plug = svg.polygon(plugShape).fill(color);
+  const bbox = plug.bbox();
+  originX -= bbox.width / 2;
+  if (moveY) originY -= bbox.height / 2;
+  plug.move(originX, originY).draggable();
+  const cable = new SvgCable(svg, color, cableDirection, originX + bbox.width / 2, originY + bbox.height / 2);
+  let firstTime = true;
+  let clone = null;
+  let dragStartPointX = null;
+  let dragStartPointY = null;
+  plug
+    .on('dragstart', (e) => {
+      if (firstTime) {
+        clone = plug.clone();
+        firstTime = false;
+      }
+      dragStartPointX = e.detail.p.x;
+      dragStartPointY = e.detail.p.y;
+    })
+    .on('dragmove', (e) => {
+      let dx = e.detail.p.x - dragStartPointX;
+      let dy = e.detail.p.y - dragStartPointY;
+      cable.dragEndPoint(dx, dy);
+    })
+    .on('dragend', (e) => {
+      console.log(e);
+      cable.endX = e.target.instance.x();
+      cable.endY = e.target.instance.y();
+      const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
+      if (hitIndex === -1) return;
+      const myIndex = plug.parent().node.instance.data('index');
+      if (hitIndex !== myIndex) {
+        callback(myIndex, hitIndex, plug, hitPlug);
+      }
+      cable.remove();
+      plug.remove();
+      plug = clone
+    });
   return [plug, cable.cable];
 }
 
-export function createLower(svg, originX, originY, offsetX, offsetY, color, sio){
-  return createLCPlugAndCable(svg, originX+offsetX, originY+offsetY, true, color, UDPlug, 'DU', '.upperPlug', function(myIndex, hitIndex, plug){
-    sio.emit('addLink', {src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug')});
+export function createLower(svg, originX, originY, offsetX, offsetY, color, sio) {
+  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, true, color, UDPlug, 'DU', '.upperPlug', function (myIndex, hitIndex, plug) {
+    sio.emit('addLink', { src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug') });
   });
 }
-export function createConnector(svg, originX, originY, offsetX, offsetY, sio){
-  offsetY +=calcFileBasePosY();
-  return createLCPlugAndCable(svg, originX+offsetX, originY+offsetY, false, config.plug_color.file, LRPlug, 'RL', '.receptorPlug', function(myIndex, hitIndex, plug, hitPlug){
+export function createConnector(svg, originX, originY, offsetX, offsetY, sio) {
+  offsetY += calcFileBasePosY();
+  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, LRPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
-    sio.emit('addFileLink', {src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName});
+    sio.emit('addFileLink', { src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName });
   });
 }
-export function createReceptor(svg, originX, originY, offsetX, offsetY){
+export function createReceptor(svg, originX, originY, offsetX, offsetY) {
   const plug = svg.polygon(LRPlug).fill(config.plug_color.file).addClass('receptorPlug');
   const bbox = plug.bbox();
-  plug.move(originX+offsetX-bbox.width/2, originY+offsetY+calcFileBasePosY());
+  plug.move(originX + offsetX - bbox.width / 2, originY + offsetY + calcFileBasePosY());
   return plug;
 }
-export function createUpper(svg, originX, originY, offsetX, offsetY){
+export function createUpper(svg, originX, originY, offsetX, offsetY) {
   const plug = svg.polygon(UDPlug).fill(config.plug_color.flow).addClass('upperPlug');
   const bbox = plug.bbox();
-  plug.move(originX+offsetX-bbox.width/2, originY+offsetY-bbox.height/2);
+  plug.move(originX + offsetX - bbox.width / 2, originY + offsetY - bbox.height / 2);
   return plug;
 }
 
-export function createBox (svg, x, y, type, name, inputFiles, outputFiles){
+export function createBox(svg, x, y, type, name, inputFiles, outputFiles) {
   const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles);
   return [box.box, box.textHeight];
 }

@@ -3,8 +3,10 @@
 
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="css/reset.css"/>
+  <link rel="stylesheet" href="css/style.css"/>
   <link rel="stylesheet" href="/css/common.css"/>
-  <link rel="stylesheet" href="/css/remotehost.css" />
+  <link rel="stylesheet" href="/css/remotehost.css"/>
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="/js/common.js"></script>
   <script type="text/javascript" src="/js/remotehost.js"></script>
@@ -12,10 +14,39 @@
 </head>
 
 <body>
+  <header>
+    <a href="home" class="title">WHEEL</a>
+      <h3 class="title_username">Yuki Tanaka</h3>
+  </header>
+
+  <main>
+      <div id="html_name">
+        <div class="remotehost">Host Manager</div>
+      </div>
+      <div id="fieldName">
+        <div class="HostField">Host List</div>
+      </div>
+  </main>
+
   <div>Register Host</div>
   <div id="view">
-
     <!-- Remote Host List Area -->
+    <div id="hostTitleArea">
+      <table id="titleTable">
+        <tr id="HostInfo">
+          <th class="label">Label</th>
+          <th class="connectionCheck">Connection Check</th>
+          <th class="hostName">Host Name</th>
+          <th class="userID">User ID</th>
+          <th class="hostWorkDir">Hosr Work Dir</th>
+          <th class="authPath">Auth Path</th>
+          <th class="jobScheduler">Job Scheduler</th>
+          <th class="queues">queues</th>
+          <th class="desc">Description</th>
+        </tr>
+      </table>
+    </div>
+
     <div>
       <ul>
         <template v-for="(host, index) in hostList" >

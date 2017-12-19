@@ -39,7 +39,7 @@ $(() => {
       },
       onAddButton:function() {
         this.mode = 'addAccount';
-        $("#errorMessage").css("visibility", "hidden");                            
+        $("#errorMessage").css("visibility", "hidden");
         // this.errorMessage = '';
         resetNewAccount();
         
@@ -79,9 +79,9 @@ $(() => {
       onDialogOKButton: function(){
         if(this.mode == 'removeAccount')
         {
-          this.selectedAccountList.forEach((index) => {
-            socket.emit('removeAccount', this.accountList[index].id);
-          })
+          // this.selectedAccountList.forEach((index) => {
+          //   socket.emit('removeAccount', this.accountList[index].id);
+          // })
           $("#deleteCheckDialog").dialog('close');          
         } else {
           socket.emit(this.mode, this.newAccount);
