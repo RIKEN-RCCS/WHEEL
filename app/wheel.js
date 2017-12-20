@@ -3,7 +3,7 @@ const path = require('path');
 const opener = require('opener');
 const waitOn = require('wait-on');
 
-let {port} = require(path.join(__dirname, 'config/server'));
+let {port} = require('./db/db');
 //TODO impliment argument parser and suppress opening browser in multi user mode
 let url = `http://localhost:${port}`;
 let opt = {

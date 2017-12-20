@@ -1,18 +1,18 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const util = require("util");
 const path = require("path");
 
 const compo = require("./workflowComponent");
 const logger = require("../logger");
+const {getDateString} = require('./utility');
+const {extProject, extWF, systemName, defaultFilename} = require('../db/db');
 
 function create(projectDirectory, projectName) {
     return new Promise(function (resolve, reject) {
-        const config = require('../config/server.json');
         util.promisify(fs.mkdir)(projectDirectory)
           .then(function(){
-            const rootWorkflowFilename = `${config.default_filename}${config.extension.workflow}`;
+            const rootWorkflowFilename = `${defaultFilename}${extWF}`;
             var rootWorkflow = new compo.factory('workflow');
             rootWorkflow.name=projectName;
             rootWorkflow.path='./';
@@ -22,13 +22,16 @@ function create(projectDirectory, projectName) {
             return(rootWorkflowFilename);
         })
         .then(function(rootWorkflowFilename){
-          const projectJsonFilename = `${config.system_name}${config.extension.project}`;
+          const projectJsonFilename = `${systemName}${extProject}`;
+          let timestamp=getDateString();
           const projectJson= {
             "name": `${projectName}`,
             "description": "This is new Project.",
             "state": "Planning",
             "path": `./${projectJsonFilename}`,
-            "path_workflow": `./${rootWorkflowFilename}`
+            "path_workflow": `./${rootWorkflowFilename}`,
+            "ctime": timestamp,
+            "mtime": timestamp
           };
           const projectJsonFileFullpath=path.join(projectDirectory, projectJsonFilename);
           logger.debug(projectJson);

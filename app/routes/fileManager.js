@@ -8,9 +8,10 @@ const siofu = require("socketio-file-upload");
 
 const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
-const config = require('../config/server.json');
+const {extProject, extWF, extPS} = require('../db/db');
 const escape = require('./utility').escapeRegExp;;
-const systemFiles = new RegExp(`^(?!^.*(${escape(config.extension.project)}|${escape(config.extension.workflow)}|${escape(config.extension.pstudy)})$).*$`);
+
+const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)})$).*$`);
 
 function list(uploader, sio, requestDir){
   logger.debug(`current dir = ${requestDir}`);

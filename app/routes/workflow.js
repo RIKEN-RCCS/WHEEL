@@ -11,11 +11,8 @@ const component = require('./workflowComponent');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
-
-const config = require('../config/server.json')
-const jsonArrayManager = require("./jsonArrayManager");
-const remotehostFilename = path.resolve(__dirname, '../', config.remotehost);
-const remoteHost= new jsonArrayManager(remotehostFilename);
+const {getDateString} = require('./utility');
+const {remoteHost} = require('../db/db');
 
 //TODO move these resource to resourceManager
 // current workflow object which is editting
@@ -31,6 +28,8 @@ let rwfFilename=null;
 // dispatcher for root workflow
 let rwfDispatcher=null
 
+let projectJson=null;
+
 /**
  * write data and emit to client with promise
  * @param {object} data - object to be writen and emitted
@@ -39,6 +38,7 @@ let rwfDispatcher=null
  * @param {string} eventName - eventName to send workflow
  */
 function writeAndEmit(data, filename, sio, eventName){
+  projectJson.mtime=getDateString();
   return promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4))
     .then(function(){
       sio.emit(eventName, data);
@@ -150,6 +150,7 @@ async function readWorkflow(filename){
 async function onWorkflowRequest(sio, msg){
   logger.debug('Workflow Request event recieved: ', msg);
   cwfFilename=msg;
+  cwfDir = path.dirname(cwfFilename);
   cwf = await readWorkflow(cwfFilename)
     .catch(function(err){
       logger.error('workflow file read error\n', err);
@@ -187,7 +188,16 @@ function onCreateNode(sio, msg){
     });
 }
 
-function onUpdateNode(sio, msg){
+function updateNode(node, property, value){
+  node[property]=value;
+  if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
+    let childDir = path.resolve(cwfDir, node.path);
+    let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
+    promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(node, null, 4));
+  }
+}
+
+async function onUpdateNode(sio, msg){
   logger.debug('updateNode event recieved: ', msg);
   let index=msg.index;
   let property=msg.property;
@@ -213,7 +223,7 @@ function onUpdateNode(sio, msg){
         }
         break;
       case 'update':
-        targetNode[property]=value;
+        await updateNode(targetNode, property, value);
         break;
       case 'updateArrayProperty':
         targetNode[property]=value;
@@ -363,10 +373,14 @@ function onRemoveFileLink(sio, msg){
 async function onRunProject(sio, msg){
   logger.debug(`run event recieved: ${msg}`);
   let rwf = await readWorkflow(rwfFilename)
+    .catch((err)=>{
+      err.wf=rwfFilename;
+      logger.error('read root workflow failure:\n',err);
+    });
   try{
     await validationCheck(rwf, path.dirname(rwfFilename), sio)
-  }catch(e){
-    logger.error('project validation failed: \n', err);
+  }catch(err){
+    logger.error('invalid root workflow:\n', err);
     return false
   }
   let state = 'running'
@@ -375,7 +389,7 @@ async function onRunProject(sio, msg){
 
   try{
     state = await rwfDispatcher.dispatch()
-  }catch(e){
+  }catch(err){
     logger.error('fatal error occurred while parseing root workflow: \n',err);
     return false;
   }
@@ -394,6 +408,18 @@ function onCleanProject(sio, msg){
   sio.emit('projectState', 'cleared');
 }
 
+function onTaskStateListRequest(sio){
+  logger.debug(`getTaskStateList event recieved: ${msg}`);
+  logger.debug('not implimented yet !!');
+}
+
+function onUpdateProjectJson(sio, data){
+  for(let key in projectJson){
+    if(data.hasOwnProperty(key)){
+      projectJson[key] = data[key];
+    }
+  }
+}
 
 module.exports = function(io){
   const sio = io.of('/workflow');
@@ -406,27 +432,34 @@ module.exports = function(io){
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
     socket.on('addLink',         onAddLink.bind(null, socket));
     socket.on('addFileLink',     onAddFileLink.bind(null, socket));
-
+    socket.on('getTaskStateList', onTaskStateListRequest.bind(null, socket));
     socket.on('runProject',      onRunProject.bind(null, socket));
     socket.on('pauseProject',    onPauseProject.bind(null, socket));
     socket.on('cleanProject',    onCleanProject.bind(null, socket));
+    socket.on('updateProjectJson', onUpdateProjectJson.bind(null, socket));
     socket.on('stopProject',     (msg)=>{
       onPauseProject(socket,msg);
       onCleanProject(socket,msg);
+    });
+    socket.on('getHostList', ()=>{
+      socket.emit('hostList', remoteHost.getAll());
+    });
+    socket.on('getProjectJson', ()=>{
+      socket.emit('projectJson', projectJson);
     });
   });
 
   let router = express.Router();
   router.post('/', function (req, res, next) {
-    const projectJSON=req.body.project;
-    rwfDir=path.dirname(projectJSON);
-    promisify(fs.readFile)(projectJSON)
+    const projectJsonFilename=req.body.project;
+    rwfDir=path.dirname(projectJsonFilename);
+    promisify(fs.readFile)(projectJsonFilename)
       .then(function(data){
-        const tmp = JSON.parse(data);
-        rwfFilename=path.resolve(rwfDir, tmp.path_workflow);
+        projectJson = JSON.parse(data);
+        rwfFilename=path.resolve(rwfDir, projectJson.path_workflow);
         res.cookie('root', rwfFilename);
         res.cookie('rootDir', rwfDir);
-        res.cookie('project', projectJSON);
+        res.cookie('project', projectJsonFilename);
         res.sendFile(path.resolve(__dirname, '../views/workflow.html'));
       })
   });

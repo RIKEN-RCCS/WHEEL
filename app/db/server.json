@@ -1,10 +1,11 @@
 {
     "port": 8089,
-    "remotehost": "./config/remotehost.json",
-    "useraccount": "./config/useraccount.json",
-    "projectList": "./config/projectList",
+    "remotehost": "./remotehost.json",
+    "useraccount": "./useraccount.json",
+    "projectList": "./projectList.json",
     "suffix": ".wheel",
     "interval": 100,
+    "adminUser": "admin",
     "scheduler": {
         "TCS": "./config/pjsub.sh",
         "TORQUE": "./config/qsub.sh"

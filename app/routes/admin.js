@@ -3,30 +3,25 @@ const path = require("path");
 
 let express = require('express');
 
-const config = require('../config/server.json')
-const jsonArrayManager = require("./jsonArrayManager");
-//const doAndEmit = require('./utility').doAndEmit;
+const {userAccount} = require('../db/db')
 
 module.exports = function(io){
-  const userAccountFilename= path.resolve(__dirname, '../', config.useraccount);
-  let userAccounts= new jsonArrayManager(userAccountFilename);
-
   let sio=io.of('/admin');
   let doAndEmit = function(func, msg){
     func(msg).then(()=>{
-      sio.emit('accountList', userAccounts.getAll());
+      sio.emit('accountList', userAccount.getAll());
     });
   }
   sio.on('connect', (socket) => {
     socket.on('getAccountList', ()=>{
-      userAccounts.getAllProject()
+      userAccount.getAll()
         .then((results)=>{
           socket.emit('accountList', results);
         });
     });
-    socket.on('addAccount',    doAndEmit.bind(null, userAccounts.add.bind(userAccounts)));
-    socket.on('removeAccount', doAndEmit.bind(null, userAccounts.remove.bind(userAccounts)));
-    socket.on('updateAccount', doAndEmit.bind(null, userAccounts.update.bind(userAccounts)));
+    socket.on('addAccount',    doAndEmit.bind(null, userAccount.add.bind(userAccount)));
+    socket.on('removeAccount', doAndEmit.bind(null, userAccount.remove.bind(userAccount)));
+    socket.on('updateAccount', doAndEmit.bind(null, userAccount.update.bind(userAccount)));
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {
