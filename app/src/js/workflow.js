@@ -180,8 +180,8 @@ $(() => {
     }else{
       $('#parentDirBtn').hide();
     }
-    fb.request('getFileList', cwd, null);
-    sio.emit('getWorkflow', cwf);
+    fb.request('getFileList', currentWorkDir, null);
+    sio.emit('getWorkflow', currentWorkFlow);
   });
 
 
@@ -191,8 +191,8 @@ $(() => {
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
-    fb.request('getFileList', cwd, null);
-    sio.emit('getWorkflow', cwf);
+    fb.request('getFileList', currentWorkDir, null);
+    sio.emit('getWorkflow', currentWorkFlow);
     sio.on('workflow', function(wf){
       $('#path').text(wf.path);
       nodeStack[nodeStack.length - 1] = wf.name;
@@ -275,7 +275,7 @@ $(() => {
 
   // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function(){
-    fb.request('getFileList', cwd, null);
+    fb.request('getFileList', currentWorkDir, null);
     $('#property').hide();
   });
 
@@ -454,7 +454,7 @@ $(() => {
           node.onMousedown(function(e){
             let nodeIndex=e.target.instance.parent('.node').data('index');
             selectedNode=nodeIndex;
-            let nodePath = cwd+'/'+nodesInWF[nodeIndex].path;
+            let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].path;
             fb.request('getFileList', nodePath, null);
             let name = nodesInWF[nodeIndex].name;
             vm.node=v;
@@ -468,12 +468,12 @@ $(() => {
               let name = nodesInWF[nodeIndex].name;
               let path=e.target.instance.parent('.node').data('path');
               let json=e.target.instance.parent('.node').data('jsonFile');
-              dirStack.push({dir: cwd, wf: cwf});
-              cwd=cwd+'/'+path;
-              cwf=cwd+'/'+json
-              fb.request('getFileList', cwd, null);
-              sio.emit('getWorkflow', cwf);
-              if(cwd !== rootDir){
+              dirStack.push({dir: currentWorkDir, wf: currentWorkFlow});
+              currentWorkDir=currentWorkDir+'/'+path;
+              currentWorkFlow=currentWorkDir+'/'+json
+              fb.request('getFileList', currentWorkDir, null);
+              sio.emit('getWorkflow', currentWorkFlow);
+              if(currentWorkDir !== rootDir){
                 $('#parentDirBtn').show();
               }else{
                 $('#parentDirBtn').hide();
@@ -533,8 +533,10 @@ $(() => {
         }else{
           $('#parentDirBtn').hide();
         }
-        fb.request('fileListRequest', currentWorkDir, null);
-        sio.emit('workflowRequest', currentWorkFlow);
+        //fb.request('fileListRequest', currentWorkDir, null);
+        //sio.emit('workflowRequest', currentWorkFlow);
+        fb.request('getFileList', currentWorkDir, null);
+        sio.emit('getWorkflow', currentWorkFlow);
       });
     }
   }
@@ -555,12 +557,14 @@ $(() => {
   });
 
   $('#fileBrowseButton').click(function () {
-    fb.request('fileListRequest', currentWorkDir, null);
+    //fb.request('fileListRequest', currentWorkDir, null);
+    fb.request('getFileList', currentWorkDir, null);
     $('#fileBrowser').dialog({title: 'File Browse', modal: true, width: 1000});
   });
 
   $('#fileBrowserCancelButton').click(function () {
-    fb.request('fileListRequest', currentWorkDir, null);
+    //fb.request('fileListRequest', currentWorkDir, null);
+    fb.request('getFileList', currentWorkDir, null);
     $('#fileBrowser').dialog('close');
   });
 

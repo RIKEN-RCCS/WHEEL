@@ -60,7 +60,7 @@
       <input type="radio" name="view" value="graph" id="graphView"><label for="graphView">graph</label>
     </span>
     <span id="breadcrumb"></span>
-    <div id="parentDirBtn"><button>../</button></div>    
+    <div id="parentDirBtn"><button>../</button></div>
     <div class="view_controler_right_area"></div>
   </div>
   
@@ -208,8 +208,14 @@
       <!--ファイル編集 -->
       <div id="filesEdit">
         <label>Files edit</label>
+        <div id="fileBrowser" class="fileBrowser">
+            <p id="path"></p>
+            <ul id="fileList"></ul>
+            <input type="file" id="fileSelector" name="uploadFiles" multiple />
+            <input type="button" id="fileBrowserCancelButton" value="Cancel" />
+        </div>
       </div>
-      <div><input type="button" value="File" id="fileBrowseButton"></div>   
+      <div><input type="button" value="File" id="fileBrowseButton"></div>      
     </div>
   </div>
 
@@ -237,12 +243,12 @@
   </div>
 
   <!-- File Browser Dialog -->
-  <div id="fileBrowser" class="fileBrowser">
+<!--   <div id="fileBrowser" class="fileBrowser">
     <p id="path"></p>
     <ul id="fileList"></ul>
     <input type="file" id="fileSelector" name="uploadFiles" multiple />
     <input type="button" id="fileBrowserCancelButton" value="Cancel" />
-  </div>
+  </div> -->
 
   <!-- dialog for File Browser Rename and Remove command -->
   <div id="dialog"></div>
