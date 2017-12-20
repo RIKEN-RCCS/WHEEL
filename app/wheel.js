@@ -18,4 +18,4 @@ waitOn(opt, (err)=>{
   }
   opener(url);
 });
-require('WHEEL')
+require('./index')
