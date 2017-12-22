@@ -9,9 +9,11 @@
   "author": {
     "name": "Kenji Ono"
   },
-  "contributer": {
-    "name": "Naoyuki Sogo"
-  },
+  "contributors": [
+    "Tomohiro Kawanabe",
+    "tsuruta.kazuya",
+    "Naoyuki Sogo"
+  ],
   "license": "BSD-2-Clause",
   "engines": {
     "node": ">=8"

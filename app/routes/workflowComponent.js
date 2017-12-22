@@ -42,14 +42,6 @@ class BaseWorkflowComponent {
      */
     this.outputFiles=[];
 
-    /**
-     * flag for clean up temporary working directory on remote host
-     * 0: do clenup
-     * 1: do not clenup
-     * 2: same as parent
-     */
-    this.cleanupFlag=null;
-
     /** cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
      */
@@ -70,6 +62,14 @@ class BaseTaskGraph extends BaseWorkflowComponent{
     super(pos, parent);
     this.nodes=[];
     this.jsonFile=null;
+    /**
+     * flag for clean up temporary working directory on remote host
+     * 0: do clenup
+     * 1: do not clenup
+     * 2: same as parent
+     */
+    this.cleanupFlag=null;
+
   }
 }
 
@@ -112,6 +112,7 @@ class Task extends BaseWorkflowComponent{
      */
     this.exclude=null;
 
+    this.cleanupFlag=null;
   }
 }
 

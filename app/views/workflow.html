@@ -188,26 +188,25 @@
                 <label for="stepInputField">step</label>
                 <input type="number" v-model.number.lazy.trim="node.step"  id="stepInputField" v-on:blur="updateProperty('step')">
               </div>
-              <div>
-                <p>remote file transfer setting</p>
+              <div  v-if="node.hasOwnProperty('cleanupFlag') || node.hasOwnProperty('include') || node.hasOwnProperty('exclude')">
+              remote file transfer setting
               </div>
-              <div>
+              <div >
                 <label>clean up flag</label>
               </div>
-              <div>
+              <div v-if="node.hasOwnProperty('cleanupFlag')">
                 <input type="radio" name="cleanupFlag" value=0>clean up
                 <input type="radio" name="cleanupFlag" value=1>keep files
                 <input type="radio" name="cleanupFlag" value=2 checked=>follow parent setting
               </div>
-              <div>
+              <div v-if="node.hasOwnProperty('include')">
                 <label for="includeInputField">  include</label>
                 <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField" v-on:blur="updateProperty('include')">
               </div>
-              <div>
+              <div v-if="node.hasOwnProperty('exclude')">
                 <label for="excludeInputField">  exclude</label>
                 <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('exclude')">
               </div>
-              <div>
             </div>
           </div>
           <div id='dialog'></div>
