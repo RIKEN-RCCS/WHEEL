@@ -7,13 +7,12 @@ const {promisify} = require("util");
 
 const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
-const {remoteHost} = require('../db/db');
+const {remoteHost, rootDir} = require('../db/db');
 const {doAndEmit} = require('./utility');
 const {canConnect} = require('./sshManager');
 
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
-  const rootDir = config.rootDir;
   var target = request ? path.normalize(request) : rootDir || os.homedir() || '/';
   fileBrowser(sio, 'fileList', target, {
     "request": request,

@@ -157,7 +157,7 @@ $(() => {
       $('#dialog').dialog('close');
       vm.newHostInfo.keyFile = target;
     });
-    fb.request('fileListRequest', null, null);
+    fb.request('getFileList', null, null);
   }
 
   function testSshConnection(index) {

@@ -473,13 +473,13 @@ $(() => {
             let nodeType = nodesInWF[nodeIndex].type;
             vm.node=v;
             $('#taskPath').html(currentPropertyDir); 
-            if(nodeType === 'if')
+/*             if(nodeType === 'if')
             {
               $('#remoteFileTransferSetthing').hide();
             }
             else{
               $('#remoteFileTransferSetthing').show();              
-            }
+            } */
             $('#property').show().animate({width: '360px', 'min-width': '360px'}, 100);
           })
           .onDblclick(function(e){

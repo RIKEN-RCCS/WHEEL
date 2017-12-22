@@ -182,8 +182,8 @@
         <label for="stepInputField">step</label>
         <input type="number" v-model.number.lazy.trim="node.step"  id="stepInputField" v-on:blur="updateProperty('step')">
       </div>
-      <div id="remoteFileTransferSetthing">
-        <p>remote file transfer setting</p>
+<!--       <div id="remoteFileTransferSetthing">
+        <p >remote file transfer setting</p>
         <div>
           <label>clean up flag</label>
         </div>
@@ -205,6 +205,32 @@
         <div>
           <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField" v-on:blur="updateProperty('exclude')">
         </div>
+        </div> -->
+      <div  v-if="node.hasOwnProperty('cleanupFlag') || node.hasOwnProperty('include') || node.hasOwnProperty('exclude')">
+            remote file transfer setting
+      </div>
+      <div >
+          <label>clean up flag</label>
+      </div>
+      <div v-if="node.hasOwnProperty('cleanupFlag')">
+          <input type="radio" name="cleanupFlag" value="0">clean up
+          <input type="radio" name="cleanupFlag" value="1">keep files
+          <input type="radio" name="cleanupFlag" value="2" checked=>follow parent setting
+      </div>
+      <div v-if="node.hasOwnProperty('include')">
+        <div>
+          <label for="includeInputField">  include</label>
+        </div>
+        <div>
+            <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField" v-on:blur="updateProperty('include')">
+        </div>
+      </div>
+      <div v-if="node.hasOwnProperty('exclude')">
+        <div>
+          <label for="excludeInputField">  exclude</label>
+        </div>
+        <div>
+          <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField" v-on:blur="updateProperty('exclude')">
         </div>
       </div>
       <!--ファイル編集 -->
@@ -216,8 +242,7 @@
           <ul id="fileList"></ul>
         </div>
       </div>
-<!--       <div><input type="button" value="File" id="fileBrowseButton"></div>
- -->    </div>
+    </div>    
   </div>
 
   <!-- 右ドロアーメニュー -->
