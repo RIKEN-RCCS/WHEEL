@@ -84,6 +84,10 @@ header {
     border-collapse: collapse; 
 }
 
+#taskLibraryButton img{
+    width: 10px;
+}
+    
 #taskLibraryMenu{
     position: absolute;    
     overflow: auto;
@@ -99,7 +103,7 @@ header {
 }
 
 .drawer_button img{
-	width:100%;
+	width:20px;
 }
 
 .drawer_button:focus{
@@ -527,7 +531,7 @@ td {
 .property div {
     color: rgb(105, 175, 45);
     font-size: 110%;
-    display: flex;
+    /* display: flex; */
     align-items: center;
     /* justify-content: space-between; */
 }
@@ -546,12 +550,47 @@ td {
     width: 75px;
 }
 
-.fileBrowser{
+/* #fileBrowser{
     display: none;
     float: left;
     height: 100%;
     overflow: scroll;
     width: 90%;
+} */
+
+#fileList{
+  margin: auto;
+  padding-left: 10px;
+  font-size: 12px;
+}
+
+#path{
+    margin: auto;
+    color: orange;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+    word-wrap: break-word;
+    font-size: 12px; 
+}
+
+#taskPath{
+    margin: auto;
+    color: orange;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+    word-wrap: break-word;
+    font-size: 12px; 
+}
+
+#taskPath:hover {
+    overflow: visible;
+    white-space:normal;
+}
+
+#fileList li:hover{
+    background-color: gray;
 }
 
 .text_readonly {

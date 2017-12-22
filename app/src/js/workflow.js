@@ -29,8 +29,10 @@ $(() => {
   let rootDir = Cookies.get('rootDir');
   let currentWorkFlow = rootWorkflow;
   let currentWorkDir = rootDir;
+  let currentNode = '';
   let nodeStack = [''];
   let dirStack = [rootDir];
+  let wfStack = [rootWorkflow];
   
   // create vue.js instance for property subscreen
   let vm = new Vue({
@@ -171,10 +173,19 @@ $(() => {
   // });
 
   // set "go to parent dir" button behavior
-  $('#parentDirBtn').on('click',function(){
+
+  //パンくずリストで対応したため不要
+/*   $('#parentDirBtn').on('click',function(){
     currentWorkFlow = nodeStack.pop();
     currentWorkDir = dirStack.pop();
+    console.log('#parentDirBtn LOG');
+    console.log('dirstack');
+    console.log(currentWorkDir);
+    console.log('nodeStack');
+    console.log(currentWorkFlow);
+    
     updateBreadrumb();
+
     if(currentWorkDir !== rootDir){
       $('#parentDirBtn').show();
     }else{
@@ -182,7 +193,7 @@ $(() => {
     }
     fb.request('getFileList', currentWorkDir, null);
     sio.emit('getWorkflow', currentWorkFlow);
-  });
+  }); */
 
 
   // container of svg elements
@@ -194,15 +205,18 @@ $(() => {
     fb.request('getFileList', currentWorkDir, null);
     sio.emit('getWorkflow', currentWorkFlow);
     sio.on('workflow', function(wf){
-      $('#path').text(wf.path);
-      nodeStack[nodeStack.length - 1] = wf.name;
+      //$('#path').text(wf.path);
+      nodeStack[nodeStack.length - 1] = wf.name;//->doubleclick内に同様の意図を持ったものを仮設
+
       updateBreadrumb();
 
       // remove all node from workflow editor
       nodes.forEach(function(v){
         if (v !== null) v.remove();
       });
+
       nodes = [];
+
       if (wf.nodes.length > 0) {
         let names = wf.nodes.map((e) => {
           return e != null? e.name : null;
@@ -210,6 +224,7 @@ $(() => {
         vm.names = names;
         vm.node = wf.nodes[selectedNode];
       }
+      
       drawNodes(wf.nodes);
       drawLinks(nodes);
     });
@@ -281,7 +296,7 @@ $(() => {
 
   // setup file uploader
   const uploader = new SocketIOFileUpload(sio);
-  uploader.listenOnDrop(document.getElementById('fileBrowser'));
+  uploader.listenOnDrop(document.getElementById('fileBrowser'));  
   uploader.listenOnInput(document.getElementById('fileSelector'));
 
 
@@ -346,34 +361,30 @@ $(() => {
   });
 
   //タスクのドラッグアンドドロップ操作
-  window.onload = function(){
-    $('#taskcontents .type').mouseover(function () {      
-      var target = $(this).attr("href");
-      //console.log(target);
+  $('#taskcontents .type').mouseover(function () {      
+    var target = $(this).attr("href");
     
-      var objectDrag = document.getElementById(target); 
-      var objectDrop = document.getElementById("node_svg");
+    var objectDrag = document.getElementById(target); 
+    var objectDrop = document.getElementById("node_svg");
 
-      objectDrag.ondragstart = function(event){
-        event.dataTransfer.setData("text", event.target.id);
-      };
+    objectDrag.ondragstart = function(event){
+      event.dataTransfer.setData("text", event.target.id);
+    };
 
-      objectDrop.ondragover = function(event){
-        event.preventDefault();
-      };
+    objectDrop.ondragover = function(event){
+      event.preventDefault();
+    };
 
-      objectDrop.ondrop = function(event){
-        event.preventDefault();
-        var objectName = event.dataTransfer.getData("text");
-
-        var xCoordinate = event.offsetX;
-        var yCoordinate = event.offsetY;
+    objectDrop.ondrop = function(event){
+      event.preventDefault();
+      var objectName = event.dataTransfer.getData("text");
+      var xCoordinate = event.offsetX;
+      var yCoordinate = event.offsetY;
   
-        const pos = {x: xCoordinate, y: yCoordinate};
-        sio.emit('createNode', {"type": objectName, "pos": pos});    
-      };
-    });
-  }
+      const pos = {x: xCoordinate, y: yCoordinate};
+      sio.emit('createNode', {"type": objectName, "pos": pos});    
+    };
+  });
 
   //タスクライブラリーの表示非表示
   // function definition
@@ -452,13 +463,23 @@ $(() => {
         }else{
           let node=new SvgNodeUI(svg, sio, v);
           node.onMousedown(function(e){
-            let nodeIndex=e.target.instance.parent('.node').data('index');
+            let nodeIndex=e.target.instance.parent('.node').data('index');           
             selectedNode=nodeIndex;
-            let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].path;
-            fb.request('getFileList', nodePath, null);
-            let name = nodesInWF[nodeIndex].name;
+            let name = nodesInWF[nodeIndex].name;         
+            // let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].path+node
+            let nodePath = currentWorkDir+"\\"+nodesInWF[nodeIndex].name;
+            fb.request('getFileList', nodePath, null);            
+            let currentPropertyDir = currentWorkDir+"\\"+nodesInWF[nodeIndex].name;
+            let nodeType = nodesInWF[nodeIndex].type;
             vm.node=v;
-            $('#path').text(name);
+            $('#taskPath').html(currentPropertyDir); 
+            if(nodeType === 'if')
+            {
+              $('#remoteFileTransferSetthing').hide();
+            }
+            else{
+              $('#remoteFileTransferSetthing').show();              
+            }
             $('#property').show().animate({width: '360px', 'min-width': '360px'}, 100);
           })
           .onDblclick(function(e){
@@ -468,16 +489,22 @@ $(() => {
               let name = nodesInWF[nodeIndex].name;
               let path=e.target.instance.parent('.node').data('path');
               let json=e.target.instance.parent('.node').data('jsonFile');
-              dirStack.push({dir: currentWorkDir, wf: currentWorkFlow});
               currentWorkDir=currentWorkDir+'/'+path;
-              currentWorkFlow=currentWorkDir+'/'+json
+              currentWorkFlow=currentWorkDir+'/'+json;
+              //dirStack.push({dir: currentWorkDir, wf: currentWorkFlow});
+              dirStack.push(currentWorkDir);
+              wfStack.push(currentWorkFlow);             
+              nodeStack.push(name);
+
               fb.request('getFileList', currentWorkDir, null);
               sio.emit('getWorkflow', currentWorkFlow);
-              if(currentWorkDir !== rootDir){
+
+                //パンくずリストで対応したため不要
+/*               if(currentWorkDir !== rootDir){
                 $('#parentDirBtn').show();
               }else{
                 $('#parentDirBtn').hide();
-              }
+              } */
             }
           });
           nodes.push(node);
@@ -521,23 +548,27 @@ $(() => {
         breadcrumb.append(`<span> > </span>`)
       }
       let id = `breadcrumbButton_${index}`;
-      breadcrumb.append(`<input type="button" id=${id} class="breadcrumbButton" value=${nodeStack[index]} />`)
+      breadcrumb.append(`<input type="button" id=${id} class="breadcrumbButton" value=${nodeStack[index]}>`)
+
       $(`#${id}`).click(function () {
+
         while (index + 1 < nodeStack.length) {
-          currentWorkFlow = nodeStack.pop();
-          currentWorkDir = dirStack.pop();
+          currentNode = nodeStack.pop();
+          dirStack.pop();
+          currentWorkDir = dirStack[nodeStack.length-1];
+          currentWorkFlow = wfStack[nodeStack.length-1];
         }
-        updateBreadrumb();
-        if(currentWorkDir !== rootDir){
+        updateBreadrumb(); 
+/*         if(currentWorkDir !== rootDir){
           $('#parentDirBtn').show();
         }else{
           $('#parentDirBtn').hide();
-        }
-        //fb.request('fileListRequest', currentWorkDir, null);
-        //sio.emit('workflowRequest', currentWorkFlow);
+        } */
         fb.request('getFileList', currentWorkDir, null);
         sio.emit('getWorkflow', currentWorkFlow);
+
       });
+
     }
   }
 
@@ -556,16 +587,16 @@ $(() => {
     $('#drawer_menu').toggleClass('action', false);
   });
 
-  $('#fileBrowseButton').click(function () {
+/* $('#fileBrowseButton').click(function () {
     //fb.request('fileListRequest', currentWorkDir, null);
     fb.request('getFileList', currentWorkDir, null);
     $('#fileBrowser').dialog({title: 'File Browse', modal: true, width: 1000});
-  });
+  });  */
 
-  $('#fileBrowserCancelButton').click(function () {
+/*   $('#fileBrowserCancelButton').click(function () {
     //fb.request('fileListRequest', currentWorkDir, null);
     fb.request('getFileList', currentWorkDir, null);
     $('#fileBrowser').dialog('close');
-  });
+  }); */
 
 });
