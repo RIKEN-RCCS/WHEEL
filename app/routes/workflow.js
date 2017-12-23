@@ -29,6 +29,7 @@ let rwfFilename=null;
 let rwfDispatcher=null
 
 let projectJson=null;
+let projectState='not-started';
 
 /**
  * write data and emit to client with promise
@@ -383,17 +384,17 @@ async function onRunProject(sio, msg){
     logger.error('invalid root workflow:\n', err);
     return false
   }
-  let state = 'running'
+  projectState = 'running'
   rwfDispatcher = new Dispatcher(rwf, path.dirname(rwfFilename), rwfDir);
-  sio.emit('projectState', state);
+  sio.emit('projectState', projectState);
 
   try{
-    state = await rwfDispatcher.dispatch()
+    projectState = await rwfDispatcher.dispatch()
   }catch(err){
     logger.error('fatal error occurred while parseing root workflow: \n',err);
     return false;
   }
-  sio.emit('projectState', state);
+  sio.emit('projectState', projectState);
 }
 function onPauseProject(sio, msg){
   logger.debug(`pause event recieved: ${msg}`);
@@ -405,7 +406,8 @@ function onCleanProject(sio, msg){
   if(rwfDispatcher != null) rwfDispatcher.remove();
   //TODO 途中経過ファイルなども削除する
   onWorkflowRequest(sio, cwfFilename);
-  sio.emit('projectState', 'cleared');
+  projectState='cleared'
+  sio.emit('projectState', projectState);
 }
 
 function onTaskStateListRequest(sio){
@@ -446,6 +448,9 @@ module.exports = function(io){
     });
     socket.on('getProjectJson', ()=>{
       socket.emit('projectJson', projectJson);
+    });
+    sockect.on('getProjectList', ()=>{
+      socket.emit('projectState', projectState);
     });
   });
 
