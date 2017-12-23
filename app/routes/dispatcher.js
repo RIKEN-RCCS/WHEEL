@@ -9,7 +9,7 @@ const {interval} = require('../db/db');
 const logger=require('../logger');
 const executer = require('./executer');
 const { addXSync, asyncNcp } = require('./utility');
-const { paramVecGenerator, getFilenames, removeInvalid}  = require('./parameterParser');
+const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 
 // utility functions
 function _forGetNextIndex(node){
@@ -217,11 +217,13 @@ class Dispatcher{
     logger.debug('_delegate called', node.name);
     let child = await this._createChild(node);
     this.children.push(child);
+    let state='finished';
     await child.dispatch()
       .catch((err)=>{
         logger.error("fatal error occurred while dispatching sub workflow",err);
+        state='failed';
       });
-    node.state='finished';
+    node.state=state;
     Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
@@ -311,6 +313,7 @@ class Dispatcher{
     ignoreFiles.push(paramSettingsFilename);
 
     let promises=[]
+    node.numTotal = getParamSize(paramSpace);
     for(let paramVec of paramVecGenerator(paramSpace)){
       let dstDir=paramVec.reduce((p,e)=>{
         let v = e.value;
@@ -348,7 +351,17 @@ class Dispatcher{
       let newNode = Object.assign({}, node);
       newNode.path = path.relative(this.cwfDir, dstDir);
       newNode.parent = path.resolve(path.dirname(node.parent), node.path, node.jsonFile);
-      promises.push(this._delegate(newNode));
+      let p = this._delegate(newNode)
+      .then(()=>{
+        if(newNode.state === 'finished'){
+          ++(node.numFinished)
+        } else if (newNode.state === 'failed'){
+          ++(node.numFailed)
+        }else{
+          logger.error('child state is illegal', newNode.state);
+        }
+      });
+      promises.push(p);
     }
     return Promise.all(promises)
       .then(()=>{

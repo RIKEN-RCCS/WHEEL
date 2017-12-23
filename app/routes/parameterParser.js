@@ -46,11 +46,15 @@ function getNthParamVec(n, ParamSpace){
   return paramVec;
 }
 
-function* paramVecGenerator(ParamSpace){
-  let totalSize=ParamSpace.reduce((p, a)=>{
+function getParamSize(ParamSpace){
+  return ParamSpace.reduce((p, a)=>{
     let paramAxisSize=getParamAxisSize(a);
     return paramAxisSize !== 0 ? p*paramAxisSize: p
   }, 1);
+}
+
+function* paramVecGenerator(ParamSpace){
+  let totalSize=getParamSize(ParamSpace);
   let index=0;
   while(index < totalSize){
     yield getNthParamVec(index, ParamSpace);
@@ -95,5 +99,6 @@ function removeInvalid(paramSpace){
 }
 
 module.exports.paramVecGenerator=paramVecGenerator;
+module.exports.getParamSize=getParamSize;
 module.exports.getFilenames=getFilenames;
 module.exports.removeInvalid=removeInvalid;
