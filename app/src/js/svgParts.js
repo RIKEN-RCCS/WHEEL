@@ -177,9 +177,10 @@ export class SvgCable {
 }
 
 class SvgBox {
-  constructor(svg, x, y, type, name, inputFiles, outputFiles) {
+  constructor(svg, x, y, type, name, inputFiles, outputFiles, state) {
     this.draw = svg;
     this.type = type.toLowerCase();
+    //console.log(type);
 
     // read draw settings from config
     const opacity = config.box_appearance.opacity;
@@ -201,6 +202,10 @@ class SvgBox {
     this.height = bodyHeight + titleHeight;
 
     const title = this.createTitle(name);
+    const taskState = this.createState(state);
+    const childViewButton = this.createChildViewButton(type);
+    
+    
     this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, title.bbox().width)) + marginWidth;
 
     const outerFrame = this.createOuterFrame();
@@ -213,6 +218,8 @@ class SvgBox {
       .add(title)
       .add(input)
       .add(output)
+      .add(taskState)
+      .add(childViewButton)
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
@@ -305,6 +312,58 @@ class SvgBox {
     });
     return this.inputGroup;
   }
+  
+  /**
+   * create state
+   * @return state element
+   */
+  createState(state) {
+    //X座標はtitleと同じ、Y座標はoutputFilesの少し内側
+    //今は決め打ちで適当に設定
+    const statePosX = config.box_appearance.titleHeight;
+    const statePosY = statePosX + config.box_appearance['strokeWidth'];
+    
+    let taskState;
+    if(state == "not-started"){
+      taskState="/image/state.png";
+    }else{
+      taskState="/image/state_2.png";
+    }
+    return this.draw
+      //.text(taskState)
+      .image(taskState)
+      .fill('#111')
+      .x(statePosX*3)
+      .y(0);
+      
+  }
+
+    /**
+   * create child view button
+   * @return child view button
+   */
+  createChildViewButton(type) {
+    //task,if以外のtypeが来たとき子要素表示用ボタンを作成する。
+    //描画位置は適当
+    const childViewButtonPosX = config.box_appearance.titleHeight;
+    const childViewButtonPosY = childViewButtonPosX + config.box_appearance['strokeWidth'];
+    
+    console.log(type);
+    let childViewButton;
+    if(type !== "task")
+    {
+      childViewButton = "/image/state_3.png";
+      console.log(type);
+    }
+
+    return this.draw
+      .image(childViewButton)
+      .fill('#111')
+      .x(childViewButtonPosX*3)
+      .y(30);
+
+  }
+  
 }
 
 function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback) {
@@ -375,8 +434,8 @@ export function createUpper(svg, originX, originY, offsetX, offsetY) {
   return plug;
 }
 
-export function createBox(svg, x, y, type, name, inputFiles, outputFiles) {
-  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles);
+export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state) {
+  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state);
   return [box.box, box.textHeight];
 }
 

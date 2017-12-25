@@ -33,7 +33,13 @@ $(() => {
   let nodeStack = [''];
   let dirStack = [rootDir];
   let wfStack = [rootWorkflow];
+
+  let projectLootDir = currentWorkDir;
+
+  console.log(currentWorkDir);
+  console.log(projectFilePath);
   
+
   // create vue.js instance for property subscreen
   let vm = new Vue({
     el: '#property',
@@ -178,12 +184,6 @@ $(() => {
 /*   $('#parentDirBtn').on('click',function(){
     currentWorkFlow = nodeStack.pop();
     currentWorkDir = dirStack.pop();
-    console.log('#parentDirBtn LOG');
-    console.log('dirstack');
-    console.log(currentWorkDir);
-    console.log('nodeStack');
-    console.log(currentWorkFlow);
-    
     updateBreadrumb();
 
     if(currentWorkDir !== rootDir){
@@ -206,7 +206,8 @@ $(() => {
     sio.emit('getWorkflow', currentWorkFlow);
     sio.on('workflow', function(wf){
       //$('#path').text(wf.path);
-      nodeStack[nodeStack.length - 1] = wf.name;//->doubleclick内に同様の意図を持ったものを仮設
+      console.log(wf);
+      nodeStack[nodeStack.length - 1] = wf.name;
 
       updateBreadrumb();
 
@@ -216,6 +217,9 @@ $(() => {
       });
 
       nodes = [];
+      console.log(nodes);
+      console.log(wf.nodes);
+      
 
       if (wf.nodes.length > 0) {
         let names = wf.nodes.map((e) => {
@@ -467,35 +471,38 @@ $(() => {
             selectedNode=nodeIndex;
             let name = nodesInWF[nodeIndex].name;         
             // let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].path+node
-            let nodePath = currentWorkDir+"\\"+nodesInWF[nodeIndex].name;
-            fb.request('getFileList', nodePath, null);            
-            let currentPropertyDir = currentWorkDir+"\\"+nodesInWF[nodeIndex].name;
+            let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].name;
+            fb.request('getFileList', nodePath, null);
+
+            //プロパティ表示用相対パス
+            let currentPropertyDir = "."+currentWorkDir.replace(projectLootDir,"")+"/"+nodesInWF[nodeIndex].name;
+            console.log(currentWorkDir);
             let nodeType = nodesInWF[nodeIndex].type;
             vm.node=v;
             $('#taskPath').html(currentPropertyDir); 
-/*             if(nodeType === 'if')
-            {
-              $('#remoteFileTransferSetthing').hide();
-            }
-            else{
-              $('#remoteFileTransferSetthing').show();              
-            } */
+
             $('#property').show().animate({width: '360px', 'min-width': '360px'}, 100);
           })
           .onDblclick(function(e){
+            console.log("double Click!!");
+            
             let nodeType=e.target.instance.parent('.node').data('type');
             if(nodeType === 'workflow' ||nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach'){
               let nodeIndex=e.target.instance.parent('.node').data('index');
               let name = nodesInWF[nodeIndex].name;
               let path=e.target.instance.parent('.node').data('path');
               let json=e.target.instance.parent('.node').data('jsonFile');
-              currentWorkDir=currentWorkDir+'/'+path;
+              currentWorkDir=currentWorkDir+'/'+name;
               currentWorkFlow=currentWorkDir+'/'+json;
               //dirStack.push({dir: currentWorkDir, wf: currentWorkFlow});
               dirStack.push(currentWorkDir);
-              wfStack.push(currentWorkFlow);             
+              wfStack.push(currentWorkFlow);
               nodeStack.push(name);
 
+              console.log(currentWorkDir);
+              console.log(currentWorkFlow);
+              console.log(path);
+              
               fb.request('getFileList', currentWorkDir, null);
               sio.emit('getWorkflow', currentWorkFlow);
 

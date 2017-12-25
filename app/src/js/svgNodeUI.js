@@ -30,7 +30,7 @@ export default class{
     this.group.data({"index": node.index, "type": node.type}).draggable().addClass('node');
 
     // draw node
-    const [box, textHeight]= parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles);
+    const [box, textHeight]= parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state);
     const boxBbox=box.bbox()
     const boxX=box.x();
     const boxY=box.y();
@@ -41,7 +41,7 @@ export default class{
     upper.data({"index": node.index});
     this.group.add(upper);
 
-    const numLower=node.type === 'if'? 3:2;
+    const numLower = node.type === 'if'? 3:2;
     let tmp=null;
     [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width/numLower, boxBbox.height, config.plug_color.flow, sio);
     this.lowerPlug.data({"next": node.next});
@@ -71,6 +71,7 @@ export default class{
     if(node != null && node.jsonFile != null){
       this.group.data({"path": node.path, "jsonFile": node.jsonFile});
     }
+    
 
     // difference between box origin and mouse pointer
     let diffX=0;

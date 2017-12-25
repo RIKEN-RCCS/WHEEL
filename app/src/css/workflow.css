@@ -99,7 +99,11 @@ header {
 }
 
 #taskcontents{
- padding: 10px; 
+    padding: 10px;
+}
+
+#taskcontents li:hover{
+    background-color: green;
 }
 
 .drawer_button img{
