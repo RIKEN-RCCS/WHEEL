@@ -46,7 +46,7 @@ async function recursiveSymlink(srcRoot, src, dstRoot, dst){
   if(srces.length === 1){
     return promisify(fs.link)(oldPath, newPath);
   }
-  let promises = srces.map((srcFile)=>{
+  let promises = srces.map(async (srcFile)=>{
     let dir = path.posix.dirname(srcFile)
     await mkdir_p(path.posix.join(newPath, dir));
     return promisify(fs.link)(oldPath, path.posix.join(newPath, srcFile));
@@ -62,10 +62,10 @@ function normalizePath(pathString){
   // path.posix.sep('/') is disallowed as filename letter on windows OS
   // but posix allow path.win32.sep('\').
   // so the order of following if clause can not be swaped.
-  if(pathString.includes(path.posix.sep){
+  if(pathString.includes(path.posix.sep)){
     let pathObj=path.posix.parse(pathString);
     rt = path.posix.join(pathObj.dir, pathObj.base);
-  }else if(pathString.includes(path.win32.sep){
+  }else if(pathString.includes(path.win32.sep)){
     let pathObj=path.win32.parse(pathString);
     rt = path.posix.join(pathObj.dir.split(path.win32.sep), pathObj.base);
   }
