@@ -449,8 +449,28 @@ module.exports = function(io){
     socket.on('getProjectJson', ()=>{
       socket.emit('projectJson', projectJson);
     });
-    sockect.on('getProjectList', ()=>{
+    socket.on('getProjectList', ()=>{
       socket.emit('projectState', projectState);
+    });
+    socket.on('createNewFile', (filename, cb)=>{
+      promisify(fs.writeFile)(filename, '')
+      .then(()=>{
+        cb(true);
+      })
+      .catch((err)=>{
+        logger.error('create new file failed', err);
+        cb(false);
+      });
+    });
+    socket.on('createNewDir', (dirname, cb)=>{
+      promisify(fs.mkdir)(dirname)
+      .then(()=>{
+        cb(true);
+      })
+      .catch((err)=>{
+        logger.error('create new directory failed', err);
+        cb(false);
+      });
     });
   });
 

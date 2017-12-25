@@ -21,7 +21,7 @@ class BaseWorkflowComponent {
      * input files from other node
      * each element of inputFiles should be following
      * {
-     *   name: "filename, dirname or regex",
+     *   name: "filename or dirname",
      *   srcNode: "index of src node",
      *   srcName: "name in src node"
      * }
@@ -33,7 +33,7 @@ class BaseWorkflowComponent {
      * each element of outputFiles should be following
      * if name is null or white space, original file name will be used
      * {
-     *   name: "filename, dirname or regex",
+     *   name: "filename, dirname or glob pattern",
      *   dst:[
      *     {dstNode: "index of dst node1", dstName: "name in dst node1"},
      *     {dstNode: "index of dst node2", dstName: "name in dst node2"}
