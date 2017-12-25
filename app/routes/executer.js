@@ -6,7 +6,7 @@ const {promisify} = require('util');
 const glob = require('glob');
 
 const {getSsh} = require('./sshManager');
-const {interval, remoteHost} = require('../db/db');
+const {interval, remoteHost, jobScheduler} = require('../db/db');
 const logger = require('../logger');
 const {addXSync, getDateString} = require('./utility');
 
@@ -125,15 +125,22 @@ function localExec(task){
   return cp.pid;
 }
 
-async function remoteExecAdaptor(ssh, task){
+async function prepareRemoteExecDir(ssh, task){
   let script = path.resolve(task.workingDir, task.script);
   addXSync(script);
   await ssh.mkdir_p(task.remoteWorkingDir);
   await ssh.send(task.workingDir, task.remoteWorkingDir);
+}
+
+async function remoteExecAdaptor(ssh, task){
+  await prepareRemoteExecDir(ssh, task);
   let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   let workdir=path.posix.dirname(scriptAbsPath);
   let cmd = `cd ${workdir} && ${scriptAbsPath}`;
+
   let rt = await ssh.exec(cmd);
+
+  // get necessary files from remote server
   let promises=task.outputFiles.map((e)=>{
     let src = path.posix.join(task.remoteWorkingDir, e.name);
     let dst = e.name;
@@ -143,6 +150,7 @@ async function remoteExecAdaptor(ssh, task){
     ssh.recv(src, dst);
   });
   await Promise.all(promises);
+
   if(rt === 0){
     task.state = 'finished';
   }else{
