@@ -21,7 +21,7 @@ class BaseWorkflowComponent {
      * input files from other node
      * each element of inputFiles should be following
      * {
-     *   name: "filename, dirname or regex",
+     *   name: "filename or dirname",
      *   srcNode: "index of src node",
      *   srcName: "name in src node"
      * }
@@ -33,7 +33,7 @@ class BaseWorkflowComponent {
      * each element of outputFiles should be following
      * if name is null or white space, original file name will be used
      * {
-     *   name: "filename, dirname or regex",
+     *   name: "filename, dirname or glob pattern",
      *   dst:[
      *     {dstNode: "index of dst node1", dstName: "name in dst node1"},
      *     {dstNode: "index of dst node2", dstName: "name in dst node2"}
@@ -41,6 +41,20 @@ class BaseWorkflowComponent {
      * }
      */
     this.outputFiles=[];
+
+    /**
+     * node state
+     * possible value is one of
+     *  - 'not-started'
+     *  - 'stage-in'   (task only) transfering files to remote host
+     *  - 'waiting'    (task only) waiting to run due to job submit number limitation
+     *  - 'running'    running
+     *  - 'queued'     (task only) submit to batch system
+     *  - 'stage-out'  (task only) transfering files from  remote host
+     *  - 'finished'   finished
+     *  - 'failed'     error occurred before task finish
+     */
+    this.state='not-started';
 
     /** cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
@@ -86,19 +100,6 @@ class Task extends BaseWorkflowComponent{
     this.host='localhost';
     /** */
     this.jobScheduler=null;
-    /**
-     * task state
-     * possible value is one of
-     *  - 'not-started'
-     *  - 'stage-in'   transfering files to remote host
-     *  - 'waiting'    waiting to run due to job submit number limitation
-     *  - 'running'    running
-     *  - 'queued'     submit to batch system
-     *  - 'stage-out'  transfering files from  remote host
-     *  - 'finished'   finished
-     *  - 'failed'     error occurred before task finish
-     */
-    this.state='not-started';
 
     // note on filters
     // if include filter is set, matched files are transferd whther it also match exclude filter

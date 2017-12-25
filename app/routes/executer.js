@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const {promisify} = require('util');
 
+const glob = require('glob');
+
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost} = require('../db/db');
 const logger = require('../logger');
@@ -10,21 +12,84 @@ const {addXSync, getDateString} = require('./utility');
 
 let executers=[];
 
+async function mkdir_p(targetPath){
+  let dirs=[];
+  let target = targetPath;
+  while(target !== path.poisx.sep){
+    try{
+      var stats = await promisify(fs.stat)(target)
+    }catch(e){
+      if(e.code === 'ENOENT'){
+        dirs.unshift(target);
+        target = path.posix.dirname(target);
+      }
+    }
+    if(stats.isDirectory()){
+      break;
+    }
+  }
+  let p = Promise.resolve();
+  dirs.forEach((dir)=>{
+    p = p.then(()=>{
+      return promisify(fs.mkdir)(dir);
+    });
+  });
+  return p;
+}
+
+async function recursiveSymlink(srcRoot, src, dstRoot, dst){
+  let srces = await promisify(glob)(src, {cwd: srcRoot});
+  let oldPath = path.posix.resolve(srcRoot, src);
+  let newPath = path.posix.resolve(dstRoot, dst);
+  let targetDir = path.posix.dirname(newPath);
+  mkdir_p(targetDir);
+  if(srces.length === 1){
+    return promisify(fs.link)(oldPath, newPath);
+  }
+  let promises = srces.map((srcFile)=>{
+    let dir = path.posix.dirname(srcFile)
+    await mkdir_p(path.posix.join(newPath, dir));
+    return promisify(fs.link)(oldPath, path.posix.join(newPath, srcFile));
+  })
+  return Promise.all(promises);
+}
+
+/**
+ * convert to posix-style path string and remove head and tail path separator
+ */
+function normalizePath(pathString){
+  let rt="";
+  // path.posix.sep('/') is disallowed as filename letter on windows OS
+  // but posix allow path.win32.sep('\').
+  // so the order of following if clause can not be swaped.
+  if(pathString.includes(path.posix.sep){
+    let pathObj=path.posix.parse(pathString);
+    rt = path.posix.join(pathObj.dir, pathObj.base);
+  }else if(pathString.includes(path.win32.sep){
+    let pathObj=path.win32.parse(pathString);
+    rt = path.posix.join(pathObj.dir.split(path.win32.sep), pathObj.base);
+  }
+  return rt;
+}
+
+/**
+ * pass outputFiles to dstination node
+ * @param {Task} task - task instance
+ */
 async function deliverOutputFiles(task){
   let promises=[]
   task.outputFiles.forEach((e)=>{
-    let src = path.posix.join(task.workingDir, e.name);
+    let src = normalizePath(e.name);
     promises = e.dst.map(async (dst)=>{
       let dstPath=path.resolve(dst.path, dst.dstName);
       try{
-        let stats = await promisify(fs.stat)(dstPath)
-        if(stats.isFile()){
-          return promisify(fs.unlink)(dstPath);
-        }
+        promisify(fs.unlink)(dstPath);
       }catch(e){
-        if(e.code !== 'ENOENT') return Promise.reject(e);
+        if(e.code !== 'ENOENT' || e.code !== 'EISDIR'){
+          return Promise.reject(e);
+        }
       }
-      return promisify(fs.symlink)(src, dstPath)
+      return recursiveSymlink(task.workingDir, src, dst.path, normalizePath(dst.dstName))
     });
   });
   return Promise.all(promises);
