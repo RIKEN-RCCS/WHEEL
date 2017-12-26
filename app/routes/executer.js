@@ -206,9 +206,7 @@ class Executer{
 async function createExecuter(task){
   let maxNumJob=1;
   let exec = localExec;
-  if(task.jobScheduler !== null){
-    exec = localSubmit.bind(qsub);
-  }
+  //TODO add local submit case
   if(task.remotehostID!== 'localhost'){
     let hostinfo = remoteHost.get(task.remotehostID);
     let config = {

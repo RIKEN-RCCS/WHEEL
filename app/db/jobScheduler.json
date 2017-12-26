@@ -1,0 +1,9 @@
+{
+  "ParallelNavi": {
+    "submit": "pjsub",
+    "stat": "pjstat -H day=3 --choose jid,st,ec,pc",
+    "del": "pjdel",
+    "reJobID": "pjsub Job (\\\\d+) submitted.",
+    "reState": "^JOB_ID.*\\\\n\\\\d+ *(\\\\w\\\\w\\\\w) *(\\\\d) *(\\\\d)"
+  }
+}
