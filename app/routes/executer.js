@@ -6,7 +6,7 @@ const {promisify} = require('util');
 const glob = require('glob');
 
 const {getSsh} = require('./sshManager');
-const {interval, remoteHost} = require('../db/db');
+const {interval, remoteHost, jobScheduler} = require('../db/db');
 const logger = require('../logger');
 const {addXSync, getDateString} = require('./utility');
 
@@ -46,7 +46,7 @@ async function recursiveSymlink(srcRoot, src, dstRoot, dst){
   if(srces.length === 1){
     return promisify(fs.link)(oldPath, newPath);
   }
-  let promises = srces.map((srcFile)=>{
+  let promises = srces.map(async (srcFile)=>{
     let dir = path.posix.dirname(srcFile)
     await mkdir_p(path.posix.join(newPath, dir));
     return promisify(fs.link)(oldPath, path.posix.join(newPath, srcFile));
@@ -62,10 +62,10 @@ function normalizePath(pathString){
   // path.posix.sep('/') is disallowed as filename letter on windows OS
   // but posix allow path.win32.sep('\').
   // so the order of following if clause can not be swaped.
-  if(pathString.includes(path.posix.sep){
+  if(pathString.includes(path.posix.sep)){
     let pathObj=path.posix.parse(pathString);
     rt = path.posix.join(pathObj.dir, pathObj.base);
-  }else if(pathString.includes(path.win32.sep){
+  }else if(pathString.includes(path.win32.sep)){
     let pathObj=path.win32.parse(pathString);
     rt = path.posix.join(pathObj.dir.split(path.win32.sep), pathObj.base);
   }
@@ -125,15 +125,22 @@ function localExec(task){
   return cp.pid;
 }
 
-async function remoteExecAdaptor(ssh, task){
+async function prepareRemoteExecDir(ssh, task){
   let script = path.resolve(task.workingDir, task.script);
   addXSync(script);
   await ssh.mkdir_p(task.remoteWorkingDir);
   await ssh.send(task.workingDir, task.remoteWorkingDir);
+}
+
+async function remoteExecAdaptor(ssh, task){
+  await prepareRemoteExecDir(ssh, task);
   let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   let workdir=path.posix.dirname(scriptAbsPath);
   let cmd = `cd ${workdir} && ${scriptAbsPath}`;
+
   let rt = await ssh.exec(cmd);
+
+  // get necessary files from remote server
   let promises=task.outputFiles.map((e)=>{
     let src = path.posix.join(task.remoteWorkingDir, e.name);
     let dst = e.name;
@@ -143,6 +150,7 @@ async function remoteExecAdaptor(ssh, task){
     ssh.recv(src, dst);
   });
   await Promise.all(promises);
+
   if(rt === 0){
     task.state = 'finished';
   }else{
@@ -198,9 +206,7 @@ class Executer{
 async function createExecuter(task){
   let maxNumJob=1;
   let exec = localExec;
-  if(task.jobScheduler !== null){
-    exec = localSubmit.bind(qsub);
-  }
+  //TODO add local submit case
   if(task.remotehostID!== 'localhost'){
     let hostinfo = remoteHost.get(task.remotehostID);
     let config = {

@@ -83,7 +83,6 @@ class BaseTaskGraph extends BaseWorkflowComponent{
      * 2: same as parent
      */
     this.cleanupFlag=null;
-
   }
 }
 
@@ -98,22 +97,18 @@ class Task extends BaseWorkflowComponent{
     this.script=null;
     /** hostname where this task will execute on */
     this.host='localhost';
-    /** */
-    this.jobScheduler=null;
-
+    /** run as batch job or not*/
+    this.useJobScheduler=false;
+    /** list of queue name */
+    this.queue=[];
+    /** remove files on remoteserver or not */
+    this.cleanupFlag=false;
     // note on filters
     // if include filter is set, matched files are transferd whther it also match exclude filter
-    /**
-     * include filter for recieve files from remote host
-     */
+    /** include filter for recieve files from remote host */
     this.include=null;
-
-    /**
-     * exclude filter for recieve files from remote host
-     */
+    /** exclude filter for recieve files from remote host */
     this.exclude=null;
-
-    this.cleanupFlag=null;
   }
 }
 
