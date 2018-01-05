@@ -18,73 +18,43 @@
 <body>
   <!-- header始まり -->
   <header>
-    <a href="login" class="title">WHEEL</a>
-    <h3 class="title_username">Yuki Tanaka</h3>
-    <button type="button" class="title_button"><img src="../img/button_kari.png" alt="config"></button>
+    <p class="title">WHEEL</p>  
+    <span id="title_username" class="title_username">Yuki Tanaka</span>
+    <button type="button" id="drawer_button" class="drawer_button"><img src="/image/icon_config.png" alt="config"></button>
   </header>
-  <!-- header終わり -->
 
-  <!-- sidebar始まり-->
-  <aside class="home_sidebar">
-    <section>
-      <ul>
-        <li><a id="newButton" class="fileNew">New</a></li>
-        <li><a id="importButton" class="fileImport">Import</a></li>
-      </ul>
-    </section>
-  </aside>
-
-  <!-- slidebar始まり -->
-  <nav class="home_slidebar">
-    <ul>
-      <li><a href="#" id="configmenu1">Setting Menu</a></li>        
-      <li><a href="#" id="configmenu2">Host Info</a></li>
-      <li><a href="login.html" id="configmenu3">Log out</a></li>
-    </ul>
-  </nav>
-  <!-- slidebar終わり -->
-
-  <main>
+  <!-- dialogボタンエリア -->
+  <div>
     <div id="html_name">
       <p class="home">Home</p>
     </div>
-    <div id="fieldName">
-      <p class="projectField">Project List</p>
-    </div>
-    <article>
-      <section>
-        <div id="normal">
-          <div>
-            <ul id="projectList"></ul>
-          </div>
-        </div>
-      </section>
-    </article>
-  </main>
-    
-  <!-- NewDialog始まり -->
-<!-- <div class="dialogBackGround">
-      <div class="DialogArea">
-        <div class="addressBarArea">
-          <img src="../img/icon_dir.png" class="dir_icon">
-          <input type="text" id="addressBar" class="addressBarTextBox">
-        </div>
-
-        <div class="fileDialog" id="fileDialog">
-        </div>
-        
-        <div class="addressBarArea">
-          <span>Project Name</span>
-          <input type="text" id="inputTextBrowse" class="dialogTextBox">
-        </div>
-
-        <div class="dialogButton">
-          <button type="button" id="dialogOKbutton">OK</button>
-          <button type="button" id="dialogCancelbutton">Cancel</button>   
-        </div>  
-      </div>
-    </div> -->
+  </div>
+  <div id="fileControllArea" >
+    <button id="newButton" class="fileControllButton">New</button>
+    <button id="importButton" class="fileControllButton">Import</button>
+  </div>
   <div id="dialog"></div>
+
+  <main>
+    <div id="fieldName">
+    </div>
+      <section>
+        <div id="projectField">
+          <span id="projectName">Project Name</span>
+          <span id="projectDescription">Description</span>
+        </div>
+        <!-- Project List -->
+        <div id="projectList"></div>
+      </section>
+  </main>
+  <!-- 右ドロアーメニュー -->
+  <div id="drawer_menu" class="drawer_menu" data-position="right">
+    <ul>
+      <li><a class="drawer_menu_item" href="/remotehost">remotehost</a></li>
+      <li><a class="drawer_menu_item" href="/login">log out</a></li>
+    </ul>
+  </div>
+
 </body>
 
 </html>

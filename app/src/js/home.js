@@ -25,7 +25,7 @@ $(() => {
             .submit();
     };
     $.contextMenu({
-        'selector': '#projectList li',
+        'selector': '#projectList ul',
         'items': {
             'open': {
                 name: 'Open',
@@ -36,6 +36,7 @@ $(() => {
                 callback: function () {
                     var id= $(this).data('id');
                     var path= $(this).data('path');
+                    console.log(path);                    
                     var html = '<p>input new project name</p><input type="text" id="renamedProjectName">';
                     dialogWrapper('#dialog', html).done(function () {
                         var newName = $('#renamedProjectName').val();
@@ -47,6 +48,7 @@ $(() => {
                 name: 'Delete',
                 callback: function () {
                     var targetID = $(this).data('id');
+                    console.log(targetID);
                     dialogWrapper('#dialog', 'Are you sure you want to delete project?').done(function () {
                         socket.emit('removeProject', targetID);
                     });
@@ -64,7 +66,9 @@ $(() => {
     socket.on('projectList', (data) => {
         $('#projectList').empty();
         data.forEach(function (pj) {
-            $('#projectList').append(`<li class="ui-state-default" data-path="${pj.path}" data-id="${pj.id}" data-name="${pj.name}">${pj.name}</li>`);
+            $('#projectList').append(`<ul class="project" data-path="${pj.path}" data-id="${pj.id}" data-name="${pj.name}">
+            <li class="projectName">${pj.name}</li>
+            <li class="projectDescription">${pj.description}</li></ul>`);            
         });
     });
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
@@ -106,5 +110,14 @@ $(() => {
         socket.emit('importProject', target);
       });
       fb.request('getDirListAndProjectJson', null, null);
+    });
+
+    //管理者設定画面へのドロワー
+    $('#drawer_button').click(function () {
+      $('#drawer_menu').toggleClass('action', true);
+    });
+    
+    $('#drawer_menu').mouseleave(function () {
+      $('#drawer_menu').toggleClass('action', false);
     });
 });
