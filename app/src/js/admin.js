@@ -25,83 +25,77 @@ $(() => {
       newAccount: Object.assign({}, defaultAccount),
       mode: 'addAccount',
       accountList: [],
-      selectedAccountList: [],
+      selectedAccount: -1,
       errorMessage: 'temp'
     },
     methods:{
       toggleSelected: function(i) {
-        let index = this.selectedAccountList.indexOf(i);
-        if (index === -1) {
-          this.selectedAccountList.push(i);
+        if(this.selectedAccount === i)
+        {
+          this.selectedAccount = -1;
+          resetNewAccount();
+          $(".editArea").css("border", "solid 1px white");        
+          
         } else {
-          this.selectedAccountList.splice(index, 1);
+          this.selectedAccount = i;
+          $(".editArea").prop("disabled",true);
+          $(".editAreaButton").prop("disabled",true);
+          $(".editArea").css("border", "solid 1px white");        
+          Object.assign(this.newAccount, this.accountList[this.selectedAccount]);          
         }
       },
       onAddButton:function() {
-        this.mode = 'addAccount';
-        $("#errorMessage").css("visibility", "hidden");
-        // this.errorMessage = '';
-        resetNewAccount();
-        
-        $("#newAccountDialog").dialog({width:450, height:540, title: 'Add Account', modal: true});
-      },
-      onUpdateButton: function(){
-        this.mode = 'updateAccount';
-        // this.errorMessage = '';
-        $("#errorMessage").css("visibility", "hidden");                            
-        
-
-        if (this.selectedAccountList.length < 1) {
-           this.errorMessage = 'Please select Account';
-          $("#errorMessage").css("visibility", "visible");                    
-          return;
+        if(this.selectedAccount === -1)
+        {
+          this.mode = 'addAccount';
+        } else {
+          this.mode = 'updateAccount';
         }
+        $("#errorMessage").css("visibility", "hidden");
 
-        Object.assign(this.newAccount, this.accountList[this.selectedAccountList[this.selectedAccountList.length - 1]]);
-        $("#newAccountDialog").dialog({width:560, title: 'Update Account', modal: true});
+        $(".editArea").prop("disabled",false);
+        $(".editAreaButton").prop("disabled",false);        
+        $(".editArea").css("border", "solid 1px yellow");        
       },
       onRemoveButton: function(){
         this.mode = 'removeAccount';
         $("#errorMessage").css("visibility", "hidden");                                    
-        // this.errorMessage = '';
-        if (this.selectedAccountList.length < 1) {
+        if (this.selectedAccount === -1) {
           this.errorMessage = 'Please select Account';
           $("#errorMessage").css("visibility", "visible");                              
           return;
         }
 
         $("#deleteCheckDialog").dialog({width:300, title: 'Delete Account', modal: true});       
-
-        // this.selectedAccountList.forEach((index) => {
-        //   socket.emit('removeAccount', this.accountList[index].id);
-        // })
       },
+      onEditAreaOKButton: function(){
+        socket.emit(this.mode, this.newAccount);
+        resetNewAccount();
+        this.selectedAccount = -1;                
+        $(".editArea").css("border", "solid 1px white");                  
+      },
+      onEditAreaCancelButton: function(){
+        resetNewAccount();
+        this.selectedAccount = -1;        
+        $(".editArea").css("border", "solid 1px white");
+      },    
       onDialogOKButton: function(){
-        if(this.mode == 'removeAccount')
-        {
-          // this.selectedAccountList.forEach((index) => {
-          //   socket.emit('removeAccount', this.accountList[index].id);
-          // })
-          $("#deleteCheckDialog").dialog('close');          
-        } else {
-          socket.emit(this.mode, this.newAccount);
-          $("#newAccountDialog").dialog('close');
-        }
+        socket.emit('removeAccount', this.accountList[this.selectedAccount].id);
+        resetNewAccount();                              
+        $("#deleteCheckDialog").dialog('close');          
       },
       onDialogCancelButton: function(){
-        if(this.mode == 'removeAccount')
-        {
-          $("#deleteCheckDialog").dialog('close');                      
-        } if(this.mode =='updateAccount')
-        {
-          $("#newAccountDialog").dialog('close');          
-          resetNewAccount();          
-        } else {
-          $("#newAccountDialog").dialog('close');
-        }
+        $("#deleteCheckDialog").dialog('close');                      
       },
       isSelected: function(index) {
-        return this.selectedAccountList.includes(index);
+        let flag;
+        if( this.selectedAccount === index)
+        {
+          flag = true;
+        } else {
+          flag = false;
+        }
+        return flag;          
       }
     },
     computed:{
@@ -140,4 +134,13 @@ $(() => {
   function isEmpty(string) {
     return string === '';
   }
+
+  //管理者設定画面へのドロワー
+  $('#drawer_button').click(function () {
+    $('#drawer_menu').toggleClass('action', true);
+  });
+      
+  $('#drawer_menu').mouseleave(function () {
+    $('#drawer_menu').toggleClass('action', false);
+  });
 });

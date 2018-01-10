@@ -14,10 +14,7 @@ module.exports = function(io){
   }
   sio.on('connect', (socket) => {
     socket.on('getAccountList', ()=>{
-      userAccount.getAll()
-        .then((results)=>{
-          socket.emit('accountList', results);
-        });
+      socket.emit('accountList',userAccount.getAll());
     });
     socket.on('addAccount',    doAndEmit.bind(null, userAccount.add.bind(userAccount)));
     socket.on('removeAccount', doAndEmit.bind(null, userAccount.remove.bind(userAccount)));

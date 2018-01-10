@@ -1,45 +1,57 @@
 @charset "utf-8";
 
-#accountTitleArea{
-  /* list-style-type: none;
-  margin: 0 10px 10px 10px;
-  padding: 5px 5px 5px 15px; */
-  position: relative;
-  left:20px;
+body{
+  margin: 0;
+  padding: 0;
+  background-color: #3c3c3c;
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 2;
+  height:100%;
 }
 
-#accountPropertyArea
-{
+p,h1,h2,h3,h4,h5,h6{
+  margin-top: 0;
+}
+
+header{
+	position:relative;
+	padding:0;
+	color:#40555F;
+  background:gray;
+  font-family: 'Bitter', serif; 
+}
+
+#accountTitleArea{
+  padding-top: 10px;
   position: relative;
-  top: 5px;
-  height: 465px;
-  width: 919px;
-  left: 20px;
-  overflow-y: scroll;
+}
+
+#accountPropertyArea{
+  height: 331px;
   overflow-x: hidden;
-  background: #252525;
-  border: 1px solid;
+  background-color: #3c3c3c;
 }
 
 #accountListInfo{
-  background: #252525;
+  background: #3c3c3c;
   border: 1px solid;
+  border-color: black;
 }
 
 #accountListInfo:hover{
   background: green;
 }
 
-#html_name{
-  position: relative;
+#pageName{
+  height:30px;
   background:#252525;
-  height: 30px;  
 }
 
-div .admin{
+.admin{
   position: absolute;
-  background:#252525;
-  left:10px;  
+  background: #252525;
+  left: 20px;
 }
 
 #fieldName{
@@ -58,15 +70,16 @@ div .accountField{
 #titleTable
 {
   table-layout: fixed;
-  width: 900px;
+  width: 1820px;
   word-wrap: break-word;  
 }
 
 #propertyTable
 {
   table-layout: fixed;
-  width: 900px;
-  word-wrap: break-word;  
+  width: 1920px;
+  word-wrap: break-word;
+  border-collapse: collapse;
 }
 
 tr th
@@ -87,17 +100,23 @@ td:hover {
   white-space:normal;    
 }
 
-.userName,.workDir
-{
- width: 200px;
+.userName{
+ width: 300px;
 }
 
-.description
-{
-  width: 500px;
+.workDir{
+  width: 400px;
+ }
+
+.description{
+  width: 1220px;
 }
 
-button{
+#buttonArea{
+  background-color: #3c3c3c;
+  padding-bottom: 10px;
+}
+.buttonAreaButton{
   background-color: rgb(105, 175, 45);
   color: #ffffff;
   font-size: 15px;
@@ -114,21 +133,15 @@ button:hover{
   color: rgb(105, 175, 45);
 }
 
-#buttonArea
-{
-  padding: 10px;
-}
-
 li:hover{
   cursor: pointer;
 	background:#56676F;
 }
 
-p{
-	font-size:1.3em;
-	color:#EC8519;
-	margin-bottom:0px;
-	font-weight:bold;
+#accountRegistration{
+  height: 30px;  
+  background-color: #252525;  
+  padding-left: 10px;
 }
 
 .ui-state-error{
@@ -138,8 +151,15 @@ p{
 	font-weight:bold;
 }
 
-input[type="text"]{
-	width:300px;
+.editArea{
+  width:400px;
+  background-color: #252525;
+  color: white;
+}
+
+.fieldLabel{
+  display: inline-block;
+  width: 120px;
 }
 
 textarea{
@@ -152,6 +172,10 @@ textarea{
 	height:100px;
 }
 
+#testareafieldLabel{
+  padding-left : 123px;
+}
+
 #errorMessage
 {
   position: relative;
@@ -162,7 +186,98 @@ textarea{
 .dialogStateError
 {
   font-size:0.5em;  
-	border: 1px solid #ffffff;
-	background: #ffffff;
-	color: red;
+  background: #3c3c3c;
+  color: red;
+  width: 300px;
+}
+
+.editAreaButton{
+  background-color: #add8e6;
+  color: #ffffff;
+  font-size: 15px;
+  font-family: 'Bitter', serif;
+  width:100px;
+  border-radius: 3px; 
+  border: 3px solid #add8e6;
+  cursor: pointer;
+}
+
+.drawer_button{
+	position:absolute;
+	right:25px;
+	top:10px;
+	cursor: pointer;
+}
+
+.drawer_button img{
+	width:20px;
+}
+
+.drawer_button:focus{
+	outline:none;
+}
+
+.drawer_menu {
+    width:180px;
+    height:100%;
+    -webkit-transform:translateX(180px);    
+    transform:translateX(180px);
+    transition:ease .5s;
+    position:fixed;
+    top:0;
+    right:0;
+    z-index:90;
+}
+
+.drawer_menu.action {
+    width:180px;
+    background:darkslateblue;
+    -webkit-transform:translateX(0);
+    transform:translateX(0);
+}
+
+.drawer_menu_item {
+    color: white;
+}
+
+/* style.css*/
+
+
+.title{
+  padding:10px;
+  color: #e0e0e0;
+  font-size: 25px;
+  text-decoration: none;
+}
+
+/*名前の長さに注意する必要有*/
+.title_username{
+position:absolute;
+right:80px;
+  top:10px;
+}
+
+.title_button{
+position:absolute;
+right:25px;
+top:10px;
+background-color:transparent;
+border:none;
+cursor: pointer;
+width:35px;
+height:35px;
+}
+
+.title_button img{
+width:100%;
+}
+
+.title_button:focus{
+outline:none;
+}
+
+footer{
+  text-align: center;
+  color: #ffffff;
+  padding: 20px 0;
 }
