@@ -6,6 +6,7 @@ const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 module.exports={
   entry: {
     home:       "./app/src/js/home",
+    admin:      "./app/src/js/admin",
     workflow:   "./app/src/js/workflow",
     rapid:      "./app/src/js/rapid",
     remotehost: "./app/src/js/remotehost",
