@@ -1,7 +1,6 @@
 import config from './config';
 let UDPlug = [[0, 0], [20, 0], [20, 5], [10, 10], [0, 5]];
 let LRPlug = [[0, 0], [8, 0], [16, 8], [8, 16], [0, 16]];
-
 /**
  * calc y coord of 1st input/output file from top of the box
  * @return y coord
@@ -180,7 +179,6 @@ class SvgBox {
   constructor(svg, x, y, type, name, inputFiles, outputFiles, state) {
     this.draw = svg;
     this.type = type.toLowerCase();
-    //console.log(type);
 
     // read draw settings from config
     const opacity = config.box_appearance.opacity;
@@ -203,10 +201,13 @@ class SvgBox {
 
     const title = this.createTitle(name);
     const taskState = this.createState(state);
-    const childViewButton = this.createChildViewButton(type);
+    const iconImage = this.createIconImage(type);
+      
+    //const childViewButton = this.createChildViewButton(type);
     
-    
-    this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, title.bbox().width)) + marginWidth;
+    //決め打ちに変更
+    this.width = 125;
+    //this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, title.bbox().width)) + marginWidth;
 
     const outerFrame = this.createOuterFrame();
     const innerFrame = this.createInnerFrame();
@@ -219,7 +220,8 @@ class SvgBox {
       .add(input)
       .add(output)
       .add(taskState)
-      .add(childViewButton)
+      .add(iconImage)
+      //.add(childViewButton)
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
@@ -234,7 +236,7 @@ class SvgBox {
    * create outer frame
    * @return outer frame element
    */
-  createOuterFrame() {
+/*   createOuterFrame() {
     const titleHeight = config.box_appearance['titleHeight'];
     const nodeColor = config.node_color[this.type];
     return this.draw
@@ -246,12 +248,26 @@ class SvgBox {
         [0, titleHeight / 2]
       ])
       .fill(nodeColor);
+  } */
+  //矩形バージョンを考える
+  createOuterFrame() {
+    const componentHeight = 25;
+    const componentWidth = 125;    
+    const nodeColor = config.node_color[this.type];
+    return this.draw
+      .polygon([
+        [0, 0],
+        [componentWidth, 0],
+        [componentWidth, componentHeight],
+        [0, componentHeight],
+      ])
+      .fill(nodeColor);
   }
   /**
    * create inner frame
    * @return inner frame element
    */
-  createInnerFrame() {
+/*   createInnerFrame() {
     const titleHeight = config.box_appearance['titleHeight'];
     const strokeWidth = config.box_appearance['strokeWidth'];
     const nodeColor = config.node_color[this.type];
@@ -263,18 +279,43 @@ class SvgBox {
         'stroke-width': strokeWidth
       })
       .move(strokeWidth / 2, titleHeight);
+  } */
+
+  //決め打ちバージョン
+  createInnerFrame() {
+    const componentHeight = 25;
+    const strokeWidth = config.box_appearance['strokeWidth'];
+    const nodeColor = config.node_color[this.type];
+    return this.draw
+      .rect(0, 0)
+      .attr({
+        'fill': 'rgb(50, 50, 50)',
+        'stroke': nodeColor,
+        'stroke-width': strokeWidth
+      })
+      .move(strokeWidth / 2, componentHeight);
   }
   /**
    * create title
    * @return title element
    */
-  createTitle(name) {
+/*   createTitle(name) {
     const titleHeight = config.box_appearance.titleHeight;
     return this.draw
       .text(name)
       .fill('#111')
       .x(titleHeight / 2)
       .cy(titleHeight / 2);
+  } */
+  //タイトルの位置を決め打つ
+  createTitle(name) {
+    const titlePosY = 2.5;
+    const titlePosX = 25;
+    return this.draw
+      .text(name)
+      .fill('#111')
+      .x(titlePosX)
+      .y(titlePosY);
   }
   /**
    * create output file text
@@ -287,6 +328,7 @@ class SvgBox {
         .text(output.name)
         .fill('white');
       this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
+
       const x = -text.bbox().width - config.box_appearance.outputTextOffset;
       const y = calcFileBasePosY() + this.textHeight * index;
       text.move(x, y);
@@ -320,8 +362,8 @@ class SvgBox {
   createState(state) {
     //X座標はtitleと同じ、Y座標はoutputFilesの少し内側
     //今は決め打ちで適当に設定
-    const statePosX = config.box_appearance.titleHeight;
-    const statePosY = statePosX + config.box_appearance['strokeWidth'];
+    const statePosX = 105;
+    const statePosY = 2.5;
     
     let taskState;
     if(state == "not-started"){
@@ -333,9 +375,150 @@ class SvgBox {
       //.text(taskState)
       .image(taskState)
       .fill('#111')
-      .x(statePosX*3)
-      .y(0);
+      .x(statePosX)
+      .y(statePosY);
+  }
+
+    /**
+   * create workflow component icon
+   * @return icon
+   */
+  createIconImage(type) {
+    //今は決め打ちで適当に設定
+    const statePosX = 2.5;
+    const statePosY = 2.5;
+    
+    let iconType;
+    switch(type){
+      case 'task':
+        iconType = "/image/task_icon.png";
+        break;       
+      case 'workflow':
+        iconType = "/image/workflow_icon.png";
+        break;
+      case 'parameterStudy':
+        iconType = "/image/ps_icon.png";
+        break;
+      case 'if':
+        iconType = "/image/if_icon.png";
+        break;
+      case 'for':
+        iconType = "/image/for_icon.png";
+        break;
+      case 'while':
+        iconType = "/image/while_icon.png";
+        break;
+      case 'foreach':
+        iconType = "/image/foreach_icon.png";
+        break;
+    }
+    return this.draw
+      //.text(taskState)
+      .image(iconType)
+      .fill('#111')
+      .x(statePosX)
+      .y(statePosY);
+  }
+
+}
+
+export class SvgChildrenViewBox {
+  constructor(svg, x, y, type, name) {
+    this.draw = svg;
+    this.type = type.toLowerCase();
+
+    // read draw settings from config
+    const opacity = config.box_appearance.opacity;
+    const strokeWidth = config.box_appearance.strokeWidth;
+    const titleHeight = config.box_appearance.titleHeight;
+    const marginHeight = config.box_appearance.marginHeight;
+    const marginWidth = titleHeight * 2;
+    const outputTextOffset = config.box_appearance.outputTextOffset;
+    const nodeColor = config.node_color[this.type];
+
+    // create inner parts
+    const outputBBox = 20;
+    const inputBBox = 20;
+    const title = 20;
+    this.viewHeight = 20;
+    const bodyHeight = marginHeight + Math.ceil(Math.max(inputBBox, outputBBox));
+    this.height = bodyHeight + titleHeight;
+    //title.bbox().width = 35.40625
+    this.width = Math.ceil(Math.max(inputBBox + outputBBox, 35.40625)) + marginWidth;
+
+    const viewArea = this.createChildViewArea();    
+    //const childViewButton = this.createChildViewButton(type);
+    const children = this.createChildrenIcon(svg, x, y, name);
+    
+    this.viewBox = this.draw.group();
+    this.viewBox
+      .add(viewArea)
+      .add(children)
       
+      .style('cursor', 'default')
+      .opacity(opacity)
+      .move(x, y)
+      .addClass('viewBox');
+
+    // adjust size
+    viewArea.size(this.width - strokeWidth, bodyHeight);
+    //});
+  }
+
+  /**
+   * create children icon
+   * @return children icon
+   */
+  createChildrenIcon(svg, x, y, name) {
+    const titleHeight = config.box_appearance['titleHeight'];
+    const strokeWidth = config.box_appearance['strokeWidth'];
+    //let childrenWf = parent.replace("define.wf.json","")+"/"+name+"/define.wf.json";
+    
+    this.childrenGroup = this.draw.group();
+    var viewBox = this;
+       //let node = childrenWf.nodes[2];
+        //if(node == null) return;
+        // console.log(node);
+          
+          // let childName = node.name;
+          // let childPosX = node.pos.x;
+          // let childPosY = node.pos.y;
+
+          let childName = name;
+          let childPosX = x;
+          let childPosY = y;
+        
+          const text = viewBox.draw
+          .text(childName)
+          .fill('white');
+          viewBox.textHeight = 10;
+          const nodePosX = strokeWidth + childPosX/25;
+          const nodePosY = titleHeight*2 + childPosY/25;
+          text.move(nodePosX, nodePosY);
+          viewBox.childrenGroup.add(text);
+
+
+    return this.childrenGroup;
+  }
+
+
+    /**
+   * create children view area
+   * @return children view area element
+   */
+  createChildViewArea() {
+    const titleHeight = config.box_appearance['titleHeight'];
+    const strokeWidth = config.box_appearance['strokeWidth'];
+    const nodeColor = config.node_color[this.type];
+    
+    return this.draw
+      .rect(0, 0)
+      .attr({
+        'fill': 'rgb(50, 50, 50)',
+        'stroke': nodeColor,
+        'stroke-width': strokeWidth
+      })
+      .move(strokeWidth, titleHeight * 2);
   }
 
     /**
@@ -348,25 +531,22 @@ class SvgBox {
     const childViewButtonPosX = config.box_appearance.titleHeight;
     const childViewButtonPosY = childViewButtonPosX + config.box_appearance['strokeWidth'];
     
-    console.log(type);
+    //console.log(type);
     let childViewButton;
-    if(type !== "task")
-    {
-      childViewButton = "/image/state_3.png";
-      console.log(type);
-    }
+
+    childViewButton = "/image/state_3.png";
 
     return this.draw
       .image(childViewButton)
       .fill('#111')
       .x(childViewButtonPosX*3)
       .y(30);
-
   }
   
 }
 
 function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback) {
+  //plugの位置（originX,originY）を決める
   let plug = svg.polygon(plugShape).fill(color);
   const bbox = plug.bbox();
   originX -= bbox.width / 2;
@@ -392,7 +572,6 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
       cable.dragEndPoint(dx, dy);
     })
     .on('dragend', (e) => {
-      console.log(e);
       cable.endX = e.target.instance.x();
       cable.endY = e.target.instance.y();
       const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
@@ -407,6 +586,7 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
     });
   return [plug, cable.cable];
 }
+
 
 export function createLower(svg, originX, originY, offsetX, offsetY, color, sio) {
   return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, true, color, UDPlug, 'DU', '.upperPlug', function (myIndex, hitIndex, plug) {
@@ -439,3 +619,7 @@ export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state)
   return [box.box, box.textHeight];
 }
 
+/* export function createChildrenViewBox(svg, x, y, type, name, parent, jsonFile, inputFiles, sio) {
+  const viewBox = new SvgChildrenViewBox(svg, x, y, type, name, parent, jsonFile, inputFiles, sio);
+  return [viewBox.viewBox, viewBox.viewHeight];
+} */

@@ -66,9 +66,14 @@ button:hover{
   text-align: left;  
 }
 
+#newProjectName{
+  width: 650px;
+}
+
 #fileList{
   font-size: 14px;
   overflow: auto;
+  height: 950px;
 }
 
 /* Home画面 */

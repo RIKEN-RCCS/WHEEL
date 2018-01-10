@@ -79,7 +79,7 @@
       </div>
       <div id="descriptionField">
         <span><label>Description</label></span>
-        <div id="testareafieldLabel"><textarea v-model.lazy.trim="newAccount.description" v-bind:class="{'ui-state-error': !validation.name}" class="editArea"></textarea></div>
+        <div id="testareafieldLabel"><textarea v-model.lazy.trim="newAccount.description" class="editArea"></textarea></div>
       </div>
       <button class="editAreaButton" v-on:click="onEditAreaOKButton" v-bind:disabled="hasError">Confirm</button>
       <button class="editAreaButton" v-on:click="onEditAreaCancelButton">Cancel</button>

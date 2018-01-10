@@ -159,6 +159,24 @@ async function onWorkflowRequest(sio, msg){
   sio.emit('workflow', cwf);
 }
 
+// current workflow object which is editting
+let wf=null;
+// current workflow dir
+let wfDir=null;
+// current workflow filename
+let wfFilename=null;
+
+async function onNodesRequest(sio, msg){
+  logger.debug('Nodes Request event recieved: ', msg);
+  wfFilename=msg;
+  wfDir = path.dirname(wfFilename);
+  wf = await readWorkflow(wfFilename)
+    .catch(function(err){
+      logger.error('Nodes read error\n', err);
+    });
+  sio.emit('nodes', wf);
+}
+
 function onCreateNode(sio, msg){
   logger.debug('create event recieved: ', msg);
   let dirName=path.resolve(path.dirname(cwfFilename),msg.type);
@@ -429,6 +447,7 @@ module.exports = function(io){
     fileManager(socket);
 
     socket.on('getWorkflow', onWorkflowRequest.bind(null, socket));
+    socket.on('getNodes',    onNodesRequest.bind(null, socket));
     socket.on('createNode',      onCreateNode.bind(null, socket));
     socket.on('updateNode',      onUpdateNode.bind(null, socket));
     socket.on('removeNode',      onRemoveNode.bind(null, socket));

@@ -29,14 +29,24 @@ export default class{
     this.group=svg.group();
     this.group.data({"index": node.index, "type": node.type}).draggable().addClass('node');
 
-    // draw node
+    // draw node   
     const [box, textHeight]= parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state);
-    const boxBbox=box.bbox()
+    const boxBbox=box.bbox();
     const boxX=box.x();
     const boxY=box.y();
     this.group.add(box);
     this.group.data({"boxBbox": boxBbox});
 
+/*     console.log(node.name);
+    //test Children view
+    if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){   
+      console.log("createChildrenViewBox");      
+      const [viewBox, viewHeight]= parts.createChildrenViewBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.parent, node.jsonFile, node.inputFiles, sio);
+      const viewBbox=viewBox.bbox();
+      this.group.add(viewBox);
+      this.group.data({"viewBbox": viewBbox});
+    } */
+    
     const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width/2, 0);
     upper.data({"index": node.index});
     this.group.add(upper);
@@ -204,3 +214,29 @@ export default class{
     return this;
   }
 }
+
+export class SvgChildrenNodeUI{
+  /**
+   * create new instance
+   * @param svg  svg.js's instance
+   * @param node any node instance to draw
+   */
+  constructor(svg, node) {
+    /** svg.js's instance*/
+    this.svg=svg;
+
+      /** svg representation of this node */
+      this.group=svg.group();
+      this.group.data({"index": node.index, "type": node.type}).draggable().addClass('node');
+
+      //test Children view
+      //if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){   
+        
+        const [viewBox, viewHeight]= new parts.SvgChildrenViewBox(svg, node.pos.x, node.pos.y, node.type, node.name);
+
+        const viewBbox=viewBox.bbox();
+        this.group.add(viewBox);
+        this.group.data({"viewBbox": viewBbox});
+     // }
+    }
+  }

@@ -1,14 +1,72 @@
 @charset "utf-8";
 
-ul{
-  list-style-type: none;
+body{
+  margin: 0;
+  padding: 0;
+  background-color: #3c3c3c;
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 2;
+  height:100%;
 }
 
-#html_name{
-  position: relative;
-  background:#252525;
-  height: 30px;  
+p,h1,h2,h3,h4,h5,h6{
+  margin-top: 0;
 }
+
+header{
+	position:relative;
+	padding:0;
+	color:#40555F;
+  background:gray;
+  font-family: 'Bitter', serif; 
+}
+
+.title{
+  padding:10px;
+  color: #e0e0e0;
+  font-size: 25px;
+  text-decoration: none;
+}
+
+/*名前の長さに注意する必要有*/
+.title_username{
+  position:absolute;
+  right:80px;
+    top:10px;
+  }
+
+  #buttonArea{
+    background-color: #3c3c3c;
+    padding-bottom: 10px;
+  }
+  .buttonAreaButton{
+    background-color: rgb(105, 175, 45);
+    color: #ffffff;
+    font-size: 15px;
+    font-family: 'Bitter', serif;
+    width:100px;
+    border-radius: 3px; 
+    border: 3px solid rgb(105, 175, 45);
+    cursor: pointer;
+  }
+
+  .editAreaButton{
+    background-color: #add8e6;
+    color: #ffffff;
+    font-size: 15px;
+    font-family: 'Bitter', serif;
+    width:100px;
+    border-radius: 3px; 
+    border: 3px solid #add8e6;
+    cursor: pointer;
+  }
+  
+  button:hover{
+    text-decoration: none;
+    background-color: #ffffff;
+    color: rgb(105, 175, 45);
+  }
 
 div .remotehost{
   position: absolute;
@@ -31,13 +89,116 @@ div .HostField{
 
 #hostTitleArea
 {
+  padding-top: 10px;
   position: relative;
-  left:20px;
 }
 
 #titleTable
 {
   table-layout: fixed;
-  width: 900px;
+  width: 1820px;
   word-wrap: break-word;  
+}
+
+#pageName{
+  height:30px;
+  background:#252525;
+}
+
+tr th
+{
+  text-align: left;
+}
+
+td
+{
+  text-overflow:ellipsis;
+  overflow:hidden;
+  white-space:nowrap;
+  cursor: pointer;
+}
+
+td:hover {
+  overflow: visible;
+  white-space:normal;    
+}
+
+#hostPropertyArea{
+  height: 331px;
+  overflow-x: hidden;
+  background-color: #3c3c3c;
+}
+
+#propertyTable
+{
+  table-layout: fixed;
+  width: 1920px;
+  word-wrap: break-word;
+  border-collapse: collapse;
+}
+
+#hostListInfo{
+  background: #3c3c3c;
+  border: 1px solid;
+  border-color: black;
+}
+
+#hostListInfo:hover{
+  background: green;
+}
+
+#hostRegistration{
+  height: 30px;  
+  background-color: #252525;  
+  padding-left: 10px;
+}
+
+
+#newHostDialog{
+  display: inline-flex;
+  padding-left: 10px;
+  padding-top: 10px;
+}
+
+.ui-state-error{
+  font-size:1.0em;
+	color:#ffffff;
+	margin-bottom:5px;
+	font-weight:bold;
+}
+
+.dialogStateError
+{
+  font-size:0.5em;  
+  background: #3c3c3c;
+  color: red;
+  width: 300px;
+}
+
+.fieldLabel{
+  display: inline-block;
+  width: 140px;
+}
+
+.editArea{
+  width:300px;
+  background-color: #252525;
+  color: #CCC  
+}
+
+#rightEditArea div{
+  padding-left: 20px;
+  padding-bottom: 30px;
+}
+
+.port{
+  width: 100px;
+}
+
+.authType{
+  width: 100px;
+}
+
+.jobSubmissionLimit{
+  width: 100px;
 }

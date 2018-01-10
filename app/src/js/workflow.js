@@ -18,6 +18,8 @@ import dialogWrapper from './dialogWrapper';
 import logReciever from './logReciever';
 import config from './config';
 import SvgNodeUI from './svgNodeUI';
+import * as svgNode from './svgNodeUI';
+
 
 $(() => {
   // chek project Json file path
@@ -33,12 +35,9 @@ $(() => {
   let nodeStack = [''];
   let dirStack = [rootDir];
   let wfStack = [rootWorkflow];
+  let childrenViewBoxList = [];
 
   let projectLootDir = currentWorkDir;
-
-  console.log(currentWorkDir);
-  console.log(projectFilePath);
-  
 
   // create vue.js instance for property subscreen
   let vm = new Vue({
@@ -121,12 +120,7 @@ $(() => {
   $('#log_area').hide();
   $('#property').hide();
   $('#parentDirBtn').hide();
-
   $('#taskLibraryMenu').hide();
-  
-  // $('#pause_menu').hide();
-  // $('#clean_menu').hide();
-  // $('#stop_menu').hide();
 
   // setup socket.io client
   const sio = io('/workflow');
@@ -178,24 +172,6 @@ $(() => {
   //   console.log(message.toString());
   // });
 
-  // set "go to parent dir" button behavior
-
-  //パンくずリストで対応したため不要
-/*   $('#parentDirBtn').on('click',function(){
-    currentWorkFlow = nodeStack.pop();
-    currentWorkDir = dirStack.pop();
-    updateBreadrumb();
-
-    if(currentWorkDir !== rootDir){
-      $('#parentDirBtn').show();
-    }else{
-      $('#parentDirBtn').hide();
-    }
-    fb.request('getFileList', currentWorkDir, null);
-    sio.emit('getWorkflow', currentWorkFlow);
-  }); */
-
-
   // container of svg elements
   let nodes = [];
   let selectedNode=0;
@@ -204,9 +180,11 @@ $(() => {
   sio.on('connect', function () {
     fb.request('getFileList', currentWorkDir, null);
     sio.emit('getWorkflow', currentWorkFlow);
+
+    //一先ずここでemitしとく
+    sio.emit('getProjectJson', rootWorkflow);
+    
     sio.on('workflow', function(wf){
-      //$('#path').text(wf.path);
-      console.log(wf);
       nodeStack[nodeStack.length - 1] = wf.name;
 
       updateBreadrumb();
@@ -215,12 +193,7 @@ $(() => {
       nodes.forEach(function(v){
         if (v !== null) v.remove();
       });
-
       nodes = [];
-      console.log(nodes);
-      console.log(wf.nodes);
-      
-
       if (wf.nodes.length > 0) {
         let names = wf.nodes.map((e) => {
           return e != null? e.name : null;
@@ -233,44 +206,60 @@ $(() => {
       drawLinks(nodes);
     });
 
+    //子表示用として作成したが実装方法変更のため一時的にコメントアウト
+/*     //children nodes view
+    let childrenNodes = [];
+    let selectedChildrenNodes = 0;    
+    sio.on('nodes', function(wfForChildren){
+      console.log("sio.on drawNodesNodes");      
+      console.log(wfForChildren);
+          
+      childrenNodes.forEach(function(v){
+        if (v !== null) v.remove();
+      });
+      childrenNodes = [];
+      if (wfForChildren.nodes.length > 0) {
+        let names = wfForChildren.nodes.map((e) => {
+          return e != null? e.name : null;
+        });
+        vm.names = names;
+        vm.node = wfForChildren.nodes[selectedChildrenNodes];
+      }
+
+      console.log("SVG-drawNodesNodes");      
+      drawNodesNodes(wfForChildren.nodes);
+    });
+
     sio.on('taskStateList', (taskStateList) => {
       updateTaskStateTable(taskStateList);
-    })
+    }) */
 
     // TODO 現在のプロジェクト状態の取得をサーバにリクエストする
-    $('#project_name').text('No Name Project');
-    $('#project_state').text('Planning');
-    // 仮で現在日時を表示
-    let now = new Date();
-    let date = '' + now.getFullYear() + '/' + now.getMonth() + '/' + now.getDate() + ' ' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2);
-    $('#project_create_date').text(date);
-    $('#project_update_date').text(date);
+    sio.on('projectJson', (projectJson) => {
+
+      $('#project_name').text(projectJson.name);
+      $('#project_state').text(projectJson.state);
+      // 仮で現在日時を表示
+      let now = new Date();
+      let date = '' + now.getFullYear() + '/' + now.getMonth() + '/' + now.getDate() + ' ' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2);
+      $('#project_create_date').text(projectJson.ctime);
+      $('#project_update_date').text(projectJson.mtime);
+
+    })
 
     sio.on('projectState', (state)=>{
       if (state === 'running') {
         $('#project_state').text('Running');
-        // $('#run_menu').hide();
-        // $('#pause_menu').show();
-        // $('#clean_menu').show();
-        // $('#stop_menu').show();
+
       } else if(state === 'paused') {
         $('#project_state').text('Paused');
-        // $('#run_menu').show();
-        // $('#pause_menu').hide();
-        // $('#clean_menu').show();
-        // $('#stop_menu').show();
+
       } else if (state === 'finished') {
         $('#project_state').text('Finished');
-        // $('#run_menu').hide();
-        // $('#pause_menu').hide();
-        // $('#clean_menu').show();
-        // $('#stop_menu').hide();
+
       } else {
         $('#project_state').text('Planning');
-        // $('#run_menu').show();
-        // $('#pause_menu').hide();
-        // $('#clean_menu').hide();
-        // $('#stop_menu').hide();
+
       }
     });
 
@@ -290,6 +279,15 @@ $(() => {
     $('#stop_menu').on('click',function(){
       sio.emit('stopProject', true);
     });
+
+    //save,revert
+    $('#save_button').on('click',function(){
+      sio.emit('saveProject', true);
+    });
+    $('#revert_button').on('click',function(){
+      sio.emit('revertProject', true);
+    });
+
   });
 
   // hide property and select parent WF if background is clicked
@@ -315,6 +313,19 @@ $(() => {
     }
   });
 
+  //ボタンでのviewの切り替え
+  $('#listView').click(function () {
+    $('#workflow_manage_area').hide();
+    $('#project_manage_area').show();
+    sio.emit('getTaskStateList', null);
+  });
+  $('#graphView').click(function () {
+    $('#project_manage_area').hide();
+    $('#workflow_manage_area').show();
+    //sio.emit('getTaskStateList', null);
+  }); 
+
+  //ラジオボタンでのviewの切り替え
   $('input[name=view]').change(function () {
     if ($('#listView').prop('checked')) {
       $('#project_manage_area').show();
@@ -357,6 +368,7 @@ $(() => {
       },
       "delete": {
         "name": "delete",
+
         callback: function(){
           sio.emit('removeNode', selectedNode);
         }
@@ -365,9 +377,8 @@ $(() => {
   });
 
   //タスクのドラッグアンドドロップ操作
-  $('#taskcontents .type').mouseover(function () {      
-    var target = $(this).attr("href");
-    
+  $('#workflowComponents .type').mouseover(function () {      
+    var target = $(this).attr("id");
     var objectDrag = document.getElementById(target); 
     var objectDrop = document.getElementById("node_svg");
 
@@ -393,12 +404,12 @@ $(() => {
   //タスクライブラリーの表示非表示
   // function definition
   function showTaskLibrary() {
-    $('#taskLibraryButton').show().animate({left: '140px'},50);
-    $('#taskLibraryMenu').show().animate({width: '140px', 'min-width': '140px'}, 50);
+    $('#taskLibraryButton').show().animate({left: '155px'},50);
+    $('#taskLibraryMenu').show().animate({width: '155px', 'min-width': '155px'}, 50);
   }
 
   function hideTaskLibrary() {
-    $('#taskLibraryButton').show().animate({left: '-=140px'},100);    
+    $('#taskLibraryButton').show().animate({left: '-=155px'},100);    
     $('#taskLibraryMenu').hide();
   }
 
@@ -415,17 +426,11 @@ $(() => {
 
   // function definition
   function showLog() {
-    // var currentHeight = $('.sub_content_area').innerHeight();
-    // var logHeight = $('#logArea').outerHeight(true);
-    // $('.sub_content_area').innerHeight(currentHeight - logHeight);
     $('#logArea').show();
     $('#displayLogButton').toggleClass('display', true);
   }
 
   function hideLog() {
-    // var currentHeight = $('.sub_content_area').innerHeight();
-    // var logHeight = $('#logArea').outerHeight(true);
-    // $('.sub_content_area').innerHeight(currentHeight + logHeight);
     $('#logArea').hide();
     $('#displayLogButton').toggleClass('display', false);
   }
@@ -462,10 +467,18 @@ $(() => {
   function drawNodes(nodesInWF) {
       nodesInWF.forEach(function(v,i){
         // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
-        if(v ===null){
+        if(v === null){
           nodes.push(null);
+          childrenViewBoxList.push(null);
         }else{
           let node=new SvgNodeUI(svg, sio, v);
+
+          let childrenWorkflow = currentWorkDir+'/'+v.name+'/'+v.jsonFile;
+          if(v.type === 'workflow' || v.type === 'parameterStudy' || v.type === 'for' || v.type === 'while' || v.type === 'foreach'){
+            sio.emit('getNodes', childrenWorkflow);
+          }
+          childrenViewBoxList.push(svg);
+
           node.onMousedown(function(e){
             let nodeIndex=e.target.instance.parent('.node').data('index');           
             selectedNode=nodeIndex;
@@ -476,7 +489,6 @@ $(() => {
 
             //プロパティ表示用相対パス
             let currentPropertyDir = "."+currentWorkDir.replace(projectLootDir,"")+"/"+nodesInWF[nodeIndex].name;
-            console.log(currentWorkDir);
             let nodeType = nodesInWF[nodeIndex].type;
             vm.node=v;
             $('#taskPath').html(currentPropertyDir); 
@@ -484,8 +496,6 @@ $(() => {
             $('#property').show().animate({width: '360px', 'min-width': '360px'}, 100);
           })
           .onDblclick(function(e){
-            console.log("double Click!!");
-            
             let nodeType=e.target.instance.parent('.node').data('type');
             if(nodeType === 'workflow' ||nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach'){
               let nodeIndex=e.target.instance.parent('.node').data('index');
@@ -498,26 +508,35 @@ $(() => {
               dirStack.push(currentWorkDir);
               wfStack.push(currentWorkFlow);
               nodeStack.push(name);
-
-              console.log(currentWorkDir);
-              console.log(currentWorkFlow);
-              console.log(path);
               
               fb.request('getFileList', currentWorkDir, null);
               sio.emit('getWorkflow', currentWorkFlow);
-
-                //パンくずリストで対応したため不要
-/*               if(currentWorkDir !== rootDir){
-                $('#parentDirBtn').show();
-              }else{
-                $('#parentDirBtn').hide();
-              } */
             }
           });
           nodes.push(node);
         }
       });
   }
+
+  //子表示用として作成したが実装方法変更のため一時的にコメントアウト
+    /**
+   * draw nodes children
+   * @param nodeForChildren node list in workflow Json
+   */
+  /* function drawNodesNodes(nodeForChildren){
+    //viewBoxListに登録した子要素表示対象nodeのインスタンスを作成する
+    nodeForChildren.forEach(function(v,i){
+      //indexとiが一緒の時、子表示をする
+      if(v !== null){
+        console.log(v);
+        console.log(i);
+        console.log(childrenViewBoxList);
+        let childrenNode = new svgNode.SvgChildrenNodeUI(childrenViewBoxList[i], v);
+        //let childrenNode = new svgNode.SvgChildrenNodeUI(svg, v);
+
+      }
+    });
+  } */
   /**
    * draw cables between Lower and Upper plug Connector and Receptor plug respectively
    * @param nodeInWF node list in workflow Json
@@ -566,16 +585,10 @@ $(() => {
           currentWorkFlow = wfStack[nodeStack.length-1];
         }
         updateBreadrumb(); 
-/*         if(currentWorkDir !== rootDir){
-          $('#parentDirBtn').show();
-        }else{
-          $('#parentDirBtn').hide();
-        } */
+
         fb.request('getFileList', currentWorkDir, null);
         sio.emit('getWorkflow', currentWorkFlow);
-
       });
-
     }
   }
 
