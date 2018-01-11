@@ -245,7 +245,7 @@ $(() => {
       $('#project_create_date').text(projectJson.ctime);
       $('#project_update_date').text(projectJson.mtime);
 
-    })
+    });
 
     sio.on('projectState', (state)=>{
       if (state === 'running') {
@@ -259,7 +259,6 @@ $(() => {
 
       } else {
         $('#project_state').text('Planning');
-
       }
     });
 
@@ -268,7 +267,7 @@ $(() => {
 
     // register btn click event listeners
     $('#run_menu').on('click',function(){
-      sio.emit('runProject', true);
+      sio.emit('runProject', rootWorkflow);
     });
     $('#pause_menu').on('click',function(){
       sio.emit('pauseProject', true);
@@ -282,13 +281,21 @@ $(() => {
 
     //save,revert
     $('#save_button').on('click',function(){
-      sio.emit('saveProject', true);
-    });
-    $('#revert_button').on('click',function(){
-      sio.emit('revertProject', true);
+      //サーバー側未実装
+      sio.emit('saveProject', null, (result) => {
+        console.log(result);
+      });
     });
 
+    $('#revert_button').on('click',function(){
+      //サーバー側未実装
+      sio.emit('revertProject', null, (result) => {
+        console.log(result);
+      });
+  　});
+
   });
+
 
   // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function(){
@@ -483,16 +490,15 @@ $(() => {
             let nodeIndex=e.target.instance.parent('.node').data('index');           
             selectedNode=nodeIndex;
             let name = nodesInWF[nodeIndex].name;         
-            // let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].path+node
             let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].name;
+            //ファイルブラウザ用
             fb.request('getFileList', nodePath, null);
 
             //プロパティ表示用相対パス
             let currentPropertyDir = "."+currentWorkDir.replace(projectLootDir,"")+"/"+nodesInWF[nodeIndex].name;
             let nodeType = nodesInWF[nodeIndex].type;
             vm.node=v;
-            $('#taskPath').html(currentPropertyDir); 
-
+            $('#componentPath').html(currentPropertyDir);
             $('#property').show().animate({width: '360px', 'min-width': '360px'}, 100);
           })
           .onDblclick(function(e){
@@ -599,6 +605,35 @@ $(() => {
     }
   }
 
+  //プロパティエリアのファイル、フォルダー新規作成
+  $('#createFileButton').click(function () {
+    const html = '<p>New File Name (ex. aaa.txt)</p><input type=text id="newFileName">'
+    dialogWrapper('#dialog', html)
+      .done(function () {
+        let newFileName = $('#newFileName').val();
+        let newFilePath = fb.getRequestedPath() + "/" + newFileName;
+        sio.emit('createNewFile', newFilePath, (result) => {
+          console.log(result);
+          console.log(newFilePath);          
+      });
+  　});
+　});
+  $('#createFolderButton').click(function () {
+    const html = '<p>New Folder Name</p><input type=text id="newFolderName">'
+    dialogWrapper('#dialog', html)
+      .done(function () {
+        let newFolderName = $('#newFolderName').val();
+        let newFolderPath = fb.getRequestedPath() + "/" + newFolderName;        
+        sio.emit('createNewDir', newFolderPath, (result) => {
+          console.log(result);
+          console.log(newFolderPath);
+      });
+    });
+　});
+  $('#fileUploadButton').click(function () {
+    $('#fileSelector').click();
+  });
+
   $('#drawer_button').click(function () {
     $('#drawer_menu').toggleClass('action', true);
   });
@@ -606,17 +641,5 @@ $(() => {
   $('#drawer_menu').mouseleave(function () {
     $('#drawer_menu').toggleClass('action', false);
   });
-
-/* $('#fileBrowseButton').click(function () {
-    //fb.request('fileListRequest', currentWorkDir, null);
-    fb.request('getFileList', currentWorkDir, null);
-    $('#fileBrowser').dialog({title: 'File Browse', modal: true, width: 1000});
-  });  */
-
-/*   $('#fileBrowserCancelButton').click(function () {
-    //fb.request('fileListRequest', currentWorkDir, null);
-    fb.request('getFileList', currentWorkDir, null);
-    $('#fileBrowser').dialog('close');
-  }); */
 
 });

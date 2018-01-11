@@ -59,7 +59,9 @@ $(() => {
       },
       onRemoveButton: function(){
         this.mode = 'removeAccount';
-        $("#errorMessage").css("visibility", "hidden");                                    
+        $("#errorMessage").css("visibility", "hidden");
+        console.log(this.selectedAccount);
+        console.log(vm.selectedAccount);                          
         if (this.selectedAccount === -1) {
           this.errorMessage = 'Please select Account';
           $("#errorMessage").css("visibility", "visible");                              

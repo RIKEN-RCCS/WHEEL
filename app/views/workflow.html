@@ -9,7 +9,7 @@
   <script src="/siofu/client.js"></script>
   <script type="text/javascript" src="/js/common.js"></script>
   <script type="text/javascript" src="/js/workflow.js"></script>
-  <title>WHEEL</title>
+  <title>WHEEL workflow</title>
 </head>
 
 <body>
@@ -240,8 +240,12 @@
       <!--ファイル編集 -->
       <div id="filesEdit">
         <label>File editer</label>
-        <p id="taskPath"></p>
-        <input type="file" id="fileSelector" name="uploadFiles" multiple />      
+        <p id="componentPath"></p>
+        <input type="file" id="fileSelector" name="uploadFiles" multiple />
+        <button type="button" id="fileUploadButton" class="createFileDirButton"><img src="/image/fileUpload_icon.png" alt="graph"></button>        
+        <button type="button" id="createFileButton" class="createFileDirButton"><img src="/image/createFile_icon.png" alt="graph"></button>
+        <button type="button" id="createFolderButton" class="createFileDirButton"><img src="/image/createFolder_icon.png" alt="graph"></button>
+        <div id="dialog"></div>        
         <div id="fileBrowser" class="fileBrowser"> 
           <ul id="fileList"></ul>
         </div>
@@ -284,7 +288,6 @@
   </div> -->
 
   <!-- dialog for File Browser Rename and Remove command -->
-  <div id="dialog"></div>
 </body>
 
 </html>

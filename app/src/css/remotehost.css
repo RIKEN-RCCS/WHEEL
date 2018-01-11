@@ -175,6 +175,13 @@ td:hover {
   width: 300px;
 }
 
+#errorMessage
+{
+  position: relative;
+  left: 10px;
+  visibility: hidden;
+}
+
 .fieldLabel{
   display: inline-block;
   width: 140px;

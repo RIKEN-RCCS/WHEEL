@@ -95,21 +95,20 @@ $(() => {
         fb.request('getDirList', null, null);
     });
     $('#importButton').on("click", (event) => {
-      var html = '<p id="path"></p><ul id=fileList></ul>';
-      dialogWrapper('#dialog', html, dialogOptions)
-      .done(function () {
-        socket.emit('importProject', fb.getRequestedPath() + '/' + fb.getLastClicked());
-      });
-      $('#fileList').empty();
-      fb.resetOnClickEvents();
-      fb.onRecv(function () {
-        $('#path').text(fb.getRequestedPath());
-      });
-      fb.onFileDblClick(function (target) {
-        $('#dialog').dialog('close');
-        socket.emit('importProject', target);
-      });
-      fb.request('getDirListAndProjectJson', null, null);
+        var html = '<p id="path"></p><ul id=fileList></ul>';
+        dialogWrapper('#dialog', html, dialogOptions).done(function () {
+            socket.emit('importProject', fb.getRequestedPath() + '/' + fb.getLastClicked());
+        });
+        $('#fileList').empty();
+        fb.resetOnClickEvents();
+        fb.onRecv(function () {
+            $('#path').text(fb.getRequestedPath());
+        });
+        fb.onFileDblClick(function (target) {
+          $('#dialog').dialog('close');
+          socket.emit('importProject', target);
+        });
+        fb.request('getDirListAndProjectJson', null, null);
     });
 
     //管理者設定画面へのドロワー

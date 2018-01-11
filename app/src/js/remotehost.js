@@ -34,7 +34,7 @@ $(() => {
       testing: null,
       OK: [],
       NG: [],
-      errorMessage: ''
+      errorMessage: 'temp'
     },
     methods:{
       toggleSelected: function(i) {
@@ -76,9 +76,7 @@ $(() => {
       },
       onRemoveButton: function() {
         this.mode = 'removeHost';
-        console.log(this.selectedHost);
         $("#errorMessage").css("visibility", "hidden");                                        
-        //this.errorMessage = '';
         if (this.selectedHost === -1) {
           this.errorMessage = 'Please select Host';
           $("#errorMessage").css("visibility", "visible");                                        
@@ -86,7 +84,7 @@ $(() => {
         }
 
         $("#deleteCheckDialog").dialog({width:300, title: 'Delete Host', modal: true});       
-        },
+      },
       onEditAreaOKButton: function(){
         if (this.authType === '1') {
           this.newHostInfo.keyFile = null;
@@ -120,8 +118,8 @@ $(() => {
         return flag;          
       },
       browse: browseServerFiles,
-      //test: testSshConnection,
-/*       buttonState: function(index) {
+      test: testSshConnection,
+      buttonState: function(index) {
         let state = 'Test';
         if(index === this.testing) {
           state ='Testing';
@@ -131,8 +129,7 @@ $(() => {
           state = 'NG';
         }
         return state
-      }, */
-
+      }, 
     },
     computed:{
       isDuplicate: function() {
@@ -161,14 +158,14 @@ $(() => {
   socket.emit('getHostList', true);
   socket.on('hostList', (hostList)=>{
     vm.hostList = hostList;
-    vm.selectedHost = [];
+    vm.selecteds = [];
   });
 
   function browseServerFiles(){
     const html = '<p id="path"></p><ul id=fileList></ul>';
     const dialogOptions = {
-      height: $(window).height() * 0.98,
-      width: $(window).width() * 0.98
+      height: $(window).height() * 0.50,
+      width: $(window).width() * 0.50
     };
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     dialogWrapper('#dialog', html, dialogOptions)
@@ -187,10 +184,10 @@ $(() => {
     fb.request('getFileList', null, null);
   }
 
-/*   function testSshConnection(index) {
+  function testSshConnection(index) {
     vm.testing = index;
     let host = vm.hostList[index];
-    const html = '<p>input password</p><input type=password id="password">'
+    const html = '<p>Input SSH connection password.</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
         let password=$('#password').val();
@@ -205,7 +202,7 @@ $(() => {
         });
       });
   }
- */
+
   function resetNewHost() {
     Object.assign(vm.newHostInfo, defaultHost);
   }
