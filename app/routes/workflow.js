@@ -122,7 +122,7 @@ function validationCheck(workflow, dir, sio){
       let tmp = promisify(fs.readFile)(childWorkflowFilename)
       .then((data)=>{
         let childWF=JSON.parse(data);
-        validationCheck(childWF, childDir, sio)
+        return validationCheck(childWF, childDir, sio)
       });
       promises.push(tmp);
     }
@@ -156,6 +156,8 @@ async function onWorkflowRequest(sio, msg){
     .catch(function(err){
       logger.error('workflow file read error\n', err);
     });
+  //TODO cwfをコピー
+  //TODO 子のjsonファイルを読んでnodes内のpropertyに追記する
   sio.emit('workflow', cwf);
 }
 
