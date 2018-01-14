@@ -482,8 +482,8 @@ function onCleanProject(sio, msg){
   sio.emit('projectState', projectState);
 }
 
-function onTaskStateListRequest(sio){
-  logger.debug(`getTaskStateList event recieved: ${msg}`);
+function onTaskStateListRequest(sio, msg){
+  logger.debug('getTaskStateList event recieved:', msg);
   logger.debug('not implimented yet !!');
 }
 
@@ -500,18 +500,18 @@ module.exports = function(io){
   sio.on('connect', function (socket) {
     fileManager(socket);
 
-    socket.on('getWorkflow',     onWorkflowRequest.bind(null, socket));
-    socket.on('createNode',      onCreateNode.bind(null, socket));
-    socket.on('updateNode',      onUpdateNode.bind(null, socket));
-    socket.on('removeNode',      onRemoveNode.bind(null, socket));
-    socket.on('addLink',         onAddLink.bind(null, socket));
-    socket.on('addFileLink',     onAddFileLink.bind(null, socket));
-    socket.on('removeLink',      onRemoveLink.bind(null, socket));
-    socket.on('removeFileLink',  onRemoveFileLink.bind(null, socket));
+    socket.on('getWorkflow',      onWorkflowRequest.bind(null, socket));
+    socket.on('createNode',       onCreateNode.bind(null, socket));
+    socket.on('updateNode',       onUpdateNode.bind(null, socket));
+    socket.on('removeNode',       onRemoveNode.bind(null, socket));
+    socket.on('addLink',          onAddLink.bind(null, socket));
+    socket.on('addFileLink',      onAddFileLink.bind(null, socket));
+    socket.on('removeLink',       onRemoveLink.bind(null, socket));
+    socket.on('removeFileLink',   onRemoveFileLink.bind(null, socket));
     socket.on('getTaskStateList', onTaskStateListRequest.bind(null, socket));
-    socket.on('runProject',      onRunProject.bind(null, socket));
-    socket.on('pauseProject',    onPauseProject.bind(null, socket));
-    socket.on('cleanProject',    onCleanProject.bind(null, socket));
+    socket.on('runProject',       onRunProject.bind(null, socket));
+    socket.on('pauseProject',     onPauseProject.bind(null, socket));
+    socket.on('cleanProject',     onCleanProject.bind(null, socket));
     socket.on('updateProjectJson', onUpdateProjectJson.bind(null, socket));
     socket.on('stopProject',     (msg)=>{
       onPauseProject(socket,msg);
