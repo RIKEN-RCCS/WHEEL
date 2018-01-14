@@ -35,6 +35,10 @@ function hasChild(node){
 return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
 }
 
+function isValidNode(index){
+  return cwf.nodes[index];
+}
+
 /**
  * write data and emit to client with promise
  * @param {object} data - object to be writen and emitted
@@ -330,6 +334,10 @@ function onAddLink(sio, msg){
   logger.debug('addLink event recieved: ', msg);
   let src=msg.src;
   let dst=msg.dst;
+  if(!isValidNode(src) || !isValidNode(dst)){
+    logger.error('illegal addLink request', msg);
+    return
+  }
   let isElse=msg.isElse;
   if(isElse){
     cwf.nodes[src].else.push(dst);
@@ -344,22 +352,27 @@ function onAddLink(sio, msg){
 }
 function onAddFileLink(sio, msg){
   logger.debug('addFileLink event recieved: ', msg);
-  const src=msg.src;
-  const dst=msg.dst;
+  let src=msg.src;
+  let dst=msg.dst;
+  if((!isValidNode(src) && src !== 'parent')||( !isValidNode(dst) && dst !=='parent')){
+    logger.error('illegal addFileLink request', msg);
+    return
+  }
+
+  const srcNode=src !== 'parent'? cwf.nodes[parseInt(src)] : cwf;
+  const dstNode=dst !== 'parent'? cwf.nodes[parseInt(dst)] : cwf;
   const srcName = msg.srcName
   const dstName = msg.dstName
 
   // add outputFile entry on src node.
-  let srcEntry = cwf.nodes[src].outputFiles.find(function(e){
+  let srcEntry = srcNode.outputFiles.find((e)=>{
     return e.name === srcName;
   });
   srcEntry.dst.push({"dstNode": dst, "dstName": dstName});
-
   // get inputFile entry on dst node.
-  let dstEntry = cwf.nodes[dst].inputFiles.find(function(e){
+  let dstEntry = dstNode.inputFiles.find((e)=>{
     return e.name === dstName;
   });
-
   // remove outputFiles entry from former src node
   if(dstEntry.srcNode != null){
     let formerSrcNode = cwf.nodes[dstEntry.srcNode];
@@ -370,20 +383,64 @@ function onAddFileLink(sio, msg){
       return !(e.dstNode === dst && e.dstName === dstName);
     });
   }
-
   // replace inputFiles entry on dst node.
   dstEntry.srcNode=src;
   dstEntry.srcName=srcName;
+
   writeAndEmit(cwf, cwfFilename, sio, 'workflow')
-    .catch(function(err){
+    .catch((err)=>{
       logger.error('add filelink failed: ', err);
     });
 }
 function onRemoveLink(sio, msg){
-  logger.warn('DeleteLink function is not implemented yet.');
+  logger.warn('removeLink event recieved:', msg);
+  let src=msg.src;
+  let dst=msg.dst;
+  if(!isValidNode(src) || !isValidNode(dst)){
+    logger.error('illegal addLink request', msg);
+    return
+  }
+
+  let srcNode=cwf.nodes[src];
+  srcNode.next=srcNode.next.filter((e)=>{
+    return e!==dst;
+  });
+  let dstNode=cwf.nodes[dst];
+  dstNode.previous=dstNode.previous.filter((e)=>{
+    return e!==src;
+  });
+
+  writeAndEmit(cwf, cwfFilename, sio, 'workflow')
+    .catch((err)=>{
+      logger.error('remove link failed: ', err);
+    });
 }
+
 function onRemoveFileLink(sio, msg){
-  logger.warn('DeleteFileLink function is not implemented yet.');
+  logger.warn('removeFileLink event recieved:', msg);
+  let src=msg.src;
+  let dst=msg.dst;
+  if((!isValidNode(src) && src !== 'parent')||( !isValidNode(dst) && dst !=='parent')){
+    logger.error('illegal addFileLink request', msg);
+    return
+  }
+
+  const srcNode=src !== 'parent'? cwf.nodes[parseInt(src)] : cwf;
+  const dstNode=dst !== 'parent'? cwf.nodes[parseInt(dst)] : cwf;
+
+  srcNode.outputFiles.forEach((outputFile)=>{
+    outputFile.dst=outputFiles.dst.filter((dst)=>{
+      return dst.dstNode !== dst;
+    });
+  });
+  dstNode.inputFiles=dstNode.inputFiles.filter((inputFile)=>{
+    return inputFile.srcNode !== src;
+  });
+
+  writeAndEmit(cwf, cwfFilename, sio, 'workflow')
+    .catch((err)=>{
+      logger.error('remove file link failed: ', err);
+    });
 }
 
 async function onRunProject(sio, msg){
@@ -449,6 +506,8 @@ module.exports = function(io){
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
     socket.on('addLink',         onAddLink.bind(null, socket));
     socket.on('addFileLink',     onAddFileLink.bind(null, socket));
+    socket.on('removeLink',      onRemoveLink.bind(null, socket));
+    socket.on('removeFileLink',  onRemoveFileLink.bind(null, socket));
     socket.on('getTaskStateList', onTaskStateListRequest.bind(null, socket));
     socket.on('runProject',      onRunProject.bind(null, socket));
     socket.on('pauseProject',    onPauseProject.bind(null, socket));
