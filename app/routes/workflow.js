@@ -30,6 +30,7 @@ let rwfDispatcher=null
 
 let projectJson=null;
 let projectState='not-started';
+let projectJsonFilename=null;
 
 function hasChild(node){
 return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
@@ -46,12 +47,11 @@ function isValidNode(index){
  * @param {object} sio  - instance of socket.io
  * @param {string} eventName - eventName to send workflow
  */
-function writeAndEmit(data, filename, sio, eventName){
+async function writeAndEmit(data, filename, sio, eventName){
   projectJson.mtime=getDateString();
-  return promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4))
-    .then(function(){
-      sio.emit(eventName, data);
-    });
+  await promisify(fs.writeFile)(projectJsonFilename, JSON.stringify(projectJson, null, 4));
+  await promisify(fs.writeFile)(filename, JSON.stringify(data, null, 4));
+  sio.emit(eventName, data);
 }
 
 /**
@@ -174,7 +174,7 @@ async function onWorkflowRequest(sio, msg){
     }
   });
   await Promise.all(promises);
-  logger.debug(JSON.stringify(rt,null,4));
+  // logger.debug(JSON.stringify(rt,null,4));
   sio.emit('workflow', rt);
 }
 
@@ -500,7 +500,7 @@ module.exports = function(io){
   sio.on('connect', function (socket) {
     fileManager(socket);
 
-    socket.on('getWorkflow', onWorkflowRequest.bind(null, socket));
+    socket.on('getWorkflow',     onWorkflowRequest.bind(null, socket));
     socket.on('createNode',      onCreateNode.bind(null, socket));
     socket.on('updateNode',      onUpdateNode.bind(null, socket));
     socket.on('removeNode',      onRemoveNode.bind(null, socket));
@@ -550,7 +550,7 @@ module.exports = function(io){
 
   let router = express.Router();
   router.post('/', function (req, res, next) {
-    const projectJsonFilename=req.body.project;
+    projectJsonFilename=req.body.project;
     rwfDir=path.dirname(projectJsonFilename);
     promisify(fs.readFile)(projectJsonFilename)
       .then(function(data){
