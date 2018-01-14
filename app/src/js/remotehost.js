@@ -170,7 +170,9 @@ $(() => {
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {
-        socket.emit('add', fb.getRequestedPath() + '/' + fb.getLastClicked());
+        let target = fb.getRequestedPath() + '/' + fb.getLastClicked()
+        socket.emit('add', target);
+        vm.hostinfo.keyFile=target;
       });
     $('#fileList').empty();
     fb.resetOnClickEvents();

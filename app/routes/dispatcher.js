@@ -105,11 +105,10 @@ class Dispatcher{
 
   dispatch(){
     return new Promise((resolve, reject)=>{
-      console.log("interval:",interval);
       this.timeout = setInterval(()=>{
         if(this.dispatching) return
         this.dispatching=true;
-    logger.debug('currentList:',this.currentSearchList);
+        logger.debug('currentList:',this.currentSearchList);
         let promises=[];
         while(this.currentSearchList.length>0){
           let target = this.currentSearchList.shift();

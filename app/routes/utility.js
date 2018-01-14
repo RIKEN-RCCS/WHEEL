@@ -54,7 +54,8 @@ class Utility {
   getDateString (){
     let now = new Date;
     let yyyy = `0000${now.getFullYear()}`.slice(-4);
-    let mm = `00${now.getMonth()}`.slice(-2);
+    let month = now.getMonth()+1;
+    let mm = `00${month}`.slice(-2);
     let dd = `00${now.getDate()}`.slice(-2);
     let HH = `00${now.getHours()}`.slice(-2);
     let MM = `00${now.getMinutes()}`.slice(-2);

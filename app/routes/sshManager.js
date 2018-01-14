@@ -3,6 +3,7 @@ const fs = require('fs');
 
 const ARsshClient = require('arssh2-client');
 
+const logger = require("../logger");
 let pool = []
 
 async function canConnect(hostInfo, password){
@@ -14,21 +15,26 @@ async function canConnect(hostInfo, password){
   if(hostInfo.keyFile){
     let tmp = await promisify(fs.readFile)(hostInfo.keyFile);
     config.privateKey = tmp.toString();
-    config.passphrase = password;
-    config.password = undefined;
+    if(password){
+      config.passphrase = password;
+      config.password = undefined;
+    }
   }else{
     config.privateKey = undefined;
-    config.passphrase = undefined;
-    config.password = password;
+    if(password){
+      config.passphrase = undefined;
+      config.password = password;
+    }
   }
 
   let arssh = getSsh(config, {connectionRetryDelay: 100});
   return arssh.canConnect()
     .catch((err)=>{
-      if(config.hasOwnProperty('privateKey')) config.privateKey='privateKey was defined but omitted'
-      if(config.hasOwnProperty('password')) config.password='password  was defined but omitted'
-      if(config.hasOwnProperty('passphrase')) config.passphrase='passphrase  was defined but omitted'
-      err.config = config;
+      let config2 = Object.assign({}, config);
+      if(config2.hasOwnProperty('privateKey')) config2.privateKey='privateKey was defined but omitted'
+      if(config2.hasOwnProperty('password'))   config2.password='password  was defined but omitted'
+      if(config2.hasOwnProperty('passphrase')) config2.passphrase='passphrase  was defined but omitted'
+      err.config = config2;
       return Promise.reject(err);
     });
 }
@@ -38,16 +44,16 @@ function getSsh(config, opt){
     return e.config.host === config.host && e.config.username === config.username
   });
   if(arssh === undefined){
+    logger.debug('create new ssh instance');
     arssh = new ARsshClient(config, opt);
+    pool.push(arssh);
   }else{
-    for (let i in config){
-      arssh.changeConfig(i, config[i]);
-    }
+    logger.debug('overwrite config and reuse existing ssh instance');
+    arssh.overwriteConfig(config);
     for (let i in opt){
       arssh.changeConfig(i, opt[i]);
     }
   }
-  pool.push(arssh);
   return arssh;
 }
 

@@ -99,8 +99,8 @@ class Task extends BaseWorkflowComponent{
     this.host='localhost';
     /** run as batch job or not*/
     this.useJobScheduler=false;
-    /** list of queue name */
-    this.queue=[];
+    /** queue name */
+    this.queue=null;
     /** remove files on remoteserver or not */
     this.cleanupFlag=false;
     // note on filters

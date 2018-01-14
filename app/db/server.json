@@ -4,7 +4,7 @@
     "useraccount": "./useraccount.json",
     "projectList": "./projectList.json",
     "suffix": ".wheel",
-    "interval": 100,
+    "interval": 1000,
     "adminUser": "admin",
     "scheduler": {
         "TCS": "./config/pjsub.sh",

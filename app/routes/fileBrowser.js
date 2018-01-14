@@ -30,34 +30,34 @@ function sendDir(socket, eventName, targetDir, options=null) {
   let sendDirname   = options.sendDirname  != null ? options.sendDirname  : true;
   let sendFilename  = options.sendFilename != null ? options.sendFilename : true;
   let sendSymlink   = options.sendSymlink  != null ? options.sendSymlink  : true;
-  let filter        = {};
-  filter.all    =  (options.filter != null && options.filter.all  != null)? options.filter.all  : /.*/;
-  filter.dir    =  (options.filter != null && options.filter.dir  != null)? options.filter.dir  : /.*/;
-  filter.file    = (options.filter != null && options.filter.file != null)? options.filter.file : /.*/;
   let withParentDir = options.withParentDir != null? options.withParentDir : false;
 
   fs.readdir(targetDir, function (err, names) {
     if (err)
       throw err;
     names.forEach(function (name) {
-      if (!filter.all.test(name)) return;
+      if (options.filter && options.filter.all && !options.filter.all.test(name)) return;
 
       let absoluteFilename=path.join(targetDir, name);
       fs.lstat(absoluteFilename, function (err, stats) {
         if (err) return;
-        if (stats.isDirectory() && sendDirname && filter.dir.test(name)) {
+        if (stats.isDirectory() && sendDirname){
+          if(options.filter && options.filter.dir && !options.filter.dir.test(name)) return;
           socket.emit(eventName, { "path": request, "name": name, "isdir": true, "islink": false });
         }
-        if (stats.isFile() && sendFilename && filter.file.test(name)) {
+        if (stats.isFile() && sendFilename){
+          if(options.filter && options.filter.file && !options.filter.file.test(name)) return;
           socket.emit(eventName, { "path": request, "name": name, "isdir": false, "islink": false });
         }
         if (stats.isSymbolicLink() && sendSymlink) {
           fs.stat(absoluteFilename, function (err, stats2) {
             if (err) return;
-            if (stats2.isDirectory() && sendDirname && filter.dir.test(name)) {
+            if (stats2.isDirectory() && sendDirname) {
+              if(options.filter && options.filter.dir && ! options.filter.dir.test(name)) return;
               socket.emit(eventName, { "path": request, "name": name, "isdir": true, "islink": true });
             }
-            if (stats2.isFile() && sendFilename && filter.file.test(name)) {
+            if (stats2.isFile() && sendFilename) {
+              if(options.filter && options.filter.file && !options.filter.file.test(name)) return;
               socket.emit(eventName, { "path": request, "name": name, "isdir": false, "islink": true });
             }
           });
