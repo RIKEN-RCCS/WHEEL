@@ -1,6 +1,72 @@
 [
-  {
-    "id": "admin",
-    "pw": "hoge"
-  }
+    {
+        "name": "aaa",
+        "password": "aaa",
+        "workDirectory": "aaa",
+        "description": "aaa",
+        "id": "4b5854d0-f12a-11e7-87db-a55352309f01"
+    },
+    {
+        "name": "bbb",
+        "password": "bbb",
+        "workDirectory": "bbb",
+        "description": "bbb",
+        "id": "69301a10-f12a-11e7-87db-a55352309f01"
+    },
+    {
+        "name": "ccc",
+        "password": "ccc",
+        "workDirectory": "ccc",
+        "description": "ccc",
+        "id": "6e112fb0-f12a-11e7-87db-a55352309f01"
+    },
+    {
+        "name": "ddd",
+        "password": "ddd",
+        "workDirectory": "ddd",
+        "description": "ddd",
+        "id": "da4c8110-f13f-11e7-83eb-1552269efc09"
+    },
+    {
+        "name": "eee",
+        "password": "eee",
+        "workDirectory": "eee",
+        "description": "eee",
+        "id": "19bafee0-f59f-11e7-ba1a-7f3fae7f896b"
+    },
+    {
+        "name": "fff",
+        "password": "fff",
+        "workDirectory": "fff",
+        "description": "fff",
+        "id": "3093d790-f59f-11e7-ba1a-7f3fae7f896b"
+    },
+    {
+        "name": "ggg",
+        "password": "ggg",
+        "workDirectory": "ggg",
+        "description": "ggg",
+        "id": "397df250-f59f-11e7-ba1a-7f3fae7f896b"
+    },
+    {
+        "name": "hhh",
+        "password": "hhh",
+        "workDirectory": "hhh",
+        "description": "hhh",
+        "id": "10af6350-f5a8-11e7-bd96-6bfe2531d149"
+    },
+    {
+        "name": "iii",
+        "password": "iii",
+        "workDirectory": "iii",
+        "description": "iii",
+        "id": "e6c9dfb0-f5a8-11e7-bd96-6bfe2531d149"
+    },
+    {
+        "name": "kkk",
+        "password": "kkk",
+        "workDirectory": "kkk",
+        "description": "kkk",
+        "id": "b9a0f410-f5ad-11e7-bd96-6bfe2531d149"
+    }
 ]

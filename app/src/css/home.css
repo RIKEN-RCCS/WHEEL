@@ -1,4 +1,25 @@
 @charset "utf-8";
+body{
+  margin: 0;
+  padding: 0;
+  background-color: #3c3c3c;
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 2;
+  height:100%;
+}
+
+p,h1,h2,h3,h4,h5,h6{
+  margin-top: 0;
+}
+
+header{
+	position:relative;
+	padding:0;
+	color:#40555F;
+  background:gray;
+  font-family: 'Bitter', serif; 
+}
 
 #fileControllArea{
   padding-top: 10px;
@@ -134,4 +155,38 @@ button:hover{
 
 .drawer_menu_item {
     color: white;
+}
+
+/* style.css*/
+.title{
+  color: #e0e0e0;
+  font-size: 25px;
+  text-decoration: none;
+  margin-bottom: 0;
+}
+
+/*名前の長さに注意する必要有*/
+.title_username{
+position:absolute;
+right:80px;
+  top:10px;
+}
+
+.title_button{
+position:absolute;
+right:25px;
+top:10px;
+background-color:transparent;
+border:none;
+cursor: pointer;
+width:35px;
+height:35px;
+}
+
+.title_button img{
+width:100%;
+}
+
+.title_button:focus{
+outline:none;
 }
