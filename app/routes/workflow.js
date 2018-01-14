@@ -31,6 +31,10 @@ let rwfDispatcher=null
 let projectJson=null;
 let projectState='not-started';
 
+function hasChild(node){
+return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
+}
+
 /**
  * write data and emit to client with promise
  * @param {object} data - object to be writen and emitted
@@ -116,7 +120,7 @@ function validationCheck(workflow, dir, sio){
       }else{
         promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
-    }else if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
+    }else if(hasChild(node)){
       let childDir = path.resolve(dir, node.path);
       let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
       let tmp = promisify(fs.readFile)(childWorkflowFilename)
@@ -156,9 +160,18 @@ async function onWorkflowRequest(sio, msg){
     .catch(function(err){
       logger.error('workflow file read error\n', err);
     });
-  //TODO cwfをコピー
-  //TODO 子のjsonファイルを読んでnodes内のpropertyに追記する
-  sio.emit('workflow', cwf);
+  let rt = Object.assign(cwf);
+  let promises = rt.nodes.map((child)=>{
+    if(hasChild(child)){
+      return readWorkflow(path.join(cwfDir,child.path, child.jsonFile))
+        .then((tmp)=>{
+          child.nodes=tmp.nodes;
+        })
+    }
+  });
+  await Promise.all(promises);
+  logger.debug(JSON.stringify(rt,null,4));
+  sio.emit('workflow', rt);
 }
 
 function onCreateNode(sio, msg){
@@ -178,7 +191,7 @@ function onCreateNode(sio, msg){
       return node;
     })
     .then(function(node){
-      if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
+      if(hasChild(node)){
         const filename = path.resolve(path.dirname(cwfFilename),node.path,node.jsonFile)
         return promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
       }
@@ -193,7 +206,7 @@ function onCreateNode(sio, msg){
 
 function updateNode(node, property, value){
   node[property]=value;
-  if(node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach'){
+  if(hasChild(node)){
     let childDir = path.resolve(cwfDir, node.path);
     let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
     promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(node, null, 4));
