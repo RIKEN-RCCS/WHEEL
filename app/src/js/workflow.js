@@ -228,11 +228,11 @@ $(() => {
 
       console.log("SVG-drawNodesNodes");      
       drawNodesNodes(wfForChildren.nodes);
-    });
-
+    });*/
+    
     sio.on('taskStateList', (taskStateList) => {
       updateTaskStateTable(taskStateList);
-    }) */
+     })
 
     // TODO 現在のプロジェクト状態の取得をサーバにリクエストする
     sio.on('projectJson', (projectJson) => {
@@ -324,15 +324,14 @@ $(() => {
   $('#listView').click(function () {
     $('#workflow_manage_area').hide();
     $('#project_manage_area').show();
-    sio.emit('getTaskStateList', null);
+    sio.emit('getTaskStateList', rootWorkflow);
   });
   $('#graphView').click(function () {
     $('#project_manage_area').hide();
     $('#workflow_manage_area').show();
-    //sio.emit('getTaskStateList', null);
   }); 
 
-  //ラジオボタンでのviewの切り替え
+/*   //ラジオボタンでのviewの切り替え
   $('input[name=view]').change(function () {
     if ($('#listView').prop('checked')) {
       $('#project_manage_area').show();
@@ -347,7 +346,7 @@ $(() => {
     else {
       $('#workflow_manage_area').hide();
     }
-  });
+  }); */
 
   // setup context menu
   $.contextMenu({
@@ -411,13 +410,15 @@ $(() => {
   //タスクライブラリーの表示非表示
   // function definition
   function showTaskLibrary() {
-    $('#taskLibraryButton').show().animate({left: '155px'},50);
-    $('#taskLibraryMenu').show().animate({width: '155px', 'min-width': '155px'}, 50);
+    $('#taskLibraryButton').show().animate({left: '256px'},50);
+    $('#taskLibraryMenu').show().animate({width: '256px', 'min-width': '256px'}, 50);
+    $('#libraryButton').attr("src", "/image/btn_openCloseL_n.png");    
   }
 
   function hideTaskLibrary() {
-    $('#taskLibraryButton').show().animate({left: '-=155px'},100);    
+    $('#taskLibraryButton').show().animate({left: '-=256px'},100);    
     $('#taskLibraryMenu').hide();
+    $('#libraryButton').attr("src", "/image/btn_openCloseR_n.png");        
   }
 
   // show or hide log area
@@ -642,4 +643,7 @@ $(() => {
     $('#drawer_menu').toggleClass('action', false);
   });
 
+  var pos=$("#titleUserName").offset();
+  $("#img_user").css('right', window.innerWidth - 8 - pos.left + "px");
+  
 });

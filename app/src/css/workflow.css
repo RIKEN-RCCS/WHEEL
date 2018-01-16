@@ -1,8 +1,8 @@
 html,
 body {
     background-color: black;
-    color: white;
-    font-family: "游ゴシック", "Hiragino Kaku Gothic ProN", "Meiryo UI", "Meiryo", "メイリオ", "sans-serif";
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     height: 100%;
     margin: 0;
     white-space: nowrap;
@@ -15,100 +15,60 @@ li {
 
 /* ヘッダー*/
 header {
+    margin-top: 12px;
+    margin-left: 16px;
 	position:relative;
 	padding: 0;
-	color:white;
-    background:black;
-    font-family: 'Bitter', serif;        
-}
-
-.title {
-    color: white;
-    font-size: 30px;
+    background:#000000;
+    font-size: 24px;    
     text-decoration: none;
+    height: 24px;
 }
 
-/*名前の長さに注意する必要有*/
-#title_username{
+#title {
+    color: #FFFFFF;    
+    text-decoration: none;
+    position: absolute;
+    top: -4px;
+}
+
+#titleUser{
+    display: inline-flex；
+}
+
+#img_user{
+    position: absolute;
+    margin: 0px;
+    width: 24px;
+    height: 24px;
+}
+
+#titleUserName{
 	position: absolute;
-	right: 150px;
-    top: 10px;
-    color: white;
+	right: 88px;
+    color: FFFFFF;
+    font-size: 14px;
+    padding-top: 2px;
 }
 
-.drawer_button{
-	position:absolute;
-	right:25px;
-	top:10px;
-    /* background-color:transparent;
-	border:none; */
-	cursor: pointer;
-	/* width:35px;
-	height:35px;
-    -webkit-transition:ease .5s;
-    transition:ease .5s; */
+#drawer_button{
+    position:absolute;
+	right:16px;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+    background-color: #000000;
 }
 
-/* ビューコントローラ*/
-#breadcrumb{
-    position: relative;
-    margin-left: 100px;
-}
-
-/* タスクライブラリー*/
-#taskLibraryButtonArea{
-    position: absolute;
-    z-index: 40;
-}
-
-#taskLibraryButton{
-    position: absolute;
-    left: 0;
-    z-index: 40;
-	/* left:25px;
-	top:10px; */
-    background-color:black;
-    color: white;
-    border-color: black;
-	cursor: pointer;
-    border-collapse: collapse; 
-}
-
-#taskLibraryButton img{
-    width: 10px;
-}
+#img_btn_menu_n{
+    right:16px;
     
-#taskLibraryMenu{
-    position: absolute;    
-    overflow: auto;
-    height: 100%;
-    background-color: black;
-    border-right: solid 1px green;
-    display: none;
-    border-collapse: collapse;
 }
 
-#workflowComponents{
-    padding: 10px;
-}
-
-#workflowComponents .type{
-    padding-left: 0px;
-}
-
-#workflowComponents .type li{
-    display: inline-flex;
-}
-
-#workflowComponents .type:hover{
-    background-color: green;
-}
-
-.drawer_button img{
-	width:20px;
-}
-
-.drawer_button:focus{
+.btn_menu_n:focus{
 	outline:none;
 }
 
@@ -134,6 +94,207 @@ header {
 .drawer_menu_item {
     color: white;
 }
+/* ヘッダー部分末尾 */
+
+/* コントローラバー*/
+.controler_bar_area {
+    display: inline-flex;
+    flex-direction: row;
+    padding: 10px 0 0 16px;
+    font-size: 14px;
+    text-align: center;
+    height: 24px;
+}
+
+#project_name{
+    text-align: left;
+    margin: 0 10px 0 8px;
+    width:188px;
+}
+
+#project_state{
+    margin: 0 0 0 0;    
+    width: 100px;
+    border-radius: 12px;
+    border: solid 1px green;
+}
+
+.controler_button{
+    margin: 0 0 0 8px;
+}
+
+.img_btn_contoroler{
+    height: 24px;
+    width: 24px;
+    margin: 0 0 0 8px;    
+}
+
+.date_title {
+    margin: 0 0 0 24px;
+}
+
+.date_time {
+    margin: 0 0 0 8px;
+}
+
+#save_button{
+    display: inline-flex;
+    margin: 0 0 0 8px;    
+}
+
+#revert_button{
+    display: inline-flex;    
+    margin: 0 4px 0 8px;    
+}
+
+.figure_caption {
+    margin-left: 8px;
+}
+
+
+.controler_bar_right_area {
+    text-align: center;
+    display: flex;
+    padding-top: 2px;
+    position: absolute;
+    right: 16px;
+}
+
+#img_project{
+    height: 24px;
+}
+
+/*ビューコントローラー*/
+#view_controler_area{
+    padding: 5px 0 0 16px;
+    background-color: #222226;
+}
+
+.btn_view_change{
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    margin: 0px;
+    padding: 0px;
+    border: 0;
+    background-color: #222226;
+}
+
+#breadcrumb{
+    position: absolute;
+    margin-left: 176px;;
+}
+
+/* タスクライブラリー*/
+#taskLibraryButtonArea{
+    position: absolute;
+    z-index: 40;
+}
+
+#taskLibraryButton{
+    position: absolute;
+    height: 48px;
+    margin-top: 6px;
+    left: 0;
+    z-index: 40;
+    background-color:#222226;
+    color: white;
+    border: 0;
+	cursor: pointer;
+    border-collapse: collapse; 
+}
+
+#taskLibraryButton img{
+    width: 10px;
+}
+    
+#taskLibraryMenu{
+    position: absolute;
+    margin-top: 6px;
+    height: 100%;
+    background-color: #222226;
+    display: none;
+    border-collapse: collapse;
+}
+
+#taskAreaTitle{
+    font-size: 18px;
+    margin: 16px 0 0 16px;
+}
+
+#img_workflow_p{
+    border-radius: 2px;    
+    background-color: #803DB3;
+    height: 32px;
+    width: 32px;
+}
+
+#img_task_p{
+    border-radius: 2px;    
+    background-color: #3B55B3;
+    height: 32px;
+    width: 32px;
+}
+
+#img_parameterStudy_p{
+    border-radius: 2px;    
+    background-color: #666622;
+    height: 32px;
+    width: 32px;
+}
+
+#img_if_p{
+    border-radius: 2px;    
+    background-color: #5B5B5F;
+    height: 32px;
+    width: 32px;
+}
+
+#img_for_p{
+    border-radius: 2px;    
+    background-color: #247780;
+    height: 32px;
+    width: 32px;
+}
+
+#img_while_p{
+    border-radius: 2px;    
+    background-color: #247780;
+    height: 32px;
+    width: 32px;
+}
+
+#img_foreach_p{
+    border-radius: 2px;    
+    background-color: #247780;
+    height: 32px;
+    width: 32px;
+}
+
+#workflowComponents{
+    margin: 16px 16px 0 16px;
+}
+
+#workflowComponents .type{
+    padding-left: 0px;
+    height: 32px;
+}
+
+#workflowComponents .type li{
+    display: inline-flex;
+}
+
+#workflowComponents .type:hover{
+    background-color: green;
+}
+
+#img_workflow_name, #img_task_name, #img_parameterStudy_name,
+#img_if_name, #img_for_name, #img_while_name,
+#img_foreach_name{
+    font-size: 14px;
+    position: absolute;
+    margin: 6px 0 0 8px;
+}
 
 .subtitle {
     color: rgb(240, 240, 240);
@@ -143,26 +304,7 @@ header {
     height: 40px;
 }
 
-.controler_bar_area {
-    display: flex;
-    flex-direction: row;
-    padding: 0 0 0 0;
-    height: 50px;
-    font-size: 90%;
-    text-align: center;
-}
 
-.controler_item {
-    margin: 10px;
-    font-size: 15px;
-}
-
-.controler_bar_right_area {
-    display: flex;
-    flex-direction: row;
-    margin-left: auto;
-    margin-right: 30px;
-}
 
 .view_controler_right_area {
     position: relative;
@@ -170,18 +312,6 @@ header {
     flex-direction: row;
     font-size: 90%;
     text-align: right;
-}
-
-.figure_button {
-    margin: 10px;
-    padding-right: 40px;
-    font-size: 15px;
-}
-
-.figure_caption {
-    position: relative;
-    left: 50px;
-    bottom: 38px;
 }
 
 .address_bar_area {
@@ -633,7 +763,7 @@ td {
     overflow: auto;
 }
   
-#project_tree{
+#project_manage_area{
   float: left;
 }
 

@@ -15,57 +15,62 @@
 <body>
   <!-- header始まり -->
   <header>
-    <a href="home" class="title">WHEEL</a>
-    <span id="title_username" class="title_username">Yuki Tanaka</span>
-    <button type="button" id="drawer_button" class="drawer_button"><img src="/image/icon_config.png" alt="config"></button>
+    <a href="home" id="title">WHEEL</a>
+    <span id="titleUser">
+      <img src="/image/img_user.png" class="icon" id="img_user" align="middle"> 
+      <span id="titleUserName" class="titleUserName">Yuki Tanaka</span>
+    </span>
+    <button type="button" id="drawer_button">
+      <img src="/image/btn_menu_n.png" alt="config" class="btn_menu_n">
+    </button>
   </header>
   <!-- header終わり -->
 
   <!-- コントローラバー -->
-  <div class="controler_bar_area">
+  <span class="controler_bar_area">
+    <img src="/image/img_file.png" id="img_project" class="icon" />      
     <div id="project_name" class="controler_item"></div>
     <div id="project_state" class="controler_item"></div>
-    <figure id="run_menu" class="controler_item">
-      <img src="/image/icon_run.png" class="icon" id="run_button" />
+    <figure id="run_menu" class="controler_button">
+      <img src="/image/btn_play_s.png" class="img_btn_contoroler" id="run_button" />
     </figure>
-    <figure id="pause_menu" class="controler_item">
-      <img src="/image/icon_pause.png" class="icon" id="pause_button" />
+    <figure id="pause_menu" class="controler_button">
+      <img src="/image/btn_pause_n.png" class="img_btn_contoroler" id="pause_button" />
     </figure>
-    <figure id="stop_menu" class="controler_item">
-      <img src="/image/icon_stop.png" class="icon" id="stop_button" />
+    <figure id="stop_menu" class="controler_button">
+      <img src="/image/btn_stop_n.png" class="img_btn_contoroler" id="stop_button" />
     </figure>
-    <figure id="clean_menu" class="controler_item">
-      <img src="/image/icon_clean.png" class="icon" id="clean_button" />
+    <figure id="clean_menu" class="controler_button">
+      <img src="/image/btn_replay_n.png" class="img_btn_contoroler" id="clean_button" />
     </figure>
     <div class="controler_bar_right_area">
-      <div class="controler_item">Create Date:</div>
-      <div id="project_create_date" class="controler_item"></div>
-      <div class="controler_item">Update Date:</div>
-      <div id="project_update_date" class="controler_item"></div>
+      <div class="date_title">Create Date :</div>
+      <div id="project_create_date" class="date_time"></div>
+      <div class="date_title">Update Date :</div>
+      <div id="project_update_date" class="date_time"></div>
       <figure id="save_button" class="figure_button">
-        <img src="/image/icon_pause.png" class="icon" />
+        <img src="/image/btn_save_n.png" class="img_btn_contoroler" />
         <figcaption class="figure_caption">Save</figcaption>
       </figure>
       <figure id="revert_button" class="figure_button">
-        <img src="/image/icon_pause.png" class="icon" />
+        <img src="/image/btn_reset_n.png" class="img_btn_contoroler" />
         <figcaption class="figure_caption">Revert</figcaption>
       </figure>
     </div>
-  </div>
+  </span>
 
   <!-- ビューコントローラ -->
-  <div class="view_controler_area">
-    <span id="viewSelector">
-      <button type="button" name="view" value="graph" id="graphView" class="viewChangeButton"><img src="/image/graphview_icon.png" alt="graph"></button>                
-      <button type="button" name="view" value="list" id="listView" class="viewChangeButton"><img src="/image/listview_icon.png" alt="List"></button>        
-    </span>
+  <div id="view_controler_area">
+      <button type="button" name="view" value="graph" id="graphView" class="btn_view_change"><img src="/image/btn_flow_n.png" alt="graph"></button>                
+      <button type="button" name="view" value="list" id="listView" class="btn_view_change"><img src="/image/btn_list_n.png" alt="List"></button>        
     <span id="breadcrumb"></span>
     <div id="parentDirBtn"><button>../</button></div>
     <div class="view_controler_right_area"></div>
   </div>
   
   <!-- リストビュー -->
-  <div id="project_manage_area" class="sub_content_area" id="project_tree" onMouseDown="return false;">
+  <!-- <div id="project_manage_area" class="sub_content_area" id="project_tree" onMouseDown="return false;"> -->
+  <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
     <div id="project_tree_svg"></div>
     <div id="project_table_container">
       <table id="project_table">
@@ -88,41 +93,41 @@
   <div id="workflow_manage_area" class="workflow_manage_area">
       <!-- タスクライブラリメニュー -->
     <div id="taskLibraryMenu" class="taskLibraryMenu">
-      <p id="taskAreaTitle">library</p>
+      <p id="taskAreaTitle">Library</p>
       <div id="workflowComponents">
-        <ul id="task" class="type" draggable="true">                       
-            <li><img src="/image/task_icon.png" class="workflow_component_icon" /></li>
-            <li>task</li>
-        </ul>
         <ul id="workflow" class="type" draggable="true">                       
-            <li><img src="/image/workflow_icon.png" class="workflow_component_icon" /></li>
-            <li>workflow</li>
+            <li><img src="/image/img_workflow_p.png" id="img_workflow_p" class="workflow_component_icon" /></li>
+            <li id="img_workflow_name">workflow</li>
+        </ul>
+        <ul id="task" class="type" draggable="true">                       
+            <li><img src="/image/img_task_p.png" id="img_task_p" class="workflow_component_icon" /></li>
+            <li id="img_task_name">task</li>
         </ul>
         <ul id="PS" class="type" draggable="true">                       
-            <li><img src="/image/ps_icon.png" class="workflow_component_icon" /></li>
-            <li>Parameter Study</li>
+            <li><img src="/image/img_parameterStudy_p.png" id="img_parameterStudy_p" class="workflow_component_icon" /></li>
+            <li id="img_parameterStudy_name">Parameter Study</li>
         </ul>
         <ul id="if" class="type" draggable="true">                       
-            <li><img src="/image/if_icon.png" class="workflow_component_icon" /></li>
-            <li>if</li>
+            <li><img src="/image/img_if_p.png" id="img_if_p" class="workflow_component_icon" /></li>
+            <li id="img_if_name">if</li>
         </ul>
         <ul id="for" class="type" draggable="true">                       
-            <li><img src="/image/for_icon.png" class="workflow_component_icon" /></li>
-            <li>for</li>
+            <li><img src="/image/img_for_p.png" id="img_for_p" class="workflow_component_icon" /></li>
+            <li id="img_for_name">for</li>
         </ul>
         <ul id="while" class="type" draggable="true">                       
-            <li><img src="/image/while_icon.png" class="workflow_component_icon" /></li>
-            <li>while</li>
+            <li><img src="/image/img_while_p.png" id="img_while_p" class="workflow_component_icon" /></li>
+            <li id="img_while_name">while</li>
         </ul>
         <ul id="foreach" class="type" draggable="true">                       
-            <li><img src="/image/foreach_icon.png" class="workflow_component_icon" /></li>
-            <li>foreach</li>
+            <li><img src="/image/img_foreach_p.png" id="img_foreach_p" class="workflow_component_icon" /></li>
+            <li id="img_foreach_name">foreach</li>
         </ul>
         <!-- <li a href="foreach" id="foreach" class="type" draggable="true">foreach</li>         -->
         </div>
     </div>
     <div id="taskLibraryButtonArea" class="taskLibraryButtonArea">
-      <button type="button"  id="taskLibraryButton" class="taskLibraryButton"><img src="/image/icon_workflow.png" alt=">"></button>
+      <button type="button"  id="taskLibraryButton" class="taskLibraryButton"><img src="/image/btn_openCloseR_n.png" alt="libraryButton" id="libraryButton"></button>
     </div>
     <!-- SVG描画領域 -->
     <div id="node_svg" class="node_svg"></div>
