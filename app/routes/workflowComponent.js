@@ -82,7 +82,7 @@ class BaseTaskGraph extends BaseWorkflowComponent{
      * 1: do not clenup
      * 2: same as parent
      */
-    this.cleanupFlag=null;
+    this.cleanupFlag=2;
   }
 }
 
@@ -101,8 +101,8 @@ class Task extends BaseWorkflowComponent{
     this.useJobScheduler=false;
     /** queue name */
     this.queue=null;
-    /** remove files on remoteserver or not */
-    this.cleanupFlag=false;
+    /** flag for clean up temporary working directory on remote host
+    this.cleanupFlag=1;
     // note on filters
     // if include filter is set, matched files are transferd whther it also match exclude filter
     /** include filter for recieve files from remote host */
