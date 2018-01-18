@@ -185,6 +185,12 @@ header {
     margin-left: 176px;;
 }
 
+#img_pankuzuArrow{
+    margin: 0;
+}
+/*ビューコントローラー末尾*/
+
+
 /* タスクライブラリー*/
 #taskLibraryButtonArea{
     position: absolute;
@@ -211,9 +217,10 @@ header {
 #taskLibraryMenu{
     position: absolute;
     margin-top: 6px;
-    height: 100%;
+    height: calc(100% - 106px);
     background-color: #222226;
     display: none;
+    z-index: 40;    
     border-collapse: collapse;
 }
 
@@ -295,6 +302,280 @@ header {
     position: absolute;
     margin: 6px 0 0 8px;
 }
+/* タスクライブラリー末尾*/
+
+/* プロパティ*/
+#propertyButtonArea{
+    position: absolute;
+    z-index: 40;
+}
+
+#propertyButton{
+    position: absolute;
+    right: 0;
+    height: 48px;
+    margin-top: 6px;
+    z-index: 40;
+    background-color:#222226;
+    color: white;
+    border: 0;
+	cursor: pointer;
+    border-collapse: collapse; 
+}
+
+#property {
+    position: relative;
+    overflow: auto;
+    margin-top: 6px;
+    background-color: #222226;
+    height: 99%;
+    display: none;
+    z-index: 40;
+    border-collapse: collapse;
+}
+
+#propertyTitle{
+    font-size: 18px;
+    margin: 16px 0 0 16px;
+}
+
+#propertyComponents{
+    margin: 8px 16px 0 16px;
+}
+
+#img_node_type{
+    height: 32px;
+    width: 32px;
+}
+
+#propertyType{
+    display: inline-flex;
+}
+
+#propertyTypeName{
+    margin: 5px 0 0 8px;
+}
+
+#propertyName{
+    margin: 0;
+}
+
+#propertyDescription{
+    margin: 8px 0 0 0;
+    display: inline-block;
+}
+
+#propertyInputFiles, #propertyScript{
+    margin: 2px 0 0 0;
+    display: inline-block;    
+}
+
+#propertyOutputFiles, #propertyParameterSettingFile, #propertyCondition,
+#propertyIndexList, #propertyStart, #propertyEnd, #propertyStep,
+#propertyRemotehost, #propertyQueue{
+    margin: 8px 0 0 0;
+    display: inline-block;    
+}
+
+#nameInputField, .newInputFileNameInputField, .newOutputFileNameInputField,
+.newOutputFileNameInputField, #parameterFileInputField, #conditionInputField, 
+.newIndexListField{
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 20px;
+    width: 192px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+}
+
+#scriptInputField{
+    margin: 2px 0 6px 8px;
+    padding-left: 5px;
+    height: 20px;
+    width: 192px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+}
+
+#includeInputField, #excludeInputField{
+    margin: 2px 0 0 16px;
+    padding-left: 5px;
+    height: 20px;
+    width: 192px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+}
+
+#remotehostSelectField, #queueSelectField{
+    margin: 2px 0 0 16px;
+    padding-left: 5px;
+    height: 20px;
+    width: 192px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+}
+
+#descriptionInputField{
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 72px;
+    width: 192px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+}
+
+#startInputField, #endInputField{
+    margin: 2px 0 0 2px;
+    padding-left: 5px;
+    height: 15px;
+    width: 73px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+}
+
+#stepInputField{
+    margin: 2px 0 0 5px;
+    padding-left: 5px;
+    height: 15px;
+    width: 73px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+}
+
+.inputAddDelButton{
+    position: absolute;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0 5px;
+    padding: 0px;
+    border: 1px solid #5B5B5F;
+    background-color: #5B5B5F;
+}
+
+.outputAddDelButton{
+    position: absolute;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0 5px;
+    padding: 0px;
+    border: 1px solid #5B5B5F;
+    background-color: #5B5B5F;
+}
+
+.indexListButton{
+    position: absolute;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0 5px;
+    padding: 0px;
+    border: 1px solid #5B5B5F;
+    background-color: #5B5B5F;
+}
+
+#remoteFileTransferSetthing{
+    padding: 8px 16px 0 16px;
+    margin-top: 8px;
+    border-top: solid 1px #000000; 
+}
+
+#propertyCleanUpFlag, #propertyInclude, #propertyExclude{
+    margin: 8px 0 0 8px;
+    display: inline-block;    
+}
+
+#flags{
+    margin: 2px 16px 0 16px;
+}
+
+.property_text {
+    width: calc(100% - 12px);
+}
+
+.property div {
+    /* color: rgb(105, 175, 45); */
+    align-items: center;
+}
+
+#filesEdit{
+    padding: 8px 16px 0 16px;
+    margin-top: 8px;
+    border-top: solid 1px #000000;
+}
+
+.createFileDirButton{
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    margin: 0 0 0 8px;
+    padding: 0px;
+    border: 0;
+    background-color: #222226;
+}
+
+#fileEditButton{
+    margin: 8px 0 0 124px;
+}
+
+#startInputField, #endInputField, #stepInputField
+{
+    width: 75px;
+}
+
+#fileList{
+  margin: auto;
+  padding-left: 10px;
+  font-size: 12px;
+}
+
+#path{
+    margin: auto;
+    color: orange;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+    word-wrap: break-word;
+    font-size: 12px; 
+}
+
+#componentPath{
+    margin: 2px 0 4px 0;
+    height: 20px;
+    text-overflow:ellipsis;
+    overflow:hidden;
+    white-space:nowrap;
+    word-wrap: break-word;
+    font-size: 12px; 
+    background-color: #000000;
+}
+
+#componentPath:hover {
+    overflow: visible;
+    white-space:normal;
+}
+
+#fileSelector{
+    display: none;
+}
+
+#fileList li:hover{
+    background-color: gray;
+}
+/* プロパティ末尾*/
+
 
 .subtitle {
     color: rgb(240, 240, 240);
@@ -444,16 +725,12 @@ header {
 .workflow_manage_area {
     display: flex;
     flex-direction: row;
-    position: relative;
-
-    color: rgb(240, 240, 240);
-    border: solid 1px #111;
-    background-color: rgb(47, 47, 51);
+    color: #FFFFFF;
+    background-color: #2F2F33;
     box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
-    height: calc(100% - 240px);
-    width: 98%;
+    height: calc(100% - 100px);    
     overflow: auto;
-    font-size: 90%;
+    font-size: 14px;
     user-select: none;
 }
 #workflow_name_container{
@@ -638,88 +915,32 @@ td {
     width: 100%;
     overflow: hidden;
 }
-
-/*プロパティ*/
-#property {
-    position: relative;
-    overflow: auto;
-    height: 100%;
-    /* width: 360px;
-    min-width: 360px; */
-    border-left: solid 1px #111;
-    display: none;
-    z-index: 40;
-    border-collapse: collapse;
+/*プロパティ末尾*/
+#displayLogButton {
+	bottom:0px;
+    position:absolute;
+    margin: 0 50% 0 50%;
+    height: 20px;
+    width: 48px;
+    background-color: rgba(28,28,32,0.75);
+    border: 0;
 }
 
-.property_text {
-    width: calc(100% - 12px);
+.displayLogButton.display {
+    -webkit-transform:translateY(-320px);
+    transform:translateY(-320px);
 }
 
-.property div {
-    color: rgb(105, 175, 45);
-    align-items: center;
-}
-
-.property input {
-    margin-right: 6px;
-}
-
-#filesEdit{
-    margin-top: 10px;
-    border-top: solid 2px black;
-}
-
-#startInputField, #endInputField, #stepInputField
-{
-    width: 75px;
-}
-
-/* #fileBrowser{
-    display: none;
-    float: left;
-    height: 100%;
-    overflow: scroll;
-    width: 90%;
-} */
-
-#fileList{
-  margin: auto;
-  padding-left: 10px;
-  font-size: 12px;
-}
-
-#path{
-    margin: auto;
-    color: orange;
-    text-overflow:ellipsis;
-    overflow:hidden;
-    white-space:nowrap;
-    word-wrap: break-word;
-    font-size: 12px; 
-}
-
-#componentPath{
-    margin: auto;
-    color: orange;
-    text-overflow:ellipsis;
-    overflow:hidden;
-    white-space:nowrap;
-    word-wrap: break-word;
-    font-size: 12px; 
-}
-
-#componentPath:hover {
-    overflow: visible;
-    white-space:normal;
-}
-
-#fileSelector{
-    display: none;
-}
-
-#fileList li:hover{
-    background-color: gray;
+#img_displayLogButton{
+    position: absolute;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    padding: 0px;
+    left: 16px;
+    top: 1px;
+    /*border: 1px solid #5B5B5F;
+    background-color: #5B5B5F; */
 }
 
 .text_readonly {
@@ -737,30 +958,65 @@ td {
     background-color: rgb(47, 47, 42);
 }
 
-.displayLogButton {
-	bottom:0px;
-	position:absolute;
-}
 
-.displayLogButton.display {
-    -webkit-transform:translateY(-320px);
-    transform:translateY(-320px);
-}
 
 .logArea {
     display: none;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(28,28,32,0.75);
     bottom:0;
     color: rgb(240, 240, 240);
 	position:absolute;
     width: 100%;
     height: 320px;
     z-index: 80;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
 }
 
-#logText{
-    height: 230px;
+#logButtonArea{
+    padding: 8px 0 0 16px;
+    border: solid 1px rgba(28,28,32,0.75);
+    border-bottom-color: #6F6F77;
+}
+
+.logButton{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    background-color: rgba(28,28,32,0.75);
+    font-size: 14px;
+    padding: 0 20px 0 20px;
+    border: solid 2px rgba(28,28,32,0.75);
+    color: #FFFFFF;
+    cursor: pointer;
+    width: 120px;
+}
+
+.logButton:hover{
+    border-bottom-color:#CCFF00 !important;    
+}
+
+.logText{
+    font-size: 12px;
+    color: #FFFFFF;
+    height: 250px;
     overflow: auto;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    margin: 12px 0 0 12px;
+    display: none;        
+}
+
+#clear_log{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    background-color: #5B5B5F;
+    font-size: 14px;
+    padding: 0 20px 0 20px;
+    margin-top: 10px;
+    border: none;
+    color: #FFFFFF;
+    cursor: pointer;
+    width: 120px;
+}
+
+#buttonPartition{
+    padding-left: 16px;
 }
   
 #project_manage_area{

@@ -126,107 +126,143 @@
         <!-- <li a href="foreach" id="foreach" class="type" draggable="true">foreach</li>         -->
         </div>
     </div>
+    <!-- ライブラリーボタン -->
     <div id="taskLibraryButtonArea" class="taskLibraryButtonArea">
       <button type="button"  id="taskLibraryButton" class="taskLibraryButton"><img src="/image/btn_openCloseR_n.png" alt="libraryButton" id="libraryButton"></button>
     </div>
+    <!-- プロパティボタンボタン -->
+<!--     <div id="propertyButtonArea" class="propertyButtonArea">
+        <button type="button"  id="propertyButton" class="propertyButton"><img src="/image/btn_openCloseL_n.png" alt="propertyButton" id="propertyOCButton"></button>
+    </div> -->
     <!-- SVG描画領域 -->
     <div id="node_svg" class="node_svg"></div>
     <!-- プロパティ -->
     <div id="property" class="property">
-      <div>
-        <label for="nameInputField">name</label>
-      </div>
-      <div>
-        <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
-      </div>
-      <div>
-        <label for="descriptionInputField">description</label>
-      </div>
-      <div>
-        <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField" v-on:blur="updateProperty('description')"></textarea>
-      </div>
-      <div v-if="node.hasOwnProperty('script')">
-        <label for="scriptInputField">script</label>
-        </div>
-      <div v-if="node.hasOwnProperty('script')">
-        <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
-      </div>
-      <div>
-        <label>inputFiles</label>
-      </div>
-      <template  v-for="(inputFile, index) in node.inputFiles" >
+      <p id="propertyTitle">Property</p>
+      <div id="propertyComponents">
+        <span id="propertyType"> 
+          <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
+          <p id="propertyTypeName"></p>
+        </span>
         <div>
-          <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="updateProperty('inputFiles')">
-          <button v-on:click="delInputFile(index)">del</button>
+          <label for="nameInputField" id="propertyName">Name</label>
         </div>
-      </template>
-      <div>
-        <input type="text" v-model.lazy.trim="newInputFilename">
-        <button v-on:click="addInputFile">add</button>
-      </div>
-      <div>
-        <label>outputFiles</label>
-      </div>
-      <template  v-for="(outputFile, index) in node.outputFiles">
         <div>
-          <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="updateProperty('outputFiles')">
-          <button v-on:click="delOutputFile(index)">del</button>
+          <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
         </div>
-      </template>
-      <div>
-        <input type="text" v-model.lazy.trim="newOutputFilename">
-        <button v-on:click="addOutputFile">add</button>
-      </div>
-      <div v-if="node.hasOwnProperty('parameterFile')">
-        <label for="parameterFileInputField">parameter setting file</label>
-      </div>
-      <div v-if="node.hasOwnProperty('parameterFile')">
-        <input type="text" v-model.lazy.trim="node.parameterFile" spellcheck="false" id="parameterFileInputField" v-on:blur="updateProperty('parameterFile')">
-      </div>
-      <div v-if="node.hasOwnProperty('condition')">
-        <label for="conditionInputField">condition</label>
-      </div>
-      <div v-if="node.hasOwnProperty('condition')">
-        <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
-      </div>
-      <div v-if="node.hasOwnProperty('indexList')" >
-        <label>index list</label>
-      </div>
-      <template v-for="(v, i) in node.indexList">
         <div>
-          <input type="text" v-model.lazy.trim="v.label" v-on:blur="updateProperty('indexList')">
-          <button v-on:click="delIndexOfForeach(i)">del</button>
+          <label for="descriptionInputField" id="propertyDescription">Description</label>
         </div>
-      </template>
-      <div v-if="node.hasOwnProperty('indexList')" >
-        <input type="text" v-model.lazy.trim="newIndexOfForeach">
-        <button v-on:click="addIndexOfForeach">add</button>
-      </div>
-      <div v-if="node.hasOwnProperty('start')">
-        <label for="startInputField">start</label>
-        <input type="number" v-model.number.lazy.trim="node.start"  id="startInputField" v-on:blur="updateProperty('start')">
-        <label for="endInputField">end</label>
-        <input type="number" v-model.number.lazy.trim="node.end"  id="endInputField" v-on:blur="updateProperty('end')">
-        <label for="stepInputField">step</label>
-        <input type="number" v-model.number.lazy.trim="node.step"  id="stepInputField" v-on:blur="updateProperty('step')">
-      </div>
+        <div>
+          <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField" v-on:blur="updateProperty('description')"></textarea>
+        </div>
+        <div v-if="node.hasOwnProperty('script')">
+          <label for="scriptInputField" id="propertyScript">script</label>
+        </div>
+        <div v-if="node.hasOwnProperty('script')">
+          <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
+        </div>
+        <div>
+          <label id="propertyInputFiles">inputFiles</label>
+        </div>
+        <template  v-for="(inputFile, index) in node.inputFiles" >
+          <div>
+            <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="updateProperty('inputFiles')" class="newInputFileNameInputField">
+            <button v-on:click="delInputFile(index)" class="inputAddDelButton">
+                <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">                
+            </button>
+          </div>
+        </template>
+        <div>
+          <input type="text" v-model.lazy.trim="newInputFilename" class="newInputFileNameInputField">
+          <button v-on:click="addInputFile" class="inputAddDelButton">
+            <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
+          </button>
+        </div>
+        <div>
+          <label id="propertyOutputFiles">outputFiles</label>
+        </div>
+        <template  v-for="(outputFile, index) in node.outputFiles">
+          <div>
+            <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="updateProperty('outputFiles')" class="newOutputFileNameInputField">
+            <button v-on:click="delOutputFile(index)" class="outputAddDelButton">
+              <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">                                
+            </button>
+          </div>
+        </template>
+        <div>
+          <input type="text" v-model.lazy.trim="newOutputFilename"  id="newOutputFileNameInputField" class="newOutputFileNameInputField">
+          <button v-on:click="addOutputFile" class="outputAddDelButton">
+            <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">              
+          </button>
+        </div>
+
+        <div v-if="node.hasOwnProperty('host')">
+          <label for="parameterRemotehost" id="propertyRemotehost">remotehost</label>
+        </div>
+        <select name="remotehost" v-model.lazy.trim="node.host" v-if="node.hasOwnProperty('host')" id="remotehostSelectField" v-on:blur="updateProperty('host')"></select>
+        <div v-if="node.hasOwnProperty('queue')">
+          <label for="parameterRemotehost" id="propertyQueue">Queue</label>
+        </div>
+        <select name="remotehost" v-model.lazy.trim="node.queue" v-if="node.hasOwnProperty('queue')" id="queueSelectField" v-on:blur="updateProperty('queue')"></select>
+
+        <div v-if="node.hasOwnProperty('parameterFile')">
+          <label for="parameterFileInputField" id="propertyParameterSettingFile">parameter setting file</label>
+        </div>
+        <div v-if="node.hasOwnProperty('parameterFile')">
+          <input type="text" v-model.lazy.trim="node.parameterFile" spellcheck="false" id="parameterFileInputField" v-on:blur="updateProperty('parameterFile')">
+        </div>
+        <div v-if="node.hasOwnProperty('condition')">
+          <label for="conditionInputField" id="propertyCondition">condition</label>
+        </div>
+        <div v-if="node.hasOwnProperty('condition')">
+          <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
+        </div>
+        <div v-if="node.hasOwnProperty('indexList')" >
+          <label id="propertyIndexList">index list</label>
+        </div>
+        <template v-for="(v, i) in node.indexList">
+          <div>
+            <input type="text" v-model.lazy.trim="v.label" v-on:blur="updateProperty('indexList')" class="newIndexListField">
+            <button v-on:click="delIndexOfForeach(i)" class="indexListButton">
+              <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">                                                
+            </button>
+          </div>
+        </template>
+        <div v-if="node.hasOwnProperty('indexList')" >
+          <input type="text" v-model.lazy.trim="newIndexOfForeach" class="newIndexListField">
+          <button v-on:click="addIndexOfForeach" class="indexListButton">
+            <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">                            
+          </button>
+        </div>
+        <div v-if="node.hasOwnProperty('start')">
+          <label for="startInputField" id="propertyStart">start</label>
+          <input type="number" v-model.number.lazy.trim="node.start"  id="startInputField" v-on:blur="updateProperty('start')">
+          <label for="endInputField" id="propertyEnd">end</label>
+          <input type="number" v-model.number.lazy.trim="node.end"  id="endInputField" v-on:blur="updateProperty('end')">
+          <div>
+            <label for="stepInputField" id="propertyStep">step</label>
+            <input type="number" v-model.number.lazy.trim="node.step"  id="stepInputField" v-on:blur="updateProperty('step')">
+          </div>
+        </div>
+      </div> 
       <div id="remoteFileTransferSetthing">
         <div v-if="node.hasOwnProperty('cleanupFlag') || node.hasOwnProperty('include') || node.hasOwnProperty('exclude')">
           remote file transfer setting
         </div>
         <div v-if="node.hasOwnProperty('cleanupFlag')">          
         <div >
-          <label>clean up flag</label>
+          <label id="propertyCleanUpFlag">clean up flag</label>
         </div>
-        <div>
-          <input type="radio" name="cleanupFlag" value="0">clean up
-          <input type="radio" name="cleanupFlag" value="1">keep files
+        <div id="flags">
+          <div><input type="radio" name="cleanupFlag" value="0">clean up</div>
+          <div><input type="radio" name="cleanupFlag" value="1">keep files</div>
           <input type="radio" name="cleanupFlag" value="2" checked=>follow parent setting
         </div>
         </div>
         <div v-if="node.hasOwnProperty('include')">
         <div>
-          <label for="includeInputField">  include</label>
+          <label for="includeInputField" id="propertyInclude">  include</label>
         </div>
         <div>
           <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField" v-on:blur="updateProperty('include')">
@@ -234,27 +270,29 @@
         </div>
         <div v-if="node.hasOwnProperty('exclude')">
           <div>
-          <label for="excludeInputField">  exclude</label>
+          <label for="excludeInputField" id="propertyExclude">  exclude</label>
           </div>
           <div>
             <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField" v-on:blur="updateProperty('exclude')">
           </div>
         </div>
       </div>
-    
-      <!--ファイル編集 -->
+        <!--ファイル編集 -->
       <div id="filesEdit">
-        <label>File editer</label>
+        <label>Files</label>
         <p id="componentPath"></p>
         <input type="file" id="fileSelector" name="uploadFiles" multiple />
-        <button type="button" id="fileUploadButton" class="createFileDirButton"><img src="/image/fileUpload_icon.png" alt="graph"></button>        
-        <button type="button" id="createFileButton" class="createFileDirButton"><img src="/image/createFile_icon.png" alt="graph"></button>
-        <button type="button" id="createFolderButton" class="createFileDirButton"><img src="/image/createFolder_icon.png" alt="graph"></button>
-        <div id="dialog"></div>        
-        <div id="fileBrowser" class="fileBrowser"> 
-          <ul id="fileList"></ul>
+        <div id="fileEditButton">
+          <button type="button" id="createFolderButton" class="createFileDirButton"><img src="/image/btn_addFolder_n.png" alt="graph"></button>
+          <button type="button" id="createFileButton" class="createFileDirButton"><img src="/image/btn_addFile_n.png" alt="graph"></button>
+          <button type="button" id="fileUploadButton" class="createFileDirButton"><img src="/image/btn_upload_n.png" alt="graph"></button>                
         </div>
-      </div>
+        <div id="dialog"></div>        
+          <div id="fileBrowser" class="fileBrowser"> 
+            <ul id="fileList"></ul>
+          </div>
+        </div>
+
     </div>    
   </div>
 
@@ -268,20 +306,34 @@
   </div>
 
   <!-- ログボタン -->
-  <input type="button" id="displayLogButton" class="displayLogButton" value="Log">
+  <div>
+    <button type="button" id="displayLogButton" class="displayLogButton" value="Log">
+      <img src="/image/btn_openCloseU_n.png" alt="config" id="img_displayLogButton">
+    </button>
+  </div>
   <div id="logArea" class="logArea">
     <div id="logFilter">
-      <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug
-      <input type="checkbox" id="enableINFO"   checked="checked" value="node">Info
-      <input type="checkbox" id="enableWARN"   checked="checked" value="node">Warn
-      <input type="checkbox" id="enableERR"    checked="checked" value="node">Error
-      <input type="checkbox" id="enableStdout" checked="checked" value="node">stdout
-      <input type="checkbox" id="enableStderr" checked="checked" value="node">stderr
-      <input type="checkbox" id="enableSSHout" checked="checked" value="node">stdout(SSH)
-      <input type="checkbox" id="enableSSHerr" checked="checked" value="node">stderr(SSH)
-    </div>
-    <button id="clear_log">clear</button>
-    <pre id="logText" class="logText"></pre>
+      <div id="logButtonArea">
+        <!-- <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug -->
+        <button type="button" id="enableDBG" class="logButton" value="node">Debug</button>
+        <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
+        <button type="button" id="enableWARN" class="logButton" value="node">Warn</button>
+        <button type="button" id="enableERR" class="logButton" value="node">Error</button>      
+        <button type="button" id="enableStdout" class="logButton" value="node">stdout</button>
+        <button type="button" id="enableStderr" class="logButton" value="node">stderr</button>  
+        <button type="button" id="enableSSHout" class="logButton" value="node">stdout(SSH)</button>
+        <button type="button" id="enableSSHerr" class="logButton" value="node">stderr(SSH)</button>
+      </div>
+        <div id="buttonPartition"><button id="clear_log">All Log Clear</button></div>
+        <!-- <pre id="logText" class="logText"></pre> -->
+        <pre id="logDebugLog" class="logText"></pre>
+        <pre id="logInfoLog" class="logText"></pre>
+        <pre id="logWarnLog" class="logText"></pre>
+        <pre id="logStdoutLog" class="logText"></pre>
+        <pre id="logStderrLog" class="logText"></pre>
+        <pre id="logSSHoutLog" class="logText"></pre>
+        <pre id="logSSHerrLog" class="logText"></pre>
+    </div>  
   </div>
 
   <!-- File Browser Dialog -->

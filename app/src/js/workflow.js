@@ -262,6 +262,32 @@ $(() => {
       }
     });
 
+    sio.on('hostList', function(hostlist){
+      console.log(hostlist);
+      let remotehostSelectField = $('#remotehostSelectField');
+      remotehostSelectField.empty();
+      
+      remotehostSelectField.append(`<option value="localhostt">localhost</option>`);      
+      for (let index = 0; index < hostlist.length; index++) {
+        remotehostSelectField.append(`<option value=${hostlist[index].name}>${hostlist[index].name}</option>`);
+      }
+
+      let queueSelectField = $('#queueSelectField');
+      queueSelectField.empty();
+      
+      queueSelectField.append(`<option value="null">default</option>`);
+      let queueList = hostlist[1].queue;
+      let queueArray = queueList.split(',');
+      console.log(queueArray);
+
+      for (let index = 0; index < queueArray.length; index++) {
+        queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
+      }
+
+
+    });
+
+
     //setup log reciever
     logReciever(sio);
 
@@ -436,11 +462,13 @@ $(() => {
   function showLog() {
     $('#logArea').show();
     $('#displayLogButton').toggleClass('display', true);
+    $('#img_displayLogButton').attr("src", "/image/btn_openCloseD_n.png");        
   }
 
   function hideLog() {
     $('#logArea').hide();
     $('#displayLogButton').toggleClass('display', false);
+    $('#img_displayLogButton').attr("src", "/image/btn_openCloseU_n.png");        
   }
 
   /**
@@ -498,9 +526,13 @@ $(() => {
             //プロパティ表示用相対パス
             let currentPropertyDir = "."+currentWorkDir.replace(projectLootDir,"")+"/"+nodesInWF[nodeIndex].name;
             let nodeType = nodesInWF[nodeIndex].type;
+            if(nodeType === 'task'){
+              sio.emit('getHostList', true);
+            }
+            $('#propertyTypeName').html(nodesInWF[nodeIndex].type);            
             vm.node=v;
             $('#componentPath').html(currentPropertyDir);
-            $('#property').show().animate({width: '360px', 'min-width': '360px'}, 100);
+            $('#property').show().animate({width: '260px', 'min-width': '260px'}, 100);
           })
           .onDblclick(function(e){
             let nodeType=e.target.instance.parent('.node').data('type');
@@ -642,6 +674,17 @@ $(() => {
   $('#drawer_menu').mouseleave(function () {
     $('#drawer_menu').toggleClass('action', false);
   });
+
+  
+  function getSelectLabel(index){
+    var obj = document.getElementById(index);
+    var idx = obj.selectedIndex;       //インデックス番号を取得
+    var val = obj.options[idx].value;  //value値を取得
+    var txt  = obj.options[idx].text;  //ラベルを取得
+    console.log(idx);
+    console.log(val);
+    
+  }
 
   var pos=$("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - 8 - pos.left + "px");
