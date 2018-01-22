@@ -38,7 +38,7 @@ $(() => {
                     var path= $(this).data('path');
                     console.log(path);                    
                     var html = '<p>input new project name</p><input type="text" id="renamedProjectName">';
-                    dialogWrapper('#dialog', html).done(function () {
+                    dialogWrapper('#dialogContext', html).done(function () {
                         var newName = $('#renamedProjectName').val();
                         socket.emit('renameProject', {'id': id, 'path': path, 'newName': newName });
                     });
@@ -49,7 +49,7 @@ $(() => {
                 callback: function () {
                     var targetID = $(this).data('id');
                     console.log(targetID);
-                    dialogWrapper('#dialog', 'Are you sure you want to delete project?').done(function () {
+                    dialogWrapper('#dialogContext', 'Are you sure you want to delete project?').done(function () {
                         socket.emit('removeProject', targetID);
                     });
                 }
@@ -73,8 +73,10 @@ $(() => {
     });
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     const dialogOptions = {
-        height: $(window).height() * 0.98,
-        width: $(window).width() * 0.98
+/*         height: $(window).height() * 0.98,
+        width: $(window).width() * 0.98 */
+        height: $(window).height() * 0.9,
+        width: $(window).width() * 0.6
     };
     // register btn click event listeners
     $('#newButton').on("click", (event) => {

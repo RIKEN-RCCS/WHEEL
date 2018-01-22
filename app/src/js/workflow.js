@@ -33,6 +33,7 @@ $(() => {
   let currentWorkDir = rootDir;
   let currentNode = '';
   let nodeStack = [''];
+  let nodeTypeStack = [''];
   let dirStack = [rootDir];
   let wfStack = [rootWorkflow];
   let childrenViewBoxList = [];
@@ -175,17 +176,18 @@ $(() => {
   // container of svg elements
   let nodes = [];
   let selectedNode=0;
+  let remotehost = '';
+  let remotehostArray = [];
+  let queueArray = [];
+  let selectedHostQueue = '';
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
     fb.request('getFileList', currentWorkDir, null);
-    sio.emit('getWorkflow', currentWorkFlow);
-
-    //一先ずここでemitしとく
-    sio.emit('getProjectJson', rootWorkflow);
     
     sio.on('workflow', function(wf){
       nodeStack[nodeStack.length - 1] = wf.name;
+      nodeTypeStack[nodeStack.length - 1] = wf.type;
 
       updateBreadrumb();
 
@@ -262,65 +264,83 @@ $(() => {
       }
     });
 
+    /*create host, queue selectbox*/ 
     sio.on('hostList', function(hostlist){
       console.log(hostlist);
       let remotehostSelectField = $('#remotehostSelectField');
       remotehostSelectField.empty();
+      remotehostArray = [];
       
-      remotehostSelectField.append(`<option value="localhostt">localhost</option>`);      
+      remotehostSelectField.append(`<option value="localhost">localhost</option>`);
       for (let index = 0; index < hostlist.length; index++) {
-        remotehostSelectField.append(`<option value=${hostlist[index].name}>${hostlist[index].name}</option>`);
+        remotehostSelectField.append(`<option value="${hostlist[index].name}">${hostlist[index].name}</option>`);
+        remotehostArray.push(hostlist[index].name);
       }
-
-      let queueSelectField = $('#queueSelectField');
-      queueSelectField.empty();
+      //selectboxへの設定
+      remotehostSelectField.val(remotehost);
+      console.log(remotehost);      
       
-      queueSelectField.append(`<option value="null">default</option>`);
-      let queueList = hostlist[1].queue;
-      let queueArray = queueList.split(',');
-      console.log(queueArray);
-
-      for (let index = 0; index < queueArray.length; index++) {
-        queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
-      }
-
-
+      let queueSelectField = $('#queueSelectField');
+      $('#remotehostSelectField').change(function() {
+        console.log(hostlist);        
+        queueSelectField.empty();
+        let selectedHost = $('#remotehostSelectField option:selected').text();        
+        
+        if(selectedHost === 'localhost'){
+          queueArray = ['null'];
+        } else {
+          let hostListIndex = remotehostArray.indexOf(selectedHost);
+          console.log(selectedHost);
+          console.log(hostListIndex);
+          let queueList = hostlist[hostListIndex].queue;
+          queueArray = queueList.split(',');
+          queueSelectField.append(`<option value="null">null</option>`);                        
+        }
+        for (let index = 0; index < queueArray.length; index++) {
+          queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
+        }
+        queueSelectField.val(selectedHostQueue);
+        });
     });
 
+    sio.emit('getWorkflow', currentWorkFlow);
 
+    //一先ずここでemitしとく
+    sio.emit('getProjectJson', rootWorkflow);
+    
     //setup log reciever
     logReciever(sio);
 
-    // register btn click event listeners
-    $('#run_menu').on('click',function(){
-      sio.emit('runProject', rootWorkflow);
-    });
-    $('#pause_menu').on('click',function(){
-      sio.emit('pauseProject', true);
-    });
-    $('#clean_menu').on('click',function(){
-      sio.emit('cleanProject', true);
-    });
-    $('#stop_menu').on('click',function(){
-      sio.emit('stopProject', true);
-    });
-
-    //save,revert
-    $('#save_button').on('click',function(){
-      //サーバー側未実装
-      sio.emit('saveProject', null, (result) => {
-        console.log(result);
-      });
-    });
-
-    $('#revert_button').on('click',function(){
-      //サーバー側未実装
-      sio.emit('revertProject', null, (result) => {
-        console.log(result);
-      });
-  　});
-
   });
+
+  // register btn click event listeners
+  $('#run_menu').on('click',function(){
+    sio.emit('runProject', rootWorkflow);
+  });
+  $('#pause_menu').on('click',function(){
+    sio.emit('pauseProject', true);
+  });
+  $('#clean_menu').on('click',function(){
+    sio.emit('cleanProject', true);
+  });
+  $('#stop_menu').on('click',function(){
+    sio.emit('stopProject', true);
+  });
+
+  //save,revert
+  $('#save_button').on('click',function(){
+    //サーバー側未実装
+    sio.emit('saveProject', null, (result) => {
+      console.log(result);
+    });
+  });
+
+  $('#revert_button').on('click',function(){
+    //サーバー側未実装
+    sio.emit('revertProject', null, (result) => {
+      console.log(result);
+    });
+　});
 
 
   // hide property and select parent WF if background is clicked
@@ -357,36 +377,18 @@ $(() => {
     $('#workflow_manage_area').show();
   }); 
 
-/*   //ラジオボタンでのviewの切り替え
-  $('input[name=view]').change(function () {
-    if ($('#listView').prop('checked')) {
-      $('#project_manage_area').show();
-      sio.emit('getTaskStateList', null);
-    }
-    else {
-      $('#project_manage_area').hide();
-    }
-    if ($('#graphView').prop('checked')) {
-      $('#workflow_manage_area').show();
-    }
-    else {
-      $('#workflow_manage_area').hide();
-    }
-  }); */
-
   // setup context menu
   $.contextMenu({
-    selector: '#node_svg',
+    selector: 'g',
     autoHide: true,
     reposition: false,
     callback: function(itemKey, opt){
       var pos=getClickPosition(opt);
-      
       sio.emit('createNode', {"type": itemKey, "pos": pos});
     },
     items: {
-      "new": {
-        "name": "new",
+      /*"new": {
+         "name": "new",
          "items":
          {
            "task":    {name: "task"},
@@ -396,8 +398,8 @@ $(() => {
            "for":     {name: "for"},
            "while":   {name: "while"},
            "foreach": {name: "foreach"}
-         }
-      },
+         } 
+      },*/
       "delete": {
         "name": "delete",
 
@@ -526,13 +528,21 @@ $(() => {
             //プロパティ表示用相対パス
             let currentPropertyDir = "."+currentWorkDir.replace(projectLootDir,"")+"/"+nodesInWF[nodeIndex].name;
             let nodeType = nodesInWF[nodeIndex].type;
+            //iconの変更
+            let nodeIconPath = config.node_icon[nodeType];
+            $('#img_node_type').attr("src", nodeIconPath);
+            
             if(nodeType === 'task'){
               sio.emit('getHostList', true);
+              //vueで設定したJsonの値を引っ張てきて描画する            
+              remotehost = nodesInWF[nodeIndex].host;        
+              selectedHostQueue = nodesInWF[nodeIndex].queue;                                              
             }
+
             $('#propertyTypeName').html(nodesInWF[nodeIndex].type);            
             vm.node=v;
             $('#componentPath').html(currentPropertyDir);
-            $('#property').show().animate({width: '260px', 'min-width': '260px'}, 100);
+            $('#property').show().animate({width: '272px', 'min-width': '272px'}, 100);
           })
           .onDblclick(function(e){
             let nodeType=e.target.instance.parent('.node').data('type');
@@ -547,7 +557,8 @@ $(() => {
               dirStack.push(currentWorkDir);
               wfStack.push(currentWorkFlow);
               nodeStack.push(name);
-              
+              nodeTypeStack.push(nodeType);
+
               fb.request('getFileList', currentWorkDir, null);
               sio.emit('getWorkflow', currentWorkFlow);
             }
@@ -610,11 +621,17 @@ $(() => {
 
     for (let index = 0; index < nodeStack.length; index++) {
       if (0 < index) {
-        breadcrumb.append(`<span> > </span>`)
+        breadcrumb.append(`<span class="img_pankuzuArrow_icon"><img src="/image/img_pankuzuArrow.png"  /></span>`) 
       }
       let id = `breadcrumbButton_${index}`;
-      breadcrumb.append(`<input type="button" id=${id} class="breadcrumbButton" value=${nodeStack[index]}>`)
-
+      //iconの設定
+      let nodeIconPath = config.node_icon[nodeTypeStack[index]];
+      let correctNodeIconPath = nodeIconPath.replace(".png","_p.png"); 
+      let nodeColor = config.node_color[nodeTypeStack[index]];
+      breadcrumb.append(`<button type="button" id=${id} class="breadcrumbButton" value=${nodeStack[index]}>
+        <img src=${correctNodeIconPath} class="img_breadcrumbButton_icon" /><span class="breadcrunbName">${nodeStack[index]}</span></button>`)
+      $(`#${id}`).css("background-color", nodeColor);
+      
       $(`#${id}`).click(function () {
 
         while (index + 1 < nodeStack.length) {
@@ -638,9 +655,27 @@ $(() => {
     }
   }
 
+  $('#useJobSchedulerFlagField').change(function() {
+    //let checkedValue = $('#queueSelectField:checked').val();
+      console.log("checkedValue");        
+      
+      if($('#useJobSchedulerFlagField').prop('checked')){
+        console.log("test");
+        $('#queueSelectField').prop('disabled',false);
+        $('#queueSelectField').css('background-color', '#000000');
+        $('#queueSelectField').css('color', '#FFFFFF');                            
+        
+      } else {
+        $('#queueSelectField').prop('disabled',true);
+        $('#queueSelectField').css('background-color', '#333333');
+        $('#queueSelectField').css('color', '#000000');                    
+      }
+  });
+
+
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
-    const html = '<p>New File Name (ex. aaa.txt)</p><input type=text id="newFileName">'
+    const html = '<p class="dialogTitle">New file name (ex. aaa.txt)</p><input type=text class="dialogTextbox">'
     dialogWrapper('#dialog', html)
       .done(function () {
         let newFileName = $('#newFileName').val();
@@ -652,7 +687,7 @@ $(() => {
   　});
 　});
   $('#createFolderButton').click(function () {
-    const html = '<p>New Folder Name</p><input type=text id="newFolderName">'
+    const html = '<p class="dialogTitle">New folder name</p><input type=text class="dialogTextbox">'
     dialogWrapper('#dialog', html)
       .done(function () {
         let newFolderName = $('#newFolderName').val();
@@ -674,7 +709,6 @@ $(() => {
   $('#drawer_menu').mouseleave(function () {
     $('#drawer_menu').toggleClass('action', false);
   });
-
   
   function getSelectLabel(index){
     var obj = document.getElementById(index);

@@ -16,8 +16,6 @@ export default function (socket) {
         $('.logButton').css('border-bottom-color', "rgba(28,28,32,0.75)");                        
 
         let flag = $(this).attr("id");
-        
-        console.log(flag);
         switch (flag){
             case "enableDBG":
             $('#logDebugLog').show();

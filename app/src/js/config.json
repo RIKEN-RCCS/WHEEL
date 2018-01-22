@@ -7,23 +7,25 @@
   "submit_script": "submit.sh",
   "system_name": "swf",
   "node_color": {
-    "task": "#FF0000",
-    "workflow": "#0066FF",
-    "for": "#0000FF",
-    "while": "#00FFCC",
+    "task": "#3B55B3",
+    "workflow": "#803DB3",
+    "for": "#247780",
+    "while": "#247780",
     "condition": "violet",
-    "if": "#00FF66",
-    "foreach": "#00FF00",
-    "parameterstudy": "#6600FF"
+    "if": "#5B5B5F",
+    "foreach": "#247780",
+    "parameterStudy": "#666622"
   },
   "box_appearance": {
-    "opacity":  0.6,
+    "titleHeight":  32,
+    "titleWidth":  256,    
+    "opacity":  1.0,
     "strokeWidth":  2,
-    "titleHeight":  20,
     "marginHeight":  12,
     "outputTextOffset":  12,
     "textHeightScale": 1.2,
-    "plug_drop_area_scale": 2
+    "plug_drop_area_scale": 2,
+    "inputTextNamePosX": 8
   },
   "state_color": {
     "planning": "white",
@@ -34,11 +36,29 @@
     "failed": "red"
   },
   "plug_color": {
-    "file": "cyan",
-    "files": "magenta",
-    "directory": "yellow",
-    "flow": "orange",
-    "elseFlow": "yellow"
+    "file": "#5673BF",
+    "files": "#5673BF",
+    "directory": "#5673BF",
+    "flow": "#338033",
+    "elseFlow": "#9944bb"
+  },
+  "node_icon": {
+    "task": "/image/img_task.png",
+    "workflow": "/image/img_workflow.png",
+    "for": "/image/img_for.png",
+    "while": "/image/img_while.png",
+    "if": "/image/img_if.png",
+    "foreach": "/image/img_foreach.png",
+    "parameterStudy": "/image/img_parameterStudy.png"
+  },
+  "state_icon": {
+    "planning": "white",
+    "running": "/image/img_statePlay.png",
+    "completed": "/image/img_stateDone.png",
+    "failed": "/image/img_error.png",
+    "not-started": "/image/img_stateQue.png",
+    "rerunning": "orange",
+    "waiting": "yellow"
   },
   "reload_project_ms": 2000
 }

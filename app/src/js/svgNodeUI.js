@@ -1,5 +1,6 @@
 import SVG from 'svgjs/dist/svg.js';
 import 'svg.draggable.js/dist/svg.draggable.js';
+import '../css/workflow.css';
 
 import config from './config';
 import * as parts from './svgParts';
@@ -29,8 +30,9 @@ export default class{
     this.group=svg.group();
     this.group.data({"index": node.index, "type": node.type}).draggable().addClass('node');
 
-    // draw node   
-    const [box, textHeight]= parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state);
+    // draw node
+    const [box, textHeight]= parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.nodes, node.numTotal, node.numFinished, node.numFailed); 
+    console.log(node.numFinished);     
     const boxBbox=box.bbox();
     const boxX=box.x();
     const boxY=box.y();
@@ -81,6 +83,25 @@ export default class{
     if(node != null && node.jsonFile != null){
       this.group.data({"path": node.path, "jsonFile": node.jsonFile});
     }
+
+/*     //parent -> children connector
+    //データ、位置について考える必要有
+    this.connectors=[];
+    node.outputFiles.forEach((output, fileIndex) => {
+      let [plug, cable]= parts.createParentConnector(svg, boxX, boxY, boxBbox.width, textHeight*fileIndex, sio);
+      plug.data({"name": output.name, "dst": output.dst});
+      this.group.add(plug);
+      this.group.add(cable);
+      this.connectors.push(plug);
+    });
+
+    //children -> parent connector
+    //データ、位置について考える必要有
+    node.inputFiles.forEach((input, fileIndex) => {
+      const receptor = parts.createParentReceptor(svg, boxX, boxY, 0, textHeight*fileIndex);
+      receptor.data({"index": node.index, "name": input.name});
+      this.group.add(receptor);
+    }); */
     
 
     // difference between box origin and mouse pointer

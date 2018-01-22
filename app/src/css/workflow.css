@@ -73,10 +73,10 @@ header {
 }
 
 .drawer_menu {
-    width:180px;
+    width:192px;
     height:100%;
-    -webkit-transform:translateX(180px);    
-    transform:translateX(180px);
+    -webkit-transform:translateX(192px);    
+    transform:translateX(192px);
     transition:ease .5s;
     position:fixed;
     top:0;
@@ -85,14 +85,38 @@ header {
 }
 
 .drawer_menu.action {
-    width:180px;
-    background:darkslateblue;
+    width:192px;
+    background:#4C4C55;
     -webkit-transform:translateX(0);
     transform:translateX(0);
 }
 
 .drawer_menu_item {
-    color: white;
+    color: #FFFFFF;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#drawerMenuContents{
+    margin: 0;
+}
+
+#drawerMenuList{
+    padding: 0;
+    margin: 8px 8px 8px 16px;
+}
+
+#drawerMenuList li{
+    padding: 0;
+    margin: 0 0 8px 8px;
+}
+
+#menuTitle{
+    padding: 16px 8px 8px 16px;
+    margin: 0;
+    font-size: 18px;
+    border: 1px solid #4C4C55;
+    border-bottom-color: #2F2F33;
 }
 /* ヘッダー部分末尾 */
 
@@ -185,6 +209,33 @@ header {
     margin-left: 176px;;
 }
 
+.breadcrumbButton{
+    height: 24px;
+    background-color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;        
+}
+
+.img_breadcrumbButton_icon{
+    height: 24px;
+    width: 24px;
+}
+
+.img_pankuzuArrow_icon{
+    margin: 0 16px 0 16px;
+    position: relative;
+    top: -4px;
+}
+
+.breadcrunbName{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    color: #FFFFFF;
+    font-size: 14px;
+    position: relative;    
+    top: -8px;
+}
+
 #img_pankuzuArrow{
     margin: 0;
 }
@@ -229,53 +280,102 @@ header {
     margin: 16px 0 0 16px;
 }
 
-#img_workflow_p{
+#img_workflow{
     border-radius: 2px;    
     background-color: #803DB3;
     height: 32px;
     width: 32px;
 }
 
-#img_task_p{
+#img_task{
     border-radius: 2px;    
     background-color: #3B55B3;
     height: 32px;
     width: 32px;
 }
 
-#img_parameterStudy_p{
+#img_parameterStudy{
     border-radius: 2px;    
     background-color: #666622;
     height: 32px;
     width: 32px;
 }
 
-#img_if_p{
+#img_if{
     border-radius: 2px;    
     background-color: #5B5B5F;
     height: 32px;
     width: 32px;
 }
 
-#img_for_p{
+#img_for{
     border-radius: 2px;    
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
-#img_while_p{
+#img_while{
     border-radius: 2px;    
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
-#img_foreach_p{
+#img_foreach{
     border-radius: 2px;    
     background-color: #247780;
     height: 32px;
     width: 32px;
+}
+
+.img_workflow_p{
+    border-radius: 2px;    
+    background-color: #803DB3;
+    height: 24px;
+    width: 24px;
+}
+
+.img_task_p{
+    border-radius: 2px;    
+    background-color: #3B55B3 !important;
+    height: 24px;
+    width: 24px;
+}
+
+.img_parameterStudy_p{
+    border-radius: 2px;    
+    background-color: #666622;
+    height: 24px;
+    width: 24px;
+}
+
+.img_if_p{
+    border-radius: 2px;    
+    background-color: #5B5B5F;
+    height: 24px;
+    width: 24px;
+}
+
+.img_for_p{
+    border-radius: 2px;    
+    background-color: #247780;
+    height: 24px;
+    width: 24px;
+}
+
+.img_while_p{
+    border-radius: 2px;    
+    background-color: #247780;
+    height: 24px;
+    width: 24px;
+}
+
+.img_foreach_p{
+    border-radius: 2px;    
+    background-color: #247780;
+    height: 24px;
+    width: 24px;
 }
 
 #workflowComponents{
@@ -372,7 +472,7 @@ header {
 
 #propertyOutputFiles, #propertyParameterSettingFile, #propertyCondition,
 #propertyIndexList, #propertyStart, #propertyEnd, #propertyStep,
-#propertyRemotehost, #propertyQueue{
+#propertyRemotehost, #propertyQueue, #propertyuseJobScheduler{
     margin: 8px 0 0 0;
     display: inline-block;    
 }
@@ -413,14 +513,22 @@ header {
 }
 
 #remotehostSelectField, #queueSelectField{
-    margin: 2px 0 0 16px;
+    margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
-    width: 192px;
+    width: 198px;
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+}
+
+#checkbox{
+    padding: 0px;    
+}
+
+#useJobSchedulerFlagField{
+    margin: 0 0 0 8px;
 }
 
 #descriptionInputField{
@@ -499,6 +607,10 @@ header {
 
 #flags{
     margin: 2px 16px 0 16px;
+}
+
+#checkbox{
+    margin: 0;
 }
 
 .property_text {
@@ -1035,11 +1147,100 @@ progress {
     box-shadow: 0px 1px 0px 0px rgba(250, 250, 250, 0.1);
     background-color: rgb(70, 70, 65);
 }
-.ui-dialog {
-  z-index: 200;
-}
 
 svg g{
     font-size: 11px;
 }
 
+/* image{
+    height: 32px;
+    width: 32px;
+} */
+
+tspan{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;            
+    font-size: 14px;
+}
+
+/* context, dialog*/
+.context-menu-list, .context-menu-root{
+    margin: 0px;
+    padding: 0px;
+    background-color: #222226 !important;
+    border: 0;
+}
+
+.context-menu-item{
+    background-color: #222226;
+    color: #FFFFFF;
+    font-size: 14px;
+    border-radius: 1px;
+    border: 1px solid #333333;
+    padding: 8px 16px 8px 16px;
+    margin-right: 0;
+}
+
+.context-menu-item:hover{
+    color: #CCFF00;
+    background-color: #222226;
+}
+
+#context-menu-layer{
+    border: none;
+}
+
+#nodeOperationContextMenu{
+    background-color: #222226;
+}
+
+.dialogTitle{
+    margin: 8px 0 8px 0;
+    color: #FFFFFF;
+}
+
+.dialogTextbox{
+    background-color: #000000;    
+    color: #FFFFFF;
+    border: none;
+    width: 282px;
+    margin-top: 4px;
+    height: 20px;
+    padding-left: 5px;
+}
+
+.ui-dialog {
+    z-index: 200;
+    background-color: #222226;
+    border: none !important;
+    width: 312px !important;
+    height: 120px !important;
+}
+.ui-dialog-content{
+    padding: 0px 0px 5px 15px !important;
+}
+
+.ui-dialog-buttonpane{
+    background-color: #222226;
+    border: none;
+    margin: 0px !important;
+    padding: 0px !important; 
+}
+
+.ui-dialog-buttonset{
+    padding: 0;
+    position: relative;
+    left: -5px;
+    top: 12px;
+}
+
+.ui-dialog-buttonset button{
+    background-color: #6F6F77;
+    font-size: 14px !important;
+    width: 71px;
+    height: 24px;
+    color: #FFFFFF;
+    line-height: 0px;
+    border-radius: 0px;
+    border: none;    
+}
+  

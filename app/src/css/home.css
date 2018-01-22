@@ -67,6 +67,9 @@ button:hover{
   border: 0.1px solid #1f1f1f;
   border-bottom: 0.1px solid #3e3e3e;
   display: inline-flex;
+  margin: 0;
+  padding: 0 0 0 8px;
+  list-style-type: none;
 }
 
 #projectList ul:hover{
@@ -89,12 +92,11 @@ button:hover{
 
 #newProjectName{
   width: 650px;
+  margin-left: 10px;
 }
 
 #fileList{
   font-size: 14px;
-  overflow: auto;
-  height: 930px;
 }
 
 /* Home画面 */
@@ -189,4 +191,25 @@ width:100%;
 
 .title_button:focus{
 outline:none;
+}
+/* 
+#dialog{
+  height: 90% !important;
+} */
+
+/* .ui-widget{
+  width: 80% !important;
+  height: 90% !important;
+} */
+
+.ui-dialog-buttonpane{
+  margin: 0;
+  height: 60px;
+}
+
+.ui-dialog-buttonset {
+  float: right;
+  display: inline-flex;
+  position: relative;
+  top: 10px;
 }

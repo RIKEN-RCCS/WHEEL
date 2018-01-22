@@ -96,31 +96,31 @@
       <p id="taskAreaTitle">Library</p>
       <div id="workflowComponents">
         <ul id="workflow" class="type" draggable="true">                       
-            <li><img src="/image/img_workflow_p.png" id="img_workflow_p" class="workflow_component_icon" /></li>
+            <li><img src="/image/img_workflow.png" id="img_workflow" class="workflow_component_icon" /></li>
             <li id="img_workflow_name">workflow</li>
         </ul>
         <ul id="task" class="type" draggable="true">                       
-            <li><img src="/image/img_task_p.png" id="img_task_p" class="workflow_component_icon" /></li>
+            <li><img src="/image/img_task.png" id="img_task" class="workflow_component_icon" /></li>
             <li id="img_task_name">task</li>
         </ul>
         <ul id="PS" class="type" draggable="true">                       
-            <li><img src="/image/img_parameterStudy_p.png" id="img_parameterStudy_p" class="workflow_component_icon" /></li>
+            <li><img src="/image/img_parameterStudy.png" id="img_parameterStudy" class="workflow_component_icon" /></li>
             <li id="img_parameterStudy_name">Parameter Study</li>
         </ul>
         <ul id="if" class="type" draggable="true">                       
-            <li><img src="/image/img_if_p.png" id="img_if_p" class="workflow_component_icon" /></li>
+            <li><img src="/image/img_if.png" id="img_if" class="workflow_component_icon" /></li>
             <li id="img_if_name">if</li>
         </ul>
         <ul id="for" class="type" draggable="true">                       
-            <li><img src="/image/img_for_p.png" id="img_for_p" class="workflow_component_icon" /></li>
+            <li><img src="/image/img_for.png" id="img_for" class="workflow_component_icon" /></li>
             <li id="img_for_name">for</li>
         </ul>
         <ul id="while" class="type" draggable="true">                       
-            <li><img src="/image/img_while_p.png" id="img_while_p" class="workflow_component_icon" /></li>
+            <li><img src="/image/img_while.png" id="img_while" class="workflow_component_icon" /></li>
             <li id="img_while_name">while</li>
         </ul>
         <ul id="foreach" class="type" draggable="true">                       
-            <li><img src="/image/img_foreach_p.png" id="img_foreach_p" class="workflow_component_icon" /></li>
+            <li><img src="/image/img_foreach.png" id="img_foreach" class="workflow_component_icon" /></li>
             <li id="img_foreach_name">foreach</li>
         </ul>
         <!-- <li a href="foreach" id="foreach" class="type" draggable="true">foreach</li>         -->
@@ -200,11 +200,19 @@
         <div v-if="node.hasOwnProperty('host')">
           <label for="parameterRemotehost" id="propertyRemotehost">remotehost</label>
         </div>
-        <select name="remotehost" v-model.lazy.trim="node.host" v-if="node.hasOwnProperty('host')" id="remotehostSelectField" v-on:blur="updateProperty('host')"></select>
+        <select name="remotehost" v-model.lazy.trim="node.host" v-if="node.hasOwnProperty('host')" id="remotehostSelectField" v-on:blur="updateProperty('host')">
+          <option value="localhost">localhost</option>
+        </select>
+        <div v-if="node.hasOwnProperty('useJobScheduler')">
+            <label for="parameterRemotehost" id="propertyuseJobScheduler">UseJobScheduler</label>
+        </div>
+        <div id="checkbox"><input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:blur="updateProperty('useJobScheduler')" name="useJobSchedulerFlag" id="useJobSchedulerFlagField" value="true" ></div>
         <div v-if="node.hasOwnProperty('queue')">
           <label for="parameterRemotehost" id="propertyQueue">Queue</label>
         </div>
-        <select name="remotehost" v-model.lazy.trim="node.queue" v-if="node.hasOwnProperty('queue')" id="queueSelectField" v-on:blur="updateProperty('queue')"></select>
+        <select name="queue" v-model.lazy.trim="node.queue" v-if="node.hasOwnProperty('queue')" id="queueSelectField" v-on:blur="updateProperty('queue')">
+          <option value="null">null</option>
+        </select>
 
         <div v-if="node.hasOwnProperty('parameterFile')">
           <label for="parameterFileInputField" id="propertyParameterSettingFile">parameter setting file</label>
@@ -255,9 +263,9 @@
           <label id="propertyCleanUpFlag">clean up flag</label>
         </div>
         <div id="flags">
-          <div><input type="radio" name="cleanupFlag" value="0">clean up</div>
-          <div><input type="radio" name="cleanupFlag" value="1">keep files</div>
-          <input type="radio" name="cleanupFlag" value="2" checked=>follow parent setting
+          <div><input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="0">clean up</div>
+          <div><input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="1">keep files</div>
+          <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="2" checked=>follow parent setting
         </div>
         </div>
         <div v-if="node.hasOwnProperty('include')">
@@ -299,10 +307,13 @@
   <!-- 右ドロアーメニュー -->
   <div id="drawer_menu" class="drawer_menu" data-position="right">
     <!-- Put your off canvas content here -->
-    <ul>
-      <li><a class="drawer_menu_item" href="/remotehost">remotehost</a></li>
-      <li><a class="drawer_menu_item" href="/login">log out</a></li>
-    </ul>
+    <div id="drawerMenuContents">
+      <p id="menuTitle">Menu</p>
+      <ul id="drawerMenuList">
+        <li><a class="drawer_menu_item" href="/remotehost">remotehost</a></li>
+        <li><a class="drawer_menu_item" href="/login">log out</a></li>
+      </ul>
+    </div>
   </div>
 
   <!-- ログボタン -->
@@ -335,6 +346,7 @@
         <pre id="logSSHerrLog" class="logText"></pre>
     </div>  
   </div>
+
 
   <!-- File Browser Dialog -->
 <!--   <div id="fileBrowser" class="fileBrowser">
