@@ -44,6 +44,7 @@
     "js-cookie": "^2.1.4",
     "jstree": "^3.3.4",
     "ncp": "^2.0.0",
+    "nodegit": "^0.20.3",
     "opener": "^1.4.3",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
