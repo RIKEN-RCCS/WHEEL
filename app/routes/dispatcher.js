@@ -223,6 +223,7 @@ class Dispatcher{
         state='failed';
       });
     node.state=state;
+    //TODO fileのデリバリ
     Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
@@ -364,6 +365,7 @@ class Dispatcher{
     }
     return Promise.all(promises)
       .then(()=>{
+        //TODO fileのデリバリ
         node.state='finished'
       });
   }

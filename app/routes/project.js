@@ -2,6 +2,9 @@ const path = require("path");
 const fs = require("fs");
 const {promisify} = require("util");
 
+const nodegit = require("nodegit");
+
+const logger = require("../logger");
 const {getDateString} = require('./utility');
 
 class Project {
@@ -61,7 +64,8 @@ async function writeProjectJson(label){
   let filename = _getProject(label).projectJsonFilename;
   let projectJson = await readProjectJson(label);
   projectJson.mtime=getDateString();
-  return promisify(fs.writeFile)(filename, JSON.stringify(projectJson, null, 4));
+  await promisify(fs.writeFile)(filename, JSON.stringify(projectJson, null, 4));
+  return gitAdd(label, filename);
 }
 
 async function updateProjectJson (label, data){
@@ -76,10 +80,7 @@ async function updateProjectJson (label, data){
 
 function setProjectState(label, state){
   _getProject(label).projectState=state;
-}
-
-function getProjectState(label){
-  return _getProject(label).projectState;
+  return updateProjectJson({"state": state});
 }
 
 async function setCwf (label, filename){
@@ -93,48 +94,55 @@ async function setCwf (label, filename){
 }
 
 async function readRwf (label){
-  let filename=_getProject(label).rwfFilename;
-  return JSON.parse(await promisify(fs.readFile)(filename))
+  const filename=_getProject(label).rwfFilename;
+  const data = await promisify(fs.readFile)(filename)
     .catch((err)=>{
       err.wf=filename;
       logger.error('read root workflow failure:\n',err);
     });
+  return JSON.parse(data)
 }
 
-function getCwf (label) {
-  return _getProject(label).cwf;
+async function getRepo(label){
+  const rootDir = getRootDir(label)
+  return nodegit.Repository.open(path.resolve(rootDir, '.git'));
 }
 
-function getCurrentDir (label){
-  return _getProject(label).cwfDir;
+async function gitAdd(label, absFilename){
+  const repo = await getRepo(label);
+  const index = await repo.refreshIndex();
+  const rootDir = getRootDir(label)
+  const filename = path.relative(rootDir, absFilename);
+  await index.addByPath(filename);
+  try{
+    await index.write()
+  }catch(e){
+    logger.error('git add failed:', e);
+  }
+  // memo
+  // Acoding to libgit2 doc, "The index must be freed once it's no longer being used by the user."
+  // but nodegit binding of git_index_free does not seem to be available.
 }
 
-function getRootDir (label){
-  return _getProject(label).rootDir;
+async function commitProject(label){
+  const repo = await getRepo(label);
+  const author = nodegit.Signature.now('wheel', "wheel@example.com"); //TODO replace user info
+  const commiter= await author.dup();
+  const oid = await index.writeTree();
+  const parent = repo.getHeadCommit().getParents()
+  await repo.createCommit("HEAD", author, commiter, "save project", oid, parent);
 }
 
-function getCwfFilename (label){
-  return _getProject(label).cwfFilename;
+async function revertProject(label){
+  const repo = await getRepo(label);
+  const headCommit = await repo.getHeadCommit();
+  nodegit.Reset.reset(repo, headCommit, git.Reset.TYPE.HARD, null, "master");
 }
 
-function setRootDispatcher (label, dispatcher){
-  _getProject(label).rootDispatcher=dispatcher;
-}
-
-function getRootDispatcher (label){
-  return _getProject(label).rootDispatcher;
-}
-
-function pushNode (label, node){
-  return _getProject(label).cwf.nodes.push(node)-1;
-}
-
-function getNode (label, index){
-  return _getProject(label).cwf.nodes[index]
-}
-
-function removeNode(label, index){
-  _getProject(label).cwf.nodes[index]=null
+async function cleanProject(label){
+  const rootDir = getRootDir(label);
+  await del([rootDir, "!\.git*"]);
+  revertProject(label);
 }
 
 
@@ -142,16 +150,50 @@ function removeNode(label, index){
  * write current workflow and ProjectJson to file
  */
 async function write (label){
+  await writeProjectJson(label);
   let cwf =getCwf(label);
   let filename = getCwfFilename(label);
-  writeProjectJson(label);
-  return promisify(fs.writeFile)(filename, JSON.stringify(cwf, null, 4));
+  await promisify(fs.writeFile)(filename, JSON.stringify(cwf, null, 4));
+  return gitAdd(label, filename);
+}
+
+
+// simple accessor
+function getProjectState(label){
+  return _getProject(label).projectState;
+}
+function getCwf (label) {
+  return _getProject(label).cwf;
+}
+function getCurrentDir (label){
+  return _getProject(label).cwfDir;
+}
+function getRootDir (label){
+  return _getProject(label).rootDir;
+}
+function getCwfFilename (label){
+  return _getProject(label).cwfFilename;
+}
+function setRootDispatcher (label, dispatcher){
+  _getProject(label).rootDispatcher=dispatcher;
+}
+function getRootDispatcher (label){
+  return _getProject(label).rootDispatcher;
+}
+function pushNode (label, node){
+  return _getProject(label).cwf.nodes.push(node)-1;
+}
+function getNode (label, index){
+  return _getProject(label).cwf.nodes[index]
+}
+function removeNode(label, index){
+  _getProject(label).cwf.nodes[index]=null
 }
 
 module.exports.getCwf            = getCwf;
 module.exports.setCwf            = setCwf;
 module.exports.getNode           = getNode;
-module.exports.removeNode           = removeNode;
+module.exports.removeNode        = removeNode;
 module.exports.pushNode          = pushNode;
 module.exports.getCurrentDir     = getCurrentDir;
 module.exports.readRwf           = readRwf;
@@ -164,3 +206,7 @@ module.exports.openProject       = openProject;
 module.exports.updateProjectJson = updateProjectJson;
 module.exports.setProjectState   = setProjectState;
 module.exports.getProjectState   = getProjectState;
+module.exports.gitAdd            = gitAdd;
+module.exports.commitProject     = commitProject;
+module.exports.revertProject     = revertProject;
+module.exports.cleanProject      = cleanProject;

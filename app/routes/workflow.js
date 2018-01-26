@@ -138,37 +138,29 @@ async function onWorkflowRequest(sio, sessionID, workflowFilename){
   sio.emit('workflow', rt);
 }
 
-function onCreateNode(sio, sessionID, msg){
+async function onCreateNode(sio, sessionID, msg){
   logger.debug('create event recieved: ', msg);
   let dirName=path.resolve(getCurrentDir(sessionID),msg.type);
-  makeDir(dirName, 0)
-    .then(function(actualDirname){
-      let tmpPath=path.relative(getCurrentDir(sessionID),actualDirname);
-      if(! tmpPath.startsWith('.')){
-        tmpPath='./'+tmpPath;
-      }
-      var node=component.factory(msg.type, msg.pos, getCwfFilename(sessionID));
-      node.path=tmpPath;
-      node.name=path.basename(actualDirname);
-      node.index=pushNode(sessionID, node);
-      logger.debug('node created: ',node);
-      return node;
-    })
-    .then(function(node){
-      if(hasChild(node)){
-        const filename = path.resolve(getCurrentDir(sessionID),node.path,node.jsonFile)
-        return promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
-      }
-    })
-    .then(function(){
-      return write(sessionID);
-    })
-    .then(()=>{
-      sio.emit('workflow', getCwf(sessionID));
-    })
-    .catch(function(err){
-      logger.error('node create failed: ', err);
-    });
+  let actualDirname = await makeDir(dirName, 0)
+  let tmpPath=path.relative(getCurrentDir(sessionID),actualDirname);
+  if(! tmpPath.startsWith('.')){
+    tmpPath='./'+tmpPath;
+  }
+  let node=component.factory(msg.type, msg.pos, getCwfFilename(sessionID));
+  node.path=tmpPath;
+  node.name=path.basename(actualDirname);
+  node.index=pushNode(sessionID, node);
+  logger.debug('node created: ',node);
+  try{
+    if(hasChild(node)){
+      const filename = path.resolve(getCurrentDir(sessionID),node.path,node.jsonFile)
+      await promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
+    }
+    await write(sessionID);
+    sio.emit('workflow', getCwf(sessionID));
+  }catch(err){
+    logger.error('node create failed: ', err);
+  }
 }
 
 function updateNode(node, property, value){
@@ -213,23 +205,22 @@ async function onUpdateNode(sio, sessionID, msg){
         break;
     }
     cleanUpNode(targetNode);
-    write(sessionID)
-      .then(()=>{
-        sio.emit('workflow', getCwf(sessionID));
-      })
-      .catch(function(err){
-        logger.error('node update failed: ', err);
-      });
+    try{
+      await write(sessionID)
+      sio.emit('workflow', getCwf(sessionID));
+    }catch(err){
+      logger.error('node update failed: ', err);
+    }
   }
 }
-function onRemoveNode(sio, sessionID, index){
+async function onRemoveNode(sio, sessionID, index){
   logger.debug('removeNode event recieved: ', index);
   let target=getNode(sessionID, index);
   let dirName=path.resolve(getCurrentDir(sessionID),target.path);
-  del(dirName, { force: true }).catch(function () {
-    logger.warn('directory remove failed: ', dirName);
-  })
-  .then(function(){
+  await del(dirName, { force: true })
+    .catch(function () {
+      logger.warn('directory remove failed: ', dirName);
+    })
     /*
      *              previous
      *                 |
@@ -290,16 +281,14 @@ function onRemoveNode(sio, sessionID, index){
     //remove target node
     removeNode(sessionID, index);
 
-    return write(sessionID)
-      .then(()=>{
-        sio.emit('workflow', getCwf(sessionID));
-      })
-  })
-  .catch(function(err){
-      logger.error('remove node failed: ', err);
-  });
+  try{
+    await write(sessionID)
+    sio.emit('workflow', getCwf(sessionID));
+  }catch(err){
+    logger.error('remove node failed: ', err);
+  }
 }
-function onAddLink(sio, sessionID, msg){
+async function onAddLink(sio, sessionID, msg){
   logger.debug('addLink event recieved: ', msg);
   let src=msg.src;
   let dst=msg.dst;
@@ -314,13 +303,13 @@ function onAddLink(sio, sessionID, msg){
     getNode(sessionID, src).next.push(dst);
   }
   getNode(sessionID, dst).previous.push(src);
-  write(sessionID)
-    .then(()=>{
-      sio.emit('workflow', getCwf(sessionID));
-    })
-    .catch(function(err){
-      logger.error('add link failed: ', err);
-    });
+
+  try{
+    await write(sessionID)
+    sio.emit('workflow', getCwf(sessionID));
+  }catch(err){
+    logger.error('add link failed: ', err);
+  }
 }
 function onAddFileLink(sio, sessionID, msg){
   logger.debug('addFileLink event recieved: ', msg);
@@ -426,7 +415,7 @@ function onRemoveFileLink(sio, sessionID, msg){
 
 async function onRunProject(sio, sessionID, msg){
   logger.debug(`run event recieved: ${msg}`);
-  let rwf = readRwf(sessionID);
+  let rwf = await readRwf(sessionID);
   try{
     await validationCheck(rwf, getRootDir(sessionID), sio)
   }catch(err){
@@ -452,13 +441,24 @@ function onPauseProject(sio, sessionID, msg){
   setProjectState(sessionID, 'paused');
   sio.emit('projectState', getProjectState(sessionID));
 }
-function onCleanProject(sio, sessionID, msg){
+async function onCleanProject(sio, sessionID, msg){
   logger.debug(`clean event recieved: ${msg}`);
   let rootDispatcher=getRootDispatcher();
   if(rootDispatcher != null) rootDispatcher.remove();
-  //TODO 途中経過ファイルなども削除する
+  await cleanProject(sessionID);
   onWorkflowRequest(sio, getCwfFilename(sessionID));
   setProjectState(sessionID, 'not-started');
+  sio.emit('projectState', getProjectState(sessionID));
+}
+
+async function onSaveProject(sio, sessionID, msg){
+  logger.debug(`saveProject event recieved: ${msg}`);
+  await commitProject(sessionID);
+  sio.emit('projectState', getProjectState(sessionID));
+}
+async function onRevertProject(sio, sessionID, msg){
+  logger.debug(`revertProject event recieved: ${msg}`);
+  await revertProject(sessionID);
   sio.emit('projectState', getProjectState(sessionID));
 }
 
@@ -472,7 +472,7 @@ module.exports = function(io){
 
   const sio = io.of('/workflow');
   sio.on('connect', function (socket) {
-    fileManager(socket);
+    fileManager(socket, sessionID);
     socket.on('getWorkflow',      onWorkflowRequest.bind(null, socket, sessionID));
     socket.on('createNode',       onCreateNode.bind(null, socket, sessionID));
     socket.on('updateNode',       onUpdateNode.bind(null, socket, sessionID));
@@ -485,6 +485,8 @@ module.exports = function(io){
     socket.on('runProject',       onRunProject.bind(null, socket, sessionID));
     socket.on('pauseProject',     onPauseProject.bind(null, socket, sessionID));
     socket.on('cleanProject',     onCleanProject.bind(null, socket, sessionID));
+    socket.on('saveProject',      onSaveProject.bind(null, socket, sessionID));
+    socket.on('revertProject',    onRevertProject.bind(null, socket, sessionID));
     socket.on('updateProjectJson', (data)=>{
       updateProjectJson(sessionID, data);
     });

@@ -43,6 +43,7 @@ async function create(projectDirectory, projectName) {
   const author = nodegit.Signature.now('wheel', "wheel@example.com"); //TODO replace user info
   const commiter= await author.dup();
   await repo.createCommitOnHead([projectJsonFilename, rootWorkflowFilename], author, commiter, "create new project");
+  repo.free(); //TODO 本当に必要か要確認
 
   return projectJsonFileFullpath;
 }
