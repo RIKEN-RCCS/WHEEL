@@ -382,6 +382,7 @@ function onAddFileLink(sio, msg){
   const srcName = msg.srcName
   const dstName = msg.dstName
 
+/*   return true;
   // add outputFile entry on src node.
   let srcEntry = srcNode.outputFiles.find((e)=>{
     return e.name === srcName;
@@ -403,7 +404,7 @@ function onAddFileLink(sio, msg){
   }
   // replace inputFiles entry on dst node.
   dstEntry.srcNode=src;
-  dstEntry.srcName=srcName;
+  dstEntry.srcName=srcName; */
 
   writeAndEmit(cwf, cwfFilename, sio, 'workflow')
     .catch((err)=>{
@@ -535,6 +536,54 @@ module.exports = function(io){
       onPauseProject(socket,msg);
       onCleanProject(socket,msg);
     });
+
+    //for test
+    socket.on('getTaskStateList', (msg) => {
+      socket.emit('taskStateList', [
+        {
+          parent: '/',
+          name: 'Task1',
+          startTime: '2017/12/01 10:30:00',
+          endTime: '2017/12/01 12:30:00',
+          state: 'finished',
+          description: 'aaaaaaaaaaaaaaaaaaaaaaaaaa'
+        },
+        {
+          parent: '/Task1',
+          name: 'Task2',
+          startTime: '2017/12/01 12:30:10',
+          endTime: null,
+          state: 'running',
+          description: 'aaaaaaaaaaaaaaaaaaaaaaaaaa'
+        },
+        {
+          parent: '/Task1',
+          name: 'Task3',
+          startTime: '2017/12/01 12:30:10',
+          endTime: null,
+          state: 'paused',
+          description: 'aaaaaaaaaaaaaaaaaaaaaaaaaa'  
+        },
+        {
+          parent: '/Task2',
+          name: 'Task4',
+          startTime: '2017/12/01 12:30:30',
+          endTime: null,
+          state: 'failed',
+          description: 'aaaaaaaaaaaaaaaaaaaaaaaaaa'        
+        },
+        {
+          parent: '/Task3',
+          name: 'Task5',
+          startTime: null,
+          endTime: null,
+          state: 'cleared',
+          description: 'aaaaaaaaaaaaaaaaaaaaaaaaaa'          
+        }
+      ]
+    );
+    });
+    //
     socket.on('getHostList', ()=>{
       socket.emit('hostList', remoteHost.getAll());
     });

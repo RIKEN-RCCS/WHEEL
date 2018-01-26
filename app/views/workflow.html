@@ -1,6 +1,5 @@
 ﻿<!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="/css/common.css"/>
@@ -71,21 +70,23 @@
   <!-- リストビュー -->
   <!-- <div id="project_manage_area" class="sub_content_area" id="project_tree" onMouseDown="return false;"> -->
   <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
-    <div id="project_tree_svg"></div>
-    <div id="project_table_container">
-      <table id="project_table">
-        <thead id="project_table_head">
-          <tr>
-            <th>Name</th>
-            <th>State</th>
-            <th>Execution Date</th>
-            <th>Finish Date</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody id="project_table_body">
-        </tbody>
-      </table>
+    <div id="project_tree_svg">
+      <div id="project_table_container">
+        <table id="project_table">
+          <thead id="project_table_head">
+            <tr id="project_table_tr">
+              <th class="componentName">Name</th>
+              <th class="componentState">State</th>
+              <th class="componentStartTime">Execution Date</th>
+              <th class="componentEndTime">Finish Date</th>
+              <th class="componentDescription">Description</th>
+            </tr>
+          </thead>
+          <div id="tableBody">
+            <tbody id="project_table_body"></tbody>
+          </div>        
+        </table>
+      </div>
     </div>
   </div>
 

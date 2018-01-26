@@ -175,7 +175,9 @@ $(() => {
 
   // container of svg elements
   let nodes = [];
-  let selectedNode=0;
+  let parentnode =[];
+  let selectedNode = 0;
+  let selectedParent = 0;
   let remotehost = '';
   let remotehostArray = [];
   let queueArray = [];
@@ -184,8 +186,13 @@ $(() => {
   const svg = SVG('node_svg');
   sio.on('connect', function () {
     fb.request('getFileList', currentWorkDir, null);
+    sio.emit('getWorkflow', currentWorkFlow);
+    sio.emit('getProjectJson', rootWorkflow);
+    sio.emit('getProjectState', rootWorkflow);
     
     sio.on('workflow', function(wf){
+      console.log("on");
+      
       nodeStack[nodeStack.length - 1] = wf.name;
       nodeTypeStack[nodeStack.length - 1] = wf.type;
 
@@ -203,9 +210,26 @@ $(() => {
         vm.names = names;
         vm.node = wf.nodes[selectedNode];
       }
+      //remove parent node
+      parentnode.forEach(function(vv){
+        if (vv !== null) vv.remove();
+      });
+      parentnode = [];
+      if (wf.length > 0) {
+        let names = wf.map((e) => {
+          return e != null? e.name : null;
+        });
+        vm.names = names;
+        vm.node = wf[selectedParent];
+      }
+      
+      console.log("draw");
+      console.log(wf.nodes);
       
       drawNodes(wf.nodes);
       drawLinks(nodes);
+      drawParentFileRelation(wf);
+      drawParentLinks(parentnode);
     });
 
     //子表示用として作成したが実装方法変更のため一時的にコメントアウト
@@ -250,17 +274,15 @@ $(() => {
     });
 
     sio.on('projectState', (state)=>{
+      console.log("statetest");
       if (state === 'running') {
         $('#project_state').text('Running');
-
-      } else if(state === 'paused') {
-        $('#project_state').text('Paused');
-
+      } else if(state === 'failed') {
+        $('#project_state').text('Failed');
       } else if (state === 'finished') {
         $('#project_state').text('Finished');
-
       } else {
-        $('#project_state').text('Planning');
+        $('#project_state').text('Not-Started');
       }
     });
 
@@ -302,11 +324,11 @@ $(() => {
         queueSelectField.val(selectedHostQueue);
         });
     });
-
+/* 
     sio.emit('getWorkflow', currentWorkFlow);
 
     //一先ずここでemitしとく
-    sio.emit('getProjectJson', rootWorkflow);
+    sio.emit('getProjectJson', rootWorkflow); */
     
     //setup log reciever
     logReciever(sio);
@@ -502,23 +524,26 @@ $(() => {
    * draw nodes
    * @param nodeInWF node list in workflow Json
    */
+  var buttonFlag = false;
   function drawNodes(nodesInWF) {
       nodesInWF.forEach(function(v,i){
+        console.log(v);
         // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
         if(v === null){
           nodes.push(null);
           childrenViewBoxList.push(null);
         }else{
-          let node=new SvgNodeUI(svg, sio, v);
+          let node=new svgNode.SvgNodeUI(svg, sio, v);
+          console.log(node);
 
-          let childrenWorkflow = currentWorkDir+'/'+v.name+'/'+v.jsonFile;
+/*           let childrenWorkflow = currentWorkDir+'/'+v.name+'/'+v.jsonFile;
           if(v.type === 'workflow' || v.type === 'parameterStudy' || v.type === 'for' || v.type === 'while' || v.type === 'foreach'){
             sio.emit('getNodes', childrenWorkflow);
           }
-          childrenViewBoxList.push(svg);
+          childrenViewBoxList.push(svg); */
 
           node.onMousedown(function(e){
-            let nodeIndex=e.target.instance.parent('.node').data('index');           
+            let nodeIndex=e.target.instance.parent('.node').data('index');
             selectedNode=nodeIndex;
             let name = nodesInWF[nodeIndex].name;         
             let nodePath = currentWorkDir+'/'+nodesInWF[nodeIndex].name;
@@ -545,6 +570,7 @@ $(() => {
             $('#property').show().animate({width: '272px', 'min-width': '272px'}, 100);
           })
           .onDblclick(function(e){
+            console.log("Dbc");            
             let nodeType=e.target.instance.parent('.node').data('type');
             if(nodeType === 'workflow' ||nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach'){
               let nodeIndex=e.target.instance.parent('.node').data('index');
@@ -558,11 +584,32 @@ $(() => {
               wfStack.push(currentWorkFlow);
               nodeStack.push(name);
               nodeTypeStack.push(nodeType);
-
+              console.log(currentWorkDir);              
+              console.log(currentWorkFlow);
+              
+              process.nextTick(function () {                
               fb.request('getFileList', currentWorkDir, null);
               sio.emit('getWorkflow', currentWorkFlow);
+              console.log("emit");
+              });
+            }
+          })
+          .onClick(function(e){
+            console.log(buttonFlag);
+            let nodeType=e.target.instance.parent('.node').data('type');
+            if(nodeType === 'workflow' ||nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach'){
+              console.log("clickcheck");
+              if( buttonFlag === false){
+                console.log("flagfcheck");
+                $('.viewNodes').show();                         
+                buttonFlag = true;              
+              } else {
+                $('.viewNodes').css('display', 'none');                                       
+                buttonFlag = false;
+              }
             }
           });
+          
           nodes.push(node);
         }
       });
@@ -615,6 +662,44 @@ $(() => {
     });
   }
 
+    /**
+   * draw parent children file relation
+   * @param  files list in workflow Json
+   */
+  function drawParentFileRelation(parentwf){
+    //selectedParent = nodeIndex;    
+    let node=new svgNode.SvgParentNodeUI(svg, sio, parentwf);
+    parentnode.push(node);
+    console.log("parentnode");
+    console.log(parentnode);
+/*     parentwf.inputFiles.forEach(function(inputFiles){
+      if(inputFiles != null){
+        inputFiles.drawParentFileRelation();
+      }
+    }); */
+  }
+
+    /**
+   * draw cables between Lower and Upper plug Connector and Receptor plug respectively
+   * @param nodeInWF node list in workflow Json
+   */
+  function drawParentLinks(parentnode) {
+    console.log("draw Parent Link");
+    parentnode.forEach(function(node){
+      if(node != null){
+        node.drawParentLinks();
+      }
+    });
+    parentnode.forEach(function(node){
+      if(node != null){
+        node.outputFileLinks.forEach(function(cable){
+          let dst = cable.cable.data('dst');
+          parentnode[dst].inputFileLinks.push(cable);
+        });
+      }
+    });
+  }
+
   function updateBreadrumb() {
     let breadcrumb = $('#breadcrumb');
     breadcrumb.empty();
@@ -644,14 +729,35 @@ $(() => {
 
         fb.request('getFileList', currentWorkDir, null);
         sio.emit('getWorkflow', currentWorkFlow);
+        console.log("emit bread");
       });
     }
   }
 
   function updateTaskStateTable(taskStateList) {
+    $('#project_table_body').empty();
     let taskStateTable = $('#project_table_body');
     for (let i = 0; i < taskStateList.length; i++) {
-      taskStateTable.append(`<tr><td>${taskStateList[i].name}</td><td>${taskStateList[i].state}</td><td>${taskStateList[i].startTime}</td><td>${taskStateList[i].endTime}</td></tr>`);
+      //for test
+      let nodeType = "task";
+      //let nodeType = taskStateList[i].type;
+      let nodeState = "running";
+      //let nodeState = taskStateList[i].state;
+
+      let nodeIconPath = config.node_icon[nodeType];
+      let nodeColor = config.node_color[nodeType];
+      let nodeComponentState = config.state_icon[nodeState]; 
+
+      let id = `taskLabel_${i}`;      
+
+      taskStateTable.append(`<tr><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"/><label class="nameLabel">${taskStateList[i].name}</label></td>
+      <td class="componentState"><img src=${nodeComponentState}/><label class="stateLabel">${taskStateList[i].state}</label></td>
+      <td class="componentStartTime">${taskStateList[i].startTime}</td>
+      <td class="componentEndTime">${taskStateList[i].endTime}</td>
+      <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
+
+      $(`#${id}`).css("background-color", nodeColor);
+      
     }
   }
 
@@ -709,6 +815,23 @@ $(() => {
   $('#drawer_menu').mouseleave(function () {
     $('#drawer_menu').toggleClass('action', false);
   });
+
+/*   $('.viewButton').click(function(){
+    $(".viewNodes").css('display', 'block');    
+  }); */
+
+  //ボタンでのviewの切り替え
+  $('.viewButton').mouseover(function() {
+    var viewButtonID = document.getElementById('.viewButton'); 
+    console.log(viewButtonID);
+    //setAttributeメソッドでfill属性の値を青に変更 
+
+/* circle1.setAttribute("fill","#0000ff"); 
+
+    svg1 = document.getElementById('svg1');
+    $('.viewNodes').css('display', 'block'); */
+  });
+
   
   function getSelectLabel(index){
     var obj = document.getElementById(index);

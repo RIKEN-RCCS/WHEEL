@@ -878,9 +878,9 @@ header {
     margin: 5px auto;
 }
 
-.icon {
+/* .icon {
     cursor: pointer;
-}
+} */
 
 .file_icon,
 .dir_icon,
@@ -893,14 +893,14 @@ header {
     margin: 0 3px;
 }
 
-table {
+/* table {
     margin: auto;
     width: 100%;
     font-size: 90%;
     vertical-align: middle;
     height: 35px;
 }
-
+ 
 th {
     color: rgb(105, 175, 45);
     text-align: left;
@@ -908,7 +908,7 @@ th {
 
 td {
     color: rgb(240, 240, 240);
-}
+}*/
 
 .button,
 .dialog_button {
@@ -1092,10 +1092,10 @@ td {
 
 .logButton{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
-    background-color: rgba(28,28,32,0.75);
+    background-color: rgba(28,28,32,0.0);
     font-size: 14px;
     padding: 0 20px 0 20px;
-    border: solid 2px rgba(28,28,32,0.75);
+    border: solid 2px rgba(28,28,32,0.0);
     color: #FFFFFF;
     cursor: pointer;
     width: 120px;
@@ -1130,9 +1130,100 @@ td {
 #buttonPartition{
     padding-left: 16px;
 }
+
+#project_table{
+    margin :0;
+    position: absolute;
+}
   
 #project_manage_area{
-  float: left;
+    display: flex;
+    flex-direction: row;
+    color: #FFFFFF;
+    background-color: #2F2F33;
+    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    height: calc(100% - 100px);
+    width: 100%;
+    border: none;
+    overflow: auto;
+    font-size: 14px;
+    user-select: none;
+    margin: 0;
+}
+
+#tableBody{
+    margin: 0px;
+}
+
+#project_tree_svg{
+    margin: 24px 16px 16px 16px;
+    height: calc(100% - 40px);
+    width: 100%;
+}
+
+#project_table_head{
+    margin: 0 0 4px 0;
+    text-align: left;
+}
+
+#project_table_tr{
+    margin: 0 0 4px 0;
+    text-align: left;
+    
+}
+
+#project_table_tr th{
+    padding: 0 0 4px 0;
+    border: solid 1px #2F2F33;
+    border-bottom-color: #222226;
+    text-align: left;
+    font-weight: inherit;
+    padding-right:41px; 
+}
+
+
+.componentName{
+    display: inline-block;
+    width: 224px;
+    border-radius: 3px;
+}
+
+.componentState{
+    display: inline-block;    
+    padding-right: 44px;
+    padding-left: 38px;
+    width: 90px;
+}
+
+.componentStartTime{
+    display: inline-block;        
+    padding: 9px 44px 10px 0px;
+        width: 150px;    
+}
+
+.componentEndTime{
+    display: inline-block;        
+    padding: 9px 44px 10px 0px;
+    width: 150px;    
+}
+
+.componentDescription{
+    display: inline-block;            
+    padding: 9px 44px 10px 0px;
+    width: 256px;
+}
+
+.nameLabel{
+    display: inline-flex;
+    position: relative;
+    top: -9px;
+}
+
+.stateLabel{
+    display: inline-flex;
+    position: relative;
+    top: -9px;
+    padding-left: 4px;
 }
 
 input[type="text"],
@@ -1243,4 +1334,12 @@ tspan{
     border-radius: 0px;
     border: none;    
 }
-  
+
+.viewNodes{
+    display: none;
+}
+
+.viewButton:hover{
+    cursor: pointer;
+}
+
