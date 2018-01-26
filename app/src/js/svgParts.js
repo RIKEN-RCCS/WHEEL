@@ -240,11 +240,11 @@ class SvgBox {
     const iconImage = this.createIconImage(type);
     const taskState = this.createState(type, state, numTotal, numFinished, numFailed);
 
-    const nodesViewField = this.createNodesViewField(type, bodyHeight, nodes);
-    const nodesButtonField = this.createNodesButtonField(type, bodyHeight, nodes);
-    const nodesView = this.createNodes(type, nodes);
-    const nodesIconField = this.createNodesIconField(type, nodes);
-    //const nodesViewButton = this.createNodesButton(type, bodyHeight);
+    // const nodesViewField = this.createNodesViewField(type, bodyHeight, nodes);
+    // const nodesButtonField = this.createNodesButtonField(type, bodyHeight, nodes);
+    // const nodesView = this.createNodes(type, nodes);
+    // const nodesIconField = this.createNodesIconField(type, nodes);
+    // const nodesViewButton = this.createNodesButton(type, bodyHeight);
 
 
     
@@ -264,11 +264,11 @@ class SvgBox {
       .add(output)
       .add(taskState)
       .add(iconImage)
-      .add(nodesButtonField)
-      //.add(nodesViewButton)
-      .add(nodesViewField)
-      .add(nodesIconField)            
-      .add(nodesView)
+      // .add(nodesButtonField)
+      // .add(nodesViewButton)
+      // .add(nodesViewField)
+      // .add(nodesIconField)            
+      // .add(nodesView)
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
