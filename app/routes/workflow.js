@@ -15,6 +15,7 @@ const {getDateString} = require('./utility');
 const {remoteHost} = require('../db/db');
 const {getCwf, setCwf, getNode, pushNode, removeNode, getCurrentDir, readRwf, getRootDir, getCwfFilename} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
+const {commitProject, revertProject, cleanProject} =  require('./project');
 
 function hasChild(node){
 return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
@@ -422,12 +423,13 @@ async function onRunProject(sio, sessionID, msg){
     logger.error('invalid root workflow:\n', err);
     return false
   }
+  await commitProject(sessionID);
   setProjectState(sessionID, 'running');
   let rootDir = getRootDir(sessionID);
-  setRootDispatcher(new Dispatcher(rwf, rootDir, rootDir));
+  setRootDispatcher(sessionID, new Dispatcher(rwf, rootDir, rootDir));
   sio.emit('projectState', getProjectState(sessionID));
   try{
-    setProjectState(sessionID, await getRootDispatcher().dispatch());
+    setProjectState(sessionID, await getRootDispatcher(sessionID).dispatch());
   }catch(err){
     logger.error('fatal error occurred while parseing root workflow: \n',err);
     return false;
@@ -437,16 +439,16 @@ async function onRunProject(sio, sessionID, msg){
 
 function onPauseProject(sio, sessionID, msg){
   logger.debug(`pause event recieved: ${msg}`);
-  getRootDispatcher().pause();
+  getRootDispatcher(sessionID).pause();
   setProjectState(sessionID, 'paused');
   sio.emit('projectState', getProjectState(sessionID));
 }
 async function onCleanProject(sio, sessionID, msg){
   logger.debug(`clean event recieved: ${msg}`);
-  let rootDispatcher=getRootDispatcher();
+  let rootDispatcher=getRootDispatcher(sessionID);
   if(rootDispatcher != null) rootDispatcher.remove();
   await cleanProject(sessionID);
-  onWorkflowRequest(sio, getCwfFilename(sessionID));
+  onWorkflowRequest(sio, sessionID, getCwfFilename(sessionID));
   setProjectState(sessionID, 'not-started');
   sio.emit('projectState', getProjectState(sessionID));
 }

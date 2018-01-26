@@ -120,34 +120,32 @@ async function gitAdd(label, absFilename, remove=false){
     }else{
       await index.addByPath(filename);
     }
-    await index.write()
   }catch(e){
     logger.error('git add failed:', e);
   }
-  // memo
-  // Acoding to libgit2 doc, "The index must be freed once it's no longer being used by the user."
-  // but nodegit binding of git_index_free does not seem to be available.
+  return index.write()
 }
 
 async function commitProject(label){
   const repo = await _getRepo(label);
   const author = nodegit.Signature.now('wheel', "wheel@example.com"); //TODO replace user info
   const commiter= await author.dup();
+  const index = await repo.refreshIndex();
   const oid = await index.writeTree();
-  const parent = repo.getHeadCommit().getParents()
-  await repo.createCommit("HEAD", author, commiter, "save project", oid, parent);
+  const headCommit = await repo.getHeadCommit();
+  return repo.createCommit("HEAD", author, commiter, "save project", oid, [headCommit]);
 }
 
 async function revertProject(label){
   const repo = await _getRepo(label);
   const headCommit = await repo.getHeadCommit();
-  nodegit.Reset.reset(repo, headCommit, git.Reset.TYPE.HARD, null, "master");
+  return nodegit.Reset.reset(repo, headCommit, nodegit.Reset.TYPE.HARD, null, "master");
 }
 
 async function cleanProject(label){
   const rootDir = getRootDir(label);
   await del([rootDir+path.sep+"*"], {force: true});
-  revertProject(label);
+  return revertProject(label);
 }
 
 
