@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const {promisify} = require("util");
 
+const del = require("del");
 const nodegit = require("nodegit");
 
 const logger = require("../logger");
@@ -80,7 +81,7 @@ async function updateProjectJson (label, data){
 
 function setProjectState(label, state){
   _getProject(label).projectState=state;
-  return updateProjectJson({"state": state});
+  return updateProjectJson(label, {"state": state});
 }
 
 async function setCwf (label, filename){
@@ -103,18 +104,22 @@ async function readRwf (label){
   return JSON.parse(data)
 }
 
-async function getRepo(label){
+async function _getRepo(label){
   const rootDir = getRootDir(label)
   return nodegit.Repository.open(path.resolve(rootDir, '.git'));
 }
 
-async function gitAdd(label, absFilename){
-  const repo = await getRepo(label);
+async function gitAdd(label, absFilename, remove=false){
+  const repo = await _getRepo(label);
   const index = await repo.refreshIndex();
   const rootDir = getRootDir(label)
   const filename = path.relative(rootDir, absFilename);
-  await index.addByPath(filename);
   try{
+    if(remove){
+      await index.removeByPath(filename);
+    }else{
+      await index.addByPath(filename);
+    }
     await index.write()
   }catch(e){
     logger.error('git add failed:', e);
@@ -125,7 +130,7 @@ async function gitAdd(label, absFilename){
 }
 
 async function commitProject(label){
-  const repo = await getRepo(label);
+  const repo = await _getRepo(label);
   const author = nodegit.Signature.now('wheel', "wheel@example.com"); //TODO replace user info
   const commiter= await author.dup();
   const oid = await index.writeTree();
@@ -134,14 +139,14 @@ async function commitProject(label){
 }
 
 async function revertProject(label){
-  const repo = await getRepo(label);
+  const repo = await _getRepo(label);
   const headCommit = await repo.getHeadCommit();
   nodegit.Reset.reset(repo, headCommit, git.Reset.TYPE.HARD, null, "master");
 }
 
 async function cleanProject(label){
   const rootDir = getRootDir(label);
-  await del([rootDir, "!\.git*"]);
+  await del([rootDir+path.sep+"*"], {force: true});
   revertProject(label);
 }
 

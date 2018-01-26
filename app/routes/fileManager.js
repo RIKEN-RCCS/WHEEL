@@ -36,19 +36,19 @@ function list(uploader, sio, requestDir){
     })
 }
 
-function removeFile(sio, target){
+async function removeFile(sio, label, target){
   logger.debug(`removeFile event recieved: ${target}`);
   var parentDir = path.dirname(target);
-  del(target, { force: true })
-  .then(()=>{
-      fileBrowser(sio, 'fileList', parentDir, {"filter": {file: systemFiles}});
-  })
-  .catch((err)=>{
+  try{
+    await del(target, { force: true });
+    await gitAdd(label, target, true);
+  }catch(err){
     logger.warn(`removeFile failed: ${err}`);
-  });
+  }
+  fileBrowser(sio, 'fileList', parentDir, {"filter": {file: systemFiles}});
 }
 
-function renameFile(sio, msg){
+async function renameFile(sio, label, msg){
   logger.debug(`renameFile event recieved: ${msg}`);
   if (!(msg.hasOwnProperty('oldName') && msg.hasOwnProperty('newName') && msg.hasOwnProperty('path'))) {
     logger.warn(`illegal request ${msg}`);
@@ -56,16 +56,20 @@ function renameFile(sio, msg){
   }
   var oldName = path.resolve(msg.path, msg.oldName);
   var newName = path.resolve(msg.path, msg.newName);
-  util.promisify(fs.rename)(oldName, newName)
-  .then(()=>{
-    fileBrowser(sio, 'fileList', msg.path, {"filter": {file: systemFiles}});
-  })
-  .catch((err)=>{
-    logger.warn('renameFile failed: ',err);
-    logger.debug('path:    ', msg.path);
-    logger.debug('oldName: ', msg.oldName);
-    logger.debug('newName: ', msg.newName);
-  });
+  await util.promisify(fs.rename)(oldName, newName)
+    .catch((err)=>{
+      logger.warn('renameFile failed: ',err);
+      logger.debug('path:    ', msg.path);
+      logger.debug('oldName: ', msg.oldName);
+      logger.debug('newName: ', msg.newName);
+    });
+  try{
+    await gitAdd(label, oldName, true);
+    await gitAdd(label, newName, false);
+  }catch(err){
+    logger.warn('git add failed', err);
+  }
+  fileBrowser(sio, 'fileList', msg.path, {"filter": {file: systemFiles}});
 }
 
 function downloadFile(sio, msg){
@@ -87,16 +91,16 @@ function registerListeners(socket, label){
     uploader.dir = os.homedir();
     uploader.on("saved", async(event)=>{
       logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
-      fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: systemFiles}});
       await gitAdd(label, event.file.pathName);
+      fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: systemFiles}});
     });
     uploader.on("error", (event)=>{
       logger.error(`Error from uploader ${event}`);
     });
-    socket.on('getFileList', list.bind(null, uploader, socket));
-    socket.on('removeFile',          removeFile.bind(null, socket));
-    socket.on('renameFile',          renameFile.bind(null, socket));
-    socket.on('downloadFile',        downloadFile.bind(null, socket));
+    socket.on('getFileList',  list.bind(null, uploader, socket));
+    socket.on('removeFile',   removeFile.bind(null, socket, label));
+    socket.on('renameFile',   renameFile.bind(null, socket, label));
+    socket.on('downloadFile', downloadFile.bind(null, socket));
 }
 
 module.exports = registerListeners;
