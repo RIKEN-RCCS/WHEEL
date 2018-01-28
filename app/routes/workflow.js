@@ -382,7 +382,6 @@ function onAddFileLink(sio, msg){
   const srcName = msg.srcName
   const dstName = msg.dstName
 
-/*   return true;
   // add outputFile entry on src node.
   let srcEntry = srcNode.outputFiles.find((e)=>{
     return e.name === srcName;
@@ -404,7 +403,7 @@ function onAddFileLink(sio, msg){
   }
   // replace inputFiles entry on dst node.
   dstEntry.srcNode=src;
-  dstEntry.srcName=srcName; */
+  dstEntry.srcName=srcName;
 
   writeAndEmit(cwf, cwfFilename, sio, 'workflow')
     .catch((err)=>{
