@@ -13,53 +13,56 @@
 
 <body>
   <header>
-    <a href="home" class="title">WHEEL</a>
-      <h3 class="title_username">Yuki Tanaka</h3>
+    <a href="home" id="title">WHEEL</a>
+    <span id="titleUser">
+      <img src="/image/img_user.png" class="icon" id="img_user" align="middle"> 
+      <span id="titleUserName" class="titleUserName">Yuki Tanaka</span>
+    </span>
   </header>
-  <div>
-    <div id="pageName">
-      <p class="remotehost">Host List</p>
-    </div>
+  <div id="pageNameArea">
+    <label id="pageName">Host List</label>  
   </div>
 
   <main>
   <div id="view">
-    <!-- Remote Host List Area -->
-    <div id="hostTitleArea">
-      <table id="titleTable">
-        <tr id="hostInfo">
-          <th class="label">Label</th>
-          <th class="connectionCheck">Connection Check</th>
-          <th class="hostName">Host Name</th>
-          <th class="port">Port</th>
-          <th class="userID">User ID</th>
-          <th class="hostWorkDir">Hosr Work Dir</th>
-          <th class="authType">Auth Type</th>          
-          <th class="authPath">Auth Path</th>
-          <th class="jobScheduler">Job Scheduler</th>
-          <th class="jobSubmissionLimit">Max Job</th>         
-          <th class="queue">Queue</th>
-        </tr>
-      </table>
-    </div>
-    <div id="hostPropertyArea">
-      <table id="propertyTable">
-        <template v-for="(host, index) in hostList">
-          <tr id="hostListInfo">
-            <td class="label" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.name }}</td>
-            <td v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)"><button class="connectionCheck"  v-on:click="test(index)" >{{ buttonState(index) }}</button></td>
-            <td class="hostName" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.host }}</td>
-            <td class="port" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.port }}</td>            
-            <td class="userID" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.username }}</td>
-            <td class="hostWorkDir" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.path }}</td>
-            <td class="authType" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >PW</td>
-            <td class="authPath" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.keyFile }}</td>            
-            <td class="jobScheduler" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > jobscheduler</td>
-            <td class="jobSubmissionLimit" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.numJob }}</td>                        
-            <td class="queue" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.queue }}</td>                        
+    <div id="hostListArea">
+      <!-- Remote Host List Area -->
+      <div id="hostTitleArea">
+        <table id="titleTable">
+          <tr id="hostInfo">
+            <th class="label">Label</th>
+            <th class="connectionCheck">Connection Check</th>
+            <th class="hostName">Host Name</th>
+            <th class="port">Port</th>
+            <th class="userID">User ID</th>
+            <th class="hostWorkDir">Hosr Work Dir</th>
+            <th class="authType">Auth Type</th>          
+            <th class="authPath">Auth Path</th>
+            <th class="jobScheduler">Job Scheduler</th>
+            <th class="jobSubmissionLimit">Max Job</th>         
+            <th class="queue">Queue</th>
           </tr>
-        </template >
-      </table>
+        </table>
+      </div>
+      <div id="hostPropertyArea">
+        <table id="propertyTable">
+          <template v-for="(host, index) in hostList">
+            <tr id="hostListInfo">
+              <td class="label" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.name }}</td>
+              <td v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)"><button class="connectionCheck"  v-on:click="test(index)" >{{ buttonState(index) }}</button></td>
+              <td class="hostName" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.host }}</td>
+              <td class="port" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.port }}</td>            
+              <td class="userID" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.username }}</td>
+              <td class="hostWorkDir" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.path }}</td>
+              <td class="authType" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >PW</td>
+              <td class="authPath" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.keyFile }}</td>            
+              <td class="jobScheduler" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.jobscheduler }}</td>
+              <td class="jobSubmissionLimit" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.numJob }}</td>                        
+              <td class="queue" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" > {{ host.queue }}</td>                        
+            </tr>
+          </template >
+        </table>
+      </div>
     </div>
     <!-- Error Message Area -->
     <div id="errorMessage" v-show="errorMessage != ''">{{errorMessage}}</div>

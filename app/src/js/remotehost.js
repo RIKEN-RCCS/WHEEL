@@ -6,6 +6,7 @@ import dialogWrapper from './dialogWrapper';
 
 import 'jquery-ui/themes/base/all.css';
 import '../css/remotehost.css';
+import { log } from 'util';
 
 $(() => {
   // create socket.io instance
@@ -187,13 +188,15 @@ $(() => {
   }
 
   function testSshConnection(index) {
-    vm.testing = index;
     let host = vm.hostList[index];
+    vm.testing=null;
     const html = '<p>Input SSH connection password.</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
+        vm.testing = index;
         let password=$('#password').val();
         socket.emit('tryConnectHost', host.id, password, (isConnect) => {
+          console.log(isConnect)
           vm.testing=null;
           vm.selectedHosts=[];
           if (isConnect) {
@@ -212,4 +215,7 @@ $(() => {
   function isEmpty(string) {
     return string === '';
   }
+
+  var pos=$("#titleUserName").offset();
+  $("#img_user").css('right', window.innerWidth - 8 - pos.left + "px");
 });
