@@ -30,11 +30,10 @@ async function canConnect(hostInfo, password){
   let arssh = getSsh(config, {connectionRetryDelay: 100});
   return arssh.canConnect()
     .catch((err)=>{
-      let config2 = Object.assign({}, config);
-      if(config2.hasOwnProperty('privateKey')) config2.privateKey='privateKey was defined but omitted'
-      if(config2.hasOwnProperty('password'))   config2.password='password  was defined but omitted'
-      if(config2.hasOwnProperty('passphrase')) config2.passphrase='passphrase  was defined but omitted'
-      err.config = config2;
+      err.config = Object.assign({}, config);
+      if(err.config.hasOwnProperty('privateKey')) err.config.privateKey='privateKey was defined but omitted'
+      if(err.config.hasOwnProperty('password'))   err.config.password='password  was defined but omitted'
+      if(err.config.hasOwnProperty('passphrase')) err.config.passphrase='passphrase  was defined but omitted'
       return Promise.reject(err);
     });
 }

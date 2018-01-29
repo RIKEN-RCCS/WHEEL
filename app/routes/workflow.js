@@ -165,12 +165,37 @@ async function onCreateNode(sio, sessionID, msg){
   }
 }
 
-function updateNode(sessionID, node, property, value){
+async function updateValue(sessionID, node, property, value){
   node[property]=value;
   if(hasChild(node)){
-    let childDir = path.resolve(getCurrentDir(sessionID), node.path);
-    let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
-    promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(node, null, 4));
+    const childWorkflowFilename= path.resolve(getCurrentDir(sessionID), node.path, node.jsonFile);
+    const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
+    childWorkflow[property] = value;
+    return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
+  }
+}
+async function addValue(sessionID, node, property, value){
+  node[property].push(value);
+  if(hasChild(node)){
+    const childWorkflowFilename= path.resolve(getCurrentDir(sessionID), node.path, node.jsonFile);
+    const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
+    childWorkflow[property].push(value);
+    return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
+  }
+}
+
+async function delValue(sessionID, node, property, value){
+  let index = node[property].findIndex((e)=>{
+    if(e===value) return true
+    // for input/outputFiles
+    if(e.hasOwnProperty('name') && value.hasOwnProperty('name') && e.name === value.name) return true
+  })
+  node[property][index]=null;
+  if(hasChild(node)){
+    const childWorkflowFilename = path.resolve(getCurrentDir(sessionID), node.path, node.jsonFile);
+    const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
+    childWorkflow[property][index]=null;
+    return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
   }
 }
 
@@ -184,26 +209,18 @@ async function onUpdateNode(sio, sessionID, msg){
   let targetNode=getNode(sessionID, index);
   if(property in targetNode){
     switch(cmd){
+      case 'update':
+        await updateValue(sessionID, targetNode, property, value);
+        break;
       case 'add':
         if(Array.isArray(targetNode[property])){
-          targetNode[property].push(value);
+          await addValue(sessionID, targetNode, property, value);
         }
         break;
       case 'del':
         if(Array.isArray(targetNode[property])){
-          let targetIndex = targetNode[property].findIndex(function(e){
-            if(e===value) return true
-            // for input/outputFiles
-            if(e.hasOwnProperty('name') && value.hasOwnProperty('name') && e.name === value.name) return true
-          })
-          targetNode[property][targetIndex]=null;
+          await delValue(sessionID, targetNode, property, value);
         }
-        break;
-      case 'update':
-        await updateNode(sessionID, targetNode, property, value);
-        break;
-      case 'updateArrayProperty':
-        targetNode[property]=value;
         break;
     }
     cleanUpNode(targetNode);
@@ -215,6 +232,7 @@ async function onUpdateNode(sio, sessionID, msg){
     }
   }
 }
+
 async function onRemoveNode(sio, sessionID, index){
   logger.debug('removeNode event recieved: ', index);
   let target=getNode(sessionID, index);
@@ -322,8 +340,8 @@ function onAddFileLink(sio, sessionID, msg){
     return
   }
 
-  const srcNode=src !== 'parent'? getNode(sessionID, parseInt(src)) : getCwf(sessionID);
-  const dstNode=dst !== 'parent'? getNode(sessionID, parseInt(dst)) : getCwf(sessionID);
+  const srcNode=src !== 'parent' ? getNode(sessionID, parseInt(src)) : getCwf(sessionID);
+  const dstNode=dst !== 'parent' ? getNode(sessionID, parseInt(dst)) : getCwf(sessionID);
   const srcName = msg.srcName
   const dstName = msg.dstName
 
