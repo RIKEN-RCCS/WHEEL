@@ -6,7 +6,7 @@ const del = require("del");
 const nodegit = require("nodegit");
 
 const logger = require("../logger");
-const {getDateString} = require('./utility');
+const {getDateString, replacePathsep} = require('./utility');
 
 class Project {
   constructor(){
@@ -113,7 +113,7 @@ async function gitAdd(label, absFilename, remove=false){
   const repo = await _getRepo(label);
   const index = await repo.refreshIndex();
   const rootDir = getRootDir(label)
-  const filename = path.relative(rootDir, absFilename);
+  const filename = replacePathsep(path.relative(rootDir, absFilename));
   try{
     if(remove){
       await index.removeByPath(filename);
@@ -156,6 +156,7 @@ async function write (label){
   await writeProjectJson(label);
   let cwf =getCwf(label);
   let filename = getCwfFilename(label);
+  console.log(filename);
   await promisify(fs.writeFile)(filename, JSON.stringify(cwf, null, 4));
   return gitAdd(label, filename);
 }

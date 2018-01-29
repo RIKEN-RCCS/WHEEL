@@ -30,7 +30,7 @@
     "license-report": "license-report"
   },
   "dependencies": {
-    "arssh2-client": "^0.3.5",
+    "arssh2-client": "^0.3.6",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "del": "^3.0.0",

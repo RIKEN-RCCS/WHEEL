@@ -123,13 +123,14 @@ async function readWorkflow(filename){
   return JSON.parse(await promisify(fs.readFile)(filename));
 }
 
-async function onWorkflowRequest(sio, sessionID, workflowFilename){
+async function onWorkflowRequest(sio, sessionID, argWorkflowFilename){
+  let workflowFilename=path.resolve(argWorkflowFilename);
   logger.debug('Workflow Request event recieved: ', workflowFilename);
   await setCwf(sessionID, workflowFilename);
   let rt = Object.assign(getCwf(sessionID));
   let promises = rt.nodes.map((child)=>{
-    if(hasChild(child)){
-      return readWorkflow(path.join(getCwfDir(sessionID), child.path, child.jsonFile))
+    if(child && hasChild(child)){
+      return readWorkflow(path.join(getCurrentDir(sessionID), child.path, child.jsonFile))
         .then((tmp)=>{
           child.nodes=tmp.nodes;
         })
@@ -164,10 +165,10 @@ async function onCreateNode(sio, sessionID, msg){
   }
 }
 
-function updateNode(node, property, value){
+function updateNode(sessionID, node, property, value){
   node[property]=value;
   if(hasChild(node)){
-    let childDir = path.resolve(getCurrentDir(), node.path);
+    let childDir = path.resolve(getCurrentDir(sessionID), node.path);
     let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
     promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(node, null, 4));
   }
@@ -199,7 +200,7 @@ async function onUpdateNode(sio, sessionID, msg){
         }
         break;
       case 'update':
-        await updateNode(targetNode, property, value);
+        await updateNode(sessionID, targetNode, property, value);
         break;
       case 'updateArrayProperty':
         targetNode[property]=value;
