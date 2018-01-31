@@ -187,6 +187,10 @@ $(() => {
   function testSshConnection(index) {
     let host = vm.hostList[index];
     vm.testing = null;
+    if (!host) {
+      console.log('host is not selected');
+      return;
+    }
     const html = '<p>Input SSH connection password.</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
