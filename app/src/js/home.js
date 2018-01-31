@@ -8,13 +8,13 @@ import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/home.css';
 
-import FileBrowser from  './fileBrowser';
+import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
 
 $(() => {
     // socket io
     const socket = io('/home');
-  socket.emit('getProjectList', true);
+    socket.emit('getProjectList', true);
     // setup contextMenu
     var openProject = function (key, opt) {
         var rootPath = $(this).data('path');
@@ -34,13 +34,13 @@ $(() => {
             'rename': {
                 name: 'Rename',
                 callback: function () {
-                    var id= $(this).data('id');
-                    var path= $(this).data('path');
-                    console.log(path);                    
+                    var id = $(this).data('id');
+                    var path = $(this).data('path');
+                    console.log(path);
                     var html = '<p>input new project name</p><input type="text" id="renamedProjectName">';
                     dialogWrapper('#dialogContext', html).done(function () {
                         var newName = $('#renamedProjectName').val();
-                        socket.emit('renameProject', {'id': id, 'path': path, 'newName': newName });
+                        socket.emit('renameProject', { 'id': id, 'path': path, 'newName': newName });
                     });
                 }
             },
@@ -56,10 +56,11 @@ $(() => {
             }
         }
     });
+
     // setup project list UI
     $('#projectList').sortable({
         update: (e, ui) => {
-            socket.emit('reorderProject', $('#projectList').sortable('toArray',{attribute: 'data-id'}));
+            socket.emit('reorderProject', $('#projectList').sortable('toArray', { attribute: 'data-id' }));
         }
     });
     $('#projectList').disableSelection();
@@ -68,13 +69,16 @@ $(() => {
         data.forEach(function (pj) {
             $('#projectList').append(`<ul class="project" data-path="${pj.path}" data-id="${pj.id}" data-name="${pj.name}">
             <li class="projectName">${pj.name}</li>
-            <li class="projectDescription">${pj.description}</li></ul>`);            
+            <li class="projectDescription">${pj.description}</li></ul>`);
         });
+
+        // db click event
+        $('#projectList ul').dblclick(openProject);
     });
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     const dialogOptions = {
-/*         height: $(window).height() * 0.98,
-        width: $(window).width() * 0.98 */
+        /* height: $(window).height() * 0.98,
+           width: $(window).width() * 0.98 */
         height: $(window).height() * 0.9,
         width: $(window).width() * 0.6
     };
@@ -107,18 +111,18 @@ $(() => {
             $('#path').text(fb.getRequestedPath());
         });
         fb.onFileDblClick(function (target) {
-          $('#dialog').dialog('close');
-          socket.emit('importProject', target);
+            $('#dialog').dialog('close');
+            socket.emit('importProject', target);
         });
         fb.request('getDirListAndProjectJson', null, null);
     });
 
     //管理者設定画面へのドロワー
     $('#drawer_button').click(function () {
-      $('#drawer_menu').toggleClass('action', true);
+        $('#drawer_menu').toggleClass('action', true);
     });
-    
+
     $('#drawer_menu').mouseleave(function () {
-      $('#drawer_menu').toggleClass('action', false);
+        $('#drawer_menu').toggleClass('action', false);
     });
 });
