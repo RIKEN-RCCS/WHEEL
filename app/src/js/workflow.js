@@ -438,8 +438,8 @@ $(() => {
     var objectDrag = document.getElementById(target);
     var objectDrop = document.getElementById("node_svg");
 
-    objectDrag.ondragstart = function(event){
-      event.dataTransfer.setData("text", event.target.id);
+    objectDrag.ondragstart = function (event) {
+      event.dataTransfer.setData("text", target);
     };
 
     objectDrop.ondragover = function (event) {
