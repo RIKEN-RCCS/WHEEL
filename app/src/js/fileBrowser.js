@@ -6,7 +6,7 @@ import '../css/fileBrowser.css';
 
 export default class {
   // public methods
-  constructor(socket, idFileList, recvEventName, withContextMenu = false, additionalMenu={}) {
+  constructor(socket, idFileList, recvEventName, withContextMenu = false, additionalMenu = {}) {
     // private properties
     this.defaultColor = null;
     this.selectedItemColor = 'lightblue';
@@ -91,39 +91,39 @@ export default class {
     });
   }
   // private methods
-  createContextMenu(additionalMenu, trigger){
+  createContextMenu(additionalMenu, trigger) {
     const socket = this.socket;
     const fileList = `${this.idFileList} li`;
-    const defaultItems={
-        'rename': {
-          name: 'Rename',
-          callback: function () {
-            var path = $(this).data('path');
-            var oldName = $(this).data('name');
-            var html = '<p>input new filename</p><input type="text" id="newName">';
-            dialogWrapper('#dialog', html).done(function () {
-              var newName = $('#newName').val();
-              var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
-              $(fileList).remove(`:contains(${oldName})`);
-              socket.emit('renameFile', obj);
-            });
-          }
-        },
-        'delete': {
-          name: 'Delete',
-          callback: function () {
-            var filename = $(this).data('name');
-            var target = $(this).data('path') + '/' + filename;
-            var html = 'Are you sure you want to delete this file?';
-            dialogWrapper('#dialog', html).done(function () {
-              $(fileList).remove(`:contains(${filename})`);
-              socket.emit('removeFile', target);
-            });
-          }
+    const defaultItems = {
+      'rename': {
+        name: 'Rename',
+        callback: function () {
+          var path = $(this).data('path');
+          var oldName = $(this).data('name');
+          var html = '<p>input new filename</p><input type="text" id="newName">';
+          dialogWrapper('#dialog', html).done(function () {
+            var newName = $('#newName').val();
+            var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
+            $(fileList).remove(`:contains(${oldName})`);
+            socket.emit('renameFile', obj);
+          });
         }
+      },
+      'delete': {
+        name: 'Delete',
+        callback: function () {
+          var filename = $(this).data('name');
+          var target = $(this).data('path') + '/' + filename;
+          var html = 'Are you sure you want to delete this file?';
+          dialogWrapper('#dialog', html).done(function () {
+            $(fileList).remove(`:contains(${filename})`);
+            socket.emit('removeFile', target);
+          });
+        }
+      }
     }
     const items = Object.assign({}, additionalMenu, defaultItems);
-    return {'items': items}
+    return { 'items': items }
   }
   registerContextMenu(additionalMenu) {
     const fileList = `${this.idFileList} li`;
