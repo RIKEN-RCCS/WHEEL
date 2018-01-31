@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import Vue from 'vue/dist/vue.esm.js';
 
-import FileBrowser from  './fileBrowser';
+import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
 
 import 'jquery-ui/themes/base/all.css';
@@ -37,132 +37,129 @@ $(() => {
       NG: [],
       errorMessage: 'temp'
     },
-    methods:{
-      toggleSelected: function(i) {
-        if(this.selectedHost === i)
-        {
+    methods: {
+      toggleSelected: function (i) {
+        if (this.selectedHost === i) {
           this.selectedHost = -1;
           resetNewHost();
-          $(".editArea").css("border", "solid 1px white");          
+          $(".editArea").css("border", "solid 1px white");
         } else {
           this.selectedHost = i;
-          $(".editArea").prop("disabled",true);
-          $(".editAreaButton").prop("disabled",true);
-          $(".editArea").css("border", "solid 1px white");    
-          Object.assign(this.newHostInfo, this.hostList[this.selectedHost]);          
+          $(".editArea").prop("disabled", true);
+          $(".editAreaButton").prop("disabled", true);
+          $(".editArea").css("border", "solid 1px white");
+          Object.assign(this.newHostInfo, this.hostList[this.selectedHost]);
         }
       },
-      onAddButton:function() {
-        if(this.selectedHost === -1)
-        {
+      onAddButton: function () {
+        if (this.selectedHost === -1) {
           this.mode = 'addHost';
         } else {
           this.mode = 'updateHost';
         }
         this.errorMessage = '';
-        $("#errorMessage").css("visibility", "hidden");        
-        $(".editArea").prop("disabled",false);
-        $(".editAreaButton").prop("disabled",false);        
-        $(".editArea").css("border", "solid 1px yellow");  
+        $("#errorMessage").css("visibility", "hidden");
+        $(".editArea").prop("disabled", false);
+        $(".editAreaButton").prop("disabled", false);
+        $(".editArea").css("border", "solid 1px yellow");
       },
-      onCopyButton: function() {
+      onCopyButton: function () {
         this.mode = 'copyHost';
-        $("#errorMessage").css("visibility", "hidden");                                                
+        $("#errorMessage").css("visibility", "hidden");
         if (this.selectedHost === -1) {
           this.errorMessage = 'Please select Host';
-          $("#errorMessage").css("visibility", "visible");                                        
+          $("#errorMessage").css("visibility", "visible");
           return;
         }
         socket.emit('copyHost', this.hostList[this.selectedHost].id);
       },
-      onRemoveButton: function() {
+      onRemoveButton: function () {
         this.mode = 'removeHost';
-        $("#errorMessage").css("visibility", "hidden");                                        
+        $("#errorMessage").css("visibility", "hidden");
         if (this.selectedHost === -1) {
           this.errorMessage = 'Please select Host';
-          $("#errorMessage").css("visibility", "visible");                                        
+          $("#errorMessage").css("visibility", "visible");
           return;
         }
 
-        $("#deleteCheckDialog").dialog({width:300, title: 'Delete Host', modal: true});       
+        $("#deleteCheckDialog").dialog({ width: 300, title: 'Delete Host', modal: true });
       },
-      onEditAreaOKButton: function(){
+      onEditAreaOKButton: function () {
         if (this.authType === '1') {
           this.newHostInfo.keyFile = null;
         }
         socket.emit(this.mode, this.newHostInfo);
         resetNewHost();
-        this.selectedHost = -1;                
-        $(".editArea").css("border", "solid 1px white");                  
-      },
-      onEditAreaCancelButton: function(){
-        resetNewHost();
-        this.selectedHost = -1;        
+        this.selectedHost = -1;
         $(".editArea").css("border", "solid 1px white");
-      }, 
-      onDialogOKButton: function() {
-        socket.emit('removeHost', this.hostList[this.selectedHost].id);        
-        resetNewHost();        
+      },
+      onEditAreaCancelButton: function () {
+        resetNewHost();
+        this.selectedHost = -1;
+        $(".editArea").css("border", "solid 1px white");
+      },
+      onDialogOKButton: function () {
+        socket.emit('removeHost', this.hostList[this.selectedHost].id);
+        resetNewHost();
         $("#deleteCheckDialog").dialog('close');
       },
-      onDialogCancelButton: function() {
+      onDialogCancelButton: function () {
         $("#deleteCheckDialog").dialog('close');
       },
-      isSelected: function(index) {
+      isSelected: function (index) {
         let flag;
-        if( this.selectedHost === index)
-        {
+        if (this.selectedHost === index) {
           flag = true;
         } else {
           flag = false;
         }
-        return flag;          
+        return flag;
       },
       browse: browseServerFiles,
       test: testSshConnection,
-      buttonState: function(index) {
+      buttonState: function (index) {
         let state = 'Test';
-        if(index === this.testing) {
-          state ='Testing';
-        }else if (this.OK.includes(index)) {
+        if (index === this.testing) {
+          state = 'Testing';
+        } else if (this.OK.includes(index)) {
           state = 'OK';
-        }else if (this.NG.includes(index)) {
+        } else if (this.NG.includes(index)) {
           state = 'NG';
         }
         return state
-      }, 
+      },
     },
-    computed:{
-      isDuplicate: function() {
+    computed: {
+      isDuplicate: function () {
         return this.hostList.some((element) => {
-          return element.name === this.newHostInfo.name && 
-                 element.id !== this.newHostInfo.id;
+          return element.name === this.newHostInfo.name &&
+            element.id !== this.newHostInfo.id;
         });
       },
-      validation: function() {
-        return{
-          name:     !isEmpty(this.newHostInfo.name),
-          host:     !isEmpty(this.newHostInfo.host),
+      validation: function () {
+        return {
+          name: !isEmpty(this.newHostInfo.name),
+          host: !isEmpty(this.newHostInfo.host),
           username: !isEmpty(this.newHostInfo.username),
-          path:     !isEmpty(this.newHostInfo.path)
+          path: !isEmpty(this.newHostInfo.path)
         }
       },
-      hasError: function() {
+      hasError: function () {
         return this.isDuplicate || !Object.keys(this.validation).every((key) => {
           return this.validation[key];
         });
       }
     }
   });
-  
+
   // request host list
   socket.emit('getHostList', true);
-  socket.on('hostList', (hostList)=>{
+  socket.on('hostList', (hostList) => {
     vm.hostList = hostList;
     vm.selecteds = [];
   });
 
-  function browseServerFiles(){
+  function browseServerFiles() {
     const html = '<p id="path"></p><ul id=fileList></ul>';
     const dialogOptions = {
       height: $(window).height() * 0.50,
@@ -173,7 +170,7 @@ $(() => {
       .done(function () {
         let target = fb.getRequestedPath() + '/' + fb.getLastClicked()
         socket.emit('add', target);
-        vm.hostinfo.keyFile=target;
+        vm.hostinfo.keyFile = target;
       });
     $('#fileList').empty();
     fb.resetOnClickEvents();
@@ -189,16 +186,16 @@ $(() => {
 
   function testSshConnection(index) {
     let host = vm.hostList[index];
-    vm.testing=null;
+    vm.testing = null;
     const html = '<p>Input SSH connection password.</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
         vm.testing = index;
-        let password=$('#password').val();
+        let password = $('#password').val();
         socket.emit('tryConnectHost', host.id, password, (isConnect) => {
           console.log(isConnect)
-          vm.testing=null;
-          vm.selectedHosts=[];
+          vm.testing = null;
+          vm.selectedHosts = [];
           if (isConnect) {
             vm.OK.push(index);
           } else {
@@ -216,6 +213,6 @@ $(() => {
     return string === '';
   }
 
-  var pos=$("#titleUserName").offset();
+  var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - 8 - pos.left + "px");
 });
