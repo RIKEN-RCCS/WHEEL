@@ -403,26 +403,41 @@ function onRemoveLink(sio, sessionID, msg){
     });
 }
 
+function clearInputFile(node, target){
+  node.inputFiles.forEach((inputFile)=>{
+    if(inputFile.srcNode === target){
+      inputFile.srcNode = null;
+      inputFile.srcName = null;
+    }
+  });
+}
+function clearOutputFile(node, target){
+  node.outputFiles.forEach((outputFile)=>{
+    outputFile.dst=outputFile.dst.filter((e)=>{
+      return e.dstNode !== target;
+    });
+  });
+}
+
 function onRemoveFileLink(sio, sessionID, msg){
   logger.warn('removeFileLink event recieved:', msg);
   let src=msg.src;
   let dst=msg.dst;
-  if((!getNode(sessionID, src) && src !== 'parent')||( !getNode(sessionID, dst) && dst !=='parent')){
+  let func=null;
+  if(src === 'parent' && getNode(sessionID, dst)){
+    clearInputFile(getCwf(sessionID), dst);
+    clearInputFile(getNode(sessionID, parseInt(dst)), 'parent');
+  }else if(dst === 'parent' && getNode(sessionID, src)){
+    clearOutputFile(getCwf(sessionID), src);
+    clearOutputFile(getNode(sessionID, parseInt(src)), 'parent');
+  }else if(getNode(sessionID, src) && getNode(sessionID, dst)){
+    clearInputFile(getNode(sessionID, parseInt(dst)), src);
+    clearOutputFile(getNode(sessionID, parseInt(src)), dst);
+  }else{
     logger.error('illegal addFileLink request', msg);
     return
   }
 
-  const srcNode=src !== 'parent'? getNode(sessionID, parseInt(src)) : getCwf(sessionID);
-  const dstNode=dst !== 'parent'? getNode(sessionID, parseInt(dst)) : getCwf(sessionID);
-
-  srcNode.outputFiles.forEach((outputFile)=>{
-    outputFile.dst=outputFiles.dst.filter((dst)=>{
-      return dst.dstNode !== dst;
-    });
-  });
-  dstNode.inputFiles=dstNode.inputFiles.filter((inputFile)=>{
-    return inputFile.srcNode !== src;
-  });
 
   write(sessionID)
     .then(()=>{
