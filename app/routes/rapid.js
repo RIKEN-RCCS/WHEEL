@@ -1,10 +1,11 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const util = require('util');
+const {promisify} = require('util');
 
 const  express = require('express');
 const  router = express.Router();
+const nodegit = require("nodegit");
 
 const logger = require('../logger');
 
@@ -15,7 +16,7 @@ module.exports = function(io){
     let filename=req.query.filename;
     let parameterEdit=req.query.pm.toLowerCase()==="true";
     let target = path.resolve(cwd, filename);
-    util.promisify(fs.readFile)(target, 'utf-8')
+    promisify(fs.readFile)(target, 'utf-8')
       .then(function(txt){
         let tree = [];
         if(parameterEdit) {
@@ -64,15 +65,14 @@ module.exports = function(io){
   // 保存（アップロードされた編集結果をファイルとして保存）
   router.post('/', function(req, res) {
     let cwd=req.body.path;
-    let filename=req.body.filename;
-    let fn = path.resolve(cwd, filename);
+    let fn = path.resolve(cwd, req.body.filename);
     if(req.body.mode == 'json') {
-      let a = {
-        "target_file": filename,
+      let parameter = {
+        "target_file": req.body.filename,
         "target_param": req.body.param
       }
       fn = fn+'.json';
-      util.promisify(fs.writeFile)(fn,JSON.stringify(a, undefined, 4))
+      promisify(fs.writeFile)(fn,JSON.stringify(parameter, undefined, 4))
       .then(function(){
         res.send('Ok: ' + fn + ' saved');
         logger.debug(fn, ' saved.');
@@ -82,7 +82,7 @@ module.exports = function(io){
         logger.error('reason: ',err);
       });
     } else {
-      util.promisify(fs.writeFile)(fn, req.body.text)
+      promisify(fs.writeFile)(fn, req.body.text)
       .then(function(){
         res.send('Ok: ' + fn + ' saved');
         logger.debug(fn, ' saved.');
