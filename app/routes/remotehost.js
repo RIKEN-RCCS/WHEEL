@@ -20,6 +20,17 @@ function sendFileList(sio, request){
   });
 }
 
+function trySshConnection(hostInfo, password, cb){
+  canConnect(hostInfo, password)
+    .then(()=>{
+      cb(true);
+    })
+    .catch((err)=>{
+      logger.error('connection failed\n',err);
+      cb(false);
+    })
+}
+
 module.exports = function(io){
   var sio=io.of('/remotehost');
   let doAndEmit = function(func, msg){
@@ -36,16 +47,10 @@ module.exports = function(io){
     socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
     socket.on('copyHost',   doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
     socket.on('getFileList', sendFileList.bind(null, socket));
-    socket.on('tryConnectHost', async (id, password, fn)=>{
+    socket.on('tryConnectHost', trySshConnection.bind(null));
+    socket.on('tryConnectHostById', (id, password, cb)=>{
       const hostInfo = remoteHost.get(id);
-      canConnect(hostInfo, password)
-        .then(()=>{
-          fn(true);
-        })
-        .catch((err)=>{
-          logger.error('connection failed\n',err);
-          fn(false);
-        })
+      trySshConnection(hostInfo, password, cb);
     });
   });
 
