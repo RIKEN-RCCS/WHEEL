@@ -99,6 +99,11 @@ header {
   
 }
 
+.authTypeLabel{
+  padding: 0;
+  margin: 0;
+}
+
 #buttonArea{
   padding-bottom: 10px;
 }

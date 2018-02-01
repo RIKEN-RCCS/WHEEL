@@ -232,30 +232,6 @@ $(() => {
       drawParentLinks(parentnode);
     });
 
-    //子表示用として作成したが実装方法変更のため一時的にコメントアウト
-    /*     //children nodes view
-        let childrenNodes = [];
-        let selectedChildrenNodes = 0;    
-        sio.on('nodes', function(wfForChildren){
-          console.log("sio.on drawNodesNodes");      
-          console.log(wfForChildren);
-              
-          childrenNodes.forEach(function(v){
-            if (v !== null) v.remove();
-          });
-          childrenNodes = [];
-          if (wfForChildren.nodes.length > 0) {
-            let names = wfForChildren.nodes.map((e) => {
-              return e != null? e.name : null;
-            });
-            vm.names = names;
-            vm.node = wfForChildren.nodes[selectedChildrenNodes];
-          }
-    
-          console.log("SVG-drawNodesNodes");      
-          drawNodesNodes(wfForChildren.nodes);
-        });*/
-
     sio.on('taskStateList', (taskStateList) => {
       updateTaskStateTable(taskStateList);
     })
@@ -845,5 +821,9 @@ $(() => {
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - 16 - pos.left + "px");
+
+  $(window).load(function() {
+    sio.emit('getWorkflow', currentWorkFlow);
+  });
 
 });

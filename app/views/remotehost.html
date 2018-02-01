@@ -61,7 +61,9 @@
                 {{ host.username }}</td>
                 <td class="hostWorkDir" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
                 {{ host.path }}</td>
-                <td class="authType" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">PW</td>
+                <td class="authType" id="authTypeLabel" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
+                  <p class="authTypeLabel" v-if="host.keyFile === null || host.keyFile === ''">PW</p>
+                  <p class="authTypeLabel" v-else>Key</p></td>
                 <td class="authPath" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
                 {{ host.keyFile }}</td>
                 <td class="jobScheduler" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
@@ -135,7 +137,7 @@
           <div>Auth Type
             <input type="radio" name="authType" v-model="authType" value="1">
             <span>
-              <label class="authRadioButton">Pass Word</label>
+              <label class="authRadioButton">Password</label>
             </span>
             <input type="radio" name="authType" v-model="authType" value="2">
             <span>

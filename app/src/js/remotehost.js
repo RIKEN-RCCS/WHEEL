@@ -218,5 +218,5 @@ $(() => {
   }
 
   var pos = $("#titleUserName").offset();
-  $("#img_user").css('right', window.innerWidth - 8 - pos.left + "px");
+  $("#img_user").css('right', window.innerWidth - pos.left + "px");
 });
