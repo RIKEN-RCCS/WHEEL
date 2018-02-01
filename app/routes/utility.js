@@ -1,5 +1,6 @@
 const {promisify} = require('util');
 const fs = require('fs');
+const path = require('path');
 
 const ncp = require('ncp').ncp;
 const Mode = require('stat-mode');
@@ -64,8 +65,9 @@ class Utility {
     return `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
   }
 
-
-
+  replacePathsep(pathString){
+    return pathString.replace(new RegExp("\\"+path.win32.sep,"g"), path.posix.sep);
+  }
 }
 
 module.exports=new Utility;

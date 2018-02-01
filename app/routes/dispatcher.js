@@ -223,6 +223,7 @@ class Dispatcher{
         state='failed';
       });
     node.state=state;
+    //TODO fileのデリバリ
     Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
@@ -342,7 +343,7 @@ class Dispatcher{
       let data = await util.promisify(fs.readFile)(path.resolve(srcDir, targetFile));
       data = data.toString();
       paramVec.forEach((e)=>{
-        data=data.replace(`%%${e.key}%%`, e.value.toString());
+        data=data.replace(new RegExp(`%%${e.key}%%`,"g"), e.value.toString());
       });
       let rewriteFile= path.resolve(dstDir, targetFile)
       await util.promisify(fs.writeFile)(rewriteFile, data);
@@ -364,6 +365,7 @@ class Dispatcher{
     }
     return Promise.all(promises)
       .then(()=>{
+        //TODO fileのデリバリ
         node.state='finished'
       });
   }

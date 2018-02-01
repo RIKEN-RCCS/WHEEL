@@ -8,7 +8,7 @@ const glob = require('glob');
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
 const logger = require('../logger');
-const {addXSync, getDateString} = require('./utility');
+const {addXSync, getDateString, replacePathsep} = require('./utility');
 
 let executers=[];
 
@@ -306,7 +306,8 @@ async function createExecuter(task){
     let localWorkingDir = path.relative(task.rwfDir, task.workingDir);
     //TODO getDateStringではなくプロジェクトの実行開始時刻を使った方が良いかも？
     //その場合はtaskのdispatcher側でプロパティに入れておく必要あり
-    task.remoteWorkingDir = path.posix.join(hostinfo.path, getDateString(), localWorkingDir);
+    //TODO localWorkingDirのpathsepを変換しとく必要あり？
+    task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, getDateString(), localWorkingDir));
 
     let arssh = getSsh(config, {connectionRetryDelay: 1000});
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){

@@ -1,6 +1,6 @@
 {
   "name": "WHEEL",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Scientific Workflow system",
   "main": "app/index.js",
   "bin": {
@@ -30,7 +30,7 @@
     "license-report": "license-report"
   },
   "dependencies": {
-    "arssh2-client": "^0.3.5",
+    "arssh2-client": "^0.3.7",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "del": "^3.0.0",
@@ -44,6 +44,7 @@
     "js-cookie": "^2.1.4",
     "jstree": "^3.3.4",
     "ncp": "^2.0.0",
+    "nodegit": "^0.20.3",
     "opener": "^1.4.3",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",

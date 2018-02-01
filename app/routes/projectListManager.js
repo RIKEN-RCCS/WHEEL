@@ -21,10 +21,13 @@ const {projectList} = require('../db/db');
 function getAllProject() {
   return Promise.all(projectList.getAll().map(function(v){
     return util.promisify(fs.readFile)(v.path)
-            .then(function(projectJson){
-              let tmp = JSON.parse(projectJson);
-              return Object.assign(tmp,v)
-            });
+      .then(function(projectJson){
+        let tmp = JSON.parse(projectJson);
+        return Object.assign(tmp,v)
+      })
+      .catch((err)=>{
+        logger.warn(v.path,"read failed but just ignore");
+      });
   }));
 }
 function reorder(newOrder) {
