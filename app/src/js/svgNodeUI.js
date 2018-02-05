@@ -19,6 +19,7 @@ export class SvgNodeUI {
   constructor(svg, sio, node) {
     /** svg.js's instance*/
     this.svg = svg;
+    this.sio = sio;
 
     /** cable instance container */
     this.nextLinks = [];
@@ -117,6 +118,10 @@ export class SvgNodeUI {
       cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
       cable.cable.data('dst', dstIndex);
       this.nextLinks.push(cable);
+
+      dstPlug.on('click', (e) => {
+        this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex });
+      });
     });
     if (this.hasOwnProperty('lower2Plug')) {
       let srcPlug = this.lower2Plug;
@@ -128,6 +133,10 @@ export class SvgNodeUI {
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dstIndex);
         this.elseLinks.push(cable);
+      });
+
+      dstPlug.on('click', (e) => {
+        this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex });
       });
     }
     let receptorPlugs = this.svg.select('.receptorPlug');
@@ -146,6 +155,10 @@ export class SvgNodeUI {
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dst.dstNode);
         this.outputFileLinks.push(cable);
+
+        dstPlug.on('click', (e) => {
+          this.sio.emit('removeFileLink', { src: this.group.data('index'), srcName: srcPlug.data('name'), dst: dst.dstNode, dstName: dst.dstName });
+        });
       });
     });
   }
