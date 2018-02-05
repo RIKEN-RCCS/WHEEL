@@ -1,0 +1,14 @@
+@charset "utf-8";
+body{
+  margin: 0;
+  padding: 0;
+  background-color: #2F2F33;
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;  
+  color: #ffffff;
+  font-size: 14px;
+  height:100%;
+}
+
+p,h1,h2,h3,h4,h5,h6{
+  margin-top: 0;
+}
