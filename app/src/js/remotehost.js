@@ -82,7 +82,7 @@ $(() => {
           return;
         }
 
-        $("#deleteCheckDialog").dialog({ width: 300, title: 'Delete Host', modal: true });
+        $("#deleteCheckDialog").dialog({ width: 334, title: 'Delete Host', modal: true });
       },
       onEditAreaOKButton: function () {
         if (this.authType === '1') {
@@ -141,7 +141,7 @@ $(() => {
           name: !isEmpty(this.newHostInfo.name),
           host: !isEmpty(this.newHostInfo.host),
           username: !isEmpty(this.newHostInfo.username),
-          path: !isEmpty(this.newHostInfo.path)
+          //path: !isEmpty(this.newHostInfo.path)
         }
       },
       hasError: function () {

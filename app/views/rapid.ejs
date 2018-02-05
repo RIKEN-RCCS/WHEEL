@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>Editor</title>
-  <link rel="stylesheet" href="/css/common.css"/>
-  <link rel="stylesheet" href="/css/rapid.css"/>
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/rapid.css" />
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js"></script>
   <script src="/socket.io/socket.io.js"></script>
@@ -14,19 +15,29 @@
 
 <body>
 
-<div class="container">
-  <div id="header">
-    <p>
-    ファイル名：<span id="file_name"><%= filename %></span>　　編集結果を保存→
-      <button id="button_save">Save files</button>
-    </p>
+  <div class="container">
+    <div id="header">
+      <div>
+        <span>ファイル名：</span>
+        <span id="file_name">
+          <%= filename %>
+        </span>
+      </div>
+      <div>
+        <span>編集結果を保存→</span>
+        <span>
+          <button id="button_save">Save files</button>
+        </span>
+      </div>
+
+    </div>
+    <div id="left_pane">
+      <pre id="editor"><%= target %></pre>
+    </div>
+    <% if (parameterEdit){ %>
+      <%-  include('right_pane.ejs'); %>
+        <% } %>
   </div>
-  <div id="left_pane">
-    <pre id="editor"><%= target %></pre>
-  </div>
-  <% if (parameterEdit){ %>
-  <%-  include('right_pane.ejs'); %>
-  <% } %>
-</div>
 </body>
+
 </html>

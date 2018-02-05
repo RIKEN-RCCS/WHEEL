@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="/css/common.css"/>
+  <link rel="stylesheet" href="/css/common.css" />
   <link rel="stylesheet" href="/css/admin.css" />
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="/js/common.js"></script>
@@ -12,95 +13,131 @@
 
 <body>
   <header>
-    <a href="home" class="title">WHEEL</a>
-    <span id="title_username" class="title_username">Yuki Tanaka</span>
-    <button type="button" id="drawer_button" class="drawer_button"><img src="/image/icon_config.png" alt="config"></button>
+    <a href="home" id="title">WHEEL</a>
+    <span id="titleUser">
+      <img src="/image/img_user.png" class="icon" id="img_user" align="middle">
+      <span id="titleUserName" class="titleUserName">Yuki Tanaka</span>
+      <button type="button" id="drawer_button">
+        <img src="/image/btn_menu_n.png" alt="config" class="btn_menu_n">
+      </button>
+    </span>
   </header>
-  <div>
-    <div id="pageName">
-      <p class="admin">Account List</p>
-    </div>
+  <div id="pageNameArea">
+    <label id="pageName">Account List</label>
   </div>
-      
+
   <main>
-  <div id="view">
-    <div id="accountPropertyTitleArea">
-      <table id="titleTable">
-        <tr id="accountInfo">
-          <th class="userName">User Name</th>
-          <th class="workDir">Work Dir</th>
-          <th class="description">Description</th>
-        </tr>
-      </table>
-    </div>
-    <!-- Account List Area -->
-    <div id="accountPropertyArea">
-      <table id="propertyTable">
-        <template v-for="(account, index) in accountList">            
-          <tr id="accountListInfo">
-            <td class="userName" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >{{ account.name }}</td>
-            <td class="workDir" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >{{ account.workDirectory}}</td>
-            <td class="description" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" >{{ account.description }}
-            </td>
-          </tr>         
-        </template>
-      </table>
-    </div>
-    <!-- Error Message Area -->
-    <div id="errorMessage" v-show="errorMessage != ''">{{errorMessage}}</div>
-    <!-- Button Area -->
-    <div id="buttonArea">
-      <button class="buttonAreaButton" v-on:click="onAddButton">New</button>
-      <button class="buttonAreaButton" v-on:click="onRemoveButton">Delete</button>
-    </div>
-    <!-- Edit Are -->
-    <div id="accountRegistration">Account Registration</div>    
-
-    <!-- New Account Dialog -->
-    <div id="newAccountDialog">
-      <div id="acountField">
-        <span><label class="fieldLabel">Account Name</label></span>
-        <input type="text" v-model.lazy.trim="newAccount.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}" class="editArea">
-        <p v-if="isDuplicate"  class="dialogStateError">duplicated Account Name</p>
-        <p v-if="!validation.name" class="dialogStateError">empty is not allowed.</p>
-      </div>
-      <div id="passwordField">
-        <span><label class="fieldLabel">Password</label></span>
-        <input type="password" v-model.lazy.trim="newAccount.password" v-bind:class="{'ui-state-error': !validation.password}" class="editArea">
-        <p v-if="!validation.password" class="dialogStateError">empty is not allowed.</p>
-      </div>
-      <div id="workdirField">
-        <span><label class="fieldLabel">Work Directory</label></span>
-        <input type="text" v-model.lazy.trim="newAccount.workDirectory" v-bind:class="{'ui-state-error': !validation.name}" class="editArea">
-        <p v-if="!validation.workDirectory" class="dialogStateError">empty is not allowed.</p>
-      </div>
-      <div id="descriptionField">
-        <span><label>Description</label></span>
-        <div id="testareafieldLabel"><textarea v-model.lazy.trim="newAccount.description" class="editArea"></textarea></div>
-      </div>
-      <button class="editAreaButton" v-on:click="onEditAreaOKButton" v-bind:disabled="hasError">Confirm</button>
-      <button class="editAreaButton" v-on:click="onEditAreaCancelButton">Cancel</button>
-    </div>
-
-    <!-- Delete Check Dialog -->
-    <div id="deleteCheckDialog" style="display:none;">
-      <div>
-        <div class="deleteCheckMessage">
-          Are you sure want to completely delete this account?
+    <div id="view">
+      <div id="accountListArea">
+        <div id="accountTitleArea">
+          <table id="titleTable">
+            <tr id="accountInfo">
+              <th class="userName">User Name</th>
+              <th class="workDir">Work Dir</th>
+              <th class="description">Description</th>
+            </tr>
+          </table>
         </div>
-        <button v-on:click="onDialogOKButton">OK</button>
-        <button v-on:click="onDialogCancelButton">Cancel</button>
+        <!-- Account List Area -->
+        <div id="accountPropertyArea">
+          <table id="propertyTable">
+            <template v-for="(account, index) in accountList">
+              <tr id="accountListInfo">
+                <td class="userName" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">{{ account.name }}</td>
+                <td class="workDir" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">{{ account.workDirectory}}</td>
+                <td class="description" v-bind:key="account.name" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">{{ account.description }}
+                </td>
+              </tr>
+            </template>
+          </table>
+        </div>
       </div>
-    </div>
-    <!-- 右ドロアーメニュー -->
-    <div id="drawer_menu" class="drawer_menu" data-position="right">
-      <!-- Put your off canvas content here -->
-      <ul>
-        <li><a class="drawer_menu_item" href="/login">log out</a></li>
-      </ul>
-    </div>
-  </div>
-  </main>  
-</body>
-</html>
 
+      <!-- Error Message Area -->
+      <div id="errorMessage" v-show="errorMessage != ''">{{errorMessage}}</div>
+      <!-- Button Area -->
+      <div id="buttonArea">
+        <button class="buttonAreaButton" v-on:click="onAddButton">
+          <img src="/image/btn_addHost_n.png" class="img_host_btn" id="host_add_button" />
+          <label class="hostButtonLabel" id="hostAddButtonLabel">New</label>
+        </button>
+        <button class="buttonAreaButton" v-on:click="onRemoveButton">
+          <img src="/image/btn_hostDelete_n.png" class="img_host_btn" id="host_delete_button" />
+          <label class="hostButtonLabel" id="hostDeleteButtonLabel">Delete</label>
+        </button>
+      </div>
+      <!-- Edit Are -->
+      <div id="accountRegistration">
+        <label id="accountEditAreaTitle">Account Registration</label>
+      </div>
+
+      <!-- New Account Dialog -->
+      <div id="newAccountDialog">
+        <div id="acountField">
+          <span>
+            <label class="fieldLabel">Account Name</label>
+          </span>
+          <input type="text" v-model.lazy.trim="newAccount.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}"
+            class="editArea">
+          <p v-if="isDuplicate" class="dialogStateError">duplicated Account Name</p>
+          <p v-if="!validation.name" class="dialogStateError">empty is not allowed.</p>
+        </div>
+        <div id="passwordField">
+          <span>
+            <label class="fieldLabel">Password</label>
+          </span>
+          <input type="password" v-model.lazy.trim="newAccount.password" v-bind:class="{'ui-state-error': !validation.password}" class="editArea">
+          <p v-if="!validation.password" class="dialogStateError">empty is not allowed.</p>
+        </div>
+        <div id="workdirField">
+          <span>
+            <label class="fieldLabel">Work Directory</label>
+          </span>
+          <input type="text" v-model.lazy.trim="newAccount.workDirectory" v-bind:class="{'ui-state-error': !validation.name}" class="editArea">
+          <p v-if="!validation.workDirectory" class="dialogStateError">empty is not allowed.</p>
+        </div>
+        <div id="descriptionField">
+          <span>
+            <label id="descriptionLabel">Description</label>
+          </span>
+          <span id="testareafieldLabel">
+            <textarea v-model.lazy.trim="newAccount.description" id="descriptionArea"></textarea>
+          </span>
+        </div>
+      </div>
+      <!-- edit area button -->
+      <div id="confirmCancelButtonArea">
+        <button class="editAreaButton" id="cancelButton" v-on:click="onEditAreaCancelButton">Cancel</button>
+        <button class="editAreaButton" id="confirmButton" v-on:click="onEditAreaOKButton" v-bind:disabled="hasError">Confirm</button>
+      </div>
+
+      <!-- Delete Check Dialog -->
+      <div id="deleteCheckDialog" class="dialogTextbox" style="display:none;">
+        <div>
+          <div class="deleteCheckMessage">
+            Are you sure want to completely delete this account?
+          </div>
+          <div id="dialogButtonArea">
+            <button class="dialogButton" id="dialogOkButton" v-on:click="onDialogOKButton">OK</button>
+            <button class="dialogButton" id="dialogCancelButton" v-on:click="onDialogCancelButton">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <!-- 右ドロアーメニュー -->
+      <div id="drawer_menu" class="drawer_menu" data-position="right">
+        <!-- Put your off canvas content here -->
+        <div id="drawerMenuContents">
+          <p id="menuTitle">Menu</p>
+          <ul id="drawerMenuList">
+            <li>
+              <a class="drawer_menu_item" href="/login">log out</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</body>
+
+</html>

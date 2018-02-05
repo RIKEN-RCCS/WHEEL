@@ -1284,6 +1284,34 @@ tspan{
     background-color: #222226;
 }
 
+/* file rename/delete dialog*/
+#fileRenameLabel{
+    margin: 8px 0 8px 0;
+    color: #FFFFFF;
+}
+
+#newName{
+    background-color: #000000;
+    color: #FFFFFF;
+    border: none;
+    width: 282px;
+    margin-top: 4px;
+    height: 20px;
+    padding-left: 5px;
+}
+
+#fileDeleteLabel, #deleteMessage{
+    margin: 8px 0 8px 0;
+    color: #FFFFFF;    
+    padding: 0;
+}
+
+#deleteMessage{
+    margin-top: 6px;
+    color: #FFFFFF;    
+    padding: 0;
+}
+
 .dialogTitle{
     margin: 8px 0 8px 0;
     color: #FFFFFF;
@@ -1324,7 +1352,7 @@ tspan{
     top: 12px;
 }
 
-.ui-dialog-buttonset button{
+.ui-button{
     background-color: #6F6F77;
     font-size: 14px !important;
     width: 71px;
@@ -1334,6 +1362,17 @@ tspan{
     border-radius: 0px;
     border: none;    
 }
+/* 
+.ui-dialog-buttonset button{
+    background-color: #6F6F77;
+    font-size: 14px !important;
+    width: 71px;
+    height: 24px;
+    color: #FFFFFF;
+    line-height: 0px;
+    border-radius: 0px;
+    border: none;    
+} */
 
 .viewNodes{
     display: none;

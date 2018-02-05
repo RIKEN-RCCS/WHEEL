@@ -241,6 +241,9 @@ $(() => {
 
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
+      console.log(projectJson.name);
+      console.log(projectJson.state);
+
       // 仮で現在日時を表示
       let now = new Date();
       let date = '' + now.getFullYear() + '/' + now.getMonth() + '/' + now.getDate() + ' ' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2);
@@ -300,11 +303,6 @@ $(() => {
         queueSelectField.val(selectedHostQueue);
       });
     });
-    /* 
-        sio.emit('getWorkflow', currentWorkFlow);
-    
-        //一先ずここでemitしとく
-        sio.emit('getProjectJson', rootWorkflow); */
 
     //setup log reciever
     logReciever(sio);
@@ -738,7 +736,6 @@ $(() => {
   }
 
   $('#useJobSchedulerFlagField').change(function () {
-    //let checkedValue = $('#queueSelectField:checked').val();
     console.log("checkedValue");
 
     if ($('#useJobSchedulerFlagField').prop('checked')) {
@@ -753,7 +750,6 @@ $(() => {
       $('#queueSelectField').css('color', '#000000');
     }
   });
-
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
@@ -780,6 +776,7 @@ $(() => {
         });
       });
   });
+
   $('#fileUploadButton').click(function () {
     $('#fileSelector').click();
   });
@@ -821,9 +818,5 @@ $(() => {
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - 16 - pos.left + "px");
-
-  $(window).load(function() {
-    sio.emit('getWorkflow', currentWorkFlow);
-  });
 
 });

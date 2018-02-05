@@ -100,7 +100,7 @@ export default class {
         callback: function () {
           var path = $(this).data('path');
           var oldName = $(this).data('name');
-          var html = '<p>input new filename</p><input type="text" id="newName">';
+          var html = '<p id="fileRenameLabel">input new filename</p><input type="text" id="newName">';
           dialogWrapper('#dialog', html).done(function () {
             var newName = $('#newName').val();
             var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
@@ -114,7 +114,7 @@ export default class {
         callback: function () {
           var filename = $(this).data('name');
           var target = $(this).data('path') + '/' + filename;
-          var html = 'Are you sure you want to delete this file?';
+          var html = '<p id="fileDeleteLabel">Delete file</p><div id="deleteMessage">Are you sure you want to delete this file?</div>';
           dialogWrapper('#dialog', html).done(function () {
             $(fileList).remove(`:contains(${filename})`);
             socket.emit('removeFile', target);

@@ -1,55 +1,66 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="/css/common.css"/>
-    <link rel="stylesheet" href="/css/home.css"/>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/common.js"></script>
-    <script src="/js/home.js"></script>
-    <title>WHEEL home</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/home.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/home.js"></script>
+  <title>WHEEL home</title>
 </head>
 
 <body>
   <!-- header始まり -->
   <header>
-    <p class="title">WHEEL</p>  
-    <span id="title_username" class="title_username">Yuki Tanaka</span>
-    <button type="button" id="drawer_button" class="drawer_button"><img src="/image/icon_config.png" alt="config"></button>
+    <a href="home" id="title">WHEEL</a>
+    <span id="titleUser">
+      <img src="/image/img_user.png" class="icon" id="img_user" align="middle">
+      <span id="titleUserName" class="titleUserName">Yuki Tanaka</span>
+      <button type="button" id="drawer_button">
+        <img src="/image/btn_menu_n.png" alt="config" class="btn_menu_n">
+      </button>
+    </span>
   </header>
+  <div id="pageNameArea">
+    <label id="pageName">Home</label>
+  </div>
 
   <!-- dialogボタンエリア -->
-  <div>
-    <div id="html_name">
-      <p class="home">Home</p>
-    </div>
-  </div>
-  <div id="fileControllArea" >
-    <button id="newButton" class="fileControllButton">New</button>
-    <button id="importButton" class="fileControllButton">Import</button>
+  <div id="fileControllArea">
+    <button id="newButton" class="buttonAreaButton">New</button>
+    <button id="importButton" class="buttonAreaButton">Import</button>
   </div>
   <div id="dialog"></div>
-  <div id="dialogContext"></div>  
+  <div id="dialogContext"></div>
 
   <main>
-    <div id="fieldName">
-    </div>
-      <section>
-        <div id="projectField">
-          <span id="projectName">Project Name</span>
-          <span id="projectDescription">Description</span>
-        </div>
-        <!-- Project List -->
-        <div id="projectList"></div>
-      </section>
+    <section id="projectField">
+      <div id="projectPropertyField">
+        <span id="projectName">Project Name</span>
+        <span id="projectDescription">Description</span>
+      </div>
+      <!-- Project List -->
+      <div id="projectList"></div>
+    </section>
   </main>
   <!-- 右ドロアーメニュー -->
   <div id="drawer_menu" class="drawer_menu" data-position="right">
-    <ul>
-      <li><a class="drawer_menu_item" href="/remotehost">remotehost</a></li>
-      <li><a class="drawer_menu_item" href="/login">log out</a></li>
-    </ul>
+    <!-- Put your off canvas content here -->
+    <div id="drawerMenuContents">
+      <p id="menuTitle">Menu</p>
+      <ul id="drawerMenuList">
+        <li>
+          <a class="drawer_menu_item" href="/remotehost">remotehost</a>
+        </li>
+        <li>
+          <a class="drawer_menu_item" href="/login">log out</a>
+        </li>
+      </ul>
+    </div>
   </div>
+
 
 </body>
 

@@ -49,29 +49,30 @@
             <template v-for="(host, index) in hostList">
               <tr id="hostListInfo">
                 <td class="label" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.name }}</td>
-                <td v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                  <button class="connectionCheck" v-on:click="test(index)">{{ buttonState(index) }}</button>
+                  {{ host.name }}</td>
+                <td class="connectionCheck" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
+                  <button class="connectionCheckButton" v-on:click="test(index)">{{ buttonState(index) }}</button>
                 </td>
                 <td class="hostName" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.host }}</td>
+                  {{ host.host }}</td>
                 <td class="port" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.port }}</td>
+                  {{ host.port }}</td>
                 <td class="userID" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.username }}</td>
+                  {{ host.username }}</td>
                 <td class="hostWorkDir" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.path }}</td>
+                  {{ host.path }}</td>
                 <td class="authType" id="authTypeLabel" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
                   <p class="authTypeLabel" v-if="host.keyFile === null || host.keyFile === ''">PW</p>
-                  <p class="authTypeLabel" v-else>Key</p></td>
+                  <p class="authTypeLabel" v-else>Key</p>
+                </td>
                 <td class="authPath" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.keyFile }}</td>
+                  {{ host.keyFile }}</td>
                 <td class="jobScheduler" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.jobscheduler }}</td>
+                  {{ host.jobScheduler }}</td>
                 <td class="jobSubmissionLimit" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.numJob }}</td>
+                  {{ host.numJob }}</td>
                 <td class="queue" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)">
-                {{ host.queue }}</td>
+                  {{ host.queue }}</td>
               </tr>
             </template>
           </table>
@@ -81,16 +82,27 @@
       <div id="errorMessage" v-show="errorMessage != ''">{{errorMessage}}</div>
       <!-- Button Area -->
       <div id="buttonArea">
-        <button class="buttonAreaButton" v-on:click="onAddButton">New</button>
-        <button class="buttonAreaButton" v-on:click="onCopyButton">Copy</button>
-        <button class="buttonAreaButton" v-on:click="onRemoveButton">Delete</button>
+        <button class="buttonAreaButton" v-on:click="onAddButton">
+          <img src="/image/btn_addHost_n.png" class="img_host_btn" id="host_add_button" />
+          <label class="hostButtonLabel" id="hostAddButtonLabel">New</label>
+        </button>
+        <button class="buttonAreaButton" v-on:click="onCopyButton">
+          <img src="/image/btn_hostCopy_n.png" class="img_host_btn" id="host_copy_button" />
+          <label class="hostButtonLabel" id="hostCopyButtonLabel">Copy</label>
+        </button>
+        <button class="buttonAreaButton" v-on:click="onRemoveButton">
+          <img src="/image/btn_hostDelete_n.png" class="img_host_btn" id="host_delete_button" />
+          <label class="hostButtonLabel" id="hostDeleteButtonLabel">Delete</label>
+        </button>
       </div>
       <!-- Edit Area -->
-      <div id="hostRegistration">Host Registration</div>
+      <div id="hostRegistration">
+        <label id="hostEditAreaTitle">Host Registration</label>
+      </div>
       <!-- New Remote Host Dialog -->
       <div id="newHostDialog">
         <div id="leftEditArea">
-          <div>
+          <div id="labelDiv">
             <span>
               <label class="fieldLabel">Label</label>
             </span>
@@ -99,26 +111,26 @@
             <p v-if="isDuplicate" class="dialogStateError">duplicated label</p>
             <p v-if="!validation.name" class="dialogStateError">empty "Label" is not allowed</p>
           </div>
-          <div>
+          <div id="connectionCheckDiv">
             <span>
               <label class="fieldLabel">Connection Check</label>
             </span>
-            <button class="connectionCheck" v-on:click="test(index)">{{ buttonState(index) }}</button>
+            <button class="connectionCheckButton" v-on:click="test(index)">{{ buttonState(index) }}</button>
           </div>
-          <div>
+          <div id="hostNameDiv">
             <span>
               <label class="fieldLabel">Host Name</label>
             </span>
             <input type="text" v-model.lazy.trim="newHostInfo.host" v-bind:class="{'ui-state-error': !validation.host}" class="editArea">
             <p v-if="!validation.host" class="dialogStateError">empty "Host Name" is not allowed</p>
           </div>
-          <div>
+          <div id="portDiv">
             <span>
               <label class="fieldLabel">Port</label>
             </span>
             <input type="number" v-model.number="newHostInfo.port" class="editArea">
           </div>
-          <div>
+          <div id="userIdDiv">
             <span>
               <label class="fieldLabel">User ID</label>
             </span>
@@ -129,19 +141,21 @@
             <span>
               <label class="fieldLabel">Host Work Dir</label>
             </span>
-            <input type="text" v-model.lazy.trim="newHostInfo.path" v-bind:class="{'ui-state-error': !validation.path}" class="editArea">
-            <p v-if="!validation.path" class="dialogStateError">empty "Host Work Dir" is not allowed</p>
+            <input type="text" v-model.lazy.trim="newHostInfo.path" class="editArea">
           </div>
         </div>
         <div id="rightEditArea">
-          <div>Auth Type
-            <input type="radio" name="authType" v-model="authType" value="1">
-            <span>
-              <label class="authRadioButton">Password</label>
-            </span>
-            <input type="radio" name="authType" v-model="authType" value="2">
-            <span>
-              <label class="authRadioButton">Public Key</label>
+          <div>
+            <label>Auth Type</label>
+            <span id="radioButtonArea">
+              <input type="radio" name="authType" v-model="authType" value="1">
+              <span>
+                <label class="authRadioButton">Password</label>
+              </span>
+              <input type="radio" name="authType" v-model="authType" value="2">
+              <span>
+                <label class="authRadioButton">Public Key</label>
+              </span>
             </span>
           </div>
           <div v-show="authType === '2'">
@@ -149,7 +163,7 @@
               <label class="fieldLabel">KeyFile</label>
             </span>
             <input type="text" v-model="newHostInfo.keyFile" disabled class="editArea">
-            <button v-on:click="browse">Browse</button>
+            <button id="browseButton" v-on:click="browse">Browse</button>
           </div>
           <div>
             <span>
@@ -172,18 +186,20 @@
         </div>
       </div>
       <!-- Edit Button Area -->
-      <div>
-        <button class="editAreaButton" v-on:click="onEditAreaOKButton" v-bind:disabled="hasError">Confirm</button>
-        <button class="editAreaButton" v-on:click="onEditAreaCancelButton">Cancel</button>
+      <div id="confirmCancelButtonArea">
+        <button class="editAreaButton" id="cancelButton" v-on:click="onEditAreaCancelButton">Cancel</button>
+        <button class="editAreaButton" id="confirmButton" v-on:click="onEditAreaOKButton" v-bind:disabled="hasError">Confirm</button>
       </div>
       <!-- Delete Check Dialog -->
-      <div id="deleteCheckDialog" style="display:none;">
+      <div id="deleteCheckDialog" class="dialogTextbox" style="display:none;">
         <div>
           <div class="deleteCheckMessage">
-            Are you sure want to completely delete this Host?
+            Are you sure want to completely delete this host?
           </div>
-          <button v-on:click="onDialogOKButton">OK</button>
-          <button v-on:click="onDialogCancelButton">Cancel</button>
+          <div id="dialogButtonArea">
+            <button class="dialogButton" id="dialogOkButton" v-on:click="onDialogOKButton">OK</button>
+            <button class="dialogButton" id="dialogCancelButton" v-on:click="onDialogCancelButton">Cancel</button>
+          </div>
         </div>
       </div>
       <!-- Delete Check Dialog -->

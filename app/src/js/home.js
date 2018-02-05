@@ -125,4 +125,7 @@ $(() => {
     $('#drawer_menu').mouseleave(function () {
         $('#drawer_menu').toggleClass('action', false);
     });
+
+    var pos = $("#titleUserName").offset();
+    $("#img_user").css('right', window.innerWidth - pos.left + "px");
 });
