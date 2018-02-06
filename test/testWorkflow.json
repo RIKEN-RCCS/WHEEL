@@ -8,20 +8,29 @@
     "next": [],
     "inputFiles": [
         {
-            "name": "a",
-            "srcNode": 0,
-            "srcName": "c"
+            "name": "b",
+            "srcNode": 1,
+            "srcName": "f"
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
         }
     ],
     "outputFiles": [
         {
-            "name": "b",
+            "name": "a",
             "dst": [
               {
-                "dstNode": 1,
-                "dstName": "f"
+                "dstNode": 0,
+                "dstName": "c"
               }
             ]
+        },
+        {
+          "name": "newOutput",
+          "dst": []
         }
     ],
     "state": "not-started",
@@ -38,12 +47,17 @@
             "path": "./task0",
             "index": 0,
             "previous": [],
-            "next": [],
+            "next": [1],
             "inputFiles": [
                 {
                     "name": "c",
                     "srcNode": "parent",
                     "srcName": "a"
+                },
+                {
+                    "name": "newInput",
+                    "srcNode": null,
+                    "srcName": null
                 }
             ],
             "outputFiles": [
@@ -76,7 +90,7 @@
             "description": null,
             "path": "./task1",
             "index": 1,
-            "previous": [],
+            "previous": [0],
             "next": [],
             "inputFiles": [
                 {
@@ -94,6 +108,10 @@
                             "dstName": "b"
                         }
                     ]
+                },
+                {
+                    "name": "newOutput",
+                    "dst": []
                 }
             ],
             "state": "not-started",

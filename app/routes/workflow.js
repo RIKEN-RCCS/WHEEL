@@ -123,14 +123,14 @@ async function readWorkflow(filename){
   return JSON.parse(await promisify(fs.readFile)(filename));
 }
 
-async function onWorkflowRequest(sio, sessionID, argWorkflowFilename){
+async function onWorkflowRequest(sio, label, argWorkflowFilename){
   let workflowFilename=path.resolve(argWorkflowFilename);
   logger.debug('Workflow Request event recieved: ', workflowFilename);
-  await setCwf(sessionID, workflowFilename);
-  let rt = Object.assign(getCwf(sessionID));
+  await setCwf(label, workflowFilename);
+  let rt = Object.assign(getCwf(label));
   let promises = rt.nodes.map((child)=>{
     if(child && hasChild(child)){
-      return readWorkflow(path.join(getCurrentDir(sessionID), child.path, child.jsonFile))
+      return readWorkflow(path.join(getCurrentDir(label), child.path, child.jsonFile))
         .then((tmp)=>{
           child.nodes=tmp.nodes;
         })
@@ -140,51 +140,52 @@ async function onWorkflowRequest(sio, sessionID, argWorkflowFilename){
   sio.emit('workflow', rt);
 }
 
-async function onCreateNode(sio, sessionID, msg){
+async function onCreateNode(sio, label, msg){
   logger.debug('create event recieved: ', msg);
-  let dirName=path.resolve(getCurrentDir(sessionID),msg.type);
+  let dirName=path.resolve(getCurrentDir(label),msg.type);
   let actualDirname = await makeDir(dirName, 0)
-  let tmpPath=path.relative(getCurrentDir(sessionID),actualDirname);
+  let tmpPath=path.relative(getCurrentDir(label),actualDirname);
   if(! tmpPath.startsWith('.')){
     tmpPath='./'+tmpPath;
   }
-  let node=component.factory(msg.type, msg.pos, getCwfFilename(sessionID));
+  let node=component.factory(msg.type, msg.pos, getCwfFilename(label));
   node.path=tmpPath;
   node.name=path.basename(actualDirname);
-  node.index=pushNode(sessionID, node);
+  node.index=pushNode(label, node);
   logger.debug('node created: ',node);
   try{
     if(hasChild(node)){
-      const filename = path.resolve(getCurrentDir(sessionID),node.path,node.jsonFile)
+      const filename = path.resolve(getCurrentDir(label),node.path,node.jsonFile)
       await promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
     }
-    await write(sessionID);
-    sio.emit('workflow', getCwf(sessionID));
+    await write(label);
+    sio.emit('workflow', getCwf(label));
   }catch(err){
     logger.error('node create failed: ', err);
   }
 }
 
-async function updateValue(sessionID, node, property, value){
+async function updateValue(label, node, property, value){
   node[property]=value;
   if(hasChild(node)){
-    const childWorkflowFilename= path.resolve(getCurrentDir(sessionID), node.path, node.jsonFile);
+    const childWorkflowFilename= path.resolve(getCurrentDir(label), node.path, node.jsonFile);
     const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
     childWorkflow[property] = value;
     return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
   }
 }
-async function addValue(sessionID, node, property, value){
+async function addValue(label, node, property, value){
   node[property].push(value);
   if(hasChild(node)){
-    const childWorkflowFilename= path.resolve(getCurrentDir(sessionID), node.path, node.jsonFile);
+    const childWorkflowFilename= path.resolve(getCurrentDir(label), node.path, node.jsonFile);
     const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
+    //TODO inputFilesとoutputFilesは逆転させる必要あり!!
     childWorkflow[property].push(value);
     return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
   }
 }
 
-async function delValue(sessionID, node, property, value){
+async function delValue(label, node, property, value){
   let index = node[property].findIndex((e)=>{
     if(e===value) return true
     // for input/outputFiles
@@ -192,51 +193,52 @@ async function delValue(sessionID, node, property, value){
   })
   node[property][index]=null;
   if(hasChild(node)){
-    const childWorkflowFilename = path.resolve(getCurrentDir(sessionID), node.path, node.jsonFile);
+    const childWorkflowFilename = path.resolve(getCurrentDir(label), node.path, node.jsonFile);
     const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
+    //TODO inputFilesとoutputFilesは逆転させる必要あり!!
     childWorkflow[property][index]=null;
     return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
   }
 }
 
-async function onUpdateNode(sio, sessionID, msg){
+async function onUpdateNode(sio, label, msg){
   logger.debug('updateNode event recieved: ', msg);
   let index=msg.index;
   let property=msg.property;
   let value=msg.value;
   let cmd=msg.cmd;
 
-  let targetNode=getNode(sessionID, index);
+  let targetNode=getNode(label, index);
   if(property in targetNode){
     switch(cmd){
       case 'update':
-        await updateValue(sessionID, targetNode, property, value);
+        await updateValue(label, targetNode, property, value);
         break;
       case 'add':
         if(Array.isArray(targetNode[property])){
-          await addValue(sessionID, targetNode, property, value);
+          await addValue(label, targetNode, property, value);
         }
         break;
       case 'del':
         if(Array.isArray(targetNode[property])){
-          await delValue(sessionID, targetNode, property, value);
+          await delValue(label, targetNode, property, value);
         }
         break;
     }
     cleanUpNode(targetNode);
     try{
-      await write(sessionID)
-      sio.emit('workflow', getCwf(sessionID));
+      await write(label)
+      sio.emit('workflow', getCwf(label));
     }catch(err){
       logger.error('node update failed: ', err);
     }
   }
 }
 
-async function onRemoveNode(sio, sessionID, index){
+async function onRemoveNode(sio, label, index){
   logger.debug('removeNode event recieved: ', index);
-  let target=getNode(sessionID, index);
-  let dirName=path.resolve(getCurrentDir(sessionID),target.path);
+  let target=getNode(label, index);
+  let dirName=path.resolve(getCurrentDir(label),target.path);
   await del(dirName, { force: true })
     .catch(function () {
       logger.warn('directory remove failed: ', dirName);
@@ -250,7 +252,7 @@ async function onRemoveNode(sio, sessionID, index){
      */
     // remove index from next property of previous tasks
     target.previous.forEach((p)=>{
-      let pNode=getNode(sessionID, p);
+      let pNode=getNode(label, p);
       pNode.next=pNode.next.filter((e)=>{
         return e!==index;
       });
@@ -262,7 +264,7 @@ async function onRemoveNode(sio, sessionID, index){
     });
     // remove index from previous property of next tasks
     target.next.forEach((p)=>{
-      let nNode=getNode(sessionID, p);
+      let nNode=getNode(label, p);
       nNode.previous=nNode.previous.filter((e)=>{
         return e!==index;
       });
@@ -270,7 +272,7 @@ async function onRemoveNode(sio, sessionID, index){
     // remove index from previous property of next tasks (else)
     if(target.else != null){
       target.else.forEach((p)=>{
-        let nNode=getNode(sessionID, p);
+        let nNode=getNode(label, p);
         nNode.previous=nNode.previous.filter((e)=>{
           return e!==index;
         });
@@ -278,7 +280,7 @@ async function onRemoveNode(sio, sessionID, index){
     }
     // remove index from outputFiles property of tasks which have file dependency
     target.inputFiles.forEach((p)=>{
-      let pFNode=getNode(sessionID, p.srcNode);
+      let pFNode=getNode(label, p.srcNode);
       pFNode.outputFiles.forEach((outputFile)=>{
         outputFile.dst=outputFile.dst.filter((e)=>{
           return e.dstNode!==index;
@@ -288,7 +290,7 @@ async function onRemoveNode(sio, sessionID, index){
     // remove index from inputFiles property of tasks which have file dependency
     target.outputFiles.forEach((outputFile)=>{
       outputFile.dst.forEach((dst)=>{
-        let nFNode=getNode(sessionID, dst.dstNode);
+        let nFNode=getNode(label, dst.dstNode);
         nFNode.inputFiles.forEach((e)=>{
           if(e.srcNode === index){
             e.srcNode = null;
@@ -299,232 +301,260 @@ async function onRemoveNode(sio, sessionID, index){
     });
 
     //remove target node
-    removeNode(sessionID, index);
+    removeNode(label, index);
 
   try{
-    await write(sessionID)
-    sio.emit('workflow', getCwf(sessionID));
+    await write(label)
+    sio.emit('workflow', getCwf(label));
   }catch(err){
     logger.error('remove node failed: ', err);
   }
 }
-async function onAddLink(sio, sessionID, msg){
+async function onAddLink(sio, label, msg){
   logger.debug('addLink event recieved: ', msg);
   let src=msg.src;
   let dst=msg.dst;
-  if(!getNode(sessionID, src) || !getNode(sessionID, dst)){
+  if(!getNode(label, src) || !getNode(label, dst)){
     logger.error('illegal addLink request', msg);
     return
   }
   let isElse=msg.isElse;
   if(isElse){
-    getNode(sessionID, src).else.push(dst);
+    getNode(label, src).else.push(dst);
   }else{
-    getNode(sessionID, src).next.push(dst);
+    getNode(label, src).next.push(dst);
   }
-  getNode(sessionID, dst).previous.push(src);
+  getNode(label, dst).previous.push(src);
 
   try{
-    await write(sessionID)
-    sio.emit('workflow', getCwf(sessionID));
+    await write(label)
+    sio.emit('workflow', getCwf(label));
   }catch(err){
     logger.error('add link failed: ', err);
   }
 }
-function onAddFileLink(sio, sessionID, msg){
-  logger.debug('addFileLink event recieved: ', msg);
+
+function onRemoveLink(sio, label, msg){
+  logger.debug('removeLink event recieved:', msg);
   let src=msg.src;
   let dst=msg.dst;
-  if((!getNode(sessionID, src) && src !== 'parent')||( !getNode(sessionID, dst) && dst !=='parent')){
-    logger.error('illegal addFileLink request', msg);
-    return
-  }
-
-  const srcNode=src !== 'parent' ? getNode(sessionID, parseInt(src)) : getCwf(sessionID);
-  const dstNode=dst !== 'parent' ? getNode(sessionID, parseInt(dst)) : getCwf(sessionID);
-  const srcName = msg.srcName
-  const dstName = msg.dstName
-
-  // add outputFile entry on src node.
-  let srcEntry = srcNode.outputFiles.find((e)=>{
-    return e.name === srcName;
-  });
-  srcEntry.dst.push({"dstNode": dst, "dstName": dstName});
-  // get inputFile entry on dst node.
-  let dstEntry = dstNode.inputFiles.find((e)=>{
-    return e.name === dstName;
-  });
-  // remove outputFiles entry from former src node
-  if(dstEntry.srcNode != null){
-    let formerSrcNode = getNode(sessionID, dstEntry.srcNode);
-    let formerSrcEntry = formerSrcNode.outputFiles.find(function(e){
-      return e.name === dstEntry.srcName
-    });
-    formerSrcEntry.dst = formerSrcEntry.dst.filter(function(e){
-      return !(e.dstNode === dst && e.dstName === dstName);
-    });
-  }
-  // replace inputFiles entry on dst node.
-  dstEntry.srcNode=src;
-  dstEntry.srcName=srcName;
-
-  write(sessionID)
-    .then(()=>{
-      sio.emit('workflow', getCwf(sessionID));
-    })
-    .catch((err)=>{
-      logger.error('add filelink failed: ', err);
-    });
-}
-function onRemoveLink(sio, sessionID, msg){
-  logger.warn('removeLink event recieved:', msg);
-  let src=msg.src;
-  let dst=msg.dst;
-  if(!getNode(sessionID, src) || !getNode(sessionID, dst)){
+  if(!getNode(label, src) || !getNode(label, dst)){
     logger.error('illegal addLink request', msg);
     return
   }
 
-  let srcNode=getNode(sessionID, src);
+  let srcNode=getNode(label, src);
   srcNode.next=srcNode.next.filter((e)=>{
     return e!==dst;
   });
-  let dstNode=getNode(sessionID, dst);
+  let dstNode=getNode(label, dst);
   dstNode.previous=dstNode.previous.filter((e)=>{
     return e!==src;
   });
 
-  write(sessionID)
+  write(label)
     .then(()=>{
-      sio.emit('workflow', getCwf(sessionID));
+      sio.emit('workflow', getCwf(label));
     })
     .catch((err)=>{
       logger.error('remove link failed: ', err);
     });
 }
 
-function clearInputFile(node, target){
-  node.inputFiles.forEach((inputFile)=>{
-    if(inputFile.srcNode === target){
-      inputFile.srcNode = null;
-      inputFile.srcName = null;
-    }
-  });
+function getFileLinkTargetNode(label, index){
+  if(index === 'parent'){
+    return getCwf(label);
+  }else if(Number.isInteger(index)){
+    return getNode(label, parseInt(index));
+  }else{
+    logger.error('illegal index specified');
+    return null
+  }
 }
-function clearOutputFile(node, target){
-  node.outputFiles.forEach((outputFile)=>{
-    outputFile.dst=outputFile.dst.filter((e)=>{
-      return e.dstNode !== target;
-    });
+
+function hasName(name, e, i, a){
+  return e.name === name;
+}
+
+function addOutputFile(outputFiles, name, dstNode, dstName){
+  const outputFile = outputFiles.find(hasName.bind(null, name));
+  if(! outputFile){
+    logger.error(name, 'not found in outputFiles');
+    return
+  }
+  const index = outputFile.dst.findIndex((e)=>{
+    return e.dstNode === dstNode && e.dstName === dstName;
+  });
+  if(index !== -1) return;
+
+  const newEntry={"dstNode": dstNode, "dstName": dstName};
+  outputFile.dst.push(newEntry);
+}
+function addInputFile(inputFiles, name, srcNode, srcName){
+  const inputFile = inputFiles.find(hasName.bind(null, name));
+  if(! inputFile){
+    logger.error(name, 'not found in inputFiles');
+    return [null, null];
+  }
+  const oldSrcNode = inputFile.srcNode;
+  const oldSrcName = inputFile.srcName;
+  if(oldSrcNode === srcNode && oldSrcName === srcName){
+    return [null, null];
+  }
+  const rt = [oldSrcNode,oldSrcName];
+  inputFile.srcNode = srcNode;
+  inputFile.srcName = srcName;
+  return rt;
+}
+function clearInputFile(inputFiles, name){
+  const inputFile = inputFiles.find(hasName.bind(null, name));
+  if(! inputFile){
+    logger.error(name, 'not found in inputFiles');
+    return null;
+  }
+  inputFile.srcNode = null;
+  inputFile.srcName = null;
+}
+function clearOutputFile(outputFiles, name, dstNode, dstName){
+  const outputFile = outputFiles.find(hasName.bind(null, name));
+  if(! outputFile){
+    logger.error(name, 'not found in outputFiles');
+    return null;
+  }
+  outputFile.dst=outputFile.dst.filter((e)=>{
+    return e.dstNode !== dstNode && e.dstName !== dstName;
   });
 }
 
-function onRemoveFileLink(sio, sessionID, msg){
-  logger.warn('removeFileLink event recieved:', msg);
-  let src=msg.src;
-  let dst=msg.dst;
-  let func=null;
-  if(src === 'parent' && getNode(sessionID, dst)){
-    clearInputFile(getCwf(sessionID), dst);
-    clearInputFile(getNode(sessionID, parseInt(dst)), 'parent');
-  }else if(dst === 'parent' && getNode(sessionID, src)){
-    clearOutputFile(getCwf(sessionID), src);
-    clearOutputFile(getNode(sessionID, parseInt(src)), 'parent');
-  }else if(getNode(sessionID, src) && getNode(sessionID, dst)){
-    clearInputFile(getNode(sessionID, parseInt(dst)), src);
-    clearOutputFile(getNode(sessionID, parseInt(src)), dst);
-  }else{
+function onAddFileLink(sio, label, msg){
+  logger.debug('addFileLink event recieved: ', msg);
+  const src = msg.src;
+  const dst = msg.dst;
+  const srcNode = getFileLinkTargetNode(label, src);
+  const dstNode = getFileLinkTargetNode(label, dst);
+  if(src === dst || srcNode === null || dstNode === null){
     logger.error('illegal addFileLink request', msg);
     return
   }
+  const srcName = msg.srcName;
+  const dstName = msg.dstName;
 
-
-  write(sessionID)
+  addOutputFile(srcNode.outputFiles, srcName, dst, dstName);
+  const [oldSrc, oldSrcName]= addInputFile(dstNode.inputFiles, dstName, src, srcName);
+  if(oldSrc!== null){
+    const oldSrcNode = getFileLinkTargetNode(label, oldSrc);
+    clearOutputFile(oldSrcNode.outputFiles, oldSrcName, dst, dstName);
+  }
+  write(label)
     .then(()=>{
-      sio.emit('workflow', getCwf(sessionID));
+      sio.emit('workflow', getCwf(label));
+    })
+    .catch((err)=>{
+      logger.error('add filelink failed: ', err);
+    });
+}
+
+function onRemoveFileLink(sio, label, msg){
+  logger.debug('removeFileLink event recieved:', msg);
+  const src=msg.src;
+  const dst=msg.dst;
+  const srcNode = getFileLinkTargetNode(label, src);
+  const dstNode = getFileLinkTargetNode(label, dst);
+  if(src === dst || srcNode === null || dstNode === null){
+    logger.error('illegal removeFileLink request', msg);
+    return
+  }
+  const srcName = msg.srcName;
+  const dstName = msg.dstName;
+  clearOutputFile(srcNode.outputFiles, srcName, dst, dstName);
+  clearInputFile(dstNode.inputFiles, dstName);
+
+  write(label)
+    .then(()=>{
+      sio.emit('workflow', getCwf(label));
     })
     .catch((err)=>{
       logger.error('remove file link failed: ', err);
     });
 }
 
-async function onRunProject(sio, sessionID, msg){
+async function onRunProject(sio, label, msg){
   logger.debug(`run event recieved: ${msg}`);
-  let rwf = await readRwf(sessionID);
+  let rwf = await readRwf(label);
   try{
-    await validationCheck(rwf, getRootDir(sessionID), sio)
+    await validationCheck(rwf, getRootDir(label), sio)
   }catch(err){
     logger.error('invalid root workflow:\n', err);
     return false
   }
-  await commitProject(sessionID);
-  setProjectState(sessionID, 'running');
-  let rootDir = getRootDir(sessionID);
-  setRootDispatcher(sessionID, new Dispatcher(rwf, rootDir, rootDir));
-  sio.emit('projectState', getProjectState(sessionID));
+  await commitProject(label);
+  setProjectState(label, 'running');
+  let rootDir = getRootDir(label);
+  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir));
+  sio.emit('projectState', getProjectState(label));
   try{
-    setProjectState(sessionID, await getRootDispatcher(sessionID).dispatch());
+    setProjectState(label, await getRootDispatcher(label).dispatch());
   }catch(err){
     logger.error('fatal error occurred while parseing root workflow: \n',err);
     return false;
   }
-  sio.emit('projectState', getProjectState(sessionID));
+  sio.emit('projectState', getProjectState(label));
 }
 
-function onPauseProject(sio, sessionID, msg){
+function onPauseProject(sio, label, msg){
   logger.debug(`pause event recieved: ${msg}`);
-  getRootDispatcher(sessionID).pause();
-  setProjectState(sessionID, 'paused');
-  sio.emit('projectState', getProjectState(sessionID));
+  getRootDispatcher(label).pause();
+  setProjectState(label, 'paused');
+  sio.emit('projectState', getProjectState(label));
 }
-async function onCleanProject(sio, sessionID, msg){
+async function onCleanProject(sio, label, msg){
   logger.debug(`clean event recieved: ${msg}`);
-  let rootDispatcher=getRootDispatcher(sessionID);
+  let rootDispatcher=getRootDispatcher(label);
   if(rootDispatcher != null) rootDispatcher.remove();
-  await cleanProject(sessionID);
-  onWorkflowRequest(sio, sessionID, getCwfFilename(sessionID));
-  setProjectState(sessionID, 'not-started');
-  sio.emit('projectState', getProjectState(sessionID));
+  await cleanProject(label);
+  onWorkflowRequest(sio, label, getCwfFilename(label));
+  setProjectState(label, 'not-started');
+  sio.emit('projectState', getProjectState(label));
 }
 
-async function onSaveProject(sio, sessionID, msg){
+async function onSaveProject(sio, label, msg){
   logger.debug(`saveProject event recieved: ${msg}`);
-  await commitProject(sessionID);
-  sio.emit('projectState', getProjectState(sessionID));
+  await commitProject(label);
+  sio.emit('projectState', getProjectState(label));
 }
-async function onRevertProject(sio, sessionID, msg){
+async function onRevertProject(sio, label, msg){
   logger.debug(`revertProject event recieved: ${msg}`);
-  await revertProject(sessionID);
-  sio.emit('projectState', getProjectState(sessionID));
+  await revertProject(label);
+  sio.emit('projectState', getProjectState(label));
 }
 
-function onTaskStateListRequest(sio, sessionID, msg){
+function onTaskStateListRequest(sio, label, msg){
   logger.debug('getTaskStateList event recieved:', msg);
   logger.debug('not implimented yet !!');
 }
 
 module.exports = function(io){
-  let sessionID="initial";
+  let label="initial";
 
   const sio = io.of('/workflow');
   sio.on('connect', function (socket) {
-    fileManager(socket, sessionID);
-    socket.on('getWorkflow',      onWorkflowRequest.bind(null, socket, sessionID));
-    socket.on('createNode',       onCreateNode.bind(null, socket, sessionID));
-    socket.on('updateNode',       onUpdateNode.bind(null, socket, sessionID));
-    socket.on('removeNode',       onRemoveNode.bind(null, socket, sessionID));
-    socket.on('addLink',          onAddLink.bind(null, socket, sessionID));
-    socket.on('addFileLink',      onAddFileLink.bind(null, socket, sessionID));
-    socket.on('removeLink',       onRemoveLink.bind(null, socket, sessionID));     //not tested
-    socket.on('removeFileLink',   onRemoveFileLink.bind(null, socket, sessionID)); //not tested
-    socket.on('getTaskStateList', onTaskStateListRequest.bind(null, socket, sessionID));
-    socket.on('runProject',       onRunProject.bind(null, socket, sessionID));
-    socket.on('pauseProject',     onPauseProject.bind(null, socket, sessionID));
-    socket.on('cleanProject',     onCleanProject.bind(null, socket, sessionID));
-    socket.on('saveProject',      onSaveProject.bind(null, socket, sessionID));
-    socket.on('revertProject',    onRevertProject.bind(null, socket, sessionID));
+    fileManager(socket, label);
+    socket.on('getWorkflow',      onWorkflowRequest.bind(null, socket, label));
+    socket.on('createNode',       onCreateNode.bind(null, socket, label));
+    socket.on('updateNode',       onUpdateNode.bind(null, socket, label));
+    socket.on('removeNode',       onRemoveNode.bind(null, socket, label));
+    socket.on('addLink',          onAddLink.bind(null, socket, label));
+    socket.on('addFileLink',      onAddFileLink.bind(null, socket, label));
+    socket.on('removeLink',       onRemoveLink.bind(null, socket, label));     //not tested
+    socket.on('removeFileLink',   onRemoveFileLink.bind(null, socket, label));
+    socket.on('getTaskStateList', onTaskStateListRequest.bind(null, socket, label));
+    socket.on('runProject',       onRunProject.bind(null, socket, label));
+    socket.on('pauseProject',     onPauseProject.bind(null, socket, label));
+    socket.on('cleanProject',     onCleanProject.bind(null, socket, label));
+    socket.on('saveProject',      onSaveProject.bind(null, socket, label));
+    socket.on('revertProject',    onRevertProject.bind(null, socket, label));
     socket.on('updateProjectJson', (data)=>{
-      updateProjectJson(sessionID, data);
+      updateProjectJson(label, data);
     });
     socket.on('stopProject',     (msg)=>{
       onPauseProject(socket,msg);
@@ -534,7 +564,7 @@ module.exports = function(io){
       socket.emit('hostList', remoteHost.getAll());
     });
     socket.on('getProjectJson', async ()=>{
-      socket.emit('projectJson', await readProjectJson(sessionID));
+      socket.emit('projectJson', await readProjectJson(label));
     });
     socket.on('getProjectList', ()=>{
       socket.emit('projectState', projectState);
@@ -565,10 +595,10 @@ module.exports = function(io){
   router.post('/', async (req, res, next)=>{
     let projectJsonFilename=req.body.project;
     //TODO get session ID from req.body
-    await openProject(sessionID, projectJsonFilename);
+    await openProject(label, projectJsonFilename);
     // cwf is set in openProject()
-    res.cookie('root', getCwfFilename(sessionID));
-    res.cookie('rootDir', getCurrentDir(sessionID));
+    res.cookie('root', getCwfFilename(label));
+    res.cookie('rootDir', getCurrentDir(label));
     res.cookie('project', projectJsonFilename);
     res.sendFile(path.resolve(__dirname, '../views/workflow.html'));
   });

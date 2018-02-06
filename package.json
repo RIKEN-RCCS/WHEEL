@@ -79,8 +79,6 @@
     "npm-run-all": "^4.1.2",
     "nyc": "^11.4.1",
     "rewire": "^3.0.2",
-    "sinon": "^4.2.2",
-    "sinon-chai": "^2.14.0",
     "style-loader": "^0.19.0",
     "uglifyjs-webpack-plugin": "^1.0.0-rc.0",
     "url-loader": "^0.6.2",
