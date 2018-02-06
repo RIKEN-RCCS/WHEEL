@@ -13,7 +13,7 @@ const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
 const {getDateString} = require('./utility');
 const {remoteHost} = require('../db/db');
-const {getCwf, setCwf, getNode, pushNode, removeNode, getCurrentDir, readRwf, getRootDir, getCwfFilename} = require('./project');
+const {getCwf, setCwf, getNode, pushNode, removeNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
 

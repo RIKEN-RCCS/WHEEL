@@ -207,6 +207,7 @@ module.exports.write             = write;
 module.exports.setRootDispatcher = setRootDispatcher;
 module.exports.getRootDispatcher = getRootDispatcher;
 module.exports.openProject       = openProject;
+module.exports.readProjectJson   = readProjectJson;
 module.exports.updateProjectJson = updateProjectJson;
 module.exports.setProjectState   = setProjectState;
 module.exports.getProjectState   = getProjectState;
