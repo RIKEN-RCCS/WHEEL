@@ -100,6 +100,7 @@ class Dispatcher{
       }
     });
     logger.debug('initial tasks : ',this.currentSearchList);
+    //TODO this.wf.inputFilesをnodesに配る
     this.dispatching=false;
   }
 
@@ -132,6 +133,7 @@ class Dispatcher{
                 return task.state === 'failed';
               });
               let projectState = hasFailed? 'failed':'finished';
+              //TODO  this.wf.outputFilesを各nodeから回収してくる
               resolve(projectState);
             }
             this.dispatching=false;

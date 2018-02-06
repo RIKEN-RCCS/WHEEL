@@ -1,0 +1,133 @@
+{
+    "type": "workflow",
+    "name": "workflow0",
+    "description": null,
+    "path": "./workflow0",
+    "index": 0,
+    "previous": [],
+    "next": [],
+    "inputFiles": [
+        {
+            "name": "b",
+            "srcNode": 1,
+            "srcName": "f"
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        }
+    ],
+    "outputFiles": [
+        {
+            "name": "a",
+            "dst": [
+              {
+                "dstNode": 0,
+                "dstName": "c"
+              }
+            ]
+        },
+        {
+          "name": "newOutput",
+          "dst": []
+        }
+    ],
+    "state": "not-started",
+    "pos": {
+        "x": 154,
+        "y": 70
+    },
+    "parent": "/Users/sogo/test2.wheel/define.wf.json",
+    "nodes": [
+        {
+            "type": "task",
+            "name": "task0",
+            "description": null,
+            "path": "./task0",
+            "index": 0,
+            "previous": [],
+            "next": [1],
+            "inputFiles": [
+                {
+                    "name": "c",
+                    "srcNode": "parent",
+                    "srcName": "a"
+                },
+                {
+                    "name": "newInput",
+                    "srcNode": null,
+                    "srcName": null
+                }
+            ],
+            "outputFiles": [
+                {
+                    "name": "d",
+                    "dst": [
+                        {
+                            "dstNode": 1,
+                            "dstName": "e"
+                        }
+                    ]
+                }
+            ],
+            "state": "not-started",
+            "pos": {
+                "x": 140,
+                "y": 63
+            },
+            "parent": "/Users/sogo/test2.wheel/workflow0/define.wf.json",
+            "script": null,
+            "host": "localhost",
+            "useJobScheduler": false,
+            "queue": null,
+            "include": null,
+            "exclude": null
+        },
+        {
+            "type": "task",
+            "name": "task1",
+            "description": null,
+            "path": "./task1",
+            "index": 1,
+            "previous": [0],
+            "next": [],
+            "inputFiles": [
+                {
+                    "name": "e",
+                    "srcNode": 0,
+                    "srcName": "d"
+                }
+            ],
+            "outputFiles": [
+                {
+                    "name": "f",
+                    "dst": [
+                        {
+                            "dstNode": "parent",
+                            "dstName": "b"
+                        }
+                    ]
+                },
+                {
+                    "name": "newOutput",
+                    "dst": []
+                }
+            ],
+            "state": "not-started",
+            "pos": {
+                "x": 267,
+                "y": 222
+            },
+            "parent": "/Users/sogo/test2.wheel/workflow0/define.wf.json",
+            "script": null,
+            "host": "localhost",
+            "useJobScheduler": false,
+            "queue": null,
+            "include": null,
+            "exclude": null
+        }
+    ],
+    "jsonFile": "define.wf.json",
+    "cleanupFlag": 2
+}
