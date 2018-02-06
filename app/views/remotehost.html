@@ -16,7 +16,7 @@
     <a href="home" id="title">WHEEL</a>
     <span id="titleUser">
       <img src="/image/img_user.png" class="icon" id="img_user" align="middle">
-      <span id="titleUserName" class="titleUserName">Yuki Tanaka</span>
+      <span id="titleUserName" class="titleUserName">user01</span>
     </span>
   </header>
   <div id="pageNameArea">
@@ -115,7 +115,7 @@
             <span>
               <label class="fieldLabel">Connection Check</label>
             </span>
-            <button class="connectionCheckButton" v-on:click="test(index)">{{ buttonState(index) }}</button>
+            <button class="connectionCheckButton" v-on:click="test(-1)">{{ buttonState(-1) }}</button>
           </div>
           <div id="hostNameDiv">
             <span>
