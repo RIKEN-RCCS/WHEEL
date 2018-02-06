@@ -254,7 +254,8 @@ header {
     margin-top: 6px;
     left: 0;
     z-index: 40;
-    background-color:#222226;
+    /* background-color:#222226; */
+    background-color:#4C4C55;
     color: white;
     border: 0;
 	cursor: pointer;
@@ -1034,7 +1035,8 @@ td {
     margin: 0 50% 0 50%;
     height: 20px;
     width: 48px;
-    background-color: rgba(28,28,32,0.75);
+    /* background-color: rgba(28,28,32,0.75); */
+    background-color: #4C4C55;
     border: 0;
 }
 
@@ -1269,6 +1271,7 @@ tspan{
     border: 1px solid #333333;
     padding: 8px 16px 8px 16px;
     margin-right: 0;
+    height: 24px;
 }
 
 .context-menu-item:hover{
@@ -1362,23 +1365,16 @@ tspan{
     border-radius: 0px;
     border: none;    
 }
-/* 
-.ui-dialog-buttonset button{
-    background-color: #6F6F77;
-    font-size: 14px !important;
-    width: 71px;
-    height: 24px;
-    color: #FFFFFF;
-    line-height: 0px;
-    border-radius: 0px;
-    border: none;    
-} */
 
-.viewNodes{
+.viewNodesField{
+    border: solid 1px rgba(68, 68, 73, 0.5);
+}
+
+/* .viewNodes{
     display: none;
 }
 
 .viewButton:hover{
     cursor: pointer;
 }
-
+ */
