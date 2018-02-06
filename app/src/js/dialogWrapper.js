@@ -14,7 +14,6 @@ export default function (dialogID, html, options) {
         width: 'auto',
         height: 'auto',
         buttons: {
-
             "Cancel": function () {
                 def.reject();
                 $(this).dialog('close');

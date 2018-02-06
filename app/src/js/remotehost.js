@@ -20,7 +20,8 @@ $(() => {
     numJob: 5,
     queue: '',
     port: 22,
-    id: ''
+    id: '',
+    jobScheduler: ''
   }
 
   // create vue.js instance and render
@@ -39,29 +40,30 @@ $(() => {
     },
     methods: {
       toggleSelected: function (i) {
+        console.log(i);
         if (this.selectedHost === i) {
+          console.log(i);
           this.selectedHost = -1;
           resetNewHost();
-          $(".editArea").css("border", "solid 1px white");
         } else {
           this.selectedHost = i;
-          $(".editArea").prop("disabled", true);
-          $(".editAreaButton").prop("disabled", true);
-          $(".editArea").css("border", "solid 1px white");
           Object.assign(this.newHostInfo, this.hostList[this.selectedHost]);
+          vm.authType = (!this.newHostInfo.keyFile || this.newHostInfo.keyFile.length === 0) ? '1' : '2';
+        }
+        let index = this.OK.indexOf(-1);
+        if (index !== -1) {
+          this.OK.splice(index, 1);
+        }
+        index = this.NG.indexOf(-1);
+        if (index !== -1) {
+          this.NG.splice(index, 1);
         }
       },
       onAddButton: function () {
-        if (this.selectedHost === -1) {
-          this.mode = 'addHost';
-        } else {
-          this.mode = 'updateHost';
-        }
+        this.selectedHost = -1
+        resetNewHost();
         this.errorMessage = '';
         $("#errorMessage").css("visibility", "hidden");
-        $(".editArea").prop("disabled", false);
-        $(".editAreaButton").prop("disabled", false);
-        $(".editArea").css("border", "solid 1px yellow");
       },
       onCopyButton: function () {
         this.mode = 'copyHost';
@@ -88,15 +90,19 @@ $(() => {
         if (this.authType === '1') {
           this.newHostInfo.keyFile = null;
         }
+        console.log(this.selectedHost);
+        if (this.selectedHost === -1) {
+          this.mode = 'addHost';
+        } else {
+          this.mode = 'updateHost';
+        }
         socket.emit(this.mode, this.newHostInfo);
         resetNewHost();
         this.selectedHost = -1;
-        $(".editArea").css("border", "solid 1px white");
       },
       onEditAreaCancelButton: function () {
         resetNewHost();
         this.selectedHost = -1;
-        $(".editArea").css("border", "solid 1px white");
       },
       onDialogOKButton: function () {
         socket.emit('removeHost', this.hostList[this.selectedHost].id);
@@ -185,27 +191,34 @@ $(() => {
   }
 
   function testSshConnection(index) {
-    let host = vm.hostList[index];
     vm.testing = null;
-    if (!host) {
-      console.log('host is not selected');
-      return;
-    }
-    const html = '<p>Input SSH connection password.</p><input type=password id="password">'
+    const html = '<p id="sshConnectionLabel">Input SSH connection password.</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
         vm.testing = index;
         let password = $('#password').val();
-        socket.emit('tryConnectHost', host.id, password, (isConnect) => {
-          console.log(isConnect)
-          vm.testing = null;
-          vm.selectedHosts = [];
-          if (isConnect) {
-            vm.OK.push(index);
-          } else {
-            vm.NG.push(index);
-          }
-        });
+        if (index === -1) {
+          socket.emit('tryConnectHost', vm.newHostInfo, password, (isConnect) => {
+            console.log(isConnect)
+            vm.testing = null;
+            if (isConnect) {
+              vm.OK.push(index);
+            } else {
+              vm.NG.push(index);
+            }
+          });
+        } else {
+          let host = vm.hostList[index];
+          socket.emit('tryConnectHostById', host.id, password, (isConnect) => {
+            console.log(isConnect)
+            vm.testing = null;
+            if (isConnect) {
+              vm.OK.push(index);
+            } else {
+              vm.NG.push(index);
+            }
+          });
+        }
       });
   }
 

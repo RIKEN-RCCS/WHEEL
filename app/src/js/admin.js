@@ -33,34 +33,15 @@ $(() => {
         if (this.selectedAccount === i) {
           this.selectedAccount = -1;
           resetNewAccount();
-          $(".editArea").css("border", "solid 1px white");
-          $("textarea").css("border", "solid 1px white");
         } else {
           this.selectedAccount = i;
-          $(".editArea").prop("disabled", true);
-          $(".textarea").prop("disabled", true);
-
-          $(".editAreaButton").prop("disabled", true);
-          $(".editArea").css("border", "solid 1px white");
-          $("textarea").css("border", "solid 1px white");
           Object.assign(this.newAccount, this.accountList[this.selectedAccount]);
         }
       },
       onAddButton: function () {
-        if (this.selectedAccount === -1) {
-          this.mode = 'addAccount';
-        } else {
-          this.mode = 'updateAccount';
-        }
+        this.selectedAccount = -1
+        resetNewAccount();
         $("#errorMessage").css("visibility", "hidden");
-
-        $(".editArea").prop("disabled", false);
-        $("textarea").prop("disabled", false);
-
-        $(".editAreaButton").prop("disabled", false);
-        $(".editArea").css("border", "solid 1px yellow");
-        $("textarea").css("border", "solid 1px yellow");
-
       },
       onRemoveButton: function () {
         this.mode = 'removeAccount';
@@ -76,17 +57,19 @@ $(() => {
         $("#deleteCheckDialog").dialog({ width: 356, title: 'Delete Account', modal: true });
       },
       onEditAreaOKButton: function () {
+        console.log(this.selectedAccount);
+        if (this.selectedAccount === -1) {
+          this.mode = 'addAccount';
+        } else {
+          this.mode = 'updateAccount';
+        }
         socket.emit(this.mode, this.newAccount);
         resetNewAccount();
         this.selectedAccount = -1;
-        $(".editArea").css("border", "solid 1px white");
-        $("textarea").css("border", "solid 1px white");
       },
       onEditAreaCancelButton: function () {
         resetNewAccount();
         this.selectedAccount = -1;
-        $(".editArea").css("border", "solid 1px white");
-        $("textarea").css("border", "solid 1px white");
       },
       onDialogOKButton: function () {
         socket.emit('removeAccount', this.accountList[this.selectedAccount].id);

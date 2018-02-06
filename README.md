@@ -33,7 +33,7 @@ please note that:
 - `npm run dev` run node-dev and watch script in parallel
 - `npm run node-dev`   start server and keep watching to restart server if file change is detected
 - `npm run debug` dev with verbose debug log from express and socket.io
-- `npm run build` call webpack and build client-side code
+- `npm run prepare` call webpack and build client-side code
 - `npm run watch` build and keep watching for changes in src files
 
 ## how to make package

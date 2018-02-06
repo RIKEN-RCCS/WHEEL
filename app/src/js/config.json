@@ -17,14 +17,14 @@
     "parameterStudy": "#666622"
   },
   "box_appearance": {
-    "titleHeight":  32,
-    "titleWidth":  256,    
-    "opacity":  1.0,
-    "strokeWidth":  2,
-    "marginHeight":  12,
-    "outputTextOffset":  12,
+    "titleHeight": 32,
+    "titleWidth": 256,
+    "opacity": 1.0,
+    "strokeWidth": 2,
+    "marginHeight": 12,
+    "outputTextOffset": 12,
     "textHeightScale": 1.2,
-    "plug_drop_area_scale": 2,
+    "plug_drop_area_scale": 4,
     "inputTextNamePosX": 8
   },
   "state_color": {
@@ -52,7 +52,7 @@
     "parameterStudy": "/image/img_parameterStudy.png"
   },
   "state_icon": {
-    "not-started": "/image/img_stateQue.png",    
+    "not-started": "/image/img_stateQue.png",
     "running": "/image/img_statePlay.png",
     "completed": "/image/img_stateDone.png",
     "failed": "/image/img_error.png",

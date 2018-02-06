@@ -37,7 +37,7 @@ $(() => {
                     var id = $(this).data('id');
                     var path = $(this).data('path');
                     console.log(path);
-                    var html = '<p>input new project name</p><input type="text" id="renamedProjectName">';
+                    var html = '<p id="renameLabel">input new project name</p><input type="text" id="renamedProjectName">';
                     dialogWrapper('#dialogContext', html).done(function () {
                         var newName = $('#renamedProjectName').val();
                         socket.emit('renameProject', { 'id': id, 'path': path, 'newName': newName });
@@ -49,7 +49,8 @@ $(() => {
                 callback: function () {
                     var targetID = $(this).data('id');
                     console.log(targetID);
-                    dialogWrapper('#dialogContext', 'Are you sure you want to delete project?').done(function () {
+                    var html = '<p id="deleteLabel">Delete project</p><div id="deleteMessage">Are you sure you want to delete project?</div>';
+                    dialogWrapper('#dialogContext', html).done(function () {
                         socket.emit('removeProject', targetID);
                     });
                 }

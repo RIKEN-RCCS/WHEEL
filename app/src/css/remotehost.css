@@ -94,10 +94,11 @@ header {
 }
 
 #hostListInfo:hover{
-  /* background: #CCFF00;
-  opacity: 0.1; */
-  background: green;
-  
+  background-color: rgba(204, 255, 0, 0.1);
+}
+
+.ui-state-highlight{
+  background-color: #88BB00;
 }
 
 .authTypeLabel{
@@ -432,9 +433,42 @@ td:hover {
   border: 0;
 }
 
-.ui-button{
-  display: none;
-/*   border: solid 1px #FFFFFF;
-  color: #FFFFFF;
-  background-color: #222226;    */   
+#sshConnectionLabel{
+  margin: 8px;
+  color: #FFFFFF;  
 }
+
+#password{
+  background-color: #000000;
+  color: #FFFFFF;
+  border: none;
+  width: 256px;
+  margin-top: 4px;
+  height: 20px;
+  padding-left: 5px;
+}
+
+.ui-button{
+  background-color: #5B5B5F;
+  color: #ffffff;
+  width: 74px;
+  height: 28px;
+  border: 0;
+  border-radius: 0;
+}
+ 
+.ui-dialog-buttonpane{
+  background-color: #222226;
+  border: none;
+
+}
+
+#dialog{
+  padding: 0;
+  margin:16px;
+  color: #FFFFFF;
+}
+/* 
+.ui-dialog-buttonset{
+  height: 100px;
+}  */

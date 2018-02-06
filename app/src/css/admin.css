@@ -110,7 +110,11 @@ header {
 }
 
 #accountListInfo:hover{
-  background: green;
+  background-color: rgba(204, 255, 0, 0.1);
+}
+
+.ui-state-highlight{
+  background-color: #88BB00;
 }
 
 .admin{
@@ -258,6 +262,7 @@ li:hover{
 }
 
 textarea{
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
   width:400px;
   height:100px;
   margin-left: 44px;
@@ -267,6 +272,18 @@ textarea{
 	border:1px solid #000000;
   background-color: #000000;
   
+}
+
+#acountField{
+  margin-bottom: 16px;
+}
+
+#passwordField{
+  margin-bottom: 16px;
+}
+
+#workdirField{
+  margin-bottom: 16px;
 }
 
 #descriptionField{

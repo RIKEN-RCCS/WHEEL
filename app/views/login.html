@@ -13,7 +13,7 @@
 <body id="login">
 
   <!-- subtitle -->
-  <div class="subtitle">
+  <div id="subtitle">
     <h3>Next Generation Scientific Workflow</h3>
   </div>
 
@@ -22,24 +22,21 @@
     <div class="content">
       <h1>WHEEL</h1>
       <div class="form">
-        <form action="/login" method="POST">
-          <dl>
-            <dt>
-              <span class="logininfo">User Name</span>
-            </dt>
-            <dd>
-              <input type="text" name="username" class="username" required>
-            </dd>
-            <dt>
-              <span class="logininfo">Pass Word</span>
-            </dt>
-            <dd>
-              <input type="password" name="password" class="password" required>
-            </dd>
-          </dl>
+        <!-- <form action="/login" method="POST"> -->
+        <!-- ログイン処理の暫定処理 -->
+        <form action="/home" method="GET">
+          <div id="userName">
+            <span class="logininfo">User Name</span>
+            <input type="text" name="username" class="usernameText" required>
+          </div>
+          <div id="password">
+            <span class="logininfo">Password</span>
+            <input type="password" name="password" class="passwordText" required>
+          </div>
           <button type="submit" class="login_button">Log In</button>
         </form>
       </div>
+      <div id="errorMessage"></div>
     </div>
   </div>
   <!-- wrap終わり -->
