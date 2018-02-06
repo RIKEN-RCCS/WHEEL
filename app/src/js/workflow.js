@@ -378,27 +378,12 @@ $(() => {
     selector: 'g',
     autoHide: true,
     reposition: false,
-    callback: function (itemKey, opt) {
-      var pos = getClickPosition(opt);
-      sio.emit('createNode', { "type": itemKey, "pos": pos });
-    },
     items: {
-      /*"new": {
-         "name": "new",
-         "items":
-         {
-           "task":    {name: "task"},
-           "workflow":{name: "workflow"},
-           "PS":      {name: "parameter study"},
-           "if":      {name: "if"},
-           "for":     {name: "for"},
-           "while":   {name: "while"},
-           "foreach": {name: "foreach"}
-         } 
-      },*/
+      "temp": {
+        "name": ""
+      },
       "delete": {
         "name": "delete",
-
         callback: function () {
           sio.emit('removeNode', selectedNode);
         }
@@ -501,21 +486,12 @@ $(() => {
   var buttonFlag = false;
   function drawNodes(nodesInWF) {
     nodesInWF.forEach(function (v, i) {
-      console.log(v);
       // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
       if (v === null) {
         nodes.push(null);
         childrenViewBoxList.push(null);
       } else {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
-        console.log(node);
-
-        /*           let childrenWorkflow = currentWorkDir+'/'+v.name+'/'+v.jsonFile;
-                  if(v.type === 'workflow' || v.type === 'parameterStudy' || v.type === 'for' || v.type === 'while' || v.type === 'foreach'){
-                    sio.emit('getNodes', childrenWorkflow);
-                  }
-                  childrenViewBoxList.push(svg); */
-
         node.onMousedown(function (e) {
           let nodeIndex = e.target.instance.parent('.node').data('index');
           selectedNode = nodeIndex;
@@ -558,56 +534,34 @@ $(() => {
               wfStack.push(currentWorkFlow);
               nodeStack.push(name);
               nodeTypeStack.push(nodeType);
-              console.log(currentWorkDir);
-              console.log(currentWorkFlow);
-
               process.nextTick(function () {
                 fb.request('getFileList', currentWorkDir, null);
                 sio.emit('getWorkflow', currentWorkFlow);
-                console.log("emit");
               });
-            }
-          })
-          .onClick(function (e) {
-            console.log(buttonFlag);
-            let nodeType = e.target.instance.parent('.node').data('type');
-            if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
-              console.log("clickcheck");
-              if (buttonFlag === false) {
-                console.log("flagfcheck");
-                $('.viewNodes').show();
-                buttonFlag = true;
-              } else {
-                $('.viewNodes').css('display', 'none');
-                buttonFlag = false;
-              }
             }
           });
 
+        /*           .onClick(function (e) {
+                    console.log(buttonFlag);
+                    let nodeType = e.target.instance.parent('.node').data('type');
+                    if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
+                      console.log("clickcheck");
+                      if (buttonFlag === false) {
+                        console.log("flagfcheck");
+                        $('.viewNodes').show();
+                        buttonFlag = true;
+                      } else {
+                        $('.viewNodes').css('display', 'none');
+                        buttonFlag = false;
+                      }
+                    }
+                  });
+         */
         nodes.push(node);
       }
     });
   }
 
-  //子表示用として作成したが実装方法変更のため一時的にコメントアウト
-  /**
- * draw nodes children
- * @param nodeForChildren node list in workflow Json
- */
-  /* function drawNodesNodes(nodeForChildren){
-    //viewBoxListに登録した子要素表示対象nodeのインスタンスを作成する
-    nodeForChildren.forEach(function(v,i){
-      //indexとiが一緒の時、子表示をする
-      if(v !== null){
-        console.log(v);
-        console.log(i);
-        console.log(childrenViewBoxList);
-        let childrenNode = new svgNode.SvgChildrenNodeUI(childrenViewBoxList[i], v);
-        //let childrenNode = new svgNode.SvgChildrenNodeUI(svg, v);
-
-      }
-    });
-  } */
   /**
    * draw cables between Lower and Upper plug Connector and Receptor plug respectively
    * @param nodeInWF node list in workflow Json
@@ -637,28 +591,20 @@ $(() => {
   }
 
   /**
- * draw parent children file relation
- * @param  files list in workflow Json
- */
+  * draw parent children file relation
+  * @param  files list in workflow Json
+  */
   function drawParentFileRelation(parentwf) {
     //selectedParent = nodeIndex;    
     let node = new svgNode.SvgParentNodeUI(svg, sio, parentwf);
     parentnode.push(node);
-    console.log("parentnode");
-    console.log(parentnode);
-    /*     parentwf.inputFiles.forEach(function(inputFiles){
-          if(inputFiles != null){
-            inputFiles.drawParentFileRelation();
-          }
-        }); */
   }
 
   /**
- * draw cables between Lower and Upper plug Connector and Receptor plug respectively
- * @param nodeInWF node list in workflow Json
- */
+  * draw cables between Lower and Upper plug Connector and Receptor plug respectively
+  * @param nodeInWF node list in workflow Json
+  */
   function drawParentLinks(parentnode) {
-    console.log("draw Parent Link");
     parentnode.forEach(function (node) {
       if (node != null) {
         node.drawParentLinks();
@@ -703,7 +649,6 @@ $(() => {
 
         fb.request('getFileList', currentWorkDir, null);
         sio.emit('getWorkflow', currentWorkFlow);
-        console.log("emit bread");
       });
     }
   }
@@ -739,7 +684,6 @@ $(() => {
     console.log("checkedValue");
 
     if ($('#useJobSchedulerFlagField').prop('checked')) {
-      console.log("test");
       $('#queueSelectField').prop('disabled', false);
       $('#queueSelectField').css('background-color', '#000000');
       $('#queueSelectField').css('color', '#FFFFFF');
@@ -759,8 +703,6 @@ $(() => {
         let newFileName = $('#newFileName').val();
         let newFilePath = fb.getRequestedPath() + "/" + newFileName;
         sio.emit('createNewFile', newFilePath, (result) => {
-          console.log(result);
-          console.log(newFilePath);
         });
       });
   });
@@ -771,8 +713,6 @@ $(() => {
         let newFolderName = $('#newFolderName').val();
         let newFolderPath = fb.getRequestedPath() + "/" + newFolderName;
         sio.emit('createNewDir', newFolderPath, (result) => {
-          console.log(result);
-          console.log(newFolderPath);
         });
       });
   });
@@ -796,7 +736,6 @@ $(() => {
   //ボタンでのviewの切り替え
   $('.viewButton').mouseover(function () {
     var viewButtonID = document.getElementById('.viewButton');
-    console.log(viewButtonID);
     //setAttributeメソッドでfill属性の値を青に変更 
 
     /* circle1.setAttribute("fill","#0000ff"); 
@@ -811,9 +750,6 @@ $(() => {
     var idx = obj.selectedIndex;       //インデックス番号を取得
     var val = obj.options[idx].value;  //value値を取得
     var txt = obj.options[idx].text;  //ラベルを取得
-    console.log(idx);
-    console.log(val);
-
   }
 
   var pos = $("#titleUserName").offset();
