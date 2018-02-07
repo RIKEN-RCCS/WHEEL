@@ -1,10 +1,88 @@
 html {
   height:100%;
 }
+
+/*add css*/
 body {
   margin:0;
+  padding: 0;
   height:100%;
+  font-family: "Meiryo", "\30D2\30E9\30AE\30CE\89D2\30B4   Pro", "IPA P\30B4\30B7\30C3\30AF", sans-serif;  
+  color: #ffffff;
+  font-size: 14px;
 }
+
+.ace_content{
+  background-color: #000000;
+}
+
+#header {
+  background-color: #2F2F33;
+  padding: 16px;
+  position: relative;
+  width: 256px;
+ }
+
+ .ace_gutter-layer{
+  background:#222226
+}
+
+#button_save{
+  background-color: #5B5B5F;
+  color: #ffffff;
+  font-size: 14px;
+  width: 80px;
+  height: 24px;
+  border: 0;
+  cursor: pointer
+}
+
+button{
+  background-color: #5B5B5F;
+  color: #ffffff;
+  font-size: 14px;
+  width: 132px;
+  height: 24px;
+  border: 0;
+  cursor: pointer
+} 
+
+
+button:hove, #button_save:hover{
+  text-decoration: none;
+  background-color: #6F6F77;
+  color: #ffffff;
+}
+
+#right_pane {
+  width:480px;
+  background:#2F2F33;
+}
+
+.gutter.gutter-horizontal {
+  cursor:ew-resize;
+  background:#222226
+}
+
+input {
+  background-color: #000000;
+  border: 0;
+}
+
+textarea:disabled {
+  background-color: #000000;
+  border: 0;
+  cursor: not-allowed;
+}
+
+a {
+  text-decoration: none;
+  color: #CCFF00;
+}
+a:hover {
+  color:red;
+}
+
 p {
   font-size:12px;
   margin: 10px;
@@ -29,33 +107,22 @@ label.left_l {
   display:block;
   float:left;
 }
-input {
-  border:1px solid gray ;
-}
-button {
+
+/* button {
   font-size:12px;
   padding:2px 2px;
   border-radius:2px;
 }
 button:hover {
   color:red;
-}
-a {
-  text-decoration:none;
-}
-a:hover {
-  color:red;
-}
+} */
+
 input:disabled {
   background:#DCDCDC;
   cursor:not-allowed;
 
 }
-textarea:disabled {
-  background:#DCDCDC;
-  cursor:not-allowed;
 
-}
 ul {
   font-size:12px;
 
@@ -71,18 +138,12 @@ ul {
   height:100%;
 
 }
-.gutter.gutter-horizontal {
-  cursor:ew-resize;
-  background:#c0c0f0
-}
+
 #left_pane {
   width:100%;
   height:100%;
 }
-#right_pane {
-  width:480px;
-  background:#e8e8ff;
-}
+
 #editor {
   margin:0;
   height:100%;
@@ -94,10 +155,10 @@ ul {
   overflow:auto;
   border:1px dotted #c0c0ff;
 }
-#header {
+/* #header {
  border:1px solid white;
  padding:4px;
-}
+} */
 #list {
   width: 98%;
 }

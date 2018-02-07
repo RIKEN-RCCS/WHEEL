@@ -254,7 +254,8 @@ header {
     margin-top: 6px;
     left: 0;
     z-index: 40;
-    background-color:#222226;
+    /* background-color:#222226; */
+    background-color:#4C4C55;
     color: white;
     border: 0;
 	cursor: pointer;
@@ -1034,7 +1035,8 @@ td {
     margin: 0 50% 0 50%;
     height: 20px;
     width: 48px;
-    background-color: rgba(28,28,32,0.75);
+    /* background-color: rgba(28,28,32,0.75); */
+    background-color: #4C4C55;
     border: 0;
 }
 
@@ -1284,6 +1286,34 @@ tspan{
     background-color: #222226;
 }
 
+/* file rename/delete dialog*/
+#fileRenameLabel{
+    margin: 8px 0 8px 0;
+    color: #FFFFFF;
+}
+
+#newName{
+    background-color: #000000;
+    color: #FFFFFF;
+    border: none;
+    width: 282px;
+    margin-top: 4px;
+    height: 20px;
+    padding-left: 5px;
+}
+
+#fileDeleteLabel, #deleteMessage{
+    margin: 8px 0 8px 0;
+    color: #FFFFFF;    
+    padding: 0;
+}
+
+#deleteMessage{
+    margin-top: 6px;
+    color: #FFFFFF;    
+    padding: 0;
+}
+
 .dialogTitle{
     margin: 8px 0 8px 0;
     color: #FFFFFF;
@@ -1324,7 +1354,7 @@ tspan{
     top: 12px;
 }
 
-.ui-dialog-buttonset button{
+.ui-button{
     background-color: #6F6F77;
     font-size: 14px !important;
     width: 71px;
@@ -1335,11 +1365,15 @@ tspan{
     border: none;    
 }
 
-.viewNodes{
+.viewNodesField{
+    border: solid 1px rgba(68, 68, 73, 0.5);
+}
+
+/* .viewNodes{
     display: none;
 }
 
 .viewButton:hover{
     cursor: pointer;
 }
-
+ */

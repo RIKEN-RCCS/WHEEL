@@ -3869,10 +3869,10 @@ body .ui-tooltip {
 body{
   margin: 0;
   padding: 0;
-  background-color: #3c3c3c;
+  background-color: #2F2F33;
+  font-family: "Meiryo", "\30D2\30E9\30AE\30CE\89D2\30B4   Pro", "IPA P\30B4\30B7\30C3\30AF", sans-serif;  
   color: #ffffff;
-  font-size: 15px;
-  line-height: 2;
+  font-size: 14px;
   height:100%;
 }
 
@@ -3880,38 +3880,107 @@ p,h1,h2,h3,h4,h5,h6{
   margin-top: 0;
 }
 
-header{
-	position:relative;
-	padding:0;
-	color:#40555F;
-  background:gray;
-  font-family: 'Bitter', serif; 
+
+/* header 部分*/
+header {
+  position:relative;
+  padding: 12px 0 12px 16px;
+  background:#000000;
+  font-size: 24px;    
+  text-decoration: none;
+  height: 24px;
 }
 
-#accountTitleArea{
-  padding-top: 10px;
-  position: relative;
+#title {
+  color: #ffffff;  
+  text-decoration: none;
+  position: absolute;
+  top: 8px;
 }
 
-#accountPropertyArea{
-  height: 331px;
-  overflow-x: hidden;
-  background-color: #3c3c3c;
+#titleUser{
+  display: inline-flex；
 }
 
-#accountListInfo{
-  background: #3c3c3c;
-  border: 1px solid;
-  border-color: black;
+.title_username{
+  position:absolute;
+  right:80px;
+    top:10px;
+  }
+
+  
+#titleUserName{
+	position: absolute;
+	right: 88px;
+  font-size: 14px;
+  padding-top: 2px;
 }
 
-#accountListInfo:hover{
-  background: green;
+#img_user{
+  position: absolute;
+  margin: 0px;
+  width: 24px;
+  height: 24px;
+}
+
+.icon {
+    height: 30px;
+}
+
+#pageNameArea{
+  background: #222226;
+  padding-left: 16px;
+  height: 32px;
 }
 
 #pageName{
-  height:30px;
-  background:#252525;
+  position: relative;
+  top: 5px;
+}
+
+#drawer_button{
+  position:absolute;
+  right:16px;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  margin: 0px;
+  padding: 0px;
+  border: 0px;
+  background-color: #000000;
+}
+/**/
+
+#accountListArea{
+  margin: 24px 16px 0 16px;
+  padding: 0px;
+  overflow: auto;
+}
+
+#accountTitleArea{
+  padding: 0 0 4px 0;
+  border: solid 1px #2F2F33;
+  border-bottom-color: #222226;
+}
+
+#accountPropertyArea{
+  height: 401px;
+  overflow-x: hidden;
+  background-color: #2F2F33;
+}
+
+#accountListInfo{
+  border: 1px solid #2F2F33;
+  border-bottom-color: #222226;
+  height: 40px;
+}
+
+#accountListInfo:hover{
+  background-color: rgba(204, 255, 0, 0.1);
+}
+
+.ui-state-highlight{
+  background-color: #88BB00;
 }
 
 .admin{
@@ -3936,20 +4005,22 @@ div .accountField{
 #titleTable
 {
   table-layout: fixed;
-  width: 1820px;
-  word-wrap: break-word;  
+  width: 1790px;
+  word-wrap: break-word;
+  border-collapse: collapse;
 }
 
 #propertyTable
 {
   table-layout: fixed;
-  width: 1920px;
+  width: 1790px;
   word-wrap: break-word;
   border-collapse: collapse;
 }
 
 tr th
 {
+  font-weight: initial;  
   text-align: left;
 }
 
@@ -3967,36 +4038,58 @@ td:hover {
 }
 
 .userName{
- width: 300px;
+  padding: 0 48px 0 0;
+  border: 0;
+  width: 200px;
 }
 
 .workDir{
+  padding: 0 48px 0 0;
+  border: 0;
   width: 400px;
  }
 
 .description{
-  width: 1220px;
+  border: 0;
+  width: 1094px;
 }
 
 #buttonArea{
-  background-color: #3c3c3c;
-  padding-bottom: 10px;
+  padding: 8px 0 24px 16px;
 }
+
 .buttonAreaButton{
-  background-color: rgb(105, 175, 45);
+  background-color: #5B5B5F;
   color: #ffffff;
-  font-size: 15px;
-  font-family: 'Bitter', serif;
-  width:100px;
-  border-radius: 3px; 
-  border: 3px solid rgb(105, 175, 45);
+  font-size: 14px;
+  width: 96px;
+  height: 24px;
+  border: 0;
   cursor: pointer;
+}
+
+#host_add_button{
+  position: relative;
+  left: -14px;
+  top: 1px;
+}
+
+#host_delete_button{
+  position: relative;
+  left: -7px;
+  top: 1px;
+}
+
+.hostButtonLabel{
+  position: relative;
+  left: -8px;
+  top: -2px;
 }
 
 button:hover{
   text-decoration: none;
-  background-color: #ffffff;
-  color: rgb(105, 175, 45);
+  background-color: #6F6F77;
+  color: #ffffff;
 }
 
 li:hover{
@@ -4004,23 +4097,29 @@ li:hover{
 	background:#56676F;
 }
 
-#accountRegistration{
-  height: 30px;  
-  background-color: #252525;  
-  padding-left: 10px;
+/* edit area*/
+#newAccountDialog {
+  padding: 24px 0 0 16px;
 }
 
-.ui-state-error{
-  font-size:1.0em;
-	color:#ffffff;
-	margin-bottom:5px;
-	font-weight:bold;
+#accountEditAreaTitle{
+  position: relative;
+  top: 5px;
+}
+
+#accountRegistration{
+  height: 32px;
+  background-color: #222226;
+  padding-left: 16px;
 }
 
 .editArea{
-  width:400px;
-  background-color: #252525;
-  color: white;
+  width: 400px;
+  height: 24px;
+  padding: 0 0 0 8px;
+  background-color: #000000;
+  color: #FFFFFF;
+  border: 0;
 }
 
 .fieldLabel{
@@ -4029,17 +4128,37 @@ li:hover{
 }
 
 textarea{
-	padding:5px;
-	font-size:1.3em;
-	color:#333;
-	border:1px solid #CCC;
-  background:#EFEFEF;
+  font-family: "Meiryo", "\30D2\30E9\30AE\30CE\89D2\30B4   Pro", "IPA P\30B4\30B7\30C3\30AF", sans-serif;    
   width:400px;
-	height:100px;
+  height:100px;
+  margin-left: 44px;
+  padding: 0 0 0 8px;
+	font-size:14px;
+  color: #FFFFFF;
+	border:1px solid #000000;
+  background-color: #000000;
+  
 }
 
-#testareafieldLabel{
-  padding-left : 123px;
+#acountField{
+  margin-bottom: 16px;
+}
+
+#passwordField{
+  margin-bottom: 16px;
+}
+
+#workdirField{
+  margin-bottom: 16px;
+}
+
+#descriptionField{
+  padding: 0px;
+}
+
+#descriptionLabel{
+  position: relative;
+  top: -90px;
 }
 
 #errorMessage
@@ -4049,101 +4168,165 @@ textarea{
   visibility: hidden;
 }
 
+.ui-state-error{
+  font-size:1.0em;
+	color:#ffffff;
+	margin-bottom:5px;
+	font-weight:bold;
+}
+
 .dialogStateError
 {
   font-size:0.5em;  
-  background: #3c3c3c;
   color: red;
   width: 300px;
 }
 
 .editAreaButton{
-  background-color: #add8e6;
   color: #ffffff;
-  font-size: 15px;
-  font-family: 'Bitter', serif;
-  width:100px;
-  border-radius: 3px; 
-  border: 3px solid #add8e6;
+  font-size: 16px;
+  width: 128px;
+  height: 48px;
+  border: 0;
   cursor: pointer;
 }
 
-.drawer_button{
-	position:absolute;
-	right:25px;
-	top:10px;
-	cursor: pointer;
+#cancelButton{
+  background-color: #5B5B5F;
+  position: absolute;
+  right: 168px;
 }
 
-.drawer_button img{
-	width:20px;
+#confirmButton{
+  background-color: #555588;
+  position: absolute;
+  right: 16px; 
 }
 
-.drawer_button:focus{
-	outline:none;
+#confirmButton:hover{
+  text-decoration: none;
+  background-color: #606099;
+  color: #ffffff;
+}
+
+#confirmCancelButtonArea{
+  padding: 24px 0 24px 0;
+}
+
+#cancelButton:hover{
+  text-decoration: none;
+  background-color: #6F6F77;
+  color: #ffffff;
+}
+
+/*dialog css*/
+.dialogTitle{
+  margin: 8px 0 8px 0;
+  color: #FFFFFF;
+}
+
+#dialogButtonArea{
+  padding: 0;
+}
+
+.dialogButton{
+  background-color: #5B5B5F;
+  color: #ffffff;
+  font-size: 14px;
+  width: 64px;
+  height: 24px;
+  border: 0;
+  cursor: pointer;
+}
+
+
+#dialogOkButton{
+  position: relative;
+  top: 48px;
+  left: 260px;
+}
+
+#dialogCancelButton{
+  position: relative;
+  top: 48px;
+  left: 120px;
+}
+
+.dialogTextbox{
+  color: #FFFFFF;
+  border: none;
+  margin-top: 4px;
+  padding-left: 5px;
+}
+
+.ui-dialog {
+  z-index: 200;
+  background-color: #222226;
+  border: none !important;
+}
+
+.ui-dialog-titlebar{
+  background-color: #222226;    
+  color: #FFFFFF;
+  font-size: 14px; 
+  font-weight: initial;
+  border: 0;
+}
+
+.ui-button{
+  display: none;
+/*   border: solid 1px #FFFFFF;
+  color: #FFFFFF;
+  background-color: #222226;    */   
 }
 
 .drawer_menu {
-    width:180px;
-    height:100%;
-    -webkit-transform:translateX(180px);    
-    transform:translateX(180px);
-    transition:ease .5s;
-    position:fixed;
-    top:0;
-    right:0;
-    z-index:90;
+  width:192px;
+  height:100%;
+  -webkit-transform:translateX(192px);    
+  transform:translateX(192px);
+  transition:ease .5s;
+  position:fixed;
+  top:0;
+  right:0;
+  z-index:90;
 }
 
 .drawer_menu.action {
-    width:180px;
-    background:darkslateblue;
-    -webkit-transform:translateX(0);
-    transform:translateX(0);
+  width:192px;
+  background:#4C4C55;
+  -webkit-transform:translateX(0);
+  transform:translateX(0);
 }
 
 .drawer_menu_item {
-    color: white;
-}
-
-/* style.css*/
-
-
-.title{
-  padding:10px;
-  color: #e0e0e0;
-  font-size: 25px;
+  color: #FFFFFF;
   text-decoration: none;
+  cursor: pointer;
 }
 
-/*名前の長さに注意する必要有*/
-.title_username{
-position:absolute;
-right:80px;
-  top:10px;
+#drawerMenuContents{
+  margin: 0;
 }
 
-.title_button{
-position:absolute;
-right:25px;
-top:10px;
-background-color:transparent;
-border:none;
-cursor: pointer;
-width:35px;
-height:35px;
+#drawerMenuList{
+  padding: 0;
+  margin: 8px 8px 8px 16px;
 }
 
-.title_button img{
-width:100%;
+#drawerMenuList li{
+  padding: 0;
+  margin: 0 0 8px 8px;
 }
 
-.title_button:focus{
-outline:none;
+#menuTitle{
+  padding: 16px 8px 8px 16px;
+  margin: 0;
+  font-size: 18px;
+  border: 1px solid #4C4C55;
+  border-bottom-color: #2F2F33;
 }
 
-footer{
-  text-align: center;
-  color: #ffffff;
-  padding: 20px 0;
+li {
+  list-style: none;
 }
