@@ -605,6 +605,9 @@ $(() => {
   * @param nodeInWF node list in workflow Json
   */
   function drawParentLinks(parentnode) {
+    console.log("parentnode");
+    console.log(parentnode);
+
     parentnode.forEach(function (node) {
       if (node != null) {
         node.drawParentLinks();
@@ -612,6 +615,8 @@ $(() => {
     });
     parentnode.forEach(function (node) {
       if (node != null) {
+        console.log(node);
+
         node.outputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
           parentnode[dst].inputFileLinks.push(cable);
@@ -697,17 +702,21 @@ $(() => {
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
-    const html = '<p class="dialogTitle">New file name (ex. aaa.txt)</p><input type=text class="dialogTextbox">'
+    const html = '<p class="dialogTitle">New file name (ex. aaa.txt)</p><input type=text id="newFileName" class="dialogTextbox">'
     dialogWrapper('#dialog', html)
       .done(function () {
         let newFileName = $('#newFileName').val();
+        console.log("createFile");
+        console.log(newFileName);
         let newFilePath = fb.getRequestedPath() + "/" + newFileName;
+        console.log(newFilePath);
+
         sio.emit('createNewFile', newFilePath, (result) => {
         });
       });
   });
   $('#createFolderButton').click(function () {
-    const html = '<p class="dialogTitle">New folder name</p><input type=text class="dialogTextbox">'
+    const html = '<p class="dialogTitle">New folder name</p><input id="newFolderName" type=text class="dialogTextbox">'
     dialogWrapper('#dialog', html)
       .done(function () {
         let newFolderName = $('#newFolderName').val();

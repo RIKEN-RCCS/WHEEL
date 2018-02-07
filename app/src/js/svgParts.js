@@ -53,6 +53,8 @@ function collisionDetection(svg, counterpart, x, y) {
     console.log(targetY);
 
     let distance2 = (targetX - x) * (targetX - x) + (targetY - y) * (targetY - y);
+    console.log(distance2);
+
     if (minDistance2 > distance2) {
       minDistance2 = distance2;
       nearestNodeIndex = index;
@@ -471,7 +473,7 @@ class SvgBox {
         const nodeColor = config.node_color[node.type];
         const nodeIconPath = config.node_icon[node.type];
         const nodePosX = node.pos.x / 8;
-        const nodePosY = node.pos.y / 4;
+        const nodePosY = node.pos.y / 5;
         const correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
         const img = this.draw
           .image(correctNodeIconPath)
@@ -514,7 +516,7 @@ class SvgBox {
         const iconTitlewidth = 24;
         const nodeColor = config.node_color[node.type];
         const nodePosX = node.pos.x / 8;
-        const nodePosY = node.pos.y / 4;
+        const nodePosY = node.pos.y / 5;
         const iconField = this.draw
           .polygon([
             [0, 0],
