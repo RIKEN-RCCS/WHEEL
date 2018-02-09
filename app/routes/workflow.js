@@ -551,7 +551,7 @@ async function onAddFileLink(sio, label, msg){
 
 async function onRemoveFileLink(sio, label, msg){
   logger.debug('removeFileLink event recieved:', msg);
-  removeFileLink(msg.src, msg.dst, msg.srcName, msg.dstName);
+  removeFileLink(label, msg.src, msg.dst, msg.srcName, msg.dstName);
   try{
     await write(label);
     sio.emit('workflow', getCwf(label));
