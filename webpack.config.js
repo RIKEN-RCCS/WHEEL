@@ -3,11 +3,13 @@ const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 
-module.exports={
+module.exports = {
   entry: {
-    home:       "./app/src/js/home",
-    workflow:   "./app/src/js/workflow",
-    rapid:      "./app/src/js/rapid",
+    login: "./app/src/js/login",
+    home: "./app/src/js/home",
+    admin: "./app/src/js/admin",
+    workflow: "./app/src/js/workflow",
+    rapid: "./app/src/js/rapid",
     remotehost: "./app/src/js/remotehost",
   },
   stats: "detailed",
@@ -20,24 +22,24 @@ module.exports={
     new webpack.optimize.CommonsChunkPlugin({
       name: 'common',
       chunks: ['home', 'workflow', 'remotehost', 'rapid'],
-      minChunks: function(module, count){
+      minChunks: function (module, count) {
         // extract all css from node_module
-        if(module.resource && module.context
+        if (module.resource && module.context
           && (/^.*\.(css|scss)$/).test(module.resource)
-          && module.context.indexOf("node_modules") !== -1){
-           return true;
-         }
-        return count >=2;
+          && module.context.indexOf("node_modules") !== -1) {
+          return true;
+        }
+        return count >= 2;
       }
     }),
     new ExtractTextPlugin({
-      filename: (getPath)=>{
+      filename: (getPath) => {
         return getPath('css/[name].css').replace('css/js', 'css');
       },
       allChunks: true
     })
   ],
-  module:{
+  module: {
     rules: [
       {
         test: /\.js$/,

@@ -6,7 +6,7 @@ import '../css/fileBrowser.css';
 
 export default class {
   // public methods
-  constructor(socket, idFileList, recvEventName, withContextMenu = false, additionalMenu={}) {
+  constructor(socket, idFileList, recvEventName, withContextMenu = false, additionalMenu = {}) {
     // private properties
     this.defaultColor = null;
     this.selectedItemColor = 'lightblue';
@@ -53,77 +53,77 @@ export default class {
     });
   }
   onClick(func) {
-    $(this.idFileList).on("click", 'li', (event) => {
-      var target = $(event.target).data('path').trim() + '/' + $(event.target).text().trim();
+    $(this.idFileList).on("click", 'li,i', (event) => {
+      var target = $(event.target).data('path').trim() + '/' + $(event.target).data('name').trim();
       func(target);
     });
   }
   onFileClick(func) {
-    $(this.idFileList).on("click", 'li', (event) => {
+    $(this.idFileList).on("click", 'li,i', (event) => {
       if (!$(event.target).data('isdir')) {
-        var target = $(event.target).data('path').trim() + '/' + $(event.target).text().trim();
+        var target = $(event.target).data('path').trim() + '/' + $(event.target).data('name').trim();
         func(target);
       }
     });
   }
   onFileDblClick(func) {
-    $(this.idFileList).on("dblclick", 'li', (event) => {
+    $(this.idFileList).on("dblclick", 'li,i', (event) => {
       if (!$(event.target).data('isdir')) {
-        var target = $(event.target).data('path').trim() + '/' + $(event.target).text().trim();
+        var target = $(event.target).data('path').trim() + '/' + $(event.target).data('name').trim();
         func(target);
       }
     });
   }
   onDirClick(func) {
-    $(this.idFileList).on("click", 'li', (event) => {
+    $(this.idFileList).on("click", 'li,i', (event) => {
       if ($(event.target).data('isdir')) {
-        var target = $(event.target).data('path').trim() + '/' + $(event.target).text().trim();
+        var target = $(event.target).data('path').trim() + '/' + $(event.target).data('name').trim();
         func(target);
       }
     });
   }
   onDirDblClick(func) {
-    $(this.idFileList).on("dblclick", 'li', (event) => {
+    $(this.idFileList).on("dblclick", 'li,i', (event) => {
       if ($(event.target).data('isdir')) {
-        var target = $(event.target).data('path').trim() + '/' + $(event.target).text().trim();
+        var target = $(event.target).data('path').trim() + '/' + $(event.target).data('name').trim();
         func(target);
       }
     });
   }
   // private methods
-  createContextMenu(additionalMenu, trigger){
+  createContextMenu(additionalMenu, trigger) {
     const socket = this.socket;
     const fileList = `${this.idFileList} li`;
-    const defaultItems={
-        'rename': {
-          name: 'Rename',
-          callback: function () {
-            var path = $(this).data('path');
-            var oldName = $(this).data('name');
-            var html = '<p>input new filename</p><input type="text" id="newName">';
-            dialogWrapper('#dialog', html).done(function () {
-              var newName = $('#newName').val();
-              var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
-              $(fileList).remove(`:contains(${oldName})`);
-              socket.emit('renameFile', obj);
-            });
-          }
-        },
-        'delete': {
-          name: 'Delete',
-          callback: function () {
-            var filename = $(this).data('name');
-            var target = $(this).data('path') + '/' + filename;
-            var html = 'Are you sure you want to delete this file?';
-            dialogWrapper('#dialog', html).done(function () {
-              $(fileList).remove(`:contains(${filename})`);
-              socket.emit('removeFile', target);
-            });
-          }
+    const defaultItems = {
+      'rename': {
+        name: 'Rename',
+        callback: function () {
+          var path = $(this).data('path');
+          var oldName = $(this).data('name');
+          var html = '<p id="fileRenameLabel">input new filename</p><input type="text" id="newName">';
+          dialogWrapper('#dialog', html).done(function () {
+            var newName = $('#newName').val();
+            var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
+            $(fileList).remove(`:contains(${oldName})`);
+            socket.emit('renameFile', obj);
+          });
         }
+      },
+      'delete': {
+        name: 'Delete',
+        callback: function () {
+          var filename = $(this).data('name');
+          var target = $(this).data('path') + '/' + filename;
+          var html = '<p id="fileDeleteLabel">Delete file</p><div id="deleteMessage">Are you sure you want to delete this file?</div>';
+          dialogWrapper('#dialog', html).done(function () {
+            $(fileList).remove(`:contains(${filename})`);
+            socket.emit('removeFile', target);
+          });
+        }
+      }
     }
     const items = Object.assign({}, additionalMenu, defaultItems);
-    return {'items': items}
+    return { 'items': items }
   }
   registerContextMenu(additionalMenu) {
     const fileList = `${this.idFileList} li`;
@@ -157,7 +157,7 @@ export default class {
       if (!this.isValidData(data))
         return;
       const iconClass = data.isdir ? 'fa-folder-o' : 'fa-file-o';
-      const normalIcon = `<i class="fa ${iconClass} fa-2x" aria-hidden="true"></i>`;
+      const normalIcon = `<i class="fa ${iconClass} fa-2x" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"></i>`;
       const symlinkIcon = `<span class="fa-stack"><i class="fa ${iconClass} fa-stack-2x"></i><i class="fa fa-share fa-stack-1x"></i></span>`;
       let icon = data.islink ? symlinkIcon : normalIcon;
       var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}">${icon} ${data.name}</li>`);
@@ -182,15 +182,15 @@ export default class {
     });
   }
   onClickDefault() {
-    $(this.idFileList).on("click", 'li', (event) => {
+    $(this.idFileList).on("click", 'li,i', (event) => {
       this.changeColorsWhenSelected();
-      this.lastClicked = $(event.target).text().trim();
+      this.lastClicked = $(event.target).data('name').trim();
     });
   }
   onDirDblClickDefault() {
-    $(this.idFileList).on("dblclick", 'li', (event) => {
+    $(this.idFileList).on("dblclick", 'li,i', (event) => {
       if ($(event.target).data('isdir')) {
-        var target = $(event.target).data('path').trim() + '/' + $(event.target).text().trim();
+        var target = $(event.target).data('path').trim() + '/' + $(event.target).data('name').trim();
         this.request(this.sendEventName, target, null);
         $(this.idFileList).empty();
       }

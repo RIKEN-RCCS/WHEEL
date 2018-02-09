@@ -1,16 +1,17 @@
 import $ from 'jquery';
 import Vue from 'vue/dist/vue.esm.js';
 
-import FileBrowser from  './fileBrowser';
+import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
 
 import 'jquery-ui/themes/base/all.css';
 import '../css/remotehost.css';
+import { log } from 'util';
 
 $(() => {
   // create socket.io instance
-  const socket= io('/remotehost');
-  const defaultHostinfo={
+  const socket = io('/remotehost');
+  const defaultHost = {
     name: '',
     host: '',
     path: '',
@@ -19,92 +20,138 @@ $(() => {
     numJob: 5,
     queue: '',
     port: 22,
-    id: ''
+    id: '',
+    jobScheduler: ''
   }
 
   // create vue.js instance and render
   let vm = new Vue({
     el: '#view',
     data: {
-      hostinfo: Object.assign({},defaultHostinfo),
-      showInputArea: false,
+      newHostInfo: Object.assign({}, defaultHost),
       authType: '2',
       mode: 'addHost',
       hostList: [],
-      selectedHosts: [],
+      selectedHost: -1,
       testing: null,
       OK: [],
-      NG: []
+      NG: [],
+      errorMessage: 'temp'
     },
-    methods:{
-      toggleSelected: function(i){
-        let index=this.selectedHosts.indexOf(i);
-        if(index === -1){
-          this.selectedHosts.push(i);
-        }else{
-          this.selectedHosts.splice(index,1);
+    methods: {
+      toggleSelected: function (i) {
+        console.log(i);
+        if (this.selectedHost === i) {
+          console.log(i);
+          this.selectedHost = -1;
+          resetNewHost();
+        } else {
+          this.selectedHost = i;
+          Object.assign(this.newHostInfo, this.hostList[this.selectedHost]);
+          vm.authType = (!this.newHostInfo.keyFile || this.newHostInfo.keyFile.length === 0) ? '1' : '2';
+        }
+        let index = this.OK.indexOf(-1);
+        if (index !== -1) {
+          this.OK.splice(index, 1);
+        }
+        index = this.NG.indexOf(-1);
+        if (index !== -1) {
+          this.NG.splice(index, 1);
         }
       },
-      emitHost: function(){
-        if(this.authType === '1'){
-          this.hostinfo.keyFile=null;
+      onAddButton: function () {
+        this.selectedHost = -1
+        resetNewHost();
+        this.errorMessage = '';
+        $("#errorMessage").css("visibility", "hidden");
+      },
+      onCopyButton: function () {
+        this.mode = 'copyHost';
+        $("#errorMessage").css("visibility", "hidden");
+        if (this.selectedHost === -1) {
+          this.errorMessage = 'Please select Host';
+          $("#errorMessage").css("visibility", "visible");
+          return;
         }
-        socket.emit(this.mode, this.hostinfo);
-        resetInputArea();
+        socket.emit('copyHost', this.hostList[this.selectedHost].id);
       },
-      editHost: function(){
-        this.mode='updateHost';
-        this.hostinfo=this.hostList[this.selectedHosts[this.selectedHosts.length-1]];
-        this.showInputArea=true;
+      onRemoveButton: function () {
+        this.mode = 'removeHost';
+        $("#errorMessage").css("visibility", "hidden");
+        if (this.selectedHost === -1) {
+          this.errorMessage = 'Please select Host';
+          $("#errorMessage").css("visibility", "visible");
+          return;
+        }
+
+        $("#deleteCheckDialog").dialog({ width: 334, title: 'Delete Host', modal: true });
       },
-      quitInput: resetInputArea,
-      removeHost: function(){
-        this.selectedHosts.forEach((e)=>{
-          socket.emit('removeHost', this.hostList[e].id);
-        })
+      onEditAreaOKButton: function () {
+        if (this.authType === '1') {
+          this.newHostInfo.keyFile = null;
+        }
+        console.log(this.selectedHost);
+        if (this.selectedHost === -1) {
+          this.mode = 'addHost';
+        } else {
+          this.mode = 'updateHost';
+        }
+        socket.emit(this.mode, this.newHostInfo);
+        resetNewHost();
+        this.selectedHost = -1;
       },
-      copyHost: function(){
-        this.selectedHosts.forEach((e)=>{
-          socket.emit('copyHost', this.hostList[e].id);
-        })
+      onEditAreaCancelButton: function () {
+        resetNewHost();
+        this.selectedHost = -1;
+      },
+      onDialogOKButton: function () {
+        socket.emit('removeHost', this.hostList[this.selectedHost].id);
+        resetNewHost();
+        $("#deleteCheckDialog").dialog('close');
+      },
+      onDialogCancelButton: function () {
+        $("#deleteCheckDialog").dialog('close');
+      },
+      isSelected: function (index) {
+        let flag;
+        if (this.selectedHost === index) {
+          flag = true;
+        } else {
+          flag = false;
+        }
+        return flag;
       },
       browse: browseServerFiles,
       test: testSshConnection,
-      buttonState: function(index){
+      buttonState: function (index) {
         let state = 'Test';
-        if(index === this.testing){
-          state ='Testing';
-        }else if(this.OK.includes(index)){
+        if (index === this.testing) {
+          state = 'Testing';
+        } else if (this.OK.includes(index)) {
           state = 'OK';
-        }else if(this.NG.includes(index)){
+        } else if (this.NG.includes(index)) {
           state = 'NG';
         }
         return state
       },
-      isSelected: function(index){
-        return this.selectedHosts.includes(index);
-      }
     },
-    computed:{
-      isDuplicate: function(){
-        if(this.mode === 'updateHost'){
-          return false;
-        }else{
-          return this.hostList.some((e)=>{
-            return e.name === this.hostinfo.name;
-          });
+    computed: {
+      isDuplicate: function () {
+        return this.hostList.some((element) => {
+          return element.name === this.newHostInfo.name &&
+            element.id !== this.newHostInfo.id;
+        });
+      },
+      validation: function () {
+        return {
+          name: !isEmpty(this.newHostInfo.name),
+          host: !isEmpty(this.newHostInfo.host),
+          username: !isEmpty(this.newHostInfo.username),
+          //path: !isEmpty(this.newHostInfo.path)
         }
       },
-      validation: function(){
-        return{
-          name: !isEmpty(this.hostinfo.name),
-          host: !isEmpty(this.hostinfo.host),
-          username: !isEmpty(this.hostinfo.username),
-          path: !isEmpty(this.hostinfo.path)
-        }
-      },
-      hasError: function(){
-        return !Object.keys(this.validation).every((key)=>{
+      hasError: function () {
+        return this.isDuplicate || !Object.keys(this.validation).every((key) => {
           return this.validation[key];
         });
       }
@@ -113,24 +160,23 @@ $(() => {
 
   // request host list
   socket.emit('getHostList', true);
-  socket.on('hostList', (hostList)=>{
+  socket.on('hostList', (hostList) => {
     vm.hostList = hostList;
-    vm.selectedHosts=[];
+    vm.selecteds = [];
   });
 
-
-  function browseServerFiles(){
+  function browseServerFiles() {
     const html = '<p id="path"></p><ul id=fileList></ul>';
     const dialogOptions = {
-      height: $(window).height() * 0.98,
-      width: $(window).width() * 0.98
+      height: $(window).height() * 0.50,
+      width: $(window).width() * 0.50
     };
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {
         let target = fb.getRequestedPath() + '/' + fb.getLastClicked()
         socket.emit('add', target);
-        vm.hostinfo.keyFile=target;
+        vm.hostinfo.keyFile = target;
       });
     $('#fileList').empty();
     fb.resetOnClickEvents();
@@ -139,35 +185,51 @@ $(() => {
     });
     fb.onFileDblClick(function (target) {
       $('#dialog').dialog('close');
-      vm.hostinfo.keyFile=target;
+      vm.newHostInfo.keyFile = target;
     });
     fb.request('getFileList', null, null);
   }
 
-  function testSshConnection(index){
-    vm.testing=index;
-    let host = vm.hostList[index];
-    const html='<p>input password</p><input type=password id="password">'
+  function testSshConnection(index) {
+    vm.testing = null;
+    const html = '<p id="sshConnectionLabel">Input SSH connection password.</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
-        let password=$('#password').val();
-        socket.emit('tryConnectHost', host.id, password, (isConnect) => {
-          vm.testing=null;
-          vm.selectedHosts=[];
-          if (isConnect) {
-            vm.OK.push(index);
-          } else {
-            vm.NG.push(index);
-          }
-        });
+        vm.testing = index;
+        let password = $('#password').val();
+        if (index === -1) {
+          socket.emit('tryConnectHost', vm.newHostInfo, password, (isConnect) => {
+            console.log(isConnect)
+            vm.testing = null;
+            if (isConnect) {
+              vm.OK.push(index);
+            } else {
+              vm.NG.push(index);
+            }
+          });
+        } else {
+          let host = vm.hostList[index];
+          socket.emit('tryConnectHostById', host.id, password, (isConnect) => {
+            console.log(isConnect)
+            vm.testing = null;
+            if (isConnect) {
+              vm.OK.push(index);
+            } else {
+              vm.NG.push(index);
+            }
+          });
+        }
       });
   }
 
-  function resetInputArea(){
-    vm.showInputArea=false;
-    vm.hostinfo=Object.assign({},defaultHostinfo);
+  function resetNewHost() {
+    Object.assign(vm.newHostInfo, defaultHost);
   }
-  function isEmpty(string){
+
+  function isEmpty(string) {
     return string === '';
   }
+
+  var pos = $("#titleUserName").offset();
+  $("#img_user").css('right', window.innerWidth - pos.left + "px");
 });
