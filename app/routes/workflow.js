@@ -136,12 +136,6 @@ async function delValue(label, node, property, value){
   }
 }
 
-async function removeNodeDir(label, index){
-  const target=getNode(label, index);
-  const dirName=path.resolve(getCurrentDir(label),target.path);
-  return del(dirName, { force: true });
-}
-
 /**
  * add new inputFile entry
  * @param inputFiles - inputFile array which will be modified
@@ -502,16 +496,18 @@ async function onUpdateNode(sio, label, msg){
 
 async function onRemoveNode(sio, label, index){
   logger.debug('removeNode event recieved: ', index);
-  if(! getNode(label, index)){
+  const target=getNode(label, index);
+  if(! target){
     logger.error('illegal remove node request', msg);
     return
   }
+  const dirName=path.resolve(getCurrentDir(label),target.path);
 
   removeAllLink(label, index);
   removeAllFileLink(label, index);
   removeNode(label, index);
   try{
-    await removeNodeDir(label, index);
+    await del(dirName, { force: true });
     await write(label);
     sio.emit('workflow', getCwf(label));
   }catch(err){
@@ -647,7 +643,7 @@ module.exports = function(io){
       onCleanProject(socket, msg);
     });
     socket.on('getProjectState', ()=>{
-      socket.emit('projectState', projectState);
+      socket.emit('projectState', getProjectState(label));
     });
 
     socket.on('updateProjectJson', (data)=>{
