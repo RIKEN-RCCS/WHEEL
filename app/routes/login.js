@@ -1,43 +1,62 @@
 "use strict";
 const path = require('path');
+const fs = require('fs');
+const {promisify} = require('util');
+
 const express = require('express');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
-const {admin} = require('../db/db');
+const {admin, userAccount} = require('../db/db');
+const logger = require("../logger");
 
 passport.use(new LocalStrategy(
-  {
-    usernameField: 'id',
-    passwordField: 'password',
-    passReqToCallback: true
-  },
-  (req, username, password, done)=>{
-    let account = userAccount.query('id', username);
-    console.log(username, password);
+  (username, password, done)=>{
+    //TODO  sessionを使ってログイン済だったらdoneを返す
+    const account = userAccount.query('id', username);
     if(!account){
-      req.flash('error', 'invalid user id');
-      return done(null, false);
+      return done(null, false, {message: 'invalid user id'});
     }
     //TODO passwordをhashで保存するように変更した上で、hash後の値を比較
     if(account.pw!== password){
-      req.flash('error', 'invalid password');
-      return done(null, false);
+      return done(null, false, {message: 'invalid password'});
     }
     return done(null, username);
-  }));
+  })
+);
+
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function(err, user) {
+    done(err, user);
+  });
+});
 
 const router = express.Router();
 router.get('/', (req, res)=>{
   res.sendFile(path.resolve(__dirname, '../views/login.html'));
 });
-router.post('/',
-  passport.authenticate('local', {failureRedirect: '/login'}),
-    (req, res)=>{
-      if(req.user === admin){
-        return res.redirect('/admin');
-      }else{
-        return res.redirect('/home');
-      }
-    });
+router.post('/', (req, res, next)=>{
+  passport.authenticate('local', async (err, user, info)=>{
+    // exception occurred
+    if(err){
+      return next(err)
+    }
+    // authentication failed
+    if(!user){
+      logger.warn('authentication failed',info);
+      let html = await promisify(fs.readFile)(path.resolve(__dirname, '../views/login.html'));
+      html = html.toString().replace('<div id="errorMessage"></div>',
+        '<div id="errorMessage">invalid username or password</div>');
+      return res.send(html);
+    }else{
+      res.cookie('user', user);
+      const url = user === admin? '/admin':'/home';
+      return res.redirect(url);
+    }
+  })(req, res, next);
+});
 module.exports = router;

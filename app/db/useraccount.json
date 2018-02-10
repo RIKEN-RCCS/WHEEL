@@ -1,6 +1,10 @@
 [
   {
     "id": "admin",
+    "pw": "admin password"
+  },
+  {
+    "id": "hoge",
     "pw": "hoge"
   }
 ]
