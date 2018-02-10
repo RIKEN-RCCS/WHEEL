@@ -29,7 +29,7 @@ async function create(projectDirectory, projectName) {
   const projectJson= {
     "name": `${projectName}`,
     "description": "This is new Project.",
-    "state": "Planning",
+    "state": "not-started",
     "path": `./${projectJsonFilename}`,
     "path_workflow": `./${rootWorkflowFilename}`,
     "ctime": timestamp,
