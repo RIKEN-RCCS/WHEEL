@@ -5,7 +5,7 @@
     "projectList": "./projectList.json",
     "suffix": ".wheel",
     "interval": 1000,
-    "adminUser": "admin",
+    "admin": "admin",
     "scheduler": {
         "TCS": "./config/pjsub.sh",
         "TORQUE": "./config/qsub.sh"

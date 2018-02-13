@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const siofu = require('socketio-file-upload');
 const ejs = require('ejs');
 const passport = require('passport');
@@ -29,9 +30,17 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
 app.use(cookieParser());
+app.use(session({
+  secret: 'wheel',
+  resave: true,
+  saveUninitialized: false,
+  cookie: {
+    secure: "auto"
+  }}));
 app.use(express.static(path.resolve(__dirname, 'public'), { index: false }));
 app.use(siofu.router);
 app.use(passport.initialize());
+app.use(passport.session());
 
 // routing
 var routes = {

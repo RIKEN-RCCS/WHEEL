@@ -1,12 +1,12 @@
 const { promisify } = require("util");
 const fs = require("fs");
 const path = require("path");
+const del = require("del");
 
 // setup test framework
 const chai = require("chai");
 const { expect } = require("chai");
-const chaiAsPromised = require("chai-as-promised");
-chai.use(chaiAsPromised);
+chai.use(require('chai-fs'));
 const rewire = require("rewire");
 chai.use(function (_chai, _) {
   _chai.Assertion.addMethod('withMessage', function (msg) {
@@ -20,30 +20,58 @@ const wf = rewire("../app/routes/workflow.js");
 // test data
 const saved = require("./testWorkflow");
 let cwf = null;
+const label=null;
 
 // stub functions
 wf.__set__("write", ()=>{return Promise.resolve()});
+wf.__set__("del", ()=>{return Promise.resolve()});
 wf.__set__("getCwf", (label)=>{return cwf});
+wf.__set__("getCurrentDir", (label)=>{return "./"});
 wf.__set__("getNode", (label, index)=>{return cwf.nodes[index]});
-const sio={};
-sio.emit=(eventName, msg)=>{
-  /*
-    console.log("socket.io.emit() called.")
-    console.log("evengName:",eventName);
-    console.log("msg:",JSON.stringify(msg,["inputFiles", "nodes", "outputFiles","name","srcNode", "srcName", "dst", "dstNode", "dstName"],2));
-    */
-}
+wf.__set__("pushNode", (label, node)=>{return cwf.nodes.push(node) - 1});
+wf.__set__("removeNode", (label, index)=>{cwf.nodes[index]=null});
 
+//display detailed information of unhandled rejection
+process.on('unhandledRejection', console.dir);
 
 describe("Unit test for functions defined in workflow.js", function(){
+  wf.__get__("logger").setLogLevel('warn');
   beforeEach(function(){
     cwf = JSON.parse(JSON.stringify(saved));
   });
-  describe("#onRemoveLink", function(){
-    const testee = wf.__get__("onRemoveLink");
+  describe("#createNode", function(){
+    const testee = wf.__get__("createNode");
+    it("should add node[2]", async function(){
+      const nodeDir="./task0";
+      del(nodeDir);
+      await testee(label, {type: "task", pos:{x: 0, y:0}});
+
+      expect(cwf.nodes).to.have.lengthOf(3);
+      expect(cwf.nodes[2].type).to.eql("task");
+      expect(nodeDir).to.be.directory().and.empty;
+
+      expectNotChanged(cwf, saved, ["nodes"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+      del(nodeDir);
+    });
+  });
+  describe.skip("#updateValue", function(){
+    const testee = wf.__get__("updateValue");
+  });
+  describe.skip("#addValue", function(){
+    const testee = wf.__get__("addValue");
+  });
+  describe.skip("#delValue", function(){
+    const testee = wf.__get__("delValue");
+  });
+  describe.skip("#removeNodeDir", function(){
+    const testee = wf.__get__("removeNodeDir");
+  });
+  describe("#removeLink", function(){
+    const testee = wf.__get__("removeLink");
     it("should remove link from nodes[0] to nodes[1]", function(){
-      const msg = {src: 0, dst: 1}
-      testee(sio, null, msg);
+      testee(label, 0, 1, false);
 
       expect(cwf.nodes[0].next).to.have.lengthOf(0);
       expect(cwf.nodes[1].previous).to.have.lengthOf(0);
@@ -53,11 +81,58 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["next", "previous"]);
     });
   });
-  describe("#onAddFileLink", function(){
-    const testee = wf.__get__("onAddFileLink");
+  describe("#removeAllLink", function(){
+    const testee = wf.__get__("removeAllLink");
+    it("should remove all link on nodes[0]", function(){
+      testee(label, 0);
+
+      expect(cwf.nodes[0].next).to.have.lengthOf(0);
+      expect(cwf.nodes[1].previous).to.have.lengthOf(0);
+      expectNotChanged(cwf, saved, []);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["next"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["previous"]);
+    });
+    it("should remove all link on nodes[1]", function(){
+      testee(label, 0);
+
+      expect(cwf.nodes[0].next).to.have.lengthOf(0);
+      expect(cwf.nodes[1].previous).to.have.lengthOf(0);
+      expectNotChanged(cwf, saved, []);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["next"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["previous"]);
+    });
+  });
+  describe("#removeAllFileLink", function(){
+    const testee = wf.__get__("removeAllFileLink");
+    it("should all file link on nodes[0]", function(){
+      testee(label, 0);
+      expect(cwf.outputFiles).to.eql([
+        {
+            "name": "a",
+            "dst": []
+        },
+        {
+          "name": "newOutput",
+          "dst": []
+        }
+      ]);
+      expect(cwf.nodes[1].inputFiles).to.eql([
+        {
+          "name": "e",
+          "srcNode": null,
+          "srcName": null
+        }
+      ]);
+
+      expectNotChanged(cwf, saved, ["outputFiles"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["inputFiles", "outputFiles"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["inputFiles"]);
+    });
+  });
+  describe("#addFileLink", function(){
+    const testee = wf.__get__("addFileLink");
     it("should make new file link between children", function(){
-      const msg={src: 1, srcName: "newOutput", dst: 0, dstName: "newInput"}
-      testee(sio, null, msg);
+      testee(label, 1, 0, "newOutput", "newInput");
 
       expect(cwf.nodes[0].inputFiles).to.eql([
         {
@@ -98,8 +173,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
     });
     it("should add new dst to existing outputFile entry", function(){
-      const msg={src: 1, srcName: "f", dst: 0, dstName: "newInput"}
-      testee(sio, null, msg);
+      testee(label, 1, 0, "f", "newInput");
 
       expect(cwf.nodes[0].inputFiles).to.eql([
         {
@@ -137,8 +211,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
     });
     it("should replace existing inputFile entry", function(){
-      const msg={src: 1, srcName: "newOutput", dst: 0, dstName: "c"}
-      testee(sio, null, msg);
+      testee(label, 1, 0, "newOutput", "c");
 
       expect(cwf.outputFiles).to.eql([
         {
@@ -187,8 +260,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
     });
     it("should make new file link from parent to child", function(){
-      const msg={src: "parent", srcName: "newOutput", dst: 0, dstName: "newInput"}
-      testee(sio, null, msg);
+      testee(label, "parent", 0, "newOutput", "newInput");
 
       expect(cwf.outputFiles).to.eql([
         {
@@ -227,8 +299,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
     it("should make new file link from child to parent", function(){
-      const msg={src: 1, srcName: "newOutput", dst: "parent", dstName: "newInput"}
-      testee(sio, null, msg);
+      testee(label, 1, "parent", "newOutput", "newInput");
 
       expect(cwf.inputFiles).to.eql([
         {
@@ -267,8 +338,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
     });
     it("should add new dst(parent) entry to existing outputFile entry on child", function(){
-      const msg={src: 1, srcName: "f", dst: "parent", dstName: "newInput"}
-      testee(sio, null, msg);
+      testee(label, 1, "parent", "f", "newInput");
 
       expect(cwf.inputFiles).to.eql([
         {
@@ -306,8 +376,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
     });
     it("should replace existing inputFile entry on child", function(){
-      const msg={src: "parent", srcName: "newOutput", dst: 0, dstName: "c"}
-      testee(sio, null, msg);
+      testee(label, "parent", 0, "newOutput", "c");
 
       expect(cwf.outputFiles).to.eql([
         {
@@ -341,8 +410,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
     it("should replace existing inputFile entry on child", function(){
-      const msg={src: "parent", srcName: "newOutput", dst: 1, dstName: "e"}
-      testee(sio, null, msg);
+      testee(label, "parent", 1, "newOutput", "e");
 
       expect(cwf.outputFiles).to.eql([
         {
@@ -382,8 +450,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["inputFiles"]);
     });
     it("should replace existing inputFile entry on child", function(){
-      const msg={src: "parent", srcName: "a", dst: 1, dstName: "e"}
-      testee(sio, null, msg);
+      testee(label, "parent", 1, "a", "e");
 
       expect(cwf.outputFiles).to.eql([
         {
@@ -422,8 +489,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["inputFiles"]);
     });
     it("should replace existing inputFile entry on parent", function(){
-      const msg={src: 0, srcName: "d", dst: "parent", dstName: "b"}
-      testee(sio, null, msg);
+      testee(label, 0, "parent", "d", "b");
 
       expect(cwf.inputFiles).to.eql([
         {
@@ -467,8 +533,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
     });
     it("should replace existing inputFile entry on parent", function(){
-      const msg={src: 1, srcName: "newOutput", dst: "parent", dstName: "b"}
-      testee(sio, null, msg);
+      testee(label, 1, "parent", "newOutput", "b");
 
       expect(cwf.inputFiles).to.eql([
         {
@@ -502,88 +567,40 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
     });
     it("should not affect anything (existing file link)", function(){
-      const msg={src: "parent", srcName: "a", dst: 0, dstName: "c"}
-      testee(sio, null, msg);
+      testee(label, "parent", 0, "a", "c");
       expectNotChanged(cwf, saved, []);
       expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
     it("should not affect anything (existing file link)", function(){
-      const msg={src: 0, srcName: "d", dst: 1, dstName: "e"}
-      testee(sio, null, msg);
+      testee(label, 0, 1, "d", "e");
       expectNotChanged(cwf, saved, []);
       expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
     it("should not affect anything (existing file link)", function(){
-      const msg={src: 1, srcName: "f", dst: "parent", dstName: "b"}
-      testee(sio, null, msg);
+      testee(label, 1, "parent", "f", "b");
       expectNotChanged(cwf, saved, []);
       expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
     it("should not affect anything (loop)", function(){
-      const msg={src: 0, srcName: "d", dst: 0, dstName: "c"}
-      testee(sio, null, msg);
-      expectNotChanged(cwf, saved, []);
-      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
-      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
-    });
-    it("should not affect anything (loop)", function(){
-      const msg={src: 0, srcName: "d", dst: 0, dstName: "newInput"}
-      testee(sio, null, msg);
-      expectNotChanged(cwf, saved, []);
-      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
-      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
-    });
-    it("should not affect anything (loop)", function(){
-      const msg={src: 1, srcName: "f", dst: 1, dstName: "e"}
-      testee(sio, null, msg);
-      expectNotChanged(cwf, saved, []);
-      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
-      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
-    });
-    it("should not affect anything (loop)", function(){
-      const msg={src: 1, srcName: "newOutput", dst: 1, dstName: "e"}
-      testee(sio, null, msg);
+      testee(label, 0, 0, "d", "c");
       expectNotChanged(cwf, saved, []);
       expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
     it("should not affect anything (parent to parent)", function(){
-      const msg={src: "parent", srcName: "a", dst: "parent", dstName: "b"}
-      testee(sio, null, msg);
-      expectNotChanged(cwf, saved, []);
-      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
-      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
-    });
-    it("should not affect anything (parent to parent)", function(){
-      const msg={src: "parent", srcName: "a", dst: "parent", dstName: "newOutput"}
-      testee(sio, null, msg);
-      expectNotChanged(cwf, saved, []);
-      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
-      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
-    });
-    it("should not affect anything (parent to parent)", function(){
-      const msg={src: "parent", srcName: "newInput", dst: "parent", dstName: "b"}
-      testee(sio, null, msg);
-      expectNotChanged(cwf, saved, []);
-      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
-      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
-    });
-    it("should not affect anything (parent to parent)", function(){
-      const msg={src: "parent", srcName: "newInput", dst: "parent", dstName: "newOutput"}
-      testee(sio, null, msg);
+      testee(label, "parent", "parent", "a", "b");
       expectNotChanged(cwf, saved, []);
       expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
   });
-  describe("#onRemoveFileLink", function(){
-    const testee = wf.__get__("onRemoveFileLink");
+  describe("#removeFileLink", function(){
+    const testee = wf.__get__("removeFileLink");
     it("should remove file link from nodes[0] to nodes[1]", function(){
-      const msg = {src: 0, dst: 1, srcName: "d", dstName: "e"}
-      testee(sio, null, msg);
+      testee(label, 0, 1, "d", "e");
 
       expect(cwf.nodes[0].outputFiles).to.eql([{name: "d", dst:[]}]);
       expect(cwf.nodes[1].inputFiles).to.eql([{name: "e", srcNode: null, srcName: null}, ]);
@@ -593,8 +610,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], ["inputFiles"]);
     });
     it("should remove flie link from parent to nodes[0]", function(){
-      const msg = {src: "parent", dst: 0, srcName: "a", dstName: "c"};
-      testee(sio, null, msg);
+      testee(label, "parent", 0, "a", "c");
 
       expect(cwf.outputFiles).to.eql([
         {
@@ -624,8 +640,7 @@ describe("Unit test for functions defined in workflow.js", function(){
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
     });
     it("should remove flie link from nodes[1] to parent", function(){
-      const msg = {src: 1, dst: "parent", srcName: "f", dstName: "b"};
-      testee(sio, null, msg);
+      testee(label, 1, "parent", "f", "b");
 
       expect(cwf.inputFiles).to.eql([
         {
