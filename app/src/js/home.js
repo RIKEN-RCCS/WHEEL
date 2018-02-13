@@ -25,8 +25,9 @@ $(() => {
             .submit();
     };
     $.contextMenu({
-        'selector': '#projectList ul',
-        'items': {
+        selector: '#projectList ul',
+        itemClickEvent: 'click',
+        items: {
             'open': {
                 name: 'Open',
                 callback: openProject

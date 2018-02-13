@@ -378,6 +378,7 @@ $(() => {
     selector: 'g',
     autoHide: true,
     reposition: false,
+    itemClickEvent: "click",
     items: {
       "temp": {
         "name": ""
@@ -567,6 +568,9 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   function drawLinks(nodes) {
+    console.log("nodes");
+    console.log(nodes);
+
     nodes.forEach(function (node) {
       if (node != null) {
         node.drawLinks();
@@ -574,6 +578,8 @@ $(() => {
     });
     nodes.forEach(function (node) {
       if (node != null) {
+        console.log(node);
+
         node.nextLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
           nodes[dst].previousLinks.push(cable);
