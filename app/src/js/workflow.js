@@ -744,28 +744,57 @@ $(() => {
     $('#drawer_menu').toggleClass('action', false);
   });
 
-  /*   $('.viewButton').click(function(){
-      $(".viewNodes").css('display', 'block');    
-    }); */
-
-  //ボタンでのviewの切り替え
-  $('.viewButton').mouseover(function () {
-    var viewButtonID = document.getElementById('.viewButton');
-    //setAttributeメソッドでfill属性の値を青に変更 
-
-    /* circle1.setAttribute("fill","#0000ff"); 
-    
-        svg1 = document.getElementById('svg1');
-        $('.viewNodes').css('display', 'block'); */
-  });
-
-
   function getSelectLabel(index) {
     var obj = document.getElementById(index);
     var idx = obj.selectedIndex;       //インデックス番号を取得
     var val = obj.options[idx].value;  //value値を取得
     var txt = obj.options[idx].text;  //ラベルを取得
   }
+
+  // GUI表示関係処理
+
+  //header buttons
+  $('#run_button').mouseover(function () {
+    $('#run_button').attr("src", "/image/btn_play_h.png");
+  });
+  $('#run_button').mouseleave(function () {
+    $('#run_button').attr("src", "/image/btn_play_n.png");
+  });
+
+  $('#pause_button').mouseover(function () {
+    $('#pause_button').attr("src", "/image/btn_pause_h.png");
+  });
+  $('#pause_button').mouseleave(function () {
+    $('#pause_button').attr("src", "/image/btn_pause_n.png");
+  });
+
+  $('#stop_button').mouseover(function () {
+    $('#stop_button').attr("src", "/image/btn_stop_h.png");
+  });
+  $('#stop_button').mouseleave(function () {
+    $('#stop_button').attr("src", "/image/btn_stop_n.png");
+  });
+
+  $('#clean_button').mouseover(function () {
+    $('#clean_button').attr("src", "/image/btn_replay_h.png");
+  });
+  $('#clean_button').mouseleave(function () {
+    $('#clean_button').attr("src", "/image/btn_replay_n.png");
+  });
+
+  $('#save_button').mouseover(function () {
+    $('#save_button').attr("src", "/image/btn_save_h.png");
+  });
+  $('#save_button').mouseleave(function () {
+    $('#save_button').attr("src", "/image/btn_save_n.png");
+  });
+
+  $('#revert_button').mouseover(function () {
+    $('#revert_button').attr("src", "/image/btn_reset_h.png");
+  });
+  $('#revert_button').mouseleave(function () {
+    $('#revert_button').attr("src", "/image/btn_reset_n.png");
+  });
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - 16 - pos.left + "px");

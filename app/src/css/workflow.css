@@ -140,7 +140,7 @@ header {
     margin: 0 0 0 0;    
     width: 100px;
     border-radius: 12px;
-    border: solid 1px green;
+    border: solid 1px #FFFFFF;
 }
 
 .controler_button{
@@ -150,7 +150,8 @@ header {
 .img_btn_contoroler{
     height: 24px;
     width: 24px;
-    margin: 0 0 0 8px;    
+    margin: 0 0 0 8px;
+    cursor: pointer;
 }
 
 .date_title {
@@ -161,12 +162,12 @@ header {
     margin: 0 0 0 8px;
 }
 
-#save_button{
+#save_menu{
     display: inline-flex;
     margin: 0 0 0 8px;    
 }
 
-#revert_button{
+#revert_menu{
     display: inline-flex;    
     margin: 0 4px 0 8px;    
 }
