@@ -1,10 +1,10 @@
 [
-  {
-    "id": "admin",
-    "pw": "admin password"
-  },
-  {
-    "id": "hoge",
-    "pw": "hoge"
-  }
+    {
+        "name": "admin",
+        "password": "admin password"
+    },
+    {
+        "name": "hoge",
+        "password": "hoge"
+    }
 ]
