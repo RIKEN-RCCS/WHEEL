@@ -156,7 +156,6 @@ async function write (label){
   await writeProjectJson(label);
   let cwf =getCwf(label);
   let filename = getCwfFilename(label);
-  console.log(filename);
   await promisify(fs.writeFile)(filename, JSON.stringify(cwf, null, 4));
   return gitAdd(label, filename);
 }

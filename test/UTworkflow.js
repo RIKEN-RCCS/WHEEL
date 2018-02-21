@@ -19,13 +19,17 @@ const wf = rewire("../app/routes/workflow.js");
 
 // test data
 const saved = require("./testWorkflow");
+const savedParent = require('./parentWorkflow');
 let cwf = null;
+let parent = null;
 const label=null;
 
 // stub functions
 wf.__set__("write", ()=>{return Promise.resolve()});
 wf.__set__("del", ()=>{return Promise.resolve()});
 wf.__set__("getCwf", (label)=>{return cwf});
+wf.__set__("_readChildWorkflow", (label, node)=>{return cwf});
+wf.__set__("_writeChildWorkflow", (label, node, childWorkflow)=>{cwf=JSON.parse(JSON.stringify(childWorkflow))});
 wf.__set__("getCurrentDir", (label)=>{return "./"});
 wf.__set__("getNode", (label, index)=>{return cwf.nodes[index]});
 wf.__set__("pushNode", (label, node)=>{return cwf.nodes.push(node) - 1});
@@ -38,6 +42,7 @@ describe("Unit test for functions defined in workflow.js", function(){
   wf.__get__("logger").setLogLevel('warn');
   beforeEach(function(){
     cwf = JSON.parse(JSON.stringify(saved));
+    parent = JSON.parse(JSON.stringify(savedParent));
   });
   describe("#createNode", function(){
     const testee = wf.__get__("createNode");
@@ -56,17 +61,423 @@ describe("Unit test for functions defined in workflow.js", function(){
       del(nodeDir);
     });
   });
-  describe.skip("#updateValue", function(){
+  describe("#updateValue", function(){
     const testee = wf.__get__("updateValue");
+    it("should chnage node[0]'s name", async function(){
+      await testee(label, cwf.nodes[0], "name", "hoge");
+      expect(cwf.nodes[0].name).to.eql("hoge");
+      expectNotChanged(cwf, saved, []);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["name"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+    it("should chnage workflow's name", async function(){
+      await testee(label, parent, "name", "hoge");
+      expect(parent.name).to.eql("hoge");
+      expect(cwf.name).to.eql("hoge");
+      expectNotChanged(parent, savedParent, ["name"]);
+      expectNotChanged(cwf, saved, ["name"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
   });
-  describe.skip("#addValue", function(){
+  describe("#updateInputFiles", function(){
+    const testee = wf.__get__("updateInputFiles");
+    it("should chnage node[0]'s inputFiles", async function(){
+      const newInputFiles = [
+      {
+        "name": "hoge",
+        "srcNode": "parent",
+        "srcName": "a"
+      },
+      {
+        "name": "huga",
+        "srcNode": null,
+        "srcName": null
+      }]
+      await testee(label, cwf.nodes[0], newInputFiles);
+      expect(cwf.nodes[0].inputFiles).to.eql(newInputFiles);
+      expect(cwf.outputFiles).to.eql([
+        {
+            "name": "a",
+            "dst": [
+              {
+                "dstNode": 0,
+                "dstName": "hoge"
+              }
+            ]
+        },
+        {
+          "name": "newOutput",
+          "dst": []
+        }
+      ]);
+
+      expectNotChanged(cwf, saved, ["outputFiles"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["inputFiles"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+    it("should change parent's inputFiles", async function(){
+      const newInputFiles = [
+        {
+          "name": "hoge",
+          "srcNode": null,
+          "srcName": null
+        },
+        {
+          "name": "newOutput",
+          "srcNode": null,
+          "srcName": null
+        }
+      ];
+      await testee(label, parent, newInputFiles);
+
+      expect(parent.inputFiles).to.eql(newInputFiles);
+      expectNotChanged(parent, savedParent, ["inputFiles"]);
+      expect(cwf.outputFiles).to.eql([
+        {
+            "name": "hoge",
+            "dst": [
+              {
+                "dstNode": 0,
+                "dstName": "c"
+              }
+            ]
+        },
+        {
+          "name": "newOutput",
+          "dst": []
+        }
+      ]);
+      expectNotChanged(cwf, saved, ["outputFiles"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["inputFiles"]);
+      expect(cwf.nodes[0].inputFiles).to.eql([
+        {
+          "name": "c",
+          "srcNode": "parent",
+          "srcName": "hoge"
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        }
+      ]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+  });
+  describe("#updateOutputFiles", async function(){
+    const testee = wf.__get__("updateOutputFiles");
+    it("should chnage node[1]'s outputFiles", async function(){
+      const newOutputFiles=[
+      {
+        "name": "hoge",
+        "dst": [
+          {
+            "dstNode": "parent",
+            "dstName": "b"
+          }
+        ]
+      },
+      {
+        "name": "huga",
+        "dst": []
+      }]
+      await testee(label, cwf.nodes[1], newOutputFiles);
+
+      expect(cwf.nodes[1].outputFiles).to.eql(newOutputFiles);
+      expect(cwf.inputFiles).to.eql([
+        {
+          "name": "b",
+          "srcNode": 1,
+          "srcName": "hoge"
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        }]);
+
+      expectNotChanged(cwf, saved, ["inputFiles"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
+    });
+    it("should chnage parent's outputFiles", async function(){
+      const newOutputFiles=[
+        {
+          "name": "hoge",
+          "dst": []
+        },
+        {
+          "name": "newInput",
+          "dst": []
+        }]
+      await testee(label, parent, newOutputFiles);
+      expect(parent.outputFiles).to.eql(newOutputFiles);
+      expectNotChanged(parent, savedParent, ["outputFiles"]);
+      expect(cwf.inputFiles).to.eql([
+        {
+          "name": "hoge",
+          "srcNode": 1,
+          "srcName": "f"
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        }]);
+      expectNotChanged(cwf, saved, ["inputFiles"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
+      expect(cwf.nodes[1].outputFiles).to.eql([
+        {
+          "name": "f",
+          "dst": [
+            {
+              "dstNode": "parent",
+              "dstName": "hoge"
+            }
+          ]
+        },
+        {
+          "name": "newOutput",
+          "dst": []
+        }]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
+    });
+  });
+  describe("#addValue", async function(){
     const testee = wf.__get__("addValue");
+    it("should add new inputFile entry", async function(){
+      await testee(label, cwf.nodes[0], "inputFiles", {name: "hoge", srcNode: null, srcName:null});
+      expect(cwf.nodes[0].inputFiles).to.eql([
+        {
+          "name": "c",
+          "srcNode": "parent",
+          "srcName": "a"
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        },
+        {
+          "name": "hoge",
+            "srcNode": null,
+            "srcName": null
+        }
+      ]);
+      expectNotChanged(cwf, saved, []);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["inputFiles"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+    it("should add new outputFiles entry", async function(){
+      await testee(label, cwf.nodes[0], "outputFiles", {name: "hoge", dst: []});
+      expect(cwf.nodes[0].outputFiles).to.eql([
+        {
+          "name": "d",
+          "dst": [
+            {
+              "dstNode": 1,
+              "dstName": "e"
+            }
+          ]
+        },
+        {
+          "name": "hoge",
+          "dst": []
+        }]);
+      expectNotChanged(cwf, saved, []);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["outputFiles"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+    it("should add new inputFile entry to parent node", async function(){
+      await testee(label, parent, "inputFiles", {name: "hoge", srcNode: null, srcName:null});
+      expect(parent.inputFiles).to.eql([
+        {
+          "name": "a",
+          "srcNode": null,
+          "srcName": null
+        },
+        {
+          "name": "newOutput",
+          "srcNode": null,
+          "srcName": null
+        },
+        {
+          "name": "hoge",
+            "srcNode": null,
+            "srcName": null
+        }
+      ]);
+      expectNotChanged(parent, savedParent, ["inputFiles"]);
+      expect(cwf.outputFiles).to.eql([
+        {
+            "name": "a",
+            "dst": [
+              {
+                "dstNode": 0,
+                "dstName": "c"
+              }
+            ]
+        },
+        {
+          "name": "newOutput",
+          "dst": []
+        },
+        {
+          "name": "hoge",
+          "dst": []
+        }
+      ]);
+      expectNotChanged(cwf, saved, ["outputFiles"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+    it("should add new outputFiles entry to parent node", async function(){
+      await testee(label, parent, "outputFiles", {name: "hoge", dst: []});
+      expect(parent.outputFiles).to.eql([
+        {
+          "name": "b",
+          "dst": []
+        },
+        {
+          "name": "newInput",
+          "dst": []
+        },
+        {
+          "name": "hoge",
+          "dst": []
+        }]);
+      expectNotChanged(parent, savedParent, ["outputFiles"]);
+      expect(cwf.inputFiles).to.eql([
+        {
+            "name": "b",
+            "srcNode": 1,
+            "srcName": "f"
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        },
+        {
+          "name": "hoge",
+          "srcNode": null,
+          "srcName": null
+        }
+      ]);
+      expectNotChanged(cwf, saved, ["inputFiles"]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+
   });
-  describe.skip("#delValue", function(){
+  describe.skip("#delValue", async function(){
     const testee = wf.__get__("delValue");
   });
-  describe.skip("#removeNodeDir", function(){
-    const testee = wf.__get__("removeNodeDir");
+  describe("#delInputFiles", async function(){
+    const testee = wf.__get__("delInputFiles");
+    it("should delete inputFiles", async function(){
+      await testee(label, cwf.nodes[1], {"name": "e", "srcNode": 0, "srcName": "d"});
+
+      expect(cwf.nodes[0].outputFiles).to.eql([
+        {
+          "name": "d",
+          "dst": []
+        }
+      ]);
+      expect(cwf.nodes[1].inputFiles).to.eql([]);
+      expectNotChanged(cwf, saved, []);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["outputFiles"]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["inputFiles"]);
+    });
+    it("should delete inputFiles from parent", async function(){
+      await testee(label, parent, {"name": "a", "srcNode": null, "srcName": null});
+
+      expectNotChanged(parent, savedParent, ["inputFiles"]);
+      expect(parent.inputFiles).to.eql([
+        {
+          "name": "newOutput",
+          "srcNode": null,
+          "srcName": null
+        }
+      ]);
+      expectNotChanged(cwf, saved, ["outputFiles"]);
+      expect(cwf.outputFiles).to.eql([
+        {
+          "name": "newOutput",
+          "dst": []
+        }
+      ]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["inputFiles"]);
+      expect(cwf.nodes[0].inputFiles).to.eql([
+        {
+          "name": "c",
+          "srcNode": null,
+          "srcName": null
+        },
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        }
+      ]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
+    });
+  });
+  describe("#delOutputFiles", async function(){
+    const testee = wf.__get__("delOutputFiles");
+    it("should delete outputFiles", async function(){
+      await testee(label, cwf.nodes[0],
+        {"name": "d",
+          "dst": [{
+              "dstNode": 1,
+              "dstName": "e"
+            }]
+        }
+      );
+      expectNotChanged(cwf, saved, []);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], ["outputFiles"]);
+      expect(cwf.nodes[0].outputFiles).to.eql([]);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["inputFiles"]);
+      expect(cwf.nodes[1].inputFiles).to.eql([
+        {
+          "name": "e",
+          "srcNode": null,
+          "srcName": null
+        }
+      ]);
+    });
+    it("should delete outputFiles from parent", async function(){
+      await testee(label, parent, {"name": "b", "dst": []});
+
+      expectNotChanged(parent, savedParent, ["outputFiles"]);
+      expect(parent.outputFiles).to.eql([
+        {
+          "name": "newInput",
+          "dst": []
+        }
+      ]);
+      expectNotChanged(cwf, saved, ["inputFiles"]);
+      expect(cwf.inputFiles).to.eql([
+        {
+          "name": "newInput",
+          "srcNode": null,
+          "srcName": null
+        }
+      ]);
+      expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
+      expectNotChanged(cwf.nodes[1], saved.nodes[1], ["outputFiles"]);
+      expect(cwf.nodes[1].outputFiles).to.eql([
+        {
+          "name": "f",
+          "dst": []
+        },
+        {
+          "name": "newOutput",
+          "dst": []
+        }
+      ]);
+    });
   });
   describe("#removeLink", function(){
     const testee = wf.__get__("removeLink");
