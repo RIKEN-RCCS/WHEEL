@@ -1,4 +1,5 @@
-const logger = require('../logger');
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
 
 function isValidParamAxis(min, max, step){
   if(max <= min) return false;

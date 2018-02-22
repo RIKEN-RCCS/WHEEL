@@ -5,8 +5,9 @@ const util = require("util");
 
 const del = require("del");
 const siofu = require("socketio-file-upload");
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
 
-const logger = require("../logger");
 const fileBrowser = require("./fileBrowser");
 const {extProject, extWF, extPS} = require('../db/db');
 const {gitAdd} = require('./project');

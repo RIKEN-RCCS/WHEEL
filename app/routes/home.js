@@ -7,7 +7,8 @@ const util = require('util');
 let express = require('express');
 const del = require("del");
 
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 const fileBrowser = require("./fileBrowser");
 const projectListManager = require("./projectListManager");
 const projectManager = require("./projectManager");

@@ -8,7 +8,8 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
 const {admin, userAccount} = require('../db/db');
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 
 passport.use(new LocalStrategy(
   (username, password, done)=>{

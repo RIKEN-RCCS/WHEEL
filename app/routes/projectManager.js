@@ -6,7 +6,8 @@ const path = require("path");
 let nodegit = require("nodegit");
 
 const compo = require("./workflowComponent");
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 const {getDateString} = require('./utility');
 const {extProject, extWF, systemName, defaultFilename} = require('../db/db');
 

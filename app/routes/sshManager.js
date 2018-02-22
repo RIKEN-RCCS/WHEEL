@@ -3,7 +3,8 @@ const fs = require('fs');
 
 const ARsshClient = require('arssh2-client');
 
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
 let pool = []
 
 async function canConnect(hostInfo, password){

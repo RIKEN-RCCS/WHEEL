@@ -3,7 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const util = require('util');
 
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 const {projectList} = require('../db/db');
 /*
  *  projectList example

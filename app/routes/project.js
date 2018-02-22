@@ -4,8 +4,9 @@ const {promisify} = require("util");
 
 const del = require("del");
 const nodegit = require("nodegit");
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
 
-const logger = require("../logger");
 const {getDateString, replacePathsep} = require('./utility');
 
 class Project {

@@ -3,9 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const {promisify} = require('util');
 
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
+
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
-const logger = require('../logger');
 const {addXSync, getDateString, replacePathsep} = require('./utility');
 
 let executers=[];
@@ -24,8 +26,8 @@ function localExec(task){
   }
   let cp = child_process.exec(script, options, (err, stdout, stderr)=>{
     if(err) throw err;
-    logger.stdout(stdout);
-    logger.stderr(stderr);
+    logger.stdout(stdout.trim());
+    logger.stderr(stderr.trim());
   })
     .on('exit', (code) =>{
       if(code === 0){
@@ -78,10 +80,10 @@ async function remoteExecAdaptor(ssh, task){
   let workdir=path.posix.dirname(scriptAbsPath);
   let cmd = `cd ${workdir} && ${scriptAbsPath}`;
   let passToSSHout=(data)=>{
-    logger.SSHout(data.toString());
+    logger.sshout(data.toString().trim());
   }
   let passToSSHerr=(data)=>{
-    logger.SSHerr(data.toString());
+    logger.ssherr(data.toString().trim());
   }
   ssh.on('stdout', passToSSHout);
   ssh.on('stderr', passToSSHerr);
