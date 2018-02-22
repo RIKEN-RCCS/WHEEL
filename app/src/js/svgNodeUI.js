@@ -133,10 +133,9 @@ export class SvgNodeUI {
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dstIndex);
         this.elseLinks.push(cable);
-      });
-
-      dstPlug.on('click', (e) => {
-        this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex });
+        dstPlug.on('click', (e) => {
+          this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex });
+        });
       });
     }
     let receptorPlugs = this.svg.select('.receptorPlug');

@@ -380,9 +380,6 @@ $(() => {
     reposition: false,
     itemClickEvent: "click",
     items: {
-      "temp": {
-        "name": ""
-      },
       "delete": {
         "name": "delete",
         callback: function () {
@@ -783,17 +780,17 @@ $(() => {
   });
 
   $('#save_button').mouseover(function () {
-    $('#save_button').attr("src", "/image/btn_save_h.png");
+    $('#save_button_img').attr("src", "/image/btn_save_h.png");
   });
   $('#save_button').mouseleave(function () {
-    $('#save_button').attr("src", "/image/btn_save_n.png");
+    $('#save_button_img').attr("src", "/image/btn_save_n.png");
   });
 
   $('#revert_button').mouseover(function () {
-    $('#revert_button').attr("src", "/image/btn_reset_h.png");
+    $('#revert_button_img').attr("src", "/image/btn_reset_h.png");
   });
   $('#revert_button').mouseleave(function () {
-    $('#revert_button').attr("src", "/image/btn_reset_n.png");
+    $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
   });
 
   var pos = $("#titleUserName").offset();

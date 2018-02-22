@@ -162,19 +162,31 @@ header {
     margin: 0 0 0 8px;
 }
 
-#save_menu{
+#save_button{
     display: inline-flex;
-    margin: 0 0 0 8px;    
+    margin: 0 0 0 8px;
+    cursor: pointer;
 }
 
-#revert_menu{
+#save_button:hover{
+    color: #CCFF00;
+}
+
+#revert_button{
     display: inline-flex;    
-    margin: 0 4px 0 8px;    
+    margin: 0 4px 0 8px;
+    cursor: pointer;
+}
+
+#revert_button:hover{
+    color: #CCFF00;
 }
 
 .figure_caption {
     margin-left: 8px;
 }
+
+
 
 
 .controler_bar_right_area {
