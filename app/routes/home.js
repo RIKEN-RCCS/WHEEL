@@ -19,7 +19,6 @@ const ProjectJSON = new RegExp(`^.*${escape(extProject)}$`);
 const noWheelDir = new RegExp(`^(?!^.*${escape(suffix)}$).*$`);
 
 let adaptorSendFiles = function (withFile, dirFilter, sio, msg) {
-  console.log('hoge');
     const target = msg ? path.normalize(msg) : rootDir || os.homedir() || '/';
     const request = msg || target;
     fileBrowser(sio, 'fileList', target, {

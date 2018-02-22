@@ -61,22 +61,24 @@ async function readProjectJson (label){
   return JSON.parse(await promisify(fs.readFile)(filename));
 }
 
-async function writeProjectJson(label){
+async function writeProjectJson(label, projectJson){
   let filename = _getProject(label).projectJsonFilename;
-  let projectJson = await readProjectJson(label);
+  if(! projectJson){
+    projectJson = await readProjectJson(label);
+  }
   projectJson.mtime=getDateString();
   await promisify(fs.writeFile)(filename, JSON.stringify(projectJson, null, 4));
   return gitAdd(label, filename);
 }
 
 async function updateProjectJson (label, data){
-  let projectJson = await readProjectJson(label);
-  for(let key in projectJson){
+  const projectJson = await readProjectJson(label);
+  for(const key in projectJson){
     if(data.hasOwnProperty(key)){
       projectJson[key] = data[key];
     }
   }
-  return writeProjectJson(label);
+  return writeProjectJson(label, projectJson);
 }
 
 function setProjectState(label, state){
