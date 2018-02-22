@@ -6,7 +6,8 @@ const path = require("path");
 let nodegit = require("nodegit");
 
 const compo = require("./workflowComponent");
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 const {getDateString} = require('./utility');
 const {extProject, extWF, systemName, defaultFilename} = require('../db/db');
 
@@ -29,7 +30,7 @@ async function create(projectDirectory, projectName) {
   const projectJson= {
     "name": `${projectName}`,
     "description": "This is new Project.",
-    "state": "Planning",
+    "state": "not-started",
     "path": `./${projectJsonFilename}`,
     "path_workflow": `./${rootWorkflowFilename}`,
     "ctime": timestamp,

@@ -1,14 +1,16 @@
 const fs= require('fs');
 const path= require('path');
-const util= require('util');
+const {promisify} = require('util');
 const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
+const glob = require('glob');
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
 
 const {interval} = require('../db/db');
-const logger=require('../logger');
 const executer = require('./executer');
-const { addXSync, asyncNcp } = require('./utility');
+const { addXSync, asyncNcp, mkdir_p} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 
 // utility functions
@@ -92,6 +94,7 @@ class Dispatcher{
     this.nextSearchList=[];
     this.children=[];
     this.dispatchedTaskList=[]
+    this.finishedTaskList=[]
     this.nodes=wf.nodes;
     this.nodes.forEach((node,i)=>{
       if(node == null) return;
@@ -100,8 +103,50 @@ class Dispatcher{
       }
     });
     logger.debug('initial tasks : ',this.currentSearchList);
-    //TODO this.wf.inputFilesをnodesに配る
     this.dispatching=false;
+  }
+
+  deliverOutputFiles(node){
+    const promises = node.outputFiles.map((e)=>{
+      //memo src can be glob pattern
+      const src = e.name;
+      const srcRoot= path.resolve(this.cwfDir, node.path);
+      const p2 = e.dst.map(async (dst)=>{
+        const tmp = dst.dstNode === "parent" ? "./" : this.wf.nodes[dst.dstNode].path;
+        const dstRoot = path.resolve(this.cwfDir, tmp);
+        const dstPath=path.resolve(dstRoot, dst.dstName);
+        // remove dst file if it exist, make dst dir if it does not exist.
+        try{
+          await promisify(fs.unlink)(dstPath);
+        }catch(e){
+          if(e.code !== 'ENOENT' && e.code !== 'EISDIR' && e.code !== 'EPERM'){
+            return Promise.reject(e);
+          }
+        }
+        await mkdir_p(dstRoot);
+        const srces = await promisify(glob)(src, {cwd: srcRoot});
+        let p1=[]
+        if(srces.length === 1){
+          const oldPath = path.resolve(srcRoot, srces[0]);
+          logger.debug('make symlink from', oldPath, "to", dstPath);
+          p1.push(promisify(fs.symlink)(oldPath, dstPath));
+        }else if(srces.length > 1){
+          p1 = srces.map(async (srcFile)=>{
+            const oldPath = path.resolve(srcRoot, srcFile);
+            const dstDir = path.resolve(dstPath, srcFile);
+            logger.debug('make symlink from', oldPath, "to", dstDir);
+            const stats = await promisify(fs.stat)(oldPath);
+            const type = stats.isDirectory ? "dir" : "file";
+            return promisify(fs.symlink)(oldPath, dstDir, type);
+          });
+        }else{
+          logger.error('no file matched', src);
+        }
+        return Promise.all(p1);
+      });
+      return Promise.all(p2);
+    });
+    return Promise.all(promises);
   }
 
   dispatch(){
@@ -116,7 +161,14 @@ class Dispatcher{
           if(this._isReady(target)){
             let node = this.nodes[target]
             let cmd  = this._cmdFactory(node.type);
-            promises.push(cmd.call(this, node));
+            promises.push(
+              cmd.call(this, node)
+              .then(()=>{
+                if(node.type !== "task"){
+                  this.deliverOutputFiles(node);
+                }
+              })
+            );
           }else{
             this.nextSearchList.push(target);
           }
@@ -126,17 +178,27 @@ class Dispatcher{
             let tmp = new Set(this.nextSearchList);
             this.currentSearchList=Array.from(tmp.values());
             this.nextSearchList=[];
+            const finished = this.dispatchedTaskList.filter((e)=>{
+              return _isFinishedState(e.state);
+            });
+            Array.prototype.push.apply(this.finishedTaskList, finished);
+            this.dispatchedTaskList = this.dispatchedTaskList.filter((e)=>{
+              return !_isFinishedState(e.state);
+            });
+            const p = finished.map((task)=>{
+              return this.deliverOutputFiles(task);
+            });
             // check task state
             if(! this.isRunning()){
               clearInterval(this.timeout);
               let hasFailed=this.dispatchedTaskList.some((task)=>{
                 return task.state === 'failed';
               });
-              let projectState = hasFailed? 'failed':'finished';
-              //TODO  this.wf.outputFilesを各nodeから回収してくる
+              let projectState = hasFailed ? 'failed': 'finished';
               resolve(projectState);
             }
             this.dispatching=false;
+            return Promise.all(p);
           })
           .catch((err)=>{
             logger.error('Error occurred while parsing workflow: ',err)
@@ -168,6 +230,15 @@ class Dispatcher{
     this.currentSearchList=[];
     this.nextSearchList=[];
     this.nodes=[];
+  }
+  getTaskList(){
+    const tasks=[];
+    this.children.forEach((child)=>{
+      Array.prototype.push.apply(tasks, child.getTaskList());
+    });
+    Array.prototype.push.apply(tasks, this.dispatchedTaskList);
+    Array.prototype.push.apply(tasks, this.finishedTaskList);
+    return tasks;
   }
 
   async _dispatchTask(task){
@@ -205,7 +276,7 @@ class Dispatcher{
   async _createChild(node){
     let childDir= path.resolve(this.cwfDir, node.path);
     let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
-    let childWF = await util.promisify(fs.readFile)(childWorkflowFilename)
+    let childWF = await promisify(fs.readFile)(childWorkflowFilename)
       .then((data)=>{
         return JSON.parse(data);
       })
@@ -225,7 +296,6 @@ class Dispatcher{
         state='failed';
       });
     node.state=state;
-    //TODO fileのデリバリ
     Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
@@ -304,7 +374,7 @@ class Dispatcher{
     logger.debug('_PSHandler called', node.name);
     let srcDir = path.resolve(this.cwfDir, node.path);
     let paramSettingsFilename = path.resolve(srcDir, node.parameterFile);
-    let paramSettings = JSON.parse(await util.promisify(fs.readFile)(paramSettingsFilename));
+    let paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
 
     let targetFile = paramSettings.target_file;
     let paramSpace = removeInvalid(paramSettings.target_param);
@@ -342,13 +412,13 @@ class Dispatcher{
       }
       await asyncNcp(srcDir, dstDir, options);
 
-      let data = await util.promisify(fs.readFile)(path.resolve(srcDir, targetFile));
+      let data = await promisify(fs.readFile)(path.resolve(srcDir, targetFile));
       data = data.toString();
       paramVec.forEach((e)=>{
         data=data.replace(new RegExp(`%%${e.key}%%`,"g"), e.value.toString());
       });
       let rewriteFile= path.resolve(dstDir, targetFile)
-      await util.promisify(fs.writeFile)(rewriteFile, data);
+      await promisify(fs.writeFile)(rewriteFile, data);
 
       let newNode = Object.assign({}, node);
       newNode.path = path.relative(this.cwfDir, dstDir);

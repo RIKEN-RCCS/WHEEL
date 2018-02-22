@@ -8,17 +8,18 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
 const {admin, userAccount} = require('../db/db');
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 
 passport.use(new LocalStrategy(
   (username, password, done)=>{
     //TODO  sessionを使ってログイン済だったらdoneを返す
-    const account = userAccount.query('id', username);
+    const account = userAccount.query('name', username);
     if(!account){
       return done(null, false, {message: 'invalid user id'});
     }
     //TODO passwordをhashで保存するように変更した上で、hash後の値を比較
-    if(account.pw!== password){
+    if(account.password!== password){
       return done(null, false, {message: 'invalid password'});
     }
     return done(null, username);

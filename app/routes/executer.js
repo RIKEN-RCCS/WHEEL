@@ -3,98 +3,14 @@ const path = require('path');
 const fs = require('fs');
 const {promisify} = require('util');
 
-const glob = require('glob');
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
 
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
-const logger = require('../logger');
 const {addXSync, getDateString, replacePathsep} = require('./utility');
 
 let executers=[];
-
-async function mkdir_p(targetPath){
-  let dirs=[];
-  let target = targetPath;
-  while(target !== path.poisx.sep){
-    try{
-      var stats = await promisify(fs.stat)(target)
-    }catch(e){
-      if(e.code === 'ENOENT'){
-        dirs.unshift(target);
-        target = path.posix.dirname(target);
-      }
-    }
-    if(stats.isDirectory()){
-      break;
-    }
-  }
-  let p = Promise.resolve();
-  dirs.forEach((dir)=>{
-    p = p.then(()=>{
-      return promisify(fs.mkdir)(dir);
-    });
-  });
-  return p;
-}
-
-async function recursiveSymlink(srcRoot, src, dstRoot, dst){
-  let srces = await promisify(glob)(src, {cwd: srcRoot});
-  let oldPath = path.posix.resolve(srcRoot, src);
-  let newPath = path.posix.resolve(dstRoot, dst);
-  let targetDir = path.posix.dirname(newPath);
-  mkdir_p(targetDir);
-  if(srces.length === 1){
-    return promisify(fs.link)(oldPath, newPath);
-  }
-  let promises = srces.map(async (srcFile)=>{
-    let dir = path.posix.dirname(srcFile)
-    await mkdir_p(path.posix.join(newPath, dir));
-    return promisify(fs.link)(oldPath, path.posix.join(newPath, srcFile));
-  })
-  return Promise.all(promises);
-}
-
-/**
- * convert to posix-style path string and remove head and tail path separator
- */
-function normalizePath(pathString){
-  let rt="";
-  // path.posix.sep('/') is disallowed as filename letter on windows OS
-  // but posix allow path.win32.sep('\').
-  // so the order of following if clause can not be swaped.
-  if(pathString.includes(path.posix.sep)){
-    let pathObj=path.posix.parse(pathString);
-    rt = path.posix.join(pathObj.dir, pathObj.base);
-  }else if(pathString.includes(path.win32.sep)){
-    let pathObj=path.win32.parse(pathString);
-    rt = path.posix.join(pathObj.dir.split(path.win32.sep), pathObj.base);
-  }
-  return rt;
-}
-
-/**
- * pass outputFiles to dstination node
- * @param {Task} task - task instance
- */
-async function deliverOutputFiles(task){
-  let promises=[];
-  task.outputFiles.forEach((e)=>{
-    let src = normalizePath(e.name);
-    //TODO 間違い。一つづづpushしないとoutputFilesが複数存在した時に上書きしてしまう
-    promises = e.dst.map(async (dst)=>{
-      let dstPath=path.resolve(dst.path, dst.dstName);
-      try{
-        promisify(fs.unlink)(dstPath);
-      }catch(e){
-        if(e.code !== 'ENOENT' || e.code !== 'EISDIR'){
-          return Promise.reject(e);
-        }
-      }
-      return recursiveSymlink(task.workingDir, src, dst.path, normalizePath(dst.dstName))
-    });
-  });
-  return Promise.all(promises);
-}
 
 /**
  * execute task on localhost(which is running node.js)
@@ -110,18 +26,15 @@ function localExec(task){
   }
   let cp = child_process.exec(script, options, (err, stdout, stderr)=>{
     if(err) throw err;
-    logger.stdout(stdout);
-    logger.stderr(stderr);
+    logger.stdout(stdout.trim());
+    logger.stderr(stderr.trim());
   })
     .on('exit', (code) =>{
-      deliverOutputFiles(task)
-        .then(()=>{
-          if(code === 0){
-            task.state = 'finished';
-          }else{
-            task.state = 'failed';
-          }
-        });
+      if(code === 0){
+        task.state = 'finished';
+      }else{
+        task.state = 'failed';
+      }
     });
   return cp.pid;
 }
@@ -152,15 +65,12 @@ async function postProcess(ssh, task, rt){
     logger.debug('clean up on remote server');
     await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
   }
-  return deliverOutputFiles(task)
-    .then(()=>{
-    logger.debug(task.name, 'done. rt =', rt);
-      if(rt === 0){
-        task.state = 'finished';
-      }else{
-        task.state = 'failed';
-      }
-    });
+  logger.debug(task.name, 'done. rt =', rt);
+  if(rt === 0){
+    task.state = 'finished';
+  }else{
+    task.state = 'failed';
+  }
 }
 
 async function remoteExecAdaptor(ssh, task){
@@ -170,10 +80,10 @@ async function remoteExecAdaptor(ssh, task){
   let workdir=path.posix.dirname(scriptAbsPath);
   let cmd = `cd ${workdir} && ${scriptAbsPath}`;
   let passToSSHout=(data)=>{
-    logger.SSHout(data.toString());
+    logger.sshout(data.toString().trim());
   }
   let passToSSHerr=(data)=>{
-    logger.SSHerr(data.toString());
+    logger.ssherr(data.toString().trim());
   }
   ssh.on('stdout', passToSSHout);
   ssh.on('stderr', passToSSHerr);
@@ -181,7 +91,7 @@ async function remoteExecAdaptor(ssh, task){
   let rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
-  
+
   return postProcess(ssh, task, rt);
 }
 
@@ -226,7 +136,7 @@ async function remoteSubmitAdaptor(ssh, task){
   if(rt !== 0){
     logger.error('remote submit command failed!', rt);
     logger.error(error);
-    return 
+    return
   }
   let finished=false;
   let isFinished = (data)=>{

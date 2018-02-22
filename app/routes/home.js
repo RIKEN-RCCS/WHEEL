@@ -7,7 +7,8 @@ const util = require('util');
 let express = require('express');
 const del = require("del");
 
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 const fileBrowser = require("./fileBrowser");
 const projectListManager = require("./projectListManager");
 const projectManager = require("./projectManager");
@@ -70,7 +71,7 @@ let onAdd = function (sio, msg) {
     if(!pathDirectory.endsWith(suffix)){
       pathDirectory += suffix;
     }
-    let projectName = path.basename(pathDirectory.slice(0,- suffix.length));
+    const projectName = path.basename(pathDirectory.slice(0,- suffix.length));
     projectManager.create(pathDirectory, projectName)
     .then(function (projectFileName) {
       return projectListManager.add(projectFileName);
@@ -147,11 +148,12 @@ var onReorder = function (sio, orderList) {
     });
 };
 
-let onGetProjectList = function(sio){
-    projectListManager.getAllProject()
-    .then((results)=>{
-      sio.emit('projectList', results);
-    });
+let onGetProjectList = async function(sio){
+  let projectList = await projectListManager.getAllProject();
+  projectList = projectList.filter((e)=>{
+    return e;
+  });
+  sio.emit('projectList', projectList);
 }
 
 module.exports = function(io){

@@ -5,8 +5,8 @@ const {promisify} = require("util");
 
 let express = require('express');
 const del = require("del");
-
-const logger = require("../logger");
+const log4js = require('log4js');
+const logger = log4js.getLogger('workflow');
 const component = require('./workflowComponent');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
@@ -20,6 +20,18 @@ const {commitProject, revertProject, cleanProject} =  require('./project');
 async function _readWorkflow(filename){
   return JSON.parse(await promisify(fs.readFile)(filename));
 }
+
+function _getChildWorkflowFilename(label, node){
+  return  path.resolve(getCurrentDir(label), node.path, node.jsonFile);
+}
+
+async function _readChildWorkflow(label, node){
+  return _readWorkflow(_getChildWorkflowFilename(label, node));
+}
+async function _writeChildWorkflow(label, node, wf){
+    return promisify(fs.writeFile)(_getChildWorkflowFilename(label, node), JSON.stringify(wf, null, 4));
+}
+
 
 function _hasName(name, e, i, a){
   return e.name === name;
@@ -100,39 +112,147 @@ async function createNode(label, request){
   return node.index
 }
 
+async function updateInputFiles(label, node, value){
+  node.inputFiles.forEach((e,i)=>{
+    const newName = value[i].name;
+    const oldName = e.name;
+    if(oldName === newName) return;
+    e.name=newName;
+    const srcNode = _getFileLinkTargetNode(label, e.srcNode);
+    if(! srcNode) return;
+    clearOutputFile(srcNode.outputFiles, e.srcName, node.index, oldName);
+    addOutputFile(srcNode.outputFiles, e.srcName, node.index, newName);
+  });
+  if(_hasChild(node)){
+    const childWorkflow = await _readChildWorkflow(label, node);
+    childWorkflow.outputFiles.forEach((e,i)=>{
+      const newName = value[i].name;
+      const oldName = e.name;
+      if(oldName === newName) return;
+      e.name=newName;
+      e.dst.forEach((dstEntry)=>{
+        const dstNode = childWorkflow.nodes[dstEntry.dstNode];
+        if(! dstNode) return;
+        clearInputFile(dstNode.inputFiles, dstEntry.dstName);
+        addInputFile(dstNode.inputFiles, dstEntry.dstName, "parent", newName)
+      });
+    });
+    return _writeChildWorkflow(label, node, childWorkflow);
+  }
+}
+
+async function updateOutputFiles(label, node, value){
+  node.outputFiles.forEach((outputFile,i)=>{
+    const newName = value[i].name;
+    const oldName = outputFile.name;
+    if(oldName === newName) return;
+    outputFile.name=newName;
+    outputFile.dst.forEach((dst)=>{
+      const dstNode = _getFileLinkTargetNode(label, dst.dstNode);
+      if(! dstNode) return;
+      clearInputFile(dstNode.inputFiles, dst.dstName);
+      addInputFile(dstNode.inputFiles, dst.dstName, node.index, newName);
+    });
+  });
+  if(_hasChild(node)){
+    const childWorkflow = await _readChildWorkflow(label, node);
+    childWorkflow.inputFiles.forEach((inputFile, i)=>{
+      const newName = value[i].name;
+      const oldName = inputFile.name;
+      if(oldName === newName) return;
+      inputFile.name = newName;
+      const srcNode = _getFileLinkTargetNode(label, inputFile.srcNode);
+      if(! srcNode) return;
+      clearOutputFile(srcNode.outputFiles, inputFile.srcName, "parent", oldName);
+      addOutputFile(srcNode.outputFiles,  inputFile.srcName, "parent", newName);
+    });
+    return _writeChildWorkflow(label, node, childWorkflow);
+  }
+}
+
 async function updateValue(label, node, property, value){
   node[property]=value;
   if(_hasChild(node)){
-    const childWorkflowFilename= path.resolve(getCurrentDir(label), node.path, node.jsonFile);
-    const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
+    const childWorkflow = await _readChildWorkflow(label, node);
     childWorkflow[property] = value;
-    return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
+    return _writeChildWorkflow(label, node, childWorkflow);
   }
 }
+
 async function addValue(label, node, property, value){
   node[property].push(value);
   if(_hasChild(node)){
-    const childWorkflowFilename= path.resolve(getCurrentDir(label), node.path, node.jsonFile);
-    const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
-    //TODO inputFilesとoutputFilesは逆転させる必要あり!!
-    childWorkflow[property].push(value);
-    return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
+    const childWorkflow = await _readChildWorkflow(label, node);
+    let target = property;
+    if(property === "inputFiles"){
+      target = "outputFiles";
+      value={name: value.name, dst:[]};
+    }else if(property === "outputFiles"){
+      target = "inputFiles";
+      value={name: value.name, srcNode: null, srcName: null};
+    }
+    childWorkflow[target].push(value);
+    return _writeChildWorkflow(label, node, childWorkflow);
+  }
+}
+
+async function delInputFiles(label, node, value){
+  const targetIndex = node.inputFiles.findIndex((e)=>{
+    return e.name === value.name;
+  });
+  if(targetIndex === -1) return;
+  const srcNode = _getFileLinkTargetNode(label, node.inputFiles[targetIndex].srcNode);
+  if(srcNode){
+    clearOutputFile(srcNode.outputFiles, node.inputFiles[targetIndex].srcName, node.index, value.name);
+  }
+  node.inputFiles.splice(targetIndex, 1);
+  if(_hasChild(node)){
+    const childWorkflow = await _readChildWorkflow(label, node);
+    const targetIndex2 = childWorkflow.outputFiles.findIndex((e)=>{
+      return e.name === value.name;
+    });
+    if(targetIndex2 === -1) return;
+    childWorkflow.outputFiles[targetIndex2].dst.forEach((e)=>{
+      const dstNode = _getFileLinkTargetNode(label, e.dstNode);
+      clearInputFile(dstNode.inputFiles, e.dstName);
+    });
+    childWorkflow.outputFiles.splice(targetIndex2, 1);
+    return _writeChildWorkflow(label, node, childWorkflow);
+  }
+}
+async function delOutputFiles(label, node, value){
+  const targetIndex = node.outputFiles.findIndex((e)=>{
+    return e.name === value.name;
+  });
+  if(targetIndex === -1) return;
+  node.outputFiles[targetIndex].dst.forEach((e)=>{
+    const dstNode = _getFileLinkTargetNode(label, e.dstNode);
+    clearInputFile(dstNode.inputFiles, e.dstName);
+  });
+  node.outputFiles.splice(targetIndex, 1);
+  if(_hasChild(node)){
+    const childWorkflow = await _readChildWorkflow(label, node);
+    const targetIndex2 = childWorkflow.inputFiles.findIndex((e)=>{
+      return e.name === value.name;
+    });
+    if(targetIndex2 === -1) return;
+    const srcNode = _getFileLinkTargetNode(label, childWorkflow.inputFiles[targetIndex2].srcNode);
+    clearOutputFile(srcNode.outputFiles, childWorkflow.inputFiles[targetIndex2].srcName, "parent", value.name);
+    childWorkflow.inputFiles.splice(targetIndex2, 1);
+    return _writeChildWorkflow(label, node, childWorkflow);
   }
 }
 
 async function delValue(label, node, property, value){
   let index = node[property].findIndex((e)=>{
-    if(e===value) return true
-    // for input/outputFiles
-    if(e.hasOwnProperty('name') && value.hasOwnProperty('name') && e.name === value.name) return true
+    return e === value;
   })
   node[property][index]=null;
   if(_hasChild(node)){
-    const childWorkflowFilename = path.resolve(getCurrentDir(label), node.path, node.jsonFile);
-    const childWorkflow = JSON.parse(await promisify(fs.readFile)(childWorkflowFilename));
-    //TODO inputFilesとoutputFilesは逆転させる必要あり!!
-    childWorkflow[property][index]=null;
-    return promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(childWorkflow, null, 4));
+    const childWorkflow = await _readChildWorkflow(label, node);
+    let target = property
+    childWorkflow[target][index]=null;
+    return _writeChildWorkflow(label, node, childWorkflow);
   }
 }
 
@@ -382,7 +502,7 @@ function askPassword(sio){
 /**
  * check if all scripts and remote host setting are available or not
  */
-function validationCheck(workflow, dir, sio){
+function validationCheck(label, workflow, dir, sio){
   let promises=[]
   if(dir == null ){
     promises.push(Promise.reject(new Error('Project dir is null or undefined')));
@@ -403,14 +523,13 @@ function validationCheck(workflow, dir, sio){
         promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
     }else if(_hasChild(node)){
-      let childDir = path.resolve(dir, node.path);
-      let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
-      let tmp = promisify(fs.readFile)(childWorkflowFilename)
-      .then((data)=>{
-        let childWF=JSON.parse(data);
-        return validationCheck(childWF, childDir, sio)
-      });
-      promises.push(tmp);
+      const childDir = path.resolve(dir, node.path);
+      promises.push(
+        _readChildWorkflow(label, node)
+        .then((childWF)=>{
+          validationCheck(label, childWF, childDir, sio)
+        })
+      );
     }
   });
 
@@ -436,7 +555,7 @@ async function onWorkflowRequest(sio, label, argWorkflowFilename){
   let rt = Object.assign(getCwf(label));
   let promises = rt.nodes.map((child)=>{
     if(child !== null && _hasChild(child)){
-      return _readWorkflow(path.join(getCurrentDir(label), child.path, child.jsonFile))
+      return _readChildWorkflow(label, child)
         .then((tmp)=>{
           child.nodes=tmp.nodes;
         })
@@ -471,7 +590,13 @@ async function onUpdateNode(sio, label, msg){
   if(property in targetNode){
     switch(cmd){
       case 'update':
-        await updateValue(label, targetNode, property, value);
+        if(property === "inputFiles"){
+          await updateInputFiles(label, targetNode, value);
+        }else if(property === "outputFiles"){
+          await updateOutputFiles(label, targetNode, value);
+        }else{
+          await updateValue(label, targetNode, property, value);
+        }
         break;
       case 'add':
         if(Array.isArray(targetNode[property])){
@@ -480,7 +605,13 @@ async function onUpdateNode(sio, label, msg){
         break;
       case 'del':
         if(Array.isArray(targetNode[property])){
-          await delValue(label, targetNode, property, value);
+          if(property === "inputFiles"){
+            await delInputFiles(label, targetNode, value);
+          }else if(property === "outputFiles"){
+            await delOutputFiles(label, targetNode, value);
+          }else{
+            await delValue(label, targetNode, property, value);
+          }
         }
         break;
     }
@@ -564,7 +695,7 @@ async function onRunProject(sio, label, msg){
   logger.debug(`run event recieved: ${msg}`);
   let rwf = await readRwf(label);
   try{
-    await validationCheck(rwf, getRootDir(label), sio)
+    await validationCheck(label, rwf, getRootDir(label), sio)
   }catch(err){
     logger.error('invalid root workflow:\n', err);
     return false
@@ -594,7 +725,7 @@ async function onCleanProject(sio, label, msg){
   let rootDispatcher=getRootDispatcher(label);
   if(rootDispatcher != null) rootDispatcher.remove();
   await cleanProject(label);
-  onWorkflowRequest(sio, label, getCwfFilename(label));
+  await onWorkflowRequest(sio, label, getCwfFilename(label));
   setProjectState(label, 'not-started');
   sio.emit('projectState', getProjectState(label));
 }
@@ -607,6 +738,7 @@ async function onSaveProject(sio, label, msg){
 async function onRevertProject(sio, label, msg){
   logger.debug(`revertProject event recieved: ${msg}`);
   await revertProject(label);
+  await onWorkflowRequest(sio, label, getCwfFilename(label));
   sio.emit('projectState', getProjectState(label));
 }
 

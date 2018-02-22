@@ -7,6 +7,24 @@ const Mode = require('stat-mode');
 
 const getSsh = require('./sshManager');
 
+
+/**
+ * convert to posix-style path string and remove head and tail path separator
+ */
+function normalizePath(pathString){
+  let rt=pathString;
+  // path.posix.sep('/') is disallowed as filename letter on windows OS
+  // but posix allow path.win32.sep('\').
+  if(pathString.includes(path.posix.sep)){
+    let pathObj=path.posix.parse(pathString);
+    rt = path.posix.join(pathObj.dir, pathObj.base);
+  }else if(pathString.includes(path.win32.sep)){
+    let pathObj=path.win32.parse(pathString);
+    rt = path.posix.join(pathObj.dir.split(path.win32.sep), pathObj.base);
+  }
+  return rt;
+}
+
 class Utility {
   /**
    * escape meta character of regex (from MDN)
@@ -16,6 +34,42 @@ class Utility {
   escapeRegExp(string) {
     return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
   }
+
+  /**
+   * determin specified filename is invalid or not
+   */
+  isInvalidFilename(filename){
+    const reservedWin32 = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*/;
+
+  }
+
+  async mkdir_p(targetPath){
+    let dirs=[];
+    let target = normalizePath(targetPath);
+    while(target !== path.posix.sep){
+      try{
+        var stats = await promisify(fs.stat)(target)
+      }catch(e){
+        if(e.code === 'ENOENT'){
+          dirs.unshift(target);
+          target = path.posix.dirname(target);
+        }
+      }
+      if(stats.isDirectory()){
+        break;
+      }else if(stats.isFile()){
+        return Promise.reject(new Error("file exist", target));
+      }
+    }
+    let p = Promise.resolve();
+    dirs.forEach((dir)=>{
+      p = p.then(()=>{
+        return promisify(fs.mkdir)(dir);
+      });
+    });
+    return p;
+  }
+
 
   /**
    * add execute permission to file
