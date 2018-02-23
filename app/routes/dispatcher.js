@@ -12,6 +12,7 @@ const {interval} = require('../db/db');
 const executer = require('./executer');
 const { addXSync, asyncNcp, mkdir_p} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
+const {isInitialNode} = require('./workflowEditor');
 
 // utility functions
 function _forGetNextIndex(node){
@@ -90,17 +91,15 @@ class Dispatcher{
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
-    this.currentSearchList=[];
     this.nextSearchList=[];
     this.children=[];
     this.dispatchedTaskList=[]
     this.finishedTaskList=[]
     this.nodes=wf.nodes;
-    this.nodes.forEach((node,i)=>{
-      if(node == null) return;
-      if(node.previous.length===0 && node.inputFiles.length===0){
-        this.currentSearchList.push(i);
-      }
+    this.currentSearchList= this.nodes.map((node,i)=>{
+      return isInitialNode(node) ? i : null;
+    }).filter((e)=>{
+      return e !== null;
     });
     logger.debug('initial tasks : ',this.currentSearchList);
     this.dispatching=false;
@@ -437,7 +436,6 @@ class Dispatcher{
     }
     return Promise.all(promises)
       .then(()=>{
-        //TODO fileのデリバリ
         node.state='finished'
       });
   }

@@ -16,6 +16,7 @@ const {remoteHost} = require('../db/db');
 const {getCwf, setCwf, getNode, pushNode, removeNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
+const {isInitialNode} = require('./workflowEditor');
 
 async function _readWorkflow(filename){
   return JSON.parse(await promisify(fs.readFile)(filename));
@@ -532,6 +533,10 @@ function validationCheck(label, workflow, dir, sio){
       );
     }
   });
+  const hasInitialNode = workflow.nodes.some((node)=>{
+      return isInitialNode(node);
+  });
+  if(!hasInitialNode) promises.push(Promise.reject());
 
   hosts = Array.from(new Set(hosts));
   let hostPromises = hosts.map((e)=>{
