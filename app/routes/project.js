@@ -192,14 +192,14 @@ function pushNode (label, node){
 function getNode (label, index){
   return _getProject(label).cwf.nodes[index]
 }
-function removeNode(label, index){
-  _getProject(label).cwf.nodes[index]=null
-}
+// function removeNode(label, index){
+//   _getProject(label).cwf.nodes[index]=null
+// }
 
 module.exports.getCwf            = getCwf;
 module.exports.setCwf            = setCwf;
 module.exports.getNode           = getNode;
-module.exports.removeNode        = removeNode;
+// module.exports.removeNode        = removeNode;
 module.exports.pushNode          = pushNode;
 module.exports.getCurrentDir     = getCurrentDir;
 module.exports.readRwf           = readRwf;

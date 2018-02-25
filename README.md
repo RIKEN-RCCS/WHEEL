@@ -25,7 +25,7 @@ we are using webpack for client-side code(under the "src" directory).
 please note that:
 
  - do not change any files under public (it will be overwritten after you run build script)
- - you have to run `npm run build` after you change somthing in 'src'
+ - you have to run `npm run prepare` after you change somthing in 'src'
 
 ## scripts
 

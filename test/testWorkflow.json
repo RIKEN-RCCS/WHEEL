@@ -46,7 +46,7 @@
             "description": null,
             "path": "./task0",
             "index": 0,
-            "previous": [],
+            "previous": [2],
             "next": [1],
             "inputFiles": [
                 {
@@ -90,7 +90,7 @@
             "description": null,
             "path": "./task1",
             "index": 1,
-            "previous": [0],
+            "previous": [0,2],
             "next": [],
             "inputFiles": [
                 {
@@ -126,6 +126,24 @@
             "queue": null,
             "include": null,
             "exclude": null
+        },
+        {
+            "type": "if",
+            "name": "if0",
+            "description": null,
+            "path": "./if0",
+            "index": 2,
+            "previous": [],
+            "next": [0],
+            "else": [1],
+            "inputFiles": [],
+            "outputFiles": [],
+            "state": "not-started",
+            "pos": {
+                "x": 267,
+                "y": 222
+            },
+            "script": null
         }
     ],
     "jsonFile": "define.wf.json",
