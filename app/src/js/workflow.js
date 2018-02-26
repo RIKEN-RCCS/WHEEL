@@ -19,7 +19,8 @@ import logReciever from './logReciever';
 import config from './config';
 import SvgNodeUI from './svgNodeUI';
 import * as svgNode from './svgNodeUI';
-
+import SvgParentNodeUI from './svgNodeUI';
+import * as svgParentNode from './svgNodeUI';
 
 $(() => {
   // chek project Json file path
@@ -227,8 +228,8 @@ $(() => {
       console.log(wf.nodes);
 
       drawNodes(wf.nodes);
-      drawLinks(nodes);
       drawParentFileRelation(wf);
+      drawLinks(nodes);
       drawParentLinks(parentnode);
     });
 
@@ -482,6 +483,7 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   var buttonFlag = false;
+  let clickedNode = "temp";
   function drawNodes(nodesInWF) {
     nodesInWF.forEach(function (v, i) {
       // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
@@ -490,34 +492,43 @@ $(() => {
         childrenViewBoxList.push(null);
       } else {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
+        console.log("test");
         node.onMousedown(function (e) {
+          console.log(clickedNode);
+          $(`#${clickedNode}`).css('stroke', 'none');
+          console.log(clickedNode);
+
           let nodeIndex = e.target.instance.parent('.node').data('index');
           selectedNode = nodeIndex;
           let name = nodesInWF[nodeIndex].name;
           let nodePath = currentWorkDir + '/' + nodesInWF[nodeIndex].name;
           //ファイルブラウザ用
           fb.request('getFileList', nodePath, null);
-
           //プロパティ表示用相対パス
           let currentPropertyDir = "." + currentWorkDir.replace(projectLootDir, "") + "/" + nodesInWF[nodeIndex].name;
           let nodeType = nodesInWF[nodeIndex].type;
           //iconの変更
           let nodeIconPath = config.node_icon[nodeType];
           $('#img_node_type').attr("src", nodeIconPath);
-
+          //remotehostリストの設定
           if (nodeType === 'task') {
             sio.emit('getHostList', true);
             //vueで設定したJsonの値を引っ張てきて描画する            
             remotehost = nodesInWF[nodeIndex].host;
             selectedHostQueue = nodesInWF[nodeIndex].queue;
           }
-
           $('#propertyTypeName').html(nodesInWF[nodeIndex].type);
           vm.node = v;
           $('#componentPath').html(currentPropertyDir);
           $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
+          //コンポーネント選択時のカラー着色
+          var target = $(e.target).attr("id");
+          clickedNode = target;
+          $(`#${target}`).css('stroke-width', '1px');
+          $(`#${target}`).css('stroke', '#CCFF00');
         })
           .onDblclick(function (e) {
+            $('#property').hide();
             console.log("Dbc");
             let nodeType = e.target.instance.parent('.node').data('type');
             if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
@@ -538,23 +549,6 @@ $(() => {
               });
             }
           });
-
-        /*           .onClick(function (e) {
-                    console.log(buttonFlag);
-                    let nodeType = e.target.instance.parent('.node').data('type');
-                    if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
-                      console.log("clickcheck");
-                      if (buttonFlag === false) {
-                        console.log("flagfcheck");
-                        $('.viewNodes').show();
-                        buttonFlag = true;
-                      } else {
-                        $('.viewNodes').css('display', 'none');
-                        buttonFlag = false;
-                      }
-                    }
-                  });
-         */
         nodes.push(node);
       }
     });
@@ -599,7 +593,7 @@ $(() => {
   */
   function drawParentFileRelation(parentwf) {
     //selectedParent = nodeIndex;    
-    let node = new svgNode.SvgParentNodeUI(svg, sio, parentwf);
+    let node = new svgParentNode.SvgParentNodeUI(svg, sio, parentwf);
     parentnode.push(node);
   }
 
@@ -646,15 +640,14 @@ $(() => {
       $(`#${id}`).css("background-color", nodeColor);
 
       $(`#${id}`).click(function () {
-
         while (index + 1 < nodeStack.length) {
           currentNode = nodeStack.pop();
           dirStack.pop();
           currentWorkDir = dirStack[nodeStack.length - 1];
           currentWorkFlow = wfStack[nodeStack.length - 1];
+          $('#property').hide();
         }
         updateBreadrumb();
-
         fb.request('getFileList', currentWorkDir, null);
         sio.emit('getWorkflow', currentWorkFlow);
       });

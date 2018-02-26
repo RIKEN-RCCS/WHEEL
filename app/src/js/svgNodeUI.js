@@ -120,7 +120,7 @@ export class SvgNodeUI {
       this.nextLinks.push(cable);
 
       dstPlug.on('click', (e) => {
-        this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex });
+        this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex, isElse: false });
       });
     });
     if (this.hasOwnProperty('lower2Plug')) {
@@ -134,12 +134,13 @@ export class SvgNodeUI {
         cable.cable.data('dst', dstIndex);
         this.elseLinks.push(cable);
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex });
+          this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex, isElse: true });
         });
       });
     }
     let receptorPlugs = this.svg.select('.receptorPlug');
     console.log(receptorPlugs);
+    console.log(this.svg);
 
     this.connectors.forEach((srcPlug) => {
       console.log(this.connectors);
@@ -149,7 +150,7 @@ export class SvgNodeUI {
           return plug.data('index') === dst.dstNode && plug.data('name') === dst.dstName;
         });
         console.log(dstPlug);
-
+        console.log(srcPlug);
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dst.dstNode);
@@ -262,19 +263,20 @@ export class SvgParentNodeUI {
 
     // draw connector
     this.connectors = [];
-    //parentnode.outputFiles.forEach((output, fileIndex) => {
-    parentnode.inputFiles.forEach((input, fileIndex) => {
-      let [plug, cable] = parts.createParentConnector(svg, 32, 40, 0, 40 * fileIndex, sio);
+    parentnode.outputFiles.forEach((output, fileIndex) => {
+      //コンポーネントライブラリの幅程度の値
+      let connectorXpos = 290;
+      let [plug, cable] = parts.createParentConnector(svg, connectorXpos, 10, 0, 40 * fileIndex, sio);
       //const boxBbox=plug.bbox();  
-      //plug.data({"name": output.name, "dst": output.dst});
-      let dstArray = [];
-      if (input.srcName === null) {
-        dstArray = [];
-      } else {
-        dstArray = [input.srcNode, input.srcName];
-      }
-      plug.data({ "name": input.name, "dst": dstArray });
-      console.log(input);
+      plug.data({ "name": output.name, "dst": output.dst });
+      // let dstArray = [];
+      // if (input.srcName === null) {
+      //   dstArray = [];
+      // } else {
+      //   dstArray = [input.srcNode, input.srcName];
+      // }
+      // plug.data({ "name": input.name, "dst": dstArray });
+      console.log(output);
 
       this.group.add(plug);
       this.group.add(cable);
@@ -285,11 +287,10 @@ export class SvgParentNodeUI {
     console.log(this.connectors);
 
     // draw receptor
-    //parentnode.inputFiles.forEach((input, fileIndex) => {      
-    parentnode.outputFiles.forEach((output, fileIndex) => {
-      const receptor = parts.createParentReceptor(svg, 16, 800, 0, 40 * fileIndex);
+    parentnode.inputFiles.forEach((input, fileIndex) => {
+      const receptor = parts.createParentReceptor(svg, 16, 600, 0, 40 * fileIndex);
       //receptor.data({"index": parentnode.index, "name": output.name});
-      receptor.data({ "index": "parent", "name": output.name });
+      receptor.data({ "index": "parent", "name": input.name });
       console.log("receptor");
       console.log(receptor);
 
@@ -368,7 +369,6 @@ export class SvgParentNodeUI {
       v.dragEndPoint(offsetX, offsetY, boxBbox);
     });
   }
-
   /**
  * delete svg element of this node
  */
@@ -381,7 +381,6 @@ export class SvgParentNodeUI {
       v.cable.remove();
     });
   }
-
   /**
  * register callback function to 'mousedown' event
  */

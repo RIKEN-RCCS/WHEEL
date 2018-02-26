@@ -638,13 +638,10 @@ class SvgParentFilesBox {
       const text = this.draw
         .text(output.name)
         .fill('#FFFFFF');
-      this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
+      const fileNameInterval = 40;
+      const x = 0;
+      const y = 28 + fileNameInterval * index;
 
-      // const x = -text.bbox().width - config.box_appearance.outputTextOffset;
-      // const y = calcFileBasePosY() + this.textHeight * index;
-      const x = 632;
-      //const y = 870+ this.textHeight * index;
-      const y = 830 + 40 * index;
       text.move(x, y);
       this.outputGroup.add(text);
     });
@@ -660,12 +657,10 @@ class SvgParentFilesBox {
       const text = this.draw
         .text(input.name)
         .fill('#FFFFFF');
-      //this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
-      this.textHeight = 24;
-      const x = config.box_appearance.inputTextNamePosX;
-      //const y = 64 + this.textHeight * index;
-      const y = 54 + 40 * index;
-
+      const fileNameInterval = 40;
+      const x = 870;
+      const y = 610 + fileNameInterval * index;
+      //const x = config.box_appearance.inputTextNamePosX;
       text.move(x, y);
       this.inputGroup.add(text);
     });
@@ -770,7 +765,6 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
         return;
       }
       const myIndex = "parent";
-      //const myIndex = plug.parent().node.instance.data('index');
       console.log(myIndex);
       if (hitIndex !== myIndex) {
         callback(myIndex, hitIndex, plug, hitPlug);
@@ -842,6 +836,7 @@ export function createParentConnector(svg, originX, originY, offsetX, offsetY, s
 //位置の変更が必要な可能性有
 export function createParentReceptor(svg, originX, originY, offsetX, offsetY) {
   const plug = svg.polygon(parentRPlug).fill(config.plug_color.file).addClass('receptorPlug');
+  console.log(svg);
   const bbox = plug.bbox();
   plug.move(900, originY + offsetY + calcFileBasePosY());
   //plug.move(originX + offsetX - bbox.width / 2, originY + offsetY + calcFileBasePosY());
