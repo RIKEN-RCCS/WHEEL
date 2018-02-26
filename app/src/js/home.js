@@ -26,6 +26,7 @@ $(() => {
     };
     $.contextMenu({
         'selector': '#projectList ul',
+        "itemClickEvent": "click",
         'items': {
             'open': {
                 name: 'Open',

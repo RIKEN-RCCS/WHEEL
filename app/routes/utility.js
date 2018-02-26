@@ -5,8 +5,6 @@ const path = require('path');
 const ncp = require('ncp').ncp;
 const Mode = require('stat-mode');
 
-const getSsh = require('./sshManager');
-
 /**
  * convert to posix-style path string and remove head and tail path separator
  */

@@ -8,11 +8,11 @@ const eventNameTable={
   SSHOUT: "logSSHout",
   SSHERR: "logSSHerr"
 }
-function socketIOAppender(layout, timezoneOffset, socket, eventName){
+function socketIOAppender(layout, timezoneOffset, socket, namespace, argEventName){
   return (loggingEvent)=>{
-    const eventName = eventNameTable[loggingEvent.level.levelStr];
+    const eventName = argEventName || eventNameTable[loggingEvent.level.levelStr];
     if(eventName){
-      socket.emit(eventName, layout(loggingEvent, timezoneOffset));
+      socket.of(namespace).emit(eventName, layout(loggingEvent, timezoneOffset));
     }else{
       console.log('eventName not found in table');
       console.log('loglevel =',loggingEvent.level.levelStr);
@@ -24,6 +24,6 @@ function configure(config, layouts){
   if(config.layout){
     layout = layouts.layout(config.layout.type, config.layout);
   }
-  return socketIOAppender(layout, config.timezoneOffset, config.socketIO);
+  return socketIOAppender(layout, config.timezoneOffset, config.socketIO, config.namespace, config.eventName);
 }
 module.exports.configure = configure;

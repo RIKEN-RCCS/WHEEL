@@ -8,9 +8,14 @@ const session = require('express-session');
 const siofu = require('socketio-file-upload');
 const ejs = require('ejs');
 const passport = require('passport');
-const log4js = require('log4js');
 
 const {port} = require('./db/db');
+const {getLogger, setSocketIO, setLogConfig, setFilename, setMaxLogSize, setNumBackup, setCompress} = require('./logSettings');
+
+
+
+
+
 
 process.on('unhandledRejection', console.dir);// for DEBUG
 
@@ -22,31 +27,13 @@ var app = express();
 const server = require('http').createServer(app);
 const sio = require('socket.io')(server);
 
-//TODO get options from db/server
-const logfile = "./TestLogFile.txt"
-const maxLogSize = 1024*1024*8;
-const numBackup = 5
-const compress = true;
+setSocketIO(sio);
+setFilename(path.resolve(__dirname, "wheel.log"));
+setMaxLogSize(8388608);
+setNumBackup(5);
+setCompress(true);
 
-//TODO workflow関連のログをworkflowのroot以下に出力したいが、後から出力先ファイルを変えるにはどうすれば良い?
-log4js.configure({
-  appenders: {
-    console: {type: 'console'},
-    file: {type: 'file', filename: logfile, maxLogSize: maxLogSize, backups: numBackup, compress: compress},
-    socket: {type: "./log2client", socketIO: sio.of('workflow')}
-  },
-  categories: {
-    default: {appenders: ['console', 'file'], level: "debug"},
-    workflow: {appenders: ['console', 'file', 'socket'], level: "debug"},
-  },
-  levels:{
-    stdout: {value: 20000, colour: 'green'},
-    stderr: {value: 20000, colour: 'green'},
-    sshout: {value: 20000, colour: 'green'},
-    ssherr: {value: 20000, colour: 'green'}
-  }
-});
-const logger = log4js.getLogger();
+const logger = getLogger();
 
 // template engine
 app.set('views', path.resolve(__dirname, 'views'));

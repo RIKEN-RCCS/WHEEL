@@ -5,8 +5,8 @@ const path = require("path");
 const os = require("os");
 const {promisify} = require("util");
 
-const log4js = require('log4js');
-const logger = log4js.getLogger();
+const {getLogger} = require('../logSettings');
+const logger = getLogger('remotehost');
 const fileBrowser = require("./fileBrowser");
 const {remoteHost, rootDir} = require('../db/db');
 const {doAndEmit} = require('./utility');

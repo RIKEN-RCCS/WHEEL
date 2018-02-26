@@ -5,8 +5,8 @@ const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
 const glob = require('glob');
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 
 const {interval} = require('../db/db');
 const executer = require('./executer');

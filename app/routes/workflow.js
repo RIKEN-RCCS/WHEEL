@@ -5,8 +5,8 @@ const {promisify} = require("util");
 
 let express = require('express');
 const del = require("del");
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');

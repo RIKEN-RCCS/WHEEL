@@ -3,8 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const {promisify} = require('util');
 
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost, jobScheduler} = require('../db/db');

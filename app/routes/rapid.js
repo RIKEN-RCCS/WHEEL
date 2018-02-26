@@ -7,8 +7,8 @@ const  express = require('express');
 const  router = express.Router();
 const nodegit = require("nodegit");
 
-const log4js = require('log4js');
-const logger = log4js.getLogger();
+const {getLogger} = require('../logSettings');
+const logger = getLogger('rapid');
 
 module.exports = function(io){
   // メイン（エディタに編集対象のソースを入れて返す）
