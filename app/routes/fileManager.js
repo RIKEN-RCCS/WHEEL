@@ -9,11 +9,10 @@ const log4js = require('log4js');
 const logger = log4js.getLogger('workflow');
 
 const fileBrowser = require("./fileBrowser");
-const {extProject, extWF, extPS} = require('../db/db');
 const {gitAdd} = require('./project');
-const escape = require('./utility').escapeRegExp;;
-
-const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)})$).*$`);
+const escape = require('./utility').escapeRegExp;
+const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
+const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)})$).*$`);
 
 function list(uploader, sio, requestDir){
   logger.debug(`current dir = ${requestDir}`);
