@@ -114,7 +114,7 @@ label.left_l {
 }
 
 input:disabled {
-  background:#DCDCDC;
+  background:#2F2F33;
   cursor:not-allowed;
 
 }
@@ -145,8 +145,8 @@ ul {
   height:100%;
 }
 #wrapper {
-  background:#f8f8ff;
-  margin:0 18px;
+  background:#000000;
+  margin:0 9px;
   height:200px;
   overflow:auto;
   border:1px dotted #2F2F33;
