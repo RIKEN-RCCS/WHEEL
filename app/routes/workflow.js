@@ -44,17 +44,22 @@ function validationCheck(label, workflow, dir, sio){
     if(node == null) return;
     if(node.type === 'task'){
       if(node.path == null){
-        promises.push(Promise.reject(new Error(`node.path is null or undefined ${node.name}`)));
+        promises.push(Promise.reject(new Error(`illegal path ${node.name}`)));
       }
       if(node.host !== 'localhost'){
         hosts.push(node.host);
       }
       if( node.script == null){
-        promises.push(Promise.reject(new Error(`script is null or undefined ${node.name}`)));
+        promises.push(Promise.reject(new Error(`script is not specified ${node.name}`)));
       }else{
         promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
-    }else if(hasChild(node)){
+    }else if(node.type === 'parameterStudy'){
+      if(node.parameterFile === null){
+        promises.push(Promise.reject(new Error(`parameter setting file is not specified ${node.name}`)));
+      }
+    }
+    if(hasChild(node)){
       const childDir = path.resolve(dir, node.path);
       promises.push(
         readChildWorkflow(label, node)

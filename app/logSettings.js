@@ -33,7 +33,8 @@ const defaultSettings = {
       "appenders": [
         "console",
         "file",
-        "socketWF"
+        "socketWF",
+        "errorlog"
       ],
       "level": "debug"
     },

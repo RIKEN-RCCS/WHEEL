@@ -7,7 +7,9 @@ function socketIOAppender(layout, timezoneOffset, socket, eventName){
   };
 }
 function configure(config, layouts){
-  let layout = layouts.basicLayout;
+  //TODO contextの中身を見てerrorオブジェクトだったらmessageだけを表示するような
+  //カスタムレイアウトを作成して適用
+  let layout = layouts.messagePassThroughLayout;
   if(config.layout){
     layout = layouts.layout(config.layout.type, config.layout);
   }
