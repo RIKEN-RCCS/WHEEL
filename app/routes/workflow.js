@@ -226,7 +226,7 @@ async function onRemoveFileLink(sio, label, msg){
   }
 }
 
-async function onRunProject(sio, label){
+async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
   let rwf = await readRwf(label);
   try{

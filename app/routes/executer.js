@@ -109,10 +109,11 @@ async function remoteSubmitAdaptor(ssh, task){
   submitCmd += ` ${JS.submit}`
 
   let queue = null;
-  if(task.queue in hostinfo.queues){
+  let queueList = hostinfo.queue.split(',');
+  if(task.queue in queueList){
     queue = task.queue;
-  }else if (hostinfo.queues.length > 0){
-    queue = hostinfo.queues[0];
+  }else if (queueList.length > 0){
+    queue = queueList[0];
   }
   if(queue){
     submitCmd += ` ${JS.queueOpt}${queue}`;
