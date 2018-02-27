@@ -104,6 +104,12 @@ let logSettings = Object.assign({}, defaultSettings);
 
 function reset(){
   return new Promise((resolve, reject)=>{
+    if(firstCall){
+      logSettings = Object.assign({}, defaultSettings);
+      ready = false;
+      resolve();
+      return
+    }
     log4js.shutdown((err)=>{
       if(err) reject();
       logSettings = Object.assign({}, defaultSettings);

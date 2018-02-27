@@ -101,12 +101,6 @@ describe.only("Unit test for log4js's helper functions", function(){
       expect(settings.appenders.errorlog.socketIO).to.eql(sio);
     });
   });
-  describe("#getLogger",function(){
-    it("should return default logger", function(){
-      setSocketIO(sio);
-      expect(getLogger()).to.be.a('object');
-    });
-  });
   describe("#log", function(){
     const logFilename="./loggingTest.log";
     beforeEach(async function(){
@@ -116,8 +110,9 @@ describe.only("Unit test for log4js's helper functions", function(){
       setSocketIO(sio);
       sio.emit.resetHistory();
     });
-    afterEach(function(){
-      del(logFilename);
+    afterEach(async function(){
+      await reset();
+      await del(logFilename);
     });
     it("should output to default logger",function(){
       const logger=getLogger();
