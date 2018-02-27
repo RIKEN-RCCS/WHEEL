@@ -139,7 +139,7 @@ class Dispatcher{
             return promisify(fs.symlink)(oldPath, dstDir, type);
           });
         }else{
-          logger.error('no file matched', src);
+          logger.error('no outputFile matched', src);
         }
         return Promise.all(p1);
       });
@@ -245,18 +245,16 @@ class Dispatcher{
     task.id=uuidv1(); // use this id to cancel task
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
-    task.outputFiles.forEach((outputFiles)=>{
-      outputFiles.dst.forEach((dst)=>{
-        let deliverPath = this.nodes[dst.dstNode].path;
-        dst.path = path.resolve(this.cwfDir, deliverPath);
-      });
-    });
     await executer.exec(task);
     this.dispatchedTaskList.push(task);
     let nextTasks=task.next;
     task.outputFiles.forEach((outputFile)=>{
       let tmp = outputFile.dst.map((e)=>{
-        return e.dstNode;
+        if(e.dstNode !== 'parent'){
+          return e.dstNode;
+        }
+      }).filter((e)=>{
+        return e;
       });
       Array.prototype.push.apply(nextTasks, tmp);
     });
