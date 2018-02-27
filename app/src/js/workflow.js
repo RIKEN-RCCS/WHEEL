@@ -19,7 +19,8 @@ import logReciever from './logReciever';
 import config from './config';
 import SvgNodeUI from './svgNodeUI';
 import * as svgNode from './svgNodeUI';
-
+import SvgParentNodeUI from './svgNodeUI';
+import * as svgParentNode from './svgNodeUI';
 
 $(() => {
   // chek project Json file path
@@ -227,8 +228,8 @@ $(() => {
       console.log(wf.nodes);
 
       drawNodes(wf.nodes);
-      drawLinks(nodes);
       drawParentFileRelation(wf);
+      drawLinks(nodes);
       drawParentLinks(parentnode);
     });
 
@@ -378,10 +379,8 @@ $(() => {
     selector: 'g',
     autoHide: true,
     reposition: false,
+    itemClickEvent: "click",
     items: {
-      "temp": {
-        "name": ""
-      },
       "delete": {
         "name": "delete",
         callback: function () {
@@ -484,6 +483,7 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   var buttonFlag = false;
+  let clickedNode = "temp";
   function drawNodes(nodesInWF) {
     nodesInWF.forEach(function (v, i) {
       // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
@@ -492,34 +492,43 @@ $(() => {
         childrenViewBoxList.push(null);
       } else {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
+        console.log("test");
         node.onMousedown(function (e) {
+          console.log(clickedNode);
+          $(`#${clickedNode}`).css('stroke', 'none');
+          console.log(clickedNode);
+
           let nodeIndex = e.target.instance.parent('.node').data('index');
           selectedNode = nodeIndex;
           let name = nodesInWF[nodeIndex].name;
           let nodePath = currentWorkDir + '/' + nodesInWF[nodeIndex].name;
           //ファイルブラウザ用
           fb.request('getFileList', nodePath, null);
-
           //プロパティ表示用相対パス
           let currentPropertyDir = "." + currentWorkDir.replace(projectLootDir, "") + "/" + nodesInWF[nodeIndex].name;
           let nodeType = nodesInWF[nodeIndex].type;
           //iconの変更
           let nodeIconPath = config.node_icon[nodeType];
           $('#img_node_type').attr("src", nodeIconPath);
-
+          //remotehostリストの設定
           if (nodeType === 'task') {
             sio.emit('getHostList', true);
             //vueで設定したJsonの値を引っ張てきて描画する            
             remotehost = nodesInWF[nodeIndex].host;
             selectedHostQueue = nodesInWF[nodeIndex].queue;
           }
-
           $('#propertyTypeName').html(nodesInWF[nodeIndex].type);
           vm.node = v;
           $('#componentPath').html(currentPropertyDir);
           $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
+          //コンポーネント選択時のカラー着色
+          var target = $(e.target).attr("id");
+          clickedNode = target;
+          $(`#${target}`).css('stroke-width', '1px');
+          $(`#${target}`).css('stroke', '#CCFF00');
         })
           .onDblclick(function (e) {
+            $('#property').hide();
             console.log("Dbc");
             let nodeType = e.target.instance.parent('.node').data('type');
             if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
@@ -540,23 +549,6 @@ $(() => {
               });
             }
           });
-
-        /*           .onClick(function (e) {
-                    console.log(buttonFlag);
-                    let nodeType = e.target.instance.parent('.node').data('type');
-                    if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
-                      console.log("clickcheck");
-                      if (buttonFlag === false) {
-                        console.log("flagfcheck");
-                        $('.viewNodes').show();
-                        buttonFlag = true;
-                      } else {
-                        $('.viewNodes').css('display', 'none');
-                        buttonFlag = false;
-                      }
-                    }
-                  });
-         */
         nodes.push(node);
       }
     });
@@ -567,6 +559,9 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   function drawLinks(nodes) {
+    console.log("nodes");
+    console.log(nodes);
+
     nodes.forEach(function (node) {
       if (node != null) {
         node.drawLinks();
@@ -574,6 +569,8 @@ $(() => {
     });
     nodes.forEach(function (node) {
       if (node != null) {
+        console.log(node);
+
         node.nextLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
           nodes[dst].previousLinks.push(cable);
@@ -596,7 +593,7 @@ $(() => {
   */
   function drawParentFileRelation(parentwf) {
     //selectedParent = nodeIndex;    
-    let node = new svgNode.SvgParentNodeUI(svg, sio, parentwf);
+    let node = new svgParentNode.SvgParentNodeUI(svg, sio, parentwf);
     parentnode.push(node);
   }
 
@@ -643,15 +640,14 @@ $(() => {
       $(`#${id}`).css("background-color", nodeColor);
 
       $(`#${id}`).click(function () {
-
         while (index + 1 < nodeStack.length) {
           currentNode = nodeStack.pop();
           dirStack.pop();
           currentWorkDir = dirStack[nodeStack.length - 1];
           currentWorkFlow = wfStack[nodeStack.length - 1];
+          $('#property').hide();
         }
         updateBreadrumb();
-
         fb.request('getFileList', currentWorkDir, null);
         sio.emit('getWorkflow', currentWorkFlow);
       });
@@ -738,28 +734,57 @@ $(() => {
     $('#drawer_menu').toggleClass('action', false);
   });
 
-  /*   $('.viewButton').click(function(){
-      $(".viewNodes").css('display', 'block');    
-    }); */
-
-  //ボタンでのviewの切り替え
-  $('.viewButton').mouseover(function () {
-    var viewButtonID = document.getElementById('.viewButton');
-    //setAttributeメソッドでfill属性の値を青に変更 
-
-    /* circle1.setAttribute("fill","#0000ff"); 
-    
-        svg1 = document.getElementById('svg1');
-        $('.viewNodes').css('display', 'block'); */
-  });
-
-
   function getSelectLabel(index) {
     var obj = document.getElementById(index);
     var idx = obj.selectedIndex;       //インデックス番号を取得
     var val = obj.options[idx].value;  //value値を取得
     var txt = obj.options[idx].text;  //ラベルを取得
   }
+
+  // GUI表示関係処理
+
+  //header buttons
+  $('#run_button').mouseover(function () {
+    $('#run_button').attr("src", "/image/btn_play_h.png");
+  });
+  $('#run_button').mouseleave(function () {
+    $('#run_button').attr("src", "/image/btn_play_n.png");
+  });
+
+  $('#pause_button').mouseover(function () {
+    $('#pause_button').attr("src", "/image/btn_pause_h.png");
+  });
+  $('#pause_button').mouseleave(function () {
+    $('#pause_button').attr("src", "/image/btn_pause_n.png");
+  });
+
+  $('#stop_button').mouseover(function () {
+    $('#stop_button').attr("src", "/image/btn_stop_h.png");
+  });
+  $('#stop_button').mouseleave(function () {
+    $('#stop_button').attr("src", "/image/btn_stop_n.png");
+  });
+
+  $('#clean_button').mouseover(function () {
+    $('#clean_button').attr("src", "/image/btn_replay_h.png");
+  });
+  $('#clean_button').mouseleave(function () {
+    $('#clean_button').attr("src", "/image/btn_replay_n.png");
+  });
+
+  $('#save_button').mouseover(function () {
+    $('#save_button_img').attr("src", "/image/btn_save_h.png");
+  });
+  $('#save_button').mouseleave(function () {
+    $('#save_button_img').attr("src", "/image/btn_save_n.png");
+  });
+
+  $('#revert_button').mouseover(function () {
+    $('#revert_button_img').attr("src", "/image/btn_reset_h.png");
+  });
+  $('#revert_button').mouseleave(function () {
+    $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
+  });
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - 16 - pos.left + "px");

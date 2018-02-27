@@ -140,7 +140,7 @@ header {
     margin: 0 0 0 0;    
     width: 100px;
     border-radius: 12px;
-    border: solid 1px green;
+    border: solid 1px #FFFFFF;
 }
 
 .controler_button{
@@ -150,7 +150,8 @@ header {
 .img_btn_contoroler{
     height: 24px;
     width: 24px;
-    margin: 0 0 0 8px;    
+    margin: 0 0 0 8px;
+    cursor: pointer;
 }
 
 .date_title {
@@ -163,17 +164,29 @@ header {
 
 #save_button{
     display: inline-flex;
-    margin: 0 0 0 8px;    
+    margin: 0 0 0 8px;
+    cursor: pointer;
+}
+
+#save_button:hover{
+    color: #CCFF00;
 }
 
 #revert_button{
     display: inline-flex;    
-    margin: 0 4px 0 8px;    
+    margin: 0 4px 0 8px;
+    cursor: pointer;
+}
+
+#revert_button:hover{
+    color: #CCFF00;
 }
 
 .figure_caption {
     margin-left: 8px;
 }
+
+
 
 
 .controler_bar_right_area {
@@ -1110,7 +1123,7 @@ td {
 .logText{
     font-size: 12px;
     color: #FFFFFF;
-    height: 250px;
+    height: 240px;
     overflow: auto;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     margin: 12px 0 0 12px;
