@@ -4,7 +4,20 @@
 ## Prerequirements
 [node.js](https://nodejs.org/en/) v8.0.0 or later
 
-## How to install
+## How to use by cloning this repository
+install
+```
+> git clone https://gitlab.com/aicshud/WHEEL.git
+> cd WHEEL
+> git checkout -b dev2017-GUI
+> git pull origin dev2017-GUI
+> npm install
+```
+run
+```
+> npm start
+```
+## How to install from package (not available for now)
 ```
 > npm install -g WHEEL-{version}.tgz
 ```
