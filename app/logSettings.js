@@ -17,55 +17,8 @@ const defaultSettings = {
       "type": "./log2client",
       "namespace": "workflow"
     },
-    "socketHome": {
-      "type": "./log2client",
-      "namespace": "home",
-      "eventName": "showMessage"
-    },
-    "socketRemotehost": {
-      "type": "./log2client",
-      "namespace": "remotehost",
-      "eventName": "showMessage"
-    },
-    "socketLogin": {
-      "type": "./log2client",
-      "namespace": "login",
-      "eventName": "showMessage"
-    },
-    "socketAdmin": {
-      "type": "./log2client",
-      "namespace": "admin",
-      "eventName": "showMessage"
-    },
-    "socketRapid": {
-      "type": "./log2client",
-      "namespace": "rapid",
-      "eventName": "showMessage"
-    },
-    "errorHome": {
-      "type": "logLevelFilter",
-      "appender": "socketHome",
-      "level": "error"
-    },
-    "errorRemotehost": {
-      "type": "logLevelFilter",
-      "appender": "socketRemotehost",
-      "level": "error"
-    },
-    "errorLogin": {
-      "type": "logLevelFilter",
-      "appender": "socketLogin",
-      "level": "error"
-    },
-    "errorAdmin": {
-      "type": "logLevelFilter",
-      "appender": "socketAdmin",
-      "level": "error"
-    },
-    "errorRapid": {
-      "type": "logLevelFilter",
-      "appender": "socketRapid",
-      "level": "error"
+    "errorlog": {
+      "type": "./errorlog"
     }
   },
   "categories": {
@@ -88,7 +41,7 @@ const defaultSettings = {
       "appenders": [
         "console",
         "file",
-        "errorHome"
+        "errorlog"
       ],
       "level": "debug"
     },
@@ -96,7 +49,7 @@ const defaultSettings = {
       "appenders": [
         "console",
         "file",
-        "errorRemotehost"
+        "errorlog"
       ],
       "level": "debug"
     },
@@ -104,7 +57,7 @@ const defaultSettings = {
       "appenders": [
         "console",
         "file",
-        "errorLogin"
+        "errorlog"
       ],
       "level": "debug"
     },
@@ -112,7 +65,7 @@ const defaultSettings = {
       "appenders": [
         "console",
         "file",
-        "errorAdmin"
+        "errorlog"
       ],
       "level": "debug"
     },
@@ -120,7 +73,7 @@ const defaultSettings = {
       "appenders": [
         "console",
         "file",
-        "errorRapid"
+        "errorlog"
       ],
       "level": "debug"
     }
@@ -146,11 +99,21 @@ const defaultSettings = {
 }
 
 let ready=false;
-const logSettings = Object.assign({}, defaultSettings);
+let firstCall = true;
+let logSettings = Object.assign({}, defaultSettings);
 
-function setLogConfig(key, value){
-  logSettings[key]=value;
+function reset(){
+  return new Promise((resolve, reject)=>{
+    log4js.shutdown((err)=>{
+      if(err) reject();
+      logSettings = Object.assign({}, defaultSettings);
+      ready = false;
+      firstCall = true;
+      resolve();
+    });
+  });
 }
+
 function setFilename(filename){
   logSettings.appenders.file.filename=filename;
 }
@@ -166,24 +129,24 @@ function setCompress(TF){
 
 function setSocketIO(sio){
   logSettings.appenders.socketWF.socketIO=sio;
-  logSettings.appenders.socketHome.socketIO=sio;
-  logSettings.appenders.socketRemotehost.socketIO=sio;
-  logSettings.appenders.socketLogin.socketIO=sio;
-  logSettings.appenders.socketAdmin.socketIO=sio;
-  logSettings.appenders.socketRapid.socketIO=sio;
+  logSettings.appenders.errorlog.socketIO=sio;
   ready=true;
 }
 
-function getLogger(cat){
+function getLogger(cat, verbose){
   if(! ready) return null;
-  console.log("getLogger called. current setting is as follows\n", logSettings);
-  log4js.configure(logSettings);
+  if(firstCall){
+    if(verbose){
+      console.log("getLogger called. current setting is as follows\n", logSettings);
+    }
+    log4js.configure(logSettings);
+    firstCall=false;
+  }
   return log4js.getLogger(cat);
 }
 
-module.exports.setLogConfig=setLogConfig;
-module.exports.setSocketIO=setSocketIO;
 module.exports.getLogger=getLogger;
+module.exports.setSocketIO=setSocketIO;
 module.exports.setFilename=setFilename;
 module.exports.setMaxLogSize=setMaxLogSize;
 module.exports.setNumBackup=setNumBackup;

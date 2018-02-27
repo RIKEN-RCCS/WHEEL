@@ -8,9 +8,9 @@ const eventNameTable={
   SSHOUT: "logSSHout",
   SSHERR: "logSSHerr"
 }
-function socketIOAppender(layout, timezoneOffset, socket, namespace, argEventName){
+function socketIOAppender(layout, timezoneOffset, socket, namespace){
   return (loggingEvent)=>{
-    const eventName = argEventName || eventNameTable[loggingEvent.level.levelStr];
+    const eventName = eventNameTable[loggingEvent.level.levelStr];
     if(eventName){
       socket.of(namespace).emit(eventName, layout(loggingEvent, timezoneOffset));
     }else{
@@ -24,6 +24,6 @@ function configure(config, layouts){
   if(config.layout){
     layout = layouts.layout(config.layout.type, config.layout);
   }
-  return socketIOAppender(layout, config.timezoneOffset, config.socketIO, config.namespace, config.eventName);
+  return socketIOAppender(layout, config.timezoneOffset, config.socketIO, config.namespace);
 }
 module.exports.configure = configure;

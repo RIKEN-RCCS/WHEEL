@@ -10,12 +10,7 @@ const ejs = require('ejs');
 const passport = require('passport');
 
 const {port} = require('./db/db');
-const {getLogger, setSocketIO, setLogConfig, setFilename, setMaxLogSize, setNumBackup, setCompress} = require('./logSettings');
-
-
-
-
-
+const {getLogger, setSocketIO, setFilename, setMaxLogSize, setNumBackup, setCompress} = require('./logSettings');
 
 process.on('unhandledRejection', console.dir);// for DEBUG
 
