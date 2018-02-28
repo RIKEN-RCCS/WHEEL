@@ -5,12 +5,13 @@ const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
 const glob = require('glob');
+const {ensureDir} = require('fs-extra');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 
 const {interval} = require('../db/db');
 const executer = require('./executer');
-const { addXSync, asyncNcp, mkdir_p} = require('./utility');
+const { addXSync, asyncNcp} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
 
@@ -92,12 +93,14 @@ function evalConditionSync(condition, cwd){
  * @param {Object[]} nodes - node in current workflow
  * @param {string} cwfDir -  path to current workflow dir
  * @param {string} rwfDir -  path to project root workflow dir
+ * @param {string} startTime - start time of project
  */
 class Dispatcher{
-  constructor(wf, cwfDir, rwfDir){
+  constructor(wf, cwfDir, rwfDir, startTime){
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
+    this.projectStartTime=startTime;
     this.nextSearchList=[];
     this.children=[];
     this.dispatchedTaskList=[]
@@ -142,7 +145,7 @@ class Dispatcher{
           }
 
           // make destination directory
-          await mkdir_p(path.dirname(newPath));
+          await ensureDir(path.dirname(newPath));
 
           // make symlink
           const oldPath = path.resolve(srcRoot, srcFile);
@@ -253,6 +256,7 @@ class Dispatcher{
   async _dispatchTask(task){
     logger.debug('_dispatchTask called', task.name);
     task.id=uuidv1(); // use this id to cancel task
+    task.projectStartTime= this.projectStartTime;
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
     await executer.exec(task);
@@ -290,7 +294,7 @@ class Dispatcher{
       .catch((err)=>{
         logger.error('fatal error occurred while loading sub workflow', err);
       });
-    return new Dispatcher(childWF, childDir, this.rwfDir);
+    return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime);
   }
   async _delegate(node){
     logger.debug('_delegate called', node.name);

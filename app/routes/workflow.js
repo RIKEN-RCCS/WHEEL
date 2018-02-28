@@ -243,7 +243,7 @@ async function onRunProject(sio, label, rwfFilename){
   await commitProject(label);
   setProjectState(label, 'running');
   let rootDir = getRootDir(label);
-  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir));
+  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString()));
   sio.emit('projectState', getProjectState(label));
   try{
     const projectState=await getRootDispatcher(label).dispatch();

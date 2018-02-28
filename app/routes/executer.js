@@ -49,17 +49,23 @@ async function prepareRemoteExecDir(ssh, task){
 }
 async function postProcess(ssh, task, rt){
   logger.debug('get necessary files from remote server');
-  let promises=task.outputFiles.map((e)=>{
-    let src = path.posix.join(task.remoteWorkingDir, e.name);
-    let dst = e.name;
-    if(! path.posix.isAbsolute(e.name)){
-      dst = path.posix.join(task.workingDir, path.posix.dirname(e.name));
+
+  let necessaryFiles=task.outputFiles.filter((e)=>{
+    return e;
+  }).map((e)=>{
+    return e.name;
+  }).join();
+  if(necessaryFiles !== ""){
+    if(task.include){
+      necessaryFiles = `${task.remoteWorkingDir}/{${necessaryFiles},${task.include}}`;
+    }else{
+      necessaryFiles =`${task.remoteWorkingDir}/{${necessaryFiles}}`;
     }
-    ssh.recv(src, dst);
-  });
-  if(promises.length>0){
-    await Promise.all(promises);
+    logger.debug('try to get ',necessaryFiles, 'from ',task.remoteWorkingDir,'to',task.workingDir);
+    const excludeFilter = task.exclude ? task.exclude : null;
+    await ssh.recv(task.remoteWorkingDir, task.workingDir, necessaryFiles, excludeFilter)
   }
+
   //TODO dispatcher内でcleanup flagを確認してdoCleanupを設定
   if(task.doCleanup){
     logger.debug('clean up on remote server');
@@ -215,10 +221,7 @@ async function createExecuter(task){
       username: hostinfo.username,
     }
     let localWorkingDir = path.relative(task.rwfDir, task.workingDir);
-    //TODO getDateStringではなくプロジェクトの実行開始時刻を使った方が良いかも？
-    //その場合はtaskのdispatcher側でプロパティに入れておく必要あり
-    //TODO localWorkingDirのpathsepを変換しとく必要あり？
-    task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, getDateString(), localWorkingDir));
+    task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
 
     let arssh = getSsh(config, {connectionRetryDelay: 1000});
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){
