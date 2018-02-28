@@ -369,15 +369,15 @@ class Dispatcher{
   }
   async _PSHandler(node){
     logger.debug('_PSHandler called', node.name);
-    let srcDir = path.resolve(this.cwfDir, node.path);
-    let paramSettingsFilename = path.resolve(srcDir, node.parameterFile);
-    let paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
+    const srcDir = path.resolve(this.cwfDir, node.path);
+    const paramSettingsFilename = path.resolve(srcDir, node.parameterFile);
+    const paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
 
-    let targetFile = paramSettings.target_file;
+    const targetFile = paramSettings.target_file;
     let paramSpace = removeInvalid(paramSettings.target_param);
+    // ignore all filenames in file type parameter space and parameter study setting file
     let ignoreFiles=getFilenames(paramSpace).map((e)=>{
-      // return path.resolve(srcDir, e) //TODO should be used after rapid client-side was modified
-      return e;
+      return path.resolve(srcDir, e);
     });
     ignoreFiles.push(paramSettingsFilename);
 
@@ -387,19 +387,18 @@ class Dispatcher{
       let dstDir=paramVec.reduce((p,e)=>{
         let v = e.value;
         if(e.type === "file" ){
-          v = path.basename(e.value);
+          v = (e.value).replace(path.sep, '_');
         }
-        return `${p}__${e.key}_${v}`;
+        return `${p}_${e.key}_${v}`;
       }, node.path);
       dstDir = path.resolve(this.cwfDir, dstDir);
+      // copy file which is specified as parameter
       let includeFiles=paramVec
         .filter((e)=>{
           return e.type === "file";
         })
         .map((e)=>{
-          // e.value is absolute path for now
-          // but it will be relative path in the near future
-          return e.value;
+          return path.resolve(srcDir, e.value);
         });
       let options={};
       options.filter = function(filename){
