@@ -48,25 +48,22 @@ async function prepareRemoteExecDir(ssh, task){
   });
 }
 async function postProcess(ssh, task, rt){
+  task.state='stage-out';
   logger.debug('get necessary files from remote server');
 
-  let necessaryFiles=task.outputFiles.filter((e)=>{
+  const necessaryFilesArray=task.outputFiles.filter((e)=>{
     return e;
   }).map((e)=>{
     return e.name;
-  }).join();
-  if(necessaryFiles !== ""){
-    if(task.include){
-      necessaryFiles = `${task.remoteWorkingDir}/{${necessaryFiles},${task.include}}`;
-    }else{
-      necessaryFiles =`${task.remoteWorkingDir}/{${necessaryFiles}}`;
-    }
-    logger.debug('try to get ',necessaryFiles, 'from ',task.remoteWorkingDir,'to',task.workingDir);
+  });
+  if(task.include) necessaryFilesArray.push(task.include);
+
+  if(necessaryFilesArray.length > 0){
+    const necessaryFiles = necessaryFilesArray.length === 1 ? `${task.remoteWorkingDir}/${necessaryFilesArray[0]}`:`${task.remoteWorkingDir}/{${necessaryFilesArray.join()}}`
+    logger.debug('try to get ', necessaryFiles, 'from ',task.remoteWorkingDir,'to',task.workingDir);
     const excludeFilter = task.exclude ? task.exclude : null;
     await ssh.recv(task.remoteWorkingDir, task.workingDir, necessaryFiles, excludeFilter)
   }
-
-  //TODO dispatcher内でcleanup flagを確認してdoCleanupを設定
   if(task.doCleanup){
     logger.debug('clean up on remote server');
     await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
@@ -165,7 +162,7 @@ async function remoteSubmitAdaptor(ssh, task){
     if(rt !== 0){
       logger.error('remote stat command failed!', rt);
       logger.error(error);
-      return 
+      return
     }
     logger.debug(jobID,'is finished', finished);
     if(finished){
