@@ -51,6 +51,13 @@ function _isFinishedState(state){
   return state === 'finished' || state === 'failed';
 }
 
+function convertPathSep(pathString){
+  if(path.sep === path.posix.sep){
+    return pathString.replace(path.win32.sep, path.sep);
+  }else{
+    return pathString.replace(path.posix.sep, path.sep);
+  }
+}
 
 
 /**
@@ -106,44 +113,47 @@ class Dispatcher{
   }
 
   deliverOutputFiles(node){
-    const promises = node.outputFiles.map((e)=>{
+    const promises = node.outputFiles.map(async(e)=>{
       //memo src can be glob pattern
       const src = e.name;
       const srcRoot= path.resolve(this.cwfDir, node.path);
-      const p2 = e.dst.map(async (dst)=>{
-        const tmp = dst.dstNode === "parent" ? "./" : this.wf.nodes[dst.dstNode].path;
-        const dstRoot = path.resolve(this.cwfDir, tmp);
-        const dstPath=path.resolve(dstRoot, dst.dstName);
-        // remove dst file if it exist, make dst dir if it does not exist.
-        try{
-          await promisify(fs.unlink)(dstPath);
-        }catch(e){
-          if(e.code !== 'ENOENT' && e.code !== 'EISDIR' && e.code !== 'EPERM'){
-            return Promise.reject(e);
+      const srces = await promisify(glob)(src, {cwd: srcRoot});
+      const p1 = srces.map((srcFile)=>{
+        const p2 = e.dst.map(async (dst)=>{
+          const tmp = dst.dstNode === "parent" ? "./" : this.wf.nodes[dst.dstNode].path;
+          const dstName = dst.dstName ? convertPathSep(dst.dstName) : "";
+          let dstRoot = path.resolve(this.cwfDir, tmp);
+
+          // link srcFile -> dstName
+          let newPath = path.resolve(dstRoot, dstName);
+
+          // link srcFile -> dstName/srcFile
+          if(srces.length>1 || dstName.endsWith(path.sep)){
+            newPath = path.resolve(dstRoot, dstName, srcFile);
           }
-        }
-        await mkdir_p(dstRoot);
-        const srces = await promisify(glob)(src, {cwd: srcRoot});
-        let p1=[]
-        if(srces.length === 1){
-          const oldPath = path.resolve(srcRoot, srces[0]);
-          logger.debug('make symlink from', oldPath, "to", dstPath);
-          p1.push(promisify(fs.symlink)(oldPath, dstPath));
-        }else if(srces.length > 1){
-          p1 = srces.map(async (srcFile)=>{
-            const oldPath = path.resolve(srcRoot, srcFile);
-            const dstDir = path.resolve(dstPath, srcFile);
-            logger.debug('make symlink from', oldPath, "to", dstDir);
-            const stats = await promisify(fs.stat)(oldPath);
-            const type = stats.isDirectory ? "dir" : "file";
-            return promisify(fs.symlink)(oldPath, dstDir, type);
-          });
-        }else{
-          logger.error('no outputFile matched', src);
-        }
-        return Promise.all(p1);
+
+          // remove dst file if it exist
+          try{
+            await promisify(fs.unlink)(newPath);
+          }catch(e){
+            if(e.code !== 'ENOENT' && e.code !== 'EISDIR' && e.code !== 'EPERM'){
+              return Promise.reject(e);
+            }
+          }
+
+          // make destination directory
+          await mkdir_p(path.dirname(newPath));
+
+          // make symlink
+          const oldPath = path.resolve(srcRoot, srcFile);
+          logger.debug('make symlink from', oldPath, "to", newPath);
+          const stats = await promisify(fs.stat)(oldPath);
+          const type = stats.isDirectory ? "dir" : "file";
+          return promisify(fs.symlink)(oldPath, newPath, type);
+        });
+        return Promise.all(p2);
       });
-      return Promise.all(p2);
+      return Promise.all(p1);
     });
     return Promise.all(promises);
   }
