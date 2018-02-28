@@ -246,7 +246,8 @@ async function onRunProject(sio, label, rwfFilename){
   setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir));
   sio.emit('projectState', getProjectState(label));
   try{
-    setProjectState(label, await getRootDispatcher(label).dispatch());
+    const projectState=await getRootDispatcher(label).dispatch();
+    setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parseing root workflow: \n',err);
     return false;

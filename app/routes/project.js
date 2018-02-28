@@ -84,6 +84,7 @@ async function updateProjectJson (label, data){
 
 function setProjectState(label, state){
   _getProject(label).projectState=state;
+  logger.info('project state changed', state);
   return updateProjectJson(label, {"state": state});
 }
 
