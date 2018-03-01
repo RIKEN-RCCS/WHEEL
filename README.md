@@ -1,5 +1,5 @@
 # WHEEL
-**W**orkflow in **H**ierarchical distribut**E**d parall**EL**.
+__W__orkflow in __H__ierarchical distribut __E__d parall __EL__.
 
 ## Prerequirements
 [node.js](https://nodejs.org/en/) v8.0.0 or later
