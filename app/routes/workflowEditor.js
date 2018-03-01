@@ -437,7 +437,7 @@ async function updateOutputFiles(label, node, value){
 }
 
 async function updateName(label, node, value){
-  if(! _isValidName(value)){
+  if(!value || ! _isValidName(value)){
     logger.error('invalid component name', value);
     return
   }
