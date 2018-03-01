@@ -5,7 +5,7 @@ const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
 const glob = require('glob');
-const {ensureDir} = require('fs-extra');
+const {ensureDir,copy} = require('fs-extra');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 
@@ -54,9 +54,9 @@ function _isFinishedState(state){
 
 function convertPathSep(pathString){
   if(path.sep === path.posix.sep){
-    return pathString.replace(path.win32.sep, path.sep);
+    return pathString.replace(new RegExp("\\"+path.win32.sep,"g"), path.sep);
   }else{
-    return pathString.replace(path.posix.sep, path.sep);
+    return pathString.replace(new RegExp(path.posix.sep,"g"), path.sep);
   }
 }
 
@@ -152,7 +152,12 @@ class Dispatcher{
           logger.debug('make symlink from', oldPath, "to", newPath);
           const stats = await promisify(fs.stat)(oldPath);
           const type = stats.isDirectory ? "dir" : "file";
-          return promisify(fs.symlink)(oldPath, newPath, type);
+          return promisify(fs.symlink)(oldPath, newPath, type)
+          .catch((e)=>{
+            if (e.code==='EPERM'){
+              return copy(oldPath, newPath);
+            }
+          });
         });
         return Promise.all(p2);
       });
@@ -300,14 +305,16 @@ class Dispatcher{
     logger.debug('_delegate called', node.name);
     let child = await this._createChild(node);
     this.children.push(child);
-    let state='finished';
-    await child.dispatch()
+    return child.dispatch()
+      .then(()=>{
+        node.state='finished';
+      })
       .catch((err)=>{
         logger.error("fatal error occurred while dispatching sub workflow",err);
-        state='failed';
+        node.state='failed';
+      }).then(()=>{
+        Array.prototype.push.apply(this.nextSearchList, node.next);
       });
-    node.state=state;
-    Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
   _loopInitialize(node){
