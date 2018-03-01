@@ -41,7 +41,7 @@ const sio={
 };
 sio.emit = sinon.stub();
 
-describe.only("Unit test for log4js's helper functions", function(){
+describe("Unit test for log4js's helper functions", function(){
   describe("#setFilename",function(){
     it("should set filename to File appender", function(){
       const filename = "hoge";
