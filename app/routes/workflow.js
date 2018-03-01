@@ -70,14 +70,16 @@ function validationCheck(label, workflow, dir, sio){
     }
   });
   const hasInitialNode = workflow.nodes.some((node)=>{
-      return isInitialNode(node);
+    if(node === null) return false;
+    return isInitialNode(node);
   });
-  if(!hasInitialNode) promises.push(Promise.reject());
+  if(!hasInitialNode) promises.push(Promise.reject(new Error('no component can be run')));
 
   hosts = Array.from(new Set(hosts));
   let hostPromises = hosts.map((e)=>{
     let id=remoteHost.getID('name', e);
     const hostInfo = remoteHost.get(id);
+    if(!hostInfo)  promises.push(Promise.reject(new Error(`illegal remote host specified ${e}`)));
     return canConnect(hostInfo)
       .catch((err)=>{
         return askPassword(sio, e)
