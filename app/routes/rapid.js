@@ -72,6 +72,13 @@ module.exports = function(io){
         "target_file": req.body.filename,
         "target_param": req.body.param
       }
+      parameter.target_param.forEach((param)=>{
+        if(param.type === 'file'){
+          param.list = param.list.map((e)=>{
+            return path.basename(e);
+          });
+        }
+      });
       fn = fn+'.json';
       promisify(fs.writeFile)(fn,JSON.stringify(parameter, undefined, 4))
       .then(function(){
