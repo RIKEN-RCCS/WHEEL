@@ -1,26 +1,39 @@
 const path = require('path');
 const fs = require("fs");
 const {promisify} = require("util");
+const {copy} = require('fs-extra');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const component = require('./workflowComponent');
-
+const {escapeRegExp} = require('./utility');
 const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename} = require('./project');
 
-//TODO move another module
 function isInitialNode(node){
-  return node.previous.length===0 && node.inputFiles.length===0;
+  if(node.previous.length > 0) return false;
+  if(node.inputFiles.length >0 ){
+    return node.inputFiles.some((e)=>{
+      e.srcNode !== null;
+    });
+  }
+  return true;
 }
 function hasChild(node){
   return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
 }
 
+/**
+ * determin specified filename is invalid or not
+ */
+function _isValidName(name){
+  const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
+  if(win32reservedName.test(name)) return false;
 
+  const notAllowedChar = /[^a-zA-Z0-9_\-]/; //alphanumeric, '_', and '-'
+  if(notAllowedChar.test(name)) return false;
 
-
-
-
+  return true;
+}
 
 function _hasName(name, e){
   return e.name === name;
@@ -423,6 +436,27 @@ async function updateOutputFiles(label, node, value){
   }
 }
 
+async function updateName(label, node, value){
+  if(! _isValidName(value)){
+    logger.error('invalid component name', value);
+    return
+  }
+  const currentDir = getCurrentDir(label);
+  const oldName = path.resolve(currentDir, node.name);
+  let newName = path.resolve(currentDir,value);
+  try{
+    await promisify(fs.mkdir)(newName);
+  }catch(e){
+    newName = await _makeDir(newName, 0);
+  }
+  logger.debug('rename', oldName,' to', newName);
+
+  await promisify(fs.rmdir)(newName);
+  await copy(oldName, newName);
+  node.name = path.basename(newName);
+  node.path = node.name;
+}
+
 async function delValue(label, node, property, value){
   let index = node[property].findIndex((e)=>{
     return e === value;
@@ -506,6 +540,7 @@ module.exports.addValue=addValue;
 module.exports.updateValue = updateValue;
 module.exports.updateInputFiles = updateInputFiles;
 module.exports.updateOutputFiles = updateOutputFiles;
+module.exports.updateName = updateName;
 module.exports.delValue = delValue;
 module.exports.delInputFiles = delInputFiles;
 module.exports.delOutputFiles = delOutputFiles;

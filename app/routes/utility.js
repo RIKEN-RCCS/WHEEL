@@ -31,14 +31,6 @@ function escapeRegExp(string) {
   return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
-/**
- * determin specified filename is invalid or not
- */
-function isInvalidFilename(filename){
-  const reservedWin32 = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*/;
-
-}
-
 async function mkdir_p(targetPath){
   let dirs=[];
   console.log('DEBUG: targetPath', targetPath);
@@ -127,7 +119,6 @@ function replacePathsep(pathString){
 }
 
 module.exports.escapeRegExp=escapeRegExp;
-module.exports.isInvalidFilename=isInvalidFilename;
 module.exports.mkdir_p=mkdir_p;
 module.exports.addXSync=addXSync;
 module.exports.asyncNcp=asyncNcp;

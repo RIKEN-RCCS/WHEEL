@@ -17,7 +17,7 @@ const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJs
 const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
 const fileBrowser = require("./fileBrowser");
-const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
+const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
 const escape = require('./utility').escapeRegExp;
 const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
 const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)})$).*$`);
@@ -137,6 +137,8 @@ async function onUpdateNode(sio, label, msg){
           await updateInputFiles(label, targetNode, value);
         }else if(property === "outputFiles"){
           await updateOutputFiles(label, targetNode, value);
+        }else if(property === "name"){
+          await updateName(label, targetNode, value);
         }else{
           await updateValue(label, targetNode, property, value);
         }
