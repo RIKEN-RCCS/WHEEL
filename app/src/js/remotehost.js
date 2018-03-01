@@ -3,6 +3,7 @@ import Vue from 'vue/dist/vue.esm.js';
 
 import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
+import showMessage from './showMessage';
 
 import 'jquery-ui/themes/base/all.css';
 import '../css/remotehost.css';
@@ -11,6 +12,7 @@ import { log } from 'util';
 $(() => {
   // create socket.io instance
   const socket = io('/remotehost');
+  socket.on('showMessage', showMessage);
   const defaultHost = {
     name: '',
     host: '',

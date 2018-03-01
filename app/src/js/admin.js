@@ -3,6 +3,7 @@ import Vue from 'vue/dist/vue.esm.js';
 
 import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
+import showMessage from './showMessage';
 
 import 'jquery-ui/themes/base/all.css';
 import '../css/admin.css';
@@ -10,6 +11,7 @@ import '../css/admin.css';
 $(() => {
   // create socket.io instance
   const socket = io('/admin');
+  socket.on('showMessage', showMessage);
   const defaultAccount = {
     name: '',
     password: '',
