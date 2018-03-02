@@ -100,6 +100,7 @@ async function setCwf (label, filename){
 
 async function readRwf (label){
   const filename=_getProject(label).rwfFilename;
+  setCwf(label, filename);
   const data = await promisify(fs.readFile)(filename)
     .catch((err)=>{
       err.wf=filename;

@@ -241,7 +241,8 @@ async function onRunProject(sio, label, rwfFilename){
   try{
     await validationCheck(label, rwf, getRootDir(label), sio)
   }catch(err){
-    logger.error('invalid root workflow:\n', err);
+    logger.error('invalid root workflow\n', err.message);
+    logger.debug(err);
     return false
   }
   await commitProject(label);
