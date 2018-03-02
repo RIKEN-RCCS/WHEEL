@@ -30,12 +30,7 @@ function localExec(task, cb){
     logger.stderr(stderr.trim());
   })
     .on('exit', (code) =>{
-      if(code === 0){
-        task.state = 'finished';
-      }else{
-        task.state = 'failed';
-      }
-      cb();
+      cb(code === 0);
     });
   return cp.pid;
 }
@@ -50,7 +45,7 @@ async function prepareRemoteExecDir(ssh, task){
     return ssh.chmod(remoteScriptPath, '744');
   });
 }
-async function postProcess(ssh, task, rt){
+async function postProcess(ssh, task, rt, cb){
   task.state='stage-out';
   logger.debug('get necessary files from remote server');
 
@@ -72,11 +67,7 @@ async function postProcess(ssh, task, rt){
     await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
   }
   logger.debug(task.name, 'done. rt =', rt);
-  if(rt === 0){
-    task.state = 'finished';
-  }else{
-    task.state = 'failed';
-  }
+  cb(rt===0);
 }
 
 async function remoteExecAdaptor(ssh, task, cb){
@@ -97,9 +88,7 @@ async function remoteExecAdaptor(ssh, task, cb){
   let rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
-  cb();
-
-  return postProcess(ssh, task, rt);
+  return postProcess(ssh, task, rt, cb);
 }
 
 function localSubmit(qsub, task, cb){
@@ -150,12 +139,12 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   if(rt !== 0){
     logger.error('remote submit command failed!', rt);
     logger.error(error);
-    cb();
+    cb(false);
     return
   }
-  if(!jobID && jobID!=="0"){
+  if(jobID===null){
     logger.warn('illegal jobID');
-    cb();
+    cb(false);
     return;
   }
   let finished=false;
@@ -184,8 +173,7 @@ async function remoteSubmitAdaptor(ssh, task, cb){
     if(finished){
       clearInterval(timeout);
       ssh.off('stdout', isFinished);
-      postProcess(ssh, task, rt);
-      cb();
+      postProcess(ssh, task, rt, cb);
     }
   },5000);
 }
@@ -209,7 +197,12 @@ class Executer{
       this.executing=true;
       if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
         let task = this.queue.pop()
-        task.handler = this.exec(task, ()=>{
+        task.handler = this.exec(task, (isOK)=>{
+          if(isOK){
+            task.state = 'finished';
+          }else{
+            task.state = 'failed';
+          }
           this.currentNumJob--;
         });
         this.currentNumJob++;
