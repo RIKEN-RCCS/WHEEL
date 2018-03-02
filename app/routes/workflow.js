@@ -10,8 +10,8 @@ const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
-const {getDateString} = require('./utility');
-const {remoteHost} = require('../db/db');
+const {getDateString, doCleanup} = require('./utility');
+const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
 const {getCwf, setCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
@@ -248,6 +248,12 @@ async function onRunProject(sio, label, rwfFilename){
   await commitProject(label);
   setProjectState(label, 'running');
   let rootDir = getRootDir(label);
+  let cleanup = rwf.cleanupFlag;
+  if(! cleanup){
+    cleanup = defaultCleanupRemoteRoot;
+  }
+  console.log('DEBUG: cleanup flag for root workflow = ', cleanup);
+  rwf.cleanupFlag = cleanup;
   setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString()));
   sio.emit('projectState', getProjectState(label));
   try{

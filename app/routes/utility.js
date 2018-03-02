@@ -118,9 +118,24 @@ function replacePathsep(pathString){
   return pathString.replace(new RegExp("\\"+path.win32.sep,"g"), path.posix.sep);
 }
 
+/**
+ * determine do cleanup or not
+ * @param {number || string} flag - cleanup flag
+ * @param {number || string} parentflag - parent component's cleanup flag
+ */
+function doCleanup(flag, parentFlag){
+  const numFlag = parseInt(flag, 10);
+  if(numFlag === 2){
+    const numParentFlag = parseInt(parentFlag, 10);
+    return parentFlag === 0;
+  }
+  return numFlag === 0;
+}
+
 module.exports.escapeRegExp=escapeRegExp;
 module.exports.mkdir_p=mkdir_p;
 module.exports.addXSync=addXSync;
 module.exports.asyncNcp=asyncNcp;
 module.exports.getDateString=getDateString;
 module.exports.replacePathsep=replacePathsep;
+module.exports.doCleanup=doCleanup;

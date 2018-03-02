@@ -21,6 +21,7 @@ module.exports.suffix= config.suffix;
 module.exports.rootDir= config.rootDir;
 module.exports.systemName= config.system_name;
 module.exports.defaultFilename= config.default_filename;
+module.exports.defaultCleanupRemoteRoot = config.defaultCleanupRemoteRoot;
 
 module.exports.jobScheduler = jobScheduler;
 module.exports.userAccount = new jsonArrayManager(userAccountFilename);

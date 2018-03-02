@@ -6,6 +6,7 @@
     "suffix": ".wheel",
     "interval": 1000,
     "admin": "admin",
+    "defaultCleanupRemoteRoot": 0,
     "scheduler": {
         "TCS": "./config/pjsub.sh",
         "TORQUE": "./config/qsub.sh"

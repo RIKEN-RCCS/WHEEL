@@ -61,8 +61,9 @@ async function postProcess(ssh, task, rt, cb){
     const excludeFilter = task.exclude ? task.exclude : null;
     await ssh.recv(task.remoteWorkingDir, task.workingDir, necessaryFiles, excludeFilter)
   }
+  console.log('DEBUG: task.doCleanup',task.name,',',task.doCleanup);
   if(task.doCleanup){
-    logger.debug('clean up on remote server');
+    logger.debug('(remote) rm -fr', task.remoteWorkingDir);
     await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
   }
   logger.debug(task.name, 'done. rt =', rt);

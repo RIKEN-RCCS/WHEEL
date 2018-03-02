@@ -9,7 +9,7 @@ const compo = require("./workflowComponent");
 const {getLogger} = require('../logSettings');
 const logger = getLogger('home');
 const {getDateString} = require('./utility');
-const {extProject, extWF, systemName, defaultFilename} = require('../db/db');
+const {extProject, extWF, systemName, defaultFilename, defaultCleanupRemoteRoot} = require('../db/db');
 
 
 async function create(projectDirectory, projectName) {
@@ -21,6 +21,7 @@ async function create(projectDirectory, projectName) {
   rootWorkflow.name=projectName;
   rootWorkflow.path='./';
   rootWorkflow.jsonFile='./'+rootWorkflowFilename;
+  rootWorkflow.cleanupFlag = defaultCleanupRemoteRoot === 0 ? 0 : 1;
   logger.debug(rootWorkflow);
   await promisify(fs.writeFile)(rootWorkflowFileFullpath, JSON.stringify(rootWorkflow,null,4));
 
