@@ -36,7 +36,6 @@ function localExec(task, cb){
 }
 
 async function prepareRemoteExecDir(ssh, task){
-  debugger;
   logger.debug(task.remoteWorkingDir, task.script);
   let remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
@@ -273,10 +272,11 @@ async function exec(task){
     executer = await createExecuter(task);
     executers.push(executer);
   }
-
-  const hostinfo = remoteHost.get(task.remotehostID);
-  const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
-  task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
+  if(task.remotehostID !== 'localhost'){
+    const hostinfo = remoteHost.get(task.remotehostID);
+    const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
+    task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
+  }
 
   executer.submit(task);
 }
