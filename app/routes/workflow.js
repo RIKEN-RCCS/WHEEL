@@ -5,8 +5,8 @@ const {promisify} = require("util");
 
 let express = require('express');
 const del = require("del");
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
@@ -17,24 +17,24 @@ const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJs
 const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
 const fileBrowser = require("./fileBrowser");
-const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
+const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
 const escape = require('./utility').escapeRegExp;
 const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
 const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)})$).*$`);
 
-function askPassword(sio){
+function askPassword(sio, hostname){
   return new Promise((resolve, reject)=>{
     sio.on('password', (data)=>{
       resolve(data);
     });
-    sio.emit('askPassword');
+    sio.emit('askPassword', hostname);
   });
 }
 
 /**
  * check if all scripts and remote host setting are available or not
  */
-function validationCheck(label, workflow, dir, sio){
+async function validationCheck(label, workflow, dir, sio){
   let promises=[]
   if(dir == null ){
     promises.push(Promise.reject(new Error('Project dir is null or undefined')));
@@ -44,35 +44,42 @@ function validationCheck(label, workflow, dir, sio){
     if(node == null) return;
     if(node.type === 'task'){
       if(node.path == null){
-        promises.push(Promise.reject(new Error(`node.path is null or undefined ${node.name}`)));
+        promises.push(Promise.reject(new Error(`illegal path ${node.name}`)));
       }
       if(node.host !== 'localhost'){
         hosts.push(node.host);
       }
       if( node.script == null){
-        promises.push(Promise.reject(new Error(`script is null or undefined ${node.name}`)));
+        promises.push(Promise.reject(new Error(`script is not specified ${node.name}`)));
       }else{
         promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
-    }else if(hasChild(node)){
+    }else if(node.type === 'parameterStudy'){
+      if(node.parameterFile === null){
+        promises.push(Promise.reject(new Error(`parameter setting file is not specified ${node.name}`)));
+      }
+    }
+    if(hasChild(node)){
       const childDir = path.resolve(dir, node.path);
       promises.push(
         readChildWorkflow(label, node)
         .then((childWF)=>{
-          validationCheck(label, childWF, childDir, sio)
+          return validationCheck(label, childWF, childDir, sio)
         })
       );
     }
   });
   const hasInitialNode = workflow.nodes.some((node)=>{
-      return isInitialNode(node);
+    if(node === null) return false;
+    return isInitialNode(node);
   });
-  if(!hasInitialNode) promises.push(Promise.reject());
+  if(!hasInitialNode) promises.push(Promise.reject(new Error('no component can be run')));
 
   hosts = Array.from(new Set(hosts));
   let hostPromises = hosts.map((e)=>{
     let id=remoteHost.getID('name', e);
     const hostInfo = remoteHost.get(id);
+    if(!hostInfo)  promises.push(Promise.reject(new Error(`illegal remote host specified ${e}`)));
     return canConnect(hostInfo)
       .catch((err)=>{
         return askPassword(sio, e)
@@ -130,6 +137,8 @@ async function onUpdateNode(sio, label, msg){
           await updateInputFiles(label, targetNode, value);
         }else if(property === "outputFiles"){
           await updateOutputFiles(label, targetNode, value);
+        }else if(property === "name"){
+          await updateName(label, targetNode, value);
         }else{
           await updateValue(label, targetNode, property, value);
         }
@@ -226,7 +235,7 @@ async function onRemoveFileLink(sio, label, msg){
   }
 }
 
-async function onRunProject(sio, label){
+async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
   let rwf = await readRwf(label);
   try{
@@ -238,10 +247,11 @@ async function onRunProject(sio, label){
   await commitProject(label);
   setProjectState(label, 'running');
   let rootDir = getRootDir(label);
-  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir));
+  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString()));
   sio.emit('projectState', getProjectState(label));
   try{
-    setProjectState(label, await getRootDispatcher(label).dispatch());
+    const projectState=await getRootDispatcher(label).dispatch();
+    setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parseing root workflow: \n',err);
     return false;

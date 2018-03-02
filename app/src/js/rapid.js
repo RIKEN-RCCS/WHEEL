@@ -3,6 +3,7 @@ import Cookies from 'js-cookie';
 import 'jstree/dist/jstree';
 import 'jstree/dist/themes/default/style.css';
 import Split from 'split.js';
+import showMessage from './showMessage';
 
 import '../css/rapid.css';
 
@@ -72,6 +73,7 @@ $(() => {
   if (parameterEdit) {
     // get json tree by socket.io
     const sio = io('/rapid');
+    sio.on('showMessage', showMessage);
     sio.on('tree', function (tree) {
       // ファイルのツリービュー
       $('#file_selector').jstree({

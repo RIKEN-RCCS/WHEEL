@@ -10,10 +10,13 @@ import '../css/home.css';
 
 import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
+import showMessage from './showMessage';
 
 $(() => {
     // socket io
     const socket = io('/home');
+    socket.on('showMessage', showMessage);
+
     socket.emit('getProjectList', true);
     // setup contextMenu
     var openProject = function (key, opt) {

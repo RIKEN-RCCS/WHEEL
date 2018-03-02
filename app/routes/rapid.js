@@ -7,8 +7,8 @@ const  express = require('express');
 const  router = express.Router();
 const nodegit = require("nodegit");
 
-const log4js = require('log4js');
-const logger = log4js.getLogger();
+const {getLogger} = require('../logSettings');
+const logger = getLogger('rapid');
 
 module.exports = function(io){
   // メイン（エディタに編集対象のソースを入れて返す）
@@ -72,6 +72,13 @@ module.exports = function(io){
         "target_file": req.body.filename,
         "target_param": req.body.param
       }
+      parameter.target_param.forEach((param)=>{
+        if(param.type === 'file'){
+          param.list = param.list.map((e)=>{
+            return path.basename(e);
+          });
+        }
+      });
       fn = fn+'.json';
       promisify(fs.writeFile)(fn,JSON.stringify(parameter, undefined, 4))
       .then(function(){

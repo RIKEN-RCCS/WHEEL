@@ -1390,3 +1390,18 @@ tspan{
     cursor: pointer;
 }
  */
+#sshConnectionLabel{
+  margin: 8px;
+  color: #FFFFFF;  
+}
+
+#password{
+  background-color: #000000;
+  color: #FFFFFF;
+  border: none;
+  width: 256px;
+  margin-top: 4px;
+  height: 20px;
+  padding-left: 5px;
+}
+

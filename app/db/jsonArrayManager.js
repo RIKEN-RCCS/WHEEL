@@ -3,8 +3,8 @@ const {promisify} = require("util");
 
 const uuidv1 = require("uuid/v1");
 
-const log4js = require('log4js');
-const logger = log4js.getLogger();
+const {getLogger} = require('../logSettings');
+const logger = getLogger();
 
 class JsonArrayManager{
   constructor(filename){

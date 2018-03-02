@@ -3,8 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const {promisify} = require('util');
 
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
@@ -17,7 +17,7 @@ let executers=[];
  * @param {Task} task - task instance
  * @return pid - process id of child process
  */
-function localExec(task){
+function localExec(task, cb){
   let script = path.resolve(task.workingDir, task.script);
   addXSync(script);
   //TODO env, uid, gidを設定する
@@ -30,16 +30,14 @@ function localExec(task){
     logger.stderr(stderr.trim());
   })
     .on('exit', (code) =>{
-      if(code === 0){
-        task.state = 'finished';
-      }else{
-        task.state = 'failed';
-      }
+      cb(code === 0);
     });
   return cp.pid;
 }
 
 async function prepareRemoteExecDir(ssh, task){
+  debugger;
+  logger.debug(task.remoteWorkingDir, task.script);
   let remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
   return ssh.send(task.workingDir, task.remoteWorkingDir)
@@ -47,33 +45,32 @@ async function prepareRemoteExecDir(ssh, task){
     return ssh.chmod(remoteScriptPath, '744');
   });
 }
-async function postProcess(ssh, task, rt){
+async function postProcess(ssh, task, rt, cb){
+  task.state='stage-out';
   logger.debug('get necessary files from remote server');
-  let promises=task.outputFiles.map((e)=>{
-    let src = path.posix.join(task.remoteWorkingDir, e.name);
-    let dst = e.name;
-    if(! path.posix.isAbsolute(e.name)){
-      dst = path.posix.join(task.workingDir, path.posix.dirname(e.name));
-    }
-    ssh.recv(src, dst);
+
+  const necessaryFilesArray=task.outputFiles.filter((e)=>{
+    return e;
+  }).map((e)=>{
+    return e.name;
   });
-  if(promises.length>0){
-    await Promise.all(promises);
+  if(task.include) necessaryFilesArray.push(task.include);
+
+  if(necessaryFilesArray.length > 0){
+    const necessaryFiles = necessaryFilesArray.length === 1 ? `${task.remoteWorkingDir}/${necessaryFilesArray[0]}`:`${task.remoteWorkingDir}/{${necessaryFilesArray.join()}}`
+    logger.debug('try to get ', necessaryFiles, 'from ',task.remoteWorkingDir,'to',task.workingDir);
+    const excludeFilter = task.exclude ? task.exclude : null;
+    await ssh.recv(task.remoteWorkingDir, task.workingDir, necessaryFiles, excludeFilter)
   }
-  //TODO dispatcher内でcleanup flagを確認してdoCleanupを設定
   if(task.doCleanup){
     logger.debug('clean up on remote server');
     await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
   }
   logger.debug(task.name, 'done. rt =', rt);
-  if(rt === 0){
-    task.state = 'finished';
-  }else{
-    task.state = 'failed';
-  }
+  cb(rt===0);
 }
 
-async function remoteExecAdaptor(ssh, task){
+async function remoteExecAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task)
   logger.debug("prepare done");
   let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
@@ -91,14 +88,13 @@ async function remoteExecAdaptor(ssh, task){
   let rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
-
-  return postProcess(ssh, task, rt);
+  return postProcess(ssh, task, rt, cb);
 }
 
-function localSubmit(qsub, task){
+function localSubmit(qsub, task, cb){
   console.log('localSubmit function is not implimented yet');
 }
-async function remoteSubmitAdaptor(ssh, task){
+async function remoteSubmitAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task);
   let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   let workdir=path.posix.dirname(scriptAbsPath);
@@ -109,10 +105,11 @@ async function remoteSubmitAdaptor(ssh, task){
   submitCmd += ` ${JS.submit}`
 
   let queue = null;
-  if(task.queue in hostinfo.queues){
+  let queueList = hostinfo.queue.split(',');
+  if(task.queue in queueList){
     queue = task.queue;
-  }else if (hostinfo.queues.length > 0){
-    queue = hostinfo.queues[0];
+  }else if (queueList.length > 0){
+    queue = queueList[0];
   }
   if(queue){
     submitCmd += ` ${JS.queueOpt}${queue}`;
@@ -125,18 +122,30 @@ async function remoteSubmitAdaptor(ssh, task){
     let outputText=data.toString();
     logger.debug(outputText);
     let re = new RegExp(JS.reJobID);
-    jobID = re.exec(outputText)[1];
+    const result = re.exec(outputText);
+    if(result === null){
+      logger.warn('getJobID failed');
+      return
+    }
+    jobID = result[1];
     logger.info('jobID:', jobID);
   }
   ssh.on('stdout', getJobID);
   logger.debug('submit job:', submitCmd);
   let rt = await ssh.exec(submitCmd);
   ssh.off('stdout', getJobID);
-
+  //TODO ssh.execからstdout/stderrを返すように変更して整理する
+  //
   if(rt !== 0){
     logger.error('remote submit command failed!', rt);
     logger.error(error);
+    cb(false);
     return
+  }
+  if(jobID===null){
+    logger.warn('illegal jobID');
+    cb(false);
+    return;
   }
   let finished=false;
   let isFinished = (data)=>{
@@ -158,20 +167,23 @@ async function remoteSubmitAdaptor(ssh, task){
     if(rt !== 0){
       logger.error('remote stat command failed!', rt);
       logger.error(error);
-      return 
+      return
     }
     logger.debug(jobID,'is finished', finished);
     if(finished){
       clearInterval(timeout);
       ssh.off('stdout', isFinished);
-      postProcess(ssh, task, rt);
+      postProcess(ssh, task, rt, cb);
     }
   },5000);
 }
 
 class Executer{
-  constructor(exec, maxNumJob, remotehostID){
+  constructor(exec, maxNumJob, remotehostID, useJobScheduler){
+    //remotehostID and useJobScheduler flag is not used inside Executer class
+    //this 2 property is used as search key in exec();
     this.remotehostID=remotehostID;
+    this.useJobScheduler=useJobScheduler;
 
     this.exec=exec;
     this.maxNumJob=maxNumJob;
@@ -179,14 +191,23 @@ class Executer{
     this.queue=[];
     this.currentNumJob=0;
     this.executing=false;
-    setInterval(()=>{
+    //TODO  queue.lengthが0になったら止め、submitが呼ばれたらもう一度動かすように変更
+    this.timeout = setInterval(()=>{
       if(this.executing) return;
       this.executing=true;
       if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
         let task = this.queue.pop()
-        task.handler = this.exec(task);
+        task.handler = this.exec(task, (isOK)=>{
+          if(isOK){
+            task.state = 'finished';
+          }else{
+            task.state = 'failed';
+          }
+          this.currentNumJob--;
+        });
         this.currentNumJob++;
       }
+      logger.debug('running job:',this.currentNumJob,'/',this.maxNumJob);
       this.executing=false;
     }, interval);
   }
@@ -202,10 +223,11 @@ class Executer{
 }
 
 async function createExecuter(task){
+  logger.debug('createExecuter called');
   let maxNumJob=1;
   let exec = localExec;
   //TODO add local submit case
-  if(task.remotehostID!== 'localhost'){
+  if(task.remotehostID !== 'localhost'){
     let hostinfo = remoteHost.get(task.remotehostID);
     maxNumJob = hostinfo.numJob;
     let config = {
@@ -213,13 +235,8 @@ async function createExecuter(task){
       port: hostinfo.port,
       username: hostinfo.username,
     }
-    let localWorkingDir = path.relative(task.rwfDir, task.workingDir);
-    //TODO getDateStringではなくプロジェクトの実行開始時刻を使った方が良いかも？
-    //その場合はtaskのdispatcher側でプロパティに入れておく必要あり
-    //TODO localWorkingDirのpathsepを変換しとく必要あり？
-    task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, getDateString(), localWorkingDir));
-
     let arssh = getSsh(config, {connectionRetryDelay: 1000});
+
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){
       exec = remoteSubmitAdaptor.bind(null, arssh)
     }else{
@@ -231,7 +248,7 @@ async function createExecuter(task){
     maxNumJob = 1;
   }
 
-  return new Executer(exec, maxNumJob, task.remotehostID);
+  return new Executer(exec, maxNumJob, task.remotehostID, task.useJobScheduler);
 }
 
 /**
@@ -244,8 +261,15 @@ async function exec(task){
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
   });
   if( executer === undefined){
+    logger.debug('create new executer for', task.remotehostID,' with job scheduler', task.useJobScheduler);
     executer = await createExecuter(task);
+    executers.push(executer);
   }
+
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
+  task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
+
   executer.submit(task);
 }
 

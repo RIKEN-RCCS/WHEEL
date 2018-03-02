@@ -5,12 +5,13 @@ const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
 const glob = require('glob');
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {ensureDir,copy} = require('fs-extra');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 
 const {interval} = require('../db/db');
 const executer = require('./executer');
-const { addXSync, asyncNcp, mkdir_p} = require('./utility');
+const { addXSync, asyncNcp} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
 
@@ -51,6 +52,13 @@ function _isFinishedState(state){
   return state === 'finished' || state === 'failed';
 }
 
+function convertPathSep(pathString){
+  if(path.sep === path.posix.sep){
+    return pathString.replace(new RegExp("\\"+path.win32.sep,"g"), path.sep);
+  }else{
+    return pathString.replace(new RegExp(path.posix.sep,"g"), path.sep);
+  }
+}
 
 
 /**
@@ -85,12 +93,14 @@ function evalConditionSync(condition, cwd){
  * @param {Object[]} nodes - node in current workflow
  * @param {string} cwfDir -  path to current workflow dir
  * @param {string} rwfDir -  path to project root workflow dir
+ * @param {string} startTime - start time of project
  */
 class Dispatcher{
-  constructor(wf, cwfDir, rwfDir){
+  constructor(wf, cwfDir, rwfDir, startTime){
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
+    this.projectStartTime=startTime;
     this.nextSearchList=[];
     this.children=[];
     this.dispatchedTaskList=[]
@@ -106,44 +116,52 @@ class Dispatcher{
   }
 
   deliverOutputFiles(node){
-    const promises = node.outputFiles.map((e)=>{
+    const promises = node.outputFiles.map(async(e)=>{
       //memo src can be glob pattern
       const src = e.name;
       const srcRoot= path.resolve(this.cwfDir, node.path);
-      const p2 = e.dst.map(async (dst)=>{
-        const tmp = dst.dstNode === "parent" ? "./" : this.wf.nodes[dst.dstNode].path;
-        const dstRoot = path.resolve(this.cwfDir, tmp);
-        const dstPath=path.resolve(dstRoot, dst.dstName);
-        // remove dst file if it exist, make dst dir if it does not exist.
-        try{
-          await promisify(fs.unlink)(dstPath);
-        }catch(e){
-          if(e.code !== 'ENOENT' && e.code !== 'EISDIR' && e.code !== 'EPERM'){
-            return Promise.reject(e);
+      const srces = await promisify(glob)(src, {cwd: srcRoot});
+      const p1 = srces.map((srcFile)=>{
+        const p2 = e.dst.map(async (dst)=>{
+          const tmp = dst.dstNode === "parent" ? "./" : this.wf.nodes[dst.dstNode].path;
+          const dstName = dst.dstName ? convertPathSep(dst.dstName) : "";
+          let dstRoot = path.resolve(this.cwfDir, tmp);
+
+          // link srcFile -> dstName
+          let newPath = path.resolve(dstRoot, dstName);
+
+          // link srcFile -> dstName/srcFile
+          if(srces.length>1 || dstName.endsWith(path.sep)){
+            newPath = path.resolve(dstRoot, dstName, srcFile);
           }
-        }
-        await mkdir_p(dstRoot);
-        const srces = await promisify(glob)(src, {cwd: srcRoot});
-        let p1=[]
-        if(srces.length === 1){
-          const oldPath = path.resolve(srcRoot, srces[0]);
-          logger.debug('make symlink from', oldPath, "to", dstPath);
-          p1.push(promisify(fs.symlink)(oldPath, dstPath));
-        }else if(srces.length > 1){
-          p1 = srces.map(async (srcFile)=>{
-            const oldPath = path.resolve(srcRoot, srcFile);
-            const dstDir = path.resolve(dstPath, srcFile);
-            logger.debug('make symlink from', oldPath, "to", dstDir);
-            const stats = await promisify(fs.stat)(oldPath);
-            const type = stats.isDirectory ? "dir" : "file";
-            return promisify(fs.symlink)(oldPath, dstDir, type);
+
+          // remove dst file if it exist
+          try{
+            await promisify(fs.unlink)(newPath);
+          }catch(e){
+            if(e.code !== 'ENOENT' && e.code !== 'EISDIR' && e.code !== 'EPERM'){
+              return Promise.reject(e);
+            }
+          }
+
+          // make destination directory
+          await ensureDir(path.dirname(newPath));
+
+          // make symlink
+          const oldPath = path.resolve(srcRoot, srcFile);
+          logger.debug('make symlink from', oldPath, "to", newPath);
+          const stats = await promisify(fs.stat)(oldPath);
+          const type = stats.isDirectory ? "dir" : "file";
+          return promisify(fs.symlink)(oldPath, newPath, type)
+          .catch((e)=>{
+            if (e.code==='EPERM'){
+              return copy(oldPath, newPath);
+            }
           });
-        }else{
-          logger.error('no file matched', src);
-        }
-        return Promise.all(p1);
+        });
+        return Promise.all(p2);
       });
-      return Promise.all(p2);
+      return Promise.all(p1);
     });
     return Promise.all(promises);
   }
@@ -153,7 +171,7 @@ class Dispatcher{
       this.timeout = setInterval(()=>{
         if(this.dispatching) return
         this.dispatching=true;
-        logger.debug('currentList:',this.currentSearchList);
+        logger.trace('currentList:',this.currentSearchList);
         let promises=[];
         while(this.currentSearchList.length>0){
           let target = this.currentSearchList.shift();
@@ -243,20 +261,19 @@ class Dispatcher{
   async _dispatchTask(task){
     logger.debug('_dispatchTask called', task.name);
     task.id=uuidv1(); // use this id to cancel task
+    task.projectStartTime= this.projectStartTime;
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
-    task.outputFiles.forEach((outputFiles)=>{
-      outputFiles.dst.forEach((dst)=>{
-        let deliverPath = this.nodes[dst.dstNode].path;
-        dst.path = path.resolve(this.cwfDir, deliverPath);
-      });
-    });
     await executer.exec(task);
     this.dispatchedTaskList.push(task);
     let nextTasks=task.next;
     task.outputFiles.forEach((outputFile)=>{
       let tmp = outputFile.dst.map((e)=>{
-        return e.dstNode;
+        if(e.dstNode !== 'parent'){
+          return e.dstNode;
+        }
+      }).filter((e)=>{
+        return e;
       });
       Array.prototype.push.apply(nextTasks, tmp);
     });
@@ -282,20 +299,22 @@ class Dispatcher{
       .catch((err)=>{
         logger.error('fatal error occurred while loading sub workflow', err);
       });
-    return new Dispatcher(childWF, childDir, this.rwfDir);
+    return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime);
   }
   async _delegate(node){
     logger.debug('_delegate called', node.name);
     let child = await this._createChild(node);
     this.children.push(child);
-    let state='finished';
-    await child.dispatch()
+    return child.dispatch()
+      .then(()=>{
+        node.state='finished';
+      })
       .catch((err)=>{
         logger.error("fatal error occurred while dispatching sub workflow",err);
-        state='failed';
+        node.state='failed';
+      }).then(()=>{
+        Array.prototype.push.apply(this.nextSearchList, node.next);
       });
-    node.state=state;
-    Array.prototype.push.apply(this.nextSearchList, node.next);
   }
 
   _loopInitialize(node){
@@ -371,15 +390,15 @@ class Dispatcher{
   }
   async _PSHandler(node){
     logger.debug('_PSHandler called', node.name);
-    let srcDir = path.resolve(this.cwfDir, node.path);
-    let paramSettingsFilename = path.resolve(srcDir, node.parameterFile);
-    let paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
+    const srcDir = path.resolve(this.cwfDir, node.path);
+    const paramSettingsFilename = path.resolve(srcDir, node.parameterFile);
+    const paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
 
-    let targetFile = paramSettings.target_file;
+    const targetFile = paramSettings.target_file;
     let paramSpace = removeInvalid(paramSettings.target_param);
+    // ignore all filenames in file type parameter space and parameter study setting file
     let ignoreFiles=getFilenames(paramSpace).map((e)=>{
-      // return path.resolve(srcDir, e) //TODO should be used after rapid client-side was modified
-      return e;
+      return path.resolve(srcDir, e);
     });
     ignoreFiles.push(paramSettingsFilename);
 
@@ -389,19 +408,18 @@ class Dispatcher{
       let dstDir=paramVec.reduce((p,e)=>{
         let v = e.value;
         if(e.type === "file" ){
-          v = path.basename(e.value);
+          v = (e.value).replace(path.sep, '_');
         }
-        return `${p}__${e.key}_${v}`;
+        return `${p}_${e.key}_${v}`;
       }, node.path);
       dstDir = path.resolve(this.cwfDir, dstDir);
+      // copy file which is specified as parameter
       let includeFiles=paramVec
         .filter((e)=>{
           return e.type === "file";
         })
         .map((e)=>{
-          // e.value is absolute path for now
-          // but it will be relative path in the near future
-          return e.value;
+          return path.resolve(srcDir, e.value);
         });
       let options={};
       options.filter = function(filename){

@@ -4,8 +4,8 @@ const {promisify} = require("util");
 
 const del = require("del");
 const nodegit = require("nodegit");
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 
 const {getDateString, replacePathsep} = require('./utility');
 
@@ -84,6 +84,7 @@ async function updateProjectJson (label, data){
 
 function setProjectState(label, state){
   _getProject(label).projectState=state;
+  logger.info('project state changed', state);
   return updateProjectJson(label, {"state": state});
 }
 

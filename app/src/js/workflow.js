@@ -15,6 +15,7 @@ import 'svg.draggable.js/dist/svg.draggable.js';
 
 import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
+import showMessage from './showMessage';
 import logReciever from './logReciever';
 import config from './config';
 import SvgNodeUI from './svgNodeUI';
@@ -190,6 +191,17 @@ $(() => {
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
+
+    sio.on('showMessage', showMessage);
+    sio.on('askPassword',(hostname)=>{
+      const html = `<p id="sshConnectionLabel">Input SSH connection password for ${hostname}</p><input type=password id="password">`;
+      dialogWrapper('#dialog', html)
+        .done(()=>{
+          const password = $('#password').val();
+          sio.emit('password', password);
+        });
+      //TODO ユーザがキャンセルした時の対応を検討
+    });
 
     sio.on('workflow', function (wf) {
       console.log("on");

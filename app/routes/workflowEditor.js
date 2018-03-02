@@ -1,26 +1,39 @@
 const path = require('path');
 const fs = require("fs");
 const {promisify} = require("util");
+const {copy} = require('fs-extra');
 
-const log4js = require('log4js');
-const logger = log4js.getLogger('workflow');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('workflow');
 const component = require('./workflowComponent');
+const {escapeRegExp} = require('./utility');
+const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename} = require('./project');
 
-const {getCwf, getNode, pushNode, getCurrentDir, getCwfFilename} = require('./project');
-
-//TODO move another module
 function isInitialNode(node){
-  return node.previous.length===0 && node.inputFiles.length===0;
+  if(node.previous.length > 0) return false;
+  if(node.inputFiles.length >0 ){
+    return node.inputFiles.some((e)=>{
+      e.srcNode !== null;
+    });
+  }
+  return true;
 }
 function hasChild(node){
   return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
 }
 
+/**
+ * determin specified filename is invalid or not
+ */
+function _isValidName(name){
+  const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
+  if(win32reservedName.test(name)) return false;
 
+  const notAllowedChar = /[^a-zA-Z0-9_\-]/; //alphanumeric, '_', and '-'
+  if(notAllowedChar.test(name)) return false;
 
-
-
-
+  return true;
+}
 
 function _hasName(name, e){
   return e.name === name;
@@ -107,11 +120,11 @@ function _clearOutputFile(outputFiles, name, dstNode, dstName){
 /**
  * sofisticated version of getNode
  */
-function _getFileLinkTargetNode(label, index){
+function _getFileLinkTargetNode(wf, index){
   if(index === 'parent'){
-    return getCwf(label);
+    return wf;
   }else if(Number.isInteger(index)){
-    return getNode(label, parseInt(index));
+    return wf.nodes[parseInt(index)];
   }else{
     logger.error('illegal index specified');
     return null
@@ -149,7 +162,9 @@ function _getChildWorkflowFilename(label, node){
 }
 
 async function _writeChildWorkflow(label, node, wf){
-    return promisify(fs.writeFile)(_getChildWorkflowFilename(label, node), JSON.stringify(wf, null, 4));
+  const childWorkflowFilename = _getChildWorkflowFilename(label, node);
+    await promisify(fs.writeFile)(childWorkflowFilename, JSON.stringify(wf, null, 4));
+    return gitAdd(label, childWorkflowFilename);
 }
 
 async function readChildWorkflow(label, node){
@@ -275,12 +290,12 @@ function addFileLink(label, srcIndex, dstIndex, srcName, dstName){
     logger.error("loop file link is not allowed");
     return;
   }
-  const srcNode = _getFileLinkTargetNode(label, srcIndex);
+  const srcNode = _getFileLinkTargetNode(getCwf(label), srcIndex);
   if(srcNode === null){
     logger.error("srcNode does not exist");
     return;
   }
-  const dstNode = _getFileLinkTargetNode(label, dstIndex);
+  const dstNode = _getFileLinkTargetNode(getCwf(label), dstIndex);
   if(dstNode === null){
     logger.error("dstNode does not exist");
     return;
@@ -289,7 +304,7 @@ function addFileLink(label, srcIndex, dstIndex, srcName, dstName){
   _addOutputFile(srcNode.outputFiles, srcName, dstIndex, dstName);
   const [oldSrc, oldSrcName]= _addInputFile(dstNode.inputFiles, dstName, srcIndex, srcName);
   if(oldSrc!== null){
-    const oldSrcNode = _getFileLinkTargetNode(label, oldSrc);
+    const oldSrcNode = _getFileLinkTargetNode(getCwf(label), oldSrc);
     _clearOutputFile(oldSrcNode.outputFiles, oldSrcName, dstIndex, dstName);
   }
 }
@@ -298,12 +313,12 @@ function addFileLink(label, srcIndex, dstIndex, srcName, dstName){
  * remove file link
  */
 function removeFileLink(label, srcIndex, dstIndex, srcName, dstName){
-  const srcNode = _getFileLinkTargetNode(label, srcIndex);
+  const srcNode = _getFileLinkTargetNode(getCwf(label), srcIndex);
   if(srcNode === null){
     logger.error("srcNode does not exist");
     return;
   }
-  const dstNode = _getFileLinkTargetNode(label, dstIndex);
+  const dstNode = _getFileLinkTargetNode(getCwf(label), dstIndex);
   if(dstNode === null){
     logger.error("dstNode does not exist");
     return;
@@ -322,14 +337,14 @@ function removeFileLink(label, srcIndex, dstIndex, srcName, dstName){
 function removeAllFileLink(label, index){
   const target=getNode(label, index);
   target.inputFiles.forEach((inputFile)=>{
-    const srcNode=_getFileLinkTargetNode(label, inputFile.srcNode);
+    const srcNode=_getFileLinkTargetNode(getCwf(label), inputFile.srcNode);
     if(srcNode){
       _clearOutputFile(srcNode.outputFiles, inputFile.srcName, index, inputFile.name);
     }
   });
   target.outputFiles.forEach((outputFile)=>{
     outputFile.dst.forEach((e)=>{
-      const dstNode = _getFileLinkTargetNode(label, e.dstNode);
+      const dstNode = _getFileLinkTargetNode(getCwf(label), e.dstNode);
       if(dstNode){
         _clearInputFile(dstNode.inputFiles, e.dstName);
       }
@@ -369,7 +384,7 @@ async function updateInputFiles(label, node, value){
     const oldName = e.name;
     if(oldName === newName) return;
     e.name=newName;
-    const srcNode = _getFileLinkTargetNode(label, e.srcNode);
+    const srcNode = _getFileLinkTargetNode(getCwf(label), e.srcNode);
     if(! srcNode) return;
     _clearOutputFile(srcNode.outputFiles, e.srcName, node.index, oldName);
     _addOutputFile(srcNode.outputFiles, e.srcName, node.index, newName);
@@ -399,7 +414,7 @@ async function updateOutputFiles(label, node, value){
     if(oldName === newName) return;
     outputFile.name=newName;
     outputFile.dst.forEach((dst)=>{
-      const dstNode = _getFileLinkTargetNode(label, dst.dstNode);
+      const dstNode = _getFileLinkTargetNode(getCwf(label), dst.dstNode);
       if(! dstNode) return;
       _clearInputFile(dstNode.inputFiles, dst.dstName);
       _addInputFile(dstNode.inputFiles, dst.dstName, node.index, newName);
@@ -412,13 +427,34 @@ async function updateOutputFiles(label, node, value){
       const oldName = inputFile.name;
       if(oldName === newName) return;
       inputFile.name = newName;
-      const srcNode = _getFileLinkTargetNode(label, inputFile.srcNode);
+      const srcNode = _getFileLinkTargetNode(childWorkflow, inputFile.srcNode);
       if(! srcNode) return;
       _clearOutputFile(srcNode.outputFiles, inputFile.srcName, "parent", oldName);
       _addOutputFile(srcNode.outputFiles,  inputFile.srcName, "parent", newName);
     });
     return _writeChildWorkflow(label, node, childWorkflow);
   }
+}
+
+async function updateName(label, node, value){
+  if(!value || ! _isValidName(value)){
+    logger.error('invalid component name', value);
+    return
+  }
+  const currentDir = getCurrentDir(label);
+  const oldName = path.resolve(currentDir, node.name);
+  let newName = path.resolve(currentDir,value);
+  try{
+    await promisify(fs.mkdir)(newName);
+  }catch(e){
+    newName = await _makeDir(newName, 0);
+  }
+  logger.debug('rename', oldName,' to', newName);
+
+  await promisify(fs.rmdir)(newName);
+  await copy(oldName, newName);
+  node.name = path.basename(newName);
+  node.path = node.name;
 }
 
 async function delValue(label, node, property, value){
@@ -439,7 +475,7 @@ async function delInputFiles(label, node, value){
     return e.name === value.name;
   });
   if(targetIndex === -1) return;
-  const srcNode = _getFileLinkTargetNode(label, node.inputFiles[targetIndex].srcNode);
+  const srcNode = _getFileLinkTargetNode(getCwf(label), node.inputFiles[targetIndex].srcNode);
   if(srcNode){
     _clearOutputFile(srcNode.outputFiles, node.inputFiles[targetIndex].srcName, node.index, value.name);
   }
@@ -451,7 +487,7 @@ async function delInputFiles(label, node, value){
     });
     if(targetIndex2 === -1) return;
     childWorkflow.outputFiles[targetIndex2].dst.forEach((e)=>{
-      const dstNode = _getFileLinkTargetNode(label, e.dstNode);
+      const dstNode = _getFileLinkTargetNode(childWorkflow, e.dstNode);
       _clearInputFile(dstNode.inputFiles, e.dstName);
     });
     childWorkflow.outputFiles.splice(targetIndex2, 1);
@@ -465,7 +501,7 @@ async function delOutputFiles(label, node, value){
   });
   if(targetIndex === -1) return;
   node.outputFiles[targetIndex].dst.forEach((e)=>{
-    const dstNode = _getFileLinkTargetNode(label, e.dstNode);
+    const dstNode = _getFileLinkTargetNode(getCwf(label), e.dstNode);
     _clearInputFile(dstNode.inputFiles, e.dstName);
   });
   node.outputFiles.splice(targetIndex, 1);
@@ -475,7 +511,7 @@ async function delOutputFiles(label, node, value){
       return e.name === value.name;
     });
     if(targetIndex2 === -1) return;
-    const srcNode = _getFileLinkTargetNode(label, childWorkflow.inputFiles[targetIndex2].srcNode);
+    const srcNode = _getFileLinkTargetNode(childWorkflow, childWorkflow.inputFiles[targetIndex2].srcNode);
     _clearOutputFile(srcNode.outputFiles, childWorkflow.inputFiles[targetIndex2].srcName, "parent", value.name);
     childWorkflow.inputFiles.splice(targetIndex2, 1);
     return _writeChildWorkflow(label, node, childWorkflow);
@@ -504,6 +540,7 @@ module.exports.addValue=addValue;
 module.exports.updateValue = updateValue;
 module.exports.updateInputFiles = updateInputFiles;
 module.exports.updateOutputFiles = updateOutputFiles;
+module.exports.updateName = updateName;
 module.exports.delValue = delValue;
 module.exports.delInputFiles = delInputFiles;
 module.exports.delOutputFiles = delOutputFiles;
