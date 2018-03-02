@@ -6,6 +6,6 @@
     "del": "pjdel",
     "reJobID": "pjsub Job (\\d+) submitted.",
     "reFinishedState": "^ST *EC\\nEXT *0",
-    "reFailedState": "^ST *EC\\n(CCL|ERR|EXT)"
+    "reFailedState": "^ST *EC\\n(CCL|ERR|EXT|RJT)"
   }
 }

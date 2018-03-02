@@ -40,6 +40,8 @@ function localExec(task){
 }
 
 async function prepareRemoteExecDir(ssh, task){
+  debugger;
+  logger.debug(task.remoteWorkingDir, task.script);
   let remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
   return ssh.send(task.workingDir, task.remoteWorkingDir)
@@ -174,8 +176,11 @@ async function remoteSubmitAdaptor(ssh, task){
 }
 
 class Executer{
-  constructor(exec, maxNumJob, remotehostID){
+  constructor(exec, maxNumJob, remotehostID, useJobScheduler){
+    //remotehostID and useJobScheduler flag is not used inside Executer class
+    //this 2 property is used as search key in exec();
     this.remotehostID=remotehostID;
+    this.useJobScheduler=useJobScheduler;
 
     this.exec=exec;
     this.maxNumJob=maxNumJob;
@@ -191,6 +196,7 @@ class Executer{
         task.handler = this.exec(task);
         this.currentNumJob++;
       }
+      logger.debug('running job:',this.currentNumJob,'/',this.maxNumJob);
       this.executing=false;
     }, interval);
   }
@@ -206,10 +212,11 @@ class Executer{
 }
 
 async function createExecuter(task){
+  logger.debug('createExecuter called');
   let maxNumJob=1;
   let exec = localExec;
   //TODO add local submit case
-  if(task.remotehostID!== 'localhost'){
+  if(task.remotehostID !== 'localhost'){
     let hostinfo = remoteHost.get(task.remotehostID);
     maxNumJob = hostinfo.numJob;
     let config = {
@@ -217,10 +224,9 @@ async function createExecuter(task){
       port: hostinfo.port,
       username: hostinfo.username,
     }
-    let localWorkingDir = path.relative(task.rwfDir, task.workingDir);
-    task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
-
     let arssh = getSsh(config, {connectionRetryDelay: 1000});
+    console.log("DEBUG:",jobScheduler, hostinfo,jobScheduler);
+
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){
       exec = remoteSubmitAdaptor.bind(null, arssh)
     }else{
@@ -232,7 +238,7 @@ async function createExecuter(task){
     maxNumJob = 1;
   }
 
-  return new Executer(exec, maxNumJob, task.remotehostID);
+  return new Executer(exec, maxNumJob, task.remotehostID, task.useJobScheduler);
 }
 
 /**
@@ -245,8 +251,15 @@ async function exec(task){
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
   });
   if( executer === undefined){
+    logger.debug('create new executer for', task.remotehostID,' with job scheduler', task.useJobScheduler);
     executer = await createExecuter(task);
+    executers.push(executer);
   }
+
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
+  task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
+
   executer.submit(task);
 }
 
