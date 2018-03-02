@@ -191,7 +191,13 @@ class Executer{
     this.queue=[];
     this.currentNumJob=0;
     this.executing=false;
-    //TODO  queue.lengthが0になったら止め、submitが呼ばれたらもう一度動かすように変更
+    this.timeout=null;
+  }
+  stop(){
+    clearInterval(this.timeout);
+    this.timeout=null;
+  }
+  start(){
     this.timeout = setInterval(()=>{
       if(this.executing) return;
       this.executing=true;
@@ -208,12 +214,14 @@ class Executer{
         this.currentNumJob++;
       }
       logger.debug('running job:',this.currentNumJob,'/',this.maxNumJob);
+      if(this.queue.length === 0) this.stop();
       this.executing=false;
     }, interval);
   }
   submit(task){
     this.queue.push(task);
     task.state='waiting';
+    if(this.timeout === null) this.start();
   }
   cancel(task){
     this.queue=this.queue.filter((e)=>{
