@@ -22,12 +22,12 @@ const escape = require('./utility').escapeRegExp;
 const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
 const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)})$).*$`);
 
-function askPassword(sio){
+function askPassword(sio, hostname){
   return new Promise((resolve, reject)=>{
     sio.on('password', (data)=>{
       resolve(data);
     });
-    sio.emit('askPassword');
+    sio.emit('askPassword', hostname);
   });
 }
 

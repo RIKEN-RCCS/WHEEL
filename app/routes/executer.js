@@ -17,7 +17,7 @@ let executers=[];
  * @param {Task} task - task instance
  * @return pid - process id of child process
  */
-function localExec(task){
+function localExec(task, cb){
   let script = path.resolve(task.workingDir, task.script);
   addXSync(script);
   //TODO env, uid, gidを設定する
@@ -35,6 +35,7 @@ function localExec(task){
       }else{
         task.state = 'failed';
       }
+      cb();
     });
   return cp.pid;
 }
@@ -78,7 +79,7 @@ async function postProcess(ssh, task, rt){
   }
 }
 
-async function remoteExecAdaptor(ssh, task){
+async function remoteExecAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task)
   logger.debug("prepare done");
   let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
@@ -96,14 +97,15 @@ async function remoteExecAdaptor(ssh, task){
   let rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
+  cb();
 
   return postProcess(ssh, task, rt);
 }
 
-function localSubmit(qsub, task){
+function localSubmit(qsub, task, cb){
   console.log('localSubmit function is not implimented yet');
 }
-async function remoteSubmitAdaptor(ssh, task){
+async function remoteSubmitAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task);
   let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   let workdir=path.posix.dirname(scriptAbsPath);
@@ -131,18 +133,30 @@ async function remoteSubmitAdaptor(ssh, task){
     let outputText=data.toString();
     logger.debug(outputText);
     let re = new RegExp(JS.reJobID);
-    jobID = re.exec(outputText)[1];
+    const result = re.exec(outputText);
+    if(result === null){
+      logger.warn('getJobID failed');
+      return
+    }
+    jobID = result[1];
     logger.info('jobID:', jobID);
   }
   ssh.on('stdout', getJobID);
   logger.debug('submit job:', submitCmd);
   let rt = await ssh.exec(submitCmd);
   ssh.off('stdout', getJobID);
-
+  //TODO ssh.execからstdout/stderrを返すように変更して整理する
+  //
   if(rt !== 0){
     logger.error('remote submit command failed!', rt);
     logger.error(error);
+    cb();
     return
+  }
+  if(!jobID && jobID!=="0"){
+    logger.warn('illegal jobID');
+    cb();
+    return;
   }
   let finished=false;
   let isFinished = (data)=>{
@@ -171,6 +185,7 @@ async function remoteSubmitAdaptor(ssh, task){
       clearInterval(timeout);
       ssh.off('stdout', isFinished);
       postProcess(ssh, task, rt);
+      cb();
     }
   },5000);
 }
@@ -188,12 +203,15 @@ class Executer{
     this.queue=[];
     this.currentNumJob=0;
     this.executing=false;
-    setInterval(()=>{
+    //TODO  queue.lengthが0になったら止め、submitが呼ばれたらもう一度動かすように変更
+    this.timeout = setInterval(()=>{
       if(this.executing) return;
       this.executing=true;
       if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
         let task = this.queue.pop()
-        task.handler = this.exec(task);
+        task.handler = this.exec(task, ()=>{
+          this.currentNumJob--;
+        });
         this.currentNumJob++;
       }
       logger.debug('running job:',this.currentNumJob,'/',this.maxNumJob);
@@ -225,7 +243,6 @@ async function createExecuter(task){
       username: hostinfo.username,
     }
     let arssh = getSsh(config, {connectionRetryDelay: 1000});
-    console.log("DEBUG:",jobScheduler, hostinfo,jobScheduler);
 
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){
       exec = remoteSubmitAdaptor.bind(null, arssh)

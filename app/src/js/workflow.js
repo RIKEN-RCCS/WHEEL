@@ -193,6 +193,15 @@ $(() => {
     sio.emit('getProjectState', rootWorkflow);
 
     sio.on('showMessage', showMessage);
+    sio.on('askPassword',(hostname)=>{
+      const html = `<p id="sshConnectionLabel">Input SSH connection password for ${hostname}</p><input type=password id="password">`;
+      dialogWrapper('#dialog', html)
+        .done(()=>{
+          const password = $('#password').val();
+          sio.emit('password', password);
+        });
+      //TODO ユーザがキャンセルした時の対応を検討
+    });
 
     sio.on('workflow', function (wf) {
       console.log("on");

@@ -171,7 +171,7 @@ class Dispatcher{
       this.timeout = setInterval(()=>{
         if(this.dispatching) return
         this.dispatching=true;
-        logger.debug('currentList:',this.currentSearchList);
+        logger.trace('currentList:',this.currentSearchList);
         let promises=[];
         while(this.currentSearchList.length>0){
           let target = this.currentSearchList.shift();
