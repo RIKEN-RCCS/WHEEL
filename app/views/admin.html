@@ -73,6 +73,22 @@
 
       <!-- New Account Dialog -->
       <div id="newAccountDialog">
+        <div id="idField">
+          <span id="userIdField">
+            <span>
+              <label class="fieldLabel">User ID</label>
+            </span>
+            <input type="text" v-model.lazy.trim="newAccount.uid" v-bind:class="{'ui-state-error': !validation.name}" class="idEditArea">
+            <p v-if="!validation.name" class="dialogStateError">empty is not allowed.</p>
+          </span>
+          <span id="groupIdField">
+            <span>
+              <label class="fieldLabel">group ID</label>
+            </span>
+            <input type="text" v-model.lazy.trim="newAccount.gid" v-bind:class="{'ui-state-error': !validation.name}" class="idEditArea">
+            <p v-if="!validation.name" class="dialogStateError">empty is not allowed.</p>
+          </span>
+        </div>
         <div id="acountField">
           <span>
             <label class="fieldLabel">Account Name</label>

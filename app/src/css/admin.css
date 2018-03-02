@@ -247,6 +247,15 @@ li:hover{
   padding-left: 16px;
 }
 
+.idEditArea{
+  width: 120px;
+  height: 24px;
+  padding: 0 0 0 8px;
+  background-color: #000000;
+  color: #FFFFFF;
+  border: 0;
+}
+
 .editArea{
   width: 400px;
   height: 24px;
@@ -272,6 +281,18 @@ textarea{
 	border:1px solid #000000;
   background-color: #000000;
   
+}
+
+#idField{
+  margin-bottom: 16px;
+  display: inline-flex;
+}
+
+#userIdField{
+  margin-right: 26px;
+}
+
+#groupIdField{
 }
 
 #acountField{
@@ -313,7 +334,8 @@ textarea{
 {
   font-size:0.5em;  
   color: red;
-  width: 300px;
+  width: 250px;
+  margin:0;
 }
 
 .editAreaButton{

@@ -172,7 +172,7 @@
           <label for="nameInputField" id="propertyName">Name</label>
         </div>
         <div>
-          <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
+          <input type="text" pattern="^[-0-9A-Za-z_]+$" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
         </div>
         <div>
           <label for="descriptionInputField" id="propertyDescription">Description</label>

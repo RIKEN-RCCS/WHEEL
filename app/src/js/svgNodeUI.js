@@ -352,6 +352,11 @@ export class SvgParentNodeUI {
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dst.dstNode);
         this.outputFileLinks.push(cable);
+        console.log(this.outputFileLinks);
+
+        dstPlug.on('click', (e) => {
+          this.sio.emit('removeFileLink', { src: this.group.data('index'), srcName: srcPlug.data('name'), dst: dst.dstNode, dstName: dst.dstName });
+        });
       });
     });
   }
@@ -364,11 +369,13 @@ export class SvgParentNodeUI {
     let boxBbox = this.group.data('boxBbox');
     this.outputFileLinks.forEach((v) => {
       v.dragStartPoint(offsetX, offsetY, boxBbox);
+      console.log(v);
     });
     this.inputFileLinks.forEach((v) => {
       v.dragEndPoint(offsetX, offsetY, boxBbox);
     });
   }
+
   /**
  * delete svg element of this node
  */
