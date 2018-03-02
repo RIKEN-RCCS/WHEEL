@@ -34,7 +34,7 @@ function askPassword(sio, hostname){
 /**
  * check if all scripts and remote host setting are available or not
  */
-function validationCheck(label, workflow, dir, sio){
+async function validationCheck(label, workflow, dir, sio){
   let promises=[]
   if(dir == null ){
     promises.push(Promise.reject(new Error('Project dir is null or undefined')));
@@ -64,7 +64,7 @@ function validationCheck(label, workflow, dir, sio){
       promises.push(
         readChildWorkflow(label, node)
         .then((childWF)=>{
-          validationCheck(label, childWF, childDir, sio)
+          return validationCheck(label, childWF, childDir, sio)
         })
       );
     }
