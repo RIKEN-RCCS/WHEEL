@@ -78,6 +78,11 @@ module.exports = function(io){
             return path.basename(e);
           });
         }
+        if(param.type === 'integer' || param.type === 'float'){
+          if(param.hasOwnProperty("list")){
+            param.type = "string";
+          }
+        }
       });
       fn = fn+'.json';
       promisify(fs.writeFile)(fn,JSON.stringify(parameter, undefined, 4))
