@@ -351,18 +351,6 @@ $(() => {
   uploader.listenOnDrop(document.getElementById('fileBrowser'));
   uploader.listenOnInput(document.getElementById('fileSelector'));
 
-
-  // show or hide log area
-  var isDisplayLog = false;
-  $('#displayLogButton').click(function () {
-    isDisplayLog = !isDisplayLog;
-    if (isDisplayLog) {
-      showLog();
-    } else {
-      hideLog();
-    }
-  });
-
   //ボタンでのviewの切り替え
   $('#listView').click(function () {
     $('#workflow_manage_area').hide();
@@ -429,11 +417,11 @@ $(() => {
     $('#libraryButton').attr("src", "/image/btn_openCloseR_n.png");
   }
 
-  // show or hide log area
-  var isDisplayLog = false;
+  // show or hide task(Component) Library area
+  var isTaskLibrary = false;
   $('#taskLibraryButton').click(function () {
-    isDisplayLog = !isDisplayLog;
-    if (isDisplayLog) {
+    isTaskLibrary = !isTaskLibrary;
+    if (isTaskLibrary) {
       showTaskLibrary();
     } else {
       hideTaskLibrary();
@@ -452,6 +440,17 @@ $(() => {
     $('#displayLogButton').toggleClass('display', false);
     $('#img_displayLogButton').attr("src", "/image/btn_openCloseU_n.png");
   }
+
+  // show or hide log area
+  var isDisplayLog = false;
+  $('#displayLogButton').click(function () {
+    isDisplayLog = !isDisplayLog;
+    if (isDisplayLog) {
+      showLog();
+    } else {
+      hideLog();
+    }
+  });
 
   /**
    * get mouse positoin where contextmenu is created

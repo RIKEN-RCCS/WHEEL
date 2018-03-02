@@ -1,44 +1,52 @@
-  <div id="right_pane">
+<div id="right_pane">
+  <p>
+    ↓エディタでキーワードを選択し、ターゲットとして登録
+    <br>
+  </p>
+  <p>
+    <button id="button_new_target">New Survey Target</button>
+    <div id="selected_word_area">
+      選択中のキーワード：
+      <span id="selected_word"> </span>
+    </div>
+  </p>
+  <p>
+    <table id="target_list"> </table>
+  </p>
+  <form id="param_form">
     <p>
-      ↓エディタでキーワードを選択し、ターゲットとして登録<br>
+      <label class="left_l">Target:</label>
+      <span id="label_target">-</span>
+      <a href="javascript:void(0)" onClick="onClickRemove();return false;">[Remove]</a>
+      <br>
+      <input type="hidden" name="target" value="target">
+      <label class="left_l">Keyword:</label>
+      <input type="text" id="input_keyword" name="keyword" value="" size=24>
+      <br>
+      <label class="left_l">Type:</label>
+      <input type="radio" name="type" value="integer" />
+      <label for="integer">Integer</label>
+      <input type="radio" name="type" value="float" />
+      <label for="float">Float</label>
+      <input type="radio" name="type" value="string" />
+      <label for="string">String</label>
+      <input type="radio" name="type" value="file" />
+      <label for="file">File</label>
+      <br>
+      <label class="left_l">Min value:</label>
+      <input type="text" name="min" id="input_min" value="" size=12>
+      <br>
+      <label class="left_l">Max value:</label>
+      <input type="text" name="max" value="" id="input_max" size=12>
+      <br>
+      <label class="left_l">Step:</label>
+      <input type="text" name="step" value="" id="input_step" size=12>
+      <br>
+      <label class="left_l">List:</label>
+      <textarea id="list" name="list" cols=32 rows=5></textarea>
+      <div id="wrapper">
+        <div id="file_selector"></div>
+      </div>
     </p>
-    <p>
-      <button id="button_new_target">New Survey Target</button>
-      　選択中のキーワード：<span id="selected_word"> </span>
-    </p>
-    <p>
-      <table id="target_list"> </table>
-    </p>
-    <form id="param_form">
-      <p>
-        <label class="left_l">Target:</label>
-          <span id="label_target">-</span>
-          <a href="javascript:void(0)" onClick="onClickRemove();return false;">[Remove]</a><br>
-          <input type="hidden" name="target" value="target">
-        <label class="left_l">Keyword:</label>
-          <input type="text" id="input_keyword" name="keyword" value="" size=24><br>
-        <label class="left_l">Type:</label>
-          <input type="radio" name="type" value="integer" />
-          <label for="integer">Integer</label>
-          <input type="radio" name="type" value="float" />
-          <label for="float">Float</label>
-          <input type="radio" name="type" value="string" />
-          <label for="string">String</label>
-          <input type="radio" name="type" value="file" />
-          <label for="file">File</label>
-        <br>
-        <label class="left_l">Min value:</label>
-          <input type="text" name="min" id="input_min" value="" size=12><br>
-        <label class="left_l">Max value:</label>
-          <input type="text" name="max" value="" id="input_max" size=12><br>
-        <label class="left_l">Step:</label>
-          <input type="text" name="step" value="" id="input_step" size=12><br>
-        <label class="left_l">List:</label>
-          <textarea id="list" name="list" cols=32 rows=5></textarea>
-        <div id="wrapper" >
-          <div id="file_selector"></div>
-        </div>
-      </p>
-    </form>
-  </div>
-
+  </form>
+</div>
