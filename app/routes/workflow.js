@@ -252,7 +252,6 @@ async function onRunProject(sio, label, rwfFilename){
   if(! cleanup){
     cleanup = defaultCleanupRemoteRoot;
   }
-  console.log('DEBUG: cleanup flag for root workflow = ', cleanup);
   rwf.cleanupFlag = cleanup;
   setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString()));
   sio.emit('projectState', getProjectState(label));

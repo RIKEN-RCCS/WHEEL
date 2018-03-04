@@ -265,7 +265,6 @@ class Dispatcher{
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
-    console.log('DEBUG ',task.name,':',task.cleanupFlag, task.doCleanup);
     await executer.exec(task);
     this.dispatchedTaskList.push(task);
     let nextTasks=task.next;
