@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require("fs");
 const {promisify} = require("util");
-const {copy} = require('fs-extra');
+const {move} = require('fs-extra');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
@@ -451,8 +451,7 @@ async function updateName(label, node, value){
   }
   logger.debug('rename', oldName,' to', newName);
 
-  await promisify(fs.rmdir)(newName);
-  await copy(oldName, newName);
+  await move(oldName, newName, {overwrite: true});
   node.name = path.basename(newName);
   node.path = node.name;
 }
