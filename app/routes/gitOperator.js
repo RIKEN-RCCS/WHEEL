@@ -61,4 +61,20 @@ class git{
   }
 }
 
-module.exports=git;
+repos = {};
+async function getGitOperator(rootDir){
+  if(! repos.hasOwnProperty(rootDir)){
+    repos[rootDir] = new git(rootDir);
+    await repos[rootDir].open();
+  }
+  return repos[rootDir];
+}
+
+async function gitAdd(rootDir, absFilename){
+  const git = await getGitOperator(rootDir);
+  return git.add(absFilename);
+}
+
+
+module.exports.add=gitAdd;
+module.exports.getGitOperator=getGitOperator;

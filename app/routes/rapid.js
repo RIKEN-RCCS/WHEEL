@@ -5,10 +5,31 @@ const {promisify} = require('util');
 
 const  express = require('express');
 const  router = express.Router();
-const nodegit = require("nodegit");
 
+const {add} = require("./gitOperator");
 const {getLogger} = require('../logSettings');
 const logger = getLogger('rapid');
+
+/**
+ * search git directory
+ */
+function searchGitRepo(filename){
+  const dir = path.dirname(filename);
+  const trial = path.resolve(dir, '.git')
+  try{
+  var stats = fs.statSync(trial);
+  }catch(e){
+    if(e.code !== "ENOENT"){
+      throw e;
+    }
+    return searchGitRepo(dir);
+  }
+  if(stats.isDirectory()){
+      return dir;
+  }else{
+      return searchGitRepo(dir);
+  }
+}
 
 module.exports = function(io){
   // メイン（エディタに編集対象のソースを入れて返す）
@@ -66,7 +87,7 @@ module.exports = function(io){
   // 保存（アップロードされた編集結果をファイルとして保存）
   router.post('/', function(req, res) {
     let cwd=req.body.path;
-    let fn = path.resolve(cwd, req.body.filename);
+    let filename = path.resolve(cwd, req.body.filename);
     if(req.body.mode == 'json') {
       let parameter = {
         "target_file": req.body.filename,
@@ -84,27 +105,30 @@ module.exports = function(io){
           }
         }
       });
-      fn = fn+'.json';
-      promisify(fs.writeFile)(fn,JSON.stringify(parameter, undefined, 4))
+      filename = filename+'.json';
+      promisify(fs.writeFile)(filename,JSON.stringify(parameter, undefined, 4))
       .then(function(){
-        res.send('Ok: ' + fn + ' saved');
-        logger.debug(fn, ' saved.');
+        res.send('Ok: ' + filename + ' saved');
+        logger.debug(filename, ' saved.');
       })
       .catch(function(err){
-        logger.error('param file save failed! ',fn);
+        logger.error('param file save failed! ',filename);
         logger.error('reason: ',err);
       });
     } else {
-      promisify(fs.writeFile)(fn, req.body.text)
+      promisify(fs.writeFile)(filename, req.body.text)
       .then(function(){
-        res.send('Ok: ' + fn + ' saved');
-        logger.debug(fn, ' saved.');
+        res.send('Ok: ' + filename + ' saved');
+        logger.debug(filename, ' saved.');
       })
       .catch(function(err){
-        logger.error('file save failed! ', fn);
+        logger.error('file save failed! ', filename);
         logger.error('reason: ',err);
       });
     }
+    const repoPath = searchGitRepo(filename);
+    add(repoPath, filename);
+
   });
   return router;
 }

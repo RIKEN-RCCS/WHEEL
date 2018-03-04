@@ -3,7 +3,7 @@ const fs = require("fs");
 const {promisify} = require("util");
 
 const del = require("del");
-const gitOperator = require("./gitOperator");
+const {add, getGitOperator}= require("./gitOperator");
 const {getDateString, replacePathsep} = require('./utility');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
@@ -38,12 +38,12 @@ class Project {
 
 }
 
-data={};
+projectDirs={};
 _getProject = (label)=>{
-  if(! data.hasOwnProperty(label)){
-    data[label] = new Project;
+  if(! projectDirs.hasOwnProperty(label)){
+    projectDirs[label] = new Project;
   }
-  return data[label];
+  return projectDirs[label];
 }
 
 
@@ -53,8 +53,7 @@ async function openProject (label, filename){
   const projectJson = JSON.parse(await promisify(fs.readFile)(filename));
   const rootDir = getRootDir(label);
   pj.rwfFilename = path.resolve(rootDir, projectJson.path_workflow);
-  pj.git = new gitOperator(rootDir);
-  await pj.git.open();
+  pj.git = await getGitOperator(rootDir);
   return setCwf(label, pj.rwfFilename);
 }
 
