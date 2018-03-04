@@ -107,6 +107,7 @@ class Dispatcher{
     this.finishedTaskList=[]
     this.nodes=wf.nodes;
     this.currentSearchList= this.nodes.map((node,i)=>{
+      if(node === null) return null;
       return isInitialNode(node) ? i : null;
     }).filter((e)=>{
       return e !== null;
