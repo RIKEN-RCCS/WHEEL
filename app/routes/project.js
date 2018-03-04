@@ -3,11 +3,10 @@ const fs = require("fs");
 const {promisify} = require("util");
 
 const del = require("del");
-const nodegit = require("nodegit");
+const gitOperator = require("./gitOperator");
+const {getDateString, replacePathsep} = require('./utility');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
-
-const {getDateString, replacePathsep} = require('./utility');
 
 class Project {
   constructor(){
@@ -49,11 +48,13 @@ _getProject = (label)=>{
 
 
 async function openProject (label, filename){
-  let pj=_getProject(label);
+  const pj=_getProject(label);
   pj.projectJsonFilename=filename;
-  let projectJson = JSON.parse(await promisify(fs.readFile)(filename));
-  pj.rwfDir = path.dirname(filename);
-  pj.rwfFilename = path.resolve(pj.rwfDir, projectJson.path_workflow);
+  const projectJson = JSON.parse(await promisify(fs.readFile)(filename));
+  const rootDir = getRootDir(label);
+  pj.rwfFilename = path.resolve(rootDir, projectJson.path_workflow);
+  pj.git = new gitOperator(rootDir);
+  await pj.git.open();
   return setCwf(label, pj.rwfFilename);
 }
 
@@ -109,42 +110,21 @@ async function readRwf (label){
   return JSON.parse(data)
 }
 
-async function _getRepo(label){
-  const rootDir = getRootDir(label)
-  return nodegit.Repository.open(path.resolve(rootDir, '.git'));
-}
-
 async function gitAdd(label, absFilename, remove=false){
-  const repo = await _getRepo(label);
-  const index = await repo.refreshIndex();
-  const rootDir = getRootDir(label)
-  const filename = replacePathsep(path.relative(rootDir, absFilename));
-  try{
-    if(remove){
-      await index.removeByPath(filename);
-    }else{
-      await index.addByPath(filename);
-    }
-  }catch(e){
-    logger.error('git add failed:', e);
-  }
-  return index.write()
+  const git = _getProject(label).git;
+  return remove ? git.rm(absFilename) : git.add(absFilename);
 }
 
 async function commitProject(label){
-  const repo = await _getRepo(label);
-  const author = nodegit.Signature.now('wheel', "wheel@example.com"); //TODO replace user info
-  const commiter= await author.dup();
-  const index = await repo.refreshIndex();
-  const oid = await index.writeTree();
-  const headCommit = await repo.getHeadCommit();
-  return repo.createCommit("HEAD", author, commiter, "save project", oid, [headCommit]);
+  const git = _getProject(label).git;
+  const name = 'wheel'; //TODO replace user info
+  const email = `${name}@example.com`;
+  return git.commit(name, email);
 }
 
 async function revertProject(label){
-  const repo = await _getRepo(label);
-  const headCommit = await repo.getHeadCommit();
-  return nodegit.Reset.reset(repo, headCommit, nodegit.Reset.TYPE.HARD, null, "master");
+  const git = _getProject(label).git;
+  return git.resetHEAD();
 }
 
 async function cleanProject(label){
@@ -152,7 +132,6 @@ async function cleanProject(label){
   await del([rootDir+path.sep+"*"], {force: true});
   return revertProject(label);
 }
-
 
 /**
  * write current workflow and ProjectJson to file
@@ -194,14 +173,10 @@ function pushNode (label, node){
 function getNode (label, index){
   return _getProject(label).cwf.nodes[index]
 }
-// function removeNode(label, index){
-//   _getProject(label).cwf.nodes[index]=null
-// }
 
 module.exports.getCwf            = getCwf;
 module.exports.setCwf            = setCwf;
 module.exports.getNode           = getNode;
-// module.exports.removeNode        = removeNode;
 module.exports.pushNode          = pushNode;
 module.exports.getCurrentDir     = getCurrentDir;
 module.exports.readRwf           = readRwf;
