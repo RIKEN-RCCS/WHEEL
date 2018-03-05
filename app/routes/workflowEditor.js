@@ -49,7 +49,7 @@ function _hasName(name, e){
 function _addInputFile(inputFiles, name, srcNode, srcName){
   const inputFile = inputFiles.find(_hasName.bind(null, name));
   if(! inputFile){
-    logger.error(name, 'not found in inputFiles');
+    logger.warn(name, 'not found in inputFiles');
     return [null, null];
   }
   const oldSrcNode = inputFile.srcNode;
@@ -71,7 +71,7 @@ function _addInputFile(inputFiles, name, srcNode, srcName){
 function _clearInputFile(inputFiles, name){
   const inputFile = inputFiles.find(_hasName.bind(null, name));
   if(! inputFile){
-    logger.error(name, 'not found in inputFiles');
+    logger.warn(name, 'not found in inputFiles');
     return null;
   }
   inputFile.srcNode = null;
@@ -88,7 +88,7 @@ function _clearInputFile(inputFiles, name){
 function _addOutputFile(outputFiles, name, dstNode, dstName){
   const outputFile = outputFiles.find(_hasName.bind(null, name));
   if(! outputFile){
-    logger.error(name, 'not found in outputFiles');
+    logger.warn(name, 'not found in outputFiles');
     return
   }
   const index = outputFile.dst.findIndex((e)=>{
@@ -110,7 +110,7 @@ function _addOutputFile(outputFiles, name, dstNode, dstName){
 function _clearOutputFile(outputFiles, name, dstNode, dstName){
   const outputFile = outputFiles.find(_hasName.bind(null, name));
   if(! outputFile){
-    logger.error(name, 'not found in outputFiles');
+    logger.warn(name, 'not found in outputFiles');
     return null;
   }
   outputFile.dst=outputFile.dst.filter((e)=>{
@@ -127,7 +127,7 @@ function _getFileLinkTargetNode(wf, index){
   }else if(Number.isInteger(index)){
     return wf.nodes[parseInt(index)];
   }else{
-    logger.error('illegal index specified');
+    logger.warn('illegal index specified');
     return null
   }
 }
@@ -150,7 +150,7 @@ async function _makeDir(basename, suffix){
       if(err.code === 'EEXIST') {
         return _makeDir(basename, suffix+1);
       }
-      logger.error('mkdir failed', err);
+      logger.warn('mkdir failed', err);
     });
 }
 
@@ -206,14 +206,18 @@ function removeNode(label, index){
  * @param isElse {Boolean} - flag to remove 'else' link
  */
 function addLink (label, srcIndex, dstIndex, isElse=false){
+  if(srcIndex === dstIndex){
+    logger.error("loop link is not allowed");
+    return;
+  }
   const srcNode=getNode(label, srcIndex);
   if(srcNode === null){
-    logger.error("srcNode does not exist");
+    logger.warn("srcNode does not exist");
     return;
   }
   let dstNode=getNode(label, dstIndex);
   if(dstNode === null){
-    logger.error("dstNode does not exist");
+    logger.warn("dstNode does not exist");
     return;
   }
 
@@ -235,12 +239,12 @@ function addLink (label, srcIndex, dstIndex, isElse=false){
 function removeLink(label, srcIndex, dstIndex, isElse=false){
   const srcNode=getNode(label, srcIndex);
   if(srcNode === null){
-    logger.error("srcNode does not exist");
+    logger.warn("srcNode does not exist");
     return;
   }
   let dstNode=getNode(label, dstIndex);
   if(dstNode === null){
-    logger.error("dstNode does not exist");
+    logger.warn("dstNode does not exist");
     return;
   }
 
@@ -294,12 +298,12 @@ function addFileLink(label, srcIndex, dstIndex, srcName, dstName){
   }
   const srcNode = _getFileLinkTargetNode(getCwf(label), srcIndex);
   if(srcNode === null){
-    logger.error("srcNode does not exist");
+    logger.warn("srcNode does not exist");
     return;
   }
   const dstNode = _getFileLinkTargetNode(getCwf(label), dstIndex);
   if(dstNode === null){
-    logger.error("dstNode does not exist");
+    logger.warn("dstNode does not exist");
     return;
   }
 
@@ -317,12 +321,12 @@ function addFileLink(label, srcIndex, dstIndex, srcName, dstName){
 function removeFileLink(label, srcIndex, dstIndex, srcName, dstName){
   const srcNode = _getFileLinkTargetNode(getCwf(label), srcIndex);
   if(srcNode === null){
-    logger.error("srcNode does not exist");
+    logger.warn("srcNode does not exist");
     return;
   }
   const dstNode = _getFileLinkTargetNode(getCwf(label), dstIndex);
   if(dstNode === null){
-    logger.error("dstNode does not exist");
+    logger.warn("dstNode does not exist");
     return;
   }
 
@@ -462,7 +466,7 @@ async function updateName(label, node, value){
         }
       })
     .catch((e)=>{
-      logger.error('git rm',oldFile,' failed',e);
+      logger.warn('git rm',oldFile,' failed',e);
     });
   });
   pOldFiles = pOldFiles.reduce((m,p)=>m.then(p), Promise.resolve());
@@ -479,7 +483,7 @@ async function updateName(label, node, value){
       }
     })
     .catch((e)=>{
-      logger.error('git add',newFile,' failed',e);
+      logger.warn('git add',newFile,' failed',e);
     });
   });
   pNewFiles = pNewFiles.reduce((m,p)=>m.then(p), Promise.resolve());

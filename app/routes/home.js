@@ -80,8 +80,7 @@ let onAdd = function (sio, msg) {
       sio.emit('projectList', projectList);
     })
     .catch(function(err){
-      logger.error('create project failed');
-      logger.error('reason: ',err);
+      logger.error('create project failed', err);
     });
 };
 let onImport= function (sio, projectJsonFilepath) {
@@ -95,8 +94,7 @@ let onImport= function (sio, projectJsonFilepath) {
         sio.emit('projectList', projectList);
       })
       .catch(function(err){
-        logger.error('import project failed');
-        logger.error('reason: ',err);
+        logger.error('import project failed', err);
       });
 };
 let onRemove = function (sio, msg) {
@@ -113,8 +111,7 @@ let onRemove = function (sio, msg) {
       sio.emit('projectList', projectList);
     })
     .catch(function(err){
-      logger.error('remove project failed');
-      logger.error('reason: ',err);
+      logger.error('remove project failed', err);
     });
 };
 let onRename = function (sio, msg) {
@@ -136,8 +133,7 @@ let onRename = function (sio, msg) {
         sio.emit('projectList', results);
       })
       .catch(function(err){
-        logger.error('rename project failed');
-        logger.error('reason: ',err);
+        logger.error('rename project failed', err);
       });
 };
 var onReorder = function (sio, orderList) {

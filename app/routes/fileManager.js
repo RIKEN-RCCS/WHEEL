@@ -95,7 +95,7 @@ function registerListeners(socket, label){
       fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: systemFiles}});
     });
     uploader.on("error", (event)=>{
-      logger.error("Error from uploader", event);
+      logger.error("file upload failed", event);
     });
     socket.on('getFileList',  list.bind(null, uploader, socket));
     socket.on('removeFile',   removeFile.bind(null, socket, label));

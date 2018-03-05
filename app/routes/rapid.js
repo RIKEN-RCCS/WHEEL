@@ -45,7 +45,7 @@ module.exports = function(io){
           let walk = function(p) {
             fs.readdir(p, function(err, files) {
               if (err) {
-                logger.error('fs.readdir failed: ',err);
+                logger.warn('fs.readdir failed: ',err);
                 return;
               }
 
@@ -78,9 +78,8 @@ module.exports = function(io){
           socket.emit('tree', tree);
         });
       })
-      .catch(function(err){
-        logger.error('file open failed');
-        logger.error('reason: ', err);
+      .catch((err)=>{
+        logger.error('file open failed',err);
       });
   });
 
@@ -122,8 +121,7 @@ module.exports = function(io){
         logger.debug(filename, ' saved.');
       })
       .catch(()=>{
-        logger.error('file save failed! ', filename);
-        logger.error('reason: ',err);
+        logger.error(filename, 'save failed!', err);
       });
   });
   return router;

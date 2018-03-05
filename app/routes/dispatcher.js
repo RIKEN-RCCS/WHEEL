@@ -67,7 +67,7 @@ function convertPathSep(pathString){
  */
 function evalConditionSync(condition, cwd){
   if( !(typeof condition === 'string' || typeof condition === 'boolean') ){
-    logger.error('condition must be string or boolean');
+    logger.warn('condition must be string or boolean');
     return false;
   }
   let script = path.resolve(cwd, condition);
@@ -449,7 +449,7 @@ class Dispatcher{
         } else if (newNode.state === 'failed'){
           ++(node.numFailed)
         }else{
-          logger.error('child state is illegal', newNode.state);
+          logger.warn('child state is illegal', newNode.state);
         }
       });
       promises.push(p);

@@ -17,7 +17,7 @@ function getParamAxisSize(axis){
   }else if (axis.type === 'integer' ||  axis.type === 'float'){
     return calcParamAxisSize(axis.min, axis.max, axis.step);
   }
-  logger.error('invalid param type:', axis.type);
+  logger.warn('invalid param type', axis.type);
   return 0;
 }
 

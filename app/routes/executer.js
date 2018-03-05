@@ -26,7 +26,7 @@ function localExec(task, cb){
   }
   let cp = child_process.exec(script, options, (err, stdout, stderr)=>{
     if(err){
-      logger.error(task.name, 'failed.', err);
+      logger.warn(task.name, 'failed.', err);
       cb(false);
     }
     logger.stdout(stdout.trim());
@@ -140,8 +140,8 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   //TODO ssh.execからstdout/stderrを返すように変更して整理する
   //
   if(rt !== 0){
-    logger.error('remote submit command failed!', rt);
-    logger.error(error);
+    logger.warn('remote submit command failed!', rt);
+    logger.warn(error);
     cb(false);
     return
   }
@@ -168,8 +168,8 @@ async function remoteSubmitAdaptor(ssh, task, cb){
     logger.debug(cmd);
     let rt = await ssh.exec(cmd);
     if(rt !== 0){
-      logger.error('remote stat command failed!', rt);
-      logger.error(error);
+      logger.warn('remote stat command failed!', rt);
+      logger.warn(error);
       return
     }
     logger.debug(jobID,'is finished', finished);
