@@ -31,38 +31,6 @@ function escapeRegExp(string) {
   return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
-async function mkdir_p(targetPath){
-  let dirs=[];
-  console.log('DEBUG: targetPath', targetPath);
-  let target = replacePathsep(targetPath);
-  while(target !== path.posix.sep){
-    try{
-      var nativePath = target.replace(/\//g, path.sep);
-      console.log('DEBUG: target', target);
-      var stats = await promisify(fs.stat)(nativePath)
-    }catch(e){
-      if(e.code === 'ENOENT'){
-        dirs.unshift(nativePath);
-        target = path.posix.dirname(target);
-        continue;
-      }
-    }
-    if(stats.isDirectory()){
-      break;
-    }else if(stats.isFile()){
-      return Promise.reject(new Error("file exist", nativePath));
-    }
-  }
-  let p = Promise.resolve();
-  dirs.forEach((dir)=>{
-    p = p.then(()=>{
-      return promisify(fs.mkdir)(dir);
-    });
-  });
-  return p;
-}
-
-
 /**
  * add execute permission to file
  * @param {string} file - filename in absolute path
@@ -133,7 +101,6 @@ function doCleanup(flag, parentFlag){
 }
 
 module.exports.escapeRegExp=escapeRegExp;
-module.exports.mkdir_p=mkdir_p;
 module.exports.addXSync=addXSync;
 module.exports.asyncNcp=asyncNcp;
 module.exports.getDateString=getDateString;
