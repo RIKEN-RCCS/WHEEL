@@ -186,10 +186,11 @@ async function createNode(label, request){
   node.path=tmpPath;
   node.name=path.basename(actualDirname);
   node.index=pushNode(label, node);
-  if(hasChild(node)){
-    const filename = path.resolve(getCurrentDir(label),node.path,node.jsonFile)
-    await promisify(fs.writeFile)(filename,JSON.stringify(node,null,4))
-  }
+  let filename = hasChild(node) ? node.jsonFile : '.gitkeep';
+  filename = path.resolve(getCurrentDir(label),node.path, filename);
+  const data = hasChild(node)? JSON.stringify(node,null,4) : '';
+  await promisify(fs.writeFile)(filename, data);
+  await gitAdd(label, filename);
   return node.index
 }
 function removeNode(label, index){
