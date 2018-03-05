@@ -25,12 +25,16 @@ function localExec(task, cb){
     "cwd": task.workingDir
   }
   let cp = child_process.exec(script, options, (err, stdout, stderr)=>{
-    if(err) throw err;
+    if(err){
+      logger.error(task.name, 'failed.', err);
+      cb(false);
+    }
     logger.stdout(stdout.trim());
     logger.stderr(stderr.trim());
   })
-    .on('exit', (code) =>{
-      cb(code === 0);
+    .on('exit', (rt) =>{
+      logger.debug(task.name, 'done. rt =', rt);
+      cb(rt === 0);
     });
   return cp.pid;
 }
