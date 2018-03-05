@@ -1,13 +1,28 @@
 const path = require("path");
+const EventEmitter = require('events');
 const nodegit = require("nodegit");
 const {replacePathsep} = require('./utility');
 
 /**
  * git operation class
  */
-class git{
+class git extends EventEmitter{
   constructor(rootDir){
+    super();
     this.rootDir = rootDir;
+    this.registerWriteIndex();
+  }
+
+  registerWriteIndex(){
+    this.once('writeIndex', ()=>{
+      this._write();
+    });
+  }
+  async _write(){
+    setImmediate(async ()=>{
+      await this.index.write();
+      this.registerWriteIndex();
+    });
   }
 
   /**
@@ -26,7 +41,7 @@ class git{
   async add(absFilename){
     const filename = replacePathsep(path.relative(this.rootDir, absFilename));
     await this.index.addByPath(filename);
-    return this.index.write()
+    this.emit('writeIndex');
   }
   /**
    * perform git rm
@@ -35,7 +50,7 @@ class git{
   async rm(absFilename){
     const filename = replacePathsep(path.relative(this.rootDir, absFilename));
     await this.index.removeByPath(filename);
-    return this.index.write()
+    this.emit('writeIndex');
   }
 
   /**
@@ -70,11 +85,19 @@ async function getGitOperator(rootDir){
   return repos[rootDir];
 }
 
+// for rapid
 async function gitAdd(rootDir, absFilename){
   const git = await getGitOperator(rootDir);
   return git.add(absFilename);
 }
 
+// for rapid (futer release)
+async function gitRm(rootDir, absFilename){
+  const git = await getGitOperator(rootDir);
+  return git.rm(absFilename);
+}
+
 
 module.exports.add=gitAdd;
+module.exports.rm=gitRm;
 module.exports.getGitOperator=getGitOperator;

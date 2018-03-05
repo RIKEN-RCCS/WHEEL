@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require("fs");
 const {promisify} = require("util");
 const {move} = require('fs-extra');
+const glob = require('glob');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
@@ -451,7 +452,37 @@ async function updateName(label, node, value){
   }
   logger.debug('rename', oldName,' to', newName);
 
+  const oldFiles = await promisify(glob)(`${oldName}/**`, {dot: true});
+  let pOldFiles  = oldFiles.map((oldFile)=>{
+    return promisify(fs.stat)(oldFile)
+      .then((stats)=>{
+        if(stats.isFile()){
+          gitAdd(label, oldFile, true);
+        }
+      })
+    .catch((e)=>{
+      logger.error('git rm',oldFile,' failed',e);
+    });
+  });
+  pOldFiles = pOldFiles.reduce((m,p)=>m.then(p), Promise.resolve());
+
+  await pOldFiles;
   await move(oldName, newName, {overwrite: true});
+
+  const newFiles = await promisify(glob)(`${newName}/**`, {dot: true});
+  let pNewFiles = newFiles.map((newFile)=>{
+    return promisify(fs.stat)(newFile)
+    .then((stats)=>{
+      if(stats.isFile()){
+        gitAdd(label, newFile);
+      }
+    })
+    .catch((e)=>{
+      logger.error('git add',newFile,' failed',e);
+    });
+  });
+  pNewFiles = pNewFiles.reduce((m,p)=>m.then(p), Promise.resolve());
+  await pNewFiles;
   node.name = path.basename(newName);
   node.path = node.name;
 }
