@@ -27,6 +27,7 @@ export class SvgNodeUI {
     this.previousLinks = [];
     this.outputFileLinks = [];
     this.inputFileLinks = [];
+    this.inputParentFileLinks = [];
 
     /** svg representation of this node */
     this.group = svg.group();
@@ -92,7 +93,7 @@ export class SvgNodeUI {
       .on('dragmove', (e) => {
         let dx = e.detail.p.x - startX;
         let dy = e.detail.p.y - startY;
-        this.reDrawLinks(dx, dy)
+        this.reDrawLinks(dx, dy);
       })
       .on('dragend', (e) => {
         let x = e.detail.p.x;
@@ -168,6 +169,7 @@ export class SvgNodeUI {
    * @param offsetY y coordinate difference from dragstart
    */
   reDrawLinks(offsetX, offsetY) {
+    console.log('reDrawLinks');
     let boxBbox = this.group.data('boxBbox');
     this.nextLinks.forEach((v) => {
       v.dragStartPoint(offsetX, offsetY, boxBbox);
@@ -184,6 +186,10 @@ export class SvgNodeUI {
     this.inputFileLinks.forEach((v) => {
       v.dragEndPoint(offsetX, offsetY, boxBbox);
     });
+    this.inputParentFileLinks.forEach((v) => {
+      v.dragEndPoint(offsetX, offsetY, boxBbox);
+    });
+
   }
 
   /**
@@ -243,6 +249,7 @@ export class SvgParentNodeUI {
   constructor(svg, sio, parentnode) {
     /** svg.js's instance*/
     this.svg = svg;
+    this.sio = sio;
 
     /** cable instance container */
     this.outputFileLinks = [];
@@ -250,7 +257,7 @@ export class SvgParentNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    //this.group.data({"index": parentnode.index, "type": parentnode.type}).draggable().addClass('parentnode');
+    this.group.data({ "index": 'parent', "type": parentnode.type }).draggable().addClass('parentnode');
 
     // draw input output file name
     // draw node
@@ -320,7 +327,7 @@ export class SvgParentNodeUI {
         let x = e.detail.p.x;
         let y = e.detail.p.y;
         if (x !== startX || y !== startY) {
-          sio.emit('updateNode', { index: parentnode.index, property: 'pos', value: { 'x': x - diffX, 'y': y - diffY }, cmd: 'update' });
+          this.sio.emit('updateNode', { index: parentnode.index, property: 'pos', value: { 'x': x - diffX, 'y': y - diffY }, cmd: 'update' });
         }
       });
   }

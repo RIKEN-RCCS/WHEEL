@@ -193,10 +193,10 @@ $(() => {
     sio.emit('getProjectState', rootWorkflow);
 
     sio.on('showMessage', showMessage);
-    sio.on('askPassword',(hostname)=>{
+    sio.on('askPassword', (hostname) => {
       const html = `<p id="sshConnectionLabel">Input SSH connection password for ${hostname}</p><input type=password id="password">`;
       dialogWrapper('#dialog', html)
-        .done(()=>{
+        .done(() => {
           const password = $('#password').val();
           sio.emit('password', password);
         });
@@ -242,7 +242,7 @@ $(() => {
       drawNodes(wf.nodes);
       drawParentFileRelation(wf);
       drawLinks(nodes);
-      drawParentLinks(parentnode);
+      drawParentLinks(parentnode, nodes);
     });
 
     sio.on('taskStateList', (taskStateList) => {
@@ -592,6 +592,9 @@ $(() => {
         });
         node.outputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
+          if (dst === 'parent') {
+            return;
+          }
           nodes[dst].inputFileLinks.push(cable);
         });
       }
@@ -612,7 +615,7 @@ $(() => {
   * draw cables between Lower and Upper plug Connector and Receptor plug respectively
   * @param nodeInWF node list in workflow Json
   */
-  function drawParentLinks(parentnode) {
+  function drawParentLinks(parentnode, nodes) {
     console.log("parentnode");
     console.log(parentnode);
 
@@ -627,7 +630,7 @@ $(() => {
 
         node.outputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
-          parentnode[dst].inputFileLinks.push(cable);
+          nodes[dst].inputFileLinks.push(cable);
         });
       }
     });
