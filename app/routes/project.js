@@ -67,7 +67,7 @@ async function writeProjectJson(label, projectJson){
   if(! projectJson){
     projectJson = await readProjectJson(label);
   }
-  projectJson.mtime=getDateString();
+  projectJson.mtime=getDateString(true);
   await promisify(fs.writeFile)(filename, JSON.stringify(projectJson, null, 4));
   return gitAdd(label, filename);
 }

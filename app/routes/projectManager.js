@@ -27,7 +27,7 @@ async function create(projectDirectory, projectName) {
 
   // write project JSON
   const projectJsonFilename = `${systemName}${extProject}`;
-  let timestamp=getDateString();
+  let timestamp=getDateString(true);
   const projectJson= {
     "name": `${projectName}`,
     "description": "This is new Project.",

@@ -8,7 +8,7 @@ const logger = getLogger('workflow');
 
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
-const {addXSync, getDateString, replacePathsep} = require('./utility');
+const {addXSync, replacePathsep} = require('./utility');
 
 let executers=[];
 
