@@ -88,6 +88,7 @@ module.exports = function(io){
   router.post('/', function(req, res) {
     let cwd=req.body.path;
     let filename = path.resolve(cwd, req.body.filename);
+    let data='';
     if(req.body.mode == 'json') {
       let parameter = {
         "target_file": req.body.filename,
@@ -105,30 +106,25 @@ module.exports = function(io){
           }
         }
       });
+
       filename = filename+'.json';
-      promisify(fs.writeFile)(filename,JSON.stringify(parameter, undefined, 4))
-      .then(function(){
+      data = JSON.stringify(parameter, undefined, 4);
+    }else{
+      data = req.body.text;
+    }
+    promisify(fs.writeFile)(filename, data)
+      .then(()=>{
+        const repoPath = searchGitRepo(filename);
+        add(repoPath, filename);
+      })
+      .then(()=>{
         res.send('Ok: ' + filename + ' saved');
         logger.debug(filename, ' saved.');
       })
-      .catch(function(err){
-        logger.error('param file save failed! ',filename);
-        logger.error('reason: ',err);
-      });
-    } else {
-      promisify(fs.writeFile)(filename, req.body.text)
-      .then(function(){
-        res.send('Ok: ' + filename + ' saved');
-        logger.debug(filename, ' saved.');
-      })
-      .catch(function(err){
+      .catch(()=>{
         logger.error('file save failed! ', filename);
         logger.error('reason: ',err);
       });
-    }
-    const repoPath = searchGitRepo(filename);
-    add(repoPath, filename);
-
   });
   return router;
 }
