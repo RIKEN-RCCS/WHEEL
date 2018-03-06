@@ -554,11 +554,6 @@ async function delOutputFiles(label, node, value){
 }
 
 
-
-
-
-
-
 module.exports.isInitialNode = isInitialNode;
 module.exports.hasChild= hasChild;
 module.exports.readChildWorkflow = readChildWorkflow;

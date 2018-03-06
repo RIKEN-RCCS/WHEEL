@@ -373,7 +373,7 @@ class Dispatcher{
 
     await asyncNcp(srcDir, dstDir)
       .catch((err)=>{
-        logger.error('fatal error occurred while copying loop dir\n', err);
+        logger.error('fatal error occurred while copying loop dir', err);
       });
 
     //TODO nodeをコピーしてthis._delegateを呼び出す方式に変更

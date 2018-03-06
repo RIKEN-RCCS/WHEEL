@@ -1,3 +1,6 @@
+/**
+ * send log message to client vi socketIO if level is higher than 40000(ERROR)
+ */
 function socketIOAppender(layout, timezoneOffset, socket, eventName){
   return (loggingEvent)=>{
     const namespace = loggingEvent.categoryName;
@@ -6,9 +9,8 @@ function socketIOAppender(layout, timezoneOffset, socket, eventName){
     }
   };
 }
+
 function configure(config, layouts){
-  //TODO contextの中身を見てerrorオブジェクトだったらmessageだけを表示するような
-  //カスタムレイアウトを作成して適用
   let layout = layouts.messagePassThroughLayout;
   if(config.layout){
     layout = layouts.layout(config.layout.type, config.layout);
