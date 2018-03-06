@@ -67,7 +67,7 @@ async function writeProjectJson(label, projectJson){
   if(! projectJson){
     projectJson = await readProjectJson(label);
   }
-  projectJson.mtime=getDateString();
+  projectJson.mtime=getDateString(true);
   await promisify(fs.writeFile)(filename, JSON.stringify(projectJson, null, 4));
   return gitAdd(label, filename);
 }
@@ -94,7 +94,7 @@ async function setCwf (label, filename){
   try{
     pj.cwf=JSON.parse(await promisify(fs.readFile)(filename));
   } catch(err){
-    logger.error('workflow file read error\n', err);
+    logger.error('workflow file read error', err);
   }
 }
 
@@ -104,7 +104,8 @@ async function readRwf (label){
   const data = await promisify(fs.readFile)(filename)
     .catch((err)=>{
       err.wf=filename;
-      logger.error('read root workflow failure:\n',err);
+      logger.error('read root workflow failure',err);
+      return;
     });
   return JSON.parse(data)
 }

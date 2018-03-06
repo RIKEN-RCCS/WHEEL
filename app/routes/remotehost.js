@@ -27,7 +27,7 @@ function trySshConnection(hostInfo, password, cb){
       cb(true);
     })
     .catch((err)=>{
-      logger.error('connection failed\n',err);
+      logger.error('connection failed',err);
       cb(false);
     })
 }

@@ -1,6 +1,21 @@
 const path = require('path');
 const log4js = require('log4js');
 
+log4js.addLayout('errorlog', function(config){
+  return function(logEvent){
+    const tmp = logEvent.data.reduce((a,p)=>{
+      if(p instanceof Error){
+        return `${a}<br>${p.message}`;
+      }else if(typeof p === 'string'){
+        return `${a} ${p}`;
+      }else{
+        return a;
+      }
+    }, '');
+    return tmp
+  }
+});
+
 const defaultSettings = {
   "appenders": {
     "console": {
@@ -13,12 +28,13 @@ const defaultSettings = {
       "backups": 5,
       "compress" : true
     },
-    "socketWF": {
+    "workflow": {
       "type": "./log2client",
       "namespace": "workflow"
     },
     "errorlog": {
-      "type": "./errorlog"
+      "type": "./errorlog",
+      "layout": {"type": "errorlog"}
     }
   },
   "categories": {
@@ -33,7 +49,7 @@ const defaultSettings = {
       "appenders": [
         "console",
         "file",
-        "socketWF",
+        "workflow",
         "errorlog"
       ],
       "level": "debug"
@@ -135,7 +151,7 @@ function setCompress(TF){
 }
 
 function setSocketIO(sio){
-  logSettings.appenders.socketWF.socketIO=sio;
+  logSettings.appenders.workflow.socketIO=sio;
   logSettings.appenders.errorlog.socketIO=sio;
   ready=true;
 }

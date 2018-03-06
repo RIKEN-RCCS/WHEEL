@@ -118,7 +118,7 @@ async function onCreateNode(sio, label, msg){
     await write(label);
     sio.emit('workflow', getCwf(label));
   }catch(err){
-    logger.error('node create failed: ', err);
+    logger.error('node create failed', err);
   }
 }
 
@@ -164,7 +164,7 @@ async function onUpdateNode(sio, label, msg){
       await write(label)
       sio.emit('workflow', getCwf(label));
     }catch(err){
-      logger.error('node update failed: ', err);
+      logger.error('node update failed', err);
     }
   }
 }
@@ -173,7 +173,7 @@ async function onRemoveNode(sio, label, index){
   logger.debug('removeNode event recieved: ', index);
   const target=getNode(label, index);
   if(! target){
-    logger.error('illegal remove node request', index);
+    logger.warn('illegal remove node request', index);
     return
   }
   const dirName=path.resolve(getCurrentDir(label),target.path);
@@ -241,7 +241,7 @@ async function onRunProject(sio, label, rwfFilename){
   try{
     await validationCheck(label, rwf, getRootDir(label), sio)
   }catch(err){
-    logger.error('invalid root workflow\n', err.message);
+    logger.error('invalid root workflow:', err.message);
     logger.debug(err);
     return false
   }
@@ -259,7 +259,7 @@ async function onRunProject(sio, label, rwfFilename){
     const projectState=await getRootDispatcher(label).dispatch();
     setProjectState(label, projectState);
   }catch(err){
-    logger.error('fatal error occurred while parseing root workflow: \n',err);
+    logger.error('fatal error occurred while parseing workflow:',err);
     return false;
   }
   sio.emit('projectState', getProjectState(label));

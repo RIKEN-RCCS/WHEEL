@@ -67,7 +67,7 @@ function convertPathSep(pathString){
  */
 function evalConditionSync(condition, cwd){
   if( !(typeof condition === 'string' || typeof condition === 'boolean') ){
-    logger.error('condition must be string or boolean');
+    logger.warn('condition must be string or boolean');
     return false;
   }
   let script = path.resolve(cwd, condition);
@@ -373,7 +373,7 @@ class Dispatcher{
 
     await asyncNcp(srcDir, dstDir)
       .catch((err)=>{
-        logger.error('fatal error occurred while copying loop dir\n', err);
+        logger.error('fatal error occurred while copying loop dir', err);
       });
 
     //TODO nodeをコピーしてthis._delegateを呼び出す方式に変更
@@ -449,7 +449,7 @@ class Dispatcher{
         } else if (newNode.state === 'failed'){
           ++(node.numFailed)
         }else{
-          logger.error('child state is illegal', newNode.state);
+          logger.warn('child state is illegal', newNode.state);
         }
       });
       promises.push(p);
