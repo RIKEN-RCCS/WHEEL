@@ -46,7 +46,11 @@ export class SvgNodeUI {
 
     const numLower = node.type === 'if' ? 3 : 2;
     let tmp = null;
-    [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio);
+    if (numLower === 2) {
+      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio);
+    } else {
+      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio);
+    }
     this.lowerPlug.data({ "next": node.next });
     this.group.add(this.lowerPlug).add(tmp);
 
@@ -66,7 +70,7 @@ export class SvgNodeUI {
     });
 
     if (numLower === 3) {
-      [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.elseFlow, sio)
+      [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.elseFlow, sio)
       this.lower2Plug.addClass('elsePlug').data({ "else": node.else });
       this.group.add(this.lower2Plug).add(tmp);
     }
@@ -139,18 +143,13 @@ export class SvgNodeUI {
       });
     }
     let receptorPlugs = this.svg.select('.receptorPlug');
-    console.log(receptorPlugs);
-    console.log(this.svg);
 
     this.connectors.forEach((srcPlug) => {
-      console.log(this.connectors);
-      console.log(srcPlug.data('dst'));
       srcPlug.data('dst').forEach((dst) => {
         let dstPlug = receptorPlugs.members.find((plug) => {
           return plug.data('index') === dst.dstNode && plug.data('name') === dst.dstName;
         });
-        console.log(dstPlug);
-        console.log(srcPlug);
+
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dst.dstNode);
@@ -276,23 +275,16 @@ export class SvgParentNodeUI {
       //   dstArray = [input.srcNode, input.srcName];
       // }
       // plug.data({ "name": input.name, "dst": dstArray });
-      console.log(output);
-
       this.group.add(plug);
       this.group.add(cable);
       this.connectors.push(plug);
-      console.log(plug);
-
     });
-    console.log(this.connectors);
 
     // draw receptor
     parentnode.inputFiles.forEach((input, fileIndex) => {
       const receptor = parts.createParentReceptor(svg, 16, 600, 0, 40 * fileIndex);
       //receptor.data({"index": parentnode.index, "name": output.name});
       receptor.data({ "index": "parent", "name": input.name });
-      console.log("receptor");
-      console.log(receptor);
 
       this.group.add(receptor);
     });
@@ -330,29 +322,18 @@ export class SvgParentNodeUI {
    */
   drawParentLinks() {
     let boxBbox = this.group.data('boxBbox');
-
     let receptorPlugs = this.svg.select('.receptorPlug');
-    console.log("receptorPlugs");
-
-    console.log(receptorPlugs);
     this.connectors.forEach((srcPlug) => {
-      console.log(this.connectors);
-      console.log(srcPlug.data('dst'));
+
       srcPlug.data('dst').forEach((dst) => {
-        //console.log(srcPlug.data('dst'));
 
         let dstPlug = receptorPlugs.members.find((plug) => {
           return plug.data('index') === dst.dstNode && plug.data('name') === dst.dstName;
         });
-        console.log(dst);
-        console.log(dstPlug);
-
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
-        console.log(cable);
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dst.dstNode);
         this.outputFileLinks.push(cable);
-        console.log(this.outputFileLinks);
 
         dstPlug.on('click', (e) => {
           this.sio.emit('removeFileLink', { src: this.group.data('index'), srcName: srcPlug.data('name'), dst: dst.dstNode, dstName: dst.dstName });
@@ -369,7 +350,6 @@ export class SvgParentNodeUI {
     let boxBbox = this.group.data('boxBbox');
     this.outputFileLinks.forEach((v) => {
       v.dragStartPoint(offsetX, offsetY, boxBbox);
-      console.log(v);
     });
     this.inputFileLinks.forEach((v) => {
       v.dragEndPoint(offsetX, offsetY, boxBbox);

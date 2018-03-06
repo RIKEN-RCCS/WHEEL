@@ -193,10 +193,10 @@ $(() => {
     sio.emit('getProjectState', rootWorkflow);
 
     sio.on('showMessage', showMessage);
-    sio.on('askPassword',(hostname)=>{
+    sio.on('askPassword', (hostname) => {
       const html = `<p id="sshConnectionLabel">Input SSH connection password for ${hostname}</p><input type=password id="password">`;
       dialogWrapper('#dialog', html)
-        .done(()=>{
+        .done(() => {
           const password = $('#password').val();
           sio.emit('password', password);
         });
@@ -204,8 +204,6 @@ $(() => {
     });
 
     sio.on('workflow', function (wf) {
-      console.log("on");
-
       nodeStack[nodeStack.length - 1] = wf.name;
       nodeTypeStack[nodeStack.length - 1] = wf.type;
 
@@ -235,10 +233,6 @@ $(() => {
         vm.names = names;
         vm.node = wf[selectedParent];
       }
-
-      console.log("draw");
-      console.log(wf.nodes);
-
       drawNodes(wf.nodes);
       drawParentFileRelation(wf);
       drawLinks(nodes);
@@ -254,10 +248,7 @@ $(() => {
 
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
-      console.log(projectJson.name);
-      console.log(projectJson.state);
 
-      // 仮で現在日時を表示
       let now = new Date();
       let date = '' + now.getFullYear() + '/' + now.getMonth() + '/' + now.getDate() + ' ' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2);
       $('#project_create_date').text(projectJson.ctime);
@@ -266,7 +257,6 @@ $(() => {
     });
 
     sio.on('projectState', (state) => {
-      console.log("statetest");
       if (state === 'running') {
         $('#project_state').text('Running');
       } else if (state === 'failed') {
@@ -280,7 +270,6 @@ $(() => {
 
     /*create host, queue selectbox*/
     sio.on('hostList', function (hostlist) {
-      console.log(hostlist);
       let remotehostSelectField = $('#remotehostSelectField');
       remotehostSelectField.empty();
       remotehostArray = [];
@@ -292,11 +281,10 @@ $(() => {
       }
       //selectboxへの設定
       remotehostSelectField.val(remotehost);
-      console.log(remotehost);
 
       let queueSelectField = $('#queueSelectField');
       $('#remotehostSelectField').change(function () {
-        console.log(hostlist);
+        queueArray = [];
         queueSelectField.empty();
         let selectedHost = $('#remotehostSelectField option:selected').text();
 
@@ -304,14 +292,15 @@ $(() => {
           queueArray = ['null'];
         } else {
           let hostListIndex = remotehostArray.indexOf(selectedHost);
-          console.log(selectedHost);
-          console.log(hostListIndex);
           let queueList = hostlist[hostListIndex].queue;
-          queueArray = queueList.split(',');
+          if (queueList !== "") {
+            queueArray = queueList.split(',');
+          }
           queueSelectField.append(`<option value="null">null</option>`);
         }
         for (let index = 0; index < queueArray.length; index++) {
           queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
+
         }
         queueSelectField.val(selectedHostQueue);
       });
@@ -338,16 +327,12 @@ $(() => {
 
   //save,revert
   $('#save_button').on('click', function () {
-    //サーバー側未実装
     sio.emit('saveProject', null, (result) => {
-      console.log(result);
     });
   });
 
   $('#revert_button').on('click', function () {
-    //サーバー側未実装
     sio.emit('revertProject', null, (result) => {
-      console.log(result);
     });
   });
 
@@ -503,12 +488,8 @@ $(() => {
         childrenViewBoxList.push(null);
       } else {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
-        console.log("test");
         node.onMousedown(function (e) {
-          console.log(clickedNode);
           $(`#${clickedNode}`).css('stroke', 'none');
-          console.log(clickedNode);
-
           let nodeIndex = e.target.instance.parent('.node').data('index');
           selectedNode = nodeIndex;
           let name = nodesInWF[nodeIndex].name;
@@ -540,7 +521,6 @@ $(() => {
         })
           .onDblclick(function (e) {
             $('#property').hide();
-            console.log("Dbc");
             let nodeType = e.target.instance.parent('.node').data('type');
             if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
               let nodeIndex = e.target.instance.parent('.node').data('index');
@@ -549,7 +529,6 @@ $(() => {
               let json = e.target.instance.parent('.node').data('jsonFile');
               currentWorkDir = currentWorkDir + '/' + name;
               currentWorkFlow = currentWorkDir + '/' + json;
-              //dirStack.push({dir: currentWorkDir, wf: currentWorkFlow});
               dirStack.push(currentWorkDir);
               wfStack.push(currentWorkFlow);
               nodeStack.push(name);
@@ -570,8 +549,6 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   function drawLinks(nodes) {
-    console.log("nodes");
-    console.log(nodes);
 
     nodes.forEach(function (node) {
       if (node != null) {
@@ -580,7 +557,6 @@ $(() => {
     });
     nodes.forEach(function (node) {
       if (node != null) {
-        console.log(node);
 
         node.nextLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
@@ -613,8 +589,6 @@ $(() => {
   * @param nodeInWF node list in workflow Json
   */
   function drawParentLinks(parentnode) {
-    console.log("parentnode");
-    console.log(parentnode);
 
     parentnode.forEach(function (node) {
       if (node != null) {
@@ -623,7 +597,6 @@ $(() => {
     });
     parentnode.forEach(function (node) {
       if (node != null) {
-        console.log(node);
 
         node.outputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
@@ -692,14 +665,11 @@ $(() => {
     }
   }
 
-  $('#useJobSchedulerFlagField').change(function () {
-    console.log("checkedValue");
-
+  $('input[name="useJobSchedulerFlag"]').change(function () {
     if ($('#useJobSchedulerFlagField').prop('checked')) {
       $('#queueSelectField').prop('disabled', false);
       $('#queueSelectField').css('background-color', '#000000');
       $('#queueSelectField').css('color', '#FFFFFF');
-
     } else {
       $('#queueSelectField').prop('disabled', true);
       $('#queueSelectField').css('background-color', '#333333');
@@ -713,11 +683,7 @@ $(() => {
     dialogWrapper('#dialog', html)
       .done(function () {
         let newFileName = $('#newFileName').val();
-        console.log("createFile");
-        console.log(newFileName);
         let newFilePath = fb.getRequestedPath() + "/" + newFileName;
-        console.log(newFilePath);
-
         sio.emit('createNewFile', newFilePath, (result) => {
         });
       });

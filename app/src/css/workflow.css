@@ -537,7 +537,8 @@ header {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
 }
 
-#checkbox{
+#checkboxArea{
+    margin: 0;    
     padding: 0px;    
 }
 
@@ -621,10 +622,6 @@ header {
 
 #flags{
     margin: 2px 16px 0 16px;
-}
-
-#checkbox{
-    margin: 0;
 }
 
 .property_text {
@@ -1315,6 +1312,16 @@ tspan{
     padding-left: 5px;
 }
 
+#newFileName.dialogTextbox{
+    background-color: #000000;
+    width: 300px;
+}
+
+#newFolderName.dialogTextbox{
+    background-color: #000000;
+    width: 300px;
+}
+
 #fileDeleteLabel, #deleteMessage{
     margin: 8px 0 8px 0;
     color: #FFFFFF;    
@@ -1333,24 +1340,15 @@ tspan{
 }
 
 .dialogTextbox{
-    background-color: #000000;    
     color: #FFFFFF;
     border: none;
-    width: 282px;
-    margin-top: 4px;
-    height: 20px;
-    padding-left: 5px;
+    margin: 4px 4px 4px 4px;
 }
 
 .ui-dialog {
     z-index: 200;
     background-color: #222226;
     border: none !important;
-    width: 312px !important;
-    height: 120px !important;
-}
-.ui-dialog-content{
-    padding: 0px 0px 5px 15px !important;
 }
 
 .ui-dialog-buttonpane{
@@ -1368,28 +1366,28 @@ tspan{
 }
 
 .ui-button{
-    background-color: #6F6F77;
+    background-color: #5B5B5F;
     font-size: 14px !important;
     width: 71px;
     height: 24px;
     color: #FFFFFF;
     line-height: 0px;
     border-radius: 0px;
-    border: none;    
+    border: none;
+    top: -15px;
 }
+
+.ui-button:hover{
+    text-decoration: none;
+    background-color: #6F6F77;
+    color: #FFFFFF;    
+    border: 0;
+  }
 
 .viewNodesField{
     border: solid 1px rgba(68, 68, 73, 0.5);
 }
 
-/* .viewNodes{
-    display: none;
-}
-
-.viewButton:hover{
-    cursor: pointer;
-}
- */
 #sshConnectionLabel{
   margin: 8px;
   color: #FFFFFF;  
@@ -1400,7 +1398,7 @@ tspan{
   color: #FFFFFF;
   border: none;
   width: 256px;
-  margin-top: 4px;
+  margin: 4pz;
   height: 20px;
   padding-left: 5px;
 }

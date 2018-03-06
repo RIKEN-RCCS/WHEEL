@@ -30,8 +30,6 @@ function calcFileBasePosY() {
  * @param y y coordinate of the point which will be checked
  */
 function collisionDetection(svg, counterpart, x, y) {
-  console.log("collisionDetection");
-
   let minDistance2 = Number.MAX_VALUE;
   let nearestNodeIndex = -1;
   let nearestPlugPoints = null;
@@ -39,21 +37,12 @@ function collisionDetection(svg, counterpart, x, y) {
   // dropしたplugと対応する種類のplugのうち最も距離が近いものを探す
   svg.select(counterpart).each(function (i, v) {
     let index = v[i].parent().node.instance.data('index');
-    console.log(x);
-    console.log(y);
-
     let points = v[i].node.points;
-    console.log(points);
-
     // let targetX = points[3].x;
     // let targetY = points[2].y;
     let targetX = (points[0].x + points[1].x) * 0.5;
     let targetY = (points[0].y + points[3].y) * 0.5;
-    console.log(targetX);
-    console.log(targetY);
-
     let distance2 = (targetX - x) * (targetX - x) + (targetY - y) * (targetY - y);
-    console.log(distance2);
 
     if (minDistance2 > distance2) {
       minDistance2 = distance2;
@@ -67,9 +56,6 @@ function collisionDetection(svg, counterpart, x, y) {
       nearestPlug = v[i];
     }
   });
-  console.log("nearestPlugPoints");
-  console.log(nearestPlugPoints);
-
   // 最近傍plugの頂点座標から当たり領域を作成
   let xPoints = Array.from(nearestPlugPoints).map((p) => {
     return p.x;
@@ -87,13 +73,6 @@ function collisionDetection(svg, counterpart, x, y) {
   maxX += extendX;
   minY -= extendY;
   maxY += extendY;
-  console.log(minX);
-  console.log(x);
-  console.log(maxX);
-  console.log(minY);
-  console.log(y);
-  console.log(maxY);
-
   // 最近傍plugが範囲内に入っていれば indexとそのplugを返す
   if (minX < x && x < maxX && minY < y && y < maxY) {
     return [nearestNodeIndex, nearestPlug];
@@ -702,9 +681,6 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
       cable.endX = e.target.instance.x();
       cable.endY = e.target.instance.y();
       const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
-      console.log("[hitIndex, hitPlug]");
-      console.log(hitIndex);
-      console.log(hitPlug);
       if (hitIndex === -1) {
         cable.remove();
         plug.remove();
@@ -712,8 +688,6 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
         return;
       }
       const myIndex = plug.parent().node.instance.data('index');
-      console.log(myIndex);
-
       if (hitIndex !== myIndex) {
         callback(myIndex, hitIndex, plug, hitPlug);
       }
@@ -727,8 +701,6 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
 function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback) {
   //plugの位置（originX,originY）を決める
   let plug = svg.polygon(plugShape).fill(color);
-  console.log("plug");
-  console.log(plug);
   const bbox = plug.bbox();
   if (moveY) originX -= bbox.width / 2;
   plug.move(originX, originY).draggable();
@@ -755,9 +727,7 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
       cable.endX = e.target.instance.x();
       cable.endY = e.target.instance.y();
       const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
-      console.log("[hitIndex, hitPlug]");
-      console.log(hitIndex);
-      console.log(hitPlug);
+
       if (hitIndex === -1) {
         cable.remove();
         plug.remove();
@@ -765,7 +735,6 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
         return;
       }
       const myIndex = "parent";
-      console.log(myIndex);
       if (hitIndex !== myIndex) {
         callback(myIndex, hitIndex, plug, hitPlug);
       }
@@ -824,10 +793,6 @@ export function createParentConnector(svg, originX, originY, offsetX, offsetY, s
   return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
-    console.log(myIndex);
-    console.log(hitIndex);
-    console.log(srcName);
-    console.log(dstName);
     sio.emit('addFileLink', { src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName });
   });
 }
@@ -836,7 +801,6 @@ export function createParentConnector(svg, originX, originY, offsetX, offsetY, s
 //位置の変更が必要な可能性有
 export function createParentReceptor(svg, originX, originY, offsetX, offsetY) {
   const plug = svg.polygon(parentRPlug).fill(config.plug_color.file).addClass('receptorPlug');
-  console.log(svg);
   const bbox = plug.bbox();
   plug.move(900, originY + offsetY + calcFileBasePosY());
   //plug.move(originX + offsetX - bbox.width / 2, originY + offsetY + calcFileBasePosY());

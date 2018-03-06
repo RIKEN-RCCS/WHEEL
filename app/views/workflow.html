@@ -230,9 +230,9 @@
         <div v-if="node.hasOwnProperty('useJobScheduler')">
           <label for="parameterRemotehost" id="propertyuseJobScheduler">UseJobScheduler</label>
         </div>
-        <div id="checkbox">
+        <div id="checkboxArea">
           <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:blur="updateProperty('useJobScheduler')"
-            name="useJobSchedulerFlag" id="useJobSchedulerFlagField" value="true">
+            name="check" id="useJobSchedulerFlagField" value="true">
         </div>
         <div v-if="node.hasOwnProperty('queue')">
           <label for="parameterRemotehost" id="propertyQueue">Queue</label>
