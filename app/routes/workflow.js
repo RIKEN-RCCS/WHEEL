@@ -173,7 +173,7 @@ async function onRemoveNode(sio, label, index){
   logger.debug('removeNode event recieved: ', index);
   const target=getNode(label, index);
   if(! target){
-    logger.('illegal remove node request', index);
+    logger.warn('illegal remove node request', index);
     return
   }
   const dirName=path.resolve(getCurrentDir(label),target.path);
