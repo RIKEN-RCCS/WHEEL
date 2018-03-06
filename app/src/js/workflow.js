@@ -236,7 +236,7 @@ $(() => {
       drawNodes(wf.nodes);
       drawParentFileRelation(wf);
       drawLinks(nodes);
-      drawParentLinks(parentnode);
+      drawParentLinks(parentnode, nodes);
     });
 
     sio.on('taskStateList', (taskStateList) => {
@@ -568,6 +568,9 @@ $(() => {
         });
         node.outputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
+          if (dst === 'parent') {
+            return;
+          }
           nodes[dst].inputFileLinks.push(cable);
         });
       }
@@ -588,8 +591,7 @@ $(() => {
   * draw cables between Lower and Upper plug Connector and Receptor plug respectively
   * @param nodeInWF node list in workflow Json
   */
-  function drawParentLinks(parentnode) {
-
+  function drawParentLinks(parentnode, nodes) {
     parentnode.forEach(function (node) {
       if (node != null) {
         node.drawParentLinks();
@@ -600,7 +602,7 @@ $(() => {
 
         node.outputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
-          parentnode[dst].inputFileLinks.push(cable);
+          nodes[dst].inputFileLinks.push(cable);
         });
       }
     });
