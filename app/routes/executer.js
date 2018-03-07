@@ -63,11 +63,23 @@ async function postProcess(ssh, task, rt, cb){
     const necessaryFiles = necessaryFilesArray.length === 1 ? `${task.remoteWorkingDir}/${necessaryFilesArray[0]}`:`${task.remoteWorkingDir}/{${necessaryFilesArray.join()}}`
     logger.debug('try to get ', necessaryFiles, 'from ',task.remoteWorkingDir,'to',task.workingDir);
     const excludeFilter = task.exclude ? task.exclude : null;
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, necessaryFiles, excludeFilter)
+    try{
+      await ssh.recv(task.remoteWorkingDir, task.workingDir, necessaryFiles, excludeFilter)
+    }catch(e){
+      logger.warn('get files failed',e);
+      cb(false);
+      return
+    }
   }
   if(task.doCleanup){
     logger.debug('(remote) rm -fr', task.remoteWorkingDir);
-    await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
+    try{
+      await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
+    }catch(e){
+      logger.warn('remote cleanup failed',e);
+      cb(false);
+      return
+    }
   }
   logger.debug(task.name, 'done. rt =', rt);
   cb(rt===0);
