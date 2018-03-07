@@ -12,7 +12,7 @@ const fileBrowser = require("./fileBrowser");
 const {gitAdd} = require('./project');
 const escape = require('./utility').escapeRegExp;
 const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)})$).*$`);
+const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)}|.gitkeep)$).*$`);
 
 function list(uploader, sio, requestDir){
   logger.debug(`current dir = ${requestDir}`);
