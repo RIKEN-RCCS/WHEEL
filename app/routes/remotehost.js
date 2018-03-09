@@ -10,7 +10,7 @@ const logger = getLogger('remotehost');
 const fileBrowser = require("./fileBrowser");
 const {remoteHost, rootDir} = require('../db/db');
 const {doAndEmit} = require('./utility');
-const {canConnect} = require('./sshManager');
+const {getSsh, canConnect} = require('./sshManager');
 
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
@@ -21,7 +21,9 @@ function sendFileList(sio, request){
   });
 }
 
-function trySshConnection(hostInfo, password, cb){
+async function trySshConnection(hostInfo, password, cb){
+  const ssh = getSsh({host: hostInfo.host, username: hostInfo.username});
+  await ssh.disconnect();
   canConnect(hostInfo, password)
     .then(()=>{
       cb(true);
