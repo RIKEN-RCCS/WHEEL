@@ -490,6 +490,12 @@ async function updateName(label, node, value){
   await pNewFiles;
   node.name = path.basename(newName);
   node.path = node.name;
+  if(hasChild(node)){
+    const childWorkflow = await readChildWorkflow(label, node);
+    childWorkflow.name = node.name;
+    childWorkflow.path = node.path;
+    return _writeChildWorkflow(label, node, childWorkflow);
+  }
 }
 
 async function delValue(label, node, property, value){
