@@ -38,6 +38,7 @@ module.exports = function(io){
     let filename=req.query.filename;
     let parameterEdit=req.query.pm.toLowerCase()==="true";
     let target = path.resolve(cwd, filename);
+    logger.debug(target,'open');
     promisify(fs.readFile)(target, 'utf-8')
       .then(function(txt){
         let tree = [];
@@ -100,7 +101,7 @@ module.exports = function(io){
           });
         }
         if(param.type === 'integer' || param.type === 'float'){
-          if(param.hasOwnProperty("list")){
+          if(param.list.length >0){
             param.type = "string";
           }
         }
