@@ -12,6 +12,16 @@ const {addXSync, replacePathsep} = require('./utility');
 
 let executers=[];
 
+function parseFilter(pattern){
+  if(pattern.startsWith('{') && pattern.endsWith('}')){
+    return pattern
+  }else if(! pattern.includes(',')){
+    return pattern
+  }else{
+    return `{${pattern}}`;
+  }
+}
+
 /**
  * execute task on localhost(which is running node.js)
  * @param {Task} task - task instance
@@ -52,23 +62,36 @@ async function postProcess(ssh, task, rt, cb){
   task.state='stage-out';
   logger.debug('get necessary files from remote server');
 
-  const necessaryFilesArray=task.outputFiles.filter((e)=>{
-    return e;
+  //get outputFiles from remote server
+  const outputFilesArray = task.outputFiles.filter((e)=>{
+    if(e.dst.length >0) return e;
   }).map((e)=>{
-    return e.name;
+    if(e.name.endsWith('/') || e.name.endsWith('\\')){
+      const dirname = replacePathsep(e.name);
+      return `${dirname}/*`;
+    }else{
+      return e.name;
+    }
   });
-  if(task.include) necessaryFilesArray.push(task.include);
+  const outputFiles= `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
+  try{
+    logger.debug('try to get outputFiles', outputFiles, '\n  from:', task.remoteWorkingDir, '\n  to:',task.workingDir);
+    await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null)
+  }catch(e){
+    logger.warn('falied to get outputFiles',e);
+    cb(false);
+    return
+  }
 
-  if(necessaryFilesArray.length > 0){
-    const necessaryFiles = necessaryFilesArray.length === 1 ? `${task.remoteWorkingDir}/${necessaryFilesArray[0]}`:`${task.remoteWorkingDir}/{${necessaryFilesArray.join()}}`
-    logger.debug('try to get ', necessaryFiles, 'from ',task.remoteWorkingDir,'to',task.workingDir);
-    const excludeFilter = task.exclude ? task.exclude : null;
+  //get files which match include filter
+  if(task.include){
+    const include =`${task.remoteWorkingDir}/${parseFilter(task.include)}`;
+    const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
+    logger.debug('try to get ', include, '\n  from:',task.remoteWorkingDir, '\n  to:', task.workingDir, '\n  exclude filter:', exclude);
     try{
-      await ssh.recv(task.remoteWorkingDir, task.workingDir, necessaryFiles, excludeFilter)
+      await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude)
     }catch(e){
-      logger.warn('get files failed',e);
-      cb(false);
-      return
+      logger.warn('faild to get files',e);
     }
   }
   if(task.doCleanup){
