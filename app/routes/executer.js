@@ -28,25 +28,29 @@ function parseFilter(pattern){
  * @return pid - process id of child process
  */
 function localExec(task, cb){
-  let script = path.resolve(task.workingDir, task.script);
+  const script = path.resolve(task.workingDir, task.script);
   addXSync(script);
   //TODO env, uid, gidを設定する
-  let options = {
+  const options = {
     "cwd": task.workingDir
   }
-  let cp = child_process.exec(script, options, (err, stdout, stderr)=>{
+  const cp = child_process.spawn(script, options, (err)=>{
     if(err){
       logger.warn(task.name, 'failed.', err);
       cb(false);
     }
-    logger.stdout(stdout.trim());
-    logger.stderr(stderr.trim());
-  })
-    .on('exit', (rt) =>{
-      logger.debug(task.name, 'done. rt =', rt);
-      cb(rt === 0);
-    });
-  return cp.pid;
+  });
+  cp.stdout.on('data', (data)=>{
+    logger.stdout(data.toString());
+  });
+  cp.stderr.on('data', (data)=>{
+    logger.stderr(data.toString());
+  });
+  cp.on('exit', (rt) =>{
+    logger.debug(task.name, 'done. rt =', rt);
+    cb(rt === 0);
+  });
+  return cp;
 }
 
 async function prepareRemoteExecDir(ssh, task){
@@ -123,6 +127,9 @@ async function remoteExecAdaptor(ssh, task, cb){
   ssh.on('stdout', passToSSHout);
   ssh.on('stderr', passToSSHerr);
   logger.debug('exec (remote)', cmd);
+  //TODO ここで使ったsshオブジェクトを返せられれば後で接続を切ることができるが
+  //Promiseしか返ってこないので無理
+  //接続完了時にconnect eventを投げるか?
   let rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
@@ -265,6 +272,7 @@ class Executer{
     this.queue=this.queue.filter((e)=>{
       return e.id!==task.id;
     });
+    task.sate='not-started';
   }
 }
 
@@ -302,7 +310,7 @@ async function createExecuter(task){
  * @param {Task} task - instance of Task class (dfined in workflowComponent.js)
  */
 async function exec(task){
-  task.remotehostID=remoteHost.getID('name', task.host) || 'localhost'; //TODO to be replaced by id search
+  task.remotehostID=remoteHost.getID('name', task.host) || 'localhost';
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
   });
@@ -320,4 +328,17 @@ async function exec(task){
   executer.submit(task);
 }
 
+function cancel(task){
+  task.remotehostID=remoteHost.getID('name', task.host) || 'localhost';
+  let executer = executers.find((e)=>{
+    return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
+  });
+  if( executer === undefined){
+    logger.warn('executer for', task.remotehostID,' with job scheduler' ,task.useJobScheduler, 'is not found');
+    return;
+  }
+  executer.cancel(task);
+}
+
 module.exports.exec= exec;
+module.exports.cancel= cancel;

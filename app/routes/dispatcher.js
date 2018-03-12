@@ -9,11 +9,49 @@ const {ensureDir,copy} = require('fs-extra');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 
-const {interval} = require('../db/db');
+const {interval, remoteHost, jobScheduler} = require('../db/db');
 const executer = require('./executer');
 const { addXSync, asyncNcp, doCleanup} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
+
+async function cancelRemoteJob(task, ssh){
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const JS = jobScheduler[hostinfo.jobScheduler];
+  const cancelCmd = `${JS.del} ${task.handler}`;
+  await ssh.exec(cancelCmd);
+}
+async function cancelLocalJob(task){
+}
+function killLocalProcess(task){
+  task.handler.kill();
+}
+async function killTask(task){
+  if(task.remotehostID !== 'localhost'){
+    const hostinfo = remoteHost.get(task.remotehostID);
+    const config = {
+      host: hostinfo.host,
+      port: hostinfo.port,
+      username: hostinfo.username,
+    }
+    const arssh = getSsh(config);
+    if(task.useJobScheduler){
+      await cancelRemoteJob(task, arssh);
+    }else{
+      logger.warn('kill remote process is not supported');
+      //TODO nohupとか使われてなければ接続を切ればremoteのプロセスも死ぬはず
+      //nohupは諦める・・・?
+      //とすると、再実行時のリモート環境のrootディレクトリ名は変えた方が良いか?
+    }
+  }else{
+    if(task.useJobScheduler){
+      await cancelLocalJob(task);
+    }else{
+      await killLocalProcess(task);
+    }
+  }
+  task.state = 'not-started';
+}
 
 // utility functions
 function _forGetNextIndex(node){
@@ -234,11 +272,17 @@ class Dispatcher{
     });
     return hasTask;
   }
-  pause(){
-    this.children.forEach((child)=>{
-      child.pause();
-    });
+  async pause(){
     clearInterval(this.timeout);
+    const p1 = this.children.map((child)=>{
+      return child.pause();
+    });
+    await Promise.all(p1);
+    const p2 =  this.dispatchedTaskList.map((task)=>{
+      executer.cancel(task);
+      return killTask(task);
+    });
+    return Promise.all(p2);
   }
   remove(){
     this.pause();
