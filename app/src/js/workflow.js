@@ -182,6 +182,7 @@ $(() => {
   let selectedParent = 0;
   let remotehost = '';
   let remotehostArray = [];
+  let remotehostDataArray = [];
   let queueArray = [];
   let selectedHostQueue = '';
 
@@ -191,6 +192,7 @@ $(() => {
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
+    sio.emit('getHostList', true);
 
     sio.on('showMessage', showMessage);
     sio.on('askPassword', (hostname) => {
@@ -248,6 +250,11 @@ $(() => {
 
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
+      if (projectJson.state === 'failed') {
+        $('#project_state').css('background-color', '#E60000');
+      } else if (projectJson.state === 'running'){
+        $('#project_state').css('background-color', '#88BB00');
+      }
 
       let now = new Date();
       let date = '' + now.getFullYear() + '/' + now.getMonth() + '/' + now.getDate() + ' ' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2);
@@ -256,20 +263,9 @@ $(() => {
 
     });
 
-    sio.on('projectState', (state) => {
-      if (state === 'running') {
-        $('#project_state').text('Running');
-      } else if (state === 'failed') {
-        $('#project_state').text('Failed');
-      } else if (state === 'finished') {
-        $('#project_state').text('Finished');
-      } else {
-        $('#project_state').text('Not-Started');
-      }
-    });
-
     /*create host, queue selectbox*/
     sio.on('hostList', function (hostlist) {
+      remotehostDataArray = hostlist;
       let remotehostSelectField = $('#remotehostSelectField');
       remotehostSelectField.empty();
       remotehostArray = [];
@@ -281,28 +277,14 @@ $(() => {
       }
       //selectboxへの設定
       remotehostSelectField.val(remotehost);
+      console.log(remotehost);
+      console.log(remotehostSelectField);
 
-      let queueSelectField = $('#queueSelectField');
+      let selectedHost = $('#remotehostSelectField option:selected').text();
+
+      // console.log(queueSelectField);
       $('#remotehostSelectField').change(function () {
-        queueArray = [];
-        queueSelectField.empty();
-        let selectedHost = $('#remotehostSelectField option:selected').text();
-
-        if (selectedHost === 'localhost') {
-          queueArray = ['null'];
-        } else {
-          let hostListIndex = remotehostArray.indexOf(selectedHost);
-          let queueList = hostlist[hostListIndex].queue;
-          if (queueList !== "") {
-            queueArray = queueList.split(',');
-          }
-          queueSelectField.append(`<option value="null">null</option>`);
-        }
-        for (let index = 0; index < queueArray.length; index++) {
-          queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
-
-        }
-        queueSelectField.val(selectedHostQueue);
+        updateQueueList(selectedHost, selectedHostQueue);
       });
     });
 
@@ -502,13 +484,17 @@ $(() => {
           //iconの変更
           let nodeIconPath = config.node_icon[nodeType];
           $('#img_node_type').attr("src", nodeIconPath);
+
           //remotehostリストの設定
           if (nodeType === 'task') {
             sio.emit('getHostList', true);
-            //vueで設定したJsonの値を引っ張てきて描画する            
             remotehost = nodesInWF[nodeIndex].host;
             selectedHostQueue = nodesInWF[nodeIndex].queue;
+            console.log(remotehost);
+            console.log(selectedHostQueue);
+            updateQueueList(remotehost, selectedHostQueue);
           }
+
           $('#propertyTypeName').html(nodesInWF[nodeIndex].type);
           vm.node = v;
           $('#componentPath').html(currentPropertyDir);
@@ -608,6 +594,32 @@ $(() => {
     });
   }
 
+  function updateQueueList(remotehost, selectedHostQueue) {
+    //json設定値を取得し、onで表示
+    let queueSelectField = $('#queueSelectField');
+    console.log(remotehost);
+    console.log(selectedHostQueue);
+    queueArray = [];
+    queueSelectField.empty();
+    if (remotehost === 'localhost') {
+      queueArray = ['null'];
+    } else {
+      let hostListIndex = remotehostArray.indexOf(remotehost);
+      let queueList = remotehostDataArray[hostListIndex].queue;
+
+      if (queueList !== "") {
+        queueArray = queueList.split(',');
+      }
+      queueSelectField.append(`<option value="null">null</option>`);
+    }
+    for (let index = 0; index < queueArray.length; index++) {
+      queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
+    }
+    queueSelectField.val(selectedHostQueue);
+    console.log(selectedHostQueue);
+    console.log(queueSelectField);
+  }
+
   function updateBreadrumb() {
     let breadcrumb = $('#breadcrumb');
     breadcrumb.empty();
@@ -690,6 +702,7 @@ $(() => {
         });
       });
   });
+
   $('#createFolderButton').click(function () {
     const html = '<p class="dialogTitle">New folder name</p><input id="newFolderName" type=text class="dialogTextbox">'
     dialogWrapper('#dialog', html)

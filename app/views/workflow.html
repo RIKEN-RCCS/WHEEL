@@ -172,7 +172,7 @@
           <label for="nameInputField" id="propertyName">Name</label>
         </div>
         <div>
-          <input type="text" pattern="^[-0-9A-Za-z_]+$" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
+          <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
         </div>
         <div>
           <label for="descriptionInputField" id="propertyDescription">Description</label>
@@ -240,7 +240,6 @@
         <select name="queue" v-model.lazy.trim="node.queue" v-if="node.hasOwnProperty('queue')" id="queueSelectField" v-on:blur="updateProperty('queue')">
           <option value="null">null</option>
         </select>
-
         <div v-if="node.hasOwnProperty('parameterFile')">
           <label for="parameterFileInputField" id="propertyParameterSettingFile">parameter setting file</label>
         </div>
@@ -370,13 +369,13 @@
         <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
         <button type="button" id="enableWARN" class="logButton" value="node">Warn</button>
         <button type="button" id="enableERR" class="logButton" value="node">Error</button>
-        <button type="button" id="enableStdout" class="logButton" value="node">stdout</button>
-        <button type="button" id="enableStderr" class="logButton" value="node">stderr</button>
-        <button type="button" id="enableSSHout" class="logButton" value="node">stdout(SSH)</button>
-        <button type="button" id="enableSSHerr" class="logButton" value="node">stderr(SSH)</button>
+        <button type="button" id="enableStdout" class="logButton" value="node">Stdout</button>
+        <button type="button" id="enableStderr" class="logButton" value="node">Stderr</button>
+        <button type="button" id="enableSSHout" class="logButton" value="node">Stdout(SSH)</button>
+        <button type="button" id="enableSSHerr" class="logButton" value="node">Stderr(SSH)</button>
       </div>
       <div id="buttonPartition">
-        <button id="clear_log">All Log Clear</button>
+        <button id="clear_log">All log clear</button>
       </div>
       <!-- <pre id="logText" class="logText"></pre> -->
       <pre id="logDebugLog" class="logText"></pre>

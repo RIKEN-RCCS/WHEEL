@@ -361,6 +361,9 @@ class SvgBox {
     const statePosX = 220;
     const statePosY = 0;
     const paraStuPosX = 120;
+    if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
+      state = 'running'
+    }
     const nodeStatePath = config.state_icon[state];
     const paraStuState = "Fin:" + numFinished + "Fail:" + numFailed + "(" + numTotal + ")";
     if (type === 'parameterStudy' && state === 'running') {
@@ -378,20 +381,20 @@ class SvgBox {
     }
   }
 
-  /**
-  * create state
-  * @return state element
-  */
-  createParaStuState(numTotal, numFinished, numFailed) {
-    const statePosX = 120;
-    const statePosY = 0;
-    const paraStuState = "Fin:" + 20 + "Fail:" + numFailed + "(" + numTotal + ")";
-    return this.draw
-      .text(paraStuState)
-      .fill('#111')
-      .x(statePosX)
-      .y(statePosY);
-  }
+  // /**
+  // * create state
+  // * @return state element
+  // */
+  // createParaStuState(numTotal, numFinished, numFailed) {
+  //   const statePosX = 120;
+  //   const statePosY = 0;
+  //   const paraStuState = "Fin:" + 20 + "Fail:" + numFailed + "(" + numTotal + ")";
+  //   return this.draw
+  //     .text(paraStuState)
+  //     .fill('#111')
+  //     .x(statePosX)
+  //     .y(statePosY);
+  // }
 
   /**
  * create workflow component icon
@@ -637,7 +640,7 @@ class SvgParentFilesBox {
         .text(input.name)
         .fill('#FFFFFF');
       const fileNameInterval = 40;
-      const x = 870;
+      const x = 1020;
       const y = 610 + fileNameInterval * index;
       //const x = config.box_appearance.inputTextNamePosX;
       text.move(x, y);
@@ -802,7 +805,7 @@ export function createParentConnector(svg, originX, originY, offsetX, offsetY, s
 export function createParentReceptor(svg, originX, originY, offsetX, offsetY) {
   const plug = svg.polygon(parentRPlug).fill(config.plug_color.file).addClass('receptorPlug');
   const bbox = plug.bbox();
-  plug.move(900, originY + offsetY + calcFileBasePosY());
+  plug.move(1050, originY + offsetY + calcFileBasePosY());
   //plug.move(originX + offsetX - bbox.width / 2, originY + offsetY + calcFileBasePosY());
   return plug;
 }

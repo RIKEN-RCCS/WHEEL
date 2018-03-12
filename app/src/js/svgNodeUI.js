@@ -256,7 +256,7 @@ export class SvgParentNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    this.group.data({ "index": 'parent', "type": parentnode.type }).draggable().addClass('parentnode');
+    this.group.data({ "index": 'parent', "type": parentnode.type }).addClass('parentnode');
 
     // draw input output file name
     // draw node
