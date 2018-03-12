@@ -272,6 +272,7 @@ class Executer{
     this.queue=this.queue.filter((e)=>{
       return e.id!==task.id;
     });
+    task.sate='not-started';
   }
 }
 
