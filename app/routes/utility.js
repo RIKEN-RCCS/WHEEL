@@ -100,9 +100,25 @@ function doCleanup(flag, parentFlag){
   return numFlag === 0;
 }
 
+/**
+ * determin specified name is valid file/directory name or not
+ */
+function isValidName(name){
+  const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
+  if(win32reservedName.test(name)) return false;
+
+  const notAllowedChar = /[^a-zA-Z0-9_\-]/; //alphanumeric, '_', and '-'
+  if(notAllowedChar.test(name)) return false;
+
+  return true;
+}
+
+
+
 module.exports.escapeRegExp=escapeRegExp;
 module.exports.addXSync=addXSync;
 module.exports.asyncNcp=asyncNcp;
 module.exports.getDateString=getDateString;
 module.exports.replacePathsep=replacePathsep;
 module.exports.doCleanup=doCleanup;
+module.exports.isValidName=isValidName;

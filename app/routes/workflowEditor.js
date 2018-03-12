@@ -7,7 +7,7 @@ const glob = require('glob');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const component = require('./workflowComponent');
-const {escapeRegExp} = require('./utility');
+const {isValidName} = require('./utility');
 const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename} = require('./project');
 
 function isInitialNode(node){
@@ -19,27 +19,14 @@ function isInitialNode(node){
   }
   return true;
 }
+
 function hasChild(node){
   return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
-}
-
-/**
- * determin specified filename is invalid or not
- */
-function _isValidName(name){
-  const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
-  if(win32reservedName.test(name)) return false;
-
-  const notAllowedChar = /[^a-zA-Z0-9_\-]/; //alphanumeric, '_', and '-'
-  if(notAllowedChar.test(name)) return false;
-
-  return true;
 }
 
 function _hasName(name, e){
   return e.name === name;
 }
-
 
 /**
  * add new inputFile entry
@@ -443,7 +430,7 @@ async function updateOutputFiles(label, node, value){
 }
 
 async function updateName(label, node, value){
-  if(!value || ! _isValidName(value)){
+  if(!value || ! isValidName(value)){
     logger.error('invalid component name', value);
     return
   }
