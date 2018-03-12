@@ -429,6 +429,7 @@ class Dispatcher{
           return !includeFiles.includes(e);
         }).includes(filename);
       }
+      logger.debug('copy from', srcDir, 'to ',dstDir);
       await asyncNcp(srcDir, dstDir, options);
 
       let data = await promisify(fs.readFile)(path.resolve(srcDir, targetFile));

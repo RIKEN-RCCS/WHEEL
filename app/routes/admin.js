@@ -1,28 +1,29 @@
 "use strict";
 const path = require("path");
-
-let express = require('express');
-
+const express = require('express');
+const {getLogger} = require('../logSettings');
+const logger = getLogger('login');
 const {userAccount} = require('../db/db')
 
 module.exports = function(io){
-  let sio=io.of('/admin');
-  let doAndEmit = function(func, msg){
-    func(msg).then(()=>{
-      sio.emit('accountList', userAccount.getAll());
-    });
-  }
+  const sio=io.of('/admin');
   sio.on('connect', (socket) => {
+    const doAndEmit = async function(eventName, func, msg){
+      logger.debug(eventName,"request recieved", msg);
+      await func(msg);
+      sio.emit('accountList', userAccount.getAll());
+    }
+
     socket.on('getAccountList', ()=>{
       sio.emit('accountList', userAccount.getAll());
     });
-    socket.on('addAccount',    doAndEmit.bind(null, userAccount.add.bind(userAccount)));
-    socket.on('removeAccount', doAndEmit.bind(null, userAccount.remove.bind(userAccount)));
-    socket.on('updateAccount', doAndEmit.bind(null, userAccount.update.bind(userAccount)));
+    socket.on('addAccount',    doAndEmit.bind(null, 'addAccount', userAccount.add.bind(userAccount)));
+    socket.on('removeAccount', doAndEmit.bind(null, 'removeAccount', userAccount.remove.bind(userAccount)));
+    socket.on('updateAccount', doAndEmit.bind(null, 'updateAccount', userAccount.update.bind(userAccount)));
   });
   const router = express.Router();
   router.get('/', function (req, res, next) {
-    //TODO 認証情報の確認とadminじゃなければ/loginにリダイレクト
+    //TODO 認証情報の確認とadminじゃなければ/homeにリダイレクト
     res.sendFile(path.resolve(__dirname,'../views/admin.html'));
   });
   return router;

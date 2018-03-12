@@ -1,10 +1,20 @@
 [
     {
         "name": "admin",
-        "password": "admin password"
+        "password": "admin password",
+        "workDirectory": "admin",
+        "description": "default administrator entry",
+        "id": "65928270-2597-11e8-8d88-bd43502ced03",
+        "uid": "0",
+        "gid": "0"
     },
     {
-        "name": "hoge",
-        "password": "hoge"
+        "name": "example",
+        "password": "example",
+        "workDirectory": "example",
+        "description": "normal user example",
+        "id": "26f044d0-2597-11e8-817d-69a7a8056b8d",
+        "uid": "0",
+        "gid": "0"
     }
 ]

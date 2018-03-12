@@ -22,7 +22,7 @@ function getParamAxisSize(axis){
 }
 
 function getNthValue(n, axis){
-  if(axis.list != null){
+  if(Array.isArray(axis.list)){
     return axis.list[n];
   }else{
     return  (0 < axis.step ? axis.min : axis.max) + axis.step * n;
