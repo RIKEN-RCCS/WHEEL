@@ -234,10 +234,10 @@
           <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:blur="updateProperty('useJobScheduler')"
             name="check" id="useJobSchedulerFlagField" value="true">
         </div>
-        <div v-if="node.hasOwnProperty('queue')">
+        <div v-show="node.hasOwnProperty('queue')">
           <label for="parameterRemotehost" id="propertyQueue">Queue</label>
         </div>
-        <select name="queue" v-model.lazy.trim="node.queue" v-if="node.hasOwnProperty('queue')" id="queueSelectField" v-on:blur="updateProperty('queue')">
+        <select name="queue" v-model.lazy.trim="node.queue" v-show="node.hasOwnProperty('queue')" id="queueSelectField" v-on:blur="updateProperty('queue')">
           <option value="null">null</option>
         </select>
         <div v-if="node.hasOwnProperty('parameterFile')">

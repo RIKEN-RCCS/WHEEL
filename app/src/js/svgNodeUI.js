@@ -168,7 +168,6 @@ export class SvgNodeUI {
    * @param offsetY y coordinate difference from dragstart
    */
   reDrawLinks(offsetX, offsetY) {
-    console.log('reDrawLinks');
     let boxBbox = this.group.data('boxBbox');
     this.nextLinks.forEach((v) => {
       v.dragStartPoint(offsetX, offsetY, boxBbox);

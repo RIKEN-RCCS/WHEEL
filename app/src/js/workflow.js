@@ -252,7 +252,7 @@ $(() => {
       $('#project_state').text(projectJson.state);
       if (projectJson.state === 'failed') {
         $('#project_state').css('background-color', '#E60000');
-      } else if (projectJson.state === 'running'){
+      } else if (projectJson.state === 'running') {
         $('#project_state').css('background-color', '#88BB00');
       }
 
@@ -277,13 +277,8 @@ $(() => {
       }
       //selectboxへの設定
       remotehostSelectField.val(remotehost);
-      console.log(remotehost);
-      console.log(remotehostSelectField);
-
-      let selectedHost = $('#remotehostSelectField option:selected').text();
-
-      // console.log(queueSelectField);
       $('#remotehostSelectField').change(function () {
+        let selectedHost = $('#remotehostSelectField option:selected').text();
         updateQueueList(selectedHost, selectedHostQueue);
       });
     });
@@ -471,6 +466,7 @@ $(() => {
       } else {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
         node.onMousedown(function (e) {
+          vm.node = v;
           $(`#${clickedNode}`).css('stroke', 'none');
           let nodeIndex = e.target.instance.parent('.node').data('index');
           selectedNode = nodeIndex;
@@ -490,13 +486,10 @@ $(() => {
             sio.emit('getHostList', true);
             remotehost = nodesInWF[nodeIndex].host;
             selectedHostQueue = nodesInWF[nodeIndex].queue;
-            console.log(remotehost);
-            console.log(selectedHostQueue);
             updateQueueList(remotehost, selectedHostQueue);
           }
 
           $('#propertyTypeName').html(nodesInWF[nodeIndex].type);
-          vm.node = v;
           $('#componentPath').html(currentPropertyDir);
           $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
           //コンポーネント選択時のカラー着色
@@ -597,8 +590,6 @@ $(() => {
   function updateQueueList(remotehost, selectedHostQueue) {
     //json設定値を取得し、onで表示
     let queueSelectField = $('#queueSelectField');
-    console.log(remotehost);
-    console.log(selectedHostQueue);
     queueArray = [];
     queueSelectField.empty();
     if (remotehost === 'localhost') {
@@ -616,8 +607,6 @@ $(() => {
       queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
     }
     queueSelectField.val(selectedHostQueue);
-    console.log(selectedHostQueue);
-    console.log(queueSelectField);
   }
 
   function updateBreadrumb() {
