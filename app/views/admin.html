@@ -16,7 +16,7 @@
     <a href="home" id="title">WHEEL</a>
     <span id="titleUser">
       <img src="/image/img_user.png" class="icon" id="img_user" align="middle">
-      <span id="titleUserName" class="titleUserName">user01</span>
+      <span id="titleUserName" class="titleUserName">admin</span>
       <button type="button" id="drawer_button">
         <img src="/image/btn_menu_n.png" alt="config" class="btn_menu_n">
       </button>
@@ -78,15 +78,15 @@
             <span>
               <label class="fieldLabel">User ID</label>
             </span>
-            <input type="text" v-model.lazy.trim="newAccount.uid" v-bind:class="{'ui-state-error': !validation.name}" class="idEditArea">
-            <p v-if="!validation.name" class="dialogStateError">empty is not allowed.</p>
+            <input type="text" v-model.number="newAccount.uid" v-bind:class="{'ui-state-error': !validation.uid}" class="idEditArea">
+            <p v-if="!validation.uid" class="dialogStateError">empty is not allowed.</p>
           </span>
           <span id="groupIdField">
             <span>
-              <label class="fieldLabel">group ID</label>
+              <label class="fieldLabel">Group ID</label>
             </span>
-            <input type="text" v-model.lazy.trim="newAccount.gid" v-bind:class="{'ui-state-error': !validation.name}" class="idEditArea">
-            <p v-if="!validation.name" class="dialogStateError">empty is not allowed.</p>
+            <input type="text" v-model.number="newAccount.gid" v-bind:class="{'ui-state-error': !validation.gid}" class="idEditArea">
+            <p v-if="!validation.gid" class="dialogStateError">empty is not allowed.</p>
           </span>
         </div>
         <div id="acountField">
