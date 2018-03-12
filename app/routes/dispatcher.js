@@ -36,7 +36,7 @@ async function killTask(task){
     }
     const arssh = getSsh(config);
     if(task.useJobScheduler){
-      cancelRemoteJob(task, arssh);
+      await cancelRemoteJob(task, arssh);
     }else{
       logger.warn('kill remote process is not supported');
       //TODO nohupとか使われてなければ接続を切ればremoteのプロセスも死ぬはず
@@ -45,12 +45,12 @@ async function killTask(task){
     }
   }else{
     if(task.useJobScheduler){
-      cancelLocalJob(task);
+      await cancelLocalJob(task);
     }else{
-      killLocalProcess(task);
+      await killLocalProcess(task);
     }
   }
-
+  task.state = 'not-started';
 }
 
 // utility functions
