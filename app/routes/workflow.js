@@ -259,7 +259,7 @@ async function onRunProject(sio, label, rwfFilename){
     const projectState=await getRootDispatcher(label).dispatch();
     setProjectState(label, projectState);
   }catch(err){
-    logger.error('fatal error occurred while parseing workflow:',err);
+    logger.error('fatal error occurred while parsing workflow:',err);
     return false;
   }
   sio.emit('projectState', getProjectState(label));
@@ -345,8 +345,8 @@ module.exports = function(io){
     socket.on('saveProject',      onSaveProject.bind(null, socket, label));
     socket.on('revertProject',    onRevertProject.bind(null, socket, label));
     socket.on('stopProject',     (msg)=>{
-      onPauseProject(socket, msg);
-      onCleanProject(socket, msg);
+      onPauseProject(socket, label, msg);
+      onCleanProject(socket, label, msg);
     });
     socket.on('getProjectState', ()=>{
       socket.emit('projectState', getProjectState(label));
