@@ -48,7 +48,7 @@ export default function (socket) {
                 break;
 
             case "enableSSHout":
-                $('#logSSHoutog').show();
+                $('#logSSHoutLog').show();
                 $('#enableSSHout').css('border-bottom-color', "#88BB00");
                 break;
 
