@@ -253,14 +253,14 @@ async function onRunProject(sio, label, rwfFilename){
     cleanup = defaultCleanupRemoteRoot;
   }
   rwf.cleanupFlag = cleanup;
-  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString()));
+  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio));
   sio.emit('projectState', getProjectState(label));
   try{
     const projectState=await getRootDispatcher(label).dispatch();
     setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parsing workflow:',err);
-    return false;
+    setProjectState(label, 'failed');
   }
   sio.emit('projectState', getProjectState(label));
 }
@@ -295,7 +295,14 @@ async function onRevertProject(sio, label){
 
 function onTaskStateListRequest(sio, label, msg){
   logger.debug('getTaskStateList event recieved:', msg);
-  logger.debug('not implimented yet !!');
+  const rootDispatcher=getRootDispatcher(label);
+  if(rootDispatcher != null){
+    const tasks=[];
+    rootDispatcher._getTaskList(tasks);
+    sio.emit('taskStateList', tasks);
+  }else{
+    logger.debug('task state list requested before root dispatcher is set');
+  }
 }
 
 async function onCreateNewFile(sio, label, filename, cb){
