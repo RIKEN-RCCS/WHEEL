@@ -266,7 +266,8 @@ async function onRunProject(sio, label, rwfFilename){
     return false
   }
   await commitProject(label);
-  setProjectState(label, 'running');
+  await setProjectState(label, 'running');
+  sio.emit('projectJson', await readProjectJson(label));
   let rootDir = getRootDir(label);
   let cleanup = rwf.cleanupFlag;
   if(! cleanup){
@@ -282,23 +283,23 @@ async function onRunProject(sio, label, rwfFilename){
   }, 5000);
   try{
     const projectState=await getRootDispatcher(label).dispatch();
-    setProjectState(label, projectState);
+    await setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parsing workflow:',err);
-    setProjectState(label, 'failed');
+    await setProjectState(label, 'failed');
   }
   clearInterval(timeout);
   const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
   overwriteCwf(label, cwf);
   sendWorkflow(sio, label);
-  sio.emit('projectState', getProjectState(label));
+  sio.emit('projectJson', await readProjectJson(label));
 }
 
-function onPauseProject(sio, label){
+async function onPauseProject(sio, label){
   logger.debug("pause event recieved");
-  getRootDispatcher(label).pause();
-  setProjectState(label, 'paused');
-  sio.emit('projectState', getProjectState(label));
+  await getRootDispatcher(label).pause();
+  await setProjectState(label, 'paused');
+  sio.emit('projectJson', await readProjectJson(label));
 }
 async function onCleanProject(sio, label){
   logger.debug("clean event recieved");
@@ -307,8 +308,8 @@ async function onCleanProject(sio, label){
   await cleanProject(label);
   await resetProject(label);
   await sendWorkflow(sio, label);
-  setProjectState(label, 'not-started');
-  sio.emit('projectState', getProjectState(label));
+  await setProjectState(label, 'not-started');
+  sio.emit('projectJson', await readProjectJson(label));
 }
 
 async function onSaveProject(sio, label){
