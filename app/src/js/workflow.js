@@ -667,18 +667,20 @@ $(() => {
 
     }
   }
-
-  $('input[name="useJobSchedulerFlag"]').change(function () {
-    if ($('#useJobSchedulerFlagField').prop('checked')) {
-      $('#queueSelectField').prop('disabled', false);
-      $('#queueSelectField').css('background-color', '#000000');
-      $('#queueSelectField').css('color', '#FFFFFF');
-    } else {
-      $('#queueSelectField').prop('disabled', true);
-      $('#queueSelectField').css('background-color', '#333333');
-      $('#queueSelectField').css('color', '#000000');
-    }
-  });
+  //Queueリストの有効、無効処理必要あれば実装する
+  /*   $(function () {
+      $(document).on('change', '#useJobSchedulerFlagField', function () {
+        if ($('#useJobSchedulerFlagField').prop('checked')) {
+          $('#queueSelectField').prop('disabled', false);
+          $('#queueSelectField').css('background-color', '#000000');
+          $('#queueSelectField').css('color', '#FFFFFF');
+        } else {
+          $('#queueSelectField').prop('disabled', true);
+          $('#queueSelectField').css('background-color', '#333333');
+          $('#queueSelectField').css('color', '#000000');
+        }
+      });
+    }); */
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
