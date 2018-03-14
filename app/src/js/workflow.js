@@ -296,6 +296,18 @@ $(() => {
     sio.emit('pauseProject', true);
   });
   $('#clean_menu').on('click', function () {
+    // パンくずリストをrootに更新
+    let rootNodeStack = nodeStack[0];
+    let rootDirStack = dirStack[0];
+    let rootWfStack = wfStack[0];
+    nodeStack = [];
+    dirStack = [];
+    wfStack = [];
+    nodeStack.push(rootNodeStack);
+    dirStack.push(rootDirStack);
+    wfStack.push(rootWfStack);
+    currentWorkDir = dirStack[nodeStack.length - 1];
+    fb.request('getFileList', currentWorkDir, null);
     sio.emit('cleanProject', true);
   });
   $('#stop_menu').on('click', function () {
@@ -630,6 +642,7 @@ $(() => {
         while (index + 1 < nodeStack.length) {
           currentNode = nodeStack.pop();
           dirStack.pop();
+          wfStack.pop();
           currentWorkDir = dirStack[nodeStack.length - 1];
           currentWorkFlow = wfStack[nodeStack.length - 1];
           $('#property').hide();
