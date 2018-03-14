@@ -526,7 +526,8 @@ header {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
 }
 
-#remotehostSelectField, #queueSelectField{
+#remotehostSelectField, 
+#queueSelectField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;

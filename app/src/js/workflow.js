@@ -296,6 +296,18 @@ $(() => {
     sio.emit('pauseProject', true);
   });
   $('#clean_menu').on('click', function () {
+    // パンくずリストをrootに更新
+    let rootNodeStack = nodeStack[0];
+    let rootDirStack = dirStack[0];
+    let rootWfStack = wfStack[0];
+    nodeStack = [];
+    dirStack = [];
+    wfStack = [];
+    nodeStack.push(rootNodeStack);
+    dirStack.push(rootDirStack);
+    wfStack.push(rootWfStack);
+    currentWorkDir = dirStack[nodeStack.length - 1];
+    fb.request('getFileList', currentWorkDir, null);
     sio.emit('cleanProject', true);
   });
   $('#stop_menu').on('click', function () {
@@ -630,6 +642,7 @@ $(() => {
         while (index + 1 < nodeStack.length) {
           currentNode = nodeStack.pop();
           dirStack.pop();
+          wfStack.pop();
           currentWorkDir = dirStack[nodeStack.length - 1];
           currentWorkFlow = wfStack[nodeStack.length - 1];
           $('#property').hide();
@@ -667,18 +680,20 @@ $(() => {
 
     }
   }
-
-  $('input[name="useJobSchedulerFlag"]').change(function () {
-    if ($('#useJobSchedulerFlagField').prop('checked')) {
-      $('#queueSelectField').prop('disabled', false);
-      $('#queueSelectField').css('background-color', '#000000');
-      $('#queueSelectField').css('color', '#FFFFFF');
-    } else {
-      $('#queueSelectField').prop('disabled', true);
-      $('#queueSelectField').css('background-color', '#333333');
-      $('#queueSelectField').css('color', '#000000');
-    }
-  });
+  //Queueリストの有効、無効処理必要あれば実装する
+  /*   $(function () {
+      $(document).on('change', '#useJobSchedulerFlagField', function () {
+        if ($('#useJobSchedulerFlagField').prop('checked')) {
+          $('#queueSelectField').prop('disabled', false);
+          $('#queueSelectField').css('background-color', '#000000');
+          $('#queueSelectField').css('color', '#FFFFFF');
+        } else {
+          $('#queueSelectField').prop('disabled', true);
+          $('#queueSelectField').css('background-color', '#333333');
+          $('#queueSelectField').css('color', '#000000');
+        }
+      });
+    }); */
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
