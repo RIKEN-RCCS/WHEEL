@@ -365,10 +365,6 @@ textarea{
   color: #ffffff;
 }
 
-#confirmCancelButtonArea{
-  padding: 24px 0 24px 0;
-}
-
 #cancelButton:hover{
   text-decoration: none;
   background-color: #6F6F77;

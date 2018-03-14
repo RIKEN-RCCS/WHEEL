@@ -54,10 +54,8 @@
   "state_icon": {
     "not-started": "/image/img_stateQue.png",
     "running": "/image/img_statePlay.png",
-    "completed": "/image/img_stateDone.png",
-    "failed": "/image/img_error.png",
-    "rerunning": "orange",
-    "waiting": "yellow"
+    "finished": "/image/img_stateDone.png",
+    "failed": "/image/img_error.png"
   },
   "reload_project_ms": 2000
 }

@@ -13,6 +13,8 @@ $(() => {
   const socket = io('/admin');
   socket.on('showMessage', showMessage);
   const defaultAccount = {
+    uid: '',
+    gid: '',
     name: '',
     password: '',
     workDirectory: '',
@@ -100,6 +102,8 @@ $(() => {
       },
       validation: function () {
         return {
+          uid: !isEmpty(this.newAccount.uid),
+          gid: !isEmpty(this.newAccount.gid),
           name: !isEmpty(this.newAccount.name),
           password: !isEmpty(this.newAccount.password),
           workDirectory: !isEmpty(this.newAccount.workDirectory)
