@@ -12,7 +12,7 @@ const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
 const {getDateString, doCleanup} = require('./utility');
 const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
-const {getCwf, setCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject} = require('./project');
+const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
@@ -91,8 +91,24 @@ async function validationCheck(label, workflow, dir, sio){
   return Promise.all(promises.concat(hostPromises));
 }
 
+/**
+ * remove harmfull property from obj before send to client
+ */
+function cleanup(obj){
+  obj.nodes.forEach((child)=>{
+    if(child === null) return;
+    if(child.handler) delete child.handler;
+    if(child.nodes){
+      child.nodes.forEach((grandson)=>{
+        if(grandson.hander)delete grandson.handler
+      });
+    }
+  });
+  return obj;
+}
+
 async function sendWorkflow(sio, label){
-  const rt = Object.assign(getCwf(label));
+  const rt = Object.assign({}, getCwf(label));
   const promises = rt.nodes.map((child)=>{
     if(child !== null && hasChild(child)){
       return readChildWorkflow(label, child)
@@ -102,7 +118,7 @@ async function sendWorkflow(sio, label){
     }
   });
   await Promise.all(promises);
-  sio.emit('workflow', rt);
+  sio.emit('workflow', cleanup(rt));
 }
 
 async function onWorkflowRequest(sio, label, argWorkflowFilename){
@@ -260,6 +276,8 @@ async function onRunProject(sio, label, rwfFilename){
   setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio));
   sio.emit('projectState', getProjectState(label));
   const timeout = setInterval(()=>{
+    const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
+    overwriteCwf(label, cwf);
     sendWorkflow(sio, label);
   }, 5000);
   try{
@@ -270,6 +288,9 @@ async function onRunProject(sio, label, rwfFilename){
     setProjectState(label, 'failed');
   }
   clearInterval(timeout);
+  const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
+  overwriteCwf(label, cwf);
+  sendWorkflow(sio, label);
   sio.emit('projectState', getProjectState(label));
 }
 
@@ -298,7 +319,7 @@ async function onSaveProject(sio, label){
 async function onRevertProject(sio, label){
   logger.debug("revertProject event recieved");
   await revertProject(label);
-  await onWorkflowRequest(sio, label, getCwfFilename(label));
+  await sendWorkflow(sio, label);
   sio.emit('projectState', getProjectState(label));
 }
 

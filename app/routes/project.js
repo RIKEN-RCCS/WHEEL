@@ -176,11 +176,15 @@ function pushNode (label, node){
 function getNode (label, index){
   return _getProject(label).cwf.nodes[index];
 }
+function overwriteCwf(label, cwf){
+  _getProject(label).cwf=cwf;
+}
 
 module.exports.openProject       = openProject;
 module.exports.resetProject      = resetProject;
 module.exports.getCwf            = getCwf;
 module.exports.setCwf            = setCwf;
+module.exports.overwriteCwf      = overwriteCwf;
 module.exports.getNode           = getNode;
 module.exports.pushNode          = pushNode;
 module.exports.getCurrentDir     = getCurrentDir;

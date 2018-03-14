@@ -24,7 +24,7 @@ async function cancelRemoteJob(task, ssh){
 async function cancelLocalJob(task){
 }
 function killLocalProcess(task){
-  task.handler.kill();
+  if(task.handler && task.handler.connect) task.handler.kill();
 }
 async function killTask(task){
   if(task.remotehostID !== 'localhost'){
@@ -97,6 +97,7 @@ function convertPathSep(pathString){
     return pathString.replace(new RegExp(path.posix.sep,"g"), path.sep);
   }
 }
+
 
 
 /**
@@ -218,6 +219,7 @@ class Dispatcher{
           if(this._isReady(target)){
             let node = this.nodes[target]
             let cmd  = this._cmdFactory(node.type);
+            node.status='running';
             promises.push(
               cmd.call(this, node)
               .then(()=>{
@@ -295,6 +297,18 @@ class Dispatcher{
     this.nextSearchList=[];
     this.nodes=[];
   }
+  getCwf(dir){
+    if(this.cwfDir === dir){
+      return this.wf;
+    }
+    let rt=null;
+    this.children.forEach((child)=>{
+      const tmp = child.getCwf(dir);
+      if(tmp) rt = tmp;
+    });
+    return rt;
+  }
+
   _getTaskList(tasks){
     this.children.forEach((child)=>{
       child._getTaskList(tasks);
