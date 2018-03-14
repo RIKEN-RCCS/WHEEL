@@ -56,6 +56,9 @@ async function openProject (label, filename){
   pj.git = await getGitOperator(rootDir);
   return setCwf(label, pj.rwfFilename);
 }
+async function resetProject(label){
+  return openProject(label, _getProject(label).projectJsonFilename);
+}
 
 async function readProjectJson (label){
   let filename = _getProject(label).projectJsonFilename;
@@ -171,9 +174,11 @@ function pushNode (label, node){
   return _getProject(label).cwf.nodes.push(node)-1;
 }
 function getNode (label, index){
-  return _getProject(label).cwf.nodes[index]
+  return _getProject(label).cwf.nodes[index];
 }
 
+module.exports.openProject       = openProject;
+module.exports.resetProject      = resetProject;
 module.exports.getCwf            = getCwf;
 module.exports.setCwf            = setCwf;
 module.exports.getNode           = getNode;
@@ -183,13 +188,17 @@ module.exports.readRwf           = readRwf;
 module.exports.getRootDir        = getRootDir;
 module.exports.getCwfFilename    = getCwfFilename;
 module.exports.write             = write;
+
 module.exports.setRootDispatcher = setRootDispatcher;
 module.exports.getRootDispatcher = getRootDispatcher;
-module.exports.openProject       = openProject;
+
+//operators for ProjectJson
 module.exports.readProjectJson   = readProjectJson;
 module.exports.updateProjectJson = updateProjectJson;
 module.exports.setProjectState   = setProjectState;
 module.exports.getProjectState   = getProjectState;
+
+//operators for git repository
 module.exports.gitAdd            = gitAdd;
 module.exports.commitProject     = commitProject;
 module.exports.revertProject     = revertProject;

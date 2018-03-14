@@ -12,7 +12,7 @@ const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
 const {getDateString, doCleanup} = require('./utility');
 const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
-const {getCwf, setCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson} = require('./project');
+const {getCwf, setCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
@@ -91,12 +91,9 @@ async function validationCheck(label, workflow, dir, sio){
   return Promise.all(promises.concat(hostPromises));
 }
 
-async function onWorkflowRequest(sio, label, argWorkflowFilename){
-  let workflowFilename=path.resolve(argWorkflowFilename);
-  logger.debug('Workflow Request event recieved: ', workflowFilename);
-  await setCwf(label, workflowFilename);
-  let rt = Object.assign(getCwf(label));
-  let promises = rt.nodes.map((child)=>{
+async function sendWorkflow(sio, label){
+  const rt = Object.assign(getCwf(label));
+  const promises = rt.nodes.map((child)=>{
     if(child !== null && hasChild(child)){
       return readChildWorkflow(label, child)
         .then((tmp)=>{
@@ -106,6 +103,13 @@ async function onWorkflowRequest(sio, label, argWorkflowFilename){
   });
   await Promise.all(promises);
   sio.emit('workflow', rt);
+}
+
+async function onWorkflowRequest(sio, label, argWorkflowFilename){
+  const workflowFilename=path.resolve(argWorkflowFilename);
+  logger.debug('Workflow Request event recieved: ', workflowFilename);
+  await setCwf(label, workflowFilename);
+  sendWorkflow(sio, label);
 }
 
 async function onCreateNode(sio, label, msg){
@@ -253,15 +257,19 @@ async function onRunProject(sio, label, rwfFilename){
     cleanup = defaultCleanupRemoteRoot;
   }
   rwf.cleanupFlag = cleanup;
-  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString()));
+  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio));
   sio.emit('projectState', getProjectState(label));
+  const timeout = setInterval(()=>{
+    sendWorkflow(sio, label);
+  }, 5000);
   try{
     const projectState=await getRootDispatcher(label).dispatch();
     setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parsing workflow:',err);
-    return false;
+    setProjectState(label, 'failed');
   }
+  clearInterval(timeout);
   sio.emit('projectState', getProjectState(label));
 }
 
@@ -273,10 +281,11 @@ function onPauseProject(sio, label){
 }
 async function onCleanProject(sio, label){
   logger.debug("clean event recieved");
-  let rootDispatcher=getRootDispatcher(label);
+  const rootDispatcher=getRootDispatcher(label);
   if(rootDispatcher != null) rootDispatcher.remove();
   await cleanProject(label);
-  await onWorkflowRequest(sio, label, getCwfFilename(label));
+  await resetProject(label);
+  await sendWorkflow(sio, label);
   setProjectState(label, 'not-started');
   sio.emit('projectState', getProjectState(label));
 }
@@ -295,7 +304,14 @@ async function onRevertProject(sio, label){
 
 function onTaskStateListRequest(sio, label, msg){
   logger.debug('getTaskStateList event recieved:', msg);
-  logger.debug('not implimented yet !!');
+  const rootDispatcher=getRootDispatcher(label);
+  if(rootDispatcher != null){
+    const tasks=[];
+    rootDispatcher._getTaskList(tasks);
+    sio.emit('taskStateList', tasks);
+  }else{
+    logger.debug('task state list requested before root dispatcher is set');
+  }
 }
 
 async function onCreateNewFile(sio, label, filename, cb){
@@ -369,9 +385,9 @@ module.exports = function(io){
     socket.on('createNewDir', onCreateNewDir.bind(null, socket, label));
   });
 
-  let router = express.Router();
+  const router = express.Router();
   router.post('/', async (req, res, next)=>{
-    let projectJsonFilename=req.body.project;
+    const projectJsonFilename=req.body.project;
     //TODO openProject will return label(index number of opend project)
     // so update label var here
     await openProject(label, projectJsonFilename);

@@ -8,7 +8,7 @@ const logger = getLogger('workflow');
 
 const {getSsh} = require('./sshManager');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
-const {addXSync, replacePathsep} = require('./utility');
+const {addXSync, replacePathsep, getDateString} = require('./utility');
 
 let executers=[];
 
@@ -248,7 +248,9 @@ class Executer{
       this.executing=true;
       if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
         let task = this.queue.pop()
+        task.startTime = getDateString(true);
         task.handler = this.exec(task, (isOK)=>{
+          task.endTime = getDateString(true);
           if(isOK){
             task.state = 'finished';
           }else{

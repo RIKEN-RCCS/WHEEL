@@ -142,7 +142,7 @@ async function onAdd (sio, projectDir) {
     logger.error('create project failed.',e);
     return
   }
-  projectList.add({path: projectJsonFilename});
+  projectList.unshift({path: projectJsonFilename});
   const newProjectList = await getAllProject();
   sio.emit('projectList', newProjectList);
 }
@@ -169,7 +169,7 @@ async function onImport(sio, projectJsonFilepath) {
 
   const filename=path.basename(projectJsonFilepath);
   const projectJsonFilename = path.resolve(newProjectRootDir, filename);
-  projectList.add({path: projectJsonFilename});
+  projectList.unshift({path: projectJsonFilename});
   const newProjectList = await getAllProject();
   sio.emit('projectList', newProjectList);
 }

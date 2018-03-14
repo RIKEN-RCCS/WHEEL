@@ -132,17 +132,18 @@ function evalConditionSync(condition, cwd){
  * @param {string} cwfDir -  path to current workflow dir
  * @param {string} rwfDir -  path to project root workflow dir
  * @param {string} startTime - start time of project
+ * @param {SocketIO} sio - SocketIO object which is used to send task state list
  */
 class Dispatcher{
-  constructor(wf, cwfDir, rwfDir, startTime){
+  constructor(wf, cwfDir, rwfDir, startTime, sio){
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
     this.projectStartTime=startTime;
+    this.sio = sio; //never pass to child dispatcher
     this.nextSearchList=[];
     this.children=[];
     this.dispatchedTaskList=[]
-    this.finishedTaskList=[]
     this.nodes=wf.nodes;
     this.currentSearchList= this.nodes.map((node,i)=>{
       if(node === null) return null;
@@ -237,10 +238,6 @@ class Dispatcher{
             const finished = this.dispatchedTaskList.filter((e)=>{
               return _isFinishedState(e.state);
             });
-            Array.prototype.push.apply(this.finishedTaskList, finished);
-            this.dispatchedTaskList = this.dispatchedTaskList.filter((e)=>{
-              return !_isFinishedState(e.state);
-            });
             const p = finished.map((task)=>{
               return this.deliverOutputFiles(task);
             });
@@ -260,6 +257,11 @@ class Dispatcher{
             logger.error('Error occurred while parsing workflow: ',err)
             reject(err);
           });
+        if(this.sio){
+          const tasks=[];
+          this._getTaskList(tasks);
+          this.sio.emit('taskStateList', tasks);
+        }
       }, interval);
     });
   }
@@ -293,19 +295,29 @@ class Dispatcher{
     this.nextSearchList=[];
     this.nodes=[];
   }
-  getTaskList(){
-    const tasks=[];
+  _getTaskList(tasks){
     this.children.forEach((child)=>{
-      Array.prototype.push.apply(tasks, child.getTaskList());
+      child._getTaskList(tasks);
     });
-    Array.prototype.push.apply(tasks, this.dispatchedTaskList);
-    Array.prototype.push.apply(tasks, this.finishedTaskList);
+    const ownTasks=this.dispatchedTaskList.map((task)=>{
+      return {
+        name: task.name,
+        description: task.description ? task.description : '',
+        state: task.state,
+        parent: task.parent,
+        startTime: task.startTime,
+        endTime: task.endTime
+      }
+    });
+    Array.prototype.push.apply(tasks, ownTasks);
     return tasks;
   }
 
   async _dispatchTask(task){
     logger.debug('_dispatchTask called', task.name);
     task.id=uuidv1(); // use this id to cancel task
+    task.startTime = 'not started'; // to be assigned in executer
+    task.endTime   = 'not finished'; // to be assigned in executer
     task.projectStartTime= this.projectStartTime;
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
@@ -345,6 +357,7 @@ class Dispatcher{
       .catch((err)=>{
         logger.error('fatal error occurred while loading sub workflow', err);
       });
+    // this.sio must not pass to child
     return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime);
   }
   async _delegate(node){

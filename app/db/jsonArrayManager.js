@@ -34,6 +34,14 @@ class JsonArrayManager{
     return this.write();
   }
   /**
+   * add new entry at the top of array
+   */
+  unshift(entry){
+    entry.id=uuidv1();
+    this.data.unshift(entry)
+    return this.write();
+  }
+  /**
    * update entry
    * @param {Object} - entry
    */
