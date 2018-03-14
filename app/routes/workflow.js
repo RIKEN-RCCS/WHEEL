@@ -93,7 +93,6 @@ async function validationCheck(label, workflow, dir, sio){
 
 async function sendWorkflow(sio, label){
   const rt = Object.assign(getCwf(label));
-  console.log('DEBUG:', rt.name);
   const promises = rt.nodes.map((child)=>{
     if(child !== null && hasChild(child)){
       return readChildWorkflow(label, child)
@@ -260,9 +259,8 @@ async function onRunProject(sio, label, rwfFilename){
   rwf.cleanupFlag = cleanup;
   setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio));
   sio.emit('projectState', getProjectState(label));
-  const timeout = setInterveal(()=>{
-    sendWorkflow(label);
-    console.log('DEBUG: send workflow');
+  const timeout = setInterval(()=>{
+    sendWorkflow(sio, label);
   }, 5000);
   try{
     const projectState=await getRootDispatcher(label).dispatch();
