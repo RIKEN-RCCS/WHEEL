@@ -56,9 +56,18 @@ $(() => {
     });
 
     // HTMLとの関連づけ
-    $(function () { $('#button_new_target').click(function () { newTarget(); }); });
+    $(function () {
+      $('#button_new_target').click(function () {
+        newTarget();
+      });
+    });
   }
-  $(function () { $('#button_save').click(function () { saveFile(); }); });
+
+  $(function () {
+    $('#button_save').click(function () {
+      saveFile();
+    });
+  });
 
   $('#wrapper').hide();
   switchStrForm(false);
@@ -160,13 +169,10 @@ $(() => {
     }
   }
 
-
   function errMsg(t) {
     //console.log(t);
     alert(t);
   }
-
-
 
   function newTarget() {
     if ($('#selected_word').text().trim() == '') {
@@ -186,11 +192,9 @@ $(() => {
     targetList();
   }
 
-
   function escapeChar(t) {
     return '%%' + t + '%%';
   }
-
 
   function targetList() {
     $('#target_list').empty();
@@ -198,12 +202,14 @@ $(() => {
     $('#target_list').append(t);
 
     param.forEach(function (v, i) {
-      if (currentTarget == i) { // 現在編集中のターゲット以外はリンクとして表示
-        t = '<tr><td>' + (i + 1) + '</td>';
-        t += '<td><b>' + v['target'] + '</b></td>';
+      if (currentTarget == i) {
+        // 現在編集中のターゲット以外はリンクとして表示
+        t = '<tr class="targetTable" id=' + i + '><td>' + (i + 1) + '</td>';
+        t += '<td>' + v['target'] + '</td>';
       } else {
-        t = `<tr class="clickable"onClick="onClickTarget(${i});return false;">`;
-        t += '<td>' + (i + 1) + '</td><td >' + v['target'] + '</td>';
+        //t = `<tr class="clickable"onClick="onClickTarget(${i});return false;">`;
+        t = '<tr  class="targetTable" id=' + i + '><td>' + (i + 1) + '</td>';
+        t += '<td>' + v['target'] + '</td>';
       }
       t += '<td>' + v['keyword'] + '</td><td>' + v['type'] + '</td><td>';
       t += v['min'] + '</td><td>' + v['max'] + '</td><td>' + v['step'] + '</td></tr>';
@@ -212,8 +218,32 @@ $(() => {
     });
   }
 
+  // target tableのidをもとにtableのindexを取得する
+  $(function () {
+    $(document).on('click', '.targetTable', function () {
+      // clickイベントで発動する処理
+      var target = $(this).attr("id");
+      console.log(target);
+      onClickTarget(target);
+    });
+  });
+
+  // HTMLとの関連づけ
+  $(function () {
+    $('#button_remove_target').click(function () {
+      onClickRemove();
+    });
+  });
+
+  // HTMLとの関連づけ
+  $(function () {
+    $('#targetTable').click(function () {
+      onClickRemove();
+    });
+  });
 
   function onClickRemove() {
+    console.log(param);
     editor.find(escapeChar(param[currentTarget].keyword));
     editor.replace(param[currentTarget].target);
     editor.clearSelection();
@@ -223,6 +253,7 @@ $(() => {
       $('#label_target').text('-');
     }
     targetList();
+    console.log(currentTarget);
     setForm(currentTarget);
   }
 

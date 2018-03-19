@@ -38,7 +38,7 @@ $(() => {
   let nodeTypeStack = [''];
   let dirStack = [rootDir];
   let wfStack = [rootWorkflow];
-  let childrenViewBoxList = [];
+  //let childrenViewBoxList = [];
 
   let projectLootDir = currentWorkDir;
 
@@ -236,6 +236,7 @@ $(() => {
         vm.node = wf[selectedParent];
       }
       drawNodes(wf.nodes);
+      console.log(wf);
       drawParentFileRelation(wf);
       drawLinks(nodes);
       drawParentLinks(parentnode, nodes);
@@ -250,10 +251,13 @@ $(() => {
 
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
-      if (projectJson.state === 'failed') {
-        $('#project_state').css('background-color', '#E60000');
-      } else if (projectJson.state === 'running') {
+
+      if (projectJson.state === 'running') {
         $('#project_state').css('background-color', '#88BB00');
+      } else if (projectJson.state === 'failed') {
+        $('#project_state').css('background-color', '#E60000');
+      } else {
+        $('#project_state').css('background-color', '#000000');
       }
 
       let now = new Date();
@@ -474,12 +478,11 @@ $(() => {
       // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
       if (v === null) {
         nodes.push(null);
-        childrenViewBoxList.push(null);
+        //childrenViewBoxList.push(null);
       } else {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
         node.onMousedown(function (e) {
           vm.node = v;
-          $(`#${clickedNode}`).css('stroke', 'none');
           let nodeIndex = e.target.instance.parent('.node').data('index');
           selectedNode = nodeIndex;
           let name = nodesInWF[nodeIndex].name;
@@ -505,10 +508,7 @@ $(() => {
           $('#componentPath').html(currentPropertyDir);
           $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
           //コンポーネント選択時のカラー着色
-          var target = $(e.target).attr("id");
-          clickedNode = target;
-          $(`#${target}`).css('stroke-width', '1px');
-          $(`#${target}`).css('stroke', '#CCFF00');
+          drawStrokeColor(e);
         })
           .onDblclick(function (e) {
             $('#property').hide();
@@ -540,7 +540,6 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   function drawLinks(nodes) {
-
     nodes.forEach(function (node) {
       if (node != null) {
         node.drawLinks();
@@ -565,6 +564,18 @@ $(() => {
           nodes[dst].inputFileLinks.push(cable);
         });
       }
+    });
+  }
+
+  function drawStrokeColor(node) {
+    $(`#${clickedNode}`).css('stroke', 'none');
+    var target = $(node.target).attr("id");
+    clickedNode = target;
+    $(`#${target}`).css('stroke-width', '1px');
+    $(`#${target}`).css('stroke', '#CCFF00');
+
+    $('#node_svg').on('mousedown', function (node) {
+      $(`#${clickedNode}`).css('stroke', 'none');
     });
   }
 
@@ -681,19 +692,19 @@ $(() => {
     }
   }
   //Queueリストの有効、無効処理必要あれば実装する
-  /*   $(function () {
-      $(document).on('change', '#useJobSchedulerFlagField', function () {
-        if ($('#useJobSchedulerFlagField').prop('checked')) {
-          $('#queueSelectField').prop('disabled', false);
-          $('#queueSelectField').css('background-color', '#000000');
-          $('#queueSelectField').css('color', '#FFFFFF');
-        } else {
-          $('#queueSelectField').prop('disabled', true);
-          $('#queueSelectField').css('background-color', '#333333');
-          $('#queueSelectField').css('color', '#000000');
-        }
-      });
-    }); */
+  // $(function () {
+  //   $(document).on('change', '#useJobSchedulerFlagField', function () {
+  //     if ($('#useJobSchedulerFlagField').prop('checked')) {
+  //       $('#queueSelectField').prop('disabled', false);
+  //       $('#queueSelectField').css('background-color', '#000000');
+  //       $('#queueSelectField').css('color', '#FFFFFF');
+  //     } else {
+  //       $('#queueSelectField').prop('disabled', true);
+  //       $('#queueSelectField').css('background-color', '#333333');
+  //       $('#queueSelectField').css('color', '#000000');
+  //     }
+  //   });
+  // });
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {

@@ -140,7 +140,7 @@ header {
     margin: 0 0 0 0;    
     width: 100px;
     border-radius: 12px;
-    border: solid 1px #FFFFFF;
+    border: 1px solid #FFFFFF
 }
 
 .controler_button{
@@ -555,6 +555,7 @@ header {
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
 }
 
 #startInputField, #endInputField{
@@ -1199,12 +1200,12 @@ td {
     display: inline-block;
     width: 224px;
     border-radius: 3px;
+    padding-right: 38px;
 }
 
 .componentState{
     display: inline-block;    
     padding-right: 44px;
-    padding-left: 38px;
     width: 90px;
 }
 

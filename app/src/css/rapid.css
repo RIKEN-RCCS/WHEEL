@@ -47,6 +47,22 @@ button{
   cursor: pointer
 } 
 
+#button_remove_target{
+  background-color: #2F2F33;
+  color: #CCFF00;
+  font-size: 12px;
+  width: 48px;
+  height: 14px;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+#button_remove_target:hover{
+  color: red;  
+}
+  
+
 button:hover, #button_save:hover{
   text-decoration: none;
   background-color: #6F6F77;
@@ -132,6 +148,12 @@ ul {
   background:#ffdddd;
 
 }
+
+.targetTable:hover {
+  cursor:pointer;
+  background-color: rgba(204, 255, 0, 0.5);
+}
+
 .container {
   display:flex;
   justify-content:flex-end;
