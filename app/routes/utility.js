@@ -2,7 +2,6 @@ const {promisify} = require('util');
 const fs = require('fs');
 const path = require('path');
 
-const ncp = require('ncp').ncp;
 const Mode = require('stat-mode');
 
 const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
@@ -50,21 +49,6 @@ function addXSync(file){
   if(mode.others.write) o+=2;
   let modeString = u.toString()+g.toString()+o.toString();
   fs.chmodSync(file, modeString);
-}
-
-/**
- * promise version of ncp
- * @param {string} src - src directory
- * @param {string} dst - dst directory
- * @param {Object} options - see ncp's npm page
- */
-function asyncNcp(...args){
-  return new Promise((resolve, reject)=>{
-    ncp(...args, (err)=>{
-      if(err) reject(err);
-      resolve(null);
-    });
-  });
 }
 
 function getDateString (humanReadable = false){
@@ -124,7 +108,6 @@ function getSystemFiles(){
 
 module.exports.escapeRegExp=escapeRegExp;
 module.exports.addXSync=addXSync;
-module.exports.asyncNcp=asyncNcp;
 module.exports.getDateString=getDateString;
 module.exports.replacePathsep=replacePathsep;
 module.exports.doCleanup=doCleanup;

@@ -11,7 +11,7 @@ const logger = getLogger('workflow');
 
 const {interval, remoteHost, jobScheduler} = require('../db/db');
 const executer = require('./executer');
-const { addXSync, asyncNcp, doCleanup} = require('./utility');
+const { addXSync, doCleanup} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
 
@@ -442,7 +442,7 @@ class Dispatcher{
     dstDir = path.resolve(this.cwfDir, dstDir);
 
 
-    await asyncNcp(srcDir, dstDir)
+    await copy(srcDir, dstDir)
       .catch((err)=>{
         logger.error('fatal error occurred while copying loop dir', err);
       });
@@ -501,7 +501,7 @@ class Dispatcher{
         }).includes(filename);
       }
       logger.debug('copy from', srcDir, 'to ',dstDir);
-      await asyncNcp(srcDir, dstDir, options);
+      await copy(srcDir, dstDir, options);
 
       let data = await promisify(fs.readFile)(path.resolve(srcDir, targetFile));
       data = data.toString();
