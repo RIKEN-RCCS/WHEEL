@@ -10,7 +10,7 @@ const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
-const {getDateString, doCleanup} = require('./utility');
+const {getDateString, doCleanup, getSystemFiles} = require('./utility');
 const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
 const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
@@ -18,9 +18,6 @@ const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
 const fileBrowser = require("./fileBrowser");
 const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
-const escape = require('./utility').escapeRegExp;
-const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)})$).*$`);
 
 function askPassword(sio, hostname){
   return new Promise((resolve, reject)=>{
@@ -340,7 +337,7 @@ async function onCreateNewFile(sio, label, filename, cb){
   try{
     await promisify(fs.writeFile)(filename, '')
     await gitAdd(label, filename);
-    fileBrowser(sio, 'fileList', path.dirname(filename), {"filter": {file: systemFiles}});
+    fileBrowser(sio, 'fileList', path.dirname(filename), {"filter": {file: getSystemFiles()}});
     cb(true);
   }catch(e){
     logger.error('create new file failed', e);
@@ -352,7 +349,7 @@ async function onCreateNewDir(sio, label, dirname, cb){
     await promisify(fs.mkdir)(dirname)
     await promisify(fs.writeFile)(path.resolve(dirname,'.gitkeep'), '')
     await gitAdd(label, path.resolve(dirname,'.gitkeep'));
-    fileBrowser(sio, 'fileList', path.dirname(dirname), {"filter": {file: systemFiles}});
+    fileBrowser(sio, 'fileList', path.dirname(dirname), {"filter": {file: getSystemFiles()}});
     cb(true);
   }catch(e){
     logger.error('create new directory failed', e);

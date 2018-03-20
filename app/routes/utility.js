@@ -5,6 +5,7 @@ const path = require('path');
 const ncp = require('ncp').ncp;
 const Mode = require('stat-mode');
 
+const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
 /**
  * convert to posix-style path string and remove head and tail path separator
  */
@@ -113,6 +114,12 @@ function isValidName(name){
   return true;
 }
 
+/**
+ * return regexp of systemfiles
+ */
+function getSystemFiles(){
+  return new RegExp(`^(?!^.*(${escapeRegExp(extProject)}|${escapeRegExp(extWF)}|${escapeRegExp(extPS)}|${escapeRegExp(extFor)}|${escapeRegExp(extWhile)}|${escapeRegExp(extForeach)}|.gitkeep)$).*$`);
+}
 
 
 module.exports.escapeRegExp=escapeRegExp;
@@ -122,3 +129,4 @@ module.exports.getDateString=getDateString;
 module.exports.replacePathsep=replacePathsep;
 module.exports.doCleanup=doCleanup;
 module.exports.isValidName=isValidName;
+module.exports.getSystemFiles = getSystemFiles;

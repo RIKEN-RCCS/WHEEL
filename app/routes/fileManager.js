@@ -10,9 +10,7 @@ const logger = getLogger('workflow');
 
 const fileBrowser = require("./fileBrowser");
 const {gitAdd} = require('./project');
-const escape = require('./utility').escapeRegExp;
-const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)}|.gitkeep)$).*$`);
+const {getSystemFiles} = require('./utility');
 
 function list(uploader, sio, requestDir){
   logger.debug(`current dir = ${requestDir}`);
@@ -28,7 +26,7 @@ function list(uploader, sio, requestDir){
         return Promise.reject(new Error("illegal directory browse requestDir"));
       }
       logger.debug('targetDir = ', targetDir);
-      fileBrowser(sio, 'fileList', targetDir, {"requestDir": requestDir, "filter": {file: systemFiles}});
+      fileBrowser(sio, 'fileList', targetDir, {"requestDir": requestDir, "filter": {file: getSystemFiles()}});
       uploader.dir = targetDir;
     })
     .catch((err)=>{
@@ -45,7 +43,7 @@ async function removeFile(sio, label, target){
   }catch(err){
     logger.warn(`removeFile failed: ${err}`);
   }
-  fileBrowser(sio, 'fileList', parentDir, {"filter": {file: systemFiles}});
+  fileBrowser(sio, 'fileList', parentDir, {"filter": {file: getSystemFiles()}});
 }
 
 async function renameFile(sio, label, msg){
@@ -69,7 +67,7 @@ async function renameFile(sio, label, msg){
   }catch(err){
     logger.warn('git add failed', err);
   }
-  fileBrowser(sio, 'fileList', msg.path, {"filter": {file: systemFiles}});
+  fileBrowser(sio, 'fileList', msg.path, {"filter": {file: getSystemFiles()}});
 }
 
 function downloadFile(sio, msg){
@@ -92,7 +90,7 @@ function registerListeners(socket, label){
     uploader.on("saved", async(event)=>{
       logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
       await gitAdd(label, event.file.pathName);
-      fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: systemFiles}});
+      fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: getSystemFiles()}});
     });
     uploader.on("error", (event)=>{
       logger.error("file upload failed", event);
