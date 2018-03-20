@@ -82,8 +82,9 @@ $(() => {
   if (parameterEdit) {
     // get json tree by socket.io
     const sio = io('/rapid');
+    sio.emit('getFileTree', cwd);
     sio.on('showMessage', showMessage);
-    sio.on('tree', function (tree) {
+    sio.on('tree', (tree)=>{
       // ファイルのツリービュー
       $('#file_selector').jstree({
         'plugins': [],
