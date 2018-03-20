@@ -66,7 +66,7 @@ function _whileGetNextIndex(node){
 function _whileIsFinished(cwfDir, node){
   let cwd= path.resolve(cwfDir, node.path);
   let condition = evalConditionSync(node.condition, cwd);
-  return condition
+  return ! condition
 }
 function _foreachGetNextIndex(node){
   if(node.hasOwnProperty('currentIndex')){
