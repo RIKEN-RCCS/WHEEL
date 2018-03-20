@@ -136,8 +136,9 @@ async function cleanProject(label){
   const rootDir = getRootDir(label);
   const srces = await promisify(glob)("*", {cwd: rootDir});
   const p = srces.map((e)=>{
-    return fs.remove(e);
+    return fs.remove(path.resolve(rootDir,e));
   });
+  await Promise.all(p);
   return revertProject(label);
 }
 

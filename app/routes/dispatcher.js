@@ -236,19 +236,18 @@ class Dispatcher{
             let tmp = new Set(this.nextSearchList);
             this.currentSearchList=Array.from(tmp.values());
             this.nextSearchList=[];
-            const finished = this.dispatchedTaskList.filter((e)=>{
-              return _isFinishedState(e.state);
-            });
-            const p = finished.map((task)=>{
+            const p = this.dispatchedTaskList.filter((task)=>{
+              return _isFinishedState(task.state);
+            }).map((task)=>{
               return this.deliverOutputFiles(task);
             });
             // check task state
             if(! this.isRunning()){
               clearInterval(this.timeout);
-              let hasFailed=this.dispatchedTaskList.some((task)=>{
+              const hasFailed=this.dispatchedTaskList.some((task)=>{
                 return task.state === 'failed';
               });
-              let projectState = hasFailed ? 'failed': 'finished';
+              const projectState = hasFailed ? 'failed': 'finished';
               resolve(projectState);
             }
             this.dispatching=false;
@@ -337,14 +336,16 @@ class Dispatcher{
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
     await executer.exec(task);
     this.dispatchedTaskList.push(task);
-    let nextTasks=task.next;
+    const nextTasks=Array.from(task.next);
     task.outputFiles.forEach((outputFile)=>{
-      let tmp = outputFile.dst.map((e)=>{
+      const tmp = outputFile.dst.map((e)=>{
         if(e.dstNode !== 'parent'){
           return e.dstNode;
+        }else{
+          return null;
         }
       }).filter((e)=>{
-        return e;
+        return e!==null;
       });
       Array.prototype.push.apply(nextTasks, tmp);
     });
