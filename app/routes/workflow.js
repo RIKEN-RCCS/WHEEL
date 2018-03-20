@@ -88,34 +88,23 @@ async function validationCheck(label, workflow, dir, sio){
   return Promise.all(promises.concat(hostPromises));
 }
 
-/**
- * remove harmfull property from obj before send to client
- */
-function cleanup(obj){
-  obj.nodes.forEach((child)=>{
-    if(child === null) return;
-    if(child.handler) delete child.handler;
-    if(child.nodes){
-      child.nodes.forEach((grandson)=>{
-        if(grandson.hander)delete grandson.handler
-      });
-    }
-  });
-  return obj;
-}
-
 async function sendWorkflow(sio, label){
   const rt = Object.assign({}, getCwf(label));
   const promises = rt.nodes.map((child)=>{
-    if(child !== null && hasChild(child)){
+    if(child === null) return child;
+    if(child.handler) delete child.handler;
+    if(hasChild(child)){
       return readChildWorkflow(label, child)
         .then((tmp)=>{
-          child.nodes=tmp.nodes;
+          child.nodes=tmp.nodes.map((e)=>{
+            if( e!== null && e.handler) delete e.handler;
+            return e;
+          });
         })
     }
   });
   await Promise.all(promises);
-  sio.emit('workflow', cleanup(rt));
+  sio.emit('workflow', rt);
 }
 
 async function onWorkflowRequest(sio, label, argWorkflowFilename){
