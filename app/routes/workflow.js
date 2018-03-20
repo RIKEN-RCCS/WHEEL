@@ -28,33 +28,39 @@ function askPassword(sio, hostname){
   });
 }
 
+
 /**
  * check if all scripts and remote host setting are available or not
  */
 async function validationCheck(label, workflow, dir, sio){
-  let promises=[]
+  const promises=[]
   if(dir == null ){
     promises.push(Promise.reject(new Error('Project dir is null or undefined')));
   }
   let hosts=[];
-  workflow.nodes.forEach((node)=>{
-    if(node == null) return;
+  workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
     if(node.type === 'task'){
-      if(node.path == null){
-        promises.push(Promise.reject(new Error(`illegal path ${node.name}`)));
-      }
-      if(node.host !== 'localhost'){
-        hosts.push(node.host);
-      }
+      if(node.path == null) promises.push(Promise.reject(new Error(`illegal path ${node.null}`)));
+      if(node.host !== 'localhost') hosts.push(node.host);
       if( node.script == null){
         promises.push(Promise.reject(new Error(`script is not specified ${node.name}`)));
       }else{
         promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
+    }else if(node.type === 'if' || node.type === 'while'){
+      if(! node.condition) promises.push(Promise.reject(new Error(`condition is not specified ${node.name}`)));
+    }else if(node.type === 'for'){
+      if(!node.start) promises.push(Promise.reject(new Error(`start is not specified ${node.name}`)));
+      if(!node.step)  promises.push(Promise.reject(new Error(`step is not specified ${node.name}`)));
+      if(!node.end)   promises.push(Promise.reject(new Error(`end is not specified ${node.name}`)));
+      if(node.step === 0 || (node.end - node.start)*node.step <0)promises.push(Promise.reject(new Error(`inifinite loop ${node.name}`)));
     }else if(node.type === 'parameterStudy'){
       if(node.parameterFile === null){
         promises.push(Promise.reject(new Error(`parameter setting file is not specified ${node.name}`)));
       }
+    }else if(node.type === 'foreach'){
+      if(! Array.isArray(node.indexList)) promises.push(Promise.reject(new Error(`index list is broken ${node.name}`)));
+      if(node.indexList.length <= 0) promises.push(Promise.reject(new Error(`index list is empty ${node.name}`)));
     }
     if(hasChild(node)){
       const childDir = path.resolve(dir, node.path);
@@ -67,7 +73,6 @@ async function validationCheck(label, workflow, dir, sio){
     }
   });
   const hasInitialNode = workflow.nodes.some((node)=>{
-    if(node === null) return false;
     return isInitialNode(node);
   });
   if(!hasInitialNode) promises.push(Promise.reject(new Error('no component can be run')));

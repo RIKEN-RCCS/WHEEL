@@ -11,6 +11,7 @@ const {isValidName} = require('./utility');
 const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename} = require('./project');
 
 function isInitialNode(node){
+  if(node === null) return false;
   if(node.previous.length > 0) return false;
   if(node.inputFiles.length >0 ){
     return node.inputFiles.some((e)=>{
