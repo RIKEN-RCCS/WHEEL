@@ -1,11 +1,13 @@
 const path = require("path");
-const fs = require("fs");
 const {promisify} = require("util");
 
-const del = require("del");
+const fs = require("fs-extra");
+const glob = require('glob');
+
 const {add, getGitOperator}= require("./gitOperator");
 const {getDateString, replacePathsep} = require('./utility');
 const {getLogger} = require('../logSettings');
+
 const logger = getLogger('workflow');
 
 class Project {
@@ -132,7 +134,10 @@ async function revertProject(label){
 
 async function cleanProject(label){
   const rootDir = getRootDir(label);
-  await del([rootDir+path.sep+"*"], {force: true});
+  const srces = await promisify(glob)("*", {cwd: rootDir});
+  const p = srces.map((e)=>{
+    return fs.remove(e);
+  });
   return revertProject(label);
 }
 

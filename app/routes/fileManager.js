@@ -1,9 +1,8 @@
 const path = require("path");
 const os = require("os");
-const fs = require("fs");
 const util = require("util");
 
-const del = require("del");
+const fs = require("fs-extra");
 const siofu = require("socketio-file-upload");
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
@@ -38,7 +37,7 @@ async function removeFile(sio, label, target){
   logger.debug(`removeFile event recieved: ${target}`);
   var parentDir = path.dirname(target);
   try{
-    await del(target, { force: true });
+    await fs.remove(target, { force: true });
     await gitAdd(label, target, true);
   }catch(err){
     logger.warn(`removeFile failed: ${err}`);

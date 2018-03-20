@@ -35,7 +35,6 @@
     "arssh2-client": "^0.3.11",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
-    "del": "^3.0.0",
     "ejs": "^2.5.7",
     "express": "^4.15.4",
     "express-session": "^1.15.6",
