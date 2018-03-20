@@ -1,10 +1,10 @@
 const path = require("path");
 const os = require("os");
-const fs = require("fs");
+const fs = require("fs-extra");
 const {promisify} = require("util");
 
-let express = require('express');
-const del = require("del");
+const klaw = require('klaw');
+const express = require('express');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
@@ -198,13 +198,19 @@ async function onRemoveNode(sio, label, index){
   removeAllLink(label, index);
   removeAllFileLink(label, index);
   removeNode(label, index);
-  try{
-    await del(dirName, { force: true });
-    await write(label);
-    sio.emit('workflow', getCwf(label));
-  }catch(err){
-    logger.error('remove node failed: ', err);
-  }
+  klaw(dirName)
+    .on('data', (item)=>{
+      gitAdd(label, item.path, true);
+    })
+    .on('end', async()=>{
+      try{
+        await fs.remove(dirName);
+        await write(label);
+        sio.emit('workflow', getCwf(label));
+      }catch(err){
+        logger.error('remove node failed: ', err);
+      }
+    });
 }
 
 async function onAddLink(sio, label, msg){
