@@ -421,22 +421,32 @@ class SvgBox {
     this.fieldGroup = this.draw.group();
     if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
       if (nodes.length > 0) {
-        const titleHeight = 160;
-        const titlewidth = 256;
-        const nodeColor = "rgba(68, 68, 73, 0.5)";
-        const field = this.draw
-          .polygon([
-            [0, 0],
-            [titlewidth, 0],
-            [titlewidth, titleHeight],
-            [0, titleHeight],
-          ])
-          .attr('class', 'viewNodesField')
-          .stroke("#2F2F33")
-          .fill(nodeColor);
-        const y = bodyHeight;
-        field.move(0, y);
-        this.inputGroup.add(field);
+        let viewFlag = false;
+        nodes.forEach((node, index) => {
+          if (node === null) {
+            return;
+          } else {
+            viewFlag = true;
+          }
+        });
+        if (viewFlag === true) {
+          const titleHeight = 160;
+          const titlewidth = 256;
+          const nodeColor = "rgba(68, 68, 73, 0.5)";
+          const field = this.draw
+            .polygon([
+              [0, 0],
+              [titlewidth, 0],
+              [titlewidth, titleHeight],
+              [0, titleHeight],
+            ])
+            .attr('class', 'viewNodesField')
+            .stroke("#2F2F33")
+            .fill(nodeColor);
+          const y = bodyHeight;
+          field.move(0, y);
+          this.inputGroup.add(field);
+        }
       }
     }
     return this.fieldGroup;
