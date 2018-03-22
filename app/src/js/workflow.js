@@ -518,8 +518,24 @@ $(() => {
           let nodeIconPath = config.node_icon[nodeType];
           $('#img_node_type').attr("src", nodeIconPath);
 
-          //remotehostリストの設定
+          // taskコンポーネント時の描画処理
           if (nodeType === 'task') {
+            //queuelistの設定
+            let useJobSchedulerFlag = nodesInWF[nodeIndex].useJobScheduler;
+            console.log(useJobSchedulerFlag);
+
+            if (useJobSchedulerFlag === true) {
+              console.log("false");
+              $('#queueSelectField').prop('disabled', false);
+              $('#queueSelectField').css('background-color', '#000000');
+              $('#queueSelectField').css('color', '#FFFFFF');
+            } else {
+              console.log("true");
+              $('#queueSelectField').prop('disabled', true);
+              $('#queueSelectField').css('background-color', '#333333');
+              $('#queueSelectField').css('color', '#333333');
+            }
+            //remotehostリストの設定
             sio.emit('getHostList', true);
             remotehost = nodesInWF[nodeIndex].host;
             selectedHostQueue = nodesInWF[nodeIndex].queue;
@@ -713,20 +729,20 @@ $(() => {
 
     }
   }
-  //Queueリストの有効、無効処理必要あれば実装する
-  // $(function () {
-  //   $(document).on('change', '#useJobSchedulerFlagField', function () {
-  //     if ($('#useJobSchedulerFlagField').prop('checked')) {
-  //       $('#queueSelectField').prop('disabled', false);
-  //       $('#queueSelectField').css('background-color', '#000000');
-  //       $('#queueSelectField').css('color', '#FFFFFF');
-  //     } else {
-  //       $('#queueSelectField').prop('disabled', true);
-  //       $('#queueSelectField').css('background-color', '#333333');
-  //       $('#queueSelectField').css('color', '#000000');
-  //     }
-  //   });
-  // });
+  //Queueリストの有効、無効処理
+  $(function () {
+    $(document).on('change', '#useJobSchedulerFlagField', function () {
+      if ($('#useJobSchedulerFlagField').prop('checked')) {
+        $('#queueSelectField').prop('disabled', false);
+        $('#queueSelectField').css('background-color', '#000000');
+        $('#queueSelectField').css('color', '#FFFFFF');
+      } else {
+        $('#queueSelectField').prop('disabled', true);
+        $('#queueSelectField').css('background-color', '#333333');
+        $('#queueSelectField').css('color', '#333333');
+      }
+    });
+  });
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
