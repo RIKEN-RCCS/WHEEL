@@ -24,6 +24,13 @@ export default function (dialogID, html, options) {
             }
         }
     });
+    //Enter key event
+    $(dialogID).keypress(function (e) {
+        if (e.which == 13) {
+            def.resolve();
+            $(this).dialog('close');
+        }
+    });
     if (options != null)
         $(dialogID).dialog('option', options);
     $('.ui-dialog-titlebar').css({ display: 'none' });
