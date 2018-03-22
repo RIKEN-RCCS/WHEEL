@@ -1,16 +1,16 @@
 const path = require("path");
 const os = require("os");
-const fs = require("fs");
+const fs = require("fs-extra");
 const {promisify} = require("util");
 
-let express = require('express');
-const del = require("del");
+const klaw = require('klaw');
+const express = require('express');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {canConnect} = require('./sshManager');
-const {getDateString, doCleanup} = require('./utility');
+const {getDateString, doCleanup, getSystemFiles} = require('./utility');
 const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
 const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
@@ -18,9 +18,6 @@ const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
 const fileBrowser = require("./fileBrowser");
 const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
-const escape = require('./utility').escapeRegExp;
-const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-const systemFiles = new RegExp(`^(?!^.*(${escape(extProject)}|${escape(extWF)}|${escape(extPS)}|${escape(extFor)}|${escape(extWhile)}|${escape(extForeach)})$).*$`);
 
 function askPassword(sio, hostname){
   return new Promise((resolve, reject)=>{
@@ -31,33 +28,39 @@ function askPassword(sio, hostname){
   });
 }
 
+
 /**
  * check if all scripts and remote host setting are available or not
  */
 async function validationCheck(label, workflow, dir, sio){
-  let promises=[]
+  const promises=[]
   if(dir == null ){
     promises.push(Promise.reject(new Error('Project dir is null or undefined')));
   }
   let hosts=[];
-  workflow.nodes.forEach((node)=>{
-    if(node == null) return;
+  workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
     if(node.type === 'task'){
-      if(node.path == null){
-        promises.push(Promise.reject(new Error(`illegal path ${node.name}`)));
-      }
-      if(node.host !== 'localhost'){
-        hosts.push(node.host);
-      }
+      if(node.path == null) promises.push(Promise.reject(new Error(`illegal path ${node.null}`)));
+      if(node.host !== 'localhost') hosts.push(node.host);
       if( node.script == null){
         promises.push(Promise.reject(new Error(`script is not specified ${node.name}`)));
       }else{
         promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
+    }else if(node.type === 'if' || node.type === 'while'){
+      if(! node.condition) promises.push(Promise.reject(new Error(`condition is not specified ${node.name}`)));
+    }else if(node.type === 'for'){
+      if(!node.start) promises.push(Promise.reject(new Error(`start is not specified ${node.name}`)));
+      if(!node.step)  promises.push(Promise.reject(new Error(`step is not specified ${node.name}`)));
+      if(!node.end)   promises.push(Promise.reject(new Error(`end is not specified ${node.name}`)));
+      if(node.step === 0 || (node.end - node.start)*node.step <0)promises.push(Promise.reject(new Error(`inifinite loop ${node.name}`)));
     }else if(node.type === 'parameterStudy'){
       if(node.parameterFile === null){
         promises.push(Promise.reject(new Error(`parameter setting file is not specified ${node.name}`)));
       }
+    }else if(node.type === 'foreach'){
+      if(! Array.isArray(node.indexList)) promises.push(Promise.reject(new Error(`index list is broken ${node.name}`)));
+      if(node.indexList.length <= 0) promises.push(Promise.reject(new Error(`index list is empty ${node.name}`)));
     }
     if(hasChild(node)){
       const childDir = path.resolve(dir, node.path);
@@ -70,7 +73,6 @@ async function validationCheck(label, workflow, dir, sio){
     }
   });
   const hasInitialNode = workflow.nodes.some((node)=>{
-    if(node === null) return false;
     return isInitialNode(node);
   });
   if(!hasInitialNode) promises.push(Promise.reject(new Error('no component can be run')));
@@ -91,34 +93,23 @@ async function validationCheck(label, workflow, dir, sio){
   return Promise.all(promises.concat(hostPromises));
 }
 
-/**
- * remove harmfull property from obj before send to client
- */
-function cleanup(obj){
-  obj.nodes.forEach((child)=>{
-    if(child === null) return;
-    if(child.handler) delete child.handler;
-    if(child.nodes){
-      child.nodes.forEach((grandson)=>{
-        if(grandson.hander)delete grandson.handler
-      });
-    }
-  });
-  return obj;
-}
-
 async function sendWorkflow(sio, label){
   const rt = Object.assign({}, getCwf(label));
   const promises = rt.nodes.map((child)=>{
-    if(child !== null && hasChild(child)){
+    if(child === null) return child;
+    if(child.handler) delete child.handler;
+    if(hasChild(child)){
       return readChildWorkflow(label, child)
         .then((tmp)=>{
-          child.nodes=tmp.nodes;
+          child.nodes=tmp.nodes.map((e)=>{
+            if( e!== null && e.handler) delete e.handler;
+            return e;
+          });
         })
     }
   });
   await Promise.all(promises);
-  sio.emit('workflow', cleanup(rt));
+  sio.emit('workflow', rt);
 }
 
 async function onWorkflowRequest(sio, label, argWorkflowFilename){
@@ -201,13 +192,19 @@ async function onRemoveNode(sio, label, index){
   removeAllLink(label, index);
   removeAllFileLink(label, index);
   removeNode(label, index);
-  try{
-    await del(dirName, { force: true });
-    await write(label);
-    sio.emit('workflow', getCwf(label));
-  }catch(err){
-    logger.error('remove node failed: ', err);
-  }
+  klaw(dirName)
+    .on('data', (item)=>{
+      gitAdd(label, item.path, true);
+    })
+    .on('end', async()=>{
+      try{
+        await fs.remove(dirName);
+        await write(label);
+        sio.emit('workflow', getCwf(label));
+      }catch(err){
+        logger.error('remove node failed: ', err);
+      }
+    });
 }
 
 async function onAddLink(sio, label, msg){
@@ -340,7 +337,7 @@ async function onCreateNewFile(sio, label, filename, cb){
   try{
     await promisify(fs.writeFile)(filename, '')
     await gitAdd(label, filename);
-    fileBrowser(sio, 'fileList', path.dirname(filename), {"filter": {file: systemFiles}});
+    fileBrowser(sio, 'fileList', path.dirname(filename), {"filter": {file: getSystemFiles()}});
     cb(true);
   }catch(e){
     logger.error('create new file failed', e);
@@ -352,7 +349,7 @@ async function onCreateNewDir(sio, label, dirname, cb){
     await promisify(fs.mkdir)(dirname)
     await promisify(fs.writeFile)(path.resolve(dirname,'.gitkeep'), '')
     await gitAdd(label, path.resolve(dirname,'.gitkeep'));
-    fileBrowser(sio, 'fileList', path.dirname(dirname), {"filter": {file: systemFiles}});
+    fileBrowser(sio, 'fileList', path.dirname(dirname), {"filter": {file: getSystemFiles()}});
     cb(true);
   }catch(e){
     logger.error('create new directory failed', e);

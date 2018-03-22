@@ -1,7 +1,8 @@
 'use strict';
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const {promisify} = require('util');
+const klaw = require('klaw');
 
 const  express = require('express');
 const  router = express.Router();
@@ -32,56 +33,41 @@ function searchGitRepo(filename){
 }
 
 module.exports = function(io){
+  const sio = io.of('/rapid');
+  sio.on('connect', (socket)=>{
+    socket.on('getFileTree',(cwd)=>{
+      const tree=[];
+      tree.push({'id':cwd, 'parent':'#', 'text':cwd});
+      klaw(cwd)
+        .on('data', (item)=>{
+          if(item.path === cwd) return;
+          const parent = path.dirname(item.path);
+          const r = {'id':item.path, 'parent':path.dirname(item.path), 'text':path.basename(item.path)};
+          if(! item.stats.isDirectory()) r.icon='jstree-file';
+          tree.push(r);
+        })
+        .on('end', ()=>{
+          sio.to(socket.id).emit('tree', tree);
+        });
+    });
+  });
   // メイン（エディタに編集対象のソースを入れて返す）
-  router.get('/', function (req, res) {
-    let cwd=req.query.path;
-    let filename=req.query.filename;
-    let parameterEdit=req.query.pm.toLowerCase()==="true";
-    let target = path.resolve(cwd, filename);
-    logger.debug(target,'open');
-    promisify(fs.readFile)(target, 'utf-8')
-      .then(function(txt){
-        let tree = [];
-        if(parameterEdit) {
-          let walk = function(p) {
-            fs.readdir(p, function(err, files) {
-              if (err) {
-                logger.warn('fs.readdir failed: ',err);
-                return;
-              }
+  router.get('/', async (req, res)=>{
+    const cwd=req.query.path;
+    const filename=req.query.filename;
+    const parameterEdit=req.query.pm.toLowerCase()==="true";
+    const target = path.resolve(cwd, filename);
+    logger.debug('open file', target);
 
-              files.forEach(function(f) {
-                let fp = path.join(p, f); // to full-path
-                let r = {'id':fp, 'parent':p, 'text':f};
-                if(fs.statSync(fp).isDirectory()) {
-                  //r.icon = 'jstree-folder';
-                  tree.push(r);
-                  walk(fp); // ディレクトリなら再帰
-                } else {
-                  r.icon = 'jstree-file';
-                  tree.push(r);
-                }
-              });
-            });
-          };
-          tree.push( {'id':cwd, 'parent':'#', 'text':cwd, 'type':'dir'} );
-          walk(cwd);
-        }
-        res.cookie('path', cwd);
-        res.cookie('filename', filename);
-        res.cookie('pm', parameterEdit);
-        res.render('rapid.ejs',{
-          target: txt,
-          filename: filename,
-          parameterEdit: parameterEdit
-        });
-        io.of('/rapid').on('connect', function(socket){
-          socket.emit('tree', tree);
-        });
-      })
-      .catch((err)=>{
-        logger.error('file open failed',err);
-      });
+    const txt = await fs.readFile(target, 'utf-8');
+    res.cookie('path', cwd);
+    res.cookie('filename', filename);
+    res.cookie('pm', parameterEdit);
+    res.render('rapid.ejs',{
+      target: txt,
+      filename: filename,
+      parameterEdit: parameterEdit
+    });
   });
 
   // 保存（アップロードされた編集結果をファイルとして保存）

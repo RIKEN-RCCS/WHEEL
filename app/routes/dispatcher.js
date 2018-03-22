@@ -11,7 +11,7 @@ const logger = getLogger('workflow');
 
 const {interval, remoteHost, jobScheduler} = require('../db/db');
 const executer = require('./executer');
-const { addXSync, asyncNcp, doCleanup} = require('./utility');
+const { addXSync, doCleanup} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
 
@@ -66,7 +66,7 @@ function _whileGetNextIndex(node){
 function _whileIsFinished(cwfDir, node){
   let cwd= path.resolve(cwfDir, node.path);
   let condition = evalConditionSync(node.condition, cwd);
-  return condition
+  return ! condition
 }
 function _foreachGetNextIndex(node){
   if(node.hasOwnProperty('currentIndex')){
@@ -147,7 +147,6 @@ class Dispatcher{
     this.dispatchedTaskList=[]
     this.nodes=wf.nodes;
     this.currentSearchList= this.nodes.map((node,i)=>{
-      if(node === null) return null;
       return isInitialNode(node) ? i : null;
     }).filter((e)=>{
       return e !== null;
@@ -237,19 +236,18 @@ class Dispatcher{
             let tmp = new Set(this.nextSearchList);
             this.currentSearchList=Array.from(tmp.values());
             this.nextSearchList=[];
-            const finished = this.dispatchedTaskList.filter((e)=>{
-              return _isFinishedState(e.state);
-            });
-            const p = finished.map((task)=>{
+            const p = this.dispatchedTaskList.filter((task)=>{
+              return _isFinishedState(task.state);
+            }).map((task)=>{
               return this.deliverOutputFiles(task);
             });
             // check task state
             if(! this.isRunning()){
               clearInterval(this.timeout);
-              let hasFailed=this.dispatchedTaskList.some((task)=>{
+              const hasFailed=this.dispatchedTaskList.some((task)=>{
                 return task.state === 'failed';
               });
-              let projectState = hasFailed ? 'failed': 'finished';
+              const projectState = hasFailed ? 'failed': 'finished';
               resolve(projectState);
             }
             this.dispatching=false;
@@ -338,14 +336,16 @@ class Dispatcher{
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
     await executer.exec(task);
     this.dispatchedTaskList.push(task);
-    let nextTasks=task.next;
+    const nextTasks=Array.from(task.next);
     task.outputFiles.forEach((outputFile)=>{
-      let tmp = outputFile.dst.map((e)=>{
+      const tmp = outputFile.dst.map((e)=>{
         if(e.dstNode !== 'parent'){
           return e.dstNode;
+        }else{
+          return null;
         }
       }).filter((e)=>{
-        return e;
+        return e!==null;
       });
       Array.prototype.push.apply(nextTasks, tmp);
     });
@@ -442,7 +442,7 @@ class Dispatcher{
     dstDir = path.resolve(this.cwfDir, dstDir);
 
 
-    await asyncNcp(srcDir, dstDir)
+    await copy(srcDir, dstDir)
       .catch((err)=>{
         logger.error('fatal error occurred while copying loop dir', err);
       });
@@ -501,7 +501,7 @@ class Dispatcher{
         }).includes(filename);
       }
       logger.debug('copy from', srcDir, 'to ',dstDir);
-      await asyncNcp(srcDir, dstDir, options);
+      await copy(srcDir, dstDir, options);
 
       let data = await promisify(fs.readFile)(path.resolve(srcDir, targetFile));
       data = data.toString();
