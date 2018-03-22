@@ -168,16 +168,13 @@ header {
     cursor: pointer;
 }
 
-#save_button:hover{
-    color: #CCFF00;
-}
-
 #revert_button{
     display: inline-flex;    
     margin: 0 4px 0 8px;
     cursor: pointer;
 }
 
+/* 'save' css -> js */
 #revert_button:hover{
     color: #CCFF00;
 }

@@ -38,7 +38,8 @@ $(() => {
   let nodeTypeStack = [''];
   let dirStack = [rootDir];
   let wfStack = [rootWorkflow];
-  //let childrenViewBoxList = [];
+  //for 'save' button control
+  let presentState = '';
 
   let projectLootDir = currentWorkDir;
 
@@ -179,6 +180,8 @@ $(() => {
   let nodes = [];
   let parentnode = [];
   let selectedNode = 0;
+
+  // container of hostlist info
   let selectedParent = 0;
   let remotehost = '';
   let remotehostArray = [];
@@ -236,7 +239,6 @@ $(() => {
         vm.node = wf[selectedParent];
       }
       drawNodes(wf.nodes);
-      console.log(wf);
       drawParentFileRelation(wf);
       drawLinks(nodes);
       drawParentLinks(parentnode, nodes);
@@ -251,6 +253,7 @@ $(() => {
 
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
+      presentState = projectJson.state;
 
       if (projectJson.state === 'running') {
         $('#project_state').css('background-color', '#88BB00');
@@ -314,21 +317,40 @@ $(() => {
     fb.request('getFileList', currentWorkDir, null);
     sio.emit('cleanProject', true);
   });
+
   $('#stop_menu').on('click', function () {
     sio.emit('stopProject', true);
   });
 
-  //save,revert
+  //save
   $('#save_button').on('click', function () {
-    sio.emit('saveProject', null, (result) => {
-    });
+    if (presentState === 'not-started') {
+      sio.emit('saveProject', null, (result) => {
+      });
+    }
+  });
+  $('#save_button').mouseover(function () {
+    if (presentState === 'not-started') {
+      $('#save_button_img').attr("src", "/image/btn_save_h.png");
+      $('#save_button').css("color", "#CCFF00");
+    }
+  });
+  $('#save_button').mouseleave(function () {
+    $('#save_button_img').attr("src", "/image/btn_save_n.png");
+    $('#save_button').css("color", "#FFFFFF");
   });
 
+  //revert
   $('#revert_button').on('click', function () {
     sio.emit('revertProject', null, (result) => {
     });
   });
-
+  $('#revert_button').mouseover(function () {
+    $('#revert_button_img').attr("src", "/image/btn_reset_h.png");
+  });
+  $('#revert_button').mouseleave(function () {
+    $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
+  });
 
   // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function () {
@@ -777,20 +799,6 @@ $(() => {
   });
   $('#clean_button').mouseleave(function () {
     $('#clean_button').attr("src", "/image/btn_replay_n.png");
-  });
-
-  $('#save_button').mouseover(function () {
-    $('#save_button_img').attr("src", "/image/btn_save_h.png");
-  });
-  $('#save_button').mouseleave(function () {
-    $('#save_button_img').attr("src", "/image/btn_save_n.png");
-  });
-
-  $('#revert_button').mouseover(function () {
-    $('#revert_button_img').attr("src", "/image/btn_reset_h.png");
-  });
-  $('#revert_button').mouseleave(function () {
-    $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
   });
 
   var pos = $("#titleUserName").offset();
