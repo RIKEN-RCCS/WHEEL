@@ -7,8 +7,8 @@ const glob = require('glob');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const component = require('./workflowComponent');
-const {isValidName} = require('./utility');
-const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename} = require('./project');
+const {isValidName, replacePathsep} = require('./utility');
+const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename, getRootDir} = require('./project');
 
 function isInitialNode(node){
   if(node === null) return false;
@@ -160,27 +160,23 @@ async function readChildWorkflow(label, node){
   return _readWorkflow(_getChildWorkflowFilename(label, node));
 }
 
-
-
 async function createNode(label, request){
-  const node=component.factory(request.type, request.pos, getCwfFilename(label));
+  const parentRelativePath = replacePathsep(path.relative(getRootDir(label),getCurrentDir(label)));
+  const node=component.factory(request.type, request.pos, parentRelativePath);
 
   const dirName=path.resolve(getCurrentDir(label),request.type);
   const actualDirname = await _makeDir(dirName, 0)
-  let tmpPath=path.relative(getCurrentDir(label),actualDirname);
-  if(! tmpPath.startsWith('.')){
-    tmpPath='./'+tmpPath;
-  }
-  node.path=tmpPath;
   node.name=path.basename(actualDirname);
+  node.path=node.name;
   node.index=pushNode(label, node);
   let filename = hasChild(node) ? node.jsonFile : '.gitkeep';
-  filename = path.resolve(getCurrentDir(label),node.path, filename);
+  filename = path.resolve(getCurrentDir(label), node.path, filename);
   const data = hasChild(node)? JSON.stringify(node,null,4) : '';
   await promisify(fs.writeFile)(filename, data);
   await gitAdd(label, filename);
   return node.index
 }
+
 function removeNode(label, index){
   const cwf = getCwf(label);
   cwf.nodes[index]=null;

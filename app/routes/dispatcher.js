@@ -512,8 +512,8 @@ class Dispatcher{
       await promisify(fs.writeFile)(rewriteFile, data);
 
       let newNode = Object.assign({}, node);
-      newNode.path = path.relative(this.cwfDir, dstDir);
-      newNode.parent = path.resolve(path.dirname(node.parent), node.path, node.jsonFile);
+      newNode.name= path.relative(this.cwfDir, dstDir);
+      newNode.path = path.name;
       let p = this._delegate(newNode)
       .then(()=>{
         if(newNode.state === 'finished'){
