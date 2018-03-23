@@ -32,7 +32,10 @@ function localExec(task, cb){
   addXSync(script);
   //TODO env, uid, gidを設定する
   const options = {
-    "cwd": task.workingDir
+    "cwd": task.workingDir,
+    "env": {
+      "WHEEL_CURRENT_INDEX": task.currentIndex.toString()
+    }
   }
   const cp = child_process.spawn(script, options, (err)=>{
     if(err){
@@ -124,13 +127,18 @@ async function remoteExecAdaptor(ssh, task, cb){
   let passToSSHerr=(data)=>{
     logger.ssherr(data.toString().trim());
   }
+  const options = {
+    "env": {
+      "WHEEL_CURRENT_INDEX": task.currentIndex.toString()
+    }
+  }
   ssh.on('stdout', passToSSHout);
   ssh.on('stderr', passToSSHerr);
   logger.debug('exec (remote)', cmd);
   //TODO ここで使ったsshオブジェクトを返せられれば後で接続を切ることができるが
   //Promiseしか返ってこないので無理
   //接続完了時にconnect eventを投げるか?
-  let rt = await ssh.exec(cmd);
+  let rt = await ssh.exec(cmd, options);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
   return postProcess(ssh, task, rt, cb);
@@ -177,7 +185,12 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   }
   ssh.on('stdout', getJobID);
   logger.debug('submit job:', submitCmd);
-  let rt = await ssh.exec(submitCmd);
+  const options = {
+    "env": {
+      "WHEEL_CURRENT_INDEX": task.currentIndex.toString()
+    }
+  }
+  let rt = await ssh.exec(submitCmd, options);
   ssh.off('stdout', getJobID);
   //TODO ssh.execからstdout/stderrを返すように変更して整理する
   //

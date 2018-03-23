@@ -1,4 +1,4 @@
-const fs= require('fs');
+const fs= require('fs-extra');
 const path= require('path');
 const {promisify} = require('util');
 const child_process = require('child_process');
@@ -334,6 +334,7 @@ class Dispatcher{
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
+    if(this.wf.currentIndex) task.currentIndex=this.wf.currentIndex;
     await executer.exec(task);
     this.dispatchedTaskList.push(task);
     const nextTasks=Array.from(task.next);
@@ -364,13 +365,10 @@ class Dispatcher{
   async _createChild(node){
     let childDir= path.resolve(this.cwfDir, node.path);
     let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
-    let childWF = await promisify(fs.readFile)(childWorkflowFilename)
-      .then((data)=>{
-        return JSON.parse(data);
-      })
-      .catch((err)=>{
-        logger.error('fatal error occurred while loading sub workflow', err);
-      });
+    let childWF = await fs.readJSON(childWorkflowFilename);
+    if(node.currentIndex){
+      childWF.currentIndex = node.currentIndex;
+    }
     // this.sio must not pass to child
     return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime);
   }
