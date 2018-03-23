@@ -41,8 +41,10 @@ async function validationCheck(label, workflow, dir, sio){
   workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
     // fix parent property
     // parent is relative path from root project dir to parent component dir after 0d2c9bc commit
-    if(path.posix.isAbsolute(node.parent) || path.win32.isAbsolute(node.parent)){
-      node.parent = replacePathsep(path.relative(getRootDir(label),dir));
+    if(node.parent){
+      if(path.posix.isAbsolute(node.parent) || path.win32.isAbsolute(node.parent)){
+        node.parent = replacePathsep(path.relative(getRootDir(label),dir));
+      }
     }
     if(node.type === 'task'){
       if(node.path == null) promises.push(Promise.reject(new Error(`illegal path ${node.null}`)));
