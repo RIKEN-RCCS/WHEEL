@@ -272,7 +272,7 @@ async function onRunProject(sio, label, rwfFilename){
   }
   rwf.cleanupFlag = cleanup;
   setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio));
-  sio.emit('projectState', getProjectState(label));
+  sio.emit('projectJson', await readProjectJson(label));
   const timeout = setInterval(()=>{
     const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
     overwriteCwf(label, cwf);
@@ -311,14 +311,20 @@ async function onCleanProject(sio, label){
 
 async function onSaveProject(sio, label){
   logger.debug("saveProject event recieved");
-  await commitProject(label);
-  sio.emit('projectState', getProjectState(label));
+  const projectState=getProjectState(label);
+  if('not-started'=== projectState){
+    await commitProject(label);
+    sio.emit('projectJson', await readProjectJson(label));
+  }else{
+    logger.error(projectState,'project can not be saved');
+  }
 }
 async function onRevertProject(sio, label){
   logger.debug("revertProject event recieved");
   await revertProject(label);
+  await setProjectState(label, 'not-started');
   await sendWorkflow(sio, label);
-  sio.emit('projectState', getProjectState(label));
+  sio.emit('projectJson', await readProjectJson(label));
 }
 
 function onTaskStateListRequest(sio, label, msg){

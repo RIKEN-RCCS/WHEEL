@@ -4,7 +4,7 @@ const {promisify} = require("util");
 const fs = require("fs-extra");
 const glob = require('glob');
 
-const {add, getGitOperator}= require("./gitOperator");
+const {getGitOperator}= require("./gitOperator");
 const {getDateString, replacePathsep} = require('./utility');
 const {getLogger} = require('../logSettings');
 
