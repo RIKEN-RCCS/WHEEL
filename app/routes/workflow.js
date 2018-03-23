@@ -39,6 +39,11 @@ async function validationCheck(label, workflow, dir, sio){
   }
   let hosts=[];
   workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
+    // fix parent property
+    // parent is relative path from root project dir to parent component dir after 0d2c9bc commit
+    if(path.posix.isAbsolute(node.parent) || path.win32.isAbsolute(node.parent)){
+      node.parent = replacePathsep(path.relative(getRootDir(label),dir));
+    }
     if(node.type === 'task'){
       if(node.path == null) promises.push(Promise.reject(new Error(`illegal path ${node.null}`)));
       if(node.host !== 'localhost') hosts.push(node.host);
@@ -94,16 +99,18 @@ async function validationCheck(label, workflow, dir, sio){
 }
 
 async function sendWorkflow(sio, label){
-  const rt = Object.assign({}, getCwf(label));
+  const cwf = getCwf(label);
+  const rt = JSON.parse(JSON.stringify(cwf));
   const promises = rt.nodes.map((child)=>{
     if(child === null) return child;
     if(child.handler) delete child.handler;
     if(hasChild(child)){
       return readChildWorkflow(label, child)
         .then((tmp)=>{
-          child.nodes=tmp.nodes.map((e)=>{
-            if( e!== null && e.handler) delete e.handler;
-            return e;
+          child.nodes=tmp.nodes.map((grandson)=>{
+            if(grandson === null) return grandson;
+            if( grandson.handler) delete grandson.handler;
+            return grandson;
           });
         })
     }
@@ -127,7 +134,7 @@ async function onCreateNode(sio, label, msg){
 
   try{
     await write(label);
-    sio.emit('workflow', getCwf(label));
+    sendWorkflow(sio, label);
   }catch(err){
     logger.error('node create failed', err);
   }
@@ -173,7 +180,7 @@ async function onUpdateNode(sio, label, msg){
     }
     try{
       await write(label)
-      sio.emit('workflow', getCwf(label));
+      sendWorkflow(sio, label);
     }catch(err){
       logger.error('node update failed', err);
     }
@@ -200,7 +207,7 @@ async function onRemoveNode(sio, label, index){
       try{
         await fs.remove(dirName);
         await write(label);
-        sio.emit('workflow', getCwf(label));
+        sendWorkflow(sio, label);
       }catch(err){
         logger.error('remove node failed: ', err);
       }
@@ -212,7 +219,7 @@ async function onAddLink(sio, label, msg){
   addLink(label, msg.src, msg.dst, msg.isElse);
   try{
     await write(label)
-    sio.emit('workflow', getCwf(label));
+      sendWorkflow(sio, label);
   }catch(err){
     logger.error('add link failed: ', err);
   }
@@ -223,7 +230,7 @@ function onRemoveLink(sio, label, msg){
 
   write(label)
     .then(()=>{
-      sio.emit('workflow', getCwf(label));
+      sendWorkflow(sio, label);
     })
     .catch((err)=>{
       logger.error('remove link failed: ', err);
@@ -235,7 +242,7 @@ async function onAddFileLink(sio, label, msg){
   addFileLink(label, msg.src, msg.dst, msg.srcName, msg.dstName);
   try{
     await write(label);
-    sio.emit('workflow', getCwf(label));
+      sendWorkflow(sio, label);
   }catch(err){
     logger.error('add filelink failed:', err);
   }
@@ -246,7 +253,7 @@ async function onRemoveFileLink(sio, label, msg){
   removeFileLink(label, msg.src, msg.dst, msg.srcName, msg.dstName);
   try{
     await write(label);
-    sio.emit('workflow', getCwf(label));
+      sendWorkflow(sio, label);
   }catch(err){
     logger.error('remove file link failed:', err);
   }
