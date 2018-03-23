@@ -1,29 +1,51 @@
 "use strict";
 const path = require("path");
 const express = require('express');
+const bcrypt = require('bcrypt');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('login');
-const {userAccount} = require('../db/db')
+const {userAccount, saltRound} = require('../db/db')
 
 module.exports = function(io){
   const sio=io.of('/admin');
-  sio.on('connect', (socket) => {
-    const doAndEmit = async function(eventName, func, msg){
-      logger.debug(eventName,"request recieved", msg);
-      await func(msg);
-      sio.emit('accountList', userAccount.getAll());
-    }
-
-    socket.on('getAccountList', ()=>{
-      sio.emit('accountList', userAccount.getAll());
+  function sendAccountList(){
+    const coppiedAccounts = JSON.parse(JSON.stringify(userAccount.getAll()));
+    coppiedAccounts.forEach((account)=>{
+      account.password=null;
     });
-    socket.on('addAccount',    doAndEmit.bind(null, 'addAccount', userAccount.add.bind(userAccount)));
-    socket.on('removeAccount', doAndEmit.bind(null, 'removeAccount', userAccount.remove.bind(userAccount)));
-    socket.on('updateAccount', doAndEmit.bind(null, 'updateAccount', userAccount.update.bind(userAccount)));
+    sio.emit('accountList', coppiedAccounts);
+  }
+
+  sio.on('connect', (socket) => {
+    socket.on('addAccount', async (account)=>{
+      logger.debug("addAccount request recieved", JSON.stringify(account, ['name','description','gid','uid'],4));
+      account.password = await bcrypt.hash(account.password, saltRound);
+      userAccount.add(account);
+      sendAccountList();
+    });
+    socket.on('updateAccount', async (account)=>{
+      logger.debug("updateAccount request recieved", JSON.stringify(account, ['name','description','gid','uid'],4));
+      if(account.password === null || account.password === undefined){
+        const id = userAccount.getID('name', account.name);
+        const oldPassword = userAccount.get(id).password;
+        account.password = oldPassword;
+      }else{
+        logger.debug('password changed',account.name);
+        account.password = await bcrypt.hash(account.password, saltRound);
+      }
+      userAccount.update(account);
+      sendAccountList();
+    });
+    socket.on('removeAccount', async (account)=>{
+      logger.debug("removeAccount request recieved", JSON.stringify(account, ['name','description','gid','uid'],4));
+      await userAccount.remove(account);
+      sendAccountList();
+    });
+    socket.on('getAccountList', sendAccountList);
   });
+
   const router = express.Router();
   router.get('/', function (req, res, next) {
-    //TODO 認証情報の確認とadminじゃなければ/homeにリダイレクト
     res.sendFile(path.resolve(__dirname,'../views/admin.html'));
   });
   return router;

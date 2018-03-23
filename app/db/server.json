@@ -7,6 +7,7 @@
     "interval": 1000,
     "admin": "admin",
     "defaultCleanupRemoteRoot": 0,
+    "saltRound": 10,
     "scheduler": {
         "TCS": "./config/pjsub.sh",
         "TORQUE": "./config/qsub.sh"

@@ -1,7 +1,7 @@
 [
     {
         "name": "admin",
-        "password": "admin password",
+        "password": "$2a$10$fB8uQmP9AcgEPMl4CVEXeO6.PkYjfoyTF9MMTx1VT5tHb8dfHzUwi",
         "workDirectory": "admin",
         "description": "default administrator entry",
         "id": "65928270-2597-11e8-8d88-bd43502ced03",
@@ -10,7 +10,7 @@
     },
     {
         "name": "example",
-        "password": "example",
+        "password": "$2a$10$RNz8rlA5XTIrfZAUNjlGA.dhPMOKVZmnRvjXjn5HWWmzOnbTNegcG",
         "workDirectory": "example",
         "description": "normal user example",
         "id": "26f044d0-2597-11e8-817d-69a7a8056b8d",

@@ -6,6 +6,7 @@ const {promisify} = require('util');
 const express = require('express');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const bcrypt = require('bcrypt');
 
 const {admin, userAccount} = require('../db/db');
 const {getLogger} = require('../logSettings');
@@ -13,16 +14,17 @@ const logger = getLogger('login');
 
 passport.use(new LocalStrategy(
   (username, password, done)=>{
-    //TODO  sessionを使ってログイン済だったらdoneを返す
     const account = userAccount.query('name', username);
     if(!account){
       return done(null, false, {message: 'invalid user id'});
     }
-    //TODO passwordをhashで保存するように変更した上で、hash後の値を比較
-    if(account.password!== password){
-      return done(null, false, {message: 'invalid password'});
-    }
-    return done(null, username);
+    bcrypt.compare(password, account.password, (err, result)=>{
+      if(result){
+        return done(null, username);
+      }else{
+        return done(null, false, {message: 'invalid password'});
+      }
+    });
   })
 );
 
