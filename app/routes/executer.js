@@ -33,10 +33,10 @@ function localExec(task, cb){
   //TODO env, uid, gidを設定する
   const options = {
     "cwd": task.workingDir,
-    "env": {
-      "WHEEL_CURRENT_INDEX": task.currentIndex.toString()
-    }
+    "env": {}
   }
+  if(task.currentIndex) options.env.WHEEL_CURRENT_INDEX=task.currentIndex.toString();
+
   const cp = child_process.spawn(script, options, (err)=>{
     if(err){
       logger.warn(task.name, 'failed.', err);
@@ -118,27 +118,22 @@ async function postProcess(ssh, task, rt, cb){
 async function remoteExecAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task)
   logger.debug("prepare done");
-  let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
-  let workdir=path.posix.dirname(scriptAbsPath);
-  let cmd = `cd ${workdir} && ${scriptAbsPath}`;
-  let passToSSHout=(data)=>{
+  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
+  const workdir=path.posix.dirname(scriptAbsPath);
+  let cmd = `cd ${workdir} &&`;
+  if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
+  cmd = cmd + scriptAbsPath;
+
+  const passToSSHout=(data)=>{
     logger.sshout(data.toString().trim());
   }
-  let passToSSHerr=(data)=>{
+  const passToSSHerr=(data)=>{
     logger.ssherr(data.toString().trim());
-  }
-  const options = {
-    "env": {
-      "WHEEL_CURRENT_INDEX": task.currentIndex.toString()
-    }
   }
   ssh.on('stdout', passToSSHout);
   ssh.on('stderr', passToSSHerr);
   logger.debug('exec (remote)', cmd);
-  //TODO ここで使ったsshオブジェクトを返せられれば後で接続を切ることができるが
-  //Promiseしか返ってこないので無理
-  //接続完了時にconnect eventを投げるか?
-  let rt = await ssh.exec(cmd, options);
+  let rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
   return postProcess(ssh, task, rt, cb);
@@ -149,16 +144,17 @@ function localSubmit(qsub, task, cb){
 }
 async function remoteSubmitAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task);
-  let scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
-  let workdir=path.posix.dirname(scriptAbsPath);
+  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
+  const workdir=path.posix.dirname(scriptAbsPath);
   let submitCmd = `cd ${workdir} &&`
+  if(task.currentIndex) submitCmd = submitCmd+ `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
 
-  let hostinfo = remoteHost.get(task.remotehostID);
-  let JS = jobScheduler[hostinfo.jobScheduler];
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const JS = jobScheduler[hostinfo.jobScheduler];
   submitCmd += ` ${JS.submit}`
 
   let queue = null;
-  let queueList = hostinfo.queue.split(',');
+  const queueList = hostinfo.queue.split(',');
   if(task.queue in queueList){
     queue = task.queue;
   }else if (queueList.length > 0){
@@ -168,6 +164,8 @@ async function remoteSubmitAdaptor(ssh, task, cb){
     submitCmd += ` ${JS.queueOpt}${queue}`;
   }
   submitCmd += ` ${scriptAbsPath}`;
+
+  const output=[];
 
   let jobID=null;
   let getJobID = (data)=>{
@@ -185,12 +183,8 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   }
   ssh.on('stdout', getJobID);
   logger.debug('submit job:', submitCmd);
-  const options = {
-    "env": {
-      "WHEEL_CURRENT_INDEX": task.currentIndex.toString()
-    }
-  }
-  let rt = await ssh.exec(submitCmd, options);
+  let rt = await ssh.exec(submitCmd, {}, output, output);
+  console.log(output);
   ssh.off('stdout', getJobID);
   //TODO ssh.execからstdout/stderrを返すように変更して整理する
   //
