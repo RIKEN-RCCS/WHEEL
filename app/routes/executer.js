@@ -142,6 +142,17 @@ async function remoteExecAdaptor(ssh, task, cb){
 function localSubmit(qsub, task, cb){
   console.log('localSubmit function is not implimented yet');
 }
+
+function isFinished(JS, outputText){
+  logger.trace(outputText);
+  const reFinishedState = new RegExp(JS.reFinishedState);
+  let finished=reFinishedState.test(outputText);
+  if(finished) return true;
+  const reFailedState  = new RegExp(JS.reFailedState);
+  finished=reFailedState.test(outputText);
+  return finished;
+}
+
 async function remoteSubmitAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task);
   const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
@@ -165,28 +176,17 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   }
   submitCmd += ` ${scriptAbsPath}`;
 
-  const output=[];
-
-  let jobID=null;
-  let getJobID = (data)=>{
-    logger.debug('getJobID() called');
-    let outputText=data.toString();
-    logger.debug(outputText);
-    let re = new RegExp(JS.reJobID);
-    const result = re.exec(outputText);
-    if(result === null){
-      logger.warn('getJobID failed');
-      return
-    }
-    jobID = result[1];
-    logger.info('jobID:', jobID);
-  }
-  ssh.on('stdout', getJobID);
   logger.debug('submit job:', submitCmd);
-  let rt = await ssh.exec(submitCmd, {}, output, output);
-  ssh.off('stdout', getJobID);
-  //TODO ssh.execからstdout/stderrを返すように変更して整理する
-  //
+  const output=[];
+  const rt = await ssh.exec(submitCmd, {}, output, output);
+  const re = new RegExp(JS.reJobID);
+  const result = re.exec(output.join());
+  if(result === null){
+    logger.warn('getJobID failed');
+    return
+  }
+  const jobID = result[1];
+
   if(rt !== 0){
     logger.warn('remote submit command failed!', rt);
     logger.warn(error);
@@ -198,32 +198,23 @@ async function remoteSubmitAdaptor(ssh, task, cb){
     cb(false);
     return;
   }
-  let finished=false;
-  let isFinished = (data)=>{
-    logger.debug('isFinished() called');
-    let outputText=data.toString();
-    logger.debug(outputText);
-    let reFinishedState = new RegExp(JS.reFinishedState);
-    finished=reFinishedState.test(outputText);
-    if(finished) return;
-    let reFailedState  = new RegExp(JS.reFailedState);
-    finished=reFailedState.test(outputText);
-  }
-  ssh.on('stdout', isFinished);
+  logger.debug('submit success:', submitCmd, jobID);
 
   let timeout = setInterval(async ()=>{
-    let cmd=`${JS.stat} ${jobID}`;
-    logger.debug(cmd);
-    let rt = await ssh.exec(cmd);
+    const cmd=`${JS.stat} ${jobID}`;
+    logger.trace(cmd);
+    const output=[];
+    const rt = await ssh.exec(cmd, {}, output, output);
     if(rt !== 0){
       logger.warn('remote stat command failed!', rt);
       logger.warn(error);
       return
     }
-    logger.debug(jobID,'is finished', finished);
+    const finished = isFinished(output.join());
+    logger.trace(jobID,'is finished', finished);
     if(finished){
+      logger.debug(jobID,'is finished');
       clearInterval(timeout);
-      ssh.off('stdout', isFinished);
       postProcess(ssh, task, rt, cb);
     }
   },5000);

@@ -14,6 +14,7 @@ const executer = require('./executer');
 const { addXSync, doCleanup} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
+const {getSsh} = require('./sshManager');
 
 async function cancelRemoteJob(task, ssh){
   const hostinfo = remoteHost.get(task.remotehostID);
