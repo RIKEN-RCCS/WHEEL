@@ -511,7 +511,7 @@ class Dispatcher{
 
       let newNode = Object.assign({}, node);
       newNode.name= path.relative(this.cwfDir, dstDir);
-      newNode.path = path.name;
+      newNode.path = newNode.name;
       let p = this._delegate(newNode)
       .then(()=>{
         if(newNode.state === 'finished'){

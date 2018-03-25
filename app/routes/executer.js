@@ -184,7 +184,6 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   ssh.on('stdout', getJobID);
   logger.debug('submit job:', submitCmd);
   let rt = await ssh.exec(submitCmd, {}, output, output);
-  console.log(output);
   ssh.off('stdout', getJobID);
   //TODO ssh.execからstdout/stderrを返すように変更して整理する
   //
