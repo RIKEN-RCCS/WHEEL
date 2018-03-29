@@ -80,14 +80,16 @@ async function postProcess(ssh, task, rt, cb){
       return e.name;
     }
   });
-  const outputFiles= `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
-  try{
-    logger.debug('try to get outputFiles', outputFiles, '\n  from:', task.remoteWorkingDir, '\n  to:',task.workingDir);
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null)
-  }catch(e){
-    logger.warn('falied to get outputFiles',e);
-    cb(false);
-    return
+  if(outputFilesArray.length>0){
+    const outputFiles= `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
+    try{
+      logger.debug('try to get outputFiles', outputFiles, '\n  from:', task.remoteWorkingDir, '\n  to:',task.workingDir);
+      await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null)
+    }catch(e){
+      logger.warn('falied to get outputFiles',e);
+      cb(false);
+      return
+    }
   }
 
   //get files which match include filter
@@ -101,6 +103,8 @@ async function postProcess(ssh, task, rt, cb){
       logger.warn('faild to get files',e);
     }
   }
+
+  //clean up remote working directory
   if(task.doCleanup){
     logger.debug('(remote) rm -fr', task.remoteWorkingDir);
     try{
@@ -146,7 +150,6 @@ function localSubmit(qsub, task, cb){
 }
 
 function isFinished(JS, outputText){
-  logger.trace(outputText);
   const reFinishedState = new RegExp(JS.reFinishedState);
   let finished=reFinishedState.test(outputText);
   if(finished) return true;
@@ -178,7 +181,7 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   }
   submitCmd += ` ${scriptAbsPath}`;
 
-  logger.debug('submit job:', submitCmd);
+  logger.debug('submitting job:', submitCmd);
   const output=[];
   const rt = await ssh.exec(submitCmd, {}, output, output);
   if(rt !== 0){
@@ -190,26 +193,25 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   const re = new RegExp(JS.reJobID);
   const result = re.exec(output.join());
   if(result === null || result[1] === null){
-    logger.warn('getJobID failed\nfull output from submmit command:', output.join());
+    logger.warn('getJobID failed\nsubmit command:',submitCmd,'\nfull output from submmit command:', output.join());
     cb(false);
     return
   }
   const jobID = result[1];
-  logger.debug('submit success:', submitCmd, jobID);
+  logger.info('submit success:', scriptAbsPath, jobID);
 
   const timeout = setInterval(async ()=>{
-    const cmd=`${JS.stat} ${jobID}`;
-    logger.trace('job stat:',cmd);
+    const statCmd=`${JS.stat} ${jobID}`;
     const output=[];
-    const rt = await ssh.exec(cmd, {}, output, output);
+    const rt = await ssh.exec(statCmd, {}, output, output);
     if(rt !== 0){
-      logger.warn('remote stat command failed!\ncmd:',cmd,'\nrt:', rt);
+      logger.warn('remote stat command failed!\ncmd:',statCmd,'\nrt:', rt);
       return
     }
     const finished = isFinished(output.join());
-    logger.trace('is',jobID,'finished', finished,'\n',output.join());
+    logger.trace('is',jobID,'finished', finished,'\n',output.join()); //TODO traceはどこにも出力されていないはず。consoleのみに出す?
     if(finished){
-      logger.debug(jobID,'is finished');
+      logger.info(jobID,'is finished');
       clearInterval(timeout);
       postProcess(ssh, task, rt, cb);
     }
