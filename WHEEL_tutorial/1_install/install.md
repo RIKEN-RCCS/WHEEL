@@ -18,10 +18,10 @@ WHEELのダウンロード先は、次のURLです。
 
 サイトへ遷移後、下図内の手順に従い、WHEELのモジュールをユーザマシンへダウンロードします。
 
-1. ![img](img\WHEEL_download_cloud.PNG "download")ボタンをクリックします。
+1. ![img](https://gitlab.com/aicshud/WHEEL/blob/dev2017/WHEEL_tutorial/1_install/img/WHEEL_download_cloud.PNG "download")ボタンをクリックします。
 1. 拡張子[ tar.gz ]を選択します。  
 
-![img](img\WHEEL_download.PNG "download")  
+![img](https://gitlab.com/aicshud/WHEEL/blob/dev2017/WHEEL_tutorial/1_install/img/WHEEL_download.PNG "download")  
 
 
 ### WHEELのインストール
