@@ -115,6 +115,13 @@ async function postProcess(ssh, task, rt, cb){
   cb(rt===0);
 }
 
+const passToSSHout=(data)=>{
+  logger.sshout(data.toString().trim());
+}
+const passToSSHerr=(data)=>{
+  logger.ssherr(data.toString().trim());
+}
+
 async function remoteExecAdaptor(ssh, task, cb){
   await prepareRemoteExecDir(ssh, task)
   logger.debug("prepare done");
@@ -124,18 +131,13 @@ async function remoteExecAdaptor(ssh, task, cb){
   if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
   cmd = cmd + scriptAbsPath;
 
-  const passToSSHout=(data)=>{
-    logger.sshout(data.toString().trim());
-  }
-  const passToSSHerr=(data)=>{
-    logger.ssherr(data.toString().trim());
-  }
   ssh.on('stdout', passToSSHout);
   ssh.on('stderr', passToSSHerr);
   logger.debug('exec (remote)', cmd);
   let rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
+
   return postProcess(ssh, task, rt, cb);
 }
 
@@ -179,39 +181,33 @@ async function remoteSubmitAdaptor(ssh, task, cb){
   logger.debug('submit job:', submitCmd);
   const output=[];
   const rt = await ssh.exec(submitCmd, {}, output, output);
+  if(rt !== 0){
+    logger.warn('remote submit command failed!\ncmd:',submitCmd,'\nrt:', rt);
+    cb(false);
+    return
+  }
+
   const re = new RegExp(JS.reJobID);
   const result = re.exec(output.join());
-  if(result === null){
-    logger.warn('getJobID failed');
+  if(result === null || result[1] === null){
+    logger.warn('getJobID failed\nfull output from submmit command:', output.join());
+    cb(false);
     return
   }
   const jobID = result[1];
-
-  if(rt !== 0){
-    logger.warn('remote submit command failed!', rt);
-    logger.warn(error);
-    cb(false);
-    return
-  }
-  if(jobID===null){
-    logger.warn('illegal jobID');
-    cb(false);
-    return;
-  }
   logger.debug('submit success:', submitCmd, jobID);
 
-  let timeout = setInterval(async ()=>{
+  const timeout = setInterval(async ()=>{
     const cmd=`${JS.stat} ${jobID}`;
-    logger.trace(cmd);
+    logger.trace('job stat:',cmd);
     const output=[];
     const rt = await ssh.exec(cmd, {}, output, output);
     if(rt !== 0){
-      logger.warn('remote stat command failed!', rt);
-      logger.warn(error);
+      logger.warn('remote stat command failed!\ncmd:',cmd,'\nrt:', rt);
       return
     }
     const finished = isFinished(output.join());
-    logger.trace(jobID,'is finished', finished);
+    logger.trace('is',jobID,'finished', finished,'\n',output.join());
     if(finished){
       logger.debug(jobID,'is finished');
       clearInterval(timeout);
