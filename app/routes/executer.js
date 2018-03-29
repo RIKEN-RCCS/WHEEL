@@ -33,7 +33,8 @@ function localExec(task, cb){
   //TODO env, uid, gidを設定する
   const options = {
     "cwd": task.workingDir,
-    "env": {}
+    "env": process.env,
+    "shell": true
   }
   if(task.currentIndex) options.env.WHEEL_CURRENT_INDEX=task.currentIndex.toString();
 
