@@ -157,13 +157,13 @@ class Dispatcher{
   }
 
   deliverOutputFiles(node){
-    const promises = node.outputFiles.map(async(e)=>{
+    return Promise.all(node.outputFiles.map(async(e)=>{
       //memo src can be glob pattern
       const src = e.name;
       const srcRoot= path.resolve(this.cwfDir, node.path);
       const srces = await promisify(glob)(src, {cwd: srcRoot});
-      const p1 = srces.map((srcFile)=>{
-        const p2 = e.dst.map(async (dst)=>{
+      return Promise.all(srces.map((srcFile)=>{
+        return Promise.all(e.dst.map(async (dst)=>{
           const tmp = dst.dstNode === "parent" ? "./" : this.wf.nodes[dst.dstNode].path;
           const dstName = dst.dstName ? convertPathSep(dst.dstName) : "";
           let dstRoot = path.resolve(this.cwfDir, tmp);
@@ -192,19 +192,16 @@ class Dispatcher{
           const oldPath = path.resolve(srcRoot, srcFile);
           logger.debug('make symlink from', oldPath, "to", newPath);
           const stats = await promisify(fs.stat)(oldPath);
-          const type = stats.isDirectory ? "dir" : "file";
+          const type = stats.isDirectory() ? "dir" : "file";
           return promisify(fs.symlink)(oldPath, newPath, type)
           .catch((e)=>{
             if (e.code==='EPERM'){
               return copy(oldPath, newPath);
             }
           });
-        });
-        return Promise.all(p2);
-      });
-      return Promise.all(p1);
-    });
-    return Promise.all(promises);
+        }));
+      }));
+    }));
   }
 
   dispatch(){
