@@ -21,15 +21,15 @@ Taskは、WHEELにおいて、ジョブを投入する計算機の設定やジ�
 
 > コンポーネントの作成とプロパティの設定
 
-![img](img\task_exe_1.png "task_exe_1")  
+![img](./img/task_exe_1.png "task_exe_1")  
 
 ファイルの設定が完了後、プロジェクトを保存します。  
 保存前後でワークフロー画面上部[ Create date ]が更新されることを確認します。
 
 > プロジェクトを保存する
 
-![img](img\before_save.png "before_save")  
-![img](img\after_save.png "after_save")  
+![img](./img/before_save.png "before_save")  
+![img](./img/after_save.png "after_save")  
 
 
 ### ワークフローの実行と実行状況の確認
@@ -40,7 +40,7 @@ Taskは、WHEELにおいて、ジョブを投入する計算機の設定やジ�
 
 > 実行
 
-![img](img\run.png "run")  
+![img](./img/run.png "run")  
 
 実行ボタン押下後、実行の状況の確認はグラフビュー画面、リストビュー画面のいずれかから確認することができます。
 
@@ -48,20 +48,20 @@ Taskは、WHEELにおいて、ジョブを投入する計算機の設定やジ�
 
 グラフビュー画面では、ワークフロー画面上部よりプロジェクト全体の進行状況とコンポーネント右上のアイコンにより実行状況を確認できます。  
 
-![img](img\running.png "runnig_graghview")  
+![img](./img/running.png "runnig_graghview")  
 
 > リストビュー画面
 
 リストビュー画面では、各コンポーネントの進行状況がグラフビュー画面より詳細に表示されます。
 
-![img](img\running_ListView.png "running_listview")  
+![img](./img/running_ListView.png "running_listview")  
 
 > 実行完了
 
 実行が完了したとき、状態は[ finish ]へと変化し、  
 また、ログエリア[ Stdout ]に「Hello World」と表示されます。  
 
-![img](img\finish.png "finish")  
+![img](./img/finish.png "finish")  
 
 
 以上が基本的なコンポーネント設定、ワークフローの実行手順となります。  
@@ -90,11 +90,11 @@ WHEELのPS用ファイル編集機能によりインプットデータにパラ�
 
 コンポーネント内に配置しているコンポーネント（子コンポーネント）は、親コンポーネントにアイコンとして表示されます。
 
-![img](img\PS_workflow.png "PS_workflow")  
+![img](./img/PS_workflow.png "PS_workflow")  
 
 > PSワークフロー　子階層
 
-![img](img\PS_child_workflow.png "PS_child_workflow")
+![img](./img/PS_child_workflow.png "PS_child_workflow")
 
 ### PS用ファイル編集画面
 
@@ -109,7 +109,7 @@ WHEELのPS用ファイル編集機能によりインプットデータにパラ�
 
 > PS用ファイル編集画面
 
-![img](img\edit_for_PS.png "edit_for_PS")  
+![img](./img/edit_for_PS.png "edit_for_PS")  
 
 PS用ファイル編集画面でのパラメータ設定手順は以下です。  
 次の手順では、上記図 「vertex_2 のY座標値」を「6から10」まで変化させる場合の設定を示しています。  
@@ -121,26 +121,26 @@ PS用ファイル編集画面でのパラメータ設定手順は以下です。
 
 > 1. キーワードの選択
 
-![img](img\select_keyword.png "select_keyword")  
+![img](./img/select_keyword.png "select_keyword")  
 
 > 2. ターゲットの定義
 
-![img](img\define_target.png "define_target")  
+![img](./img/define_target.png "define_target")  
 
 > 3. パラメータの設定
 
-![img](img\set_param.png "set_param")  
+![img](./img/set_param.png "set_param")  
 
 > 4. 設定内容の保存
 
-![img](img\save_files.png "save_files")  
+![img](./img/save_files.png "save_files")  
 
 保存後、ワークフロー編集画面に戻りプロパティを表示すると、「 編集したファイル名.json 」ファイルが作成されていることを確認します。  
 このデータをプロパティ[ parameter setting file ]に設定します。
 
 > 編集したファイル名.jsonの確認
 
-![img](img\set_json.png "set_json")  
+![img](./img/set_json.png "set_json")  
 
 以上がParameter Studyワークフローにおけるパラメータ設定手順になります。
 
@@ -152,14 +152,14 @@ PSワークフロー実行時には、プロジェクトディレクトリ内に
 
 > プロジェクトディレクトリ内に生成されるディレクトリ
 
-![img](img\project_directory.png "project_directory")  
+![img](./img/project_directory.png "project_directory")  
 
 PSワークフローを実行すると生成されたワークフローが順に実行されます。  
 実行後の結果は以下です。
 
 > PSワークフロー実行結果
 
-![img](img\PS_finished.png "PS_finished") 
+![img](./img/PS_finished.png "PS_finished") 
 
 
 ## If コンポーネント
@@ -179,7 +179,7 @@ ifコンポーネントはTaskコンポーネントにより得られた結果�
 
 > ワークフロー構成図
 
-![img](img\if_workflow.png "if_workflow")   
+![img](./img/if_workflow.png "if_workflow")   
 
 このサンプルは下記の処理を行います。
 
@@ -220,11 +220,11 @@ Forコンポーネントのサンプルを示します。
 
 > For ワークフロー  
 
-![img](img\For_workflow.png "For_workflow")   
+![img](./img/For_workflow.png "For_workflow")   
 
 > For ワークフロー　子階層
 
-![img](img\For_child_workflow.png "For_child_workflow")
+![img](./img/For_child_workflow.png "For_child_workflow")
 
 このサンプルは下記の処理を行います。
 
@@ -248,11 +248,11 @@ Foreachコンポーネントのサンプルを示します。
 
 > Foreach ワークフロー  
 
-![img](img\Foreach_workflow.png "Foreach_workflow")   
+![img](./img/Foreach_workflow.png "Foreach_workflow")   
 
 > Foreach ワークフロー　子階層
 
-![img](img\Foreach_child_workflow.png "Foreach_child_workflow")
+![img](./img/Foreach_child_workflow.png "Foreach_child_workflow")
 
 このサンプルは下記の処理を行います。
 
@@ -277,11 +277,11 @@ Whileコンポーネントのサンプルを示します。
 
 > While ワークフロー  
 
-![img](img\While_workflow.png "While_workflow")   
+![img](./img/While_workflow.png "While_workflow")   
 
 > While ワークフロー　子階層
 
-![img](img\While_child_workflow.png "While_child_workflow")
+![img](./img/While_child_workflow.png "While_child_workflow")
 
 このサンプルは下記の処理を行います。
 
@@ -301,8 +301,8 @@ Workflowコンポーネントを使用することで、ワークフロー編集
 
 > Workflow コンポーネント 未使用  
 
-![img](img\components.png "components")   
+![img](./img/components.png "components")   
 
 > Workflow コンポーネント 使用  
 
-![img](img\Workflow.png "Workflow")   
+![img](./img/Workflow.png "Workflow")   

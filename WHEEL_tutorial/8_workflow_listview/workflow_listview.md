@@ -7,7 +7,7 @@
 ワークフロー編集画面の「ワークフロー作成用エリア」が実況状況確認用画面に変更されます。  
 リストビュー画面は、以下のように構成されています。  
 
-![img](img\workflow_listview.png "workflow_listview")  
+![img](./img/workflow_listview.png "workflow_listview")  
 
 1. Name：コンポーネント名
 1. State：コンポーネント進行状況
@@ -37,4 +37,4 @@ Stateは、以下のように分類され、表示されます。
 複数個コンポーネント、また、Parameter Study, For, Foreach, Whileなどの1つのコンポーネントにて複数回の処理が実行される場合は、  
 実行順にリスト表示されます。例としてParameter Study実行時のリスト画面を示します。
 
-![img](img\PS_finished.png "PS_component_list")  
+![img](./img/PS_finished.png "PS_component_list")  

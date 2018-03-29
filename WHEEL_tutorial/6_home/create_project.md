@@ -2,7 +2,7 @@
 新規プロジェクトの作成や既存プロジェクトの編集はホーム画面で行います。  
 ホーム画面の構成は以下のようになっています。  
 
-![img](img\home.PNG "home")  
+![img](./img/home.PNG "home")  
 1. ユーザ名：ログインユーザ名
 1. 画面遷移ドロワー：ホスト登録画面、ログイン画面への遷移用
 1. New ボタン   ：新規プロジェクトの作成
@@ -28,15 +28,15 @@
 
 > 1. [ New ] ボタンをクリックする  
 
-![img](img\new_1.PNG "new_1")  
+![img](./img/new_1.PNG "new_1")  
 > 2. プロジェクトデータ作成場所を選択する
 > 3. プロジェクト名を入力し、[ OK ] ボタンをクリックする  
 
-![img](img\new_2.PNG "new_2")  
+![img](./img/new_2.PNG "new_2")  
 
 > 新規作成後  
 
-![img](img\new_3.PNG "new_3")  
+![img](./img/new_3.PNG "new_3")  
 
 ### 2. [ Import ]：既存プロジェクトデータの読み込み 
 *** 
@@ -46,14 +46,14 @@
 
 > 1. [ Import ] ボタンをクリックする  
 
-![img](img\import_1.PNG "import_1")  
+![img](./img/import_1.PNG "import_1")  
 
 > 1. プロジェクトデータ作成場所を選択し、[ OK ] ボタンをクリックする  
 
 読み込みたいプロジェクトのディレクトリ内にある「swf.prj.json」を選択します。  
 
-![img](img\import_2.PNG "import_2")  　
+![img](./img/import_2.PNG "import_2")  　
 
 > 新規作成後  
 
-![img](img\import_3.PNG "import_3")  
+![img](./img/import_3.PNG "import_3")  

@@ -13,7 +13,7 @@
 本事例で使用する解析対象モデルは、分配菅モデルです。
 > 解析モデル D50-d10
 
-![img](img\model.png "model")  
+![img](./img/model.png "model")  
 
 inletから流入した流体がoutletから出ていく解析を実施します。  
 また、本解析では、`inletの流量`を対象としたパラメトリックスタディ解析を行います。
@@ -34,13 +34,13 @@ inletから流入した流体がoutletから出ていく解析を実施します
 
 > 「Geometry」モジュールのグループ設定
 
-![img](img\mesh_1.png "Geometryモジュールのグループ設定")  
+![img](./img/mesh_1.png "Geometryモジュールのグループ設定")  
 
 ### 「Mesh」モジュールでのメッシュの設定と作成
 「Geometory」モジュールにて、グループ名設定後、「Mesh」モジュールに切り替えて、メッシュの設定と作成します。
 このモデルでは、四面体テトラ要素と境界層メッシュ（プリズム）を設定しています。
 
-![img](img\mesh_2.png "「Mesh」モジュールでのメッシュの設定と作成")  
+![img](./img/mesh_2.png "「Mesh」モジュールでのメッシュの設定と作成")  
 
 ### 「Mesh」モジュールのグループ設定
 メッシュ作成後、入口/出口/壁面のそれぞれにFACEグループを設定します。  
@@ -52,7 +52,7 @@ inletから流入した流体がoutletから出ていく解析を実施します
 プリズム（三角柱）：109503  
 合計　　　　　　　：383229
 
-![img](img\mesh_3.png "メッシュ")  
+![img](./img/mesh_3.png "メッシュ")  
 
 
 ### メッシュデータのエキスポート
@@ -99,7 +99,7 @@ inletから流入した流体がoutletから出ていく解析を実施します
 1. boundaryField -> inlet -> value の uniform (5 0 0)の5に対してターゲット設定を行う（Min Value:5, Max value:7, Step:1）
 1. 設定後作成された「U.txt.json」ファイルをPSプロパティ[ parameter setting file ]に設定する
 
-![img](img\OpenFOAM_PS.png "OpenFOAM_PS")  
+![img](./img/OpenFOAM_PS.png "OpenFOAM_PS")  
 
 以上がPSコンポーネントでの設定になります。
 
@@ -115,7 +115,7 @@ inletから流入した流体がoutletから出ていく解析を実施します
 1. プロパティ[ remotehost ]に「 localhost 」を設定する　*1
 *1 この処理は、京コンピュータへのジョブ投入前に実施するため、localhostで実施します。
 
-![img](img\moveFile_Task.png "moveFile_Task")  
+![img](./img/moveFile_Task.png "moveFile_Task")  
 
 以上がファイル転送用Taskコンポーネントの設定になります。
 
@@ -176,7 +176,7 @@ WHEELは、リソースグループmicroを用い、効率的に計算資源を�
 - Queue：micro  
 ※ホスト情報のQueue欄に[ micro ]登録を登録しておくことで、Taskのプロパティからの選択が可能となります。  
 
-![img](img\runOpenFOAM_Task.png "runOpenFOAM_Task")  
+![img](./img/runOpenFOAM_Task.png "runOpenFOAM_Task")  
 
 moveFile_TaskとrunOpenFOAM_Taskを結線で繋ぎます。
 

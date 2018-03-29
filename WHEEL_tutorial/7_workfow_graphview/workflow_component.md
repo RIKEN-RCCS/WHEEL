@@ -5,13 +5,13 @@
 
 ワークフローコンポーネントは以下の7種です。  
 
-![img](img\workflow_componentlibrary.png "workflow_componentlibrary")  
+![img](./img/workflow_componentlibrary.png "workflow_componentlibrary")  
 
 以下で各コンポーネントについて説明します。
 
 ### Workflow コンポーネント
 ***
-![img](img\workflow.png "workflow")  
+![img](./img/workflow.png "workflow")  
 
 workflowコンポーネントのプロパティについて説明します。
 
@@ -34,7 +34,7 @@ workflowコンポーネントのプロパティについて説明します。
 
 ### Task コンポーネント
 ***
-![img](img\task.png "task")  
+![img](./img/task.png "task")  
 
 taskコンポーネントのプロパティについて説明します。
 
@@ -61,7 +61,7 @@ taskコンポーネントのプロパティについて説明します。
 
 ### Parameter Study コンポーネント
 ***
-![img](img\PS.png "Parameter Study")  
+![img](./img/PS.png "Parameter Study")  
 
 Parameter Studyコンポーネントのプロパティについて説明します。
 
@@ -76,7 +76,7 @@ Parameter Studyコンポーネントのプロパティについて説明しま�
 
 ### If コンポーネント
 ***
-![img](img\if.png "if")  
+![img](./img/if.png "if")  
 
 ifコンポーネントのプロパティについて説明します。
 
@@ -95,7 +95,7 @@ ifコンポーネントのプロパティについて説明します。
 
 ### For コンポーネント
 ***
-![img](img\for.png "for")  
+![img](./img/for.png "for")  
 
 forコンポーネントのプロパティについて説明します。
 
@@ -112,7 +112,7 @@ forコンポーネントのプロパティについて説明します。
 
 ### While コンポーネント
 ***
-![img](img\while.png "while")  
+![img](./img/while.png "while")  
 
 whileコンポーネントのプロパティについて説明します。
 
@@ -127,7 +127,7 @@ whileコンポーネントのプロパティについて説明します。
 
 ### Foreach コンポーネント
 ***
-![img](img\foreach.png "foreach")  
+![img](./img/foreach.png "foreach")  
 
 foreachコンポーネントのプロパティについて説明します。
 
@@ -146,11 +146,11 @@ foreachコンポーネントのプロパティについて説明します。
 
 例：Workflowコンポーネントのプロパティ画面  
 
-![img](img\property_Files.png "property_Files")  
+![img](./img/property_Files.png "property_Files")  
 
 Files領域の構成は、以下です。  
 
-![img](img\Files.png "Files")  
+![img](./img/Files.png "Files")  
 
 1. rootワークフローからの相対パス表示領域
 1. コンポーネントディレクトリへの新規ディレクトリの作成ボタン
@@ -169,11 +169,11 @@ Files領域の構成は、以下です。
 
 > 新規ディレクトリの作成  
 
-![img](img\create_directory.png "create_directory")  
+![img](./img/create_directory.png "create_directory")  
 
 > 作成結果 
 
-![img](img\create_directory_result.png "create_directory_result")  
+![img](./img/create_directory_result.png "create_directory_result")  
 
 ### コンポーネントディレクトリへの新規ファイルの作成
 ***
@@ -194,8 +194,8 @@ Files領域の構成は、以下です。
 
 > ファイルのアップロード 
 
-![img](img\file_upload.png "file_upload")  
+![img](./img/file_upload.png "file_upload")  
 
 > アップロード結果 
 
-![img](img\file_upload_result.png "file_upload_result")  
+![img](./img/file_upload_result.png "file_upload_result")  

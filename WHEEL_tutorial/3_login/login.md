@@ -6,7 +6,7 @@ WHEELのユーザアカウントとして登録されている
 
 を入力することで行います。  
 
-![img](img\login.png "login")  
+![img](./img/login.png "login")  
 
 また、WHEELへのログイン方法は、2パターンあります。
 
@@ -22,8 +22,8 @@ WHEELのユーザアカウントとして登録されている
 
 > 管理者  
 
-![img](img\useraccount.png "useraccount")  
+![img](./img/useraccount.png "useraccount")  
 
 > ユーザ  
 
-![img](img\home.png "home") 
+![img](./img/home.png "home") 

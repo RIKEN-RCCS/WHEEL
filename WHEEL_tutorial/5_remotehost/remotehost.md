@@ -9,15 +9,15 @@ WHEELにてジョブを京コンピュータ等の外部計算環境に投入す
 > 1. ホーム画面右上ドロワー内の[ remotehost ]
 > 2. ワークフロー画面右上ドロワー内の[ remotehost ]  
 1. ホーム画面右上ドロワー  
-![img](img\home_remotehost.png "home_remotehost")  
+![img](./img/home_remotehost.png "home_remotehost")  
 
 1. ワークフロー画面右上ドロワー  
-![img](img\workflow_remotehost.png "workflow_remotehost")  
+![img](./img/workflow_remotehost.png "workflow_remotehost")  
 
 ## ホスト登録画面
 ***
 ホスト登録画面の構成は以下のようになっています。  
-![img](img\remotehost.png "remotehost")  
+![img](./img/remotehost.png "remotehost")  
 
 1. タイトル　：ホーム画面遷移ボタン
 1. ユーザー名：ログインユーザ名
@@ -100,19 +100,19 @@ null(デフォルト値)が指定されていた場合は、ジョブスケジ�
 
 Host Registrationがクリアされます。ただし、Port, Max Jobにはデフォルト値が入ります。
 
-![img](img\remotehost_new.png "remotehost_new")  
+![img](./img/remotehost_new.png "remotehost_new")  
 
 > 2. Host Registration エリアの必要項目を入力する  
 
 必要項目を入力します。Label（重複不可）, Host Name, User Nameは、入力必須項目です。 
 
-![img](img\remotehost_info.png "remotehost_info")  
+![img](./img/remotehost_info.png "remotehost_info")  
 
 > 3. Host Registration エリア「Confirm」ボタンをクリックする  
 
 入力内容をホスト情報として登録します。Host List エリアにホスト情報が追加されます。  
 
-![img](img\remotehost_confirm.png "remotehost_confirm")  
+![img](./img/remotehost_confirm.png "remotehost_confirm")  
 
 
 ### 2. 既存のホスト情報を引用し、登録する  
@@ -128,26 +128,26 @@ Host Registrationがクリアされます。ただし、Port, Max Jobにはデ�
 
 登録済みホストを選択します。選択したホスト情報は、Host Registration エリアに反映されます。  
 
-![img](img\remotehost_select.png "remotehost_select")  
+![img](./img/remotehost_select.png "remotehost_select")  
 
 > 2. Host List エリア「Copy」ボタンをクリックする
 
 Copyボタンをクリックします。Host Listに選択したホスト情報が複製されます。  
 Labelも複製されるため、Label重複の警告メッセージが表示されます。
 
-![img](img\remotehost_copy.png "remotehost_copy")  
+![img](./img/remotehost_copy.png "remotehost_copy")  
 
 > 3. 複製したホストを選択し、Host Registration エリアのLabel（必須）及びその他項目を編集する
 
 Label及びその他項目を編集し、Label重複警告メッセージが解除されたことを確認します。  
 
-![img](img\remotehost_copy_edit.png "remotehost_copy_edit")  
+![img](./img/remotehost_copy_edit.png "remotehost_copy_edit")  
 
 > 4. Host Registration エリア「Confirm」ボタンをクリックする  
 
 「Confirm」ボタンをクリックします。  
 
-![img](img\remotehost_copy_confirm.png "remotehost_copy_confirm")  
+![img](./img/remotehost_copy_confirm.png "remotehost_copy_confirm")  
 
 ## ホストの編集
 ***
@@ -160,19 +160,19 @@ Label及びその他項目を編集し、Label重複警告メッセージが解�
 
 Host Registration エリアに選択したホストの登録情報が表示されます。
 
-![img](img\host_edit.png "host_edit")  
+![img](./img/host_edit.png "host_edit")  
 
 > 2. Host Registration エリアにてホスト情報を編集する
 
 項目を編集します。
 
-![img](img\host_edit_info.png "host_edit_info")  
+![img](./img/host_edit_info.png "host_edit_info")  
 
 > 3. Host Registration エリア「Confirm」ボタンをクリックする  
 
 ホスト情報を更新します。
 
-![img](img\host_edit_confirm.png "host_edit_confirm")  
+![img](./img/host_edit_confirm.png "host_edit_confirm")  
 
 
 ## ホストの削除
@@ -182,11 +182,11 @@ Host Registration エリアに選択したホストの登録情報が表示さ�
 1. Host List エリア「Delete」ボタンをクリックする
 1. 表示される「削除確認メッセージダイアログボックス」の「OK」ボタンをクリックする。  
 
-![img](img\remotehost_delete.png "remotehost_delete")  
+![img](./img/remotehost_delete.png "remotehost_delete")  
 
 削除されていることを確認します。  
 
-![img](img\remotehost_delete_result.png "remotehost_delete_result")  
+![img](./img/remotehost_delete_result.png "remotehost_delete_result")  
 
 
 ## ホストの接続確認
@@ -202,7 +202,7 @@ Connection Checkの手順は以下になります。
 
 > 1. Connection Check
 
-![img](img\remotehost_connectioncheck.png "remotehost_connectioncheck")  
+![img](./img/remotehost_connectioncheck.png "remotehost_connectioncheck")  
 
 > 4. 「Test」ボタンの表示が OK または NG になることを確認する
 
@@ -211,11 +211,11 @@ Host Name, User ID, Port, AuthPath 及び入力したパスワードが適切な
 ・適切な場合  
 「Test」ボタンがOKとなります。
 
-![img](img\remotehost_connectioncheck_OK.png "remotehost_connectioncheck_OK")  
+![img](./img/remotehost_connectioncheck_OK.png "remotehost_connectioncheck_OK")  
 
 ・不適切な場合  
 「Test」ボタンがNGとなり、エラーメッセージが表示されます。  
 
-![img](img\remotehost_connectioncheck_NG.png "remotehost_connectioncheck_NG")  
+![img](./img/remotehost_connectioncheck_NG.png "remotehost_connectioncheck_NG")  
 
 

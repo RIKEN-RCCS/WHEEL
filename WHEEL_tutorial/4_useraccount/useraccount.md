@@ -9,12 +9,12 @@ WHEELにあらかじめ用意されている管理者アカウントを使用し
 
 > ユーザアカウント登録時には管理者でログインする
 
-![img](img\admin_login.png "admin_login")  
+![img](./img/admin_login.png "admin_login")  
 
 ## アカウント登録画面
 ***
 アカウント登録画面の構成は以下のようになっています。 
-![img](img\useraccount.png "useraccount")  
+![img](./img/useraccount.png "useraccount")  
 
 1. 画面遷移ドロワー：ログイン画面への遷移ボタンを表示するドロワー
 1. Account List エリア：登録済みアカウントリスト
@@ -49,19 +49,19 @@ WHEELにあらかじめ用意されている管理者アカウントを使用し
 
 Account Registrationがクリアされます。
 
-![img](img\useraccount_new.png "useraccount_new")  
+![img](./img/useraccount_new.png "useraccount_new")  
 
 > 2. Account Registration エリアの必要項目を入力する  
 
 必要項目を入力します。Descriptionを除く全ての項目に入力してください。
 
-![img](img\useraccount_info.png "useraccount_info")  
+![img](./img/useraccount_info.png "useraccount_info")  
 
 > 3. Account Registration エリア「Confirm」ボタンをクリックする  
 
 入力内容をユーザ情報として登録します。Account List エリアにユーザ情報が追加されます。  
 
-![img](img\useraccount_confirm.png "useraccount_confirm")  
+![img](./img/useraccount_confirm.png "useraccount_confirm")  
 
 ## ユーザの編集
 ***
@@ -74,19 +74,19 @@ Account Registrationがクリアされます。
 
 Account Registrationエリアに選択したユーザの登録情報が表示されます。
 
-![img](img\useraccount_edit.png "useraccount_edit")  
+![img](./img/useraccount_edit.png "useraccount_edit")  
 
 > 2. Account Registration エリアのユーザ情報を編集する
 
 項目を編集します。
 
-![img](img\useraccount_edit_info.png "useraccount_edit_info")  
+![img](./img/useraccount_edit_info.png "useraccount_edit_info")  
 
 > 3. Account Registration エリア「Confirm」ボタンをクリックする  
 
 ユーザ情報を更新します。
 
-![img](img\useraccount_edit_confirm.png "useraccount_edit_confirm")  
+![img](./img/useraccount_edit_confirm.png "useraccount_edit_confirm")  
 
 ## ユーザの削除
 ***
@@ -95,8 +95,8 @@ Account Registrationエリアに選択したユーザの登録情報が表示さ
 1. Account List エリア「Delete」ボタンをクリックする
 1. 表示される「削除確認メッセージダイアログボックス」の「OK」ボタンをクリックする。  
 
-![img](img\useraccount_delete.png "useraccount_delete")  
+![img](./img/useraccount_delete.png "useraccount_delete")  
 
 削除されていることを確認します。  
 
-![img](img\useraccount_delete_result.png "useraccount_delete_result")  
+![img](./img/useraccount_delete_result.png "useraccount_delete_result")  

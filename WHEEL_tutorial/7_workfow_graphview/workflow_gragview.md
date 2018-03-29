@@ -6,7 +6,7 @@
 ***
 ワークフロー編集画面（グラフビュー）は以下のように構成されています。  
 
-![img](img\workflow_graghview.png "workflow_graghview")  
+![img](./img/workflow_graghview.png "workflow_graghview")  
 
 1. タイトル　　　　　　　　　　　　　：ホーム画面遷移ボタン
 1. ユーザー名　　　　　　　　　　　　：ログインユーザ名
@@ -30,25 +30,25 @@
 
 1. not-started：プロジェクト実行前
 
-![img](img\not-started.png "not_started") 
+![img](./img/not-started.png "not_started") 
 
 2. running    ：プロジェクト実行中
 
-![img](img\running.png "running") 
+![img](./img/running.png "running") 
 
 3. finished   ：プロジェクト実行終了
 
-![img](img\finished.png "finished") 
+![img](./img/finished.png "finished") 
 
 4. failed     ：プロジェクトの失敗
 
-![img](img\failed.png "failed") 
+![img](./img/failed.png "failed") 
 
 ### プロジェクトの操作ボタンエリア
 ***
 プロジェクト実行、停止などを操作するボタンとその詳細は以下です。  
 
-![img](img\run_button_area.png "run_button_area") 
+![img](./img/run_button_area.png "run_button_area") 
 
 1. run ボタン：プロジェクトの実行開始
 1. pause ボタン：プロジェクト実行の一時停止
@@ -64,7 +64,7 @@
 ***
 プロジェクト保存、リバートを操作するボタンとその詳細は以下です。  
 
-![img](img\save_button_area.png "save_button_area") 
+![img](./img/save_button_area.png "save_button_area") 
 
 1. save ボタン：projectのsave(commit)を指示する
 1. revert ボタン：projectの状態を直前のcommitまで戻すことを指示する
@@ -81,11 +81,11 @@
 
 > グラフビュー画面  
 
-![img](img\graghview.png "graghview") 
+![img](./img/graghview.png "graghview") 
 
 > リストビュー画面  
 
-![img](img\listview.png "listview")   
+![img](./img/listview.png "listview")   
 
 ### プロジェクトの階層表示・遷移ボタン
 ***
@@ -95,15 +95,15 @@
 
 > root階層の場合  
 
-![img](img\root_workflow.png "root_workflow")   
+![img](./img/root_workflow.png "root_workflow")   
 
 > 子階層 (root階層の1階層下) の場合  
 
-![img](img\root_createworkflow.png "root_createworkflow")   
+![img](./img/root_createworkflow.png "root_createworkflow")   
 
 作成したworkflowコンポーネント内へ遷移する（rootの子階層に相当）
 
-![img](img\child_workflow.png "child_workflow")   
+![img](./img/child_workflow.png "child_workflow")   
 
 ### コンポーネントライブラリ表示ボタン
 ***
@@ -112,11 +112,11 @@
 
 > コンポーネントライブラリ非表示  
 
-![img](img\component_library.png "conponent_library")
+![img](./img/component_library.png "conponent_library")
 
 > コンポーネントライブラリ表示  
 
-![img](img\component_library_open.png "component_library_open")   
+![img](./img/component_library_open.png "component_library_open")   
 
 ### ワークフロー作成用エリア
 ***
@@ -125,7 +125,7 @@
 
 > ワークフロー作成用エリア  
 
-![img](img\workflow_area.png "workflow_area")
+![img](./img/workflow_area.png "workflow_area")
 
 ### ログ表示ボタン
 ***
@@ -133,11 +133,11 @@
 
 > ログ非表示  
 
-![img](img\log_close.png "log_close")
+![img](./img/log_close.png "log_close")
 
 > ログ表示  
 
-![img](img\log_open.png "log_open")  
+![img](./img/log_open.png "log_open")  
 
 ログ表示エリア内の各ボタンは以下のようになっております。  
 ログは、サーバサイドの処理中に発生した出力内容を分類し表示しています。
@@ -154,5 +154,5 @@
 
 > ログ表示例 (Debug)
 
-![img](img\log_exe_debug.png "log_debug")  
+![img](./img/log_exe_debug.png "log_debug")  
 

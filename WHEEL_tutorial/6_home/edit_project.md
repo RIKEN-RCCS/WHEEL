@@ -11,7 +11,7 @@
 
 > プロジェクトのオープン [ 右クリック -> Open ]  
 
-![img](img\open.png "right_click_open")  
+![img](./img/open.png "right_click_open")  
 
 ### プロジェクトの名称変更
 ***
@@ -23,25 +23,25 @@
 
 > プロジェクトの名称変更 [ 右クリック -> Rename ]  
 
-![img](img\rename_1.png "rename")  
+![img](./img/rename_1.png "rename")  
 
 > 名称変更ダイアログ  
 
-![img](img\rename_2.png "rename_dialog")  
+![img](./img/rename_2.png "rename_dialog")  
 
 > 名称変更後  
 
-![img](img\rename_3.png "renamed")  
+![img](./img/rename_3.png "renamed")  
 
 プロジェクト名を既存プロジェクト名に変更しようとした場合のエラー例を示します。  
 
 > プロジェクト名を既存のプロジェクト名（Project2）の変更する  
 
-![img](img\rename_error_1.png "rename_error") 
+![img](./img/rename_error_1.png "rename_error") 
 
 > エラーメッセージが表示される  
 
-![img](img\rename_error_2.png "rename_error") 
+![img](./img/rename_error_2.png "rename_error") 
 
 ### プロジェクトの削除
 ***
@@ -51,12 +51,12 @@
 
 > プロジェクトの削除 [ 右クリック -> Delete ]  
 
-![img](img\delete_1.png "delete")  
+![img](./img/delete_1.png "delete")  
 
 > 削除確認ダイアログ  
 
-![img](img\delete_2.png "delete_dialog")  
+![img](./img/delete_2.png "delete_dialog")  
 
 > 削除後  
 
-![img](img\delete_3.png "deleted")  
+![img](./img/delete_3.png "deleted")  
