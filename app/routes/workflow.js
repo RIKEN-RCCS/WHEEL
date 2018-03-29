@@ -5,14 +5,14 @@ const {promisify} = require("util");
 
 const klaw = require('klaw');
 const express = require('express');
+const ARsshClient = require('arssh2-client');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
-const {canConnect} = require('./sshManager');
-const {getDateString, replacePathsep, getSystemFiles} = require('./utility');
+const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require('./utility');
 const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
-const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject} = require('./project');
+const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject, addSsh, removeSsh} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
@@ -28,24 +28,26 @@ function askPassword(sio, hostname){
   });
 }
 
-
 /**
- * check if all scripts and remote host setting are available or not
+ * rewrite old-style parent property
+ * after 0d2c9bc commit, parent property has relative path from root project dir
  */
-async function validationCheck(label, workflow, dir, sio){
-  const promises=[]
-  if(dir == null ){
-    promises.push(Promise.reject(new Error('Project dir is null or undefined')));
-  }
-  let hosts=[];
+function fixParentProperty(workflow){
   workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
-    // fix parent property
-    // parent is relative path from root project dir to parent component dir after 0d2c9bc commit
     if(node.parent){
       if(path.posix.isAbsolute(node.parent) || path.win32.isAbsolute(node.parent)){
         node.parent = replacePathsep(path.relative(getRootDir(label),dir));
       }
     }
+  });
+}
+
+/**
+ * validate all components in workflow and gather remote hosts which is used in tasks
+ */
+function validateNodes(label, workflow, dir, hosts){
+  const promises=[]
+  workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
     if(node.type === 'task'){
       if(node.path == null) promises.push(Promise.reject(new Error(`illegal path ${node.null}`)));
       if(node.host !== 'localhost') hosts.push(node.host);
@@ -74,7 +76,7 @@ async function validationCheck(label, workflow, dir, sio){
       promises.push(
         readChildWorkflow(label, node)
         .then((childWF)=>{
-          return validationCheck(label, childWF, childDir, sio)
+          return validateNodes(label, childWF, childDir, hosts);
         })
       );
     }
@@ -83,21 +85,61 @@ async function validationCheck(label, workflow, dir, sio){
     return isInitialNode(node);
   });
   if(!hasInitialNode) promises.push(Promise.reject(new Error('no component can be run')));
+  return Promise.all(promises);
+}
+
+/**
+ * check if all scripts and remote host setting are available or not
+ */
+async function validationCheck(label, workflow, sio){
+  fixParentProperty(workflow);
+  const rootDir = getRootDir(label);
+  let hosts=[];
+  await validateNodes(label, workflow, rootDir, hosts);
 
   hosts = Array.from(new Set(hosts));
-  let hostPromises = hosts.map((e)=>{
-    let id=remoteHost.getID('name', e);
+  // remoteHostName is name property of remote host entry
+  // hostInfo.host is hostname or IP address of remote host
+  await hosts.reduce(async (promise, remoteHostName)=>{
+    await promise;
+    const id=remoteHost.getID('name', remoteHostName);
     const hostInfo = remoteHost.get(id);
-    if(!hostInfo)  promises.push(Promise.reject(new Error(`illegal remote host specified ${e}`)));
-    return canConnect(hostInfo)
-      .catch((err)=>{
-        return askPassword(sio, e)
-          .then((password)=>{
-            canConnect(hostInfo, password);
-          });
-      });
-  });
-  return Promise.all(promises.concat(hostPromises));
+    if(!hostInfo)  return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
+    const password = await askPassword(sio, remoteHostName);
+    const config = await createSshConfig(hostInfo, password);
+    const arssh = new ARsshClient(config, {connectionRetryDelay: 1000});
+    addSsh(label, hostInfo.host, arssh);
+    return arssh.canConnect()
+    .catch(async (err)=>{
+      if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
+        const newPassword = await askPassword(sio, hostInfo);
+        if(config.passphrase) config.passphrase = newPassword;
+        if(config.password) config.password = newPassword;
+        arssh.overwriteConfig(config);
+        return arssh.canConnect();
+      }else{
+        return Promise.reject(err);
+      }
+    })
+    .catch(async (err)=>{
+      if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
+        const newPassword = await askPassword(sio, hostInfo);
+        if(config.passphrase) config.passphrase = newPassword;
+        if(config.password) config.password = newPassword;
+        arssh.overwriteConfig(config);
+        return arssh.canConnect();
+      }else{
+        return Promise.reject(err);
+      }
+    })
+    .catch((err)=>{
+      if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
+        return Promise.reject(new Error('wrong password for 3 times'));
+      }else{
+        return Promise.reject(err);
+      }
+    });
+  }, Promise.resolve());
 }
 
 async function sendWorkflow(sio, label){
@@ -265,10 +307,10 @@ async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
   let rwf = await readRwf(label);
   try{
-    await validationCheck(label, rwf, getRootDir(label), sio)
+    await validationCheck(label, rwf, sio)
   }catch(err){
-    logger.error('invalid root workflow:', err.message);
-    logger.debug(err);
+    logger.error('invalid root workflow:', err);
+    removeSsh(label);
     return false
   }
   await commitProject(label);
@@ -280,7 +322,7 @@ async function onRunProject(sio, label, rwfFilename){
     cleanup = defaultCleanupRemoteRoot;
   }
   rwf.cleanupFlag = cleanup;
-  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio));
+  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio, label));
   sio.emit('projectJson', await readProjectJson(label));
   const timeout = setInterval(()=>{
     const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));

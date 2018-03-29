@@ -14,7 +14,7 @@ const executer = require('./executer');
 const { addXSync, doCleanup} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
-const {getSsh} = require('./sshManager');
+const {getSsh} = require('./project');
 
 async function cancelRemoteJob(task, ssh){
   const hostinfo = remoteHost.get(task.remotehostID);
@@ -29,20 +29,10 @@ function killLocalProcess(task){
 }
 async function killTask(task){
   if(task.remotehostID !== 'localhost'){
-    const hostinfo = remoteHost.get(task.remotehostID);
-    const config = {
-      host: hostinfo.host,
-      port: hostinfo.port,
-      username: hostinfo.username,
-    }
-    const arssh = getSsh(config);
     if(task.useJobScheduler){
+      const hostinfo = remoteHost.get(task.remotehostID);
+      const arssh = getSsh(task.label, hostinfo.host);
       await cancelRemoteJob(task, arssh);
-    }else{
-      logger.warn('kill remote process is not supported');
-      //TODO nohupとか使われてなければ接続を切ればremoteのプロセスも死ぬはず
-      //nohupは諦める・・・?
-      //とすると、再実行時のリモート環境のrootディレクトリ名は変えた方が良いか?
     }
   }else{
     if(task.useJobScheduler){
@@ -135,14 +125,16 @@ function evalConditionSync(condition, cwd){
  * @param {string} rwfDir -  path to project root workflow dir
  * @param {string} startTime - start time of project
  * @param {SocketIO} sio - SocketIO object which is used to send task state list
+ * @param {string} label - label of project
  */
 class Dispatcher{
-  constructor(wf, cwfDir, rwfDir, startTime, sio){
+  constructor(wf, cwfDir, rwfDir, startTime, sio, label){
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
     this.projectStartTime=startTime;
     this.sio = sio; //never pass to child dispatcher
+    this.label = label;
     this.nextSearchList=[];
     this.children=[];
     this.dispatchedTaskList=[]
@@ -329,6 +321,7 @@ class Dispatcher{
     task.startTime = 'not started'; // to be assigned in executer
     task.endTime   = 'not finished'; // to be assigned in executer
     task.projectStartTime= this.projectStartTime;
+    task.label = this.label;
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);

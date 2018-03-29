@@ -1,10 +1,40 @@
 const {promisify} = require('util');
-const fs = require('fs');
 const path = require('path');
 
+const fs = require('fs-extra');
 const Mode = require('stat-mode');
 
 const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
+
+/**
+ * check if ssh connection can be established
+ * @param {hostinfo} hotsInfo - remote host setting
+ * @param {string} password - password or passphrase for private key
+ */
+async function createSshConfig(hostInfo, password){
+  const config={
+    host: hostInfo.host,
+    port: hostInfo.port,
+    username: hostInfo.username
+  }
+  if(hostInfo.keyFile){
+    config.privateKey = await fs.readFile(hostInfo.keyFile);
+    config.privateKey = config.privateKey.toString();
+    if(password){
+      config.passphrase = password;
+      config.password = undefined;
+    }
+  }else{
+    config.privateKey = undefined;
+    if(password){
+      config.passphrase = undefined;
+      config.password = password;
+    }
+  }
+  return config;
+}
+
+
 /**
  * convert to posix-style path string and remove head and tail path separator
  */
@@ -105,11 +135,11 @@ function getSystemFiles(){
   return new RegExp(`^(?!^.*(${escapeRegExp(extProject)}|${escapeRegExp(extWF)}|${escapeRegExp(extPS)}|${escapeRegExp(extFor)}|${escapeRegExp(extWhile)}|${escapeRegExp(extForeach)}|.gitkeep)$).*$`);
 }
 
-
-module.exports.escapeRegExp=escapeRegExp;
-module.exports.addXSync=addXSync;
-module.exports.getDateString=getDateString;
-module.exports.replacePathsep=replacePathsep;
-module.exports.doCleanup=doCleanup;
-module.exports.isValidName=isValidName;
-module.exports.getSystemFiles = getSystemFiles;
+module.exports.escapeRegExp     = escapeRegExp;
+module.exports.addXSync         = addXSync;
+module.exports.getDateString    = getDateString;
+module.exports.replacePathsep   = replacePathsep;
+module.exports.doCleanup        = doCleanup;
+module.exports.isValidName      = isValidName;
+module.exports.getSystemFiles   = getSystemFiles;
+module.exports.createSshConfig = createSshConfig;

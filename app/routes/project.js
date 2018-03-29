@@ -26,6 +26,8 @@ class Project {
 
     this.projectState='not-started';
     this.projectJsonFilename=null;
+
+    this.ssh=new Map();
   }
 
   // return absolute path of current workflow dir
@@ -94,7 +96,7 @@ function setProjectState(label, state){
 }
 
 async function setCwf (label, filename){
-  let pj=_getProject(label);
+  const pj=_getProject(label);
   pj.cwfFilename=filename;
   try{
     pj.cwf=JSON.parse(await promisify(fs.readFile)(filename));
@@ -153,6 +155,17 @@ async function write (label){
   return gitAdd(label, filename);
 }
 
+/**
+ * disconnect and remove all ssh instance
+ */
+function removeSsh(label){
+  const pj=_getProject(label);
+  for (const ssh of pj.ssh){
+    ssh.disconnect();
+  }
+  pj.ssh.clear();
+}
+
 
 // simple accessor
 function getProjectState(label){
@@ -185,6 +198,12 @@ function getNode (label, index){
 function overwriteCwf(label, cwf){
   _getProject(label).cwf=cwf;
 }
+function getSsh (label, hostname){
+  return _getProject(label).ssh.get(hostname);
+}
+function addSsh (label, hostname, ssh){
+  _getProject(label).ssh.set(hostname, ssh);
+}
 
 module.exports.openProject       = openProject;
 module.exports.resetProject      = resetProject;
@@ -213,3 +232,6 @@ module.exports.gitAdd            = gitAdd;
 module.exports.commitProject     = commitProject;
 module.exports.revertProject     = revertProject;
 module.exports.cleanProject      = cleanProject;
+
+module.exports.addSsh            = addSsh;
+module.exports.getSsh            = getSsh;

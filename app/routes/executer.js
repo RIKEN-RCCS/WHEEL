@@ -6,7 +6,7 @@ const {promisify} = require('util');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 
-const {getSsh} = require('./sshManager');
+const {getSsh} = require('./project');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
 const {addXSync, replacePathsep, getDateString} = require('./utility');
 
@@ -280,15 +280,9 @@ async function createExecuter(task){
   let exec = localExec;
   //TODO add local submit case
   if(task.remotehostID !== 'localhost'){
-    let hostinfo = remoteHost.get(task.remotehostID);
+    const hostinfo = remoteHost.get(task.remotehostID);
     maxNumJob = hostinfo.numJob;
-    let config = {
-      host: hostinfo.host,
-      port: hostinfo.port,
-      username: hostinfo.username,
-    }
-    let arssh = getSsh(config, {connectionRetryDelay: 1000});
-
+    const arssh = getSsh(task.label, hostinfo.host);
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){
       exec = remoteSubmitAdaptor.bind(null, arssh)
     }else{
