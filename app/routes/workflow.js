@@ -13,7 +13,7 @@ const fileManager = require('./fileManager');
 const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require('./utility');
 const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
 const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject, addSsh, removeSsh} = require('./project');
-const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
+const {write, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
 const fileBrowser = require("./fileBrowser");
@@ -142,32 +142,43 @@ async function validationCheck(label, workflow, sio){
   }, Promise.resolve());
 }
 
-async function sendWorkflow(sio, label){
-  const cwf = getCwf(label);
-  const rt = JSON.parse(JSON.stringify(cwf));
-  const promises = rt.nodes.map((child)=>{
-    if(child === null) return child;
-    if(child.handler) delete child.handler;
-    if(hasChild(child)){
-      return readChildWorkflow(label, child)
-        .then((tmp)=>{
-          child.nodes=tmp.nodes.map((grandson)=>{
-            if(grandson === null) return grandson;
-            if( grandson.handler) delete grandson.handler;
-            return grandson;
-          });
-        })
-    }
+async function sendWorkflow(sio, label, fromDispatcher=false){
+  let wf=null;
+  if(fromDispatcher){
+    wf = getRootDispatcher(label).getCwf(getCurrentDir(label));
+  }else{
+    wf = getCwf(label);
+  }
+
+  const rt = Object.assign({}, wf);
+  rt.nodes = wf.nodes.map((child)=>{
+    if(child !== null && child.handler) delete child.handler;
+    return child;
   });
-  await Promise.all(promises);
+  for(const child of rt.nodes){
+    if(hasChild(child)){
+      const childJson = await readChildWorkflow(label, child);
+      child.nodes = childJson.nodes.map((grandson)=>{
+        if(grandson !== null && grandson.handler) delete grandson.handler;
+        return grandson;
+      });
+    }
+  }
+
   sio.emit('workflow', rt);
+}
+
+function isRunning(projectState){
+  return projectState === 'running' || projectState === 'paused';
 }
 
 async function onWorkflowRequest(sio, label, argWorkflowFilename){
   const workflowFilename=path.resolve(argWorkflowFilename);
   logger.debug('Workflow Request event recieved: ', workflowFilename);
   await setCwf(label, workflowFilename);
-  sendWorkflow(sio, label);
+  getProjectState(label);
+  const projectState=getProjectState(label);
+  sendWorkflow(sio, label, isRunning(projectState));
 }
 
 async function onCreateNode(sio, label, msg){
@@ -303,9 +314,12 @@ async function onRemoveFileLink(sio, label, msg){
   }
 }
 
+//TODO fix me!! temporary workaround
+let timeout;
+
 async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
-  let rwf = await readRwf(label);
+  const rwf = await readRwf(label);
   try{
     await validationCheck(label, rwf, sio)
   }catch(err){
@@ -316,43 +330,61 @@ async function onRunProject(sio, label, rwfFilename){
   await commitProject(label);
   await setProjectState(label, 'running');
   sio.emit('projectJson', await readProjectJson(label));
-  let rootDir = getRootDir(label);
+
+  const rootDir = getRootDir(label);
   let cleanup = rwf.cleanupFlag;
   if(! cleanup){
     cleanup = defaultCleanupRemoteRoot;
   }
   rwf.cleanupFlag = cleanup;
-  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio, label));
+
+  const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio, label);
+  setRootDispatcher(label, rootDispatcher);
   sio.emit('projectJson', await readProjectJson(label));
-  const timeout = setInterval(()=>{
-    const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
-    overwriteCwf(label, cwf);
-    sendWorkflow(sio, label);
+
+  timeout = setInterval(()=>{
+    sendWorkflow(sio, label, true);
   }, 5000);
+
+  // project start here
   try{
-    const projectState=await getRootDispatcher(label).dispatch();
+    const projectState=await rootDispatcher.dispatch();
     await setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parsing workflow:',err);
     await setProjectState(label, 'failed');
   }
+
   clearInterval(timeout);
-  const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
-  overwriteCwf(label, cwf);
-  sendWorkflow(sio, label);
+  sendWorkflow(sio, label, true);
+
   sio.emit('projectJson', await readProjectJson(label));
 }
 
 async function onPauseProject(sio, label){
   logger.debug("pause event recieved");
-  await getRootDispatcher(label).pause();
+  clearInterval(timeout); // TODO fix me!
+  const rootDispatcher=getRootDispatcher(label);
+  rootDispatcher.pause();
+
+  let hosts=[];
+  await rootDispatcher.killDispatchedTasks(hosts);
+  hosts = Array.from(new Set(hosts));
+  logger.debug('remove ssh connection to', hosts);
+  for(const host of hosts){
+    removeSsh(label, host);
+  }
+
   await setProjectState(label, 'paused');
   sio.emit('projectJson', await readProjectJson(label));
 }
 async function onCleanProject(sio, label){
   logger.debug("clean event recieved");
-  const rootDispatcher=getRootDispatcher(label);
-  if(rootDispatcher != null) rootDispatcher.remove();
+  const rootDispatcher = getRootDispatcher(label);
+  if(rootDispatcher){
+    rootDispatcher.remove();;
+    deleteRootDispatcher(label);
+  }
   await cleanProject(label);
   await resetProject(label);
   await sendWorkflow(sio, label);
@@ -436,9 +468,9 @@ module.exports = function(io){
     socket.on('cleanProject',     onCleanProject.bind(null, socket, label));
     socket.on('saveProject',      onSaveProject.bind(null, socket, label));
     socket.on('revertProject',    onRevertProject.bind(null, socket, label));
-    socket.on('stopProject',     (msg)=>{
-      onPauseProject(socket, label, msg);
-      onCleanProject(socket, label, msg);
+    socket.on('stopProject',     async ()=>{
+      await onPauseProject(socket, label);
+      await onCleanProject(socket, label);
     });
     socket.on('getProjectState', ()=>{
       socket.emit('projectState', getProjectState(label));

@@ -19,20 +19,25 @@ const {getSsh} = require('./project');
 async function cancelRemoteJob(task, ssh){
   const hostinfo = remoteHost.get(task.remotehostID);
   const JS = jobScheduler[hostinfo.jobScheduler];
-  const cancelCmd = `${JS.del} ${task.handler}`;
-  await ssh.exec(cancelCmd);
+  const cancelCmd = `${JS.del} ${task.jobID}`;
+  logger.debug(`cancel job: ${cancelCmd}`);
+  const output=[];
+  await ssh.exec(cancelCmd, {}, output, output);
+  logger.debug('cacnel done', output.join());
 }
 async function cancelLocalJob(task){
 }
 function killLocalProcess(task){
   if(task.handler && task.handler.connect) task.handler.kill();
 }
-async function killTask(task){
+async function killTask(task, hosts){
   if(task.remotehostID !== 'localhost'){
+    const hostinfo = remoteHost.get(task.remotehostID);
     if(task.useJobScheduler){
-      const hostinfo = remoteHost.get(task.remotehostID);
       const arssh = getSsh(task.label, hostinfo.host);
       await cancelRemoteJob(task, arssh);
+    }else{
+      hosts.push(hostinfo.host);
     }
   }else{
     if(task.useJobScheduler){
@@ -266,21 +271,26 @@ class Dispatcher{
   }
   async pause(){
     clearInterval(this.timeout);
-    const p1 = this.children.map((child)=>{
-      return child.pause();
-    });
-    await Promise.all(p1);
-    const p2 =  this.dispatchedTaskList.map((task)=>{
+    for (const child of this.children){
+      child.pause();
+    }
+    for (const task of this.dispatchedTaskList){
       executer.cancel(task);
-      return killTask(task);
-    });
-    return Promise.all(p2);
+    }
+  }
+  async killDispatchedTasks(hosts){
+    await Promise.all(this.children.map((child)=>{
+      return child.killDispatchedTasks(hosts);
+    }));
+    return Promise.all(this.dispatchedTaskList.map((task)=>{
+      return killTask(task, hosts);
+    }));
   }
   remove(){
-    this.pause();
-    this.children.forEach((child)=>{
+    for (const child of this.children){
       child.remove();
-    });
+    }
+    this.children=[];
     this.currentSearchList=[];
     this.nextSearchList=[];
     this.nodes=[];

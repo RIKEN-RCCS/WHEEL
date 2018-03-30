@@ -127,7 +127,9 @@ const passToSSHerr=(data)=>{
   logger.ssherr(data.toString().trim());
 }
 
-async function remoteExecAdaptor(ssh, task, cb){
+async function remoteExec(task, cb){
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const ssh = getSsh(task.label, hostinfo.host);
   await prepareRemoteExecDir(ssh, task)
   logger.debug("prepare done");
   const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
@@ -159,14 +161,15 @@ function isFinished(JS, outputText){
   return finished;
 }
 
-async function remoteSubmitAdaptor(ssh, task, cb){
+async function remoteSubmit(task, cb){
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const ssh = getSsh(task.label, hostinfo.host);
   await prepareRemoteExecDir(ssh, task);
   const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   const workdir=path.posix.dirname(scriptAbsPath);
   let submitCmd = `cd ${workdir} &&`
   if(task.currentIndex) submitCmd = submitCmd+ `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
 
-  const hostinfo = remoteHost.get(task.remotehostID);
   const JS = jobScheduler[hostinfo.jobScheduler];
   submitCmd += ` ${JS.submit}`
 
@@ -199,8 +202,10 @@ async function remoteSubmitAdaptor(ssh, task, cb){
     return
   }
   const jobID = result[1];
+  task.jobID=jobID;
   logger.info('submit success:', scriptAbsPath, jobID);
 
+  //check job stat repeatedly
   const timeout = setInterval(async ()=>{
     const statCmd=`${JS.stat} ${jobID}`;
     const output=[];
@@ -270,7 +275,7 @@ class Executer{
     this.queue=this.queue.filter((e)=>{
       return e.id!==task.id;
     });
-    task.sate='not-started';
+    task.state='not-started';
   }
 }
 
@@ -282,11 +287,10 @@ async function createExecuter(task){
   if(task.remotehostID !== 'localhost'){
     const hostinfo = remoteHost.get(task.remotehostID);
     maxNumJob = hostinfo.numJob;
-    const arssh = getSsh(task.label, hostinfo.host);
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){
-      exec = remoteSubmitAdaptor.bind(null, arssh)
+      exec = remoteSubmit;
     }else{
-      exec = remoteExecAdaptor.bind(null, arssh)
+      exec = remoteExec;
     }
   }
   maxNumJob = parseInt(maxNumJob, 10);

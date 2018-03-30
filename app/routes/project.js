@@ -160,7 +160,7 @@ async function write (label){
  */
 function removeSsh(label){
   const pj=_getProject(label);
-  for (const ssh of pj.ssh){
+  for (const ssh of pj.ssh.values()){
     ssh.disconnect();
   }
   pj.ssh.clear();
@@ -185,6 +185,10 @@ function getCwfFilename (label){
 }
 function setRootDispatcher (label, dispatcher){
   _getProject(label).rootDispatcher=dispatcher;
+}
+function deleteRootDispatcher (label){
+  const pj=_getProject(label);
+  pj.rootDispatcher=null;
 }
 function getRootDispatcher (label){
   return _getProject(label).rootDispatcher;
@@ -220,6 +224,7 @@ module.exports.write             = write;
 
 module.exports.setRootDispatcher = setRootDispatcher;
 module.exports.getRootDispatcher = getRootDispatcher;
+module.exports.deleteRootDispatcher = deleteRootDispatcher;
 
 //operators for ProjectJson
 module.exports.readProjectJson   = readProjectJson;
@@ -235,3 +240,4 @@ module.exports.cleanProject      = cleanProject;
 
 module.exports.addSsh            = addSsh;
 module.exports.getSsh            = getSsh;
+module.exports.removeSsh         = removeSsh;
