@@ -306,7 +306,7 @@ class Executer{
   }
 }
 
-async function createExecuter(task){
+function createExecuter(task){
   logger.debug('createExecuter called');
   let maxNumJob=1;
   let exec = localExec;
@@ -339,7 +339,7 @@ async function exec(task){
   });
   if( executer === undefined){
     logger.debug('create new executer for', task.remotehostID,' with job scheduler', task.useJobScheduler);
-    executer = await createExecuter(task);
+    executer = createExecuter(task);
     executers.push(executer);
   }
   if(task.remotehostID !== 'localhost'){
