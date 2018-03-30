@@ -94,8 +94,6 @@ function convertPathSep(pathString){
   }
 }
 
-
-
 /**
  * evalute condition by executing external command or evalute JS expression
  * @param {string} condition - command name or javascript expression
@@ -105,7 +103,7 @@ function evalConditionSync(condition, cwd){
     logger.warn('condition must be string or boolean');
     return false;
   }
-  let script = path.resolve(cwd, condition);
+  const script = path.resolve(cwd, condition);
   try{
     fs.accessSync(script);
   }catch(e){
@@ -116,8 +114,8 @@ function evalConditionSync(condition, cwd){
   }
   logger.debug('execute ', script);
   addXSync(script);
-  let dir = path.dirname(script)
-  let options = {
+  const dir = path.dirname(script)
+  const options = {
     "cwd": dir
   }
   return child_process.spawnSync(script, options).status === 0;

@@ -10,8 +10,11 @@ const {getSsh} = require('./project');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
 const {addXSync, replacePathsep, getDateString} = require('./utility');
 
-let executers=[];
+const executers=[];
 
+/**
+ * parse filter string from client and return validate glob pattern
+ */
 function parseFilter(pattern){
   if(pattern.startsWith('{') && pattern.endsWith('}')){
     return pattern
@@ -22,12 +25,72 @@ function parseFilter(pattern){
   }
 }
 
+const passToSSHout=(data)=>{
+  logger.sshout(data.toString().trim());
+}
+const passToSSHerr=(data)=>{
+  logger.ssherr(data.toString().trim());
+}
+
+/**
+ * check if job is finished or not on remote server
+ */
+async function isFinished(JS, ssh, jobID){
+  const statCmd=`${JS.stat} ${jobID}`;
+  const output=[];
+  const rt = await ssh.exec(statCmd, {}, output, output);
+  if(rt !== 0){
+    const error = new Error("job stat command failed!");
+    error.cmd = statCmd;
+    error.rt = rt;
+    return Promise.reject(error);
+  }
+  const outputText = output.join("");
+  const reFinishedState = new RegExp(JS.reFinishedState, "m");
+  let finished=reFinishedState.test(outputText);
+  if(! finished){
+    const reFailedState  = new RegExp(JS.reFailedState, "m");
+    finished=reFailedState.test(outputText);
+  }
+  //note: following line will not be written anyware for now
+  logger.debug('is',jobID,'finished', finished,'\n',outputText);
+
+  return finished;
+}
+
+async function remoteExec(task, cb){
+  task.state= 'running';
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const ssh = getSsh(task.label, hostinfo.host);
+  await prepareRemoteExecDir(ssh, task)
+  logger.debug("prepare done");
+  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
+  const workdir=path.posix.dirname(scriptAbsPath);
+  let cmd = `cd ${workdir} &&`;
+  if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
+  cmd = cmd + scriptAbsPath;
+
+  ssh.on('stdout', passToSSHout);
+  ssh.on('stderr', passToSSHerr);
+  logger.debug('exec (remote)', cmd);
+  let rt = await ssh.exec(cmd);
+  ssh.off('stdout', passToSSHout);
+  ssh.off('stderr', passToSSHerr);
+  if(rt === 0){
+    await postProcess(ssh, task, rt, cb);
+  }else{
+    cb(false);
+  }
+}
+
+
 /**
  * execute task on localhost(which is running node.js)
  * @param {Task} task - task instance
  * @return pid - process id of child process
  */
 function localExec(task, cb){
+  task.state= 'running';
   const script = path.resolve(task.workingDir, task.script);
   addXSync(script);
   //TODO env, uid, gidを設定する
@@ -58,13 +121,12 @@ function localExec(task, cb){
 }
 
 async function prepareRemoteExecDir(ssh, task){
+  task.state= 'stage-in';
   logger.debug(task.remoteWorkingDir, task.script);
-  let remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
+  const remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
-  return ssh.send(task.workingDir, task.remoteWorkingDir)
-  .then(()=>{
-    return ssh.chmod(remoteScriptPath, '744');
-  });
+  await ssh.send(task.workingDir, task.remoteWorkingDir)
+  return ssh.chmod(remoteScriptPath, '744');
 }
 async function postProcess(ssh, task, rt, cb){
   task.state='stage-out';
@@ -120,52 +182,15 @@ async function postProcess(ssh, task, rt, cb){
   cb(rt===0);
 }
 
-const passToSSHout=(data)=>{
-  logger.sshout(data.toString().trim());
-}
-const passToSSHerr=(data)=>{
-  logger.ssherr(data.toString().trim());
-}
-
-async function remoteExec(task, cb){
-  const hostinfo = remoteHost.get(task.remotehostID);
-  const ssh = getSsh(task.label, hostinfo.host);
-  await prepareRemoteExecDir(ssh, task)
-  logger.debug("prepare done");
-  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
-  const workdir=path.posix.dirname(scriptAbsPath);
-  let cmd = `cd ${workdir} &&`;
-  if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
-  cmd = cmd + scriptAbsPath;
-
-  ssh.on('stdout', passToSSHout);
-  ssh.on('stderr', passToSSHerr);
-  logger.debug('exec (remote)', cmd);
-  let rt = await ssh.exec(cmd);
-  ssh.off('stdout', passToSSHout);
-  ssh.off('stderr', passToSSHerr);
-
-  return postProcess(ssh, task, rt, cb);
-}
-
 function localSubmit(qsub, task, cb){
   console.log('localSubmit function is not implimented yet');
-}
-
-function isFinished(JS, outputText){
-  console.log('DEBUG:',outputText);
-  const reFinishedState = new RegExp(JS.reFinishedState);
-  let finished=reFinishedState.test(outputText);
-  if(finished) return true;
-  const reFailedState  = new RegExp(JS.reFailedState);
-  finished=reFailedState.test(outputText);
-  return finished;
 }
 
 async function remoteSubmit(task, cb){
   const hostinfo = remoteHost.get(task.remotehostID);
   const ssh = getSsh(task.label, hostinfo.host);
   await prepareRemoteExecDir(ssh, task);
+  task.state= 'running';
   const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   const workdir=path.posix.dirname(scriptAbsPath);
   let submitCmd = `cd ${workdir} &&`
@@ -209,23 +234,18 @@ async function remoteSubmit(task, cb){
 
   //check job stat repeatedly
   const timeout = setInterval(async ()=>{
-    const statCmd=`${JS.stat} ${jobID}`;
-    const output=[];
-    const rt = await ssh.exec(statCmd, {}, output, output);
-    if(rt !== 0){
-      logger.warn('remote stat command failed!\ncmd:',statCmd,'\nrt:', rt);
-      return
+    if(task.state !== 'running'){
+      clearInterval(timeout);
+      cb(false);
+      return;
     }
-    const outputText = output.join("");
-    const finished = isFinished(JS, outputText);
-    //note: following line will not be written anyware for now
-    logger.trace('is',jobID,'finished', finished,'\n',outputText);
+    const finished = await isFinished(JS, ssh, jobID);
     if(finished){
       logger.info(jobID,'is finished');
       clearInterval(timeout);
       postProcess(ssh, task, rt, cb);
     }
-  },5000);
+  },5000); //TODO get interval value from server.json
 }
 
 class Executer{
@@ -252,18 +272,21 @@ class Executer{
       if(this.executing) return;
       this.executing=true;
       if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
+        this.currentNumJob++;
         let task = this.queue.pop()
         task.startTime = getDateString(true);
         task.handler = this.exec(task, (isOK)=>{
           task.endTime = getDateString(true);
-          if(isOK){
-            task.state = 'finished';
-          }else{
-            task.state = 'failed';
+          // prevent to overwrite killed task's state
+          if(task.state !== 'not-started'){
+            if(isOK){
+              task.state = 'finished';
+            }else{
+              task.state = 'failed';
+            }
           }
           this.currentNumJob--;
         });
-        this.currentNumJob++;
       }
       logger.debug('running job:',this.currentNumJob,'/',this.maxNumJob);
       if(this.queue.length === 0) this.stop();

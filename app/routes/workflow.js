@@ -11,7 +11,7 @@ const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require('./utility');
-const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
+const {interval, remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
 const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject, addSsh, removeSsh} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
@@ -344,7 +344,7 @@ async function onRunProject(sio, label, rwfFilename){
 
   timeout = setInterval(()=>{
     sendWorkflow(sio, label, true);
-  }, 5000);
+  }, interval);
 
   // project start here
   try{
