@@ -9,8 +9,8 @@ install
 ```
 > git clone https://gitlab.com/aicshud/WHEEL.git
 > cd WHEEL
-> git checkout -b dev2017-GUI
-> git pull origin dev2017-GUI
+> git checkout -b dev2017
+> git pull origin dev2017
 > npm install
 ```
 run
