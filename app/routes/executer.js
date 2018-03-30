@@ -153,6 +153,7 @@ function localSubmit(qsub, task, cb){
 }
 
 function isFinished(JS, outputText){
+  console.log('DEBUG:',outputText);
   const reFinishedState = new RegExp(JS.reFinishedState);
   let finished=reFinishedState.test(outputText);
   if(finished) return true;
@@ -193,11 +194,12 @@ async function remoteSubmit(task, cb){
     cb(false);
     return
   }
+  const outputText = output.join("");
 
   const re = new RegExp(JS.reJobID);
-  const result = re.exec(output.join());
+  const result = re.exec(outputText);
   if(result === null || result[1] === null){
-    logger.warn('getJobID failed\nsubmit command:',submitCmd,'\nfull output from submmit command:', output.join());
+    logger.warn('getJobID failed\nsubmit command:',submitCmd,'\nfull output from submmit command:', outputText);
     cb(false);
     return
   }
@@ -214,8 +216,10 @@ async function remoteSubmit(task, cb){
       logger.warn('remote stat command failed!\ncmd:',statCmd,'\nrt:', rt);
       return
     }
-    const finished = isFinished(output.join());
-    logger.trace('is',jobID,'finished', finished,'\n',output.join()); //TODO traceはどこにも出力されていないはず。consoleのみに出す?
+    const outputText = output.join("");
+    const finished = isFinished(JS, outputText);
+    //note: following line will not be written anyware for now
+    logger.trace('is',jobID,'finished', finished,'\n',outputText);
     if(finished){
       logger.info(jobID,'is finished');
       clearInterval(timeout);

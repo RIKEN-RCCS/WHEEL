@@ -112,7 +112,7 @@ async function validationCheck(label, workflow, sio){
     return arssh.canConnect()
     .catch(async (err)=>{
       if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
-        const newPassword = await askPassword(sio, hostInfo);
+        const newPassword = await askPassword(sio, remoteHostName);
         if(config.passphrase) config.passphrase = newPassword;
         if(config.password) config.password = newPassword;
         arssh.overwriteConfig(config);
@@ -123,7 +123,7 @@ async function validationCheck(label, workflow, sio){
     })
     .catch(async (err)=>{
       if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
-        const newPassword = await askPassword(sio, hostInfo);
+        const newPassword = await askPassword(sio, remoteHostName);
         if(config.passphrase) config.passphrase = newPassword;
         if(config.password) config.password = newPassword;
         arssh.overwriteConfig(config);
