@@ -131,7 +131,7 @@ function evalConditionSync(condition, cwd){
  * @param {string} label - label of project
  */
 class Dispatcher{
-  constructor(wf, cwfDir, rwfDir, startTime, sio, label){
+  constructor(wf, cwfDir, rwfDir, startTime, label, sio){
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
@@ -369,7 +369,7 @@ class Dispatcher{
       childWF.currentIndex = node.currentIndex;
     }
     // this.sio must not pass to child
-    return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime);
+    return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
   }
   async _delegate(node){
     logger.debug('_delegate called', node.name);

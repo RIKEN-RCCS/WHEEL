@@ -32,7 +32,7 @@ function askPassword(sio, hostname){
  * rewrite old-style parent property
  * after 0d2c9bc commit, parent property has relative path from root project dir
  */
-function fixParentProperty(workflow){
+function fixParentProperty(label, workflow, dir){
   workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
     if(node.parent){
       if(path.posix.isAbsolute(node.parent) || path.win32.isAbsolute(node.parent)){
@@ -46,6 +46,7 @@ function fixParentProperty(workflow){
  * validate all components in workflow and gather remote hosts which is used in tasks
  */
 function validateNodes(label, workflow, dir, hosts){
+  fixParentProperty(label, workflow, dir);
   const promises=[]
   workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
     if(node.type === 'task'){
@@ -92,7 +93,6 @@ function validateNodes(label, workflow, dir, hosts){
  * check if all scripts and remote host setting are available or not
  */
 async function validationCheck(label, workflow, sio){
-  fixParentProperty(workflow);
   const rootDir = getRootDir(label);
   let hosts=[];
   await validateNodes(label, workflow, rootDir, hosts);
@@ -156,12 +156,14 @@ async function sendWorkflow(sio, label, fromDispatcher=false){
     return child;
   });
   for(const child of rt.nodes){
-    if(hasChild(child)){
-      const childJson = await readChildWorkflow(label, child);
-      child.nodes = childJson.nodes.map((grandson)=>{
-        if(grandson !== null && grandson.handler) delete grandson.handler;
-        return grandson;
-      });
+    if(child!==null){
+      if(hasChild(child)){
+        const childJson = await readChildWorkflow(label, child);
+        child.nodes = childJson.nodes.map((grandson)=>{
+          if(grandson !== null && grandson.handler) delete grandson.handler;
+          return grandson;
+        });
+      }
     }
   }
 
@@ -338,7 +340,7 @@ async function onRunProject(sio, label, rwfFilename){
   }
   rwf.cleanupFlag = cleanup;
 
-  const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio, label);
+  const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), label, sio);
   setRootDispatcher(label, rootDispatcher);
   sio.emit('projectJson', await readProjectJson(label));
 
