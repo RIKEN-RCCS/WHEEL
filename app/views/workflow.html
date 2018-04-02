@@ -32,16 +32,16 @@
     <div id="project_name" class="controler_item"></div>
     <div id="project_state" class="controler_item"></div>
     <figure id="run_menu" class="controler_button">
-      <img src="/image/btn_play_n.png" class="img_btn_contoroler" id="run_button" />
+      <img src="/image/btn_play_n.png" class="img_btn_contoroler" id="run_button" title="Run" />
     </figure>
     <figure id="pause_menu" class="controler_button">
-      <img src="/image/btn_pause_n.png" class="img_btn_contoroler" id="pause_button" />
+      <img src="/image/btn_pause_n.png" class="img_btn_contoroler" id="pause_button" title="Pause" />
     </figure>
     <figure id="stop_menu" class="controler_button">
-      <img src="/image/btn_stop_n.png" class="img_btn_contoroler" id="stop_button" />
+      <img src="/image/btn_stop_n.png" class="img_btn_contoroler" id="stop_button" title="Stop" />
     </figure>
     <figure id="clean_menu" class="controler_button">
-      <img src="/image/btn_replay_n.png" class="img_btn_contoroler" id="clean_button" />
+      <img src="/image/btn_replay_n.png" class="img_btn_contoroler" id="clean_button" title="Clean" />
     </figure>
     <div class="controler_bar_right_area">
       <div class="date_title">Create Date :</div>
@@ -62,10 +62,10 @@
   <!-- ビューコントローラ -->
   <div id="view_controler_area">
     <button type="button" name="view" value="graph" id="graphView" class="btn_view_change">
-      <img src="/image/btn_flow_n.png" alt="graph">
+      <img src="/image/btn_flow_n.png" alt="graph" title="Gragh View">
     </button>
     <button type="button" name="view" value="list" id="listView" class="btn_view_change">
-      <img src="/image/btn_list_n.png" alt="List">
+      <img src="/image/btn_list_n.png" alt="List" title="List View">
     </button>
     <span id="breadcrumb"></span>
     <div id="parentDirBtn">
@@ -181,13 +181,13 @@
           <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField" v-on:blur="updateProperty('description')"></textarea>
         </div>
         <div v-if="node.hasOwnProperty('script')">
-          <label for="scriptInputField" id="propertyScript">script</label>
+          <label for="scriptInputField" id="propertyScript">Script</label>
         </div>
         <div v-if="node.hasOwnProperty('script')">
           <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
         </div>
         <div>
-          <label id="propertyInputFiles">inputFiles</label>
+          <label id="propertyInputFiles">InputFiles</label>
         </div>
         <template v-for="(inputFile, index) in node.inputFiles">
           <div>
@@ -204,7 +204,7 @@
           </button>
         </div>
         <div>
-          <label id="propertyOutputFiles">outputFiles</label>
+          <label id="propertyOutputFiles">OutputFiles</label>
         </div>
         <template v-for="(outputFile, index) in node.outputFiles">
           <div>
@@ -222,7 +222,7 @@
         </div>
 
         <div v-if="node.hasOwnProperty('host')">
-          <label for="parameterRemotehost" id="propertyRemotehost">remotehost</label>
+          <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
         </div>
         <select name="remotehost" v-model.lazy.trim="node.host" v-if="node.hasOwnProperty('host')" id="remotehostSelectField" v-on:blur="updateProperty('host')">
           <option value="localhost">localhost</option>
@@ -241,13 +241,13 @@
           <option value="null">null</option>
         </select>
         <div v-if="node.hasOwnProperty('parameterFile')">
-          <label for="parameterFileInputField" id="propertyParameterSettingFile">parameter setting file</label>
+          <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>
         </div>
         <div v-if="node.hasOwnProperty('parameterFile')">
           <input type="text" v-model.lazy.trim="node.parameterFile" spellcheck="false" id="parameterFileInputField" v-on:blur="updateProperty('parameterFile')">
         </div>
         <div v-if="node.hasOwnProperty('condition')">
-          <label for="conditionInputField" id="propertyCondition">condition</label>
+          <label for="conditionInputField" id="propertyCondition">Condition</label>
         </div>
         <div v-if="node.hasOwnProperty('condition')">
           <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
@@ -282,11 +282,11 @@
       </div>
       <div id="remoteFileTransferSetthing">
         <div v-if="node.hasOwnProperty('cleanupFlag') || node.hasOwnProperty('include') || node.hasOwnProperty('exclude')">
-          remote file transfer setting
+          Remote file transfer setting
         </div>
         <div v-if="node.hasOwnProperty('cleanupFlag')">
           <div>
-            <label id="propertyCleanUpFlag">clean up flag</label>
+            <label id="propertyCleanUpFlag">Clean up flag</label>
           </div>
           <div id="flags">
             <div>
@@ -294,7 +294,7 @@
             <div>
               <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="1">keep files</div>
             <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="2"
-              checked=>follow parent setting
+              checked=>Follow parent setting
           </div>
         </div>
         <div v-if="node.hasOwnProperty('include')">

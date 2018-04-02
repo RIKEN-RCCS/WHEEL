@@ -42,9 +42,7 @@ $(() => {
     },
     methods: {
       toggleSelected: function (i) {
-        console.log(i);
         if (this.selectedHost === i) {
-          console.log(i);
           this.selectedHost = -1;
           resetNewHost();
         } else {
@@ -92,7 +90,6 @@ $(() => {
         if (this.authType === '1') {
           this.newHostInfo.keyFile = null;
         }
-        console.log(this.selectedHost);
         if (this.selectedHost === -1) {
           this.mode = 'addHost';
         } else {
@@ -194,6 +191,8 @@ $(() => {
 
   function testSshConnection(index) {
     vm.testing = null;
+    vm.OK = [];
+    vm.NG = [];
     const html = '<p id="sshConnectionLabel">Input SSH connection password.</p><input type=password id="password">'
     dialogWrapper('#dialog', html)
       .done(function () {
@@ -201,7 +200,6 @@ $(() => {
         let password = $('#password').val();
         if (index === -1) {
           socket.emit('tryConnectHost', vm.newHostInfo, password, (isConnect) => {
-            console.log(isConnect)
             vm.testing = null;
             if (isConnect) {
               vm.OK.push(index);
@@ -212,7 +210,6 @@ $(() => {
         } else {
           let host = vm.hostList[index];
           socket.emit('tryConnectHostById', host.id, password, (isConnect) => {
-            console.log(isConnect)
             vm.testing = null;
             if (isConnect) {
               vm.OK.push(index);

@@ -361,6 +361,7 @@ class SvgBox {
     const statePosX = 220;
     const statePosY = 0;
     const paraStuPosX = 120;
+    console.log(state);
     if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
       state = 'running'
     }
@@ -380,21 +381,6 @@ class SvgBox {
         .y(statePosY);
     }
   }
-
-  // /**
-  // * create state
-  // * @return state element
-  // */
-  // createParaStuState(numTotal, numFinished, numFailed) {
-  //   const statePosX = 120;
-  //   const statePosY = 0;
-  //   const paraStuState = "Fin:" + 20 + "Fail:" + numFailed + "(" + numTotal + ")";
-  //   return this.draw
-  //     .text(paraStuState)
-  //     .fill('#111')
-  //     .x(statePosX)
-  //     .y(statePosY);
-  // }
 
   /**
  * create workflow component icon

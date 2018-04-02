@@ -195,6 +195,7 @@ $(() => {
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
+    sio.emit('getTaskStateList', rootWorkflow);
     sio.emit('getHostList', true);
 
     sio.on('showMessage', showMessage);
@@ -707,12 +708,12 @@ $(() => {
     $('#project_table_body').empty();
     let taskStateTable = $('#project_table_body');
     for (let i = 0; i < taskStateList.length; i++) {
-      //for test
       let nodeType = "task";
-      //let nodeType = taskStateList[i].type;
-      let nodeState = "running";
-      //let nodeState = taskStateList[i].state;
-
+      //親のコンポーネント表示の際はプロパティ「parent」を使用する
+      let nodeState = taskStateList[i].state;
+      if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
+        nodeState = 'running'
+      }
       let nodeIconPath = config.node_icon[nodeType];
       let nodeColor = config.node_color[nodeType];
       let nodeComponentState = config.state_icon[nodeState];
