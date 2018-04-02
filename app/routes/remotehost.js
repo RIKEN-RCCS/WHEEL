@@ -1,16 +1,15 @@
 'use strict';
 const express = require('express');
-const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const {promisify} = require("util");
+const ARsshClient = require('arssh2-client');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('remotehost');
 const fileBrowser = require("./fileBrowser");
 const {remoteHost, rootDir} = require('../db/db');
-const {doAndEmit} = require('./utility');
-const {getSsh, canConnect} = require('./sshManager');
+const {doAndEmit, createSshConfig} = require('./utility');
 
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
@@ -21,17 +20,23 @@ function sendFileList(sio, request){
   });
 }
 
-async function trySshConnection(hostInfo, password, cb){
-  const ssh = getSsh({host: hostInfo.host, username: hostInfo.username});
-  await ssh.disconnect();
-  canConnect(hostInfo, password)
+async function trySshConnectionWrapper(hostInfo, password, cb){
+  const config = await createSshConfig(hostInfo, password);
+  config.readyTimeout = 1000;//TODO remotehost画面でホスト毎に別の値を入力できるようにする
+  const arssh = new ARsshClient(config, {connectionRetry: 1, connectionRetryDelay: 2000});
+  logger.debug('try to connect', config.host,':',config.port);
+  arssh.canConnect()
     .then(()=>{
       cb(true);
     })
     .catch((err)=>{
-      logger.error('connection failed',err);
+      err.config = Object.assign({}, config);
+      if(err.config.hasOwnProperty('privateKey')) err.config.privateKey='privateKey was defined but omitted'
+      if(err.config.hasOwnProperty('password'))   err.config.password='password  was defined but omitted'
+      if(err.config.hasOwnProperty('passphrase')) err.config.passphrase='passphrase  was defined but omitted'
       cb(false);
-    })
+      logger.error(err);
+    });
 }
 
 module.exports = function(io){
@@ -50,10 +55,10 @@ module.exports = function(io){
     socket.on('updateHost', doAndEmit.bind(null, remoteHost.update.bind(remoteHost)));
     socket.on('copyHost',   doAndEmit.bind(null, remoteHost.copy.bind(remoteHost)));
     socket.on('getFileList', sendFileList.bind(null, socket));
-    socket.on('tryConnectHost', trySshConnection.bind(null));
-    socket.on('tryConnectHostById', (id, password, cb)=>{
+    socket.on('tryConnectHost', trySshConnectionWrapper.bind(null));
+    socket.on('tryConnectHostById', async (id, password, cb)=>{
       const hostInfo = remoteHost.get(id);
-      trySshConnection(hostInfo, password, cb);
+      await trySshConnectionWrapper(hostInfo, password, cb);
     });
   });
 

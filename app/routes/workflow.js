@@ -5,15 +5,15 @@ const {promisify} = require("util");
 
 const klaw = require('klaw');
 const express = require('express');
+const ARsshClient = require('arssh2-client');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
-const {canConnect} = require('./sshManager');
-const {getDateString, replacePathsep, getSystemFiles} = require('./utility');
-const {remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
-const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject} = require('./project');
-const {write, setRootDispatcher, getRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
+const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require('./utility');
+const {interval, remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
+const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject, addSsh, removeSsh} = require('./project');
+const {write, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
 const {commitProject, revertProject, cleanProject} =  require('./project');
 const {gitAdd} = require('./project');
 const fileBrowser = require("./fileBrowser");
@@ -28,24 +28,27 @@ function askPassword(sio, hostname){
   });
 }
 
-
 /**
- * check if all scripts and remote host setting are available or not
+ * rewrite old-style parent property
+ * after 0d2c9bc commit, parent property has relative path from root project dir
  */
-async function validationCheck(label, workflow, dir, sio){
-  const promises=[]
-  if(dir == null ){
-    promises.push(Promise.reject(new Error('Project dir is null or undefined')));
-  }
-  let hosts=[];
+function fixParentProperty(label, workflow, dir){
   workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
-    // fix parent property
-    // parent is relative path from root project dir to parent component dir after 0d2c9bc commit
     if(node.parent){
       if(path.posix.isAbsolute(node.parent) || path.win32.isAbsolute(node.parent)){
         node.parent = replacePathsep(path.relative(getRootDir(label),dir));
       }
     }
+  });
+}
+
+/**
+ * validate all components in workflow and gather remote hosts which is used in tasks
+ */
+function validateNodes(label, workflow, dir, hosts){
+  fixParentProperty(label, workflow, dir);
+  const promises=[]
+  workflow.nodes.filter((e)=>{return e}).forEach((node)=>{
     if(node.type === 'task'){
       if(node.path == null) promises.push(Promise.reject(new Error(`illegal path ${node.null}`)));
       if(node.host !== 'localhost') hosts.push(node.host);
@@ -74,7 +77,7 @@ async function validationCheck(label, workflow, dir, sio){
       promises.push(
         readChildWorkflow(label, node)
         .then((childWF)=>{
-          return validationCheck(label, childWF, childDir, sio)
+          return validateNodes(label, childWF, childDir, hosts);
         })
       );
     }
@@ -83,49 +86,101 @@ async function validationCheck(label, workflow, dir, sio){
     return isInitialNode(node);
   });
   if(!hasInitialNode) promises.push(Promise.reject(new Error('no component can be run')));
-
-  hosts = Array.from(new Set(hosts));
-  let hostPromises = hosts.map((e)=>{
-    let id=remoteHost.getID('name', e);
-    const hostInfo = remoteHost.get(id);
-    if(!hostInfo)  promises.push(Promise.reject(new Error(`illegal remote host specified ${e}`)));
-    return canConnect(hostInfo)
-      .catch((err)=>{
-        return askPassword(sio, e)
-          .then((password)=>{
-            canConnect(hostInfo, password);
-          });
-      });
-  });
-  return Promise.all(promises.concat(hostPromises));
+  return Promise.all(promises);
 }
 
-async function sendWorkflow(sio, label){
-  const cwf = getCwf(label);
-  const rt = JSON.parse(JSON.stringify(cwf));
-  const promises = rt.nodes.map((child)=>{
-    if(child === null) return child;
-    if(child.handler) delete child.handler;
-    if(hasChild(child)){
-      return readChildWorkflow(label, child)
-        .then((tmp)=>{
-          child.nodes=tmp.nodes.map((grandson)=>{
-            if(grandson === null) return grandson;
-            if( grandson.handler) delete grandson.handler;
-            return grandson;
-          });
-        })
-    }
+/**
+ * check if all scripts and remote host setting are available or not
+ */
+async function validationCheck(label, workflow, sio){
+  const rootDir = getRootDir(label);
+  let hosts=[];
+  await validateNodes(label, workflow, rootDir, hosts);
+
+  hosts = Array.from(new Set(hosts));
+  // remoteHostName is name property of remote host entry
+  // hostInfo.host is hostname or IP address of remote host
+  await hosts.reduce(async (promise, remoteHostName)=>{
+    await promise;
+    const id=remoteHost.getID('name', remoteHostName);
+    const hostInfo = remoteHost.get(id);
+    if(!hostInfo)  return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
+    const password = await askPassword(sio, remoteHostName);
+    const config = await createSshConfig(hostInfo, password);
+    const arssh = new ARsshClient(config, {connectionRetryDelay: 1000});
+    addSsh(label, hostInfo.host, arssh);
+    return arssh.canConnect()
+    .catch(async (err)=>{
+      if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
+        const newPassword = await askPassword(sio, remoteHostName);
+        if(config.passphrase) config.passphrase = newPassword;
+        if(config.password) config.password = newPassword;
+        arssh.overwriteConfig(config);
+        return arssh.canConnect();
+      }else{
+        return Promise.reject(err);
+      }
+    })
+    .catch(async (err)=>{
+      if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
+        const newPassword = await askPassword(sio, remoteHostName);
+        if(config.passphrase) config.passphrase = newPassword;
+        if(config.password) config.password = newPassword;
+        arssh.overwriteConfig(config);
+        return arssh.canConnect();
+      }else{
+        return Promise.reject(err);
+      }
+    })
+    .catch((err)=>{
+      if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
+        return Promise.reject(new Error('wrong password for 3 times'));
+      }else{
+        return Promise.reject(err);
+      }
+    });
+  }, Promise.resolve());
+}
+
+async function sendWorkflow(sio, label, fromDispatcher=false){
+  let wf=null;
+  if(fromDispatcher){
+    wf = getRootDispatcher(label).getCwf(getCurrentDir(label));
+  }else{
+    wf = getCwf(label);
+  }
+
+  const rt = Object.assign({}, wf);
+  rt.nodes = wf.nodes.map((child)=>{
+    if(child !== null && child.handler) delete child.handler;
+    return child;
   });
-  await Promise.all(promises);
+  for(const child of rt.nodes){
+    if(child!==null){
+      if(hasChild(child)){
+        const childJson = await readChildWorkflow(label, child);
+        child.nodes = childJson.nodes.map((grandson)=>{
+          if(grandson !== null && grandson.handler) delete grandson.handler;
+          return grandson;
+        });
+      }
+    }
+  }
+
   sio.emit('workflow', rt);
+}
+
+function isRunning(projectState){
+  return projectState === 'running' || projectState === 'paused';
 }
 
 async function onWorkflowRequest(sio, label, argWorkflowFilename){
   const workflowFilename=path.resolve(argWorkflowFilename);
   logger.debug('Workflow Request event recieved: ', workflowFilename);
   await setCwf(label, workflowFilename);
-  sendWorkflow(sio, label);
+  getProjectState(label);
+  const projectState=getProjectState(label);
+  sendWorkflow(sio, label, isRunning(projectState));
 }
 
 async function onCreateNode(sio, label, msg){
@@ -261,56 +316,77 @@ async function onRemoveFileLink(sio, label, msg){
   }
 }
 
+//TODO fix me!! temporary workaround
+let timeout;
+
 async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
-  let rwf = await readRwf(label);
+  const rwf = await readRwf(label);
   try{
-    await validationCheck(label, rwf, getRootDir(label), sio)
+    await validationCheck(label, rwf, sio)
   }catch(err){
-    logger.error('invalid root workflow:', err.message);
-    logger.debug(err);
+    logger.error('invalid root workflow:', err);
+    removeSsh(label);
     return false
   }
   await commitProject(label);
   await setProjectState(label, 'running');
   sio.emit('projectJson', await readProjectJson(label));
-  let rootDir = getRootDir(label);
+
+  const rootDir = getRootDir(label);
   let cleanup = rwf.cleanupFlag;
   if(! cleanup){
     cleanup = defaultCleanupRemoteRoot;
   }
   rwf.cleanupFlag = cleanup;
-  setRootDispatcher(label, new Dispatcher(rwf, rootDir, rootDir, getDateString(), sio));
+
+  const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), label, sio);
+  setRootDispatcher(label, rootDispatcher);
   sio.emit('projectJson', await readProjectJson(label));
-  const timeout = setInterval(()=>{
-    const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
-    overwriteCwf(label, cwf);
-    sendWorkflow(sio, label);
-  }, 5000);
+
+  timeout = setInterval(()=>{
+    sendWorkflow(sio, label, true);
+  }, interval);
+
+  // project start here
   try{
-    const projectState=await getRootDispatcher(label).dispatch();
+    const projectState=await rootDispatcher.dispatch();
     await setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parsing workflow:',err);
     await setProjectState(label, 'failed');
   }
+
   clearInterval(timeout);
-  const cwf = getRootDispatcher(label).getCwf(getCurrentDir(label));
-  overwriteCwf(label, cwf);
-  sendWorkflow(sio, label);
+  sendWorkflow(sio, label, true);
+
   sio.emit('projectJson', await readProjectJson(label));
 }
 
 async function onPauseProject(sio, label){
   logger.debug("pause event recieved");
-  await getRootDispatcher(label).pause();
+  clearInterval(timeout); // TODO fix me!
+  const rootDispatcher=getRootDispatcher(label);
+  rootDispatcher.pause();
+
+  let hosts=[];
+  await rootDispatcher.killDispatchedTasks(hosts);
+  hosts = Array.from(new Set(hosts));
+  logger.debug('remove ssh connection to', hosts);
+  for(const host of hosts){
+    removeSsh(label, host);
+  }
+
   await setProjectState(label, 'paused');
   sio.emit('projectJson', await readProjectJson(label));
 }
 async function onCleanProject(sio, label){
   logger.debug("clean event recieved");
-  const rootDispatcher=getRootDispatcher(label);
-  if(rootDispatcher != null) rootDispatcher.remove();
+  const rootDispatcher = getRootDispatcher(label);
+  if(rootDispatcher){
+    rootDispatcher.remove();;
+    deleteRootDispatcher(label);
+  }
   await cleanProject(label);
   await resetProject(label);
   await sendWorkflow(sio, label);
@@ -394,9 +470,9 @@ module.exports = function(io){
     socket.on('cleanProject',     onCleanProject.bind(null, socket, label));
     socket.on('saveProject',      onSaveProject.bind(null, socket, label));
     socket.on('revertProject',    onRevertProject.bind(null, socket, label));
-    socket.on('stopProject',     (msg)=>{
-      onPauseProject(socket, label, msg);
-      onCleanProject(socket, label, msg);
+    socket.on('stopProject',     async ()=>{
+      await onPauseProject(socket, label);
+      await onCleanProject(socket, label);
     });
     socket.on('getProjectState', ()=>{
       socket.emit('projectState', getProjectState(label));

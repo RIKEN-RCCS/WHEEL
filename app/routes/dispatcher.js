@@ -14,35 +14,30 @@ const executer = require('./executer');
 const { addXSync, doCleanup} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
-const {getSsh} = require('./sshManager');
+const {getSsh} = require('./project');
 
 async function cancelRemoteJob(task, ssh){
   const hostinfo = remoteHost.get(task.remotehostID);
   const JS = jobScheduler[hostinfo.jobScheduler];
-  const cancelCmd = `${JS.del} ${task.handler}`;
-  await ssh.exec(cancelCmd);
+  const cancelCmd = `${JS.del} ${task.jobID}`;
+  logger.debug(`cancel job: ${cancelCmd}`);
+  const output=[];
+  await ssh.exec(cancelCmd, {}, output, output);
+  logger.debug('cacnel done', output.join());
 }
 async function cancelLocalJob(task){
 }
 function killLocalProcess(task){
   if(task.handler && task.handler.connect) task.handler.kill();
 }
-async function killTask(task){
+async function killTask(task, hosts){
   if(task.remotehostID !== 'localhost'){
     const hostinfo = remoteHost.get(task.remotehostID);
-    const config = {
-      host: hostinfo.host,
-      port: hostinfo.port,
-      username: hostinfo.username,
-    }
-    const arssh = getSsh(config);
     if(task.useJobScheduler){
+      const arssh = getSsh(task.label, hostinfo.host);
       await cancelRemoteJob(task, arssh);
     }else{
-      logger.warn('kill remote process is not supported');
-      //TODO nohupとか使われてなければ接続を切ればremoteのプロセスも死ぬはず
-      //nohupは諦める・・・?
-      //とすると、再実行時のリモート環境のrootディレクトリ名は変えた方が良いか?
+      hosts.push(hostinfo.host);
     }
   }else{
     if(task.useJobScheduler){
@@ -99,8 +94,6 @@ function convertPathSep(pathString){
   }
 }
 
-
-
 /**
  * evalute condition by executing external command or evalute JS expression
  * @param {string} condition - command name or javascript expression
@@ -110,7 +103,7 @@ function evalConditionSync(condition, cwd){
     logger.warn('condition must be string or boolean');
     return false;
   }
-  let script = path.resolve(cwd, condition);
+  const script = path.resolve(cwd, condition);
   try{
     fs.accessSync(script);
   }catch(e){
@@ -121,8 +114,8 @@ function evalConditionSync(condition, cwd){
   }
   logger.debug('execute ', script);
   addXSync(script);
-  let dir = path.dirname(script)
-  let options = {
+  const dir = path.dirname(script)
+  const options = {
     "cwd": dir
   }
   return child_process.spawnSync(script, options).status === 0;
@@ -135,14 +128,16 @@ function evalConditionSync(condition, cwd){
  * @param {string} rwfDir -  path to project root workflow dir
  * @param {string} startTime - start time of project
  * @param {SocketIO} sio - SocketIO object which is used to send task state list
+ * @param {string} label - label of project
  */
 class Dispatcher{
-  constructor(wf, cwfDir, rwfDir, startTime, sio){
+  constructor(wf, cwfDir, rwfDir, startTime, label, sio){
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
     this.projectStartTime=startTime;
     this.sio = sio; //never pass to child dispatcher
+    this.label = label;
     this.nextSearchList=[];
     this.children=[];
     this.dispatchedTaskList=[]
@@ -274,21 +269,26 @@ class Dispatcher{
   }
   async pause(){
     clearInterval(this.timeout);
-    const p1 = this.children.map((child)=>{
-      return child.pause();
-    });
-    await Promise.all(p1);
-    const p2 =  this.dispatchedTaskList.map((task)=>{
+    for (const child of this.children){
+      child.pause();
+    }
+    for (const task of this.dispatchedTaskList){
       executer.cancel(task);
-      return killTask(task);
-    });
-    return Promise.all(p2);
+    }
+  }
+  async killDispatchedTasks(hosts){
+    await Promise.all(this.children.map((child)=>{
+      return child.killDispatchedTasks(hosts);
+    }));
+    return Promise.all(this.dispatchedTaskList.map((task)=>{
+      return killTask(task, hosts);
+    }));
   }
   remove(){
-    this.pause();
-    this.children.forEach((child)=>{
+    for (const child of this.children){
       child.remove();
-    });
+    }
+    this.children=[];
     this.currentSearchList=[];
     this.nextSearchList=[];
     this.nodes=[];
@@ -329,6 +329,7 @@ class Dispatcher{
     task.startTime = 'not started'; // to be assigned in executer
     task.endTime   = 'not finished'; // to be assigned in executer
     task.projectStartTime= this.projectStartTime;
+    task.label = this.label;
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
@@ -368,7 +369,7 @@ class Dispatcher{
       childWF.currentIndex = node.currentIndex;
     }
     // this.sio must not pass to child
-    return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime);
+    return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
   }
   async _delegate(node){
     logger.debug('_delegate called', node.name);
