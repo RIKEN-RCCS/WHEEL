@@ -1,6 +1,6 @@
 const child_process = require('child_process');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const {promisify} = require('util');
 
 const {getLogger} = require('../logSettings');
@@ -11,6 +11,16 @@ const {interval, remoteHost, jobScheduler} = require('../db/db');
 const {addXSync, replacePathsep, getDateString} = require('./utility');
 
 const executers=[];
+
+/**
+ * replace CRLF to LF
+ * @param {string} filename
+ */
+async function replaceCRLF(filename){
+  let contents = await fs.readFile(filename);
+  contents = contents.toString().replace(/\r\n/m,'\n');
+  return fs.writeFile(filename , contents);
+};
 
 /**
  * parse filter string from client and return validate glob pattern
@@ -123,6 +133,8 @@ function localExec(task, cb){
 async function prepareRemoteExecDir(ssh, task){
   task.state= 'stage-in';
   logger.debug(task.remoteWorkingDir, task.script);
+  const localScriptPath = path.resolve(task.workingDir, task.script);
+  await replaceCRLF(localScriptPath);
   const remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
   await ssh.send(task.workingDir, task.remoteWorkingDir)
