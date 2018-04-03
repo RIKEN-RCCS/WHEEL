@@ -498,10 +498,10 @@ module.exports = function(io){
   const router = express.Router();
   router.post('/', async (req, res, next)=>{
     const projectJsonFilename=req.body.project;
-    //TODO openProject will return label(index number of opend project)
-    // so update label var here
+    //TODO label must be stored in session
+    //otherwise each request from clients are messed up
+    label = path.dirname(projectJsonFilename);
     await openProject(label, projectJsonFilename);
-    // cwf is set in openProject()
     res.cookie('root', getCwfFilename(label));
     res.cookie('rootDir', getCurrentDir(label));
     res.cookie('project', projectJsonFilename);
