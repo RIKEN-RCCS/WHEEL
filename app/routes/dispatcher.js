@@ -193,6 +193,7 @@ class Dispatcher{
             if (e.code==='EPERM'){
               return copy(oldPath, newPath);
             }
+            return Promise.reject(e);
           });
         }));
       }));
