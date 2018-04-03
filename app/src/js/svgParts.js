@@ -617,7 +617,7 @@ class SvgParentFilesBox {
         .text(output.name)
         .fill('#FFFFFF');
       const fileNameInterval = 40;
-      const x = 0;
+      const x = 2;
       const y = 28 + fileNameInterval * index;
 
       text.move(x, y);
@@ -636,7 +636,7 @@ class SvgParentFilesBox {
         .text(input.name)
         .fill('#FFFFFF');
       const fileNameInterval = 40;
-      const x = 1020;
+      const x = 1034;
       const y = 610 + fileNameInterval * index;
       //const x = config.box_appearance.inputTextNamePosX;
       text.move(x, y);
