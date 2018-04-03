@@ -720,8 +720,8 @@ $(() => {
 
       let id = `taskLabel_${i}`;
 
-      taskStateTable.append(`<tr><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"/><label class="nameLabel">${taskStateList[i].name}</label></td>
-      <td class="componentState"><img src=${nodeComponentState}/><label class="stateLabel">${taskStateList[i].state}</label></td>
+      taskStateTable.append(`<tr><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
+      <td class="componentState"><img src=${nodeComponentState}><label class="stateLabel">${taskStateList[i].state}</label></td>
       <td class="componentStartTime">${taskStateList[i].startTime}</td>
       <td class="componentEndTime">${taskStateList[i].endTime}</td>
       <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
