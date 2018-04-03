@@ -32,7 +32,7 @@
     "license-report": "license-report"
   },
   "dependencies": {
-    "arssh2-client": "^0.4.2",
+    "arssh2-client": "^0.4.3",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
