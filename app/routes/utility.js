@@ -54,6 +54,7 @@ function normalizePath(pathString){
 
 /**
  * escape meta character of regex (from MDN)
+ * please note that this function can not treat '-' in the '[]'
  * @param {string} string - target string which will be escaped
  * @return {string} escaped regex string
  */
@@ -115,16 +116,35 @@ function doCleanup(flag, parentFlag){
   return numFlag === 0;
 }
 
+//blacklist
+const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
+
+//whitelist
+const alphanumeric = 'a-zA-Z0-9';
+// due to escapeRegExp's spec, bars must be added separately any other regexp strings
+const bars = '_\-';
+const pathseps = '/\\';
+const metaCharactors = '*?[]{}()!?+@.';
 /**
  * determin specified name is valid file/directory name or not
  */
 function isValidName(name){
-  const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
   if(win32reservedName.test(name)) return false;
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric)}+bars]`);
+  if(forbidonChars.test(name)) return false;
+  return true;
+}
 
-  const notAllowedChar = /[^a-zA-Z0-9_\-]/; //alphanumeric, '_', and '-'
-  if(notAllowedChar.test(name)) return false;
-
+function isValidInputFilename(name){
+  if(win32reservedName.test(name)) return false;
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps)}+bars]`);
+  if(forbidonChars.test(name)) return false;
+  return true;
+}
+function isValidOutputFilename(name){
+  if(win32reservedName.test(name)) return false;
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps+metaCharactors)}+bars]`);
+  if(forbidonChars.test(name)) return false;
   return true;
 }
 
@@ -135,11 +155,13 @@ function getSystemFiles(){
   return new RegExp(`^(?!^.*(${escapeRegExp(extProject)}|${escapeRegExp(extWF)}|${escapeRegExp(extPS)}|${escapeRegExp(extFor)}|${escapeRegExp(extWhile)}|${escapeRegExp(extForeach)}|.gitkeep)$).*$`);
 }
 
-module.exports.escapeRegExp     = escapeRegExp;
-module.exports.addXSync         = addXSync;
-module.exports.getDateString    = getDateString;
-module.exports.replacePathsep   = replacePathsep;
-module.exports.doCleanup        = doCleanup;
-module.exports.isValidName      = isValidName;
-module.exports.getSystemFiles   = getSystemFiles;
-module.exports.createSshConfig = createSshConfig;
+module.exports.escapeRegExp          = escapeRegExp;
+module.exports.addXSync              = addXSync;
+module.exports.getDateString         = getDateString;
+module.exports.replacePathsep        = replacePathsep;
+module.exports.doCleanup             = doCleanup;
+module.exports.isValidName           = isValidName;
+module.exports.isValidInputFilename  = isValidInputFilename;
+module.exports.isValidOutputFilename = isValidOutputFilename;
+module.exports.getSystemFiles        = getSystemFiles;
+module.exports.createSshConfig       = createSshConfig;

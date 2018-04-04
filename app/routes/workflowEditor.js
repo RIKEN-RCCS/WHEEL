@@ -7,7 +7,7 @@ const glob = require('glob');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const component = require('./workflowComponent');
-const {isValidName, replacePathsep} = require('./utility');
+const {isValidName, isValidInputFilename, isValidOutputFilename, replacePathsep} = require('./utility');
 const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename, getRootDir} = require('./project');
 
 function isInitialNode(node){
@@ -343,6 +343,18 @@ function removeAllFileLink(label, index){
 }
 
 async function addValue(label, node, property, value){
+  if(property === "inputFiles"){
+    if(! isValidInputFilename(value.name)){
+      logger.error('only alpha numeric and _ - / \ is allowed for inputFile name');
+      return;
+    }
+  } else  if(property === "outputFiles"){
+    if(! isValidOutputFilename(value.name)){
+      logger.error('only alpha numeric and _ - / \ ?!@*()[]{} is allowed for outputFile name');
+      return;
+    }
+  }
+
   node[property].push(value);
   if(hasChild(node)){
     const childWorkflow = await readChildWorkflow(label, node);
