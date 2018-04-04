@@ -15,8 +15,8 @@
     1. [新規プロジェクトの作成（ニュー、インポート）](6_home/create_project.md)
     1. [既存プロジェクトの編集（オープン、リネーム、デリート）](6_home/edit_project.md)
 1. ワークフロー編集画面（グラフビュー）の機能説明
-    1. [画面仕様説明](7_workflow_graghview/workflow_graghview.md)
-    1. [各コンポーネントのプロパティ説明](7_workflow_graghview/workflow_component.md)
+    1. [画面仕様説明](7_workflow_graphview/workflow_graphview.md)
+    1. [各コンポーネントのプロパティ説明](7_workflow_graphview/workflow_component.md)
 1. ワークフロー実行状況確認画面（リストビュー）の機能説明
     1. [画面仕様説明](8_workflow_listview/workflow_listview.md)
 1. [ワークフローの作成（使用例と実行）](9_create_workflow/create_workflow.md)
