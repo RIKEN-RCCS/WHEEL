@@ -130,20 +130,20 @@ const metaCharactors = '*?[]{}()!?+@.';
  */
 function isValidName(name){
   if(win32reservedName.test(name)) return false;
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric)}+bars]`);
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric)+bars}]`);
   if(forbidonChars.test(name)) return false;
   return true;
 }
 
 function isValidInputFilename(name){
   if(win32reservedName.test(name)) return false;
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps)}+bars]`);
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps)+bars}]`);
   if(forbidonChars.test(name)) return false;
   return true;
 }
 function isValidOutputFilename(name){
   if(win32reservedName.test(name)) return false;
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps+metaCharactors)}+bars]`);
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps+metaCharactors)+bars}]`);
   if(forbidonChars.test(name)) return false;
   return true;
 }
