@@ -8,7 +8,7 @@ const logger = getLogger('workflow');
 
 const {getSsh} = require('./project');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
-const {addXSync, replacePathsep, getDateString} = require('./utility');
+const {addXSync, replacePathsep, getDateString, deliverOutputFiles} = require('./utility');
 
 const executers=[];
 
@@ -84,7 +84,7 @@ async function remoteExec(task, cb){
   ssh.on('stdout', passToSSHout);
   ssh.on('stderr', passToSSHerr);
   logger.debug('exec (remote)', cmd);
-  let rt = await ssh.exec(cmd);
+  const rt = await ssh.exec(cmd);
   ssh.off('stdout', passToSSHout);
   ssh.off('stderr', passToSSHerr);
   if(rt === 0){
@@ -294,6 +294,13 @@ class Executer{
           if(task.state !== 'not-started'){
             if(isOK){
               task.state = 'finished';
+              // TODO errors occurred in deliverOutputFiles can not be seen
+              deliverOutputFiles(task.outputFiles, task.workingDir)
+                .then((rt)=>{
+                  if(rt.length > 0 ){
+                    logger.debug('deliverOutputFiles:\n',rt);
+                  }
+                });
             }else{
               task.state = 'failed';
             }
@@ -345,7 +352,7 @@ function createExecuter(task){
  * enqueue task
  * @param {Task} task - instance of Task class (dfined in workflowComponent.js)
  */
-async function exec(task){
+function exec(task){
   task.remotehostID=remoteHost.getID('name', task.host) || 'localhost';
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler

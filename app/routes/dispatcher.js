@@ -4,14 +4,12 @@ const {promisify} = require('util');
 const child_process = require('child_process');
 
 const uuidv1 = require('uuid/v1');
-const glob = require('glob');
-const {ensureDir,copy} = require('fs-extra');
+
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
-
 const {interval, remoteHost, jobScheduler} = require('../db/db');
 const executer = require('./executer');
-const { addXSync, doCleanup} = require('./utility');
+const { addXSync, doCleanup, deliverOutputFiles} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
 const {getSsh} = require('./project');
@@ -86,14 +84,6 @@ function _isFinishedState(state){
   return state === 'finished' || state === 'failed';
 }
 
-function convertPathSep(pathString){
-  if(path.sep === path.posix.sep){
-    return pathString.replace(new RegExp("\\"+path.win32.sep,"g"), path.sep);
-  }else{
-    return pathString.replace(new RegExp(path.posix.sep,"g"), path.sep);
-  }
-}
-
 /**
  * evalute condition by executing external command or evalute JS expression
  * @param {string} condition - command name or javascript expression
@@ -151,57 +141,6 @@ class Dispatcher{
     this.dispatching=false;
   }
 
-  // TODO srcRootとdstRootをコンポーネント側で作成してから渡すように変更し
-  // utility.jsへ移動
-  deliverOutputFiles(node){
-    return Promise.all(node.outputFiles.map(async(e)=>{
-      //memo src can be glob pattern
-      const src = e.name;
-      const srcRoot= path.resolve(this.cwfDir, node.path);
-      const srces = await promisify(glob)(src, {cwd: srcRoot});
-      return Promise.all(srces.map((srcFile)=>{
-        return Promise.all(e.dst.map(async (dst)=>{
-          const tmp = dst.dstNode === "parent" ? "./" : this.wf.nodes[dst.dstNode].path;
-          const dstName = dst.dstName ? convertPathSep(dst.dstName) : "";
-          let dstRoot = path.resolve(this.cwfDir, tmp);
-
-          // link srcFile -> dstName
-          let newPath = path.resolve(dstRoot, dstName);
-
-          // link srcFile -> dstName/srcFile
-          if(srces.length>1 || dstName.endsWith(path.sep)){
-            newPath = path.resolve(dstRoot, dstName, srcFile);
-          }
-
-          // remove dst file if it exist
-          try{
-            await promisify(fs.unlink)(newPath);
-          }catch(e){
-            if(e.code !== 'ENOENT' && e.code !== 'EISDIR' && e.code !== 'EPERM'){
-              return Promise.reject(e);
-            }
-          }
-
-          // make destination directory
-          await ensureDir(path.dirname(newPath));
-
-          // make symlink
-          const oldPath = path.resolve(srcRoot, srcFile);
-          logger.debug('make symlink from', oldPath, "to", newPath);
-          const stats = await promisify(fs.stat)(oldPath);
-          const type = stats.isDirectory() ? "dir" : "file";
-          return promisify(fs.symlink)(oldPath, newPath, type)
-          .catch((e)=>{
-            if (e.code==='EPERM'){
-              return copy(oldPath, newPath);
-            }
-            return Promise.reject(e);
-          });
-        }));
-      }));
-    }));
-  }
-
   dispatch(){
     return new Promise((resolve, reject)=>{
       this.timeout = setInterval(()=>{
@@ -212,14 +151,26 @@ class Dispatcher{
         while(this.currentSearchList.length>0){
           let target = this.currentSearchList.shift();
           if(this._isReady(target)){
-            let node = this.nodes[target]
-            let cmd  = this._cmdFactory(node.type);
-            node.status='running';
+            const  component = this.nodes[target]
+            // put dst path into outputFiles
+            for(const outputFile of component.outputFiles){
+              for(const dst of outputFile.dst){
+                dst.dstRoot = dst.dstNode === 'parent' ? this.cwfDir : path.resolve(this.cwfDir, this.nodes[dst.dstNode].path);
+              }
+            }
+            const  cmd  = this._cmdFactory(component.type);
+            component.status='running';
             promises.push(
-              cmd.call(this, node)
+              cmd.call(this, component)
               .then(()=>{
-                if(node.type !== "task"){
-                  this.deliverOutputFiles(node);
+                // task component is not finished at this time
+                if(component.type !== "task"){
+                  deliverOutputFiles(component.outputFiles,  path.resolve(this.cwfDir, component.path))
+                    .then((rt)=>{
+                      if(rt.length > 0 ){
+                        logger.debug('deliverOutputFiles:\n',rt);
+                      }
+                    });
                 }
               })
             );
@@ -229,14 +180,9 @@ class Dispatcher{
         }
         Promise.all(promises)
           .then(()=>{
-            let tmp = new Set(this.nextSearchList);
+            const tmp = new Set(this.nextSearchList);
             this.currentSearchList=Array.from(tmp.values());
             this.nextSearchList=[];
-            const p = this.dispatchedTaskList.filter((task)=>{
-              return _isFinishedState(task.state);
-            }).map((task)=>{
-              return this.deliverOutputFiles(task);
-            });
             // check task state
             if(! this.isRunning()){
               clearInterval(this.timeout);
@@ -247,7 +193,6 @@ class Dispatcher{
               resolve(projectState);
             }
             this.dispatching=false;
-            return Promise.all(p);
           })
           .catch((err)=>{
             logger.error('Error occurred while parsing workflow: ',err)
@@ -337,7 +282,7 @@ class Dispatcher{
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
     if(this.wf.currentIndex) task.currentIndex=this.wf.currentIndex;
-    await executer.exec(task);
+    executer.exec(task);
     this.dispatchedTaskList.push(task);
     const nextTasks=Array.from(task.next);
     task.outputFiles.forEach((outputFile)=>{
@@ -442,7 +387,7 @@ class Dispatcher{
     dstDir = path.resolve(this.cwfDir, dstDir);
 
 
-    await copy(srcDir, dstDir)
+    await fs.copy(srcDir, dstDir)
       .catch((err)=>{
         logger.error('fatal error occurred while copying loop dir', err);
       });
@@ -501,7 +446,7 @@ class Dispatcher{
         }).includes(filename);
       }
       logger.debug('copy from', srcDir, 'to ',dstDir);
-      await copy(srcDir, dstDir, options);
+      await fs.copy(srcDir, dstDir, options);
 
       let data = await promisify(fs.readFile)(path.resolve(srcDir, targetFile));
       data = data.toString();
