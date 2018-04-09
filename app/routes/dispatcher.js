@@ -151,6 +151,8 @@ class Dispatcher{
     this.dispatching=false;
   }
 
+  // TODO srcRootとdstRootをコンポーネント側で作成してから渡すように変更し
+  // utility.jsへ移動
   deliverOutputFiles(node){
     return Promise.all(node.outputFiles.map(async(e)=>{
       //memo src can be glob pattern
@@ -538,7 +540,8 @@ class Dispatcher{
       }
     });
     this.nodes[index].inputFiles.forEach((inputFile)=>{
-      let i = inputFile.srcNode;
+      const i = inputFile.srcNode;
+      if(i === null || i === 'parent') return;
       if(! _isFinishedState(this.nodes[i].state)){
         ready = false;
       }
