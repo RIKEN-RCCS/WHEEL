@@ -19,7 +19,6 @@ const executers=[];
 async function replaceCRLF(filename){
   let contents = await fs.readFile(filename);
   contents = contents.toString().replace(/\r\n/g,'\n');
-  console.log(contents);
   return fs.writeFile(filename , contents);
 };
 
