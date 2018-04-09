@@ -6,11 +6,19 @@ const {promisify} = require('util');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 
-const {getSsh} = require('./project');
+const {getSsh, emit} = require('./project');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
 const {addXSync, replacePathsep, getDateString, deliverOutputFiles} = require('./utility');
 
 const executers=[];
+
+/**
+ *
+ */
+function setTaskState(task, state){
+  task.state=state;
+  emit(task.label, 'taskStateChanged');
+}
 
 /**
  * replace CRLF to LF
@@ -69,7 +77,7 @@ async function isFinished(JS, ssh, jobID){
 }
 
 async function remoteExec(task, cb){
-  task.state= 'running';
+  setTaskState(task, 'running');
   const hostinfo = remoteHost.get(task.remotehostID);
   const ssh = getSsh(task.label, hostinfo.host);
   await prepareRemoteExecDir(ssh, task)
@@ -100,7 +108,7 @@ async function remoteExec(task, cb){
  * @return pid - process id of child process
  */
 function localExec(task, cb){
-  task.state= 'running';
+  setTaskState(task, 'running');
   const script = path.resolve(task.workingDir, task.script);
   addXSync(script);
   //TODO env, uid, gidを設定する
@@ -131,7 +139,7 @@ function localExec(task, cb){
 }
 
 async function prepareRemoteExecDir(ssh, task){
-  task.state= 'stage-in';
+  setTaskState(task, 'stage-in');
   logger.debug(task.remoteWorkingDir, task.script);
   const localScriptPath = path.resolve(task.workingDir, task.script);
   await replaceCRLF(localScriptPath);
@@ -141,7 +149,7 @@ async function prepareRemoteExecDir(ssh, task){
   return ssh.chmod(remoteScriptPath, '744');
 }
 async function postProcess(ssh, task, rt, cb){
-  task.state='stage-out';
+  setTaskState(task, 'stage-out');
   logger.debug('get necessary files from remote server');
 
   //get outputFiles from remote server
@@ -202,7 +210,7 @@ async function remoteSubmit(task, cb){
   const hostinfo = remoteHost.get(task.remotehostID);
   const ssh = getSsh(task.label, hostinfo.host);
   await prepareRemoteExecDir(ssh, task);
-  task.state= 'running';
+  setTaskState(task, 'running');
   const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   const workdir=path.posix.dirname(scriptAbsPath);
   let submitCmd = `cd ${workdir} &&`
@@ -292,7 +300,7 @@ class Executer{
           // prevent to overwrite killed task's state
           if(task.state !== 'not-started'){
             if(isOK){
-              task.state = 'finished';
+              setTaskState(task, 'finished');
               // TODO errors occurred in deliverOutputFiles can not be seen
               deliverOutputFiles(task.outputFiles, task.workingDir)
                 .then((rt)=>{
@@ -301,7 +309,7 @@ class Executer{
                   }
                 });
             }else{
-              task.state = 'failed';
+              setTaskState(task, 'failed');
             }
           }
           this.currentNumJob--;
@@ -314,14 +322,14 @@ class Executer{
   }
   submit(task){
     this.queue.push(task);
-    task.state='waiting';
+    setTaskState(task, 'waiting');
     if(this.timeout === null) this.start();
   }
   cancel(task){
     this.queue=this.queue.filter((e)=>{
       return e.id!==task.id;
     });
-    task.state='not-started';
+    setTaskState(task, 'not-started');
   }
 }
 

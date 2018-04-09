@@ -12,7 +12,7 @@ const executer = require('./executer');
 const { addXSync, doCleanup, deliverOutputFiles} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
-const {getSsh} = require('./project');
+const {getSsh, emit} = require('./project');
 
 async function cancelRemoteJob(task, ssh){
   const hostinfo = remoteHost.get(task.remotehostID);
@@ -45,6 +45,7 @@ async function killTask(task, hosts){
     }
   }
   task.state = 'not-started';
+  emit(task.label, 'taskStateChanged');
 }
 
 // utility functions
@@ -112,21 +113,28 @@ function evalConditionSync(condition, cwd){
 }
 
 /**
+ * set component state and emit event
+ */
+function setComponentState(label, component, state){
+  component.state = state;
+  emit(label, 'componentStateChanged');
+}
+
+
+/**
  * parse workflow graph and dispatch ready tasks to executer
  * @param {Object[]} nodes - node in current workflow
  * @param {string} cwfDir -  path to current workflow dir
  * @param {string} rwfDir -  path to project root workflow dir
  * @param {string} startTime - start time of project
- * @param {SocketIO} sio - SocketIO object which is used to send task state list
  * @param {string} label - label of project
  */
 class Dispatcher{
-  constructor(wf, cwfDir, rwfDir, startTime, label, sio){
+  constructor(wf, cwfDir, rwfDir, startTime, label){
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
     this.projectStartTime=startTime;
-    this.sio = sio; //never pass to child dispatcher
     this.label = label;
     this.nextSearchList=[];
     this.children=[];
@@ -147,9 +155,9 @@ class Dispatcher{
         if(this.dispatching) return
         this.dispatching=true;
         logger.trace('currentList:',this.currentSearchList);
-        let promises=[];
+        const  promises=[];
         while(this.currentSearchList.length>0){
-          let target = this.currentSearchList.shift();
+          const target = this.currentSearchList.shift();
           if(this._isReady(target)){
             const  component = this.nodes[target]
             // put dst path into outputFiles
@@ -159,7 +167,7 @@ class Dispatcher{
               }
             }
             const  cmd  = this._cmdFactory(component.type);
-            component.status='running';
+            setComponentState(this.label, component, 'running');
             promises.push(
               cmd.call(this, component)
               .then(()=>{
@@ -198,11 +206,6 @@ class Dispatcher{
             logger.error('Error occurred while parsing workflow: ',err)
             reject(err);
           });
-        if(this.sio){
-          const tasks=[];
-          this._getTaskList(tasks);
-          this.sio.emit('taskStateList', tasks);
-        }
       }, interval);
     });
   }
@@ -210,10 +213,9 @@ class Dispatcher{
   isRunning(){
     if(this.currentSearchList.length > 0) return true;
     if(this.nextSearchList.length > 0) return true;
-    let hasTask=this.dispatchedTaskList.some((task)=>{
+    return this.dispatchedTaskList.some((task)=>{
       return ! _isFinishedState(task.state);
     });
-    return hasTask;
   }
   async pause(){
     clearInterval(this.timeout);
@@ -253,9 +255,9 @@ class Dispatcher{
     return rt;
   }
 
-  _getTaskList(tasks){
+  getTaskList(tasks){
     this.children.forEach((child)=>{
-      child._getTaskList(tasks);
+      child.getTaskList(tasks);
     });
     const ownTasks=this.dispatchedTaskList.map((task)=>{
       return {
@@ -306,7 +308,7 @@ class Dispatcher{
     let condition = evalConditionSync(node.condition, cwd);
     let next = condition? node.next: node.else;
     Array.prototype.push.apply(this.nextSearchList, next);
-    node.state='finished';
+    setComponentState(this.label, node, 'finished');
   }
 
   async _createChild(node){
@@ -316,7 +318,6 @@ class Dispatcher{
     if(node.currentIndex){
       childWF.currentIndex = node.currentIndex;
     }
-    // this.sio must not pass to child
     return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
   }
   async _delegate(node){
@@ -325,11 +326,11 @@ class Dispatcher{
     this.children.push(child);
     return child.dispatch()
       .then(()=>{
-        node.state='finished';
+        setComponentState(this.label, node, 'finished');
       })
       .catch((err)=>{
         logger.error("fatal error occurred while dispatching sub workflow",err);
-        node.state='failed';
+        setComponentState(this.label, node, 'failed');
       }).then(()=>{
         Array.prototype.push.apply(this.nextSearchList, node.next);
       });
@@ -339,7 +340,6 @@ class Dispatcher{
     node.initialized=true;
     node.originalPath=node.path;
     node.originalName=node.name;
-    node.state='running'
   }
   _loopFinalize(node){
     delete node.initialized;
@@ -347,7 +347,7 @@ class Dispatcher{
     node.path=node.originalPath;
     node.name=node.originalName;
     Array.prototype.push.apply(this.nextSearchList, node.next);
-    node.state='finished'
+    setComponentState(this.label, node, 'finished');
   }
 
   async _loopHandler(getNextIndex, isFinished, node){
@@ -473,7 +473,7 @@ class Dispatcher{
     }
     return Promise.all(promises)
       .then(()=>{
-        node.state='finished'
+        setComponentState(this.label, node, 'finished');
       });
   }
 

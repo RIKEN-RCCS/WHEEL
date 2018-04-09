@@ -1,5 +1,6 @@
 const path = require("path");
 const {promisify} = require("util");
+const EventEmitter = require("events");
 
 const fs = require("fs-extra");
 const glob = require('glob');
@@ -10,8 +11,9 @@ const {getLogger} = require('../logSettings');
 
 const logger = getLogger('workflow');
 
-class Project {
+class Project extends EventEmitter{
   constructor(){
+    super();
     // current workflow object which is editting
     this.cwf=null;
 
@@ -89,7 +91,7 @@ async function updateProjectJson (label, data){
   return writeProjectJson(label, projectJson);
 }
 
-function setProjectState(label, state){
+async function setProjectState(label, state){
   _getProject(label).projectState=state;
   logger.info('project state changed', state);
   return updateProjectJson(label, {"state": state});
@@ -209,6 +211,13 @@ function addSsh (label, hostname, ssh){
   _getProject(label).ssh.set(hostname, ssh);
 }
 
+function once(label, eventName, cb){
+  _getProject(label).once(eventName, cb);
+}
+function emit(label, eventName){
+  _getProject(label).emit(eventName);
+}
+
 module.exports.openProject       = openProject;
 module.exports.resetProject      = resetProject;
 module.exports.getCwf            = getCwf;
@@ -238,6 +247,11 @@ module.exports.commitProject     = commitProject;
 module.exports.revertProject     = revertProject;
 module.exports.cleanProject      = cleanProject;
 
+//functions for ssh instance management
 module.exports.addSsh            = addSsh;
 module.exports.getSsh            = getSsh;
 module.exports.removeSsh         = removeSsh;
+
+//functions for state change event register and emitter
+module.exports.once = once;
+module.exports.emit = emit;

@@ -14,7 +14,7 @@ const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require
 const {interval, remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
 const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject, addSsh, removeSsh} = require('./project');
 const {write, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
-const {commitProject, revertProject, cleanProject} =  require('./project');
+const {commitProject, revertProject, cleanProject, once, emit} =  require('./project');
 const {gitAdd} = require('./project');
 const fileBrowser = require("./fileBrowser");
 const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
@@ -340,13 +340,30 @@ async function onRunProject(sio, label, rwfFilename){
   }
   rwf.cleanupFlag = cleanup;
 
-  const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), label, sio);
+  const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), label);
   setRootDispatcher(label, rootDispatcher);
   sio.emit('projectJson', await readProjectJson(label));
 
-  timeout = setInterval(()=>{
+  // add event listener for task state changed
+  function onTaskStateChanged(){
+    const tasks=[];
+    rootDispatcher.getTaskList(tasks);
+    sio.emit('taskStateList', tasks);
     sendWorkflow(sio, label, true);
-  }, interval);
+    setImmediate(()=>{
+      once(label, 'taskStateChanged', onTaskStateChanged);
+    });
+  };
+  once(label, 'taskStateChanged', onTaskStateChanged);
+
+  // add event listener for component state changed
+  function onComponentStateChanged(){
+    sendWorkflow(sio, label, true);
+    setImmediate(()=>{
+      once(label, 'componentStateChanged', onComponentStateChanged);
+    });
+  }
+  once(label, 'componentStateChanged', onComponentStateChanged);
 
   // project start here
   try{
@@ -417,10 +434,10 @@ function onTaskStateListRequest(sio, label, msg){
   const rootDispatcher=getRootDispatcher(label);
   if(rootDispatcher != null){
     const tasks=[];
-    rootDispatcher._getTaskList(tasks);
+    rootDispatcher.getTaskList(tasks);
     sio.emit('taskStateList', tasks);
   }else{
-    logger.debug('task state list requested before root dispatcher is set');
+    logger.warn('task state list requested before root dispatcher is set');
   }
 }
 
@@ -474,14 +491,15 @@ module.exports = function(io){
       await onPauseProject(socket, label);
       await onCleanProject(socket, label);
     });
-    socket.on('getProjectState', ()=>{
-      socket.emit('projectState', getProjectState(label));
-    });
 
     socket.on('updateProjectJson', (data)=>{
       updateProjectJson(label, data);
     });
 
+    // not used for now
+    socket.on('getProjectState', ()=>{
+      socket.emit('projectState', getProjectState(label));
+    });
     socket.on('getHostList', ()=>{
       socket.emit('hostList', remoteHost.getAll());
     });
