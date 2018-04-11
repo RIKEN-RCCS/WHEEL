@@ -150,13 +150,10 @@ async function sendWorkflow(sio, label, fromDispatcher=false){
     wf = getCwf(label);
   }
 
-  const rt = Object.assign({}, wf);
-  rt.nodes = wf.nodes.map((child)=>{
-    if(child !== null && child.handler) delete child.handler;
-    return child;
-  });
+  const rt = JSON.parse(JSON.stringify(wf));
   for(const child of rt.nodes){
     if(child!==null){
+      if(child.handler) delete child.handler;
       if(hasChild(child)){
         const childJson = await readChildWorkflow(label, child);
         child.nodes = childJson.nodes.map((grandson)=>{
@@ -166,6 +163,7 @@ async function sendWorkflow(sio, label, fromDispatcher=false){
       }
     }
   }
+  console.log('DEBUG2:',rt);
 
   sio.emit('workflow', rt);
 }
