@@ -311,18 +311,19 @@ class Dispatcher{
     setComponentState(this.label, node, 'finished');
   }
 
-  async _createChild(node){
-    let childDir= path.resolve(this.cwfDir, node.path);
-    let childWorkflowFilename= path.resolve(childDir, node.jsonFile);
-    let childWF = await fs.readJSON(childWorkflowFilename);
+  async _readChild(node){
+    const childWorkflowFilename= path.resolve(this.cwfDir, node.path, node.jsonFile);
+    return fs.readJSON(childWorkflowFilename);
+  }
+
+  async _delegate(node){
+    logger.debug('_delegate called', node.name);
+    const childDir= path.resolve(this.cwfDir, node.path);
+    const childWF = await this._readChild(node);
     if(node.currentIndex){
       childWF.currentIndex = node.currentIndex;
     }
-    return new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
-  }
-  async _delegate(node){
-    logger.debug('_delegate called', node.name);
-    let child = await this._createChild(node);
+    const child = new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
     this.children.push(child);
     return child.dispatch()
       .then(()=>{
@@ -377,34 +378,28 @@ class Dispatcher{
     // send back itself to searchList for next loop trip
     this.nextSearchList.push(node.index);
 
-    // temporaly rename node.name
-    node.name = `${node.originalName}_${node.currentIndex}`;
+    const newNode = Object.assign({}, node);
+    newNode.name = `${node.originalName}_${node.currentIndex}`;
+    newNode.path = newNode.name;
+    const dstDir = path.resolve(this.cwfDir, newNode.name);
 
-    // copy loop dir
-    let dstDir = `${node.originalPath}_${node.currentIndex}`;
-    // temporaly overwrite node.path by child's
-    node.path=dstDir;
-    dstDir = path.resolve(this.cwfDir, dstDir);
-
-
-    await fs.copy(srcDir, dstDir)
-      .catch((err)=>{
-        logger.error('fatal error occurred while copying loop dir', err);
-      });
-
-    //TODO nodeをコピーしてthis._delegateを呼び出す方式に変更
-    // delegate new loop block
-    let child = await this._createChild(node);
-    this.children.push(child);
-    child.dispatch()
-      .then(()=>{
-        logger.debug('loop trip end index = ', node.currentIndex);
-        node.childLoopRunning=false;
-      })
-      .catch((err)=>{
-        logger.error('fatal error occurred during loop child dispatching. index = ', node.currentIndex);
-        logger.error(err);
-      });
+    try{
+      await fs.copy(srcDir, dstDir)
+      const childWF = await this._readChild(node);
+      childWF.name=newNode.name;
+      childWF.path=newNode.path;
+      for (const child of childWF.nodes){
+        child.parent = path.join(newNode.parent, newNode.path);
+      }
+      await fs.writeJson(path.resolve(dstDir, newNode.jsonFile), childWF, {spaces: 4});
+      await this._delegate(newNode);
+    }catch(e){
+      e.index = node.currentIndex;
+      logger.warn('fatal error occurred during loop child dispatching.', e);
+      return Promise.reject(e);
+    }
+    logger.debug('loop finished at index =', node.currentIndex);
+    node.childLoopRunning=false;
   }
   async _PSHandler(node){
     logger.debug('_PSHandler called', node.name);

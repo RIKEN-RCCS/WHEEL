@@ -1,5 +1,5 @@
 const path = require('path');
-const fs = require("fs");
+const fs = require("fs-extra");
 const {promisify} = require("util");
 const {move} = require('fs-extra');
 const glob = require('glob');
@@ -157,7 +157,7 @@ async function _writeChildWorkflow(label, node, wf){
 }
 
 async function readChildWorkflow(label, node){
-  return _readWorkflow(_getChildWorkflowFilename(label, node));
+  return fs.readJson(_getChildWorkflowFilename(label, node));
 }
 
 async function createNode(label, request){

@@ -75,7 +75,7 @@ function validateNodes(label, workflow, dir, hosts){
     if(hasChild(node)){
       const childDir = path.resolve(dir, node.path);
       promises.push(
-        readChildWorkflow(label, node)
+        fs.readJson(path.resolve(childDir, node.jsonFile))
         .then((childWF)=>{
           return validateNodes(label, childWF, childDir, hosts);
         })
