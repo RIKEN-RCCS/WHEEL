@@ -12,8 +12,6 @@ const passport = require('passport');
 const {port} = require('./db/db');
 const {getLogger, setSocketIO, setFilename, setMaxLogSize, setNumBackup, setCompress} = require('./logSettings');
 
-process.on('unhandledRejection', console.dir);// for DEBUG
-
 /*
  * set up express, http and socket.io
  */
@@ -29,6 +27,7 @@ setNumBackup(5);
 setCompress(true);
 
 const logger = getLogger();
+process.on('unhandledRejection', logger.debug);
 
 // template engine
 app.set('views', path.resolve(__dirname, 'views'));
