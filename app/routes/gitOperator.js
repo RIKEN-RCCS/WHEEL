@@ -26,6 +26,20 @@ class git extends EventEmitter{
   }
 
   /**
+   * create new repository
+   * @param {string} root - new repository's root directory
+   * @param {string} user - author's name
+   * @param {string} mail - author's mailaddress
+   */
+  async init(root, user, mail){
+  //TODO  'wheel', "wheel@example.com"
+  const repo = await nodegit.Repository.init(root, 0);
+  const author = nodegit.Signature.now(user, mail); //TODO replace user info
+  const commiter= await author.dup();
+  await repo.createCommitOnHead([projectJsonFilename, rootWorkflowFilename], author, commiter, "create new project");
+  }
+
+  /**
    * open git repository and index
    */
   async open(){
@@ -91,7 +105,7 @@ async function gitAdd(rootDir, absFilename){
   return git.add(absFilename);
 }
 
-// for rapid (futer release)
+// for rapid (future release)
 async function gitRm(rootDir, absFilename){
   const git = await getGitOperator(rootDir);
   return git.rm(absFilename);

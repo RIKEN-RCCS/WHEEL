@@ -14,6 +14,7 @@ const {getDateString} = require('./utility');
 
 const compo = require("./workflowComponent");
 const {projectList, extWF, systemName, defaultCleanupRemoteRoot, defaultFilename, extProject, suffix, rootDir} = require('../db/db');
+const {getGitOperator}= require("./gitOperator");
 
 const {escapeRegExp, isValidName} = require('./utility');
 const noDotFiles = /^[^\.].*$/;
@@ -116,15 +117,6 @@ function removeTrailingPathSep(filename){
   return filename;
 }
 
-let renameAsync=function(oldPath, newPath){
-  return new Promise(function(resolve, reject){
-    fs.rename(oldPath, newPath, function(err){
-      if(err) reject(err);
-      resolve(newPath);
-    });
-  });
-}
-
 async function onAdd (sio, projectDir) {
   logger.debug("onAdd", projectDir);
   let pathDirectory = removeTrailingPathSep(projectDir);
@@ -220,6 +212,7 @@ async function onRename (sio, msg) {
   const projectJson = await fs.readJSON(target.path)
   projectJson.name = newName;
   await fs.writeJson(target.path, projectJson,{spaces: 4});
+  //TODO git add and commit
 
   const newProjectList = await getAllProject();
   sio.emit('projectList', newProjectList);

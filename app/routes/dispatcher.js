@@ -283,7 +283,7 @@ class Dispatcher{
     task.workingDir=path.resolve(this.cwfDir, task.path);
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
-    if(this.wf.currentIndex) task.currentIndex=this.wf.currentIndex;
+    if(this.wf.currentIndex !== undefined) task.currentIndex=this.wf.currentIndex;
     executer.exec(task);
     this.dispatchedTaskList.push(task);
     const nextTasks=Array.from(task.next);
@@ -320,7 +320,7 @@ class Dispatcher{
     logger.debug('_delegate called', node.name);
     const childDir= path.resolve(this.cwfDir, node.path);
     const childWF = await this._readChild(node);
-    if(node.currentIndex){
+    if(node.currentIndex !== undefined){
       childWF.currentIndex = node.currentIndex;
     }
     const child = new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
@@ -364,7 +364,7 @@ class Dispatcher{
     }
 
     // determine old loop block directory
-    let srcDir= node.currentIndex? `${node.originalPath}_${node.currentIndex}` : node.path;
+    let srcDir= node.currentIndex == undefined ? node.path : `${node.originalPath}_${node.currentIndex}`;
     srcDir = path.resolve(this.cwfDir, srcDir);
 
     // update index variable(node.currentIndex)
@@ -388,9 +388,6 @@ class Dispatcher{
       const childWF = await this._readChild(node);
       childWF.name=newNode.name;
       childWF.path=newNode.path;
-      for (const child of childWF.nodes){
-        child.parent = path.join(newNode.parent, newNode.path);
-      }
       await fs.writeJson(path.resolve(dstDir, newNode.jsonFile), childWF, {spaces: 4});
       await this._delegate(newNode);
     }catch(e){

@@ -58,11 +58,11 @@ function validateNodes(label, workflow, dir, hosts){
         promises.push(promisify(fs.access)(path.resolve(dir, node.path, node.script)));
       }
     }else if(node.type === 'if' || node.type === 'while'){
-      if(! node.condition) promises.push(Promise.reject(new Error(`condition is not specified ${node.name}`)));
+      if(node.condition === undefined) promises.push(Promise.reject(new Error(`condition is not specified ${node.name}`)));
     }else if(node.type === 'for'){
-      if(!node.start) promises.push(Promise.reject(new Error(`start is not specified ${node.name}`)));
-      if(!node.step)  promises.push(Promise.reject(new Error(`step is not specified ${node.name}`)));
-      if(!node.end)   promises.push(Promise.reject(new Error(`end is not specified ${node.name}`)));
+      if(node.start === undefined) promises.push(Promise.reject(new Error(`start is not specified ${node.name}`)));
+      if(node.step === undefined)  promises.push(Promise.reject(new Error(`step is not specified ${node.name}`)));
+      if(node.end === undefined)   promises.push(Promise.reject(new Error(`end is not specified ${node.name}`)));
       if(node.step === 0 || (node.end - node.start)*node.step <0)promises.push(Promise.reject(new Error(`inifinite loop ${node.name}`)));
     }else if(node.type === 'parameterStudy'){
       if(node.parameterFile === null){
@@ -163,7 +163,6 @@ async function sendWorkflow(sio, label, fromDispatcher=false){
       }
     }
   }
-  console.log('DEBUG2:',rt);
 
   sio.emit('workflow', rt);
 }

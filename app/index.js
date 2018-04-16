@@ -27,7 +27,7 @@ setNumBackup(5);
 setCompress(true);
 
 const logger = getLogger();
-process.on('unhandledRejection', logger.debug);
+process.on('unhandledRejection', console.dir);
 
 // template engine
 app.set('views', path.resolve(__dirname, 'views'));

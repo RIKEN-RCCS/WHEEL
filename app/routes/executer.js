@@ -124,7 +124,7 @@ function localExec(task, cb){
     "env": process.env,
     "shell": true
   }
-  if(task.currentIndex) options.env.WHEEL_CURRENT_INDEX=task.currentIndex.toString();
+  if(task.currentIndex !== undefined) options.env.WHEEL_CURRENT_INDEX=task.currentIndex.toString();
 
   const cp = child_process.spawn(script, options, (err)=>{
     if(err){
