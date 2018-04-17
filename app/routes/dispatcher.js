@@ -342,11 +342,16 @@ class Dispatcher{
     node.originalPath=node.path;
     node.originalName=node.name;
   }
-  _loopFinalize(node){
+  async _loopFinalize(node, lastDir){
+    const dstDir = path.resolve(this.cwfDir, node.originalPath);
+    if(lastDir !== dstDir){
+      logger.debug('copy ',lastDir,'to',dstDir);
+      await fs.copy(lastDir, dstDir)
+    }
     delete node.initialized;
     delete node.currentIndex;
-    node.path=node.originalPath;
     node.name=node.originalName;
+    node.path=node.originalPath;
     Array.prototype.push.apply(this.nextSearchList, node.next);
     setComponentState(this.label, node, 'finished');
   }
@@ -372,8 +377,7 @@ class Dispatcher{
 
     // end determination
     if(isFinished(node)){
-      this._loopFinalize(node)
-      return
+      return this._loopFinalize(node, srcDir)
     }
     // send back itself to searchList for next loop trip
     this.nextSearchList.push(node.index);

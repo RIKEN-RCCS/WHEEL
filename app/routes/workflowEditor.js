@@ -425,6 +425,7 @@ async function updateOutputFiles(label, node, value){
   if(hasChild(node)){
     const childWorkflow = await readChildWorkflow(label, node);
     childWorkflow.inputFiles.forEach((inputFile, i)=>{
+      if(value[i] == null || inputFile == null) return;
       const newName = value[i].name;
       const oldName = inputFile.name;
       if(oldName === newName) return;
