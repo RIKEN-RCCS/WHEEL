@@ -266,11 +266,17 @@ async function remoteSubmit(task, cb){
       cb(false);
       return;
     }
+    try{
     const finished = await isFinished(JS, ssh, jobID);
-    if(finished){
-      logger.info(jobID,'is finished');
-      clearInterval(timeout);
-      postProcess(ssh, task, rt, cb);
+      if(finished){
+        logger.info(jobID,'is finished');
+        clearInterval(timeout);
+        postProcess(ssh, task, rt, cb);
+      }
+    }catch(err){
+      err.jobID = jobID;
+      err.JS = JS;
+      logger.warn('status check failed',err);
     }
   },5000); //TODO get interval value from server.json
 }
