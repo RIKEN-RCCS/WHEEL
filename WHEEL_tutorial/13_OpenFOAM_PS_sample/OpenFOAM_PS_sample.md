@@ -111,6 +111,10 @@ inletから流入した流体がoutletから出ていく解析を実施します
 本コンポーネントは、PSコンポーネントによりパラメータ化した「U.txt」ファイルをOpenFOAMでの計算で用いるために  
 京コンピュータへ計算を投入するTask（runOpenFOAM_Task詳細は後述）へ転送するためのコンポーネントです。
 
+（例）moveFile.sh
+> #!/bin/sh  
+> mv ../U.txt ../runOpenFOAM_Task  
+
 設定は以下です。
 1. moveFile_Taskコンポーネントへファイル転送をするスクリプトmoveFile.shをインポートする 
 1. プロパティ[ script ]にmoveFile.shを設定する
@@ -124,6 +128,28 @@ inletから流入した流体がoutletから出ていく解析を実施します
 ### Task コンポーネント - 2
 続いて、京コンピュータへのジョブ投入用及びOpenFOAM解析実行用コンポーネント「runOpenFOAM_Task」について説明します。  
 本コンポーネントは、京コンピュータのmicroキューを用いてOpenFOAMによる分配管の流体解析を実行するためのコンポーネントです。
+
+（例）runOpenFOAM.sh
+> #!/bin/sh  
+> #PJM --rsc-list "node=2"  
+> #PJM --mpi "shape=2"  
+> #PJM --mpi "proc=12"  
+> #PJM -s  
+> *#*   
+> . /work/system/Env_base  
+> *#*  
+> module load OpenFOAM/2.4.0-fujitsu-sparc64  
+> source $WM_PROJECT_DIR/etc/bashrc  
+> tar xvzf D50-d10.tar.gz  
+> mv ./U.txt U  
+> mv ./U ./D50-d10/0  
+> cd ./D50-d10  
+> decomposePar  
+> mpiexec -n 12 simpleFoam -parallel  
+> reconstructPar  
+> touch result.foam  
+> cd ..  
+> tar cvzf D50-d10.tar.gz D50-d10  
 
 設定は以下です。
 1. 京コンピュータでOpenFOAMを実行するために必要なデータ（OpenFOAMの入力ファイル「D50-b10.tar.gz」）及びジョブスクリプトrunOpenFOAM.shをインポートする *1
