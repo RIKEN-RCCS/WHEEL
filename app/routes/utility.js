@@ -201,7 +201,7 @@ async function deliverOutputFiles(outputFiles, srcRoot){
     const srces = await promisify(glob)(outputFile.name, {cwd: srcRoot});
     for(const srcFile of srces){
       const oldPath = path.resolve(srcRoot, srcFile);
-      const stats = await fs.stat(oldPath);
+      const stats = await fs.lstat(oldPath);
       const type = stats.isDirectory() ? "dir" : "file";
       for(const dst of outputFile.dst){
         const dstName = dst.dstName ? convertPathSep(dst.dstName) : "";
