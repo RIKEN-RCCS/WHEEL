@@ -3,6 +3,9 @@ const path= require('path');
 const {promisify} = require('util');
 const child_process = require('child_process');
 
+const memorySuspection = process.env.NODE_ENV === "development" && process.env.MEMORY_SUSPECT
+const heapdump = memorySuspection ? require('heapdump') : null; // to suspect memory leak
+
 const uuidv1 = require('uuid/v1');
 
 const {getLogger} = require('../logSettings');
@@ -154,6 +157,10 @@ class Dispatcher{
       this.timeout = setInterval(()=>{
         if(this.dispatching) return
         this.dispatching=true;
+        if(memorySuspection && this.cwfDir === this.rwfDir){
+          logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
+          heapdump.writeSnapshot();
+        }
         logger.trace('currentList:',this.currentSearchList);
         const  promises=[];
         while(this.currentSearchList.length>0){

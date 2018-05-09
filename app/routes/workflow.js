@@ -3,6 +3,9 @@ const os = require("os");
 const fs = require("fs-extra");
 const {promisify} = require("util");
 
+const memorySuspection = process.env.NODE_ENV === "development" && process.env.MEMORY_SUSPECT
+const heapdump = memorySuspection ? require('heapdump') : null; // to suspect memory leak
+
 const klaw = require('klaw');
 const express = require('express');
 const ARsshClient = require('arssh2-client');
@@ -318,6 +321,10 @@ let timeout;
 
 async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
+  if(memorySuspection){
+    logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
+    heapdump.writeSnapshot("dump1_startpoint"+".heapsnapshot");
+  }
   const rwf = await readRwf(label);
   try{
     await validationCheck(label, rwf, sio)
@@ -364,7 +371,15 @@ async function onRunProject(sio, label, rwfFilename){
 
   // project start here
   try{
+    if(memorySuspection){
+      logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
+      heapdump.writeSnapshot("dump2_just_before_dispatching"+".heapsnapshot");
+    }
     const projectState=await rootDispatcher.dispatch();
+    if(memorySuspection){
+      logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
+      heapdump.writeSnapshot("dump3_just_after_dispatching"+".heapsnapshot");
+    }
     await setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parsing workflow:',err);
