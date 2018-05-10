@@ -316,14 +316,12 @@ async function onRemoveFileLink(sio, label, msg){
   }
 }
 
-//TODO fix me!! temporary workaround
-let timeout;
-
 async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
+  const rootDir = getRootDir(label);
   if(memorySuspection){
-    logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
-    heapdump.writeSnapshot("dump1_startpoint"+".heapsnapshot");
+    logger.debug("used heap size at start point =", process.memoryUsage().heapUsed/1024/1024,"MB");
+    heapdump.writeSnapshot(path.resolve(rootDir, "dump1_startpoint"+".heapsnapshot"));
   }
   const rwf = await readRwf(label);
   try{
@@ -337,7 +335,6 @@ async function onRunProject(sio, label, rwfFilename){
   await setProjectState(label, 'running');
   sio.emit('projectJson', await readProjectJson(label));
 
-  const rootDir = getRootDir(label);
   let cleanup = rwf.cleanupFlag;
   if(! cleanup){
     cleanup = defaultCleanupRemoteRoot;
@@ -372,13 +369,13 @@ async function onRunProject(sio, label, rwfFilename){
   // project start here
   try{
     if(memorySuspection){
-      logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
-      heapdump.writeSnapshot("dump2_just_before_dispatching"+".heapsnapshot");
+      logger.debug("used heap size before dispatching =", process.memoryUsage().heapUsed/1024/1024,"MB");
+      heapdump.writeSnapshot(path.resolve(rootDir, "dump2_just_before_dispatching"+".heapsnapshot"));
     }
     const projectState=await rootDispatcher.dispatch();
     if(memorySuspection){
-      logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
-      heapdump.writeSnapshot("dump3_just_after_dispatching"+".heapsnapshot");
+      logger.debug("used heap size after dispatching =", process.memoryUsage().heapUsed/1024/1024,"MB");
+      heapdump.writeSnapshot(path.resolve(rootDir, "dump3_just_after_dispatching"+".heapsnapshot"));
     }
     await setProjectState(label, projectState);
   }catch(err){
@@ -386,7 +383,6 @@ async function onRunProject(sio, label, rwfFilename){
     await setProjectState(label, 'failed');
   }
 
-  clearInterval(timeout);
   sendWorkflow(sio, label, true);
 
   sio.emit('projectJson', await readProjectJson(label));
@@ -394,7 +390,6 @@ async function onRunProject(sio, label, rwfFilename){
 
 async function onPauseProject(sio, label){
   logger.debug("pause event recieved");
-  clearInterval(timeout); // TODO fix me!
   const rootDispatcher=getRootDispatcher(label);
   rootDispatcher.pause();
 
