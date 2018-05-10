@@ -88,18 +88,14 @@ async function remoteExec(task, cb){
   if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
   cmd = cmd + scriptAbsPath;
 
-  ssh.on('stdout', passToSSHout);
-  ssh.on('stderr', passToSSHerr);
   logger.debug('exec (remote)', cmd);
   let rt=null;
   try{
-    rt = await ssh.exec(cmd);
+    rt = await ssh.exec(cmd, {} , passToSSHout, passToSSHerr);
   }catch(e){
     logger.warn('remote exec failed:',e);
     cb(false);
   }
-  ssh.off('stdout', passToSSHout);
-  ssh.off('stderr', passToSSHerr);
   if(rt === 0){
     await postProcess(ssh, task, rt, cb);
   }else{
