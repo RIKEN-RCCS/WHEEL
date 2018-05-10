@@ -4,7 +4,7 @@
   "description": "Scientific Workflow system",
   "main": "app/index.js",
   "bin": {
-    "wheel": "app/wheel.js"
+    "wheel": "app/cmd.js"
   },
   "author": {
     "name": "Kenji Ono"
