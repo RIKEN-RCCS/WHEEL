@@ -162,7 +162,7 @@ class Dispatcher{
         this.dispatching=true;
         if(memorySuspection && this.cwfDir === this.rwfDir){
           logger.debug("used heap size =", process.memoryUsage().heapUsed/1024/1024,"MB");
-            heapdump.writeSnapshot(path.resolve(this.rwfDir, "dump_in_dispatch_"+this.dumpCount+".heapsnapshot"));
+            //heapdump.writeSnapshot(path.resolve(this.rwfDir, "dump_in_dispatch_"+this.dumpCount+".heapsnapshot"));
           this.dumpCount++;
         }
         logger.trace('currentList:',this.currentSearchList);

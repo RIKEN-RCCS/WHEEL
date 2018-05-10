@@ -321,7 +321,7 @@ async function onRunProject(sio, label, rwfFilename){
   const rootDir = getRootDir(label);
   if(memorySuspection){
     logger.debug("used heap size at start point =", process.memoryUsage().heapUsed/1024/1024,"MB");
-    heapdump.writeSnapshot(path.resolve(rootDir, "dump1_startpoint"+".heapsnapshot"));
+    //heapdump.writeSnapshot(path.resolve(rootDir, "dump1_startpoint"+".heapsnapshot"));
   }
   const rwf = await readRwf(label);
   try{
@@ -370,12 +370,12 @@ async function onRunProject(sio, label, rwfFilename){
   try{
     if(memorySuspection){
       logger.debug("used heap size before dispatching =", process.memoryUsage().heapUsed/1024/1024,"MB");
-      heapdump.writeSnapshot(path.resolve(rootDir, "dump2_just_before_dispatching"+".heapsnapshot"));
+      //heapdump.writeSnapshot(path.resolve(rootDir, "dump2_just_before_dispatching"+".heapsnapshot"));
     }
     const projectState=await rootDispatcher.dispatch();
     if(memorySuspection){
       logger.debug("used heap size after dispatching =", process.memoryUsage().heapUsed/1024/1024,"MB");
-      heapdump.writeSnapshot(path.resolve(rootDir, "dump3_just_after_dispatching"+".heapsnapshot"));
+      //heapdump.writeSnapshot(path.resolve(rootDir, "dump3_just_after_dispatching"+".heapsnapshot"));
     }
     await setProjectState(label, projectState);
   }catch(err){
