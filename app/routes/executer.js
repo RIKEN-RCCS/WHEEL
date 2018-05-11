@@ -2,6 +2,7 @@ const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs-extra');
 const {promisify} = require('util');
+const SBS = require("simple-batch-system");
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
@@ -73,72 +74,8 @@ async function isFinished(JS, ssh, jobID){
   //note: following line will not be written anyware for now
   logger.debug('is',jobID,'finished', finished,'\n',outputText);
 
+  //TODO should be return with return value of job script
   return finished;
-}
-
-async function remoteExec(task, cb){
-  setTaskState(task, 'running');
-  const hostinfo = remoteHost.get(task.remotehostID);
-  const ssh = getSsh(task.label, hostinfo.host);
-  await prepareRemoteExecDir(ssh, task)
-  logger.debug("prepare done");
-  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
-  const workdir=path.posix.dirname(scriptAbsPath);
-  let cmd = `cd ${workdir} &&`;
-  if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
-  cmd = cmd + scriptAbsPath;
-
-  logger.debug('exec (remote)', cmd);
-  let rt=null;
-  try{
-    rt = await ssh.exec(cmd, {} , passToSSHout, passToSSHerr);
-  }catch(e){
-    logger.warn('remote exec failed:',e);
-    cb(false);
-  }
-  if(rt === 0){
-    await postProcess(ssh, task, rt, cb);
-  }else{
-    logger.warn('script returned', rt);
-    cb(false);
-  }
-}
-
-
-/**
- * execute task on localhost(which is running node.js)
- * @param {Task} task - task instance
- * @return pid - process id of child process
- */
-function localExec(task, cb){
-  setTaskState(task, 'running');
-  const script = path.resolve(task.workingDir, task.script);
-  addXSync(script);
-  //TODO env, uid, gidを設定する
-  const options = {
-    "cwd": task.workingDir,
-    "env": process.env,
-    "shell": true
-  }
-  if(task.currentIndex !== undefined) options.env.WHEEL_CURRENT_INDEX=task.currentIndex.toString();
-
-  const cp = child_process.spawn(script, options, (err)=>{
-    if(err){
-      logger.warn(task.name, 'failed.', err);
-      cb(false);
-    }
-  });
-  cp.stdout.on('data', (data)=>{
-    logger.stdout(data.toString());
-  });
-  cp.stderr.on('data', (data)=>{
-    logger.stderr(data.toString());
-  });
-  cp.on('exit', (rt) =>{
-    logger.debug(task.name, 'done. rt =', rt);
-    cb(rt === 0);
-  });
-  return cp;
 }
 
 async function prepareRemoteExecDir(ssh, task){
@@ -151,21 +88,23 @@ async function prepareRemoteExecDir(ssh, task){
   await ssh.send(task.workingDir, task.remoteWorkingDir)
   return ssh.chmod(remoteScriptPath, '744');
 }
-async function postProcess(ssh, task, rt, cb){
+
+async function postProcess(ssh, task, rt){
   setTaskState(task, 'stage-out');
   logger.debug('get necessary files from remote server');
 
   //get outputFiles from remote server
   const outputFilesArray = task.outputFiles.filter((e)=>{
     if(e.dst.length >0) return e;
-  }).map((e)=>{
-    if(e.name.endsWith('/') || e.name.endsWith('\\')){
-      const dirname = replacePathsep(e.name);
-      return `${dirname}/*`;
-    }else{
-      return e.name;
-    }
-  });
+  })
+    .map((e)=>{
+      if(e.name.endsWith('/') || e.name.endsWith('\\')){
+        const dirname = replacePathsep(e.name);
+        return `${dirname}/*`;
+      }else{
+        return e.name
+      }
+    });
   if(outputFilesArray.length>0){
     const outputFiles= `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
     try{
@@ -173,8 +112,7 @@ async function postProcess(ssh, task, rt, cb){
       await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null)
     }catch(e){
       logger.warn('falied to get outputFiles',e);
-      cb(false);
-      return
+      return e;
     }
   }
 
@@ -187,6 +125,7 @@ async function postProcess(ssh, task, rt, cb){
       await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude)
     }catch(e){
       logger.warn('faild to get files',e);
+      return e;
     }
   }
 
@@ -197,84 +136,146 @@ async function postProcess(ssh, task, rt, cb){
       await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
     }catch(e){
       logger.warn('remote cleanup failed',e);
-      cb(false);
-      return
+      return e;
     }
   }
-  logger.debug(task.name, 'done. rt =', rt);
-  cb(rt===0);
+  return rt;
 }
 
-function localSubmit(qsub, task, cb){
+/**
+ * execute task on localhost(which is running node.js)
+ * @param {Task} task - task instance
+ * @return pid - process id of child process
+ */
+async function localExec(task){
+  return new Promise((resolve, reject)=>{
+    setTaskState(task, 'running');
+    const script = path.resolve(task.workingDir, task.script);
+    addXSync(script);
+    //TODO env, uid, gidを設定する
+    const options = {
+      "cwd": task.workingDir,
+      "env": process.env,
+      "shell": true
+    }
+    if(task.currentIndex !== undefined) options.env.WHEEL_CURRENT_INDEX=task.currentIndex.toString();
+    const cp = child_process.spawn(script, options, (err)=>{
+      if(err){
+        logger.warn(task.name, 'failed.', err);
+        reject(err);
+      }
+    });
+    cp.stdout.on('data', (data)=>{
+      logger.stdout(data.toString());
+    });
+    cp.stderr.on('data', (data)=>{
+      logger.stderr(data.toString());
+    });
+    cp.on('exit', (rt) =>{
+      logger.debug(task.name, 'done. rt =', rt);
+      if(rt===0){
+        resolve(rt);
+      }else{
+        reject(rt);
+      }
+    });
+    task.handler = cp;
+  });
+}
+
+async function remoteExec(task){
+  setTaskState(task, 'running');
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const ssh = getSsh(task.label, hostinfo.host);
+  await prepareRemoteExecDir(ssh, task)
+  logger.debug("prepare done");
+  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
+  const workdir=path.posix.dirname(scriptAbsPath);
+  let cmd = `cd ${workdir} &&`;
+  if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
+  cmd = cmd + scriptAbsPath;
+  logger.debug('exec (remote)', cmd);
+
+  //if exception occurred in ssh.exec, it will be catched in caller
+  const rt = await ssh.exec(cmd, {}, passToSSHout, passToSSHerr);
+  return rt === 0? postProcess(ssh, task, rt):Promise.reject(rt);
+}
+
+function localSubmit(task){
   console.log('localSubmit function is not implimented yet');
 }
 
-async function remoteSubmit(task, cb){
-  const hostinfo = remoteHost.get(task.remotehostID);
-  const ssh = getSsh(task.label, hostinfo.host);
-  await prepareRemoteExecDir(ssh, task);
-  setTaskState(task, 'running');
-  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
-  const workdir=path.posix.dirname(scriptAbsPath);
-  let submitCmd = `cd ${workdir} &&`
-  if(task.currentIndex) submitCmd = submitCmd+ `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
-
-  const JS = jobScheduler[hostinfo.jobScheduler];
-  submitCmd += ` ${JS.submit}`
-
+function determinQueue(task, queues){
   let queue = null;
-  const queueList = hostinfo.queue.split(',');
+  const queueList = queues.split(',');
   if(task.queue in queueList){
     queue = task.queue;
   }else if (queueList.length > 0){
     queue = queueList[0];
   }
+  return queue;
+}
+
+function makeCmd(task, JS, queues){
+  const workdir=path.posix.dirname(path.posix.join(task.remoteWorkingDir, task.script));
+  let submitCmd = `cd ${workdir} &&`
+  if(task.currentIndex) submitCmd = submitCmd+ `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
+
+  submitCmd += ` ${JS.submit}`
+  const queue = determinQueue(task, queues);
   if(queue){
     submitCmd += ` ${JS.queueOpt}${queue}`;
   }
   submitCmd += ` ${scriptAbsPath}`;
+}
+
+async function remoteSubmit(task){
+  const hostinfo = remoteHost.get(task.remotehostID);
+  const ssh = getSsh(task.label, hostinfo.host);
+  await prepareRemoteExecDir(ssh, task);
+  setTaskState(task, 'running');
+
+  const JS = jobScheduler[hostinfo.jobScheduler];
+  const submitCmd = makeCmd(task, JS, hostinfo.queue);
 
   logger.debug('submitting job:', submitCmd);
   const output=[];
   const rt = await ssh.exec(submitCmd, {}, output, output);
   if(rt !== 0){
     logger.warn('remote submit command failed!\ncmd:',submitCmd,'\nrt:', rt);
-    cb(false);
-    return
+    return Promise.reject(rt);
   }
   const outputText = output.join("");
-
   const re = new RegExp(JS.reJobID);
   const result = re.exec(outputText);
   if(result === null || result[1] === null){
     logger.warn('getJobID failed\nsubmit command:',submitCmd,'\nfull output from submmit command:', outputText);
-    cb(false);
-    return
+    return Promise.reject(false);
   }
   const jobID = result[1];
   task.jobID=jobID;
-  logger.info('submit success:', scriptAbsPath, jobID);
+  logger.info('submit success:', submitCmd, jobID);
 
   //check job stat repeatedly
   const timeout = setInterval(async ()=>{
     if(task.state !== 'running'){
+      // project is stopped
       clearInterval(timeout);
-      cb(false);
-      return;
+      return Promise.reject(false);
     }
     try{
-    const finished = await isFinished(JS, ssh, jobID);
+      const [finished, rt] = await isFinished(JS, ssh, jobID);
       if(finished){
         logger.info(jobID,'is finished');
         clearInterval(timeout);
-        postProcess(ssh, task, rt, cb);
+        return postProcess(ssh, task, rt);
       }
     }catch(err){
       err.jobID = jobID;
       err.JS = JS;
       logger.warn('status check failed',err);
     }
-  },5000); //TODO get interval value from server.json
+  },1000); //TODO get interval value from server.json
 }
 
 class Executer{
@@ -283,61 +284,39 @@ class Executer{
     //this 2 property is used as search key in exec();
     this.remotehostID=remotehostID;
     this.useJobScheduler=useJobScheduler;
-
-    this.exec=exec;
-    this.maxNumJob=maxNumJob;
-
-    this.queue=[];
-    this.currentNumJob=0;
-    this.executing=false;
-    this.timeout=null;
-  }
-  stop(){
-    clearInterval(this.timeout);
-    this.timeout=null;
-  }
-  start(){
-    this.timeout = setInterval(()=>{
-      if(this.executing) return;
-      this.executing=true;
-      if(this.queue.length >0 && this.currentNumJob < this.maxNumJob){
-        this.currentNumJob++;
-        let task = this.queue.pop()
-        task.startTime = getDateString(true);
-        task.handler = this.exec(task, (isOK)=>{
-          task.endTime = getDateString(true);
-          // prevent to overwrite killed task's state
-          if(task.state !== 'not-started'){
-            if(isOK){
-              setTaskState(task, 'finished');
-              // TODO errors occurred in deliverOutputFiles can not be seen
-              deliverOutputFiles(task.outputFiles, task.workingDir)
-                .then((rt)=>{
-                  if(rt.length > 0 ){
-                    logger.debug('deliverOutputFiles:\n',rt);
-                  }
-                });
-            }else{
-              setTaskState(task, 'failed');
+    this.batch = new SBS({exec: async (task)=>{
+      task.startTime = getDateString(true);
+      const rt = await exec(task);
+      task.endTime = getDateString(true);
+      // prevent to overwrite killed task's state
+      if(task.state !== 'not-started'){
+        if(rt === 0){
+          try{
+            const rt2 = await deliverOutputFiles(task.outputFiles, task.workingDir)
+            if(rt2.length > 0 ){
+              logger.debug('deliverOutputFiles:\n',rt2);
             }
+          }catch(e){
+            logger.warn("file delivery failed", e);
           }
-          this.currentNumJob--;
-        });
+          setTaskState(task, 'finished');
+        }
+      }else{
+        setTaskState(task, 'failed');
       }
-      logger.debug('running job:',this.currentNumJob,'/',this.maxNumJob);
-      if(this.queue.length === 0) this.stop();
-      this.executing=false;
-    }, interval);
+    },
+      retry: false,
+      maxConcurrent: maxNumJob});
+
+    this.stop = this.batch.stop;
+    this.start = this.batch.start;
   }
   submit(task){
-    this.queue.push(task);
-    setTaskState(task, 'waiting');
-    if(this.timeout === null) this.start();
+    task.jobid = this.batch.qsub(task);
+    if(task.jobid !== null) setTaskState(task, 'waiting');
   }
   cancel(task){
-    this.queue=this.queue.filter((e)=>{
-      return e.id!==task.id;
-    });
+    this.batch.qdel(task.jobid);
     setTaskState(task, 'not-started');
   }
 }

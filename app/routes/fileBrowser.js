@@ -26,11 +26,11 @@ function sendDir(socket, eventName, targetDir, options=null) {
   if(socket == null || eventName == null){
     throw "illegal argument.";;
   }
-  let request       = options.request != null ? options.request : targetDir;
-  let sendDirname   = options.sendDirname  != null ? options.sendDirname  : true;
-  let sendFilename  = options.sendFilename != null ? options.sendFilename : true;
-  let sendSymlink   = options.sendSymlink  != null ? options.sendSymlink  : true;
-  let withParentDir = options.withParentDir != null? options.withParentDir : false;
+  const request       = options.request != null ? options.request : targetDir;
+  const sendDirname   = options.sendDirname  != null ? options.sendDirname  : true;
+  const sendFilename  = options.sendFilename != null ? options.sendFilename : true;
+  const sendSymlink   = options.sendSymlink  != null ? options.sendSymlink  : true;
+  const withParentDir = options.withParentDir != null? options.withParentDir : false;
 
   fs.readdir(targetDir, function (err, names) {
     if (err)
@@ -38,7 +38,7 @@ function sendDir(socket, eventName, targetDir, options=null) {
     names.forEach(function (name) {
       if (options.filter && options.filter.all && !options.filter.all.test(name)) return;
 
-      let absoluteFilename=path.join(targetDir, name);
+      const absoluteFilename=path.join(targetDir, name);
       fs.lstat(absoluteFilename, function (err, stats) {
         if (err) return;
         if (stats.isDirectory() && sendDirname){

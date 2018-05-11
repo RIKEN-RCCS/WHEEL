@@ -3,7 +3,7 @@ const os = require("os");
 const fs = require("fs-extra");
 const {promisify} = require("util");
 
-const verbose = process.env.NODE_ENV === "development";
+const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR !== undefined;
 
 const klaw = require('klaw');
 const express = require('express');
@@ -318,9 +318,8 @@ async function onRemoveFileLink(sio, label, msg){
 async function onRunProject(sio, label, rwfFilename){
   logger.debug("run event recieved");
   const rootDir = getRootDir(label);
-  if(verbose){
+  if(memMeasurement){
     logger.debug("used heap size at start point =", process.memoryUsage().heapUsed/1024/1024,"MB");
-    heapdump.writeSnapshot(path.resolve(rootDir, "dump1_startpoint"+".heapsnapshot"));
   }
   const rwf = await readRwf(label);
   try{
@@ -367,12 +366,17 @@ async function onRunProject(sio, label, rwfFilename){
 
   // project start here
   try{
-    if(verbose){
+    let timeout;
+    if(memMeasurement){
       logger.debug("used heap size just before execution", process.memoryUsage().heapUsed/1024/1024,"MB");
+      timeout = setInterval(()=>{
+        logger.debug("used heap size ", process.memoryUsage().heapUsed/1024/1024,"MB");
+      }, 30000);
     }
     const projectState=await rootDispatcher.dispatch();
-    if(verbose){
+    if(memMeasurement){
       logger.debug("used heap size immediately after execution=", process.memoryUsage().heapUsed/1024/1024,"MB");
+      clearInterval(timeout);
     }
     await setProjectState(label, projectState);
   }catch(err){
@@ -383,7 +387,7 @@ async function onRunProject(sio, label, rwfFilename){
   sendWorkflow(sio, label, true);
 
   sio.emit('projectJson', await readProjectJson(label));
-  if(verbose){
+  if(memMeasurement){
     logger.debug("used heap size at the end", process.memoryUsage().heapUsed/1024/1024,"MB");
   }
 }

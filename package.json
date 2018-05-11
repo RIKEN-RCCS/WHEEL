@@ -20,7 +20,8 @@
   },
   "scripts": {
     "start": "node app/index",
-    "memoryMonitor": "cross-env NODE_ENV=development node app/index",
+    "memoryInspection": "run-s memoryMonitor",
+    "memoryMonitor": "cross-env NODE_ENV=development MEMORY_MONITOR=TRUE node app/index",
     "profiler": "node --prof app/index",
     "mocha": "mocha",
     "coverage": "nyc --reporter=html --reporter=text mocha",
