@@ -14,9 +14,10 @@ function isInitialNode(node){
   if(node === null) return false;
   if(node.previous.length > 0) return false;
   if(node.inputFiles.length >0 ){
-    return !node.inputFiles.some((e)=>{
-      e.srcNode !== null;
+    const hasConnectedInputFile =  node.inputFiles.some((e)=>{
+      return e.srcNode !== null;
     });
+    return !hasConnectedInputFile
   }
   return true;
 }
