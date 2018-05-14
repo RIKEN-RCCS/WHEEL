@@ -47,12 +47,12 @@ class Project extends EventEmitter{
 
 }
 
-projectDirs={};
+const projectDirs=new Map();
 _getProject = (label)=>{
-  if(! projectDirs.hasOwnProperty(label)){
-    projectDirs[label] = new Project;
+  if(! projectDirs.has(label)){
+    projectDirs.set(label, new Project());
   }
-  return projectDirs[label];
+  return projectDirs.get(label);
 }
 
 
@@ -141,14 +141,16 @@ async function revertProject(label){
 
 async function cleanProject(label){
   const rootDir = getRootDir(label);
-  const contents = await fs.readdir(rootDir);
-  await Promise.all(
-    contents.filter((e)=>{
-      return ! e.startsWith('.git');
-    }).map((e)=>{
-      fs.remove(path.resolve(rootDir,e));
-    })
-  );
+  const srces = await promisify(glob)("*", {cwd: rootDir});
+  console.log(srces);
+  //TODO should be optimized stride value(100);
+  for(let i =0; i<srces.length; i+=100){
+    const end = i+100 < srces.length? i+100:srces.length;
+    const p = srces.slice(i, end).map((e)=>{
+      return fs.remove(path.resolve(rootDir,e));
+    });
+    await Promise.all(p);
+  }
   return revertProject(label);
 }
 
