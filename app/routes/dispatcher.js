@@ -2,6 +2,7 @@ const fs= require('fs-extra');
 const path= require('path');
 const {promisify} = require('util');
 const child_process = require('child_process');
+const {EventEmitter} = require('events');
 
 const uuidv1 = require('uuid/v1');
 
@@ -12,73 +13,39 @@ const executer = require('./executer');
 const { addXSync, doCleanup, deliverOutputFiles} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
-const {getSsh, emit} = require('./project');
-
-async function cancelRemoteJob(task, ssh){
-  const hostinfo = remoteHost.get(task.remotehostID);
-  const JS = jobScheduler[hostinfo.jobScheduler];
-  const cancelCmd = `${JS.del} ${task.jobID}`;
-  logger.debug(`cancel job: ${cancelCmd}`);
-  const output=[];
-  await ssh.exec(cancelCmd, {}, output, output);
-  logger.debug('cacnel done', output.join());
-}
-async function cancelLocalJob(task){
-}
-function killLocalProcess(task){
-  if(task.handler && task.handler.connect) task.handler.kill();
-}
-async function killTask(task, hosts){
-  if(task.remotehostID !== 'localhost'){
-    const hostinfo = remoteHost.get(task.remotehostID);
-    if(task.useJobScheduler){
-      const arssh = getSsh(task.label, hostinfo.host);
-      await cancelRemoteJob(task, arssh);
-    }else{
-      hosts.push(hostinfo.host);
-    }
-  }else{
-    if(task.useJobScheduler){
-      await cancelLocalJob(task);
-    }else{
-      await killLocalProcess(task);
-    }
-  }
-  task.state = 'not-started';
-  emit(task.label, 'taskStateChanged');
-}
+const {getSsh, emit, addDispatchedTask} = require('./project');
 
 // utility functions
-function _forGetNextIndex(node){
-  return node.hasOwnProperty('currentIndex') ? node.currentIndex + node.step : node.start;
+function _forGetNextIndex(component){
+  return component.hasOwnProperty('currentIndex') ? component.currentIndex + component.step : component.start;
 }
-function _forIsFinished(node){
-  return (node.currentIndex > node.end && node.step > 0 ) || (node.currentIndex < node.end && node.step < 0);
+function _forIsFinished(component){
+  return (component.currentIndex > component.end && component.step > 0 ) || (component.currentIndex < component.end && component.step < 0);
 }
-function _whileGetNextIndex(node){
-  return node.hasOwnProperty('currentIndex')? ++(node.currentIndex) : 0;
+function _whileGetNextIndex(component){
+  return component.hasOwnProperty('currentIndex')? ++(component.currentIndex) : 0;
 }
-function _whileIsFinished(cwfDir, node){
-  let cwd= path.resolve(cwfDir, node.path);
-  let condition = evalConditionSync(node.condition, cwd);
+function _whileIsFinished(cwfDir, component){
+  let cwd= path.resolve(cwfDir, component.path);
+  let condition = evalConditionSync(component.condition, cwd);
   return ! condition
 }
-function _foreachGetNextIndex(node){
-  if(node.hasOwnProperty('currentIndex')){
-    let i = node.indexList.findIndex((e)=>{
-      return e.label ===  node.currentIndex;
+function _foreachGetNextIndex(component){
+  if(component.hasOwnProperty('currentIndex')){
+    let i = component.indexList.findIndex((e)=>{
+      return e.label ===  component.currentIndex;
     });
-    if( i === -1 || i === node.indexList.length-1){
+    if( i === -1 || i === component.indexList.length-1){
       return undefined;
     }else{
-      return node.indexList[i+1].label;
+      return component.indexList[i+1].label;
     }
   }else{
-    return node.indexList[0].label;
+    return component.indexList[0].label;
   }
 }
-function _foreachIsFinished(node){
-  return node.currentIndex === undefined;
+function _foreachIsFinished(component){
+  return component.currentIndex === undefined;
 }
 
 function _isFinishedState(state){
@@ -123,154 +90,153 @@ function setComponentState(label, component, state){
 
 /**
  * parse workflow graph and dispatch ready tasks to executer
- * @param {Object[]} nodes - node in current workflow
+ * @param {Object[]} nodes - child component in current workflow
  * @param {string} cwfDir -  path to current workflow dir
  * @param {string} rwfDir -  path to project root workflow dir
  * @param {string} startTime - start time of project
  * @param {string} label - label of project
  */
-class Dispatcher{
+class Dispatcher extends EventEmitter{
   constructor(wf, cwfDir, rwfDir, startTime, label){
+    super();
     this.wf=wf;
     this.cwfDir=cwfDir;
     this.rwfDir=rwfDir;
     this.projectStartTime=startTime;
     this.label = label;
     this.nextSearchList=[];
-    this.children=[];
+    this.children=new Set();
     this.dispatchedTaskList=[]
     this.nodes=wf.nodes;
-    this.currentSearchList= this.nodes.map((node,i)=>{
-      return isInitialNode(node) ? i : null;
+    this.currentSearchList = this.nodes.map((component,i)=>{
+      return isInitialNode(component) ? i : null;
     }).filter((e)=>{
       return e !== null;
     });
     logger.debug('initial tasks : ',this.currentSearchList);
-    this.dispatching=false;
   }
 
-  dispatch(){
-    return new Promise((resolve, reject)=>{
-      this.timeout = setInterval(()=>{
-        if(this.dispatching) return
-        this.dispatching=true;
-        logger.trace('currentList:',this.currentSearchList);
-        const  promises=[];
-        while(this.currentSearchList.length>0){
-          const target = this.currentSearchList.shift();
-          if(this._isReady(target)){
-            const  component = this.nodes[target]
-            // put dst path into outputFiles
-            for(const outputFile of component.outputFiles){
-              for(const dst of outputFile.dst){
-                dst.dstRoot = dst.dstNode === 'parent' ? this.cwfDir : path.resolve(this.cwfDir, this.nodes[dst.dstNode].path);
-              }
-            }
-            const  cmd  = this._cmdFactory(component.type);
-            setComponentState(this.label, component, 'running');
-            promises.push(
-              cmd.call(this, component)
-              .then(()=>{
-                // task component is not finished at this time
-                if(component.type !== "task"){
-                  deliverOutputFiles(component.outputFiles,  path.resolve(this.cwfDir, component.path))
-                    .then((rt)=>{
-                      if(rt.length > 0 ){
-                        logger.debug('deliverOutputFiles:\n',rt);
-                      }
-                    });
-                }
-              })
-            );
-          }else{
-            this.nextSearchList.push(target);
+  async _dispatch(){
+    logger.debug('currentList:',this.currentSearchList);
+    if(this.currentSearchList.length>0){
+      const  promises=[];
+      while(this.currentSearchList.length>0){
+        const target = this.currentSearchList.shift();
+        if(! this._isReady(target)) this.nextSearchList.push(target);
+        const  component = this.nodes[target]
+        // put dst path into outputFiles
+        for(const outputFile of component.outputFiles){
+          for(const dst of outputFile.dst){
+            dst.dstRoot = dst.dstNode === 'parent' ? this.cwfDir : path.resolve(this.cwfDir, this.nodes[dst.dstNode].path);
           }
         }
-        Promise.all(promises)
+        const  cmd  = this._cmdFactory(component.type);
+        setComponentState(this.label, component, 'running');
+        promises.push(
+          cmd.call(this, component)
           .then(()=>{
-            const tmp = new Set(this.nextSearchList);
-            this.currentSearchList=Array.from(tmp.values());
-            this.nextSearchList=[];
-            // check task state
-            if(! this.isRunning()){
-              clearInterval(this.timeout);
-              const hasFailed=this.dispatchedTaskList.some((task)=>{
-                return task.state === 'failed';
-              });
-              const projectState = hasFailed ? 'failed': 'finished';
-              resolve(projectState);
-            }
-            this.dispatching=false;
+            // task component is not finished at this time
+            if(component.type === "task") return
+            deliverOutputFiles(component.outputFiles,  path.resolve(this.cwfDir, component.path))
+              .then((rt)=>{
+                if(rt.length > 0 ) logger.debug('deliverOutputFiles:\n',rt);
+              })
           })
           .catch((err)=>{
-            logger.error('Error occurred while parsing workflow: ',err)
-            reject(err);
-          });
+            setComponentState(this.label, component, 'failed');
+            return Promise.reject(err);
+          })
+        );
+      }
+      try{
+        await Promise.all(promises);
+      }catch(e){
+        this.emit("error", e);
+      }
+      //remove duplicated entry
+      const tmp = new Set(this.nextSearchList);
+      this.currentSearchList=Array.from(tmp.values());
+      this.nextSearchList=[];
+    }
+    if(this.isFinished()){
+      this.removeListener('dispatch', this._dispatch);
+      const hasFailed=this.dispatchedTaskList.some((task)=>{
+        return task.state === 'failed';
+      });
+      this.emit('done', !hasFailed);
+    }else{
+      //start next dispatcher
+      setTimeout(()=>{
+        this.emit('dispatch');
       }, interval);
-    });
+    }
   }
 
-  isRunning(){
-    if(this.currentSearchList.length > 0) return true;
-    if(this.nextSearchList.length > 0) return true;
-    return this.dispatchedTaskList.some((task)=>{
+  isFinished(){
+    if(this.currentSearchList.length > 0 || this.nextSearchList.length > 0) return false;
+    const hasRunningTask = this.dispatchedTaskList.some((task)=>{
       return ! _isFinishedState(task.state);
     });
+    return !hasRunningTask;
   }
-  async pause(){
-    clearInterval(this.timeout);
-    for (const child of this.children){
+  async start(){
+    if(this.listenerCount('dispatch') === 0){
+      this.on('dispatch', this._dispatch);
+    }
+    for (let child of this.children){
+      child.start();
+    }
+    setImmediate(()=>{
+      this.emit('dispatch');
+    });
+    return new Promise((resolve, reject)=>{
+      const onStop=()=>{
+        this.removeListener('error', onError);
+        this.removeListener('done', onDone);
+        this.removeListener('stop', onStop);
+      };
+      const onDone = (isSuccess)=>{
+        onStop();
+        const projectState = isSuccess ? 'finished':'failed';
+        resolve(projectState);
+      }
+      const onError = (err)=>{
+        onStop();
+        reject(err);
+      }
+      this.once('done', onDone);
+      this.once('error', onError);
+      this.once('stop', onStop);
+    });
+  }
+  pause(){
+    this.emit('stop');
+    this.removeListener('dispatch', this._dispatch);
+    for (let child of this.children){
       child.pause();
     }
-    for (const task of this.dispatchedTaskList){
-      executer.cancel(task);
-    }
-  }
-  async killDispatchedTasks(hosts){
-    await Promise.all(this.children.map((child)=>{
-      return child.killDispatchedTasks(hosts);
-    }));
-    return Promise.all(this.dispatchedTaskList.map((task)=>{
-      return killTask(task, hosts);
-    }));
   }
   remove(){
-    for (const child of this.children){
+    this.pause();
+    for (let child of this.children){
       child.remove();
     }
-    this.children=[];
+    this.children.clear();
     this.currentSearchList=[];
     this.nextSearchList=[];
     this.nodes=[];
   }
+
   getCwf(dir){
     if(this.cwfDir === dir){
       return this.wf;
     }
     let rt=null;
-    this.children.forEach((child)=>{
+    for(let child of this.children){
       const tmp = child.getCwf(dir);
       if(tmp) rt = tmp;
-    });
+    }
     return rt;
-  }
-
-  getTaskList(tasks){
-    this.children.forEach((child)=>{
-      child.getTaskList(tasks);
-    });
-    const ownTasks=this.dispatchedTaskList.map((task)=>{
-      return {
-        name: task.name,
-        description: task.description ? task.description : '',
-        state: task.state,
-        parent: task.parent,
-        startTime: task.startTime,
-        endTime: task.endTime
-      }
-    });
-    Array.prototype.push.apply(tasks, ownTasks);
-    return tasks;
   }
 
   async _dispatchTask(task){
@@ -285,7 +251,9 @@ class Dispatcher{
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
     if(this.wf.currentIndex !== undefined) task.currentIndex=this.wf.currentIndex;
     executer.exec(task);
+    // task should be registerd both this.dispatchedTasksList and Project.tasks
     this.dispatchedTaskList.push(task);
+    addDispatchedTask(this.label, task);
     const nextTasks=Array.from(task.next);
     task.outputFiles.forEach((outputFile)=>{
       const tmp = outputFile.dst.map((e)=>{
@@ -302,110 +270,108 @@ class Dispatcher{
     Array.prototype.push.apply(this.nextSearchList, nextTasks);
   }
 
-  async _checkIf(node){
-    logger.debug('_checkIf called', node.name);
-    let cwd= path.resolve(this.cwfDir, node.path);
-    let condition = evalConditionSync(node.condition, cwd);
-    let next = condition? node.next: node.else;
+  async _checkIf(component){
+    logger.debug('_checkIf called', component.name);
+    const cwd= path.resolve(this.cwfDir, component.path);
+    const condition = evalConditionSync(component.condition, cwd);
+    const next = condition? component.next: component.else;
     Array.prototype.push.apply(this.nextSearchList, next);
-    setComponentState(this.label, node, 'finished');
+    setComponentState(this.label, component, 'finished');
   }
 
-  async _readChild(node){
-    const childWorkflowFilename= path.resolve(this.cwfDir, node.path, node.jsonFile);
+  async _readChild(component){
+    const childWorkflowFilename= path.resolve(this.cwfDir, component.path, component.jsonFile);
     return fs.readJSON(childWorkflowFilename);
   }
 
-  async _delegate(node){
-    logger.debug('_delegate called', node.name);
-    const childDir= path.resolve(this.cwfDir, node.path);
-    const childWF = await this._readChild(node);
-    if(node.currentIndex !== undefined){
-      childWF.currentIndex = node.currentIndex;
+  async _delegate(component){
+    logger.debug('_delegate called', component.name);
+    const childDir= path.resolve(this.cwfDir, component.path);
+    const childWF = await this._readChild(component);
+    if(component.currentIndex !== undefined){
+      childWF.currentIndex = component.currentIndex;
     }
     const child = new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
-    this.children.push(child);
-    return child.dispatch()
-      .then(()=>{
-        setComponentState(this.label, node, 'finished');
-      })
-      .catch((err)=>{
-        logger.error("fatal error occurred while dispatching sub workflow",err);
-        setComponentState(this.label, node, 'failed');
-      }).then(()=>{
-        Array.prototype.push.apply(this.nextSearchList, node.next);
-      });
+    this.children.add(child);
+    try{
+      await child.start();
+      setComponentState(this.label, component, 'finished');
+    }finally{
+      Array.prototype.push.apply(this.nextSearchList, component.next);
+      child.emit('stop');
+      this.children.delete(child);
+    }
   }
 
-  _loopInitialize(node){
-    node.initialized=true;
-    node.originalPath=node.path;
-    node.originalName=node.name;
+  _loopInitialize(component){
+    component.initialized=true;
+    component.originalPath=component.path;
+    component.originalName=component.name;
   }
-  async _loopFinalize(node, lastDir){
-    const dstDir = path.resolve(this.cwfDir, node.originalPath);
+  async _loopFinalize(component, lastDir){
+    const dstDir = path.resolve(this.cwfDir, component.originalPath);
     if(lastDir !== dstDir){
       logger.debug('copy ',lastDir,'to',dstDir);
       await fs.copy(lastDir, dstDir)
     }
-    delete node.initialized;
-    delete node.currentIndex;
-    node.name=node.originalName;
-    node.path=node.originalPath;
-    Array.prototype.push.apply(this.nextSearchList, node.next);
-    setComponentState(this.label, node, 'finished');
+    delete component.initialized;
+    delete component.currentIndex;
+    component.name=component.originalName;
+    component.path=component.originalPath;
+    Array.prototype.push.apply(this.nextSearchList, component.next);
+    setComponentState(this.label, component, 'finished');
   }
 
-  async _loopHandler(getNextIndex, isFinished, node){
-    if(node.childLoopRunning){
+  async _loopHandler(getNextIndex, isFinished, component){
+    if(component.childLoopRunning){
       // send back itself to searchList for next loop trip
-      this.nextSearchList.push(node.index);
+      this.nextSearchList.push(component.index);
       return;
     }
-    logger.debug('_loopHandler called', node.name);
-    node.childLoopRunning=true;
-    if(! node.initialized){
-      this._loopInitialize(node)
+    logger.debug('_loopHandler called', component.name);
+    component.childLoopRunning=true;
+    if(! component.initialized){
+      this._loopInitialize(component)
     }
 
     // determine old loop block directory
-    let srcDir= node.currentIndex == undefined ? node.path : `${node.originalPath}_${node.currentIndex}`;
+    let srcDir= component.currentIndex == undefined ? component.path : `${component.originalPath}_${component.currentIndex}`;
     srcDir = path.resolve(this.cwfDir, srcDir);
 
-    // update index variable(node.currentIndex)
-    node.currentIndex = getNextIndex(node);
+    // update index variable(component.currentIndex)
+    component.currentIndex = getNextIndex(component);
 
     // end determination
-    if(isFinished(node)){
-      return this._loopFinalize(node, srcDir)
+    if(isFinished(component)){
+      return this._loopFinalize(component, srcDir)
     }
     // send back itself to searchList for next loop trip
-    this.nextSearchList.push(node.index);
+    this.nextSearchList.push(component.index);
 
-    const newNode = Object.assign({}, node);
-    newNode.name = `${node.originalName}_${node.currentIndex}`;
-    newNode.path = newNode.name;
-    const dstDir = path.resolve(this.cwfDir, newNode.name);
+    const newComponent = Object.assign({}, component);
+    newComponent.name = `${component.originalName}_${component.currentIndex}`;
+    newComponent.path = newComponent.name;
+    const dstDir = path.resolve(this.cwfDir, newComponent.name);
 
     try{
       await fs.copy(srcDir, dstDir)
-      const childWF = await this._readChild(node);
-      childWF.name=newNode.name;
-      childWF.path=newNode.path;
-      await fs.writeJson(path.resolve(dstDir, newNode.jsonFile), childWF, {spaces: 4});
-      await this._delegate(newNode);
+      const childWF = await this._readChild(component);
+      childWF.name=newComponent.name;
+      childWF.path=newComponent.path;
+      await fs.writeJson(path.resolve(dstDir, newComponent.jsonFile), childWF, {spaces: 4});
+      await this._delegate(newComponent);
     }catch(e){
-      e.index = node.currentIndex;
+      e.index = component.currentIndex;
       logger.warn('fatal error occurred during loop child dispatching.', e);
       return Promise.reject(e);
     }
-    logger.debug('loop finished at index =', node.currentIndex);
-    node.childLoopRunning=false;
+    logger.debug('loop finished at index =', component.currentIndex);
+    component.childLoopRunning=false;
   }
-  async _PSHandler(node){
-    logger.debug('_PSHandler called', node.name);
-    const srcDir = path.resolve(this.cwfDir, node.path);
-    const paramSettingsFilename = path.resolve(srcDir, node.parameterFile);
+  async _PSHandler(component){
+    logger.debug('_PSHandler called', component.name);
+    const srcDir = path.resolve(this.cwfDir, component.path);
+    const paramSettingsFilename = path.resolve(srcDir, component.parameterFile);
     const paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
 
     const targetFile = paramSettings.target_file;
@@ -417,7 +383,7 @@ class Dispatcher{
     ignoreFiles.push(paramSettingsFilename);
 
     let promises=[]
-    node.numTotal = getParamSize(paramSpace);
+    component.numTotal = getParamSize(paramSpace);
     for(let paramVec of paramVecGenerator(paramSpace)){
       let dstDir=paramVec.reduce((p,e)=>{
         let v = e.value;
@@ -425,7 +391,7 @@ class Dispatcher{
           v = (e.value).replace(path.sep, '_');
         }
         return `${p}_${e.key}_${v}`;
-      }, node.path);
+      }, component.path);
       dstDir = path.resolve(this.cwfDir, dstDir);
       // copy file which is specified as parameter
       let includeFiles=paramVec
@@ -449,28 +415,26 @@ class Dispatcher{
       paramVec.forEach((e)=>{
         data=data.replace(new RegExp(`%%${e.key}%%`,"g"), e.value.toString());
       });
-      let rewriteFile= path.resolve(dstDir, targetFile)
+      const rewriteFile= path.resolve(dstDir, targetFile)
       await promisify(fs.writeFile)(rewriteFile, data);
 
-      let newNode = Object.assign({}, node);
-      newNode.name= path.relative(this.cwfDir, dstDir);
-      newNode.path = newNode.name;
-      let p = this._delegate(newNode)
+      const newComponent = Object.assign({}, component);
+      newComponent.name= path.relative(this.cwfDir, dstDir);
+      newComponent.path = newComponent.name;
+      const p = this._delegate(newComponent)
       .then(()=>{
-        if(newNode.state === 'finished'){
-          ++(node.numFinished)
-        } else if (newNode.state === 'failed'){
-          ++(node.numFailed)
+        if(newComponent.state === 'finished'){
+          ++(component.numFinished)
+        } else if (newComponent.state === 'failed'){
+          ++(component.numFailed)
         }else{
-          logger.warn('child state is illegal', newNode.state);
+          logger.warn('child state is illegal', newComponent.state);
         }
       });
       promises.push(p);
     }
-    return Promise.all(promises)
-      .then(()=>{
-        setComponentState(this.label, node, 'finished');
-      });
+    await Promise.all(promises)
+    setComponentState(this.label, component, 'finished');
   }
 
   _isReady(index){

@@ -14,10 +14,33 @@ const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require('./utility');
 const {interval, remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
-const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject, addSsh, removeSsh} = require('./project');
-const {write, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
-const {commitProject, revertProject, cleanProject, once, emit} =  require('./project');
-const {gitAdd} = require('./project');
+const {getCwf,
+  setCwf,
+  overwriteCwf,
+  getNode, pushNode,
+  getCurrentDir,
+  readRwf, getRootDir,
+  getCwfFilename,
+  readProjectJson,
+  resetProject, addSsh,
+  removeSsh,
+  getTaskStateList,
+  removeDispatchedTasks,
+  write,
+  setRootDispatcher,
+  getRootDispatcher,
+  deleteRootDispatcher,
+  openProject,
+  updateProjectJson,
+  setProjectState,
+  getProjectState,
+  commitProject,
+  revertProject,
+  cleanProject,
+  once,
+  emit,
+  gitAdd
+} = require('./project');
 const fileBrowser = require("./fileBrowser");
 const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
 
@@ -145,13 +168,7 @@ async function validationCheck(label, workflow, sio){
 }
 
 async function sendWorkflow(sio, label, fromDispatcher=false){
-  let wf=null;
-  if(fromDispatcher){
-    wf = getRootDispatcher(label).getCwf(getCurrentDir(label));
-  }else{
-    wf = getCwf(label);
-  }
-
+  const wf=getCwf(label, fromDispatcher);
   const rt = JSON.parse(JSON.stringify(wf));
   for(const child of rt.nodes){
     if(child!==null){
@@ -322,46 +339,48 @@ async function onRunProject(sio, label, rwfFilename){
     logger.debug("used heap size at start point =", process.memoryUsage().heapUsed/1024/1024,"MB");
   }
   const rwf = await readRwf(label);
-  try{
-    await validationCheck(label, rwf, sio)
-  }catch(err){
-    logger.error('invalid root workflow:', err);
-    removeSsh(label);
-    return false
+  const projectState=getProjectState(label);
+  if(projectState === 'not-started'){
+    try{
+      await validationCheck(label, rwf, sio)
+    }catch(err){
+      logger.error('invalid root workflow:', err);
+      removeSsh(label);
+      return false
+    }
+    await commitProject(label);
+    let cleanup = rwf.cleanupFlag;
+    if(! cleanup){
+      cleanup = defaultCleanupRemoteRoot;
+    }
+    rwf.cleanupFlag = cleanup;
   }
-  await commitProject(label);
   await setProjectState(label, 'running');
   sio.emit('projectJson', await readProjectJson(label));
-
-  let cleanup = rwf.cleanupFlag;
-  if(! cleanup){
-    cleanup = defaultCleanupRemoteRoot;
-  }
-  rwf.cleanupFlag = cleanup;
 
   const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), label);
   setRootDispatcher(label, rootDispatcher);
   sio.emit('projectJson', await readProjectJson(label));
 
-  // add event listener for task state changed
+  // event listener for task state changed
   function onTaskStateChanged(){
-    const tasks=[];
-    rootDispatcher.getTaskList(tasks);
+    const tasks=getTaskStateList(label);
     sio.emit('taskStateList', tasks);
     sendWorkflow(sio, label, true);
     setImmediate(()=>{
       once(label, 'taskStateChanged', onTaskStateChanged);
     });
   };
-  once(label, 'taskStateChanged', onTaskStateChanged);
 
-  // add event listener for component state changed
+  // event listener for component state changed
   function onComponentStateChanged(){
     sendWorkflow(sio, label, true);
     setImmediate(()=>{
       once(label, 'componentStateChanged', onComponentStateChanged);
     });
   }
+
+  once(label, 'taskStateChanged', onTaskStateChanged);
   once(label, 'componentStateChanged', onComponentStateChanged);
 
   // project start here
@@ -373,7 +392,7 @@ async function onRunProject(sio, label, rwfFilename){
         logger.debug("used heap size ", process.memoryUsage().heapUsed/1024/1024,"MB");
       }, 30000);
     }
-    const projectState=await rootDispatcher.dispatch();
+    const projectState=await rootDispatcher.start();
     if(memMeasurement){
       logger.debug("used heap size immediately after execution=", process.memoryUsage().heapUsed/1024/1024,"MB");
       clearInterval(timeout);
@@ -385,8 +404,9 @@ async function onRunProject(sio, label, rwfFilename){
   }
 
   sendWorkflow(sio, label, true);
-
   sio.emit('projectJson', await readProjectJson(label));
+  rootDispatcher.remove();
+  deleteRootDispatcher(label);
   if(memMeasurement){
     logger.debug("used heap size at the end", process.memoryUsage().heapUsed/1024/1024,"MB");
   }
@@ -395,16 +415,10 @@ async function onRunProject(sio, label, rwfFilename){
 async function onPauseProject(sio, label){
   logger.debug("pause event recieved");
   const rootDispatcher=getRootDispatcher(label);
-  rootDispatcher.pause();
-
-  let hosts=[];
-  await rootDispatcher.killDispatchedTasks(hosts);
-  hosts = Array.from(new Set(hosts));
-  logger.debug('remove ssh connection to', hosts);
-  for(const host of hosts){
-    removeSsh(label, host);
+  if(rootDispatcher){
+    rootDispatcher.pause();
   }
-
+  await removeDispatchedTasks(label);
   await setProjectState(label, 'paused');
   sio.emit('projectJson', await readProjectJson(label));
 }
@@ -412,9 +426,11 @@ async function onCleanProject(sio, label){
   logger.debug("clean event recieved");
   const rootDispatcher = getRootDispatcher(label);
   if(rootDispatcher){
-    rootDispatcher.remove();;
+    rootDispatcher.remove();
     deleteRootDispatcher(label);
   }
+  await removeDispatchedTasks(label);
+  sio.emit('taskStateList', []);
   await cleanProject(label);
   await resetProject(label);
   await sendWorkflow(sio, label);
@@ -442,14 +458,8 @@ async function onRevertProject(sio, label){
 
 function onTaskStateListRequest(sio, label, msg){
   logger.debug('getTaskStateList event recieved:', msg);
-  const rootDispatcher=getRootDispatcher(label);
-  if(rootDispatcher != null){
-    const tasks=[];
-    rootDispatcher.getTaskList(tasks);
-    sio.emit('taskStateList', tasks);
-  }else{
-    logger.warn('task state list requested before root dispatcher is set');
-  }
+  const tasks=getTaskStateList(label);
+  sio.emit('taskStateList', tasks);
 }
 
 async function onCreateNewFile(sio, label, filename, cb){

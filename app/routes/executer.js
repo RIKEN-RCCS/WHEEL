@@ -316,8 +316,7 @@ class Executer{
     if(task.jobid !== null) setTaskState(task, 'waiting');
   }
   cancel(task){
-    this.batch.qdel(task.jobid);
-    setTaskState(task, 'not-started');
+    return this.batch.qdel(task.jobid);
   }
 }
 
@@ -367,6 +366,7 @@ function exec(task){
 }
 
 function cancel(task){
+  if(task.jobid === undefined) return;
   task.remotehostID=remoteHost.getID('name', task.host) || 'localhost';
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
@@ -375,7 +375,7 @@ function cancel(task){
     logger.warn('executer for', task.remotehostID,' with job scheduler' ,task.useJobScheduler, 'is not found');
     return;
   }
-  executer.cancel(task);
+  return executer.cancel(task);
 }
 
 module.exports.exec= exec;
