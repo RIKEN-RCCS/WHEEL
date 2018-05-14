@@ -378,5 +378,5 @@ function cancel(task){
   return executer.cancel(task);
 }
 
-module.exports.exec= exec;
-module.exports.cancel= cancel;
+module.exports.exec = exec;
+module.exports.cancel = cancel;

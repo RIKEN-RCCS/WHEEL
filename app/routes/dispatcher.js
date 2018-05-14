@@ -9,7 +9,7 @@ const uuidv1 = require('uuid/v1');
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const {interval, remoteHost, jobScheduler} = require('../db/db');
-const executer = require('./executer');
+const {exec} = require('./executer');
 const { addXSync, doCleanup, deliverOutputFiles} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
@@ -250,7 +250,7 @@ class Dispatcher extends EventEmitter{
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
     if(this.wf.currentIndex !== undefined) task.currentIndex=this.wf.currentIndex;
-    executer.exec(task);
+    exec(task);
     // task should be registerd both this.dispatchedTasksList and Project.tasks
     this.dispatchedTaskList.push(task);
     addDispatchedTask(this.label, task);

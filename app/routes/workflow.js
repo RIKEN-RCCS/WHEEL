@@ -25,7 +25,6 @@ const {getCwf,
   resetProject, addSsh,
   removeSsh,
   getTaskStateList,
-  removeDispatchedTasks,
   write,
   setRootDispatcher,
   getRootDispatcher,
@@ -39,11 +38,30 @@ const {getCwf,
   cleanProject,
   once,
   emit,
-  gitAdd
+  gitAdd,
+  getTasks
 } = require('./project');
+const {cancel} = require('./executer');
 const fileBrowser = require("./fileBrowser");
 const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
+const {killTask} = require("./taskUtil");
 
+
+function removeDispatchedTasks(label){
+  const hosts=new Set();
+  for(let task of getTasks(label)){
+    if(task.state === 'finished' || task.state === 'failed') continue;
+    const canceled = cancel(task);
+    if(! canceled){
+      killTask(task, hosts);
+    }
+    task.state='not-started';
+  }
+  for(const host of hosts){
+    logger.debug('remove ssh connection to', host);
+    removeSsh(label, host);
+  }
+}
 function askPassword(sio, hostname){
   return new Promise((resolve, reject)=>{
     sio.on('password', (data)=>{

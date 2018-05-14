@@ -7,8 +7,6 @@ const glob = require('glob');
 
 const {getGitOperator}= require("./gitOperator");
 const {getDateString, replacePathsep} = require('./utility');
-const {killTasks} = require("./taskUtil");
-const {cancel} = require("./executer");
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
@@ -44,7 +42,6 @@ class Project extends EventEmitter{
   get rootDir(){
     return path.dirname(this.projectJsonFilename);
   }
-
 }
 
 const projectDirs=new Map();
@@ -54,7 +51,6 @@ _getProject = (label)=>{
   }
   return projectDirs.get(label);
 }
-
 
 async function openProject (label, filename){
   const pj=_getProject(label);
@@ -142,7 +138,6 @@ async function revertProject(label){
 async function cleanProject(label){
   const rootDir = getRootDir(label);
   const srces = await promisify(glob)("*", {cwd: rootDir});
-  console.log(srces);
   //TODO should be optimized stride value(100);
   for(let i =0; i<srces.length; i+=100){
     const end = i+100 < srces.length? i+100:srces.length;
@@ -230,21 +225,6 @@ function emit(label, eventName){
 function addDispatchedTask(label, task){
   _getProject(label).tasks.add(task);
 }
-function removeDispatchedTasks(label){
-  const hosts=new Set();
-  for(let task of _getProject(label).tasks){
-    if(task.state === 'finished' || task.state === 'failed') continue;
-    const canceled = cancel(task);
-    if(! canceled){
-      killTask(task, hosts);
-    }
-    task.state='not-started';
-  }
-  for(const host of hosts){
-    logger.debug('remove ssh connection to', host);
-    removeSsh(label, host);
-  }
-}
 function getTaskStateList(label){
   return [..._getProject(label).tasks].map((task)=>{
     return {
@@ -256,6 +236,9 @@ function getTaskStateList(label){
       endTime: task.endTime
     }
   });
+}
+function getTasks(label){
+  return _getProject(label).tasks;
 }
 
 module.exports.openProject           = openProject;
@@ -298,5 +281,5 @@ module.exports.emit                  = emit;
 
 //operators for dispatched tasks
 module.exports.addDispatchedTask     = addDispatchedTask;
-module.exports.removeDispatchedTasks = removeDispatchedTasks;
 module.exports.getTaskStateList      = getTaskStateList;
+module.exports.getTasks              = getTasks;
