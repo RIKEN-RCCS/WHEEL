@@ -213,7 +213,8 @@ function determinQueue(task, queues){
   return queue;
 }
 
-function makeCmd(task, JS, queues){
+function makeSubmitCmd(task, JS, queues){
+  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
   const workdir=path.posix.dirname(path.posix.join(task.remoteWorkingDir, task.script));
   let submitCmd = `cd ${workdir} &&`
   if(task.currentIndex) submitCmd = submitCmd+ `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
@@ -234,7 +235,7 @@ async function remoteSubmit(task){
     setTaskState(task, 'running');
 
     const JS = jobScheduler[hostinfo.jobScheduler];
-    const submitCmd = makeCmd(task, JS, hostinfo.queue);
+    const submitCmd = makeSubmitCmd(task, JS, hostinfo.queue);
 
     logger.debug('submitting job:', submitCmd);
     const output=[];
