@@ -39,7 +39,8 @@ const {getCwf,
   once,
   emit,
   gitAdd,
-  getTasks
+  getTasks,
+  clearDispatchedTasks
 } = require('./project');
 const {cancel} = require('./executer');
 const fileBrowser = require("./fileBrowser");
@@ -57,6 +58,7 @@ function removeDispatchedTasks(label){
     }
     task.state='not-started';
   }
+  clearDispatchedTasks(label);
   for(const host of hosts){
     logger.debug('remove ssh connection to', host);
     removeSsh(label, host);
@@ -425,6 +427,8 @@ async function onRunProject(sio, label, rwfFilename){
   sio.emit('projectJson', await readProjectJson(label));
   rootDispatcher.remove();
   deleteRootDispatcher(label);
+  clearDispatchedTasks(label);
+  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
   if(memMeasurement){
     logger.debug("used heap size at the end", process.memoryUsage().heapUsed/1024/1024,"MB");
   }
@@ -436,6 +440,7 @@ async function onPauseProject(sio, label){
   if(rootDispatcher){
     rootDispatcher.pause();
   }
+  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
   await removeDispatchedTasks(label);
   await setProjectState(label, 'paused');
   sio.emit('projectJson', await readProjectJson(label));

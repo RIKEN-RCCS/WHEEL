@@ -225,6 +225,9 @@ function emit(label, eventName){
 function addDispatchedTask(label, task){
   _getProject(label).tasks.add(task);
 }
+function getTasks(label){
+  return _getProject(label).tasks;
+}
 function getTaskStateList(label){
   return [..._getProject(label).tasks].map((task)=>{
     return {
@@ -237,8 +240,8 @@ function getTaskStateList(label){
     }
   });
 }
-function getTasks(label){
-  return _getProject(label).tasks;
+function clearDispatchedTasks(label){
+  _getProject(label).tasks.clear();
 }
 
 module.exports.openProject           = openProject;
@@ -282,4 +285,5 @@ module.exports.emit                  = emit;
 //operators for dispatched tasks
 module.exports.addDispatchedTask     = addDispatchedTask;
 module.exports.getTaskStateList      = getTaskStateList;
+module.exports.clearDispatchedTasks  = clearDispatchedTasks;
 module.exports.getTasks              = getTasks;

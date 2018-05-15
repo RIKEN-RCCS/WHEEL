@@ -89,14 +89,15 @@ async function prepareRemoteExecDir(ssh, task){
   return ssh.chmod(remoteScriptPath, '744');
 }
 
-async function postProcess(ssh, task, rt){
+async function gatherFiles(ssh, task, rt){
   setTaskState(task, 'stage-out');
   logger.debug('get necessary files from remote server');
 
   //get outputFiles from remote server
-  const outputFilesArray = task.outputFiles.filter((e)=>{
-    if(e.dst.length >0) return e;
-  })
+  const outputFilesArray = task.outputFiles
+    .filter((e)=>{
+      if(e.dst.length >0) return e;
+    })
     .map((e)=>{
       if(e.name.endsWith('/') || e.name.endsWith('\\')){
         const dirname = replacePathsep(e.name);
@@ -172,6 +173,10 @@ async function localExec(task){
     cp.stderr.on('data', (data)=>{
       logger.stderr(data.toString());
     });
+    cp.on('error', (err)=>{
+      cp.removeAlllisteners('exit');
+      reject(err);
+    });
     cp.on('exit', (rt) =>{
       logger.debug(task.name, 'done. rt =', rt);
       resolve(rt);
@@ -195,7 +200,7 @@ async function remoteExec(task){
 
   //if exception occurred in ssh.exec, it will be catched in caller
   const rt = await ssh.exec(cmd, {}, passToSSHout, passToSSHerr);
-  return rt === 0? postProcess(ssh, task, rt):rt;
+  return rt === 0? gatherFiles(ssh, task, rt):rt;
 }
 
 function localSubmit(task){
@@ -232,12 +237,12 @@ async function remoteSubmit(task){
     const hostinfo = remoteHost.get(task.remotehostID);
     const ssh = getSsh(task.label, hostinfo.host);
     await prepareRemoteExecDir(ssh, task);
-    setTaskState(task, 'running');
 
     const JS = jobScheduler[hostinfo.jobScheduler];
     const submitCmd = makeSubmitCmd(task, JS, hostinfo.queue);
 
     logger.debug('submitting job:', submitCmd);
+    setTaskState(task, 'running');
     const output=[];
     const rt = await ssh.exec(submitCmd, {}, output, output);
     if(rt !== 0){
@@ -268,7 +273,7 @@ async function remoteSubmit(task){
         if(finished){
           logger.info(jobID,'is finished');
           clearInterval(timeout);
-          await postProcess(ssh, task, rt);
+          await gatherFiles(ssh, task, rt);
           resolve(rt);
         }
       }catch(err){
@@ -308,16 +313,20 @@ class Executer{
           const rt2 = await deliverOutputFiles(task.outputFiles, task.workingDir)
           if(rt2.length > 0 ){
             logger.debug('deliverOutputFiles:\n',rt2);
+            const maxRt2=rt2.reduce((p,e)=>{
+              return p>e?p:e;
+            });
+            if(maxRt2 !== 0) rt = maxRt2;
           }
-          if(rt2 !== 0) rt = rt2;
         }
 
         // update task status
-        const state = rt === 0?"finished":"failed";
+        const state = rt === 0 ? "finished" : "failed";
+        console.log("return value in SBS's default executer", task.name, rt);
         setTaskState(task, state);
 
         // to use retry function in the future release, return Promise.reject if task finished with non-zero value
-        return rt === 0? task.state:Promise.reject(task.state);
+        return rt === 0 ? task.state:Promise.reject(rt);
       },
       retry: false,
       maxConcurrent: maxNumJob
@@ -326,21 +335,9 @@ class Executer{
     this.stop = this.batch.stop;
     this.start = this.batch.start;
   }
-  /**
-   * submit job and wait
-   *
-   * @return {Promise} - only rejected when abnormal end
-   * if task exit with non-zero value, this Promise will be resolved with "failed"
-   * which came from default executer of SBS
-   */
   submit(task){
     task.jobid = this.batch.qsub(task);
     if(task.jobid !== null) setTaskState(task, 'waiting');
-    return this.batch.qwait(task.jobid)
-      .catch((e)=>{
-        if(e instanceof Error) return Promise.reject(e);
-        return Promise.resolve(e);
-      });
   }
   cancel(task){
     return this.batch.qdel(task.jobid);
@@ -373,7 +370,7 @@ function createExecuter(task){
  * enqueue task
  * @param {Task} task - instance of Task class (dfined in workflowComponent.js)
  */
-async function exec(task){
+function exec(task){
   task.remotehostID=remoteHost.getID('name', task.host) || 'localhost';
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
@@ -388,8 +385,7 @@ async function exec(task){
     const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
     task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
   }
-
-  return executer.submit(task);
+  executer.submit(task);
 }
 
 function cancel(task){

@@ -118,36 +118,37 @@ class Dispatcher extends EventEmitter{
 
   async _dispatch(){
     logger.debug('currentList:',this.currentSearchList);
-    if(this.currentSearchList.length>0){
-      const  promises=[];
-      while(this.currentSearchList.length>0){
-        const target = this.currentSearchList.shift();
-        if(! this._isReady(target)) this.nextSearchList.push(target);
-        const  component = this.nodes[target]
-        // put dst path into outputFiles
-        for(const outputFile of component.outputFiles){
-          for(const dst of outputFile.dst){
-            dst.dstRoot = dst.dstNode === 'parent' ? this.cwfDir : path.resolve(this.cwfDir, this.nodes[dst.dstNode].path);
-          }
+    logger.debug('next waiting component', this.nextSearchList);
+    const  promises=[];
+    while(this.currentSearchList.length>0){
+      const target = this.currentSearchList.shift();
+      if(! this._isReady(target)) this.nextSearchList.push(target);
+      const  component = this.nodes[target]
+      // put dst path into outputFiles
+      for(const outputFile of component.outputFiles){
+        for(const dst of outputFile.dst){
+          dst.dstRoot = dst.dstNode === 'parent' ? this.cwfDir : path.resolve(this.cwfDir, this.nodes[dst.dstNode].path);
         }
-        const  cmd  = this._cmdFactory(component.type);
-        setComponentState(this.label, component, 'running');
-        promises.push(
-          cmd.call(this, component)
-          .then(()=>{
-            // task component is not finished at this time
-            if(component.type === "task") return
-            deliverOutputFiles(component.outputFiles,  path.resolve(this.cwfDir, component.path))
-              .then((rt)=>{
-                if(rt.length > 0 ) logger.debug('deliverOutputFiles:\n',rt);
-              })
-          })
-          .catch((err)=>{
-            setComponentState(this.label, component, 'failed');
-            return Promise.reject(err);
-          })
-        );
       }
+      const  cmd  = this._cmdFactory(component.type);
+      setComponentState(this.label, component, 'running');
+      promises.push(
+        cmd.call(this, component)
+        .then(()=>{
+          // task component is not finished at this time
+          if(component.type === "task") return
+          deliverOutputFiles(component.outputFiles,  path.resolve(this.cwfDir, component.path))
+            .then((rt)=>{
+              if(rt.length > 0 ) logger.debug('deliverOutputFiles:\n',rt);
+            })
+        })
+        .catch((err)=>{
+          setComponentState(this.label, component, 'failed');
+          return Promise.reject(err);
+        })
+      );
+    }
+    if(promises.length>0){
       try{
         await Promise.all(promises);
       }catch(e){
@@ -159,10 +160,9 @@ class Dispatcher extends EventEmitter{
       this.nextSearchList=[];
     }
     if(this.isFinished()){
-      logger.warn("finished", this.cwfDir); //TODO must be removed
       this.removeListener('dispatch', this._dispatch);
-      const hasFailed=this.dispatchedTaskList.some((state)=>{
-        return state === 'failed';
+      const hasFailed=this.dispatchedTaskList.some((task)=>{
+        return task.state === 'failed';
       });
       this.emit('done', !hasFailed);
     }else{
@@ -175,8 +175,8 @@ class Dispatcher extends EventEmitter{
 
   isFinished(){
     if(this.currentSearchList.length > 0 || this.nextSearchList.length > 0) return false;
-    const hasRunningTask = this.dispatchedTaskList.some((state)=>{
-      return ! _isFinishedState(state);
+    const hasRunningTask = this.dispatchedTaskList.some((task)=>{
+      return ! _isFinishedState(task.state);
     });
     return !hasRunningTask;
   }
@@ -240,23 +240,9 @@ class Dispatcher extends EventEmitter{
     return rt;
   }
 
-  async _dispatchTask(task){
-    logger.debug('_dispatchTask called', task.name);
-    task.id=uuidv1(); // use this id to cancel task
-    task.startTime = 'not started'; // to be assigned in executer
-    task.endTime   = 'not finished'; // to be assigned in executer
-    task.projectStartTime= this.projectStartTime;
-    task.label = this.label;
-    task.workingDir=path.resolve(this.cwfDir, task.path);
-    task.rwfDir= this.rwfDir;
-    task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
-    if(this.wf.currentIndex !== undefined) task.currentIndex=this.wf.currentIndex;
-    const p = exec(task);
-    //this.diaptachedTaskList has Promise, Project.tasks has task component itself
-    this.dispatchedTaskList.push(p);
-    addDispatchedTask(this.label, task);
-    const nextTasks=Array.from(task.next);
-    task.outputFiles.forEach((outputFile)=>{
+  _addNextComponent(component, useElse=false){
+    const nextComponents=useElse?Array.from(component.else):Array.from(component.next);
+    component.outputFiles.forEach((outputFile)=>{
       const tmp = outputFile.dst.map((e)=>{
         if(e.dstNode !== 'parent'){
           return e.dstNode;
@@ -266,17 +252,34 @@ class Dispatcher extends EventEmitter{
       }).filter((e)=>{
         return e!==null;
       });
-      Array.prototype.push.apply(nextTasks, tmp);
+      Array.prototype.push.apply(nextComponents, tmp);
     });
-    Array.prototype.push.apply(this.nextSearchList, nextTasks);
+    Array.prototype.push.apply(this.nextSearchList, nextComponents);
+  }
+
+  async _dispatchTask(task){
+    logger.debug('_dispatchTask called', task.name);
+    task.id=uuidv1(); // not used for now
+    task.startTime = 'not started'; // to be assigned in executer
+    task.endTime   = 'not finished'; // to be assigned in executer
+    task.projectStartTime= this.projectStartTime;
+    task.label = this.label;
+    task.workingDir=path.resolve(this.cwfDir, task.path);
+    task.rwfDir= this.rwfDir;
+    task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
+    if(this.wf.currentIndex !== undefined) task.currentIndex=this.wf.currentIndex;
+    exec(task);
+    //following 2 containers are used for different purpose, please keep duplicated!
+    this.dispatchedTaskList.push(task);
+    addDispatchedTask(this.label, task);
+    this._addNextComponent(task);
   }
 
   async _checkIf(component){
     logger.debug('_checkIf called', component.name);
     const cwd= path.resolve(this.cwfDir, component.path);
     const condition = evalConditionSync(component.condition, cwd);
-    const next = condition? component.next: component.else;
-    Array.prototype.push.apply(this.nextSearchList, next);
+    this._addNextComponent(task, !condition);
     setComponentState(this.label, component, 'finished');
   }
 
@@ -299,7 +302,7 @@ class Dispatcher extends EventEmitter{
       await child.start();
       setComponentState(this.label, component, 'finished');
     }finally{
-      Array.prototype.push.apply(this.nextSearchList, component.next);
+      this._addNextComponent(component);
       this.children.delete(child);
     }
   }
@@ -319,7 +322,7 @@ class Dispatcher extends EventEmitter{
     delete component.currentIndex;
     component.name=component.originalName;
     component.path=component.originalPath;
-    Array.prototype.push.apply(this.nextSearchList, component.next);
+    this._addNextComponent(component);
     setComponentState(this.label, component, 'finished');
   }
 
@@ -435,6 +438,7 @@ class Dispatcher extends EventEmitter{
       promises.push(p);
     }
     await Promise.all(promises);
+    this._addNextComponent(component);
     setComponentState(this.label, component, 'finished');
   }
 
