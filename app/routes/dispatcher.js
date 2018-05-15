@@ -159,13 +159,14 @@ class Dispatcher extends EventEmitter{
       this.nextSearchList=[];
     }
     if(this.isFinished()){
+      logger.warn("finished", this.cwfDir); //TODO must be removed
       this.removeListener('dispatch', this._dispatch);
-      const hasFailed=this.dispatchedTaskList.some((task)=>{
-        return task.state === 'failed';
+      const hasFailed=this.dispatchedTaskList.some((state)=>{
+        return state === 'failed';
       });
       this.emit('done', !hasFailed);
     }else{
-      //start next dispatcher
+      //call next dispatcher
       setTimeout(()=>{
         this.emit('dispatch');
       }, interval);
@@ -174,8 +175,8 @@ class Dispatcher extends EventEmitter{
 
   isFinished(){
     if(this.currentSearchList.length > 0 || this.nextSearchList.length > 0) return false;
-    const hasRunningTask = this.dispatchedTaskList.some((task)=>{
-      return ! _isFinishedState(task.state);
+    const hasRunningTask = this.dispatchedTaskList.some((state)=>{
+      return ! _isFinishedState(state);
     });
     return !hasRunningTask;
   }
@@ -250,9 +251,9 @@ class Dispatcher extends EventEmitter{
     task.rwfDir= this.rwfDir;
     task.doCleanup = doCleanup(task.cleanupFlag, this.wf.cleanupFlag);
     if(this.wf.currentIndex !== undefined) task.currentIndex=this.wf.currentIndex;
-    exec(task);
-    // task should be registerd both this.dispatchedTasksList and Project.tasks
-    this.dispatchedTaskList.push(task);
+    const p = exec(task);
+    //this.diaptachedTaskList has Promise, Project.tasks has task component itself
+    this.dispatchedTaskList.push(p);
     addDispatchedTask(this.label, task);
     const nextTasks=Array.from(task.next);
     task.outputFiles.forEach((outputFile)=>{
@@ -293,12 +294,12 @@ class Dispatcher extends EventEmitter{
     }
     const child = new Dispatcher(childWF, childDir, this.rwfDir, this.projectStartTime, this.label);
     this.children.add(child);
+    // exception should be catched in caller
     try{
       await child.start();
       setComponentState(this.label, component, 'finished');
     }finally{
       Array.prototype.push.apply(this.nextSearchList, component.next);
-      child.emit('stop');
       this.children.delete(child);
     }
   }
@@ -375,14 +376,14 @@ class Dispatcher extends EventEmitter{
     const paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
 
     const targetFile = paramSettings.target_file;
-    let paramSpace = removeInvalid(paramSettings.target_param);
+    const paramSpace = removeInvalid(paramSettings.target_param);
     // ignore all filenames in file type parameter space and parameter study setting file
-    let ignoreFiles=getFilenames(paramSpace).map((e)=>{
+    const ignoreFiles=getFilenames(paramSpace).map((e)=>{
       return path.resolve(srcDir, e);
     });
     ignoreFiles.push(paramSettingsFilename);
 
-    let promises=[]
+    const promises=[]
     component.numTotal = getParamSize(paramSpace);
     for(let paramVec of paramVecGenerator(paramSpace)){
       let dstDir=paramVec.reduce((p,e)=>{
@@ -394,14 +395,14 @@ class Dispatcher extends EventEmitter{
       }, component.path);
       dstDir = path.resolve(this.cwfDir, dstDir);
       // copy file which is specified as parameter
-      let includeFiles=paramVec
+      const includeFiles=paramVec
         .filter((e)=>{
           return e.type === "file";
         })
         .map((e)=>{
           return path.resolve(srcDir, e.value);
         });
-      let options={};
+      const options={};
       options.filter = function(filename){
         return ! ignoreFiles.filter((e)=>{
           return !includeFiles.includes(e);
@@ -433,7 +434,7 @@ class Dispatcher extends EventEmitter{
       });
       promises.push(p);
     }
-    await Promise.all(promises)
+    await Promise.all(promises);
     setComponentState(this.label, component, 'finished');
   }
 

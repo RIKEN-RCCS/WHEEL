@@ -385,17 +385,17 @@ async function onRunProject(sio, label, rwfFilename){
     const tasks=getTaskStateList(label);
     sio.emit('taskStateList', tasks);
     sendWorkflow(sio, label, true);
-    setImmediate(()=>{
+    setTimeout(()=>{
       once(label, 'taskStateChanged', onTaskStateChanged);
-    });
+    }, interval);
   };
 
   // event listener for component state changed
   function onComponentStateChanged(){
     sendWorkflow(sio, label, true);
-    setImmediate(()=>{
+    setTimeout(()=>{
       once(label, 'componentStateChanged', onComponentStateChanged);
-    });
+    }, interval);
   }
 
   once(label, 'taskStateChanged', onTaskStateChanged);
