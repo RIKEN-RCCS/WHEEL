@@ -89,7 +89,7 @@ async function prepareRemoteExecDir(ssh, task){
 
 async function gatherFiles(ssh, task, rt){
   setTaskState(task, 'stage-out');
-  logger.debug('get necessary files from remote server');
+  logger.debug('start to get files from remote server');
 
   //get outputFiles from remote server
   const outputFilesArray = task.outputFiles
@@ -198,6 +198,7 @@ async function remoteExec(task){
 
   //if exception occurred in ssh.exec, it will be catched in caller
   const rt = await ssh.exec(cmd, {}, passToSSHout, passToSSHerr);
+  logger.debug(task.name, '(remote) done. rt =', rt);
   return rt === 0? gatherFiles(ssh, task, rt):rt;
 }
 
@@ -240,7 +241,7 @@ async function remoteSubmit(task){
     const JS = jobScheduler[hostinfo.jobScheduler];
     const submitCmd = makeSubmitCmd(task, JS, hostinfo.queue);
 
-    logger.debug('submitting job:', submitCmd);
+    logger.debug('submitting job (remote):', submitCmd);
     setTaskState(task, 'running');
     const output=[];
     const rt = await ssh.exec(submitCmd, {}, output, output);
@@ -267,24 +268,21 @@ async function remoteSubmit(task){
         clearInterval(timeout);
         reject(false);
       }
-      let line=0;
       try{
         const [finished, rt] = await isFinished(JS, ssh, jobID);
-        ++line;
         if(finished){
-        ++line;
-          logger.info(jobID,'is finished');
-        ++line;
+          logger.debug('DEBUG 1',finished, rt);
+          logger.info(jobID,'is finished (remote). rt ='rt);
+          logger.debug('DEBUG 2',finished, rt);
           clearInterval(timeout);
-        ++line;
+          logger.debug('DEBUG 3',finished, rt);
           await gatherFiles(ssh, task, rt);
-        ++line;
+          logger.debug('DEBUG 4',finished, rt);
           resolve(rt);
-        ++line;
+          logger.debug('DEBUG 5',finished, rt);
         }
       }catch(err){
         ++statFailedCount;
-        err.line = line;
         err.jobID = jobID;
         err.JS = JS;
         logger.warn('status check failed',err);
