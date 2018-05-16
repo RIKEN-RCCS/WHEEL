@@ -230,6 +230,7 @@ function makeSubmitCmd(task, JS, queues){
     submitCmd += ` ${JS.queueOpt}${queue}`;
   }
   submitCmd += ` ${scriptAbsPath}`;
+  return submitCmd;
 }
 
 async function remoteSubmit(task){
@@ -322,7 +323,6 @@ class Executer{
 
         // update task status
         const state = rt === 0 ? "finished" : "failed";
-        console.log("return value in SBS's default executer", task.name, rt);
         setTaskState(task, state);
 
         // to use retry function in the future release, return Promise.reject if task finished with non-zero value
