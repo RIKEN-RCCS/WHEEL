@@ -106,13 +106,8 @@ async function gatherFiles(ssh, task, rt){
     });
   if(outputFilesArray.length>0){
     const outputFiles= `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
-    try{
-      logger.debug('try to get outputFiles', outputFiles, '\n  from:', task.remoteWorkingDir, '\n  to:',task.workingDir);
-      await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null)
-    }catch(e){
-      logger.warn('falied to get outputFiles',e);
-      return Promise.reject(e);
-    }
+    logger.debug('try to get outputFiles', outputFiles, '\n  from:', task.remoteWorkingDir, '\n  to:',task.workingDir);
+    await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null)
   }
 
   //get files which match include filter
@@ -120,12 +115,7 @@ async function gatherFiles(ssh, task, rt){
     const include =`${task.remoteWorkingDir}/${parseFilter(task.include)}`;
     const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
     logger.debug('try to get ', include, '\n  from:',task.remoteWorkingDir, '\n  to:', task.workingDir, '\n  exclude filter:', exclude);
-    try{
-      await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude)
-    }catch(e){
-      logger.warn('faild to get files',e);
-      return Promise.reject(e);
-    }
+    await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude)
   }
 
   //clean up remote working directory
@@ -135,7 +125,7 @@ async function gatherFiles(ssh, task, rt){
       await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
     }catch(e){
       // just log and ignore error
-      logger.warn('remote cleanup failed',e);
+      logger.warn('remote cleanup failed but ignored',e);
     }
   }
   return rt;
@@ -161,7 +151,6 @@ async function localExec(task){
     if(task.currentIndex !== undefined) options.env.WHEEL_CURRENT_INDEX=task.currentIndex.toString();
     const cp = child_process.spawn(script, options, (err)=>{
       if(err){
-        logger.warn(task.name, 'failed.', err);
         reject(err);
       }
     });
@@ -183,17 +172,28 @@ async function localExec(task){
   });
 }
 
+function makeEnv(task){
+  return task.currentIndex ? `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `:"";
+}
+
+function makeQueueOpt(task, JS, queues){
+  let queue = "";
+  const queueList = queues.split(',');
+  if(task.queue in queueList){
+    queue = task.queue;
+  }else if (queueList.length > 0){
+    queue = queueList[0];
+  }
+  return queue!==""?` ${JS.queueOpt}${queue}`:"";
+}
+
 async function remoteExec(task){
   setTaskState(task, 'running');
   const hostinfo = remoteHost.get(task.remotehostID);
   const ssh = getSsh(task.label, hostinfo.host);
   await prepareRemoteExecDir(ssh, task)
   logger.debug("prepare done");
-  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
-  const workdir=path.posix.dirname(scriptAbsPath);
-  let cmd = `cd ${workdir} &&`;
-  if(task.currentIndex) cmd = cmd + `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
-  cmd = cmd + scriptAbsPath;
+  const cmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ./${task.script}`;
   logger.debug('exec (remote)', cmd);
 
   //if exception occurred in ssh.exec, it will be catched in caller
@@ -206,32 +206,6 @@ function localSubmit(task){
   console.log('localSubmit function is not implimented yet');
 }
 
-function determinQueue(task, queues){
-  let queue = null;
-  const queueList = queues.split(',');
-  if(task.queue in queueList){
-    queue = task.queue;
-  }else if (queueList.length > 0){
-    queue = queueList[0];
-  }
-  return queue;
-}
-
-function makeSubmitCmd(task, JS, queues){
-  const scriptAbsPath=path.posix.join(task.remoteWorkingDir, task.script);
-  const workdir=path.posix.dirname(path.posix.join(task.remoteWorkingDir, task.script));
-  let submitCmd = `cd ${workdir} &&`
-  if(task.currentIndex) submitCmd = submitCmd+ `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} `
-
-  submitCmd += ` ${JS.submit}`
-  const queue = determinQueue(task, queues);
-  if(queue){
-    submitCmd += ` ${JS.queueOpt}${queue}`;
-  }
-  submitCmd += ` ${scriptAbsPath}`;
-  return submitCmd;
-}
-
 async function remoteSubmit(task){
   return new Promise(async (resolve, reject)=>{
     const hostinfo = remoteHost.get(task.remotehostID);
@@ -239,22 +213,27 @@ async function remoteSubmit(task){
     await prepareRemoteExecDir(ssh, task);
 
     const JS = jobScheduler[hostinfo.jobScheduler];
-    const submitCmd = makeSubmitCmd(task, JS, hostinfo.queue);
-
+    const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${JS.submit} ${makeQueueOpt(task, JS, hostinfo.queue)} ./${task.script}`;
     logger.debug('submitting job (remote):', submitCmd);
     setTaskState(task, 'running');
     const output=[];
     const rt = await ssh.exec(submitCmd, {}, output, output);
     if(rt !== 0){
-      logger.warn('remote submit command failed!\ncmd:',submitCmd,'\nrt:', rt);
-      reject(new Error("submit command failed"));
+      const err = new Error("submit command failed");
+      err.cmd = submitCmd;
+      err.rt = rt;
+      reject(err);
+      return;
     }
     const outputText = output.join("");
     const re = new RegExp(JS.reJobID);
     const result = re.exec(outputText);
     if(result === null || result[1] === null){
-      logger.warn('getJobID failed\nsubmit command:',submitCmd,'\nfull output from submmit command:', outputText);
-      reject(new Error("get jobID failed"));
+      const err = new Error("get jobID failed");
+      err.cmd = submitCmd;
+      err.outputText = outputText;
+      reject(err);
+      return;
     }
     const jobID = result[1];
     task.jobID=jobID;
@@ -269,18 +248,15 @@ async function remoteSubmit(task){
       if(task.state !== 'running'){
         // project is stopped
         clearInterval(timeout);
-        reject(false);
+        resolve(false);
       }
       try{
         const [finished, rt] = await isFinished(JS, ssh, jobID);
         if(finished){
           logger.info(jobID,'is finished (remote). rt =', rt);
           clearInterval(timeout);
-          logger.debug('DEBUG 1',finished, rt);
           await gatherFiles(ssh, task, rt);
-          logger.debug('DEBUG 2',finished, rt);
           resolve(rt);
-          logger.debug('DEBUG 3',finished, rt);
         }
       }catch(err){
         ++statFailedCount;
@@ -290,6 +266,7 @@ async function remoteSubmit(task){
         const maxStatusCheckError=10; //TODO it should be get from hostinfo
         if(statFailedCount > maxStatusCheckError){
           reject(new Error("job status check failed over",maxStatusCheckError,"times"));
+          return;
         }
       }
     },interval);
@@ -343,6 +320,11 @@ class Executer{
   submit(task){
     task.jobid = this.batch.qsub(task);
     if(task.jobid !== null) setTaskState(task, 'waiting');
+    return this.batch.qwait(task.jobid)
+      .catch((e)=>{
+        logger.warn(task.name, "failed due to", e);
+        setTaskState(task, 'failed');
+      });
   }
   cancel(task){
     return this.batch.qdel(task.jobid);
@@ -381,7 +363,7 @@ function exec(task){
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
   });
   if( executer === undefined){
-    logger.debug('create new executer for', task.remotehostID,' with job scheduler', task.useJobScheduler);
+    logger.debug('create new executer for', task.host,' with job scheduler', task.useJobScheduler);
     executer = createExecuter(task);
     executers.push(executer);
   }
@@ -390,7 +372,8 @@ function exec(task){
     const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
     task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
   }
-  executer.submit(task);
+  //memo returned Promise is not used in dispatcher
+  return executer.submit(task);
 }
 
 function cancel(task){

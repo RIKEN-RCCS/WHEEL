@@ -122,7 +122,10 @@ class Dispatcher extends EventEmitter{
     const  promises=[];
     while(this.currentSearchList.length>0){
       const target = this.currentSearchList.shift();
-      if(! this._isReady(target)) this.nextSearchList.push(target);
+      if(! this._isReady(target)){
+        this.nextSearchList.push(target);
+        continue;
+      }
       const  component = this.nodes[target]
       // put dst path into outputFiles
       for(const outputFile of component.outputFiles){
@@ -148,17 +151,15 @@ class Dispatcher extends EventEmitter{
         })
       );
     }
-    if(promises.length>0){
-      try{
-        await Promise.all(promises);
-      }catch(e){
-        this.emit("error", e);
-      }
-      //remove duplicated entry
-      const tmp = new Set(this.nextSearchList);
-      this.currentSearchList=Array.from(tmp.values());
-      this.nextSearchList=[];
+    try{
+      await Promise.all(promises);
+    }catch(e){
+      this.emit("error", e);
     }
+    //remove duplicated entry
+    const tmp = new Set(this.nextSearchList);
+    this.currentSearchList=Array.from(tmp.values());
+    this.nextSearchList=[];
     if(this.isFinished()){
       this.removeListener('dispatch', this._dispatch);
       const hasFailed=this.dispatchedTaskList.some((task)=>{
