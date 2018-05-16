@@ -89,7 +89,7 @@ async function prepareRemoteExecDir(ssh, task){
 
 async function gatherFiles(ssh, task, rt){
   setTaskState(task, 'stage-out');
-  logger.debug('start to get files from remote server');
+  logger.debug('start to get files from remote server if specified');
 
   //get outputFiles from remote server
   const outputFilesArray = task.outputFiles
@@ -261,8 +261,11 @@ async function remoteSubmit(task){
     logger.info('submit success:', submitCmd, jobID);
 
     let statFailedCount=0;
+    let statCheckCount=0;
     //check job stat repeatedly
     const timeout = setInterval(async ()=>{
+      logger.debug(jobID,"status checked", statCheckCount);
+      ++statCheckCount;
       if(task.state !== 'running'){
         // project is stopped
         clearInterval(timeout);
@@ -271,15 +274,13 @@ async function remoteSubmit(task){
       try{
         const [finished, rt] = await isFinished(JS, ssh, jobID);
         if(finished){
-          logger.debug('DEBUG 1',finished, rt);
           logger.info(jobID,'is finished (remote). rt ='rt);
-          logger.debug('DEBUG 2',finished, rt);
           clearInterval(timeout);
-          logger.debug('DEBUG 3',finished, rt);
+          logger.debug('DEBUG 1',finished, rt);
           await gatherFiles(ssh, task, rt);
-          logger.debug('DEBUG 4',finished, rt);
+          logger.debug('DEBUG 2',finished, rt);
           resolve(rt);
-          logger.debug('DEBUG 5',finished, rt);
+          logger.debug('DEBUG 3',finished, rt);
         }
       }catch(err){
         ++statFailedCount;
