@@ -6,7 +6,7 @@ const fs = require("fs-extra");
 const glob = require('glob');
 
 const {getGitOperator}= require("./gitOperator");
-const {getDateString, replacePathsep} = require('./utility');
+const {getDateString} = require('./utility');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
@@ -45,7 +45,7 @@ class Project extends EventEmitter{
 }
 
 const projectDirs=new Map();
-_getProject = (label)=>{
+function _getProject(label){
   if(! projectDirs.has(label)){
     projectDirs.set(label, new Project());
   }

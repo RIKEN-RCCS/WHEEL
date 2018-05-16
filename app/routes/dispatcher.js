@@ -8,12 +8,12 @@ const uuidv1 = require('uuid/v1');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
-const {interval, remoteHost, jobScheduler} = require('../db/db');
+const {interval} = require('../db/db');
 const {exec} = require('./executer');
 const { addXSync, doCleanup, deliverOutputFiles} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
 const {isInitialNode} = require('./workflowEditor');
-const {getSsh, emit, addDispatchedTask} = require('./project');
+const {emit, addDispatchedTask} = require('./project');
 
 // utility functions
 function _forGetNextIndex(component){

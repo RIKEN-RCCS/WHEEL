@@ -41,7 +41,6 @@ module.exports = function(io){
       klaw(cwd)
         .on('data', (item)=>{
           if(item.path === cwd) return;
-          const parent = path.dirname(item.path);
           const r = {'id':item.path, 'parent':path.dirname(item.path), 'text':path.basename(item.path)};
           if(! item.stats.isDirectory()) r.icon='jstree-file';
           tree.push(r);
@@ -107,7 +106,7 @@ module.exports = function(io){
         res.send('Ok: ' + filename + ' saved');
         logger.debug(filename, ' saved.');
       })
-      .catch(()=>{
+      .catch((err)=>{
         logger.error(filename, 'save failed!', err);
       });
   });

@@ -64,7 +64,7 @@ function* paramVecGenerator(ParamSpace){
 }
 
 function getFilenames(ParamSpace){
-  return ParamSpace.reduce((p,c,i)=>{
+  return ParamSpace.reduce((p,c)=>{
     if(c.type !== 'file') return p;
     return p.concat(c.list);
   }, []);

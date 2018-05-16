@@ -1,5 +1,4 @@
 const path = require("path");
-const os = require("os");
 const fs = require("fs-extra");
 const {promisify} = require("util");
 
@@ -16,8 +15,7 @@ const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require
 const {interval, remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
 const {getCwf,
   setCwf,
-  overwriteCwf,
-  getNode, pushNode,
+  getNode,
   getCurrentDir,
   readRwf, getRootDir,
   getCwfFilename,
@@ -37,7 +35,6 @@ const {getCwf,
   revertProject,
   cleanProject,
   once,
-  emit,
   gitAdd,
   getTasks,
   clearDispatchedTasks
@@ -59,7 +56,7 @@ function cancelDispatchedTasks(label){
   }
 }
 function askPassword(sio, hostname){
-  return new Promise((resolve, reject)=>{
+  return new Promise((resolve)=>{
     sio.on('password', (data)=>{
       resolve(data);
     });
@@ -346,7 +343,7 @@ async function onRemoveFileLink(sio, label, msg){
   }
 }
 
-async function onRunProject(sio, label, rwfFilename){
+async function onRunProject(sio, label){
   logger.debug("run event recieved");
   const rootDir = getRootDir(label);
   if(memMeasurement){
@@ -384,7 +381,7 @@ async function onRunProject(sio, label, rwfFilename){
     setTimeout(()=>{
       once(label, 'taskStateChanged', onTaskStateChanged);
     }, interval);
-  };
+  }
 
   // event listener for component state changed
   function onComponentStateChanged(){
@@ -550,12 +547,12 @@ module.exports = function(io){
 
     //event listeners for file operation
     fileManager(socket, label);
-    socket.on('createNewFile', onCreateNewFile.bind(null, socket, label));;
+    socket.on('createNewFile', onCreateNewFile.bind(null, socket, label));
     socket.on('createNewDir', onCreateNewDir.bind(null, socket, label));
   });
 
   const router = express.Router();
-  router.post('/', async (req, res, next)=>{
+  router.post('/', async (req, res)=>{
     const projectJsonFilename=req.body.project;
     //TODO label must be stored in session
     //otherwise each request from clients are messed up

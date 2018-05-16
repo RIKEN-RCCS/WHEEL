@@ -27,6 +27,7 @@ class git extends EventEmitter{
 
   /**
    * create new repository
+   * this routine is not used for now
    * @param {string} root - new repository's root directory
    * @param {string} user - author's name
    * @param {string} mail - author's mailaddress
@@ -90,13 +91,14 @@ class git extends EventEmitter{
   }
 }
 
-repos = {};
+const repos = new Map();
 async function getGitOperator(rootDir){
-  if(! repos.hasOwnProperty(rootDir)){
-    repos[rootDir] = new git(rootDir);
-    await repos[rootDir].open();
+  if(! repos.has(rootDir)){
+    const repo = new git(rootDir);
+    repos.set(rootDir, repo);
+    await repo.open();
   }
-  return repos[rootDir];
+  return repos.get(rootDir);
 }
 
 // for rapid

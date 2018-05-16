@@ -30,7 +30,7 @@ function replacePathsep(pathString){
  * convert to posix-style path string and remove head and tail path separator
  */
 function normalizePath(pathString){
-  const rt=pathString;
+  let rt=pathString;
   // path.posix.sep('/') is disallowed as filename letter on windows OS
   // but posix allow path.win32.sep('\').
   if(pathString.includes(path.posix.sep)){
@@ -81,6 +81,7 @@ async function createSshConfig(hostInfo, password){
  * @return {string} escaped regex string
  */
 function escapeRegExp(string) {
+  //eslint-disable-next-line no-useless-escape
   return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
@@ -126,7 +127,7 @@ function doCleanup(flag, parentFlag){
   const numFlag = parseInt(flag, 10);
   if(numFlag === 2){
     const numParentFlag = parseInt(parentFlag, 10);
-    return parentFlag === 0;
+    return numParentFlag === 0;
   }
   return numFlag === 0;
 }
@@ -137,6 +138,7 @@ const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
 //whitelist
 const alphanumeric = 'a-zA-Z0-9';
 // due to escapeRegExp's spec, bars must be added separately any other regexp strings
+  //eslint-disable-next-line no-useless-escape
 const bars = '_\-';
 const pathseps = '/\\';
 const metaCharactors = '*?[]{}()!?+@.';
