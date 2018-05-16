@@ -274,7 +274,7 @@ async function remoteSubmit(task){
       try{
         const [finished, rt] = await isFinished(JS, ssh, jobID);
         if(finished){
-          logger.info(jobID,'is finished (remote). rt ='rt);
+          logger.info(jobID,'is finished (remote). rt =', rt);
           clearInterval(timeout);
           logger.debug('DEBUG 1',finished, rt);
           await gatherFiles(ssh, task, rt);
