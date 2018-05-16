@@ -261,7 +261,7 @@ async function remoteSubmit(task){
     task.jobID=jobID;
     logger.info('submit success:', submitCmd, jobID);
 
-    const statFailedCount=0;
+    let statFailedCount=0;
     //check job stat repeatedly
     const timeout = setInterval(async ()=>{
       if(task.state !== 'running'){
