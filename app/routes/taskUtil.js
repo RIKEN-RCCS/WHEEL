@@ -19,14 +19,14 @@ async function killLocalProcess(task){
   if(task.handler && task.handler.connect) task.handler.kill();
 }
 
-async function killTask(task, hosts){
+async function killTask(task){
   if(task.remotehostID !== 'localhost'){
     const hostinfo = remoteHost.get(task.remotehostID);
     if(task.useJobScheduler){
       const arssh = getSsh(task.label, hostinfo.host);
       await cancelRemoteJob(task, arssh);
     }else{
-      hosts.add(hostinfo.host);
+      // do nothing for remoteExec at this time
     }
   }else{
     if(task.useJobScheduler){

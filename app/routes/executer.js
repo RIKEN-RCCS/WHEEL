@@ -1,7 +1,6 @@
 const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs-extra');
-const {promisify} = require('util');
 const SBS = require("simple-batch-system");
 
 const {getLogger} = require('../logSettings');
@@ -29,7 +28,7 @@ async function replaceCRLF(filename){
   let contents = await fs.readFile(filename);
   contents = contents.toString().replace(/\r\n/g,'\n');
   return fs.writeFile(filename , contents);
-};
+}
 
 /**
  * parse filter string from client and return validate glob pattern
@@ -283,7 +282,7 @@ async function remoteSubmit(task){
         err.JS = JS;
         logger.warn('status check failed',err);
         const maxStatusCheckError=10; //TODO it should be get from hostinfo
-        if(statFaildCount > maxStatusCheckError){
+        if(statFailedCount > maxStatusCheckError){
           reject(new Error("job status check failed over",maxStatusCheckError,"times"));
         }
       }
