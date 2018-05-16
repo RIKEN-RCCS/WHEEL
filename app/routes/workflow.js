@@ -48,20 +48,14 @@ const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLi
 const {killTask} = require("./taskUtil");
 
 
-function removeDispatchedTasks(label){
-  const hosts=new Set();
+function cancelDispatchedTasks(label){
   for(let task of getTasks(label)){
     if(task.state === 'finished' || task.state === 'failed') continue;
     const canceled = cancel(task);
     if(! canceled){
-      killTask(task, hosts);
+      killTask(task);
     }
     task.state='not-started';
-  }
-  clearDispatchedTasks(label);
-  for(const host of hosts){
-    logger.debug('remove ssh connection to', host);
-    removeSsh(label, host);
   }
 }
 function askPassword(sio, hostname){
@@ -423,10 +417,11 @@ async function onRunProject(sio, label, rwfFilename){
     await setProjectState(label, 'failed');
   }
 
-  sendWorkflow(sio, label, true);
   sio.emit('projectJson', await readProjectJson(label));
+  sendWorkflow(sio, label, true);
   rootDispatcher.remove();
   deleteRootDispatcher(label);
+  removeSsh(label);
   clearDispatchedTasks(label);
   //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
   if(memMeasurement){
@@ -441,7 +436,8 @@ async function onPauseProject(sio, label){
     rootDispatcher.pause();
   }
   //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
-  await removeDispatchedTasks(label);
+  await cancelDispatchedTasks(label);
+  removeSsh(label);
   await setProjectState(label, 'paused');
   sio.emit('projectJson', await readProjectJson(label));
 }
@@ -452,7 +448,8 @@ async function onCleanProject(sio, label){
     rootDispatcher.remove();
     deleteRootDispatcher(label);
   }
-  await removeDispatchedTasks(label);
+  await cancelDispatchedTasks(label);
+  clearDispatchedTasks(label);
   sio.emit('taskStateList', []);
   await cleanProject(label);
   await resetProject(label);

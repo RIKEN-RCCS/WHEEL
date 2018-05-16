@@ -1,5 +1,4 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const path = require("path");
 /**
@@ -24,7 +23,7 @@ const path = require("path");
  */
 function sendDir(socket, eventName, targetDir, options=null) {
   if(socket == null || eventName == null){
-    throw "illegal argument.";;
+    throw "illegal argument.";
   }
   const request       = options.request != null ? options.request : targetDir;
   const sendDirname   = options.sendDirname  != null ? options.sendDirname  : true;

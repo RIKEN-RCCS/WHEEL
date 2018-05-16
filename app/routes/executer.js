@@ -73,8 +73,7 @@ async function isFinished(JS, ssh, jobID){
   //note: following line will not be written anyware for now
   logger.debug('is',jobID,'finished', finished,'\n',outputText);
 
-  //TODO should be return with return value of job script
-  return finished;
+  return [finished, rt];
 }
 
 async function prepareRemoteExecDir(ssh, task){
@@ -268,16 +267,24 @@ async function remoteSubmit(task){
         clearInterval(timeout);
         reject(false);
       }
+      let line=0;
       try{
         const [finished, rt] = await isFinished(JS, ssh, jobID);
+        ++line;
         if(finished){
+        ++line;
           logger.info(jobID,'is finished');
+        ++line;
           clearInterval(timeout);
+        ++line;
           await gatherFiles(ssh, task, rt);
+        ++line;
           resolve(rt);
+        ++line;
         }
       }catch(err){
         ++statFailedCount;
+        err.line = line;
         err.jobID = jobID;
         err.JS = JS;
         logger.warn('status check failed',err);

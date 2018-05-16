@@ -279,7 +279,7 @@ class Dispatcher extends EventEmitter{
     logger.debug('_checkIf called', component.name);
     const cwd= path.resolve(this.cwfDir, component.path);
     const condition = evalConditionSync(component.condition, cwd);
-    this._addNextComponent(task, !condition);
+    this._addNextComponent(component, !condition);
     setComponentState(this.label, component, 'finished');
   }
 
