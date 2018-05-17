@@ -143,7 +143,7 @@ async function validationCheck(label, workflow, sio){
     if(!hostInfo)  return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
     const password = await askPassword(sio, remoteHostName);
     const config = await createSshConfig(hostInfo, password);
-    const arssh = new ARsshClient(config, {connectionRetryDelay: 1000});
+    const arssh = new ARsshClient(config, {connectionRetryDelay: 1000, verbose: true});
     addSsh(label, hostInfo.host, arssh);
     return arssh.canConnect()
     .catch(async (err)=>{
