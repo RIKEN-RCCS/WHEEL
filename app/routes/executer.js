@@ -167,7 +167,7 @@ class Executer{
     this.batch = new SBS({
       exec: async (task)=>{
         task.startTime = getDateString(true);
-        let rt = await this.exec(task);
+        const rt = await this.exec(task);
         if(task.state === 'not-started'){
           // prevent to overwrite killed task's property
           return
@@ -177,16 +177,7 @@ class Executer{
         task.endTime = getDateString(true);
 
         // deliver files
-        if(rt === 0){
-          const rt2 = await deliverOutputFiles(task.outputFiles, task.workingDir)
-          if(rt2.length > 0 ){
-            logger.debug('deliverOutputFiles:\n',rt2);
-            const maxRt2=rt2.reduce((p,e)=>{
-              return p>e?p:e;
-            });
-            if(maxRt2 !== 0) rt = maxRt2;
-          }
-        }
+        if(rt === 0) await deliverOutputFiles(task.outputFiles, task.workingDir)
 
         // update task status
         const state = rt === 0 ? "finished" : "failed";
@@ -348,7 +339,9 @@ function createExecuter(task){
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)?jobScheduler[hostinfo.jobScheduler]:null;
   const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.min(parseInt(hostinfo.numJob, 10),1) : 1;
 
-  return new Executer(ssh, JS, maxNumJob, task.remotehostID, hostinfo.host, hostinfo.queue);
+  const host = hostinfo != null ?  hostinfo.host:null;
+  const queues = hostinfo!= null  ?hostinfo.queue:null;
+  return new Executer(ssh, JS, maxNumJob, task.remotehostID, host, queues);
 }
 
 /**
