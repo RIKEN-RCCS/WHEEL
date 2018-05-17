@@ -339,6 +339,8 @@ function createExecuter(task){
   if(task.remotehostID !== 'localhost'){
     const hostinfo = remoteHost.get(task.remotehostID);
     maxNumJob = hostinfo.numJob;
+    const ssh = getSsh(task.label, hostinfo.host);
+    ssh.changeConfig("maxConnection", maxNumJob);
     if(task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)){
       exec = remoteSubmit;
     }else{
