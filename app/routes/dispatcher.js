@@ -117,10 +117,10 @@ class Dispatcher extends EventEmitter{
   }
 
   async _dispatch(){
-    logger.debug('currentList:',this.currentSearchList);
-    logger.debug('next waiting component', this.nextSearchList);
     const  promises=[];
     while(this.currentSearchList.length>0){
+      logger.debug('currentList:',this.currentSearchList);
+      logger.debug('next waiting component', this.nextSearchList);
       const target = this.currentSearchList.shift();
       if(! this._isReady(target)){
         this.nextSearchList.push(target);

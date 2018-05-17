@@ -180,7 +180,7 @@ async function validationCheck(label, workflow, sio){
 
 async function sendWorkflow(sio, label, fromDispatcher=false){
   const wf=getCwf(label, fromDispatcher);
-  const rt = JSON.parse(JSON.stringify(wf));
+  const rt = Object.assign({}, wf);
   for(const child of rt.nodes){
     if(child!==null){
       if(child.handler) delete child.handler;
@@ -378,17 +378,17 @@ async function onRunProject(sio, label){
     const tasks=getTaskStateList(label);
     sio.emit('taskStateList', tasks);
     sendWorkflow(sio, label, true);
-    setTimeout(()=>{
+    setImmediate(()=>{
       once(label, 'taskStateChanged', onTaskStateChanged);
-    }, interval);
+    } );
   }
 
   // event listener for component state changed
   function onComponentStateChanged(){
     sendWorkflow(sio, label, true);
-    setTimeout(()=>{
+    setImmediate(()=>{
       once(label, 'componentStateChanged', onComponentStateChanged);
-    }, interval);
+    });
   }
 
   once(label, 'taskStateChanged', onTaskStateChanged);
