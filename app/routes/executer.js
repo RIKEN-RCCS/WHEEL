@@ -210,7 +210,7 @@ class Executer{
               await gatherFiles(this.ssh, task, rt);
               return rt;
             }else{
-              this.statCheckQ.qsub(task);
+              return Promise.reject("not finished");
             }
           }catch(err){
             ++statFailedCount;
@@ -223,7 +223,10 @@ class Executer{
             }
           }
         },
-        retry: false,
+        retry: (e)=>{
+          return e === "not finished";
+        },
+        retryLater: true,
         maxConcurrent: 1,
         name: `statusChecker ${hostname}`
       });
