@@ -167,7 +167,11 @@ class Executer{
     this.batch = new SBS({
       exec: async (task)=>{
         task.startTime = getDateString(true);
-        const rt = await this.exec(task);
+        const rt = await this.exec(task)
+          .catch((e)=>{
+            setTaskState(task, "failed");
+            return Promise.reject(e);
+          });
         if(task.state === 'not-started'){
           // prevent to overwrite killed task's property
           return
@@ -197,12 +201,12 @@ class Executer{
           if(task.state !== 'running') return false;
           let statFailedCount=0;
           let statCheckCount=0;
-          logger.debug(task.jobid,"status checked", statCheckCount);
+          logger.debug(task.jobID,"status checked", statCheckCount);
           ++statCheckCount;
           try{
-            const [finished, rt] = await isFinished(JS, this.ssh, task.jobid);
+            const [finished, rt] = await isFinished(JS, this.ssh, task.jobID);
             if(finished){
-              logger.info(task.jobid,'is finished (remote). rt =', rt);
+              logger.info(task.jobID,'is finished (remote). rt =', rt);
               await gatherFiles(this.ssh, task, rt);
               return rt;
             }else{
@@ -210,7 +214,7 @@ class Executer{
             }
           }catch(err){
             ++statFailedCount;
-            err.jobID = task.jobid;
+            err.jobID = task.jobID;
             err.JS = JS;
             logger.warn('status check failed',err);
             const maxStatusCheckError=10; //TODO it should be get from hostinfo
@@ -230,16 +234,16 @@ class Executer{
   }
 
   submit(task){
-    task.jobid = this.batch.qsub(task);
-    if(task.jobid !== null) setTaskState(task, 'waiting');
-    return this.batch.qwait(task.jobid)
+    task.sbsID = this.batch.qsub(task);
+    if(task.sbsID !== null) setTaskState(task, 'waiting');
+    return this.batch.qwait(task.sbsID)
       .catch((e)=>{
         logger.warn(task.name, "failed due to", e);
         setTaskState(task, 'failed');
       });
   }
   cancel(task){
-    return this.batch.qdel(task.jobid);
+    return this.batch.qdel(task.sbsID);
   }
 
   /**
@@ -337,7 +341,7 @@ function createExecuter(task){
   const hostinfo = onRemote ? remoteHost.get(task.remotehostID):null;
   const ssh = onRemote ? getSsh(task.label, hostinfo.host): null;
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler)?jobScheduler[hostinfo.jobScheduler]:null;
-  const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.min(parseInt(hostinfo.numJob, 10),1) : 1;
+  const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10),1) : 1;
 
   const host = hostinfo != null ?  hostinfo.host:null;
   const queues = hostinfo!= null  ?hostinfo.queue:null;
@@ -368,7 +372,7 @@ function exec(task){
 }
 
 function cancel(task){
-  if(task.jobid === undefined) return;
+  if(task.sbsID === undefined) return;
   task.remotehostID=remoteHost.getID('name', task.host) || 'localhost';
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler
