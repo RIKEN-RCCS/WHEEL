@@ -35,6 +35,7 @@ const {getCwf,
   revertProject,
   cleanProject,
   once,
+  emit,
   gitAdd,
   getTasks,
   clearDispatchedTasks
@@ -378,17 +379,17 @@ async function onRunProject(sio, label){
     const tasks=getTaskStateList(label);
     sio.emit('taskStateList', tasks);
     sendWorkflow(sio, label, true);
-    setImmediate(()=>{
+    setTimeout(()=>{
       once(label, 'taskStateChanged', onTaskStateChanged);
-    } );
+    },interval);
   }
 
   // event listener for component state changed
   function onComponentStateChanged(){
     sendWorkflow(sio, label, true);
-    setImmediate(()=>{
+    setTimeout(()=>{
       once(label, 'componentStateChanged', onComponentStateChanged);
-    });
+    }, interval);
   }
 
   once(label, 'taskStateChanged', onTaskStateChanged);
@@ -414,8 +415,9 @@ async function onRunProject(sio, label){
     await setProjectState(label, 'failed');
   }
 
+  emit(label, 'taskStateChanged');
+  //TODO taskStateChanged とcomponentStateChangedのremoveListener
   sio.emit('projectJson', await readProjectJson(label));
-  sendWorkflow(sio, label, true);
   rootDispatcher.remove();
   deleteRootDispatcher(label);
   removeSsh(label);
