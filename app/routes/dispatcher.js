@@ -304,7 +304,6 @@ class Dispatcher extends EventEmitter{
       setComponentState(this.label, component, 'finished');
     }finally{
       this._addNextComponent(component);
-      this.children.delete(child);
     }
   }
 

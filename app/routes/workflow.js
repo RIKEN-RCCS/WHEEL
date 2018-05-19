@@ -421,6 +421,7 @@ async function onRunProject(sio, label){
   rootDispatcher.remove();
   deleteRootDispatcher(label);
   removeSsh(label);
+  // TODO taskstate listはキープする必要ありここでclearしてはいけない
   clearDispatchedTasks(label);
   //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
   if(memMeasurement){
