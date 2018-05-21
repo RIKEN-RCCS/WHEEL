@@ -228,6 +228,7 @@ class Executer{
         },
         retryLater: true,
         maxConcurrent: 1,
+        interval: 5000,
         name: `statusChecker ${hostname}`
       });
     }
