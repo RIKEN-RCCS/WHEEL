@@ -23,7 +23,9 @@ $(() => {
     queue: '',
     port: 22,
     id: '',
-    jobScheduler: ''
+    jobScheduler: '',
+    renewInterval: '',
+    renewDelay: ''
   }
 
   // create vue.js instance and render
