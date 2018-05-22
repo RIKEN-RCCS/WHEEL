@@ -147,7 +147,7 @@ function makeQueueOpt(task, JS, queues){
 }
 
 class Executer{
-  constructor(ssh, JS, maxNumJob, remotehostID, hostname, queues){
+  constructor(ssh, JS, maxNumJob, remotehostID, hostname, queues, interval, maxStatusCheckError){
     //remotehostID and useJobScheduler flag is not used inside Executer class
     //this 2 property is used as search key in exec();
     this.remotehostID=remotehostID;
@@ -217,7 +217,6 @@ class Executer{
             err.jobID = task.jobID;
             err.JS = JS;
             logger.warn('status check failed',err);
-            const maxStatusCheckError=10; //TODO it should be get from hostinfo
             if(statFailedCount > maxStatusCheckError){
               return Promise.reject(new Error("job status check failed over",maxStatusCheckError,"times"));
             }
@@ -228,7 +227,7 @@ class Executer{
         },
         retryLater: true,
         maxConcurrent: 1,
-        interval: 5000,
+        interval: interval*1000,
         name: `statusChecker ${hostname}`
       });
     }
@@ -348,8 +347,10 @@ function createExecuter(task){
   const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10),1) : 1;
 
   const host = hostinfo != null ?  hostinfo.host:null;
-  const queues = hostinfo!= null  ?hostinfo.queue:null;
-  return new Executer(ssh, JS, maxNumJob, task.remotehostID, host, queues);
+  const queues = hostinfo!= null ? hostinfo.queue:null;
+  const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
+  const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;
+  return new Executer(ssh, JS, maxNumJob, task.remotehostID, host, queues, statusCheckInterval, maxStatusCheckError);
 }
 
 /**
