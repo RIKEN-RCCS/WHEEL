@@ -1,7 +1,8 @@
 const path = require("path");
-const os = require("os");
 const fs = require("fs-extra");
 const {promisify} = require("util");
+
+const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR !== undefined;
 
 const klaw = require('klaw');
 const express = require('express');
@@ -12,15 +13,51 @@ const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require('./utility');
 const {interval, remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
-const {getCwf, setCwf, overwriteCwf, getNode, pushNode, getCurrentDir, readRwf, getRootDir, getCwfFilename, readProjectJson, resetProject, addSsh, removeSsh} = require('./project');
-const {write, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, openProject, updateProjectJson, setProjectState, getProjectState} = require('./project');
-const {commitProject, revertProject, cleanProject, once, emit} =  require('./project');
-const {gitAdd} = require('./project');
+const {getCwf,
+  setCwf,
+  getNode,
+  getCurrentDir,
+  readRwf, getRootDir,
+  getCwfFilename,
+  readProjectJson,
+  resetProject, addSsh,
+  removeSsh,
+  getTaskStateList,
+  write,
+  setRootDispatcher,
+  getRootDispatcher,
+  deleteRootDispatcher,
+  openProject,
+  updateProjectJson,
+  setProjectState,
+  getProjectState,
+  commitProject,
+  revertProject,
+  cleanProject,
+  once,
+  emit,
+  gitAdd,
+  getTasks,
+  clearDispatchedTasks
+} = require('./project');
+const {cancel} = require('./executer');
 const fileBrowser = require("./fileBrowser");
 const {isInitialNode, hasChild, readChildWorkflow, createNode, removeNode, addLink, removeLink, removeAllLink, addFileLink, removeFileLink, removeAllFileLink, addValue, updateValue, updateInputFiles, updateOutputFiles, updateName, delValue, delInputFiles, delOutputFiles} = require('./workflowEditor');
+const {killTask} = require("./taskUtil");
 
+
+function cancelDispatchedTasks(label){
+  for(let task of getTasks(label)){
+    if(task.state === 'finished' || task.state === 'failed') continue;
+    const canceled = cancel(task);
+    if(! canceled){
+      killTask(task);
+    }
+    task.state='not-started';
+  }
+}
 function askPassword(sio, hostname){
-  return new Promise((resolve, reject)=>{
+  return new Promise((resolve)=>{
     sio.on('password', (data)=>{
       resolve(data);
     });
@@ -107,8 +144,12 @@ async function validationCheck(label, workflow, sio){
     if(!hostInfo)  return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
     const password = await askPassword(sio, remoteHostName);
     const config = await createSshConfig(hostInfo, password);
-    const arssh = new ARsshClient(config, {connectionRetryDelay: 1000});
-    addSsh(label, hostInfo.host, arssh);
+    const arssh = new ARsshClient(config, {connectionRetryDelay: 1000, verbose: true});
+    if(hostInfo.renewInterval){
+      arssh.renewInterval=hostInfo.renewInterval*60*1000
+      arssh.renewDelay=hostInfo.renewDelay*1000
+      addSsh(label, hostInfo.host, arssh);
+    }
     return arssh.canConnect()
     .catch(async (err)=>{
       if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
@@ -143,14 +184,8 @@ async function validationCheck(label, workflow, sio){
 }
 
 async function sendWorkflow(sio, label, fromDispatcher=false){
-  let wf=null;
-  if(fromDispatcher){
-    wf = getRootDispatcher(label).getCwf(getCurrentDir(label));
-  }else{
-    wf = getCwf(label);
-  }
-
-  const rt = JSON.parse(JSON.stringify(wf));
+  const wf=getCwf(label, fromDispatcher);
+  const rt = Object.assign({}, wf);
   for(const child of rt.nodes){
     if(child!==null){
       if(child.handler) delete child.handler;
@@ -313,84 +348,100 @@ async function onRemoveFileLink(sio, label, msg){
   }
 }
 
-//TODO fix me!! temporary workaround
-let timeout;
-
-async function onRunProject(sio, label, rwfFilename){
+async function onRunProject(sio, label){
   logger.debug("run event recieved");
-  const rwf = await readRwf(label);
-  try{
-    await validationCheck(label, rwf, sio)
-  }catch(err){
-    logger.error('invalid root workflow:', err);
-    removeSsh(label);
-    return false
+  const rootDir = getRootDir(label);
+  if(memMeasurement){
+    logger.debug("used heap size at start point =", process.memoryUsage().heapUsed/1024/1024,"MB");
   }
-  await commitProject(label);
+  const rwf = await readRwf(label);
+  const projectState=getProjectState(label);
+  if(projectState === 'not-started'){
+    try{
+      await validationCheck(label, rwf, sio)
+    }catch(err){
+      logger.error('invalid root workflow:', err);
+      removeSsh(label);
+      return false
+    }
+    await commitProject(label);
+    let cleanup = rwf.cleanupFlag;
+    if(! cleanup){
+      cleanup = defaultCleanupRemoteRoot;
+    }
+    rwf.cleanupFlag = cleanup;
+  }
   await setProjectState(label, 'running');
   sio.emit('projectJson', await readProjectJson(label));
-
-  const rootDir = getRootDir(label);
-  let cleanup = rwf.cleanupFlag;
-  if(! cleanup){
-    cleanup = defaultCleanupRemoteRoot;
-  }
-  rwf.cleanupFlag = cleanup;
 
   const rootDispatcher = new Dispatcher(rwf, rootDir, rootDir, getDateString(), label);
   setRootDispatcher(label, rootDispatcher);
   sio.emit('projectJson', await readProjectJson(label));
 
-  // add event listener for task state changed
+  // event listener for task state changed
   function onTaskStateChanged(){
-    const tasks=[];
-    rootDispatcher.getTaskList(tasks);
+    const tasks=getTaskStateList(label);
     sio.emit('taskStateList', tasks);
     sendWorkflow(sio, label, true);
-    setImmediate(()=>{
+    setTimeout(()=>{
       once(label, 'taskStateChanged', onTaskStateChanged);
-    });
-  };
-  once(label, 'taskStateChanged', onTaskStateChanged);
+    },interval);
+  }
 
-  // add event listener for component state changed
+  // event listener for component state changed
   function onComponentStateChanged(){
     sendWorkflow(sio, label, true);
-    setImmediate(()=>{
+    setTimeout(()=>{
       once(label, 'componentStateChanged', onComponentStateChanged);
-    });
+    }, interval);
   }
+
+  once(label, 'taskStateChanged', onTaskStateChanged);
   once(label, 'componentStateChanged', onComponentStateChanged);
 
   // project start here
   try{
-    const projectState=await rootDispatcher.dispatch();
+    let timeout;
+    if(memMeasurement){
+      logger.debug("used heap size just before execution", process.memoryUsage().heapUsed/1024/1024,"MB");
+      timeout = setInterval(()=>{
+        logger.debug("used heap size ", process.memoryUsage().heapUsed/1024/1024,"MB");
+      }, 30000);
+    }
+    const projectState=await rootDispatcher.start();
+    if(memMeasurement){
+      logger.debug("used heap size immediately after execution=", process.memoryUsage().heapUsed/1024/1024,"MB");
+      clearInterval(timeout);
+    }
     await setProjectState(label, projectState);
   }catch(err){
     logger.error('fatal error occurred while parsing workflow:',err);
     await setProjectState(label, 'failed');
   }
 
-  clearInterval(timeout);
-  sendWorkflow(sio, label, true);
-
+  emit(label, 'taskStateChanged');
+  //TODO taskStateChanged とcomponentStateChangedのremoveListener
   sio.emit('projectJson', await readProjectJson(label));
+  rootDispatcher.remove();
+  deleteRootDispatcher(label);
+  removeSsh(label);
+  // TODO taskstate listはキープする必要ありここでclearしてはいけない
+  clearDispatchedTasks(label);
+  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
+  if(memMeasurement){
+    logger.debug("used heap size at the end", process.memoryUsage().heapUsed/1024/1024,"MB");
+  }
 }
 
 async function onPauseProject(sio, label){
   logger.debug("pause event recieved");
-  clearInterval(timeout); // TODO fix me!
   const rootDispatcher=getRootDispatcher(label);
-  rootDispatcher.pause();
-
-  let hosts=[];
-  await rootDispatcher.killDispatchedTasks(hosts);
-  hosts = Array.from(new Set(hosts));
-  logger.debug('remove ssh connection to', hosts);
-  for(const host of hosts){
-    removeSsh(label, host);
+  if(rootDispatcher){
+    rootDispatcher.pause();
   }
-
+  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
+  await cancelDispatchedTasks(label);
+  removeSsh(label);
   await setProjectState(label, 'paused');
   sio.emit('projectJson', await readProjectJson(label));
 }
@@ -398,9 +449,12 @@ async function onCleanProject(sio, label){
   logger.debug("clean event recieved");
   const rootDispatcher = getRootDispatcher(label);
   if(rootDispatcher){
-    rootDispatcher.remove();;
+    rootDispatcher.remove();
     deleteRootDispatcher(label);
   }
+  await cancelDispatchedTasks(label);
+  clearDispatchedTasks(label);
+  sio.emit('taskStateList', []);
   await cleanProject(label);
   await resetProject(label);
   await sendWorkflow(sio, label);
@@ -428,14 +482,8 @@ async function onRevertProject(sio, label){
 
 function onTaskStateListRequest(sio, label, msg){
   logger.debug('getTaskStateList event recieved:', msg);
-  const rootDispatcher=getRootDispatcher(label);
-  if(rootDispatcher != null){
-    const tasks=[];
-    rootDispatcher.getTaskList(tasks);
-    sio.emit('taskStateList', tasks);
-  }else{
-    logger.warn('task state list requested before root dispatcher is set');
-  }
+  const tasks=getTaskStateList(label);
+  sio.emit('taskStateList', tasks);
 }
 
 async function onCreateNewFile(sio, label, filename, cb){
@@ -506,12 +554,12 @@ module.exports = function(io){
 
     //event listeners for file operation
     fileManager(socket, label);
-    socket.on('createNewFile', onCreateNewFile.bind(null, socket, label));;
+    socket.on('createNewFile', onCreateNewFile.bind(null, socket, label));
     socket.on('createNewDir', onCreateNewDir.bind(null, socket, label));
   });
 
   const router = express.Router();
-  router.post('/', async (req, res, next)=>{
+  router.post('/', async (req, res)=>{
     const projectJsonFilename=req.body.project;
     //TODO label must be stored in session
     //otherwise each request from clients are messed up

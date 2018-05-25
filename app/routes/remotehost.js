@@ -2,14 +2,13 @@
 const express = require('express');
 const path = require("path");
 const os = require("os");
-const {promisify} = require("util");
 const ARsshClient = require('arssh2-client');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('remotehost');
 const fileBrowser = require("./fileBrowser");
 const {remoteHost, rootDir} = require('../db/db');
-const {doAndEmit, createSshConfig} = require('./utility');
+const {createSshConfig} = require('./utility');
 
 function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
@@ -63,7 +62,7 @@ module.exports = function(io){
   });
 
   let router = express.Router();
-  router.get('/', function (req, res, next) {
+  router.get('/', function (req, res) {
     res.sendFile(path.resolve(__dirname, '../views/remoteHost.html'));
   });
   return router;

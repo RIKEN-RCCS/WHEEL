@@ -8,15 +8,16 @@ const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const component = require('./workflowComponent');
 const {isValidName, isValidInputFilename, isValidOutputFilename, replacePathsep} = require('./utility');
-const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getCwfFilename, getRootDir} = require('./project');
+const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getRootDir} = require('./project');
 
 function isInitialNode(node){
   if(node === null) return false;
   if(node.previous.length > 0) return false;
   if(node.inputFiles.length >0 ){
-    return !node.inputFiles.some((e)=>{
-      e.srcNode !== null;
+    const hasConnectedInputFile =  node.inputFiles.some((e)=>{
+      return e.srcNode !== null;
     });
+    return !hasConnectedInputFile
   }
   return true;
 }
@@ -140,10 +141,6 @@ async function _makeDir(basename, suffix){
       }
       logger.warn('mkdir failed', err);
     });
-}
-
-async function _readWorkflow(filename){
-  return JSON.parse(await promisify(fs.readFile)(filename));
 }
 
 function _getChildWorkflowFilename(label, node){
@@ -345,11 +342,13 @@ function removeAllFileLink(label, index){
 async function addValue(label, node, property, value){
   if(property === "inputFiles"){
     if(! isValidInputFilename(value.name)){
+      //eslint-disable-next-line no-useless-escape
       logger.error('only alpha numeric and _ - / \ is allowed for inputFile name');
       return;
     }
   } else  if(property === "outputFiles"){
     if(! isValidOutputFilename(value.name)){
+      //eslint-disable-next-line no-useless-escape
       logger.error('only alpha numeric and _ - / \ ?!@*()[]{} is allowed for outputFile name');
       return;
     }

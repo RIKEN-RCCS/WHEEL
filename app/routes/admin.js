@@ -45,7 +45,7 @@ module.exports = function(io){
   });
 
   const router = express.Router();
-  router.get('/', function (req, res, next) {
+  router.get('/', function (req, res) {
     res.sendFile(path.resolve(__dirname,'../views/admin.html'));
   });
   return router;

@@ -183,6 +183,30 @@
             </span>
             <input type="text" v-model.lazy="newHostInfo.queue" class="editArea">
           </div>
+          <div>
+            <span>
+              <label class="fieldLabel">connection renewal interval(min.)</label>
+            </span>
+            <input type="text" v-model.number="newHostInfo.renewInterval" class="editArea">
+          </div>
+          <div>
+            <span>
+              <label class="fieldLabel">connection renewal delay(sec.)</label>
+            </span>
+            <input type="text" v-model.number="newHostInfo.renewDelay" class="editArea">
+          </div>
+          <div>
+            <span>
+              <label class="fieldLabel">status check interval(sec.)</label>
+            </span>
+            <input type="text" v-model.number="newHostInfo.statusCheckInterval" class="editArea">
+          </div>
+          <div>
+            <span>
+              <label class="fieldLabel">max status check error</label>
+            </span>
+            <input type="text" v-model.number="newHostInfo.maxStatusCheckError" class="editArea">
+          </div>
         </div>
       </div>
       <!-- Edit Button Area -->

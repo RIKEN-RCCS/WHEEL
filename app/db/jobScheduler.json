@@ -7,5 +7,14 @@
     "reJobID": "pjsub Job (\\d+) submitted.",
     "reFinishedState": "^ST *EC\\nEXT *0",
     "reFailedState": "^ST *EC\\n(CCL|ERR|EXT|RJT)"
+  },
+  "PBSPro":{
+    "submit": "qsub",
+    "queueOpt": "-q",
+    "stat": "qstat -x",
+    "del": "qdel",
+    "reJobID": "(\\d+).*",
+    "reFinishedState:": "",
+    "reFailedState": ""
   }
 }

@@ -2,7 +2,6 @@
 const fs = require("fs-extra");
 const os = require("os");
 const path = require("path");
-const {promisify} = require('util');
 
 const express = require('express');
 const nodegit = require("nodegit");
@@ -14,9 +13,9 @@ const {getDateString} = require('./utility');
 
 const compo = require("./workflowComponent");
 const {projectList, extWF, systemName, defaultCleanupRemoteRoot, defaultFilename, extProject, suffix, rootDir} = require('../db/db');
-const {getGitOperator}= require("./gitOperator");
 
 const {escapeRegExp, isValidName} = require('./utility');
+//eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
 const ProjectJSON = new RegExp(`^.*${escapeRegExp(extProject)}$`);
 const noWheelDir = new RegExp(`^(?!^.*${escapeRegExp(suffix)}$).*$`);
@@ -89,7 +88,7 @@ function getAllProject() {
   return Promise.all(projectList.getAll().map(async (v)=>{
     const projectJson = await fs.readJSON(v.path)
       .catch((err)=>{
-        logger.warn(v.path,"read failed but just ignore");
+        logger.warn(v.path,"read failed but just ignore", err);
       });
     return Object.assign(projectJson, v);
   }));
@@ -243,7 +242,7 @@ module.exports = function(io){
     socket.on('reorderProject', onReorder.bind(null, socket));
   });
   const router = express.Router();
-  router.get('/', function (req, res, next) {
+  router.get('/', function (req, res) {
     res.sendFile(path.join(__dirname, '../views/home.html'));
   });
   return router;

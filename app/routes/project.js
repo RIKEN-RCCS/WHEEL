@@ -6,9 +6,9 @@ const fs = require("fs-extra");
 const glob = require('glob');
 
 const {getGitOperator}= require("./gitOperator");
-const {getDateString, replacePathsep} = require('./utility');
-const {getLogger} = require('../logSettings');
+const {getDateString} = require('./utility');
 
+const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 
 class Project extends EventEmitter{
@@ -30,6 +30,7 @@ class Project extends EventEmitter{
     this.projectJsonFilename=null;
 
     this.ssh=new Map();
+    this.tasks=new Set();
   }
 
   // return absolute path of current workflow dir
@@ -41,17 +42,15 @@ class Project extends EventEmitter{
   get rootDir(){
     return path.dirname(this.projectJsonFilename);
   }
-
 }
 
-projectDirs={};
-_getProject = (label)=>{
-  if(! projectDirs.hasOwnProperty(label)){
-    projectDirs[label] = new Project;
+const projectDirs=new Map();
+function _getProject(label){
+  if(! projectDirs.has(label)){
+    projectDirs.set(label, new Project());
   }
-  return projectDirs[label];
+  return projectDirs.get(label);
 }
-
 
 async function openProject (label, filename){
   const pj=_getProject(label);
@@ -139,10 +138,14 @@ async function revertProject(label){
 async function cleanProject(label){
   const rootDir = getRootDir(label);
   const srces = await promisify(glob)("*", {cwd: rootDir});
-  const p = srces.map((e)=>{
-    return fs.remove(path.resolve(rootDir,e));
-  });
-  await Promise.all(p);
+  //TODO should be optimized stride value(100);
+  for(let i =0; i<srces.length; i+=100){
+    const end = i+100 < srces.length? i+100:srces.length;
+    const p = srces.slice(i, end).map((e)=>{
+      return fs.remove(path.resolve(rootDir,e));
+    });
+    await Promise.all(p);
+  }
   return revertProject(label);
 }
 
@@ -173,8 +176,12 @@ function removeSsh(label){
 function getProjectState(label){
   return _getProject(label).projectState;
 }
-function getCwf (label) {
-  return _getProject(label).cwf;
+function getCwf (label, fromDispatcher=false) {
+  if(fromDispatcher){
+    return getRootDispatcher(label).getCwf(getCurrentDir(label));
+  }else{
+    return _getProject(label).cwf;
+  }
 }
 function getCurrentDir (label){
   return _getProject(label).cwfDir;
@@ -189,8 +196,7 @@ function setRootDispatcher (label, dispatcher){
   _getProject(label).rootDispatcher=dispatcher;
 }
 function deleteRootDispatcher (label){
-  const pj=_getProject(label);
-  pj.rootDispatcher=null;
+  delete _getProject(label).rootDispatcher;
 }
 function getRootDispatcher (label){
   return _getProject(label).rootDispatcher;
@@ -210,48 +216,74 @@ function getSsh (label, hostname){
 function addSsh (label, hostname, ssh){
   _getProject(label).ssh.set(hostname, ssh);
 }
-
 function once(label, eventName, cb){
   _getProject(label).once(eventName, cb);
 }
 function emit(label, eventName){
   _getProject(label).emit(eventName);
 }
+function addDispatchedTask(label, task){
+  _getProject(label).tasks.add(task);
+}
+function getTasks(label){
+  return _getProject(label).tasks;
+}
+function getTaskStateList(label){
+  return [..._getProject(label).tasks].map((task)=>{
+    return {
+      name: task.name,
+      description: task.description ? task.description : '',
+      state: task.state,
+      parent: task.parent,
+      startTime: task.startTime,
+      endTime: task.endTime
+    }
+  });
+}
+function clearDispatchedTasks(label){
+  _getProject(label).tasks.clear();
+}
 
-module.exports.openProject       = openProject;
-module.exports.resetProject      = resetProject;
-module.exports.getCwf            = getCwf;
-module.exports.setCwf            = setCwf;
-module.exports.overwriteCwf      = overwriteCwf;
-module.exports.getNode           = getNode;
-module.exports.pushNode          = pushNode;
-module.exports.getCurrentDir     = getCurrentDir;
-module.exports.readRwf           = readRwf;
-module.exports.getRootDir        = getRootDir;
-module.exports.getCwfFilename    = getCwfFilename;
-module.exports.write             = write;
+module.exports.openProject           = openProject;
+module.exports.resetProject          = resetProject;
+module.exports.getCwf                = getCwf;
+module.exports.setCwf                = setCwf;
+module.exports.overwriteCwf          = overwriteCwf;
+module.exports.getNode               = getNode;
+module.exports.pushNode              = pushNode;
+module.exports.getCurrentDir         = getCurrentDir;
+module.exports.readRwf               = readRwf;
+module.exports.getRootDir            = getRootDir;
+module.exports.getCwfFilename        = getCwfFilename;
+module.exports.write                 = write;
 
-module.exports.setRootDispatcher = setRootDispatcher;
-module.exports.getRootDispatcher = getRootDispatcher;
-module.exports.deleteRootDispatcher = deleteRootDispatcher;
+module.exports.setRootDispatcher     = setRootDispatcher;
+module.exports.getRootDispatcher     = getRootDispatcher;
+module.exports.deleteRootDispatcher  = deleteRootDispatcher;
 
 //operators for ProjectJson
-module.exports.readProjectJson   = readProjectJson;
-module.exports.updateProjectJson = updateProjectJson;
-module.exports.setProjectState   = setProjectState;
-module.exports.getProjectState   = getProjectState;
+module.exports.readProjectJson       = readProjectJson;
+module.exports.updateProjectJson     = updateProjectJson;
+module.exports.setProjectState       = setProjectState;
+module.exports.getProjectState       = getProjectState;
 
 //operators for git repository
-module.exports.gitAdd            = gitAdd;
-module.exports.commitProject     = commitProject;
-module.exports.revertProject     = revertProject;
-module.exports.cleanProject      = cleanProject;
+module.exports.gitAdd                = gitAdd;
+module.exports.commitProject         = commitProject;
+module.exports.revertProject         = revertProject;
+module.exports.cleanProject          = cleanProject;
 
 //functions for ssh instance management
-module.exports.addSsh            = addSsh;
-module.exports.getSsh            = getSsh;
-module.exports.removeSsh         = removeSsh;
+module.exports.addSsh                = addSsh;
+module.exports.getSsh                = getSsh;
+module.exports.removeSsh             = removeSsh;
 
 //functions for state change event register and emitter
-module.exports.once = once;
-module.exports.emit = emit;
+module.exports.once                  = once;
+module.exports.emit                  = emit;
+
+//operators for dispatched tasks
+module.exports.addDispatchedTask     = addDispatchedTask;
+module.exports.getTaskStateList      = getTaskStateList;
+module.exports.clearDispatchedTasks  = clearDispatchedTasks;
+module.exports.getTasks              = getTasks;
