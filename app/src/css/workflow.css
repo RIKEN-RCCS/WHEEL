@@ -15,14 +15,14 @@ li {
 
 /* ヘッダー*/
 header {
-    margin-top: 12px;
     margin-left: 16px;
 	position:relative;
 	padding: 0;
     background:#000000;
     font-size: 24px;    
     text-decoration: none;
-    height: 24px;
+    height: 36px;
+    top: 10px;
 }
 
 #title {
@@ -279,7 +279,7 @@ header {
 #taskLibraryMenu{
     position: absolute;
     margin-top: 6px;
-    height: calc(100% - 106px);
+    height: calc(100% - 124px);
     background-color: #222226;
     display: none;
     z-index: 40;    
@@ -394,6 +394,7 @@ header {
 }
 
 #workflowComponents .type{
+    cursor: pointer;
     padding-left: 0px;
     height: 32px;
 }
@@ -416,6 +417,10 @@ header {
 /* タスクライブラリー末尾*/
 
 /* プロパティ*/
+#propertyArea{
+    margin: 16px 16px 16px 16px;
+}
+
 #propertyButtonArea{
     position: absolute;
     z-index: 40;
@@ -447,11 +452,6 @@ header {
 
 #propertyTitle{
     font-size: 18px;
-    margin: 16px 0 0 16px;
-}
-
-#propertyComponents{
-    margin: 8px 16px 0 16px;
 }
 
 #img_node_type{
@@ -609,7 +609,7 @@ header {
 }
 
 #remoteFileTransferSetthing{
-    padding: 8px 16px 0 16px;
+    padding-top: 8px;
     margin-top: 8px;
     border-top: solid 1px #000000; 
 }
@@ -633,7 +633,7 @@ header {
 }
 
 #filesEdit{
-    padding: 8px 16px 0 16px;
+    padding-top: 8px;
     margin-top: 8px;
     border-top: solid 1px #000000;
 }
@@ -850,7 +850,7 @@ header {
     color: #FFFFFF;
     background-color: #2F2F33;
     box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
-    height: calc(100% - 100px);    
+    height: calc(100% - 113px);    
     overflow: auto;
     font-size: 14px;
     user-select: none;
@@ -1040,7 +1040,7 @@ td {
 /*プロパティ末尾*/
 #displayLogButton {
 	bottom:0px;
-    position:absolute;
+    position: fixed;
     margin: 0 50% 0 50%;
     height: 20px;
     width: 48px;
@@ -1081,14 +1081,12 @@ td {
     background-color: rgb(47, 47, 42);
 }
 
-
-
 .logArea {
     display: none;
     background-color: rgba(28,28,32,0.75);
     bottom:0;
     color: rgb(240, 240, 240);
-	position:absolute;
+	position:fixed;
     width: 100%;
     height: 320px;
     z-index: 80;
@@ -1153,13 +1151,22 @@ td {
     color: #FFFFFF;
     background-color: #2F2F33;
     box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
-    height: calc(100% - 100px);
+    height: calc(100% - 113px);
     width: 100%;
     border: none;
     overflow: auto;
     font-size: 14px;
     user-select: none;
     margin: 0;
+}
+/* リストビュー画面 */
+#project_table_body{
+    height:800px;
+    width: calc(100% - 16px);
+    position: fixed;
+    overflow: auto;
+    border: solid 1px #2F2F33;
+    border-top-color: #222226;
 }
 
 #tableBody{
@@ -1185,11 +1192,14 @@ td {
 
 #project_table_tr th{
     padding: 0 0 4px 0;
-    border: solid 1px #2F2F33;
-    border-bottom-color: #222226;
     text-align: left;
     font-weight: inherit;
     padding-right:41px; 
+}
+
+.project_table_component{
+    border: solid 1px #2F2F33;
+    border-bottom-color: #222226;
 }
 
 

@@ -27,6 +27,7 @@ input{
   padding-left: 5px;
   height: 20px;
   width: 192px;
+  border: none;
 }
 
 #userName{
@@ -53,8 +54,7 @@ button{
     height: 24px;
     border: 0;
     cursor: pointer;
-    position: absolute;
-    left: 400px;
+    margin-left: 16px;
 }
 
 button:hover{
