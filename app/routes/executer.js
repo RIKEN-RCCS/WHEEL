@@ -181,7 +181,10 @@ class Executer{
         task.endTime = getDateString(true);
 
         // deliver files
-        if(rt === 0) await deliverOutputFiles(task.outputFiles, task.workingDir)
+        if(rt === 0){
+          const rt2 = await deliverOutputFiles(task.outputFiles, task.workingDir)
+          if(rt2.length > 0 ) logger.debug('deliverOutputFiles:\n',rt2);
+        }
 
         // update task status
         const state = rt === 0 ? "finished" : "failed";

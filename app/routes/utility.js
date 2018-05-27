@@ -180,8 +180,9 @@ function getSystemFiles(){
  */
 async function deliverFile(src, dst, type){
   try{
+    await fs.remove(dst);
     await fs.ensureSymlink(src, dst, type)
-    return `make symlink from ${src} to ${dst}`;
+    return `make symlink from ${src} to ${dst} (${type})`;
   }catch(e){
     if (e.code==='EPERM'){
       await fs.copy(src, dst);
