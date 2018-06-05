@@ -63,7 +63,7 @@ module.exports = function(io){
 
   let router = express.Router();
   router.get('/', function (req, res) {
-    res.sendFile(path.resolve(__dirname, '../views/remoteHost.html'));
+    res.sendFile(path.resolve(__dirname, '../views/remotehost.html'));
   });
   return router;
 }
