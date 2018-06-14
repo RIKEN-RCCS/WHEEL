@@ -84,18 +84,20 @@ async function createNewProject(root, name) {
   return projectJsonFileFullpath;
 }
 
-function getAllProject() {
-  return Promise.all(projectList.getAll().map(async (v)=>{
-    let rt;
-    try{
-      const projectJson = await fs.readJSON(v.path)
-      rt = Object.assign(projectJson, v);
-    }catch(err){
-      logger.warn(v.path,"read failed but just ignore", err);
-      rt=null;
-    }
-    return rt
-  }));
+async function getAllProject() {
+  const pj = await Promise.all(projectList.getAll()
+    .map(async (v)=>{
+      let rt;
+      try{
+        const projectJson = await fs.readJSON(v.path)
+        rt = Object.assign(projectJson, v);
+      }catch(err){
+        logger.warn(v.path,"read failed but just ignore", err);
+        rt=false;
+      }
+      return rt
+    }));
+  return pj.filter((e)=>{return e});
 }
 
 function adaptorSendFiles (withFile, dirFilter, sio, msg) {
@@ -199,6 +201,9 @@ async function onRename (sio, msg) {
   const parent = path.dirname(oldDir);
   const newDir = path.resolve(parent, newName+suffix);
   try{
+    const  projectJson = await fs.readJson(projectJsonFilepath);
+    projectJson.name = newName;
+    await fs.writeJson(projectJsonFilepath, projectJson);
     await fs.move(oldDir, newDir);
   }catch(err){
     logger.error('rename project failed', err);
@@ -230,7 +235,7 @@ async function onReorder(sio, orderList) {
 
 async function onGetProjectList (sio){
   const pj = await getAllProject();
-  sio.emit('projectList', pj.filter((e)=>{return e}));
+  sio.emit('projectList', pj);
 }
 
 module.exports = function(io){
