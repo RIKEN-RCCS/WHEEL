@@ -1,5 +1,7 @@
 const path = require("path");
 const EventEmitter = require('events');
+const fs = require('fs-extra');
+const klaw = require('klaw');
 const nodegit = require("nodegit");
 const {replacePathsep} = require('./utility');
 
@@ -54,8 +56,24 @@ class git extends EventEmitter{
    * @param {string} absFilePath - target filepath
    */
   async add(absFilename){
-    const filename = replacePathsep(path.relative(this.rootDir, absFilename));
-    await this.index.addByPath(filename);
+    const stats = await fs.stat(absFilename);
+    if(stats.isDirectory()){
+      const p=[];
+      klaw(absFilename)
+        .on('data', (item, fileStats)=>{
+          if(fileStats.isFile()){
+            const filename = replacePathsep(path.relative(this.rootDir, item));
+            p.push(this.index.addByPath(filename));
+          }
+        })
+        .on('error', (err, item)=>{
+          throw new Error('fatal error occurred during recursive git add',err);
+        });
+      await Promise.all(p);
+    }else{
+      const filename = replacePathsep(path.relative(this.rootDir, absFilename));
+      await this.index.addByPath(filename);
+    }
     this.emit('writeIndex');
   }
   /**
@@ -63,8 +81,24 @@ class git extends EventEmitter{
    * @param {string} absFilePath - target filepath
    */
   async rm(absFilename){
-    const filename = replacePathsep(path.relative(this.rootDir, absFilename));
-    await this.index.removeByPath(filename);
+    const stats = await fs.stat(absFilename);
+    if(stats.isDirectory()){
+      const p=[];
+      klaw(absFilename)
+        .on('data', (item, fileStats)=>{
+          if(fileStats.isFile()){
+            const filename = replacePathsep(path.relative(this.rootDir, item));
+            p.push(this.index.removeByPath(filename));
+          }
+        })
+        .on('error', (err, item)=>{
+          throw new Error('fatal error occurred during recursive git add',err);
+        });
+      await Promise.all(p);
+    }else{
+      const filename = replacePathsep(path.relative(this.rootDir, absFilename));
+      await this.index.removeByPath(filename);
+    }
     this.emit('writeIndex');
   }
 
