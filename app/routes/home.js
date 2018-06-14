@@ -233,7 +233,7 @@ module.exports = function(io){
   let sio=io.of('/home');
   sio.on('connect', (socket) => {
     socket.on('getProjectList', onGetProjectList.bind(null, socket));
-    socket.on('getDirList',     adaptorSendFiles.bind(null, false, noWheelDir, socket));
+    socket.on('getDirList',     adaptorSendFiles.bind(null, false, null, socket));
     socket.on('getDirListAndProjectJson', adaptorSendFiles.bind(null, true,  null, socket));
     socket.on('addProject',     onAdd.bind(null, socket));
     socket.on('importProject',  onImport.bind(null, socket));

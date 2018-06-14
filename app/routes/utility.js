@@ -154,7 +154,7 @@ function isValidName(name){
 
 function isValidInputFilename(name){
   if(win32reservedName.test(name)) return false;
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps)+bars}]`);
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps+'.')+bars}]`);
   if(forbidonChars.test(name)) return false;
   return true;
 }
