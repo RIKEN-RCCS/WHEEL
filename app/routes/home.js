@@ -86,11 +86,15 @@ async function createNewProject(root, name) {
 
 function getAllProject() {
   return Promise.all(projectList.getAll().map(async (v)=>{
-    const projectJson = await fs.readJSON(v.path)
-      .catch((err)=>{
-        logger.warn(v.path,"read failed but just ignore", err);
-      });
-    return Object.assign(projectJson, v);
+    let rt;
+    try{
+      const projectJson = await fs.readJSON(v.path)
+      rt = Object.assign(projectJson, v);
+    }catch(err){
+      logger.warn(v.path,"read failed but just ignore", err);
+      rt=null;
+    }
+    return rt
   }));
 }
 
@@ -226,7 +230,7 @@ async function onReorder(sio, orderList) {
 
 async function onGetProjectList (sio){
   const pj = await getAllProject();
-  sio.emit('projectList', pj);
+  sio.emit('projectList', pj.filter((e)=>{return e}));
 }
 
 module.exports = function(io){
