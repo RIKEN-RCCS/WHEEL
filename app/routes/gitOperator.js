@@ -86,7 +86,7 @@ class git extends EventEmitter{
       const p=[];
       klaw(absFilename)
         .on('data', (item, fileStats)=>{
-          if(fileStats.isFile()){
+          if(fileStats && fileStats.isFile()){
             const filename = replacePathsep(path.relative(this.rootDir, item));
             p.push(this.index.removeByPath(filename));
           }

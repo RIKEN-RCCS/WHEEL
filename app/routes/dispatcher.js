@@ -27,7 +27,7 @@ function _whileGetNextIndex(component){
 }
 function _whileIsFinished(cwfDir, component){
   let cwd= path.resolve(cwfDir, component.path);
-  let condition = evalConditionSync(component.condition, cwd);
+  let condition = evalConditionSync(component.condition, cwd, component.currentIndex);
   return ! condition
 }
 function _foreachGetNextIndex(component){
@@ -56,7 +56,7 @@ function _isFinishedState(state){
  * evalute condition by executing external command or evalute JS expression
  * @param {string} condition - command name or javascript expression
  */
-function evalConditionSync(condition, cwd){
+function evalConditionSync(condition, cwd, currentIndex){
   if( !(typeof condition === 'string' || typeof condition === 'boolean') ){
     logger.warn('condition must be string or boolean');
     return false;
@@ -67,15 +67,17 @@ function evalConditionSync(condition, cwd){
   }catch(e){
     if(e.code ===  'ENOENT' ){
       logger.debug('evalute ', condition);
-      return eval(condition);
+      return eval(`var WHEEL_CURRENT_INDEX=${currentIndex};${condition}`);
     }
   }
   logger.debug('execute ', script);
   addXSync(script);
   const dir = path.dirname(script)
   const options = {
+    "env": process.env,
     "cwd": dir
   }
+  if(currentIndex !== undefined) options.env.WHEEL_CURRENT_INDEX=currentIndex.toString();
   return child_process.spawnSync(script, options).status === 0;
 }
 
@@ -279,7 +281,7 @@ class Dispatcher extends EventEmitter{
   async _checkIf(component){
     logger.debug('_checkIf called', component.name);
     const cwd= path.resolve(this.cwfDir, component.path);
-    const condition = evalConditionSync(component.condition, cwd);
+    const condition = evalConditionSync(component.condition, cwd, this.wf.currentIndex);
     this._addNextComponent(component, !condition);
     setComponentState(this.label, component, 'finished');
   }
