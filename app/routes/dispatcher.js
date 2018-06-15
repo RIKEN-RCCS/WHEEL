@@ -135,23 +135,32 @@ class Dispatcher extends EventEmitter{
           dst.dstRoot = dst.dstNode === 'parent' ? this.cwfDir : path.resolve(this.cwfDir, this.nodes[dst.dstNode].path);
         }
       }
-      const  cmd  = this._cmdFactory(component.type);
-      setComponentState(this.label, component, 'running');
-      promises.push(
-        cmd.call(this, component)
-        .then(()=>{
-          // task component is not finished at this time
-          if(component.type === "task") return
+      if(component.state === 'finished'){
+        promises.push(
           deliverOutputFiles(component.outputFiles,  path.resolve(this.cwfDir, component.path))
-            .then((rt)=>{
-              if(rt.length > 0 ) logger.debug('deliverOutputFiles:\n',rt);
-            })
-        })
-        .catch((err)=>{
-          setComponentState(this.label, component, 'failed');
-          return Promise.reject(err);
-        })
-      );
+          .then((rt)=>{
+            if(rt.length > 0 ) logger.debug('deliverOutputFiles:\n',rt);
+          })
+        );
+      }else{
+        const  cmd  = this._cmdFactory(component.type);
+        setComponentState(this.label, component, 'running');
+        promises.push(
+          cmd.call(this, component)
+          .then(()=>{
+            // task component is not finished at this time
+            if(component.type === "task") return
+            deliverOutputFiles(component.outputFiles,  path.resolve(this.cwfDir, component.path))
+              .then((rt)=>{
+                if(rt.length > 0 ) logger.debug('deliverOutputFiles:\n',rt);
+              })
+          })
+          .catch((err)=>{
+            setComponentState(this.label, component, 'failed');
+            return Promise.reject(err);
+          })
+        );
+      }
     }
     try{
       await Promise.all(promises);
@@ -302,8 +311,8 @@ class Dispatcher extends EventEmitter{
     this.children.add(child);
     // exception should be catched in caller
     try{
-      await child.start();
-      setComponentState(this.label, component, 'finished');
+      const state = await child.start();
+      setComponentState(this.label, component, state);
     }finally{
       this._addNextComponent(component);
     }
@@ -360,7 +369,7 @@ class Dispatcher extends EventEmitter{
     const dstDir = path.resolve(this.cwfDir, newComponent.name);
 
     try{
-      await fs.copy(srcDir, dstDir)
+      await fs.copy(srcDir, dstDir); //fs-extra's copy overwrites dst by default
       const childWF = await this._readChild(component);
       childWF.name=newComponent.name;
       childWF.path=newComponent.path;
@@ -422,7 +431,7 @@ class Dispatcher extends EventEmitter{
         data=data.replace(new RegExp(`%%${e.key}%%`,"g"), e.value.toString());
       });
       const rewriteFile= path.resolve(dstDir, targetFile)
-      await promisify(fs.writeFile)(rewriteFile, data);
+      await promisify(fs.writeFile)(rewriteFile, data); //fs.writeFile overwrites existing file
 
       const newComponent = Object.assign({}, component);
       newComponent.name= path.relative(this.cwfDir, dstDir);
