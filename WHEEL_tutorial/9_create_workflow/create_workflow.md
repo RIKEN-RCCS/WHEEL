@@ -23,7 +23,7 @@ Taskコンポーネントは、WHEELにおいて、ジョブを投入する計�
 
 また、ここで設定したスクリプト「HelloWorld.bat」の中身は以下です。
 
->ex. HelloWorld.bat
+> HelloWorld.bat
 ```
   　`@echo off`  
  　 echo Hello World!  
