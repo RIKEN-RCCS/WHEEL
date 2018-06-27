@@ -23,18 +23,11 @@ Taskコンポーネントは、WHEELにおいて、ジョブを投入する計�
 
 また、ここで設定したスクリプト「HelloWorld.bat」の中身は以下です。
 
-<<<<<<< HEAD
 > HelloWorld.bat  
 ```
-@echo off  
-=======
-> HelloWorld.bat
-```
-`@echo off`  
->>>>>>> d9c4279bd2d0e429d413198638063a6359a46018
+@echo off   
 echo Hello World!  
 ```
-
 ### プロジェクトを保存する
 ファイルの設定が完了後、プロジェクトを保存します。  
 保存前後でワークフロー画面上部[ Create date ]が更新されることを確認します。
