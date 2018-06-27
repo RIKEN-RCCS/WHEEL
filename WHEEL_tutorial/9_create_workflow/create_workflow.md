@@ -23,9 +23,11 @@ Taskコンポーネントは、WHEELにおいて、ジョブを投入する計�
 
 また、ここで設定したスクリプト「HelloWorld.bat」の中身は以下です。
 
->ex. HelloWorld.bat  
+>ex. HelloWorld.bat
+```
   　`@echo off`  
  　 echo Hello World!  
+```
 
 ### プロジェクトを保存する
 ファイルの設定が完了後、プロジェクトを保存します。  
