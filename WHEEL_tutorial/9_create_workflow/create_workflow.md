@@ -545,13 +545,31 @@ if %WHEEL_CURRENT_INDEX% gtr 5 (
 ![img](./img/While_finished.png "While_finished")
 
 ## Workflow コンポーネント  
-Workflowコンポーネントは、複数のコンポーネントからなる処理を一つのコンポーネントに纏めるために用います。  
+Workflowコンポーネントは、複数のコンポーネントからなる処理を一つのコンポーネントにまとめるために用います。  
 Workflowコンポーネントを使用することで、ワークフロー編集画面上を処理毎に集約することができ、ワークフロー全体の見通しを良くすることができます。
 
-#### Workflow コンポーネント 未使用  
+サンプルプロジェクトは下記からダウンロード可能です。  
+<a href="./sample/WorkflowSampleProject_1.zip">Workflowコンポーネント未使用</a>  
+<a href="./sample/WorkflowSampleProject_2.zip">Workflowコンポーネント使用</a>  
 
-![img](./img/components.png "components")   
+#### Workflowコンポーネント未使用  
 
-#### Workflow コンポーネント 使用  
+![img](./img/Workflow_1.png "Workflow_1")   
 
-![img](./img/Workflow.png "Workflow")   
+#### Workflowコンポーネント使用  
+
+![img](./img/Workflow_2.png "Workflow_2")   
+
+以下に実行結果を示します。  
+
+#### Workflowコンポーネント未使用 実行結果  
+
+![img](./img/Workflow_1_result.png "Workflow_1_result")   
+
+#### Workflowコンポーネント未使用実行結果（ログ）
+
+![img](./img/Workflow_1_result_log.png "Workflow_1_result_log")   
+
+#### Workflowコンポーネント使用実行結果
+
+![img](./img/Workflow_2_result.png "Workflow_2_result")   
