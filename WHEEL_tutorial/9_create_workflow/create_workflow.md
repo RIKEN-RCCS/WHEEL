@@ -25,8 +25,8 @@ Taskコンポーネントは、WHEELにおいて、ジョブを投入する計�
 
 > HelloWorld.bat
 ```
-  　`@echo off`  
- 　 echo Hello World!  
+`@echo off`  
+echo Hello World!  
 ```
 
 ### プロジェクトを保存する
