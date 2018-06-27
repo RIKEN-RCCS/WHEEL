@@ -39,7 +39,7 @@ inletから流入した流体がoutletから出ていく解析を実施します
 1. OpenFOAMでの境界条件設定用に、入口/出口/壁面のそれぞれにFACEグループを設定する  
    本事例では、入口にinlet、10箇所の出口にoutet1～outlet10、壁面にwallのグループ名を設定
 
-####「Geometry」モジュールのグループ設定
+#### 「Geometry」モジュールのグループ設定
 
 ![img](./img/mesh_1.png "Geometryモジュールのグループ設定")  
 
