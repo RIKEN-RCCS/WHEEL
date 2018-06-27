@@ -3,11 +3,10 @@
 WHEELでは、ワークフロー画面（Taskコンポーネント）にて設定するホストの情報及びホストに登録されているユーザ情報をホスト登録画面にて設定します。  
 
 ## ホスト登録画面への移動
-***
 ホスト登録画面には、下記の2パターンの方法によって遷移します。
 
-> 1. ホーム画面右上ドロワー内の[ remotehost ]
-> 2. ワークフロー画面右上ドロワー内の[ remotehost ]  
+* ホーム画面右上ドロワー内の[ remotehost ]
+* ワークフロー画面右上ドロワー内の[ remotehost ]  
 
 1. ホーム画面右上ドロワー  
 ![img](./img/home_remotehost.png "home_remotehost")  
@@ -16,7 +15,6 @@ WHEELでは、ワークフロー画面（Taskコンポーネント）にて設�
 ![img](./img/workflow_remotehost.png "workflow_remotehost")  
 
 ## ホスト登録画面
-***
 ホスト登録画面の構成は以下のようになっています。  
 ![img](./img/remotehost.png "remotehost")  
 
@@ -76,7 +74,7 @@ reFinishedStateとreFailedStateは、前者が先に評価され前者がマッ�
 ※いずれの正規表現もプログラム内でコンパイルして利用するため、正規表現リテラル(//)は使うことができません。  
 
 > 富士通 parallel naviでの設定は次のようになります。  
-
+```
 {  
 　"ParallelNavi": {  
 　　"submit": "pjsub",   
@@ -88,9 +86,9 @@ reFinishedStateとreFailedStateは、前者が先に評価され前者がマッ�
 　　"reFailedState": "^ST *EC\\\\n(CCL|ERR|EXT)"  
 　}  
 }  
+```
 
 ## ホストの登録
-***
 ホストの登録方法は、2パターンあります。
 1. 新規に登録する
 1. 既存のホスト情報を引用し、登録する  
@@ -103,19 +101,19 @@ reFinishedStateとreFailedStateは、前者が先に評価され前者がマッ�
 1. Host Registration エリアの必要項目を入力する
 1. Host Registration エリア「Confirm」ボタンをクリックする  
 
-> 1. Host List エリア「New」ボタンをクリックする
+#### 1. Host List エリア「New」ボタンをクリックする
 
 Host Registrationがクリアされます。ただし、Port, Max Jobにはデフォルト値が入ります。
 
 ![img](./img/remotehost_new.png "remotehost_new")  
 
-> 2. Host Registration エリアの必要項目を入力する  
+#### 2. Host Registration エリアの必要項目を入力する  
 
 必要項目を入力します。Label（重複不可）, Host Name, User Nameは、入力必須項目です。 
 
 ![img](./img/remotehost_info.png "remotehost_info")  
 
-> 3. Host Registration エリア「Confirm」ボタンをクリックする  
+#### 3. Host Registration エリア「Confirm」ボタンをクリックする  
 
 入力内容をホスト情報として登録します。Host List エリアにホスト情報が追加されます。  
 
@@ -131,51 +129,50 @@ Host Registrationがクリアされます。ただし、Port, Max Jobにはデ�
 1. 複製したホストを選択し、Host Registration エリアのLabel（必須）及びその他項目を編集する
 1. Host Registration エリア「Confirm」ボタンをクリックする
 
-> 1. Host List エリアに表示されている登録済みホストをクリックする
+#### 1. Host List エリアに表示されている登録済みホストをクリックする
 
 登録済みホストを選択します。選択したホスト情報は、Host Registration エリアに反映されます。  
 
 ![img](./img/remotehost_select.png "remotehost_select")  
 
-> 2. Host List エリア「Copy」ボタンをクリックする
+#### 2. Host List エリア「Copy」ボタンをクリックする
 
 Copyボタンをクリックします。Host Listに選択したホスト情報が複製されます。  
 Labelも複製されるため、Label重複の警告メッセージが表示されます。
 
 ![img](./img/remotehost_copy.png "remotehost_copy")  
 
-> 3. 複製したホストを選択し、Host Registration エリアのLabel（必須）及びその他項目を編集する
+#### 3. 複製したホストを選択し、Host Registration エリアのLabel（必須）及びその他項目を編集する
 
 Label及びその他項目を編集し、Label重複警告メッセージが解除されたことを確認します。  
 
 ![img](./img/remotehost_copy_edit.png "remotehost_copy_edit")  
 
-> 4. Host Registration エリア「Confirm」ボタンをクリックする  
+#### 4. Host Registration エリア「Confirm」ボタンをクリックする  
 
 「Confirm」ボタンをクリックします。  
 
 ![img](./img/remotehost_copy_confirm.png "remotehost_copy_confirm")  
 
 ## ホストの編集
-***
 ホストの編集の手順は以下になります。
 1. Host List エリアに表示されている編集したいホストをクリックする
 1. Host Registration エリアにてホスト情報を編集する
 1. Host Registration エリア「Confirm」ボタンをクリックする  
 
-> 1. Host List エリアに表示されている編集したいホストをクリックする
+#### 1. Host List エリアに表示されている編集したいホストをクリックする
 
 Host Registration エリアに選択したホストの登録情報が表示されます。
 
 ![img](./img/remotehost_edit.png "host_edit")  
 
-> 2. Host Registration エリアにてホスト情報を編集する
+#### 2. Host Registration エリアにてホスト情報を編集する
 
 項目を編集します。
 
 ![img](./img/remotehost_edit_info.png "host_edit_info")  
 
-> 3. Host Registration エリア「Confirm」ボタンをクリックする  
+#### 3. Host Registration エリア「Confirm」ボタンをクリックする  
 
 ホスト情報を更新します。
 
@@ -183,7 +180,6 @@ Host Registration エリアに選択したホストの登録情報が表示さ�
 
 
 ## ホストの削除
-***
 ホストの削除は、以下の手順で行います。
 1. Host List エリアに表示されている削除したいホストをクリックする
 1. Host List エリア「Delete」ボタンをクリックする
@@ -197,7 +193,6 @@ Host Registration エリアに選択したホストの登録情報が表示さ�
 
 
 ## ホストの接続確認
-***
 登録したホストが有効であるが確認するためにホストの接続確認（Connection Check）を行います。  
 Connection Checkは、「Test」ボタンをクリックすることで行います。  
 
@@ -207,11 +202,11 @@ Connection Checkの手順は以下になります。
 1. 表示される「パスワード入力ダイアログボックス」にパスワードを入力し、「OK」を押下する
 1. 「Test」ボタンの表示がOKまたはNGになることを確認する
 
-> 1. Connection Check
+#### 1. Connection Check
 
 ![img](./img/remotehost_connectioncheck.png "remotehost_connectioncheck")  
 
-> 4. 「Test」ボタンの表示が OK または NG になることを確認する
+#### 4. 「Test」ボタンの表示が OK または NG になることを確認する
 
 Host Name, User ID, Port, AuthPath 及び入力したパスワードが適切な場合は「OK」、不適切な場合は「NG」となります。  
 
@@ -224,5 +219,3 @@ Host Name, User ID, Port, AuthPath 及び入力したパスワードが適切な
 「Test」ボタンがNGとなり、エラーメッセージが表示されます。  
 
 ![img](./img/remotehost_connectioncheck_NG.png "remotehost_connectioncheck_NG")  
-
-
