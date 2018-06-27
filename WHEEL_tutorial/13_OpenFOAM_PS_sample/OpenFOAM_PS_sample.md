@@ -73,7 +73,9 @@ inletから流入した流体がoutletから出ていく解析を実施します
 ターミナルを起動し、
 解析データの親ディレクトリ「D50-d10」にて、  
 
-> $ ideasUnvToFoam *.unv
+```
+$ ideasUnvToFoam *.unv
+```
 
 コマンドを実行します。
 
@@ -141,9 +143,11 @@ moveFile_Taskコンポーネントに設定するプロパティ、及びスク�
 | Remotehost | localhost |
 | Files | resultRead.bat, value.txt *2 |
 
-> ex.moveFile.bat  
-　`@echo off`  
-　mv ../U.txt ../runOpenFOAM_Task     
+> moveFile.bat  
+```
+@echo off  
+mv ../U.txt ../runOpenFOAM_Task  
+```
 
 設定は以下です。
 1. moveFile_Taskコンポーネントへファイル転送をするスクリプトmoveFile.batをインポートする 
@@ -179,27 +183,29 @@ runOpenFOAM_Taskコンポーネントに設定するプロパティ、及びス�
 
 *　解析モデル及びOpenFOAMの計算設定ファイル一式  
 
-> ex.runOpenFOAM.sh  
-　#!/bin/sh  
-　#PJM --rsc-list "node=2"  
-　#PJM --mpi "shape=2"  
-　#PJM --mpi "proc=12"  
-　#PJM -s  
-　*#*   
-　. /work/system/Env_base  
-　*#*  
-　module load OpenFOAM/2.4.0-fujitsu-sparc64  
-　source $WM_PROJECT_DIR/etc/bashrc  
-　tar xvzf D50-d10.tar.gz  
-　mv ./U.txt U  
-　mv ./U ./D50-d10/0  
-　cd ./D50-d10  
-　decomposePar  
-　mpiexec -n 12 simpleFoam -parallel  
-　reconstructPar  
-　touch result.foam  
-　cd ..  
-　tar cvzf D50-d10.tar.gz D50-d10  
+> runOpenFOAM.sh  
+```
+#!/bin/sh  
+#PJM --rsc-list "node=2"  
+#PJM --mpi "shape=2"  
+#PJM --mpi "proc=12"  
+#PJM -s  
+#   
+. /work/system/Env_base  
+#  
+module load OpenFOAM/2.4.0-fujitsu-sparc64  
+source $WM_PROJECT_DIR/etc/bashrc  
+tar xvzf D50-d10.tar.gz  
+mv ./U.txt U  
+mv ./U ./D50-d10/0  
+cd ./D50-d10  
+decomposePar  
+mpiexec -n 12 simpleFoam -parallel  
+reconstructPar  
+touch result.foam  
+cd ..  
+tar cvzf D50-d10.tar.gz D50-d10  
+```
 
 設定は以下です。
 1. 京コンピュータでOpenFOAMを実行するために必要なデータ（OpenFOAMの入力ファイル「D50-b10.tar.gz」）及びジョブスクリプトrunOpenFOAM.shをインポートする
@@ -226,20 +232,26 @@ WHEELは、リソースグループmicroを用い、効率的に計算資源を�
 
 本事例では、メッシュは作成済みであるため下記コマンドをスクリプトに組み込んでいます。  
 
-> $ module load OpenFOAM/version..  
-> $ source $WM_PROJECT_DIR/etc/bashrc  
-> $ simpleFoam 
+```
+$ module load OpenFOAM/version..  
+$ source $WM_PROJECT_DIR/etc/bashrc  
+$ simpleFoam  
+```
 
 京で利用できるOpenFOAMのバージョンを確認するためには、  
 
-> $ module avail
+```
+$ module avail
+```
 
 コマンドで確認してください。  
 
 また、解析完了後、Paraviewで解析結果を確認するためには、空の「○○.foam」ファイル（○○は任意の文字列）が  
 必要であるため、空ファイルを作成するコマンド
 
-> $ touch ○○.foam
+```
+$ touch ○○.foam
+```
 
 をスクリプト内に組み込んでおくと結果確認をスムーズに行うことができます。
 

@@ -28,6 +28,7 @@ Taskコンポーネントは、WHEELにおいて、ジョブを投入する計�
 @echo off   
 echo Hello World!  
 ```
+
 ### プロジェクトを保存する
 ファイルの設定が完了後、プロジェクトを保存します。  
 保存前後でワークフロー画面上部[ Create date ]が更新されることを確認します。
@@ -118,9 +119,11 @@ WHEELのPS用ファイル編集機能によりインプットデータにパラ�
 
 *2 本タスクは、ローカルマシンでの実行のため、その他プロパティ（UseJobScheduler以下）の設定は行いません。(本章内他のTaskコンポーネントも同様)  
 
-> ex. moveFiles.bat  
-　`@echo off`  
-　mv ../inputdata.txt ../calcTask  
+> moveFiles.bat  
+```
+@echo off  
+mv ../inputdata.txt ../calcTask  
+```
 
 ##### calcTask
 
@@ -135,10 +138,12 @@ WHEELのPS用ファイル編集機能によりインプットデータにパラ�
 
 *3 inputdata.txtは、moveFileTask実行後にPSディレクトリより移動されるファイルです。
 
-> ex. calc.bat  
-　`@echo off`  
-　g++ wheel_tutorial_solver.cc -o wheel_tutorial_solver  
-　wheel_tutorial_solver.exe  
+> calc.bat  
+```
+@echo off 
+g++ wheel_tutorial_solver.cc -o wheel_tutorial_solver  
+wheel_tutorial_solver.exe  
+```
 
 #### Parameter Study ワークフロー  
 
@@ -263,9 +268,11 @@ ifコンポーネントはTaskコンポーネントにより得られた結果�
 | Remotehost | localhost |
 | Files | true.bat |  
 
->ex. true.bat  
-　`@echo off`  
-　echo true
+> true.bat  
+```
+@echo off  
+echo true  
+```
 
 ##### falseTask
 
@@ -278,9 +285,11 @@ ifコンポーネントはTaskコンポーネントにより得られた結果�
 | Remotehost | localhost |
 | Files | false.bat |  
 
->ex. false.bat  
-　`@echo off`  
-　echo false
+> false.bat  
+```
+　@echo off  
+　echo false  
+```
 
 ##### sampleIf
 
@@ -292,12 +301,14 @@ ifコンポーネントはTaskコンポーネントにより得られた結果�
 | Condition | condition.bat |
 | Files | condition.bat |  
 
->ex. condition.bat  
-　`@echo off`    
-　for /f "tokens=2 delims==" %%a in (input.txt) do (  
-　　set result=%%a  
-　)  
-　if %result% gtr 20 echo true  
+> condition.bat  
+```
+@echo off    
+for /f "tokens=2 delims==" %%a in (input.txt) do (  
+  set result=%%a  
+)  
+if %result% gtr 20 echo true  
+```
 
 #### ワークフロー構成図
 
@@ -389,19 +400,21 @@ loopCalcTaskコンポーネントにて使用するワークフローを実行�
 
 *2 result.batの計算結果ファイル、loopCalcTask内でインプットデータとして利用  
 
->ex. resultRead.bat  
-　`@echo off`  
-　for /f "tokens=2 delims==" %%a in (input.txt) do (  
-　　set result=%%a  
-　)  
-　if not %WHEEL_CURRENT_INDEX% == 1 (  
-　　for /f "tokens=2 delims==" %%a in (value.txt) do (  
-　　 　set value=%%a  
-　　)  
-　)  
-　set /a x=result*WHEEL_CURRENT_INDEX + value  
-　echo value=%x%  
-　echo value=%x% > value.txt  
+> resultRead.bat  
+```
+@echo off  
+for /f "tokens=2 delims==" %%a in (input.txt) do (  
+  set result=%%a  
+)  
+if not %WHEEL_CURRENT_INDEX% == 1 (  
+　for /f "tokens=2 delims==" %%a in (value.txt) do (  
+    set value=%%a  
+  )  
+)  
+set /a x=result*WHEEL_CURRENT_INDEX + value  
+echo value=%x%  
+echo value=%x% > value.txt  
+```
 
 #### For ワークフロー  
 
@@ -497,13 +510,15 @@ calcTask, loopCalcTaskコンポーネントは、前述のForeachコンポーネ
 | Condition | condition.bat |
 | Files | condition.bat |
 
->ex. condition.bat  
-`@echo off`  
+> condition.bat  
+```
+@echo off  
 if %WHEEL_CURRENT_INDEX% gtr 5 (  
-    exit /b 1  
+  exit /b 1  
 ) else (  
-    goto:eof  
+  goto:eof  
 )  
+```
 
 #### While ワークフロー  
 
