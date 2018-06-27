@@ -549,8 +549,8 @@ Workflowコンポーネントは、複数のコンポーネントからなる処
 Workflowコンポーネントを使用することで、ワークフロー編集画面上を処理毎に集約することができ、ワークフロー全体の見通しを良くすることができます。
 
 サンプルプロジェクトは下記からダウンロード可能です。  
-<a href="./sample/WorkflowSampleProject_1.zip">Workflowコンポーネント未使用</a>  
-<a href="./sample/WorkflowSampleProject_2.zip">Workflowコンポーネント使用</a>  
+<a href="./sample/WorkflowSampleProject_1.wheel.zip">Workflowコンポーネント未使用</a>  
+<a href="./sample/WorkflowSampleProject_2.wheel.zip">Workflowコンポーネント使用</a>  
 
 #### Workflowコンポーネント未使用  
 
