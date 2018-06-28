@@ -41,7 +41,7 @@ $(() => {
   //for 'save' button control
   let presentState = '';
 
-  let projectLootDir = currentWorkDir;
+  let projectRootDir = currentWorkDir;
 
   // create vue.js instance for property subscreen
   let vm = new Vue({
@@ -105,15 +105,24 @@ $(() => {
           return name === val;
         })
         if (!dup) {
+          console.log("namecheck");
           sio.emit('updateNode', { index: this.node.index, property: 'name', value: this.node.name, cmd: 'update' });
+          let currentComponentDir = currentWorkDir + '/' + val;
+          fb.request('getFileList', currentComponentDir, null);
+          console.log(currentComponentDir);
+          let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
+          $('#componentPath').html(displayDirPath);
         } else {
-          console.log('duplicated name is not allowd!');
+          console.log('duplicated name is not allowed!');
         }
       },
       updateProperty: function (property, arrayFlag) {
         let val = this.node[property];
         let cmd = arrayFlag ? 'updataArrayProperty' : 'update';
         sio.emit('updateNode', { index: this.node.index, property: property, value: val, cmd: cmd });
+      },
+      changeQueueListState: function (useJocSchedulerFlag) {
+
       }
     }
   });
@@ -192,6 +201,7 @@ $(() => {
   const svg = SVG('node_svg');
   sio.on('connect', function () {
     fb.request('getFileList', currentWorkDir, null);
+    console.log("connect");
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
@@ -212,7 +222,7 @@ $(() => {
     sio.on('workflow', function (wf) {
       nodeStack[nodeStack.length - 1] = wf.name;
       nodeTypeStack[nodeStack.length - 1] = wf.type;
-
+      console.log("get workflow");
       updateBreadrumb();
 
       // remove all node from workflow editor
@@ -246,6 +256,7 @@ $(() => {
     });
 
     sio.on('taskStateList', (taskStateList) => {
+      console.log("get taskStateList");
       updateTaskStateTable(taskStateList);
     })
 
@@ -373,6 +384,7 @@ $(() => {
   $('#graphView').click(function () {
     $('#project_manage_area').hide();
     $('#workflow_manage_area').show();
+    sio.emit('getWorkflow', currentWorkFlow);
   });
 
   // setup context menu
@@ -497,11 +509,11 @@ $(() => {
   var buttonFlag = false;
   let clickedNode = "temp";
   function drawNodes(nodesInWF) {
+    console.log("drawnodes")
     nodesInWF.forEach(function (v, i) {
       // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
       if (v === null) {
         nodes.push(null);
-        //childrenViewBoxList.push(null);
       } else {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
         node.onMousedown(function (e) {
@@ -510,10 +522,10 @@ $(() => {
           selectedNode = nodeIndex;
           let name = nodesInWF[nodeIndex].name;
           let nodePath = currentWorkDir + '/' + nodesInWF[nodeIndex].name;
-          //ファイルブラウザ用
+
           fb.request('getFileList', nodePath, null);
           //プロパティ表示用相対パス
-          let currentPropertyDir = "." + currentWorkDir.replace(projectLootDir, "") + "/" + nodesInWF[nodeIndex].name;
+          let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + nodesInWF[nodeIndex].name;
           let nodeType = nodesInWF[nodeIndex].type;
           //iconの変更
           let nodeIconPath = config.node_icon[nodeType];
@@ -525,17 +537,17 @@ $(() => {
             let useJobSchedulerFlag = nodesInWF[nodeIndex].useJobScheduler;
             console.log(useJobSchedulerFlag);
 
-            if (useJobSchedulerFlag === true) {
-              console.log("false");
-              $('#queueSelectField').prop('disabled', false);
-              $('#queueSelectField').css('background-color', '#000000');
-              $('#queueSelectField').css('color', '#FFFFFF');
-            } else {
-              console.log("true");
-              $('#queueSelectField').prop('disabled', true);
-              $('#queueSelectField').css('background-color', '#333333');
-              $('#queueSelectField').css('color', '#333333');
-            }
+            // if (useJobSchedulerFlag === true) {
+            //   console.log("abled");
+            //   $('#queueSelectField').prop('disabled', false);
+            //   // $('#queueSelectField').css('background-color', '#000000');
+            //   // $('#queueSelectField').css('color', '#FFFFFF');
+            // } else {
+            //   console.log("disabled");
+            //   $('#queueSelectField').prop('disabled', true);
+            //   // $('#queueSelectField').css('background-color', '#333333');
+            //   // $('#queueSelectField').css('color', '#333333');
+            // }
             //remotehostリストの設定
             sio.emit('getHostList', true);
             remotehost = nodesInWF[nodeIndex].host;
@@ -655,15 +667,20 @@ $(() => {
     queueArray = [];
     queueSelectField.empty();
     if (remotehost === 'localhost') {
-      queueArray = ['null'];
+      queueArray = [];
     } else {
       let hostListIndex = remotehostArray.indexOf(remotehost);
-      let queueList = remotehostDataArray[hostListIndex].queue;
-
+      let queueList;
+      //プロジェクトに設定されているremotehostが存在しないとき何も表示しない
+      if (hostListIndex === -1) {
+        queueList = "";
+      } else {
+        queueList = remotehostDataArray[hostListIndex].queue;
+      }
       if (queueList !== "") {
         queueArray = queueList.split(',');
       }
-      queueSelectField.append(`<option value="null">null</option>`);
+      queueSelectField.append(`<option value="null"></option>`);
     }
     for (let index = 0; index < queueArray.length; index++) {
       queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
@@ -720,7 +737,7 @@ $(() => {
 
       let id = `taskLabel_${i}`;
 
-      taskStateTable.append(`<tr><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
+      taskStateTable.append(`<tr class="project_table_component" ><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
       <td class="componentState"><img src=${nodeComponentState}><label class="stateLabel">${taskStateList[i].state}</label></td>
       <td class="componentStartTime">${taskStateList[i].startTime}</td>
       <td class="componentEndTime">${taskStateList[i].endTime}</td>
@@ -730,20 +747,20 @@ $(() => {
 
     }
   }
-  //Queueリストの有効、無効処理
-  $(function () {
-    $(document).on('change', '#useJobSchedulerFlagField', function () {
-      if ($('#useJobSchedulerFlagField').prop('checked')) {
-        $('#queueSelectField').prop('disabled', false);
-        $('#queueSelectField').css('background-color', '#000000');
-        $('#queueSelectField').css('color', '#FFFFFF');
-      } else {
-        $('#queueSelectField').prop('disabled', true);
-        $('#queueSelectField').css('background-color', '#333333');
-        $('#queueSelectField').css('color', '#333333');
-      }
-    });
-  });
+  // //Queueリストの有効、無効処理
+  // $(function () {
+  //   $(document).on('change', '#useJobSchedulerFlagField', function () {
+  //     if ($('#useJobSchedulerFlagField').prop('checked')) {
+  //       $('#queueSelectField').prop('disabled', false);
+  //       $('#queueSelectField').css('background-color', '#000000');
+  //       $('#queueSelectField').css('color', '#FFFFFF');
+  //     } else {
+  //       $('#queueSelectField').prop('disabled', true);
+  //       $('#queueSelectField').css('background-color', '#333333');
+  //       $('#queueSelectField').css('color', '#333333');
+  //     }
+  //   });
+  // });
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
@@ -819,6 +836,14 @@ $(() => {
   });
 
   var pos = $("#titleUserName").offset();
-  $("#img_user").css('right', window.innerWidth - 16 - pos.left + "px");
+  $("#img_user").css('right', window.innerWidth - pos.left + "px");
+
+  //for debug
+  // document.body.addEventListener("click", function (event) {
+  //   var x = event.pageX;
+  //   var y = event.pageY;
+  //   console.log(x);
+  //   console.log(y);
+  // });
 
 });

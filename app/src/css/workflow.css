@@ -418,7 +418,7 @@ header {
 
 /* プロパティ*/
 #propertyArea{
-    margin: 16px 16px 16px 16px;
+    margin: 16px;
 }
 
 #propertyButtonArea{
@@ -482,9 +482,13 @@ header {
 }
 
 #propertyOutputFiles, #propertyParameterSettingFile, #propertyCondition,
-#propertyIndexList, #propertyStart, #propertyEnd, #propertyStep,
+#propertyIndexList, #propertyStart, #propertyStep,
 #propertyRemotehost, #propertyQueue, #propertyuseJobScheduler{
     margin: 8px 0 0 0;
+    display: inline-block;    
+}
+
+#propertyEnd{
     display: inline-block;    
 }
 
@@ -609,9 +613,8 @@ header {
 }
 
 #remoteFileTransferSetthing{
-    padding-top: 8px;
-    margin-top: 8px;
-    border-top: solid 1px #000000; 
+    padding: 16px;
+    border-top: solid 1px #000000;
 }
 
 #propertyCleanUpFlag, #propertyInclude, #propertyExclude{
@@ -632,9 +635,12 @@ header {
     align-items: center;
 }
 
+#filesTitle{
+    font-size: 18px;
+}
+
 #filesEdit{
-    padding-top: 8px;
-    margin-top: 8px;
+    padding: 16px;
     border-top: solid 1px #000000;
 }
 
@@ -661,6 +667,12 @@ header {
   margin: auto;
   padding-left: 10px;
   font-size: 12px;
+}
+
+#fileDropArea{
+    visibility: hidden;
+    margin: 0;
+    height: 12px;
 }
 
 #path{
