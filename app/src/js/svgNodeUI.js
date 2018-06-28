@@ -258,8 +258,9 @@ export class SvgParentNodeUI {
     this.group.data({ "index": 'parent', "type": parentnode.type }).addClass('parentnode');
 
     // draw input output file name
-    // draw node
-    const [box, textHeight] = parts.createFilesNameBox(svg, 36, 0, parentnode.type, parentnode.name, parentnode.inputFiles, parentnode.outputFiles);
+    let fileNameXpos = 0;
+    let fileNameYpos = 0;
+    const [box, textHeight] = parts.createFilesNameBox(svg, fileNameXpos, fileNameYpos, parentnode.type, parentnode.name, parentnode.inputFiles, parentnode.outputFiles);
     const boxBbox = box.bbox();
     const boxX = box.x();
     const boxY = box.y();
@@ -269,9 +270,11 @@ export class SvgParentNodeUI {
     // draw connector
     this.connectors = [];
     parentnode.outputFiles.forEach((output, fileIndex) => {
-      //コンポーネントライブラリの幅程度の値
-      let connectorXpos = 290;
-      let [plug, cable] = parts.createParentConnector(svg, connectorXpos, 10, 0, 40 * fileIndex, sio);
+      //ファイル名の最大値程度
+      let connectorXpos = 180;
+      //コネクター間の幅、コネクターの高さ
+      let connectorYpos = 32;
+      let [plug, cable] = parts.createParentConnector(svg, connectorXpos, connectorYpos, 0, connectorYpos * 1.5 * fileIndex, sio);
       //const boxBbox=plug.bbox();  
       plug.data({ "name": output.name, "dst": output.dst });
       // let dstArray = [];

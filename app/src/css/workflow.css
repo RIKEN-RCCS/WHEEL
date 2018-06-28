@@ -281,6 +281,7 @@ header {
     margin-top: 6px;
     height: calc(100% - 124px);
     background-color: #222226;
+    opacity: 0.9;
     display: none;
     z-index: 40;    
     border-collapse: collapse;

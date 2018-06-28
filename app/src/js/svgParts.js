@@ -38,11 +38,13 @@ function collisionDetection(svg, counterpart, x, y) {
   svg.select(counterpart).each(function (i, v) {
     let index = v[i].parent().node.instance.data('index');
     let points = v[i].node.points;
-    // let targetX = points[3].x;
-    // let targetY = points[2].y;
+    const connectorWidth = 16;
+    const connectorHeight = 32;
+    let connectorCenterXpos = x + connectorWidth * 0.5;
+    let connectorCenterYpos = y + connectorHeight * 0.5;
     let targetX = (points[0].x + points[1].x) * 0.5;
     let targetY = (points[0].y + points[3].y) * 0.5;
-    let distance2 = (targetX - x) * (targetX - x) + (targetY - y) * (targetY - y);
+    let distance2 = (targetX - connectorCenterXpos) * (targetX - connectorCenterXpos) + (targetY - connectorCenterYpos) * (targetY - connectorCenterYpos);
 
     if (minDistance2 > distance2) {
       minDistance2 = distance2;
@@ -250,8 +252,6 @@ class SvgBox {
       .add(nodesViewField)
       .add(nodesIconField)
       .add(nodesView)
-      // .add(nodesButtonField)
-      // .add(nodesViewButton)
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
@@ -361,7 +361,6 @@ class SvgBox {
     const statePosX = 220;
     const statePosY = 0;
     const paraStuPosX = 120;
-    console.log(state);
     if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
       state = 'running'
     }
@@ -450,7 +449,7 @@ class SvgBox {
 
         const nodeColor = config.node_color[node.type];
         const nodeIconPath = config.node_icon[node.type];
-        const nodePosX = node.pos.x / 8;
+        const nodePosX = node.pos.x / 5;
         const nodePosY = node.pos.y / 5;
         const correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
         const img = this.draw
@@ -493,7 +492,7 @@ class SvgBox {
         const iconFieldHeight = 24;
         const iconTitlewidth = 24;
         const nodeColor = config.node_color[node.type];
-        const nodePosX = node.pos.x / 8;
+        const nodePosX = node.pos.x / 5;
         const nodePosY = node.pos.y / 5;
         const iconField = this.draw
           .polygon([
@@ -524,52 +523,6 @@ class SvgBox {
     }
     return this.fieldGroup;
   }
-
-  /**
-* create children button field
-* @return button field
-*/
-  /*   createNodesButtonField(type, bodyHeight, nodes) {
-      this.fieldGroup = this.draw.group();
-      if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
-        if (nodes.length > 0) {
-          console.log("nodes check");
-          const titleHeight = 24;
-          const titlewidth = 256;
-          const nodeColor = "rgba(68, 68, 73, 0.5)";
-          const field = this.draw
-            .polygon([
-              [0, 0],
-              [titlewidth, 0],
-              [titlewidth, titleHeight],
-              [0, titleHeight],
-            ])
-            .fill(nodeColor);
-  
-          const y = bodyHeight;
-          field.move(0, y);
-          this.fieldGroup.add(field);
-        }
-      }
-      return this.fieldGroup;
-    } */
-
-  /*   createNodesButton(type, bodyHeight) {
-      this.buttonGroup = this.draw.group();    
-      if(type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach'){                           
-      const statePosX = 232;
-      const statePosY = bodyHeight + 4;
-      const nodeIconPath = "/image/btn_openCloseD_n.png";
-      const button = this.draw
-        .image(nodeIconPath)
-        .attr('class','viewButton')                  
-        .x(statePosX)
-        .y(statePosY);
-        this.buttonGroup.add(button);            
-      }
-      return this.buttonGroup;
-    } */
-
 }
 
 class SvgParentFilesBox {
@@ -616,9 +569,11 @@ class SvgParentFilesBox {
       const text = this.draw
         .text(output.name)
         .fill('#FFFFFF');
-      const fileNameInterval = 40;
-      const x = 2;
-      const y = 28 + fileNameInterval * index;
+      const connectorHeight = 32;
+      const connectorInterval = connectorHeight * 1.5;
+      const fileNameInterval = connectorInterval;
+      const x = -200;
+      const y = connectorHeight + fileNameInterval * index;
 
       text.move(x, y);
       this.outputGroup.add(text);
@@ -636,8 +591,8 @@ class SvgParentFilesBox {
         .text(input.name)
         .fill('#FFFFFF');
       const fileNameInterval = 40;
-      const x = 1034;
-      const y = 610 + fileNameInterval * index;
+      const x = 1072;
+      const y = 640 + fileNameInterval * index;
       //const x = config.box_appearance.inputTextNamePosX;
       text.move(x, y);
       this.inputGroup.add(text);
@@ -684,6 +639,7 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
         cable.remove();
         plug.remove();
         plug = clone
+        console.log("not connect");
         return;
       }
       const myIndex = plug.parent().node.instance.data('index');
@@ -788,7 +744,7 @@ export function createFilesNameBox(svg, x, y, type, name, inputFiles, outputFile
 //parent -> children connector
 //位置の変更が必要な可能性有
 export function createParentConnector(svg, originX, originY, offsetX, offsetY, sio) {
-  offsetY += calcFileBasePosY();
+  // offsetY += calcFileBasePosY();
   return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
