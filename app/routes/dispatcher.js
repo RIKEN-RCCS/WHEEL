@@ -334,7 +334,7 @@ class Dispatcher extends EventEmitter{
     component.name=component.originalName;
     component.path=component.originalPath;
     this._addNextComponent(component);
-    setComponentState(this.label, component, 'finished');
+    component.state = component.hasFaild? 'failed':'finished';
   }
 
   async _loopHandler(getNextIndex, isFinished, component){
@@ -375,6 +375,7 @@ class Dispatcher extends EventEmitter{
       childWF.path=newComponent.path;
       await fs.writeJson(path.resolve(dstDir, newComponent.jsonFile), childWF, {spaces: 4});
       await this._delegate(newComponent);
+      if(newComponent.state === 'failed') component.hasFaild=true;
     }catch(e){
       e.index = component.currentIndex;
       logger.warn('fatal error occurred during loop child dispatching.', e);
@@ -450,7 +451,8 @@ class Dispatcher extends EventEmitter{
     }
     await Promise.all(promises);
     this._addNextComponent(component);
-    setComponentState(this.label, component, 'finished');
+    const state = component.numFailed > 0? 'failed':'finished';
+    setComponentState(this.label, component, state);
   }
 
   _isReady(index){
