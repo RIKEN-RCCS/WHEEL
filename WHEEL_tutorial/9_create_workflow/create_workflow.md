@@ -1,32 +1,38 @@
 # ワークフローの作成（使用例と実行）
 この章では、各ワークフローコンポーネントの作成例と実行例を示します。
 
-## Task コンポーネント
-***
-Taskは、WHEELにおいて、ジョブを投入する計算機の設定やジョブの投入、処理スクリプトを設定する重要なコンポーネントです。  
-以下では、Taskコンポーネント1つからなる「ログにメッセージを出力する」処理を行うワークフローを例とし、ワークフローの基本的な作成方法と実行手順、実行状況の確認について説明します。  
+## Task コンポーネント  
+Taskコンポーネントは、WHEELにおいて、ジョブを投入する計算機の設定や処理スクリプトを設定する重要なコンポーネントです。  
+以下では、「ログにメッセージを出力する」Taskコンポーネントを例に、ワークフローの基本的な作成方法と実行手順、実行状況の確認について説明します。  
 本章は、ローカルホスト内での設定方法について説明します。リモートホストへのジョブ投入サンプルに関しては、最終章「OpenFOAMを利用したパラメトリックスタディ解析ワークフロー」にて説明します。
 
 ### ワークフローの作成
 はじめに、ワークフローの作成手順（実行に必要なファイルの設定方法）について説明します。  
-ここでは、例として、ログエリア[ Stdout ]にメッセージ「Hello World」を出力するTaskコンポーネントの設定を紹介します。  
+ここでは、例として、ログエリア[ Stdout ]にメッセージ「Hello World!」を出力するTaskコンポーネントの設定を紹介します。  
 手順は以下です。
-
-1. グラフビュー画面左部 Component Libraryより、Taskコンポーネントをグラフビュー画面に配置する
-1. Taskコンポーネントをクリックし、プロパティ画面を表示する
-1. プロパティ画面下部[ Files ]より、メッセージ表示（Stdout）するスクリプトをTaskコンポーネントディレクトリへアップロードする *1
-1. アップロードしたファイルのファイル名をプロパティ[ script ]に入力する  
-*1 Taskコンポーネントディレクトリへのスクリプトの設定方法は、ファイルをアップロードする方法と  
-[ Files ]の新規ファイル作成機能によりファイルを作成する方法があります。
-
-> コンポーネントの作成とプロパティの設定
 
 ![img](./img/task_exe_1.png "task_exe_1")  
 
+1. グラフビュー画面左部 Component Libraryより、Taskコンポーネントをグラフビュー画面に配置する
+1. Taskコンポーネントをクリックし、プロパティ画面を表示する
+1. プロパティ画面下部[ Files ]より、メッセージ表示（Stdout）するスクリプト*1 をTaskコンポーネントディレクトリへアップロードする *2
+1. プロパティ[ script ]にアップロードしたファイルのファイル名(HelloWorld.bat)を入力する  
+*1 Windows環境では、「.bat」バッチファイルを設定します。本チュートリアルでは、ローカルマシンをWindowsとし、バッチファイルでの記述方法を示しています。  
+*2 Taskコンポーネントディレクトリへのスクリプトの設定方法は、ファイルをアップロードする方法と  
+　[ Files ]の新規ファイル作成機能によりファイルを作成する方法があります。
+
+また、ここで設定したスクリプト「HelloWorld.bat」の中身は以下です。
+
+> HelloWorld.bat  
+```
+@echo off   
+echo Hello World!  
+```
+
+### プロジェクトを保存する
 ファイルの設定が完了後、プロジェクトを保存します。  
 保存前後でワークフロー画面上部[ Create date ]が更新されることを確認します。
 
-> プロジェクトを保存する
 
 ![img](./img/before_save.png "before_save")  
 ![img](./img/after_save.png "after_save")  
@@ -38,28 +44,28 @@ Taskは、WHEELにおいて、ジョブを投入する計算機の設定やジ�
 
 ワークフローの実行は、ワークフロー画面上部[ Run ]ボタンより開始します。
 
-> 実行
+#### 実行
 
 ![img](./img/run.png "run")  
 
 実行ボタン押下後、実行の状況の確認はグラフビュー画面、リストビュー画面のいずれかから確認することができます。
 
-> グラフビュー画面
+#### グラフビュー画面
 
 グラフビュー画面では、ワークフロー画面上部よりプロジェクト全体の進行状況とコンポーネント右上のアイコンにより実行状況を確認できます。  
 
 ![img](./img/running.png "runnig_graghview")  
 
-> リストビュー画面
+#### リストビュー画面
 
 リストビュー画面では、各コンポーネントの進行状況がグラフビュー画面より詳細に表示されます。
 
 ![img](./img/running_ListView.png "running_listview")  
 
-> 実行完了
+#### 実行完了
 
 実行が完了したとき、状態は[ finish ]へと変化し、  
-また、ログエリア[ Stdout ]に「Hello World」と表示されます。  
+また、ログエリア[ Stdout ]に「Hello World!」と表示されます。  
 
 ![img](./img/finish.png "finish")  
 
@@ -69,32 +75,86 @@ Taskは、WHEELにおいて、ジョブを投入する計算機の設定やジ�
 WHEELでは、複雑なワークフローもこれらコンポーネントを組み合わせることにより、視覚的・直感的に理解しやすいワークフローを構成することができます。
 
 
-## Parameter Study コンポーネント
-***
+## Parameter Study コンポーネント  
 Parameter Study コンポーネントは、パラメトリックスタディ用のコンポーネントです。（以下、Parameter StudyはPSと称します）  
 WHEELのPS用ファイル編集機能によりインプットデータにパラメータ設定を行うことで、簡単にPSを実施することができます。  
 以下に、サンプルを用いてPSワークフローの設定方法を示します。  
 
-また、本章では、ソルバーの例として、ある空間に位置する3点の座標値からなる三角形の面積を導出するプログラム（面積算出ソルバー）を用います。
+また、本章では、ソルバーの例として、ある空間に位置する3点の座標値からなる三角形の面積を導出するプログラム（面積算出ソルバー:wheel_tutorial_solver.cc）を用います。
 
 用意するコンポーネントは以下です。
+
 | コンポーネントタイプ | コンポーネント名 | 入力ファイル | 出力ファイル | 設定ファイル | 備考 |
 |----|----|----|----|----|----|
 | Parameter Study | samplePS | ー | ー | パラメータスタディの設定を記述したファイル | パラメータ化するファイルを用意 | 
 | Task | moveFileTask | ー | ー | パラメータ化により値が変更された入力データをcalcTaskへ移動するスクリプト | PSコンポーネント内に配置（PS子階層） | 
-|  | calcTask | ー | ー | ソルバー実行スクリプト *1 | PSコンポーネント内に配置（PS子階層） | 
-|  |  |  |  |  |  |
-*1 面積算出ソルバー 
+|  | calcTask | ー | ー | ソルバー実行スクリプト * | PSコンポーネント内に配置（PS子階層） | 
 
-> Parameter Study ワークフロー  
+*　面積算出ソルバー 
+
+また、ここで使用しているコンポーネント samplePS, moveFileTask、calcTaskに設定されているプロパティとスクリプトの中身は以下です。
+
+##### samplePS
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | samplePS |
+| InputFiles | - |
+| OutputFiles | - |
+| Parameter setting file | inputdata.txt.json*1 |  
+| Files | inputdata.txt, inputdata.txt.json |
+
+*1 inputdata.txtのパラメータ化したデータの情報をもつJSONファイル、詳細は後述  
+
+##### moveFileTask  
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | moveFileTask |
+| Script | moveFiles.bat |
+| InputFiles | - |
+| OutputFiles | - |
+| Remotehost | localhost *2 |  
+| Files | moveFiles.bat |  
+
+*2 本タスクは、ローカルマシンでの実行のため、その他プロパティ（UseJobScheduler以下）の設定は行いません。(本章内他のTaskコンポーネントも同様)  
+
+> moveFiles.bat  
+```
+@echo off  
+mv ../inputdata.txt ../calcTask  
+```
+
+##### calcTask
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | calcTask |
+| Script | calc.bat |
+| InputFiles | - |
+| OutputFiles | - |
+| Remotehost | localhost |
+| Files | calc.bat, wheel_tutorial_solver.cc, inputdata.txt *3 |  
+
+*3 inputdata.txtは、moveFileTask実行後にPSディレクトリより移動されるファイルです。
+
+> calc.bat  
+```
+@echo off 
+g++ wheel_tutorial_solver.cc -o wheel_tutorial_solver  
+wheel_tutorial_solver.exe  
+```
+
+#### Parameter Study ワークフロー  
 
 コンポーネント内に配置しているコンポーネント（子コンポーネント）は、親コンポーネントにアイコンとして表示されます。
 
 ![img](./img/PS_workflow.png "PS_workflow")  
 
-> PSワークフロー　子階層
+#### PSワークフロー　子階層
 
-![img](./img/PS_child_workflow.png "PS_child_workflow")
+![img](./img/PS_child_workflow.png "PS_child_workflow")  
+
 
 ### PS用ファイル編集画面
 
@@ -107,7 +167,7 @@ WHEELのPS用ファイル編集機能によりインプットデータにパラ�
 
 上記操作により、PS用ファイル編集画面がブラウザの新規タブとして表示されます。
 
-> PS用ファイル編集画面
+#### PS用ファイル編集画面
 
 ![img](./img/edit_for_PS.png "edit_for_PS")  
 
@@ -119,26 +179,26 @@ PS用ファイル編集画面でのパラメータ設定手順は以下です。
 1. 左画面より、「Save files」をクリックし設定内容を保存します
 
 
-> 1. キーワードの選択
+#### 1. キーワードの選択
 
 ![img](./img/select_keyword.png "select_keyword")  
 
-> 2. ターゲットの定義
+#### 2. ターゲットの定義
 
 ![img](./img/define_target.png "define_target")  
 
-> 3. パラメータの設定
+#### 3. パラメータの設定
 
 ![img](./img/set_param.png "set_param")  
 
-> 4. 設定内容の保存
+#### 4. 設定内容の保存
 
 ![img](./img/save_files.png "save_files")  
 
 保存後、ワークフロー編集画面に戻りプロパティを表示すると、「 編集したファイル名.json 」ファイルが作成されていることを確認します。  
 このデータをプロパティ[ parameter setting file ]に設定します。
 
-> 編集したファイル名.jsonの確認
+#### 編集したファイル名.jsonの確認
 
 ![img](./img/set_json.png "set_json")  
 
@@ -150,34 +210,107 @@ PSワークフロー実行時には、プロジェクトディレクトリ内に
 上記例では、三角形を構成する一つの頂点のY座標値を6から10まで変更しているため、「10-6＋1=5」計5個のディレクトリが生成されます。  
 各ディレクトリには、PSコンポーネントのデータ及びパラメータ変化させたインプットデータが格納されています。
 
-> プロジェクトディレクトリ内に生成されるディレクトリ
+#### プロジェクトディレクトリ内に生成されるディレクトリ
 
 ![img](./img/project_directory.png "project_directory")  
 
 PSワークフローを実行すると生成されたワークフローが順に実行されます。  
 実行後の結果は以下です。
 
-> PSワークフロー実行結果
+#### PSワークフロー実行結果
 
 ![img](./img/PS_finished.png "PS_finished") 
 
+また、標準出力（Stdout）の結果は以下です。  
+
+ ![img](./img/PS_stdout.png "PS_stdout")   
 
 ## If コンポーネント
-***
 ifコンポーネントはTaskコンポーネントにより得られた結果を[ condition ]プロパティに設定したスクリプトにより真偽判別し、  
 後のワークフローの挙動を変化させるために用います。
 
 以下に、サンプルを示します。  
+サンプルでは、calcTaskコンポーネントにより三角形の面積を計算し、その計算結果を元にsampleIfコンポーネントにて真偽判定を行います。  
+面積が20より大きい場合、trueTaskコンポーネントを、小さい場合、falseTaskコンポーネントを実行します。（true/falseTaskは、"true"/"false"を標準出力するTaskです。）  
 ワークフローに設定されているファイルは以下です。  
+
 | コンポーネントタイプ | コンポーネント名 | 入力ファイル | 出力ファイル | 設定ファイル |
 |----|----|----|----|----|
 | Task | calcTask |  | 計算結果データファイル | ソルバー実行スクリプト | 
 |  | trueTask | 計算結果データファイル |  | 計算結果データを利用した計算をするスクリプト | 
-|  | falseTask | 計算結果データファイル |  | 計算結果データを利用した計算をするスクリプト | 
-| If | sampleIf | 計算結果データファイル | 計算結果データファイル | 真偽判別スクリプト | 
-|  |  |  |  |  |
+|  | falseTask | - |  | 計算結果データを利用した計算をするスクリプト | 
+| If | sampleIf | - | 計算結果データファイル | 真偽判別スクリプト |  
 
-> ワークフロー構成図
+各コンポーネントのプロパティ、スクリプトの中身は以下です。
+
+##### calkTask
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | calcTask |
+| Script | calc.bat *1 |
+| InputFiles | - |
+| OutputFiles | result.txt *2 |
+| Remotehost | localhost |
+| Files | calc.bat, wheel_tutorial_solver.cc, inputdata.txt |  
+
+*1 前述PSコンポーネントと同様  
+*2 計算結果データ
+
+##### trueTask
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | trueTask |
+| Script | true.bat |
+| InputFiles | data.txt |
+| OutputFiles | - |
+| Remotehost | localhost |
+| Files | true.bat |  
+
+> true.bat  
+```
+@echo off  
+echo true  
+```
+
+##### falseTask
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | falseTask |
+| Script | false.bat |
+| InputFiles | - |
+| OutputFiles | - |
+| Remotehost | localhost |
+| Files | false.bat |  
+
+> false.bat  
+```
+　@echo off  
+　echo false  
+```
+
+##### sampleIf
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | sampleIf |
+| InputFiles | input.txt |
+| OutputFiles | - |
+| Condition | condition.bat |
+| Files | condition.bat |  
+
+> condition.bat  
+```
+@echo off    
+for /f "tokens=2 delims==" %%a in (input.txt) do (  
+  set result=%%a  
+)  
+if %result% gtr 20 echo true  
+```
+
+#### ワークフロー構成図
 
 ![img](./img/if_workflow.png "if_workflow")   
 
@@ -188,7 +321,13 @@ ifコンポーネントはTaskコンポーネントにより得られた結果�
 3. ifコンポーネントで設定したスクリプトにより結果ファイルの真偽を判定する
 4. 真偽判定を踏まえ、trueTask, falseTaskのいずれかを実行する
 
+サンプルの実行結果は以下です。
+#### ワークフロー実行結果
+
+![img](./img/if_workflow_result.png "if_workflow_result")   
+
 ## Loop系コンポーネント
+***  
 WHEELには、For, Foreach, Whileの3種類のループ系コンポーネントが用意されています。    
 Loop系コンポーネントは、プロジェクトディレクトリ内にループの回数分コンポーネントが複製されます。  
 複製されるコンポーネントは、**1つ前のループにより生成されたディレクトリをコピーしたもの** *1 となります。  
@@ -203,54 +342,131 @@ For, Foreachコンポーネントは、コンポーネントのプロパティ�
 
 ### ＊ While
 Whileコンポーネントは、コンポーネントのプロパティconditionに設定した条件判定スクリプトを満たす限りループ処理を行います。  
-conditionに設定したスクリプトの終了条件は、Ifコンポーネントのconditionと同様です。
+conditionに設定したスクリプトの終了条件は、Ifコンポーネントのconditionと同様です。  
+conditonに設定したスクリプトには、For, Foreachコンポーネントと同様に環境変数`$WHEEL_CURRENT_INDEX`を使用することが可能です。  
+Whileコンポーネントで使用する`$WHEEL_CURRENT_INDEX`は初期値を0とし、1ずつ増加します。  
 
 以下で、For, Foreach, Whileコンポーネントのサンプルを示します。  
 
-## For コンポーネント
-***
+## For コンポーネント  
 Forコンポーネントのサンプルを示します。  
+サンプルでは、calcTaskコンポーネントによって計算した三角形の面積に対し、sampleForコンポーネントで設定されるループインデックス(`$WHEEL_CURRENT_INDEX`)を  
+loopCalcTaskコンポーネントにて使用するワークフローを実行します。  
 ワークフローに設定されているファイルは以下です。  
+
 | コンポーネントタイプ | コンポーネント名 | 入力ファイル | 出力ファイル | 設定ファイル | 備考 |
 |----|----|----|----|----|----|
 | For | sampleFor | ー | ー | ー | ループインデックスは、1から5まで1ずつ増加させる |
 | Task | calcTask | ー | 計算結果データファイル | ソルバー実行スクリプト | ソルバー、インプットデータを格納 | 
-|  | task1 | 計算結果データファイル | ー | 計算結果データ、ループインデックスを利用した計算をするスクリプト | ー |
-|  |  |  |  |  |
+|  | loopCalcTask | 計算結果データファイル | ー | 計算結果データ、ループインデックスを利用した計算をするスクリプト | ー |  
 
-> For ワークフロー  
+各コンポーネントのプロパティ、スクリプトの中身は以下です。
+
+##### sampleFor
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | sampleFor |
+| InputFiles | - |
+| OutputFiles | - |
+| start | 1 |
+| end | 5 |
+| step | 1 |
+| Files | - |
+
+##### calkTask
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | calcTask *1 |
+| Script | calc.bat |
+| InputFiles | - |
+| OutputFiles | result.txt |
+| Remotehost | localhost |
+| Files | calc.bat , wheel_tutorial_solver.cc, inputdata.txt |  
+ 
+ *1 前述PSコンポーネントと同様
+
+##### loopCalkTask
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | loopCalcTask |
+| Script | resultRead.bat |
+| InputFiles | input.txt |
+| OutputFiles | - |
+| Remotehost | localhost |
+| Files | resultRead.bat, value.txt *2 |
+
+*2 result.batの計算結果ファイル、loopCalcTask内でインプットデータとして利用  
+
+> resultRead.bat  
+```
+@echo off  
+for /f "tokens=2 delims==" %%a in (input.txt) do (  
+  set result=%%a  
+)  
+if not %WHEEL_CURRENT_INDEX% == 1 (  
+　for /f "tokens=2 delims==" %%a in (value.txt) do (  
+    set value=%%a  
+  )  
+)  
+set /a x=result*WHEEL_CURRENT_INDEX + value  
+echo value=%x%  
+echo value=%x% > value.txt  
+```
+
+#### For ワークフロー  
 
 ![img](./img/For_workflow.png "For_workflow")   
 
-> For ワークフロー　子階層
+#### For ワークフロー　子階層
 
 ![img](./img/For_child_workflow.png "For_child_workflow")
 
 このサンプルは下記の処理を行います。
 
 1. calcTaskコンポーネントにより、面積算出ソルバーを実行する
-1. 実行結果をtask1コンポーネントに渡す
-1. 1により得られた結果（面積の値）を読み込み、ループインデックスをかける。  
-（ループ回数が2回目以降は、4により得られた結果を読み込み、4で得られた値を加算する処理も加える。）
+1. 実行結果をloopCalcTaskコンポーネントに渡す
+1. 1により得られた結果（面積の値）を読み込み、ループインデックス、及び本計算結果* を使用した計算を行う
 1. 3の計算結果をファイルとして出力する
-1. 上記処理をループインデックスの上限値まで繰り返す（ループインデックス2～5）
+1. 上記処理をループインデックスの上限値まで繰り返す（ループインデックス1～5）  
 
-## Foreach コンポーネント
-***
-Foreachコンポーネントのサンプルを示します。  
+*　ループ回数2回目以降の計算にて使用する
+
+サンプルの実行結果は以下です。
+#### ワークフロー実行結果
+
+![img](./img/For_finished.png "For_finished")
+
+## Foreach コンポーネント  
+Foreachコンポーネントのサンプルを示します。 
+サンプルでは、ForコンポーネントサンプルのループインデックスをForeachコンポーネントのプロパティindex listに変更したものを実行します。  
 ワークフローに設定されているファイルは以下です。  
+
 | コンポーネントタイプ | コンポーネント名 | 入力ファイル | 出力ファイル | 設定ファイル | 備考 |
 |----|----|----|----|----|----|
 | Foreach | sampleForeach | ー | ー | ー | ループインデックスは、1, 3, 5を設定する |
 | Task | calcTask | ー | 計算結果データファイル | ソルバー実行スクリプト | ソルバー、インプットデータを格納 | 
-|  | task1 | 計算結果データファイル | ー | 計算結果データ、ループインデックスを利用した計算をするスクリプト | ー |
-|  |  |  |  |  |
+|  | loopCalcTask | 計算結果データファイル | ー | 計算結果データ、ループインデックスを利用した計算をするスクリプト | ー |  
 
-> Foreach ワークフロー  
+sampleForeachコンポーネントのプロパティは以下です。  
+calcTask, loopCalcTaskコンポーネントは、前述のForコンポーネントで使用しているものと同様です。  
+
+##### sampleFor
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | sampleForeach |
+| InputFiles | - |
+| OutputFiles | - |
+| index list | 1, 3, 5 |
+| Files | - |
+#### Foreach ワークフロー  
 
 ![img](./img/Foreach_workflow.png "Foreach_workflow")   
 
-> Foreach ワークフロー　子階層
+#### Foreach ワークフロー　子階層
 
 ![img](./img/Foreach_child_workflow.png "Foreach_child_workflow")
 
@@ -258,51 +474,102 @@ Foreachコンポーネントのサンプルを示します。
 
 1. calcTaskコンポーネントにより、面積算出ソルバーを実行する
 1. 実行結果をtask1コンポーネントに渡す
-1. 1により得られた結果（面積の値）を読み込み、ループインデックスをかける。  
-（ループ回数が2回目以降は、4により得られた結果を読み込み、4で得られた値を加算する処理も加える。）
+1. 1により得られた結果（面積の値）を読み込み、ループインデックス、及び本計算結果* を使用した計算を行う
 1. 3の計算結果をファイルとして出力する
 1. 上記処理をループインデックスの上限値まで繰り返す（ループインデックス1, 3, 5）
 
-## While コンポーネント
-***
+*　ループ回数2回目以降の計算にて使用する
+
+サンプルの実行結果は以下です。
+#### ワークフロー実行結果
+
+![img](./img/Foreach_finished.png "Foreach_finished")
+
+## While コンポーネント  
 Whileコンポーネントのサンプルを示します。  
+サンプルでは、Conditionプロパティの条件判定要素として環境変数`$WHEEL_CURRENT_INDEX`を使用しています。  
+Whileコンポーネントにおける環境変数`$WHEEL_CURRENT_INDEX`は、初期値0,増加率1として扱われます。  
 ワークフローに設定されているファイルは以下です。  
+
 | コンポーネントタイプ | コンポーネント名 | 入力ファイル | 出力ファイル | 設定ファイル | 備考 |
 |----|----|----|----|----|----|
 | While | sampleWhile | ー | ー | ループ終了判定用スクリプト | 計算値がある値を超えたらループ処理を終了する |
 | Task | calcTask | ー | 計算結果データファイル | ソルバー実行スクリプト | ソルバー、インプットデータを格納 | 
-|  | task1 | 計算結果データファイル | ー | 計算結果データ、ループインデックスを利用した計算をするスクリプト | ー |
-|  | moveFileTask | 計算結果データファイル | ー | 計算結果データ移動用スクリプト | task1より得られた結果データファイルをWhileコンポーネントディレクトリへ移動する |
-|  |  |  |  |  |
+|  | loopCalcTask | 計算結果データファイル | ー | 計算結果データ、ループインデックスを利用した計算をするスクリプト | ー |
 
-> While ワークフロー  
+sampleWhileコンポーネントのプロパティ、及びConditionプロパティに設定されるスクリプトの内容は以下です。  
+calcTask, loopCalcTaskコンポーネントは、前述のForeachコンポーネントで使用しているものと同様です。  
+
+##### sampleWhile
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | sampleWhile |
+| InputFiles | - |
+| OutputFiles | - |
+| Condition | condition.bat |
+| Files | condition.bat |
+
+> condition.bat  
+```
+@echo off  
+if %WHEEL_CURRENT_INDEX% gtr 5 (  
+  exit /b 1  
+) else (  
+  goto:eof  
+)  
+```
+
+#### While ワークフロー  
 
 ![img](./img/While_workflow.png "While_workflow")   
 
-> While ワークフロー　子階層
+#### While ワークフロー　子階層
 
 ![img](./img/While_child_workflow.png "While_child_workflow")
 
 このサンプルは下記の処理を行います。
 
 1. calcTaskコンポーネントにより、面積算出ソルバーを実行する
-1. 実行結果をtask1コンポーネントに渡す
-1. 1により得られた結果（面積の値）を読み込み、ループインデックスをかける。  
-（ループ回数が2回目以降は、4により得られた結果を読み込み、4で得られた値を加算する処理も加える。）
+1. 実行結果をloopCalcTaskコンポーネントに渡す
+1. 1により得られた結果（面積の値）を読み込み、ループインデックス、及び本計算結果* を使用した計算を行う
 1. 3の計算結果をファイルとして出力する
-1. 4で出力されたデータをWhileコンポーネントディレクトリへ移動する
 1. Whileコンポーネントに設定された条件判定スクリプトで、ループ継続判定をする
 1. ループ継続であればループインデックスに1を加算し処理1に戻り、ループ終了であればワークフローを終了する
 
-## Workflow コンポーネント
-***
-Workflowコンポーネントは、複数のコンポーネントからなる処理を一つのコンポーネントに纏めるために用います。  
+*　ループ回数2回目以降の計算にて使用する
+
+サンプルの実行結果は以下です。
+#### ワークフロー実行結果
+
+![img](./img/While_finished.png "While_finished")
+
+## Workflow コンポーネント  
+Workflowコンポーネントは、複数のコンポーネントからなる処理を一つのコンポーネントにまとめるために用います。  
 Workflowコンポーネントを使用することで、ワークフロー編集画面上を処理毎に集約することができ、ワークフロー全体の見通しを良くすることができます。
 
-> Workflow コンポーネント 未使用  
+サンプルプロジェクトは下記からダウンロード可能です。  
+<a href="./sample/WorkflowSampleProject_1.wheel.zip">Workflowコンポーネント未使用</a>  
+<a href="./sample/WorkflowSampleProject_2.wheel.zip">Workflowコンポーネント使用</a>  
 
-![img](./img/components.png "components")   
+#### Workflowコンポーネント未使用  
 
-> Workflow コンポーネント 使用  
+![img](./img/Workflow_1.png "Workflow_1")   
 
-![img](./img/Workflow.png "Workflow")   
+#### Workflowコンポーネント使用  
+
+![img](./img/Workflow_2.png "Workflow_2")   
+
+以下に実行結果を示します。  
+
+#### Workflowコンポーネント未使用 実行結果  
+
+![img](./img/Workflow_1_result.png "Workflow_1_result")   
+
+#### Workflowコンポーネント未使用実行結果（ログ）
+
+![img](./img/Workflow_1_result_log.png "Workflow_1_result_log")   
+
+#### Workflowコンポーネント使用実行結果
+
+![img](./img/Workflow_2_result.png "Workflow_2_result")   

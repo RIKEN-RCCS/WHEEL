@@ -3,22 +3,27 @@
 3次元CADで作成した分配菅モデルに対しオープンソースCAEソフトウエア「SALOME-MACA」でメッシュ化し、WHEELを用いてパラメトリックスタディ解析を京コンピュータのmicroキューを利用して行います。  
 以降、下記の順にて事例内容を紹介します。  
 
+また、本章で使用するモデルデータ、OpenFOAMの計算実行ファイル、及びTaskコンポーネントで使用するスクリプト例は、  
+下記よりダウンロード可能です。  
+<a href="./sample/OpenFOAM_tutorial_sample.zip">OpenFOAMサンプルデータ</a>
+
 1. 解析概要
 1. オープンソースCAEソフトウエア「SALOME-MACA」によるメッシュ作成
 1. WHEELによるワークフローの作成  
-   1. Parameter Study コンポーネント  
-   2. Task コンポーネント
+　1. Parameter Study コンポーネント  
+　2. Task コンポーネント
 1. ジョブの投入
 1. 解析結果の確認
 
 ## 1. 解析概要
 本事例で使用する解析対象モデルは、分配菅モデルです。
-> 解析モデル D50-d10
+
+#### 解析モデル D50-d10
 
 ![img](./img/model.png "model")  
 
 inletから流入した流体がoutletから出ていく解析を実施します。  
-また、本解析では、`inletの流量`を対象としたパラメトリックスタディ解析を行います。
+また、本解析では、**inletの流量**を対象としたパラメトリックスタディ解析を行います。
 
 ## 2. オープンソースCAEソフトウエア「SALOME-MACA」によるメッシュ作成
 本解析では、オープンソースCAEソフトウエア「SALOME-MACA」にて解析モデルのメッシュを作成しました。  
@@ -34,7 +39,7 @@ inletから流入した流体がoutletから出ていく解析を実施します
 1. OpenFOAMでの境界条件設定用に、入口/出口/壁面のそれぞれにFACEグループを設定する  
    本事例では、入口にinlet、10箇所の出口にoutet1～outlet10、壁面にwallのグループ名を設定
 
-> 「Geometry」モジュールのグループ設定
+#### 「Geometry」モジュールのグループ設定
 
 ![img](./img/mesh_1.png "Geometryモジュールのグループ設定")  
 
@@ -68,7 +73,9 @@ inletから流入した流体がoutletから出ていく解析を実施します
 ターミナルを起動し、
 解析データの親ディレクトリ「D50-d10」にて、  
 
-> $ ideasUnvToFoam *.unv
+```
+$ ideasUnvToFoam *.unv
+```
 
 コマンドを実行します。
 
@@ -89,10 +96,22 @@ inletから流入した流体がoutletから出ていく解析を実施します
 - Task コンポーネント - 2：京へのジョブ投入及びOpenFOAM実行用
 
 以降で、各コンポーネントについて説明します。
-### Parameter Study コンポーネント
+### Parameter Study コンポーネント（OpenFOAM_PS）
 前述の通り本事例では、分配菅への流入量をパラメータ化します。  
-そのため、PSプロパティ[ parameter setting file ]には、OpenFOAMの初期状態の入力データである  
+そのため、OpenFOAM_PSコンポーネントのPSプロパティ[ parameter setting file ]には、OpenFOAMの初期状態の入力データである  
 0ディレクトリ配下の「U」ファイルにパラメータセッティングしたファイルを設定します。  
+
+OpenFOAM_PSコンポーネントに設定するプロパティは以下です。
+
+##### OpenFOAM_PS  
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | OpenFOAM_PS |
+| InputFiles | - |
+| OutputFiles | - |
+| Parameter setting file | U.txt.json |  
+| Files | U.txt, U.txt.json |
+
 手順は以下です。  
 
 1. PSディレクトリにUファイル（U.txt）をインポートする
@@ -108,16 +127,31 @@ inletから流入した流体がoutletから出ていく解析を実施します
 
 ### Task コンポーネント - 1
 ファイル転送用コンポーネント「moveFile_Task」について説明します。  
-本コンポーネントは、PSコンポーネントによりパラメータ化した「U.txt」ファイルをOpenFOAMでの計算で用いるために  
-京コンピュータへ計算を投入するTask（runOpenFOAM_Task詳細は後述）へ転送するためのコンポーネントです。
+本コンポーネントは、OpenFOAM_PSコンポーネントによりパラメータ化した「U.txt」ファイルをOpenFOAMでの計算で用いるために  
+OpenFOAM_PSコンポーネントから京コンピュータへ計算を投入するTask（詳細は後述）へ転送するためのコンポーネントです。
 
-（例）moveFile.sh
-> #!/bin/sh  
-> mv ../U.txt ../runOpenFOAM_Task  
+moveFile_Taskコンポーネントに設定するプロパティ、及びスクリプトの中身は以下です。
+
+##### moveFile_Task
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | moveFile_Task |
+| Script | moveFile.bat |
+| InputFiles | input.txt |
+| OutputFiles | - |
+| Remotehost | localhost |
+| Files | resultRead.bat, value.txt *2 |
+
+> moveFile.bat  
+```
+@echo off  
+mv ../U.txt ../runOpenFOAM_Task  
+```
 
 設定は以下です。
-1. moveFile_Taskコンポーネントへファイル転送をするスクリプトmoveFile.shをインポートする 
-1. プロパティ[ script ]にmoveFile.shを設定する
+1. moveFile_Taskコンポーネントへファイル転送をするスクリプトmoveFile.batをインポートする 
+1. プロパティ[ script ]にmoveFile.batを設定する
 1. プロパティ[ remotehost ]に「 localhost 」を設定する　*1  
 *1 この処理は、京コンピュータへのジョブ投入前に実施するため、localhostで実施します。
 
@@ -129,38 +163,62 @@ inletから流入した流体がoutletから出ていく解析を実施します
 続いて、京コンピュータへのジョブ投入用及びOpenFOAM解析実行用コンポーネント「runOpenFOAM_Task」について説明します。  
 本コンポーネントは、京コンピュータのmicroキューを用いてOpenFOAMによる分配管の流体解析を実行するためのコンポーネントです。
 
-（例）runOpenFOAM.sh
-> #!/bin/sh  
-> #PJM --rsc-list "node=2"  
-> #PJM --mpi "shape=2"  
-> #PJM --mpi "proc=12"  
-> #PJM -s  
-> *#*   
-> . /work/system/Env_base  
-> *#*  
-> module load OpenFOAM/2.4.0-fujitsu-sparc64  
-> source $WM_PROJECT_DIR/etc/bashrc  
-> tar xvzf D50-d10.tar.gz  
-> mv ./U.txt U  
-> mv ./U ./D50-d10/0  
-> cd ./D50-d10  
-> decomposePar  
-> mpiexec -n 12 simpleFoam -parallel  
-> reconstructPar  
-> touch result.foam  
-> cd ..  
-> tar cvzf D50-d10.tar.gz D50-d10  
+runOpenFOAM_Taskコンポーネントに設定するプロパティ、及びスクリプトの中身は以下です。
+
+##### runOpenFOAM_Task
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | runOpenFOAM_Task |
+| Script | runOpenFOAM.sh |
+| InputFiles | - |
+| OutputFiles | - |
+| Remotehost | K_micro |
+| UseJobScheduler | true |
+| Queue | micro |
+| Clean up flag | keep files |
+| include | D50-d10.tar.gz |
+| exclude | - |
+| Files | runOpenFOAM.sh, D50-d10.tar.gz* |
+
+*　解析モデル及びOpenFOAMの計算設定ファイル一式  
+
+> runOpenFOAM.sh  
+```
+#!/bin/sh  
+#PJM --rsc-list "node=2"  
+#PJM --mpi "shape=2"  
+#PJM --mpi "proc=12"  
+#PJM -s  
+#   
+. /work/system/Env_base  
+#  
+module load OpenFOAM/2.4.0-fujitsu-sparc64  
+source $WM_PROJECT_DIR/etc/bashrc  
+tar xvzf D50-d10.tar.gz  
+mv ./U.txt U  
+mv ./U ./D50-d10/0  
+cd ./D50-d10  
+decomposePar  
+mpiexec -n 12 simpleFoam -parallel  
+reconstructPar  
+touch result.foam  
+cd ..  
+tar cvzf D50-d10.tar.gz D50-d10  
+```
 
 設定は以下です。
-1. 京コンピュータでOpenFOAMを実行するために必要なデータ（OpenFOAMの入力ファイル「D50-b10.tar.gz」）及びジョブスクリプトrunOpenFOAM.shをインポートする *1
-1. プロパティ[ script ]にrunOpenFOAM.shを設定する *1
-1. プロパティ[ remotehost ]に事前に登録している京のリモートホスト情報「K_micro」設定する *2
+1. 京コンピュータでOpenFOAMを実行するために必要なデータ（OpenFOAMの入力ファイル「D50-b10.tar.gz」）及びジョブスクリプトrunOpenFOAM.shをインポートする
+1. プロパティ[ script ]にrunOpenFOAM.shを設定する
+1. プロパティ[ remotehost ]に事前に登録している京のリモートホスト情報「K_micro」設定する *
 1. プロパティ[ useJobScheduler ]をチェックし、プロパティ[ queue ]に「micro」を設定する
 1. moveFile_Taskコンポーネントへファイル転送をするスクリプトmoveFile.shをインポートする
 1. includeに回収するファイル名「D50-b10.tar.gz」を設定する
-*1 京コンピュータでリソースグループmicroを使用して計算を行うため「K_micro」としています
 
-### *1 ジョブスクリプトに関して
+*　京コンピュータでリソースグループmicroを使用して計算を行うため「K_micro」としています  
+　 ユーザの環境に合わせて名称の変更が必要です
+
+### ジョブスクリプトに関して
 WHEELは、リソースグループmicroを用い、効率的に計算資源を利用することを目的としています。  
 よって、microキュー内（30分）で解析が完了するようにモデル規模、またノード数、プロセス数を設定しジョブを投入する必要があります。  
 本解析は**2ノード12プロセス**にて解析を行っております。
@@ -174,26 +232,33 @@ WHEELは、リソースグループmicroを用い、効率的に計算資源を�
 
 本事例では、メッシュは作成済みであるため下記コマンドをスクリプトに組み込んでいます。  
 
-> $ module load OpenFOAM/version..  
-> $ source $WM_PROJECT_DIR/etc/bashrc  
-> $ simpleFoam 
+```
+$ module load OpenFOAM/version..  
+$ source $WM_PROJECT_DIR/etc/bashrc  
+$ simpleFoam  
+```
 
 京で利用できるOpenFOAMのバージョンを確認するためには、  
 
-> $ module avail
+```
+$ module avail
+```
 
 コマンドで確認してください。  
 
 また、解析完了後、Paraviewで解析結果を確認するためには、空の「○○.foam」ファイル（○○は任意の文字列）が  
 必要であるため、空ファイルを作成するコマンド
 
-> $ touch ○○.foam
+```
+$ touch ○○.foam
+```
 
 をスクリプト内に組み込んでおくと結果確認をスムーズに行うことができます。
 
-### *2 リモートホスト登録情報に関して
+### リモートホスト登録情報に関して
 本事例は、京のリソースグループmicroを利用してジョブを投入することを前提としております。  
 そのため、前述のホスト情報登録方法に従い、京のリソースグループmicroにジョブを投入するためのホスト情報を登録しておく必要があります。
+本サンプルでは、京コンピュータでリソースグループmicroを使用して計算を行うため「K_micro」としています。  
 
 参考として、本事例で設定したホスト情報の中で注意すべき項目を示します。
 
@@ -231,17 +296,17 @@ Paraviewを起動し、[ File ] -> [ Open ].... より、「result.foam *1」フ
 ### 解析結果
 **流入速度5[m]** の解析結果において、分配菅の断面図に **速度 U** を、ベクトルで **圧力 p** を表示した結果は以下になります。
 
-> 流入速度5[m]
+##### 流入速度5[m]
 
 ![img](./img/result_5.png "流入速度5m_結果")  
 
 同様に、**流入速度6[m]**、**流入速度7[m]** の結果を示します。
 
-> 流入速度6[m]
+##### 流入速度6[m]
 
 ![img](./img/result_6.png "流入速度6m_結果")  
 
-> 流入速度7[m]
+##### 流入速度7[m]
 
 ![img](./img/result_7.png "流入速度7m_結果")  
 

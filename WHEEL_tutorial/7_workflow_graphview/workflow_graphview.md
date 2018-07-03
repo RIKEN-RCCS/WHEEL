@@ -3,7 +3,6 @@
 ワークフローの作成・実行等の例題については、後述の「ワークフローの作成」において説明します。
 
 ## 1. 画面仕様説明
-***
 ワークフロー編集画面（グラフビュー）は以下のように構成されています。  
 
 ![img](./img/workflow_graghview.png "workflow_graghview")  
@@ -25,7 +24,6 @@
 次に各エリア、ボタンの詳細について説明します。  
 
 ### プロジェクトの状態表示エリア
-***
 プロジェクトの状態表示エリアは、プロジェクト全体の進行状態によって以下の状態を示します。  
 
 1. not-started：プロジェクト実行前
@@ -45,7 +43,6 @@
 ![img](./img/failed.png "failed") 
 
 ### プロジェクトの操作ボタンエリア
-***
 プロジェクト実行、停止などを操作するボタンとその詳細は以下です。  
 
 ![img](./img/run_button_area.png "run_button_area") 
@@ -58,10 +55,11 @@
 また、WHEELでは、gitを用いたファイル管理を行っております。
 そのため、上記[ clean ]ボタンは、以下の gitコマンド操作を行っております。
 
-> clean -> git clean -fd  
+```
+clean -> git clean -fd  
+```
 
 ### プロジェクトの保存ボタンエリア
-***
 プロジェクト保存、リバートを操作するボタンとその詳細は以下です。  
 
 ![img](./img/save_button_area.png "save_button_area") 
@@ -71,19 +69,20 @@
 
 [ save ], [ revert ] ボタンは、以下の gitコマンド操作を行っております。
 
-> save   -> git commit  
-> revert -> git reset HEAD --hard  
+```
+save   -> git commit  
+revert -> git reset HEAD --hard  
+```
 
 ### ワークフロー画面切替ボタン
-***
 ワークフロー画面には、ワークフローの作成を行うグラフビュー画面とワークフローの進行状態を確認するリストビュー画面があります。  
 下記のボタンによって画面の切替を行います。
 
-> グラフビュー画面  
+##### グラフビュー画面  
 
 ![img](./img/graghview.png "graghview") 
 
-> リストビュー画面  
+##### リストビュー画面  
 
 ![img](./img/listview.png "listview")   
 
@@ -93,11 +92,11 @@
 その場合の現在のコンポーネントディレクトリの階層、およびコンポーネント名の確認、および階層間の移動用として
 本ボタンは利用します。  
 
-> root階層の場合  
+##### root階層の場合  
 
 ![img](./img/root_workflow.png "root_workflow")   
 
-> 子階層 (root階層の1階層下) の場合  
+##### 子階層 (root階層の1階層下) の場合  
 
 ![img](./img/root_createworkflow.png "root_createworkflow")   
 
@@ -106,36 +105,33 @@
 ![img](./img/child_workflow.png "child_workflow")   
 
 ### コンポーネントライブラリ表示ボタン
-***
 ワークフローの作成に用いるコンポーネントライブラリを表示します。  
 コンポーネントライブラリの詳細については次章にて説明します。  
 
-> コンポーネントライブラリ非表示  
+##### コンポーネントライブラリ非表示  
 
 ![img](./img/component_library.png "conponent_library")
 
-> コンポーネントライブラリ表示  
+##### コンポーネントライブラリ表示  
 
 ![img](./img/component_library_open.png "component_library_open")   
 
 ### ワークフロー作成用エリア
-***
 ワークフローの作成用領域です。  
 ワークフローを作成する場合、この領域にコンポーネントを配置し、ワークフローを作成します。  
 
-> ワークフロー作成用エリア  
+##### ワークフロー作成用エリア  
 
 ![img](./img/workflow_area.png "workflow_area")
 
 ### ログ表示ボタン
-***
 ワークフローの作成時や実行時等に出力されるログを表示します。  
 
-> ログ非表示  
+##### ログ非表示  
 
 ![img](./img/log_close.png "log_close")
 
-> ログ表示  
+##### ログ表示  
 
 ![img](./img/log_open.png "log_open")  
 
@@ -152,7 +148,7 @@
 1. Stderr(SSH)：リモートホストで実行されたtaskの標準エラー出力
 1. All log clear：ログを全て消去する  
 
-> ログ表示例 (Debug)
+##### ログ表示例 (Debug)
 
 ![img](./img/log_exe_debug.png "log_debug")  
 
