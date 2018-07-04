@@ -156,6 +156,7 @@ class Executer{
     this.ssh = ssh;
     this.JS = JS;
     this.queues=queues;
+    this.maxStatusCheckError=maxStatusCheckError;
 
     if(this.ssh === null){
       if(this.useJobScheduler)logger.warn("local submit is not implimented yet!");
@@ -221,8 +222,8 @@ class Executer{
             err.jobID = task.jobID;
             err.JS = JS;
             logger.warn('status check failed',err);
-            if(statFailedCount > maxStatusCheckError){
-              return Promise.reject(new Error("job status check failed over",maxStatusCheckError,"times"));
+            if(statFailedCount > this.maxStatusCheckError){
+              return Promise.reject(new Error("job status check failed over",this.maxStatusCheckError,"times"));
             }
           }
         },
@@ -339,6 +340,21 @@ class Executer{
     logger.info('submit success:', submitCmd, jobID);
     return this.statCheckQ.qsubAndWait(task);
   }
+
+  setMaxNumJob(v){
+    this.batch.maxConcurrent=v;
+  }
+  setExecInterval(v){
+    this.batch.interval = v*1000;
+  }
+  setStatusCheckInterval(v){
+    if(this.useJobScheduler){
+      this.statCheckQ.interval = v*1000;
+    }
+  }
+  setMaxStatusCheckError(v){
+    this.maxStatusCheckError=v;
+  }
 }
 
 function createExecuter(task){
@@ -352,9 +368,11 @@ function createExecuter(task){
 
   const host = hostinfo != null ?  hostinfo.host:null;
   const queues = hostinfo!= null ? hostinfo.queue:null;
+
   const execInterval        = hostinfo != null ? hostinfo.execInterval : 1;
   const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
   const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;
+
   return new Executer(ssh, JS, maxNumJob, task.remotehostID, host, queues, execInterval, statusCheckInterval, maxStatusCheckError);
 }
 
@@ -371,6 +389,15 @@ function exec(task){
     logger.debug('create new executer for', task.host,' with job scheduler', task.useJobScheduler);
     executer = createExecuter(task);
     executers.push(executer);
+  }else{
+    const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10),1) : 1;
+    const execInterval        = hostinfo != null ? hostinfo.execInterval : 1;
+    const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
+    const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;
+    executer.setMaxNumJob(maxNumJob);
+    executer.setExecInterval(execInterval);
+    executer.setStatusCheckInterval(statusCheckInterval);
+    executer.setMaxStatusCheckError(maxStatusCheckError);
   }
   if(task.remotehostID !== 'localhost'){
     const hostinfo = remoteHost.get(task.remotehostID);
