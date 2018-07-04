@@ -26,7 +26,8 @@ $(() => {
     jobScheduler: '',
     renewInterval: 0,
     renewDelay: 0,
-    statusCheckInterval: 0,
+    execInterval: 1,
+    statusCheckInterval: 5,
     maxStatusCheckError: 10,
   }
 

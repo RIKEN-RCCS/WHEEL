@@ -147,7 +147,7 @@ function makeQueueOpt(task, JS, queues){
 }
 
 class Executer{
-  constructor(ssh, JS, maxNumJob, remotehostID, hostname, queues, interval, maxStatusCheckError){
+  constructor(ssh, JS, maxNumJob, remotehostID, hostname, queues, execInterval, statusCheckInterval, maxStatusCheckError){
     //remotehostID and useJobScheduler flag is not used inside Executer class
     //this 2 property is used as search key in exec();
     this.remotehostID=remotehostID;
@@ -195,6 +195,7 @@ class Executer{
       },
       retry: false,
       maxConcurrent: maxNumJob,
+      interval: execInterval*1000,
       name: `executer ${hostname}`
     });
     if(this.useJobScheduler){
@@ -230,7 +231,7 @@ class Executer{
         },
         retryLater: true,
         maxConcurrent: 1,
-        interval: interval*1000,
+        interval: statusCheckInterval*1000,
         name: `statusChecker ${hostname}`
       });
     }
@@ -351,9 +352,10 @@ function createExecuter(task){
 
   const host = hostinfo != null ?  hostinfo.host:null;
   const queues = hostinfo!= null ? hostinfo.queue:null;
+  const execInterval        = hostinfo != null ? hostinfo.execInterval : 1;
   const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
   const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;
-  return new Executer(ssh, JS, maxNumJob, task.remotehostID, host, queues, statusCheckInterval, maxStatusCheckError);
+  return new Executer(ssh, JS, maxNumJob, task.remotehostID, host, queues, execInterval, statusCheckInterval, maxStatusCheckError);
 }
 
 /**
