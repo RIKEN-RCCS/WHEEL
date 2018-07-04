@@ -390,6 +390,8 @@ function exec(task){
     executer = createExecuter(task);
     executers.push(executer);
   }else{
+    const onRemote = executer.remotehostID !== 'localhost';
+    const hostinfo = remoteHost.get(executer.remotehostID);
     const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10),1) : 1;
     const execInterval        = hostinfo != null ? hostinfo.execInterval : 1;
     const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
