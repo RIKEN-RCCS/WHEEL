@@ -25,22 +25,26 @@ function getNthValue(n, axis){
   if(Array.isArray(axis.list)){
     return axis.list[n];
   }else{
-    return  (0 < axis.step ? axis.min : axis.max) + axis.step * n;
+    let rt = (0 < axis.step ? axis.min : axis.max) + axis.step * n;
+    if(! rt.isInteger){
+      const significantDigits  =  [axis.min, axis.max, axis.step].reduce((a,e)=>{
+        const strValue = e.toString();
+        const digits   = strValue.indexOf('.')  !== -1 ? strValue.length  - strValue.indexOf('.') -1 : 0;
+        return Math.max(a, digits);
+      }, 0);
+      rt = rt.toFixed(significantDigits);
+    }
+    return rt;
   }
 }
 
 function getNthParamVec(n, ParamSpace){
   let paramVec =[];
   for(let i = 0; i < ParamSpace.length; i++){
-    let axis=ParamSpace[i];
-    let l = getParamAxisSize(axis);
-    let j = n % l;
+    const axis=ParamSpace[i];
+    const l = getParamAxisSize(axis);
+    const j = n % l;
     let value = getNthValue(j, axis);
-    if(axis.type === 'integer'){
-      value = parseInt(value);
-    }else if(axis.type === 'float'){
-      value = parseFloat(value);
-    }
     paramVec.push({key: axis.keyword, value: value, type: axis.type});
     n = Math.floor(n/l);
   }
