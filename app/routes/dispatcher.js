@@ -404,6 +404,7 @@ class Dispatcher extends EventEmitter{
       let dstDir=paramVec.reduce((p,e)=>{
         let v = e.value;
         if(e.type === "file" ){
+          //TODO /以外のメタキャラクタも置換する
           v = (e.value).replace(path.sep, '_');
         }
         return `${p}_${e.key}_${v}`;

@@ -8,7 +8,24 @@ function isValidParamAxis(min, max, step){
 }
 
 function calcParamAxisSize(min, max, step){
-  return Math.floor((max-min)/Math.abs(step))+1;
+  let modifiedMax = max;
+  let modifiedMin = min;
+  let modifiedStep = step;
+  if(! min.isInteger || !max.isInteger || !step.isInteger){
+    const significantDigits  =  [min, max, step].reduce((a,e)=>{
+      const digits = getDigitsAfterTheDecimalPoint(e);
+      return Math.max(a, digits);
+    }, 0);
+    const iMax = max*10**significantDigits;
+    const iMin = min*10**significantDigits;
+    const iStep = step*10**significantDigits;
+    if(Number.isSafeInteger(iMax) && Number.isSafeInteger(iMin) && Number.isSafeInteger(iStep)){
+      modifiedMax = iMax;
+      modifiedMin = iMin;
+      modifiedStep = iStep;
+    }
+  }
+  return Math.floor((modifiedMax-modifiedMin)/Math.abs(modifiedStep))+1;
 }
 
 function getParamAxisSize(axis){
@@ -21,20 +38,24 @@ function getParamAxisSize(axis){
   return 0;
 }
 
+function getDigitsAfterTheDecimalPoint(floatVal){
+  const strVal = floatVal.toString();
+  return strVal.indexOf('.')  !== -1 ? strVal.length  - strVal.indexOf('.') -1 : 0;
+}
+
 function getNthValue(n, axis){
   if(Array.isArray(axis.list)){
-    return axis.list[n];
+    return axis.list[n].toString();
   }else{
     let rt = (0 < axis.step ? axis.min : axis.max) + axis.step * n;
-    if(! rt.isInteger){
+    if(! Number.isInteger(rt)){
       const significantDigits  =  [axis.min, axis.max, axis.step].reduce((a,e)=>{
-        const strValue = e.toString();
-        const digits   = strValue.indexOf('.')  !== -1 ? strValue.length  - strValue.indexOf('.') -1 : 0;
+        const digits = getDigitsAfterTheDecimalPoint(e);
         return Math.max(a, digits);
       }, 0);
       rt = rt.toFixed(significantDigits);
     }
-    return rt;
+    return rt.toString();
   }
 }
 
@@ -44,7 +65,7 @@ function getNthParamVec(n, ParamSpace){
     const axis=ParamSpace[i];
     const l = getParamAxisSize(axis);
     const j = n % l;
-    let value = getNthValue(j, axis);
+    const value = getNthValue(j, axis);
     paramVec.push({key: axis.keyword, value: value, type: axis.type});
     n = Math.floor(n/l);
   }
@@ -59,7 +80,7 @@ function getParamSize(ParamSpace){
 }
 
 function* paramVecGenerator(ParamSpace){
-  let totalSize=getParamSize(ParamSpace);
+  const totalSize=getParamSize(ParamSpace);
   let index=0;
   while(index < totalSize){
     yield getNthParamVec(index, ParamSpace);
