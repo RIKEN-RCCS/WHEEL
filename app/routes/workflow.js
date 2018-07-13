@@ -147,9 +147,11 @@ async function validationCheck(label, workflow, sio){
     const arssh = new ARsshClient(config, {connectionRetryDelay: 1000, verbose: true});
     if(hostInfo.renewInterval){
       arssh.renewInterval=hostInfo.renewInterval*60*1000
-      arssh.renewDelay=hostInfo.renewDelay*1000
-      addSsh(label, hostInfo.host, arssh);
     }
+    if(hostInfo.renewDelay){
+      arssh.renewDelay=hostInfo.renewDelay*1000
+    }
+    addSsh(label, hostInfo.host, arssh);
     return arssh.canConnect()
     .catch(async (err)=>{
       if(err.reason === "invalid passphrase" || err.reason === "authentication failure"){
