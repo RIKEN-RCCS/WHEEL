@@ -4,7 +4,7 @@ const chaiIterator = require('chai-iterator');
 chai.use(chaiIterator);
 
 //testee
-const {removeInvalid, paramVecGenerator} = require("../app/routes/parameterParser");
+const {removeInvalid, paramVecGenerator} = require("../../../app/routes/parameterParser");
 
 const floatCalc = [{
     "target": "hoge",

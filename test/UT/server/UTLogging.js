@@ -1,7 +1,6 @@
 const { promisify } = require("util");
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path");
-const del = require("del");
 
 // setup test framework
 const chai = require("chai");
@@ -21,7 +20,7 @@ const rewire = require("rewire");
 process.on('unhandledRejection', console.dir);
 
 //testee
-const logger = rewire("../app/logSettings.js");
+const logger = rewire("../../../app/logSettings.js");
 const getLogger = logger.__get__('getLogger');
 const setSocketIO = logger.__get__('setSocketIO');
 const setFilename = logger.__get__('setFilename');
@@ -30,7 +29,6 @@ const setNumBackup = logger.__get__('setNumBackup');
 const setCompress = logger.__get__('setCompress');
 const reset = logger.__get__('reset');
 const settings=logger.__get__("logSettings");
-settings.appenders.socketWF.type = './app/log2client';
 settings.appenders.errorlog.type = './app/errorlog';
 
 //stubs
@@ -93,14 +91,6 @@ describe("Unit test for log4js's helper functions", function(){
       expect(settings.appenders.file.compress).to.be.false;
     });
   });
-  describe("#setSocketIO",function(){
-    it("should set socketIO instance to socketWF and errolog appender", function(){
-      setSocketIO(sio);
-      const settings=logger.__get__("logSettings");
-      expect(settings.appenders.socketWF.socketIO).to.eql(sio);
-      expect(settings.appenders.errorlog.socketIO).to.eql(sio);
-    });
-  });
   describe("#log", function(){
     const logFilename="./loggingTest.log";
     beforeEach(async function(){
@@ -112,7 +102,7 @@ describe("Unit test for log4js's helper functions", function(){
     });
     afterEach(async function(){
       await reset();
-      await del(logFilename);
+      await fs.remove(logFilename);
     });
     it("should output to default logger",function(){
       const logger=getLogger();

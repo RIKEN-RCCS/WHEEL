@@ -1,7 +1,6 @@
 const { promisify } = require("util");
 const fs = require("fs");
 const path = require("path");
-const del = require("del");
 
 // setup test framework
 const chai = require("chai");
@@ -21,7 +20,7 @@ const rewire = require("rewire");
 process.on('unhandledRejection', console.dir);
 
 //testee
-const wf = rewire("../app/routes/workflow.js");
+const wf = rewire("../../../app/routes/workflow.js");
 
 //test data
 const dummyNode = {

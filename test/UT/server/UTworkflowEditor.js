@@ -1,7 +1,6 @@
 const { promisify } = require("util");
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path");
-const del = require("del");
 
 // setup test framework
 const chai = require("chai");
@@ -18,7 +17,7 @@ chai.use(function (_chai, _) {
 process.on('unhandledRejection', console.dir);
 
 //testee
-const wf = rewire("../app/routes/workflowEditor.js");
+const wf = rewire("../../../app/routes/workflowEditor.js");
 
 // test data
 const saved = require("./testWorkflow");
@@ -47,7 +46,7 @@ describe("Unit test for workflowEditor", function(){
     const testee = wf.__get__("createNode");
     it("should add node[3]", async function(){
       const nodeDir="./task0";
-      await del(nodeDir);
+      await fs.remove(nodeDir);
       await testee(label, {type: "task", pos:{x: 0, y:0}});
 
       expect(cwf.nodes).to.have.lengthOf(4);
@@ -58,7 +57,7 @@ describe("Unit test for workflowEditor", function(){
       expectNotChanged(cwf.nodes[0], saved.nodes[0], []);
       expectNotChanged(cwf.nodes[1], saved.nodes[1], []);
       expectNotChanged(cwf.nodes[2], saved.nodes[2], []);
-      del(nodeDir);
+      await fs.remove(nodeDir);
     });
   });
   describe("#updateValue", function(){
