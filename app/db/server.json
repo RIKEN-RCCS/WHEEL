@@ -1,0 +1,34 @@
+{
+    "port": 8089,
+    "remotehost": "./remotehost.json",
+    "useraccount": "./useraccount.json",
+    "projectList": "./projectList.json",
+    "suffix": ".wheel",
+    "interval": 1000,
+    "admin": "admin",
+    "defaultCleanupRemoteRoot": 0,
+    "saltRound": 10,
+    "scheduler": {
+        "TCS": "./config/pjsub.sh",
+        "TORQUE": "./config/qsub.sh"
+    },
+    "extension": {
+        "project": ".prj.json",
+        "workflow": ".wf.json",
+        "task": ".tsk.json",
+        "remotetask": ".rtsk.json",
+        "job": ".jb.json",
+        "tree": ".tree.json",
+        "for": ".fr.json",
+        "while": ".wl.json",
+        "foreach": ".fe.json",
+        "if": ".if.json",
+        "else": ".els.json",
+        "break": ".brk.json",
+        "condition": ".cnd.json",
+        "pstudy": ".ps.json"
+    },
+    "system_name": "swf",
+    "default_filename": "define",
+    "submit_script": "submit.sh"
+}

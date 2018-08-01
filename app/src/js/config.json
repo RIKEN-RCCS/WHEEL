@@ -1,0 +1,61 @@
+{
+  "extension": {
+    "project": ".prj.json",
+    "workflow": ".wf.json"
+  },
+  "default_filename": "define",
+  "submit_script": "submit.sh",
+  "system_name": "swf",
+  "node_color": {
+    "task": "#3B55B3",
+    "workflow": "#803DB3",
+    "for": "#247780",
+    "while": "#247780",
+    "condition": "violet",
+    "if": "#5B5B5F",
+    "foreach": "#247780",
+    "parameterStudy": "#666622"
+  },
+  "box_appearance": {
+    "titleHeight": 32,
+    "titleWidth": 256,
+    "opacity": 1.0,
+    "strokeWidth": 2,
+    "marginHeight": 12,
+    "outputTextOffset": 12,
+    "textHeightScale": 1.2,
+    "plug_drop_area_scale": 4,
+    "inputTextNamePosX": 8
+  },
+  "state_color": {
+    "planning": "white",
+    "running": "cyan",
+    "rerunning": "orange",
+    "waiting": "yellow",
+    "completed": "#00ff00",
+    "failed": "red"
+  },
+  "plug_color": {
+    "file": "#5673BF",
+    "files": "#5673BF",
+    "directory": "#5673BF",
+    "flow": "#338033",
+    "elseFlow": "#9944bb"
+  },
+  "node_icon": {
+    "task": "/image/img_task.png",
+    "workflow": "/image/img_workflow.png",
+    "for": "/image/img_for.png",
+    "while": "/image/img_while.png",
+    "if": "/image/img_if.png",
+    "foreach": "/image/img_foreach.png",
+    "parameterStudy": "/image/img_parameterStudy.png"
+  },
+  "state_icon": {
+    "not-started": "/image/img_stateQue.png",
+    "running": "/image/img_statePlay.png",
+    "finished": "/image/img_stateDone.png",
+    "failed": "/image/img_error.png"
+  },
+  "reload_project_ms": 2000
+}

@@ -1,0 +1,39 @@
+{
+  "type": "workflow",
+  "name": "workflow0",
+  "description": null,
+  "path": "./workflow0",
+  "index": 0,
+  "previous": [],
+  "next": [],
+  "inputFiles": [
+    {
+      "name": "a",
+      "srcNode": null,
+      "srcName": null
+    },
+    {
+      "name": "newOutput",
+      "srcNode": null,
+      "srcName": null
+    }
+  ],
+  "outputFiles": [
+    {
+      "name": "b",
+      "dst": []
+    },
+    {
+      "name": "newInput",
+      "dst": []
+    }
+  ],
+  "state": "not-started",
+  "pos": {
+    "x": 519,
+    "y": 213
+  },
+  "nodes": [],
+  "jsonFile": "define.wf.json",
+  "cleanupFlag": 2
+}
