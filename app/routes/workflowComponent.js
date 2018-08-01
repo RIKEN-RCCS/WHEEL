@@ -22,8 +22,10 @@ class BaseWorkflowComponent {
      * each element of inputFiles should be following
      * {
      *   name: "filename or dirname",
-     *   srcNode: "index of src node",
-     *   srcName: "name in src node"
+     *   src:[
+     *   {srcNode: "index of src node1", srcName: "name in src node1"},
+     *   {srcNode: "index of src node2", srcName: "name in src node2"},
+     *   ]
      * }
      */
     this.inputFiles=[];
