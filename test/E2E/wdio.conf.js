@@ -146,7 +146,7 @@ exports.config = {
      */
     onPrepare: function (config, capabilities) {
       const {spawn} = require("child_process");
-      config.wheelProcess = spawn("npm", ["start"]);
+      config.wheelProcess = spawn("npm", ["start"], {shell: true});
     },
     /**
      * Gets executed just before initialising the webdriver session and test framework. It allows you
