@@ -11,10 +11,10 @@
   "PBSPro":{
     "submit": "qsub",
     "queueOpt": "-q",
-    "stat": "qstat -x",
+    "stat": "qstat -xf -F dsv -D ',' ",
     "del": "qdel",
     "reJobID": "(\\d+).*",
-    "reFinishedState:": "",
-    "reFailedState": ""
+    "reFinishedState:": ",substate=92",
+    "reFailedState": ",substate=(91|93)"
   }
 }
