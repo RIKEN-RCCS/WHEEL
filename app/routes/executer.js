@@ -73,6 +73,7 @@ async function isFinished(JS, ssh, jobID){
     const result  = reReturnCode.exec(outputText);
     if(result === null || result[1] === null){
       logger.warn("get return code failed, rt is overwrited");
+      logger.debug(result);
       rt = -1;
     }else{
       rt = result[1];

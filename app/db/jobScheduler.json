@@ -6,7 +6,7 @@
     "del": "pjdel",
     "reJobID": "pjsub Job (\\d+) submitted.",
     "reFinishedState": "^ST *EC\\nEXT *0",
-    "reReturnCode": "^ST *EC\\nEXT (\\d+)",
+    "reReturnCode": "^ST *EC\\nEXT *(\\d+)",
     "reFailedState": "^ST *EC\\n(CCL|ERR|EXT|RJT)"
   },
   "PBSPro":{
