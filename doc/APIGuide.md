@@ -38,7 +38,7 @@
     * [pauseProject(cb)](#pauseprojectcb)
     * [cleanProject(cb)](#cleanprojectcb)
     * [stopProject(cb)](#stopprojectcb)
-  * [cleanComponent(id, cb) [新規作成、未実装]](#cleancomponentid-cb-新規作成未実装)
+    * [cleanComponent(id, cb) [新規作成、未実装]](#cleancomponentid-cb-新規作成未実装)
     * [createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]](#createnodenode-cb-検討中-引数増node渡)
     * [updateNode(index, property, value, cb) [変更あり]](#updatenodeindex-property-value-cb-変更)
     * [addValueToArrayProperty(index, property, value, cb) [新規作成、未実装]](#addvaluetoarraypropertyindex-property-value-cb-新規作成未実装)
@@ -205,10 +205,13 @@ componentのデータ形式は本ドキュメントには記載しないので�
 
 #### taskStateList(taskState[]) [変更あり、未実装]
 実行中のtaskの状態を送ります。
+送られてくる配列には全てのtaskは含まれておらず、
+前回の送信時以降で、更新があった(もしくは新規に作成された)taskのみのデータが入っています。
 
 taskStateのデータ形式は以下のとおり。
 | property  | data type |  description                                         
 |-----------|:---------:|------------------------------------------------------
+| index     | string    | task毎に固有のID文字列
 | parent    | string    | 親コンポーネントのディレクトリパス
 | type      | string    | 親コンポーネントの種類
 | name      | string    | taskの名前
@@ -325,7 +328,7 @@ renameFileデータの形式は以下のとおり
 #### stopProject(cb)
 実行中のプロジェクトを停止し、実行開始前の状態に戻します。
 
-### cleanComponent(id, cb) [新規作成、未実装]
+#### cleanComponent(id, cb) [新規作成、未実装]
 @param {staring} id - コンポーネントのID
 
 指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
