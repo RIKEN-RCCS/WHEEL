@@ -9,7 +9,7 @@ sed -i "s/\$clienthost .*/\$clienthost `hostname`/" /var/spool/pbs/mom_priv/conf
 
 # modify PBS settings
 /opt/pbs/bin/qmgr -c "set server job_history_enable=True"
-/opt/pbs/bin/qmgr -c 'set queue workq max_queued="[o:PBS_ALL=2]"'
+/opt/pbs/bin/qmgr -c 'set queue workq max_queued="[o:PBS_ALL=3]"'
 
 
 #exec cmmand which is specified on docker run commandline
