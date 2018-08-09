@@ -38,6 +38,7 @@
     * [pauseProject(cb)](#pauseprojectcb)
     * [cleanProject(cb)](#cleanprojectcb)
     * [stopProject(cb)](#stopprojectcb)
+  * [cleanComponent(id, cb) [新規作成、未実装]](#cleancomponentid-cb-新規作成未実装)
     * [createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]](#createnodenode-cb-検討中-引数増node渡)
     * [updateNode(index, property, value, cb) [変更あり]](#updatenodeindex-property-value-cb-変更)
     * [addValueToArrayProperty(index, property, value, cb) [新規作成、未実装]](#addvaluetoarraypropertyindex-property-value-cb-新規作成未実装)
@@ -70,6 +71,7 @@
 * [remotehost画面で発生する通信一覧(server -> client)](#remotehost画面発生通信一覧server-client)
     * [hostList(hostInfo[])](#hostlisthostinfo-1)
     * [fileList](#filelist-1)
+    * [JobSchedulerList(JobSchduler[]) [新規作成、未実装]](#jobschedulerlistjobschduler-新規作成未実装)
 * [remotehost画面で発生する通信一覧(client -> server)](#remotehost画面発生通信一覧client-server)
     * [getHostList(cb)](#gethostlistcb-1)
     * [addHost(hostInfo, cb)](#addhosthostinfo-cb)
@@ -194,18 +196,14 @@ renameProjectデータの形式は以下のとおり
 home画面の同名のAPIと同じ
 
 #### workflow(component[])
-[検討中]
-
 編集対象ワークフローと、その子および孫コンポーネントを送ります。
 
 componentのデータ形式は本ドキュメントには記載しないので、workflowComponent.jsを参照のこと。
 
 #### projectState(status)
-
 実行中のprojectの状態を送ります。
 
 #### taskStateList(taskState[]) [変更あり、未実装]
-
 実行中のtaskの状態を送ります。
 
 taskStateのデータ形式は以下のとおり。
@@ -326,6 +324,12 @@ renameFileデータの形式は以下のとおり
 
 #### stopProject(cb)
 実行中のプロジェクトを停止し、実行開始前の状態に戻します。
+
+### cleanComponent(id, cb) [新規作成、未実装]
+@param {staring} id - コンポーネントのID
+
+指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
+statusをnot-startedにします。
 
 #### createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]
 新規ノードを作成します。
@@ -507,13 +511,23 @@ projectStateの送信を要求
 空ディレクトリを作成する
 
 
+
 ## remotehost画面で発生する通信一覧(server -> client)
-| hostList             | s->c        | ホスト情報の一覧                                      | hostInfo[]            |
 #### hostList(hostInfo[])
 workflow画面の同名のAPIと同じ
 
 #### fileList
 home画面の同名のAPIと同じ
+
+#### JobSchedulerList(JobSchduler[]) [新規作成、未実装]
+wheelが対応しているジョブスケジューラのリストを送る
+
+JobSchdulerのデータ形式は以下のとおり
+| property | data type |  description                                         
+|----------|-----------|------------------------------------------------------
+| name     | string    | ジョブスケジューラの設定名
+| queues   | string[]  | 対応しているキューの一覧
+
 
 ## remotehost画面で発生する通信一覧(client -> server)
 #### getHostList(cb)
