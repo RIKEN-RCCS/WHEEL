@@ -6,15 +6,17 @@
     "del": "pjdel",
     "reJobID": "pjsub Job (\\d+) submitted.",
     "reFinishedState": "^ST *EC\\nEXT *0",
+    "reReturnCode": "^ST *EC\\nEXT (\\d+)",
     "reFailedState": "^ST *EC\\n(CCL|ERR|EXT|RJT)"
   },
   "PBSPro":{
     "submit": "qsub",
     "queueOpt": "-q",
-    "stat": "qstat -xf -F dsv -D ',' ",
+    "stat": "qstat -xf -F dsv -D ','",
     "del": "qdel",
     "reJobID": "(\\d+).*",
-    "reFinishedState:": ",substate=92",
-    "reFailedState": ",substate=(91|93)"
+    "reFinishedState": ",substate\\=92",
+    "reReturnCode": ",Exit_status\\=(\\d+)",
+    "reFailedState": ",substate\\=(91|93)"
   }
 }
