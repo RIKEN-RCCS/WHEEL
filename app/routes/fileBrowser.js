@@ -1,10 +1,10 @@
 "use strict";
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path");
 /**
  * send directory contents via socket.io
  *
- * @param {Object} socket socket.io's server instance
+ * @param {function} emit - function which is used to sed directory contents
  * @param {string} eventName event name which is used sending directory contents
  * @param {string} targetDir directory path to read
  * @param {Object} options   dictionary contains following option value
@@ -21,8 +21,8 @@ const path = require("path");
  * both filter is used. so the only {directory | file} which is valid filter.all and filter.{dir, file}
  * will be sent
  */
-function sendDir(socket, eventName, targetDir, options=null) {
-  if(socket == null || eventName == null){
+async function sendDir(emit, eventName, targetDir, options=null) {
+  if(emit== null || eventName == null || targetDir == null){
     throw "illegal argument.";
   }
   const request       = options.request != null ? options.request : targetDir;
@@ -31,41 +31,40 @@ function sendDir(socket, eventName, targetDir, options=null) {
   const sendSymlink   = options.sendSymlink  != null ? options.sendSymlink  : true;
   const withParentDir = options.withParentDir != null? options.withParentDir : false;
 
-  fs.readdir(targetDir, function (err, names) {
-    if (err)
-      throw err;
-    names.forEach(function (name) {
-      if (options.filter && options.filter.all && !options.filter.all.test(name)) return;
+  const dirList=[];
+  const fileList=[];
 
-      const absoluteFilename=path.join(targetDir, name);
-      fs.lstat(absoluteFilename, function (err, stats) {
-        if (err) return;
-        if (stats.isDirectory() && sendDirname){
-          if(options.filter && options.filter.dir && !options.filter.dir.test(name)) return;
-          socket.emit(eventName, { "path": request, "name": name, "isdir": true, "islink": false });
-        }
-        if (stats.isFile() && sendFilename){
-          if(options.filter && options.filter.file && !options.filter.file.test(name)) return;
-          socket.emit(eventName, { "path": request, "name": name, "isdir": false, "islink": false });
-        }
-        if (stats.isSymbolicLink() && sendSymlink) {
-          fs.stat(absoluteFilename, function (err, stats2) {
-            if (err) return;
-            if (stats2.isDirectory() && sendDirname) {
-              if(options.filter && options.filter.dir && ! options.filter.dir.test(name)) return;
-              socket.emit(eventName, { "path": request, "name": name, "isdir": true, "islink": true });
-            }
-            if (stats2.isFile() && sendFilename) {
-              if(options.filter && options.filter.file && !options.filter.file.test(name)) return;
-              socket.emit(eventName, { "path": request, "name": name, "isdir": false, "islink": true });
-            }
-          });
-        }
-      });
-    });
-  });
+  const names = await fs.readdir(targetDir);
+  await Promise.all(names.map(async (name)=>{
+    if (options.filter && options.filter.all && !options.filter.all.test(name)) return;
+    const absoluteFilename=path.join(targetDir, name);
+    const stats = await fs.lstat(absoluteFilename);
+    if (stats.isDirectory() && sendDirname){
+      if(options.filter && options.filter.dir && !options.filter.dir.test(name)) return;
+      dirList.push({"path": request, "name": name, "type": "dir", "islink": false});
+    }else if (stats.isFile() && sendFilename){
+      if(options.filter && options.filter.file && !options.filter.file.test(name)) return;
+      fileList.push({ "path": request, "name": name, "type": "file", "islink": false });
+    }
+    if (stats.isSymbolicLink() && sendSymlink) {
+      const stats2 = await fs.stat(absoluteFilename);
+      if (stats2.isDirectory() && sendDirname) {
+        if(options.filter && options.filter.dir && ! options.filter.dir.test(name)) return;
+        dirList.push({"path": request, "name": name, "type": "dir", "islink": true});
+      }
+      if (stats2.isFile() && sendFilename) {
+        if(options.filter && options.filter.file && !options.filter.file.test(name)) return;
+        fileList.push({ "path": request, "name": name, "type": "file", "islink": true});
+      }
+    }
+  }));
   if(withParentDir){
-    socket.emit(eventName, { "path": request, "name": '../', "isdir": true, "islink": false });
+    dirList.push({"path": request, "name": "../", "type": "dir", "islink": false});
   }
+
+  //TODO 連番ファイルをチェックして存在すればfileListを置き換える
+
+  const result = dirList.sort().concat(fileList.sort());
+  emit("fileList", result);
 }
 module.exports = sendDir;

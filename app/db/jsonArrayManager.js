@@ -1,27 +1,31 @@
-const fs = require("fs");
+const fs = require("fs-extra");
 const {promisify} = require("util");
 
 const uuidv1 = require("uuid/v1");
 
 const {getLogger} = require('../logSettings');
-const logger = getLogger();
+let logger = getLogger();
 
 class JsonArrayManager{
-  constructor(filename){
+  constructor(filename, altLogger = null){
     this.filename=filename;
+    if(altLogger !== null) logger = altLogger;
+
     this.data=[];
-    promisify(fs.readFile)(this.filename)
-      .then((data)=>{
-        this.data=JSON.parse(data.toString());
-      })
-      .catch((err)=>{
-        if(err.code !== 'ENOENT'){
-          logger.error('JSON flie read error', err);
-        }
-      });
+    try{
+      this.data=fs.readJsonSync(this.filename);
+    }catch(e){
+      if(e.code === 'ENOENT'){
+        logger.debug(this.filename, 'is not exists. create new file');
+        fs.writeJsonSync(this.filename, this.data, {spaces: 4});
+        this.write();
+      }else{
+        logger.error('error occurred while reading', this.filename, e);
+      }
+    }
   }
-  write(){
-    return promisify(fs.writeFile)(this.filename, JSON.stringify(this.data, null, 4))
+  async write(){
+    return    fs.writeJson(this.filename, this.data, {spaces: 4});
   }
   /**
    * add new entry
@@ -83,6 +87,14 @@ class JsonArrayManager{
     return this.query('id', id);
   }
   /**
+   * get the specified element of array
+   * this function will throw RangeError if specified index is out of range
+   * @param {string} index - array index
+   */
+  getByPosition(index){
+    return this.data[index];
+  }
+  /**
    * return entry id with specific key:value pair
    * @param {string} - key
    * @param {string} - value
@@ -110,20 +122,15 @@ class JsonArrayManager{
   }
   /**
    * reorder data array
-   * @param {string[]} newOrder - array of id's stored in new order
+   * @param {string[]} newOrder - array of indeces stored in new order
    */
   reorder(newOrder) {
     if (this.data.length != newOrder.length) {
       return;
     }
-    const oldIndexList = newOrder.map((id)=>{
-      return this.data.findIndex((v,i)=>{
-        if(id === v.id) return true
-      });
-    });
-    var tmp = Array.from(this.data);
+    const tmp = Array.from(this.data);
     for(let i=0; i<tmp.length; i++){
-      this.data[i] = tmp[oldIndexList[i]];
+      this.data[i] = tmp[newOrder[i]];
     }
     return this.write();
   }
