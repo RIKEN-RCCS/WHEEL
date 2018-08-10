@@ -114,7 +114,7 @@ describe("Unit test for log4js's helper functions", function(){
       const logger=getLogger('workflow');
       logger.info("foo");
       logger.error("bar");
-      expect(sio.emit).to.have.been.calledTwice;
+      expect(sio.emit).to.have.been.calledThrice;
       const calls = sio.emit.getCalls();
       expect(calls[0].args[0]).to.eql('logINFO');
       expect(calls[0].args[1]).to.match(/foo$/);

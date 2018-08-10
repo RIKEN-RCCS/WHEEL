@@ -29,11 +29,11 @@ const defaultSettings = {
       "compress" : true
     },
     "workflow": {
-      "type": "./log2client",
+      "type": path.resolve(__dirname,"log2client"),
       "namespace": "workflow"
     },
     "errorlog": {
-      "type": "./errorlog",
+      "type": path.resolve(__dirname, "errorlog"),
       "layout": {"type": "errorlog"}
     }
   },
