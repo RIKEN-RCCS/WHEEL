@@ -25,7 +25,7 @@
     "profiler": "node --prof app/index",
     "mocha": "mocha",
     "coverage": "nyc --reporter=html --reporter=text npm run fullTest",
-    "fullTest": "run-p UT:server UT:client ST",
+    "fullTest": "run-p UT:server UT:client E2E",
     "UT:server": "mocha --recursive test/UT/server/",
     "UT:client": "opener test/UT/client/index.html",
     "E2E": "wdio test/E2E/wdio.conf.js",
