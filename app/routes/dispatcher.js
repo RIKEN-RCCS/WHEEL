@@ -271,7 +271,6 @@ class Dispatcher extends EventEmitter{
 
   async _dispatchTask(task){
     logger.debug('_dispatchTask called', task.name);
-    task.id=uuidv1(); // not used for now
     task.startTime = 'not started'; // to be assigned in executer
     task.endTime   = 'not finished'; // to be assigned in executer
     task.projectStartTime= this.projectStartTime;

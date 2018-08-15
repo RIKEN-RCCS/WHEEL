@@ -7,12 +7,13 @@ const glob = require('glob');
 
 const {getGitOperator}= require("./gitOperator");
 const {getDateString} = require('./utility');
+const {projectJsonFilename, componentJsonFilename} = require("../db/db");
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 
 class Project extends EventEmitter{
-  constructor(){
+  constructor(rootDir){
     super();
     // current workflow object which is editting
     this.cwf=null;
@@ -20,14 +21,11 @@ class Project extends EventEmitter{
     // current workflow filename
     this.cwfFilename=null;
 
-    // project root workflow file
-    this.rwfFilename=null;
-
     // dispatcher for root workflow
     this.rootDispatcher=null
 
     this.projectState='not-started';
-    this.projectJsonFilename=null;
+    this.rootDir = rootDir;
 
     this.ssh=new Map();
     this.tasks=new Set();
@@ -37,46 +35,37 @@ class Project extends EventEmitter{
   get cwfDir(){
     return path.dirname(this.cwfFilename);
   }
-
-  // return absolute path of project root dir
-  get rootDir(){
-    return path.dirname(this.projectJsonFilename);
-  }
 }
 
 const projectDirs=new Map();
+
 function _getProject(label){
   if(! projectDirs.has(label)){
-    projectDirs.set(label, new Project());
+    projectDirs.set(label, new Project(label));
   }
   return projectDirs.get(label);
 }
 
-async function openProject (label, filename){
+async function openProject (label){
   const pj=_getProject(label);
-  pj.projectJsonFilename=filename;
-  const projectJson = JSON.parse(await promisify(fs.readFile)(filename));
-  const rootDir = getRootDir(label);
-  pj.rwfFilename = path.resolve(rootDir, projectJson.path_workflow);
-  pj.git = await getGitOperator(rootDir);
-  return setCwf(label, pj.rwfFilename);
+  pj.git = await getGitOperator(label);
+  return setCwf(label, path.resolve(label, componentJsonFilename));
 }
 async function resetProject(label){
-  return openProject(label, _getProject(label).projectJsonFilename);
+  return openProject(label);
 }
 
 async function readProjectJson (label){
-  let filename = _getProject(label).projectJsonFilename;
-  return JSON.parse(await promisify(fs.readFile)(filename));
+  return fs.readJson(path.resolve(label, projectJsonFilename));
 }
 
 async function writeProjectJson(label, projectJson){
-  let filename = _getProject(label).projectJsonFilename;
   if(! projectJson){
     projectJson = await readProjectJson(label);
   }
   projectJson.mtime=getDateString(true);
-  await promisify(fs.writeFile)(filename, JSON.stringify(projectJson, null, 4));
+  const filename = path.resolve(label, projectJsonFilename);
+  await fs.writeJson(filename, projectJson, {spaces: 4});
   return gitAdd(label, filename);
 }
 
@@ -107,7 +96,7 @@ async function setCwf (label, filename){
 }
 
 async function readRwf (label){
-  const filename=_getProject(label).rwfFilename;
+  const filename=path.resolve(label, projectJsonFilename);
   setCwf(label, filename);
   const data = await promisify(fs.readFile)(filename)
     .catch((err)=>{

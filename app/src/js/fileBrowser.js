@@ -153,32 +153,34 @@ export default class {
     }
   }
   onRecvDefault() {
-    this.socket.on(this.recvEventName, (data) => {
-      if (!this.isValidData(data))
-        return;
-      const iconClass = data.isdir ? 'fa-folder-o' : 'fa-file-o';
-      const normalIcon = `<i class="fa ${iconClass} fa-2x" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"></i>`;
-      const symlinkIcon = `<span class="fa-stack"><i class="fa ${iconClass} fa-stack-2x"></i><i class="fa fa-share fa-stack-1x"></i></span>`;
-      let icon = data.islink ? symlinkIcon : normalIcon;
-      var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}">${icon} ${data.name}</li>`);
-      var compare = this.compare;
-      var lengthBefore = $(`${this.idFileList} li`).length;
-      var counter = 0;
-      $(`${this.idFileList} li`).each(function (i, v) {
-        var result = compare(v, item);
-        if (result === 0)
-          return false;
-        if (result === 1) {
-          item.insertBefore(v);
-          return false;
+    this.socket.on(this.recvEventName, (fileList) => {
+      fileList.forEach((data)=>{
+        if (!this.isValidData(data)) return;
+        //TODO select icon for SND
+        const iconClass = data.type === 'dir' ? 'fa-folder-o' : 'fa-file-o';
+        const normalIcon = `<i class="fa ${iconClass} fa-2x" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"></i>`;
+        const symlinkIcon = `<span class="fa-stack"><i class="fa ${iconClass} fa-stack-2x"></i><i class="fa fa-share fa-stack-1x"></i></span>`;
+        let icon = data.islink ? symlinkIcon : normalIcon;
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}">${icon} ${data.name}</li>`);
+        var compare = this.compare;
+        var lengthBefore = $(`${this.idFileList} li`).length;
+        var counter = 0;
+        $(`${this.idFileList} li`).each(function (i, v) {
+          var result = compare(v, item);
+          if (result === 0)
+            return false;
+          if (result === 1) {
+            item.insertBefore(v);
+            return false;
+          }
+          counter++;
+        });
+        if (counter === lengthBefore) {
+          $(`${this.idFileList}`).append(item);
         }
-        counter++;
-      });
-      if (counter === lengthBefore) {
-        $(`${this.idFileList}`).append(item);
-      }
-      this.defaultColor = $(`${this.idFileList} li`).css('background-color');
-      this.requestedPath = data.path;
+        this.defaultColor = $(`${this.idFileList} li`).css('background-color');
+        this.requestedPath = data.path;
+      })
     });
   }
   onClickDefault() {
@@ -210,7 +212,7 @@ export default class {
       return false;
     if (!data.hasOwnProperty('name'))
       return false;
-    if (!data.hasOwnProperty('isdir'))
+    if (! (data.hasOwnProperty('type') && (data.type === "file" || data.type === "dir" || data.type === "snd")))
       return false;
     if (!data.hasOwnProperty('islink'))
       return false;

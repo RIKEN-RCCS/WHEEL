@@ -10,13 +10,14 @@ const fileBrowser = require("./fileBrowser");
 const {remoteHost, rootDir} = require('../db/db');
 const {createSshConfig} = require('./utility');
 
-function sendFileList(sio, request){
+async function sendFileList(sio, request){
   logger.debug(`current dir = ${request}`);
   var target = request ? path.normalize(request) : rootDir || os.homedir() || '/';
-  fileBrowser(sio, 'fileList', target, {
+  const result = await fileBrowser(target, {
     "request": request,
     "withParentDir" : true
   });
+  sio.emit("fileList", result);
 }
 
 async function trySshConnectionWrapper(hostInfo, password, cb){

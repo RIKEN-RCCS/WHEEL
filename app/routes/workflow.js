@@ -12,7 +12,7 @@ const logger = getLogger('workflow');
 const Dispatcher = require('./dispatcher');
 const fileManager = require('./fileManager');
 const {getDateString, replacePathsep, getSystemFiles, createSshConfig} = require('./utility');
-const {interval, remoteHost, defaultCleanupRemoteRoot} = require('../db/db');
+const {interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename} = require('../db/db');
 const {getCwf,
   setCwf,
   getNode,
@@ -188,6 +188,7 @@ async function validationCheck(label, workflow, sio){
 async function sendWorkflow(sio, label, fromDispatcher=false){
   const wf=getCwf(label, fromDispatcher);
   const rt = Object.assign({}, wf);
+  //TODO
   for(const child of rt.nodes){
     if(child!==null){
       if(child.handler) delete child.handler;
@@ -210,7 +211,7 @@ function isRunning(projectState){
 
 async function onWorkflowRequest(sio, label, argWorkflowFilename){
   const workflowFilename=path.resolve(argWorkflowFilename);
-  logger.debug('Workflow Request event recieved: ', workflowFilename);
+  logger.debug('Workflow Request event recieved:', workflowFilename);
   await setCwf(label, workflowFilename);
   getProjectState(label);
   const projectState=getProjectState(label);
@@ -218,7 +219,7 @@ async function onWorkflowRequest(sio, label, argWorkflowFilename){
 }
 
 async function onCreateNode(sio, label, msg){
-  logger.debug('create event recieved: ', msg);
+  logger.debug('create event recieved:', msg);
 
   let index = await createNode(label, msg);
   logger.debug('node created: ',getNode(label, index));
@@ -232,7 +233,7 @@ async function onCreateNode(sio, label, msg){
 }
 
 async function onUpdateNode(sio, label, msg){
-  logger.debug('updateNode event recieved: ', msg);
+  logger.debug('updateNode event recieved:', msg);
   let index=msg.index;
   let property=msg.property;
   let value=msg.value;
@@ -488,30 +489,6 @@ function onTaskStateListRequest(sio, label, msg){
   sio.emit('taskStateList', tasks);
 }
 
-async function onCreateNewFile(sio, label, filename, cb){
-  try{
-    await promisify(fs.writeFile)(filename, '')
-    await gitAdd(label, filename);
-    fileBrowser(sio, 'fileList', path.dirname(filename), {"filter": {file: getSystemFiles()}});
-    cb(true);
-  }catch(e){
-    logger.error('create new file failed', e);
-    cb(false);
-  }
-}
-async function onCreateNewDir(sio, label, dirname, cb){
-  try{
-    await promisify(fs.mkdir)(dirname)
-    await promisify(fs.writeFile)(path.resolve(dirname,'.gitkeep'), '')
-    await gitAdd(label, path.resolve(dirname,'.gitkeep'));
-    fileBrowser(sio, 'fileList', path.dirname(dirname), {"filter": {file: getSystemFiles()}});
-    cb(true);
-  }catch(e){
-    logger.error('create new directory failed', e);
-    cb(false);
-  }
-}
-
 module.exports = function(io){
   let label="initial";
 
@@ -543,7 +520,6 @@ module.exports = function(io){
       updateProjectJson(label, data);
     });
 
-    // not used for now
     socket.on('getProjectState', ()=>{
       socket.emit('projectState', getProjectState(label));
     });
@@ -556,20 +532,16 @@ module.exports = function(io){
 
     //event listeners for file operation
     fileManager(socket, label);
-    socket.on('createNewFile', onCreateNewFile.bind(null, socket, label));
-    socket.on('createNewDir', onCreateNewDir.bind(null, socket, label));
   });
 
   const router = express.Router();
   router.post('/', async (req, res)=>{
-    const projectJsonFilename=req.body.project;
-    //TODO label must be stored in session
-    //otherwise each request from clients are messed up
-    label = path.dirname(projectJsonFilename);
-    await openProject(label, projectJsonFilename);
+    const projectRootDir =req.body.project;
+    label = projectRootDir;
+    await openProject(label);
     res.cookie('root', getCwfFilename(label));
     res.cookie('rootDir', getCurrentDir(label));
-    res.cookie('project', projectJsonFilename);
+    res.cookie('project', path.resolve(label, projectJsonFilename));
     res.sendFile(path.resolve(__dirname, '../views/workflow.html'));
   });
   return router;

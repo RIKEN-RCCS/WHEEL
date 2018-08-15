@@ -5,8 +5,7 @@ const fs = require('fs-extra');
 const Mode = require('stat-mode');
 const glob = require('glob');
 
-const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-
+const {projectJsonFilename, componentJsonFilename} = require('../db/db');
 
 /**
  * replace path separator by native path separator
@@ -169,7 +168,7 @@ function isValidOutputFilename(name){
  * return regexp of systemfiles
  */
 function getSystemFiles(){
-  return new RegExp(`^(?!^.*(${escapeRegExp(extProject)}|${escapeRegExp(extWF)}|${escapeRegExp(extPS)}|${escapeRegExp(extFor)}|${escapeRegExp(extWhile)}|${escapeRegExp(extForeach)}|.gitkeep)$).*$`);
+  return new RegExp(`^(?!^.*(${escapeRegExp(projectJsonFilename)}|${escapeRegExp(componentJsonFilename)}|\.git.*)$).*$`);
 }
 
 /**

@@ -21,24 +21,22 @@
     * [fileList](#filelist)
     * [workflow(component[])](#workflowcomponent)
     * [projectState(status)](#projectstatestatus)
-    * [taskStateList(taskState[]) [変更あり、未実装]](#taskstatelisttaskstate-変更未実装)
+    * [taskStateList(taskState[]) [変更予定、未実施]](#taskstatelisttaskstate-変更予定未実施)
     * [logXXXX(message)](#logxxxxmessage)
     * [askPassword(remoteHost)](#askpasswordremotehost)
     * [hostList(hostInfo[])](#hostlisthostinfo)
     * [projectJson(projectJson)](#projectjsonprojectjson)
 * [workflow画面で発生する通信一覧(client -> server)](#workflow画面発生通信一覧client-server)
+  * [File操作関連API](#file操作関連api)
     * [getFileList(path, cb)](#getfilelistpath-cb)
-    * [getSNDContents(path, cb) [新規作成, 未実装]](#getsndcontentspath-cb-新規作成-未実装)
-    * [getWorkflow(path,cb)](#getworkflowpathcb)
+    * [getSNDContents(path, name, cb) [新規作成]](#getsndcontentspath-name-cb-新規作成)
     * [removeFile(path, cb)](#removefilepath-cb)
     * [renameFile(renameFile, cb) [検討中 引数を増やしてrenameFileの中身をバラバラに渡す]](#renamefilerenamefile-cb-検討中-引数増renamefile中身渡)
-    * [downloadFile(path, cb) [未実装]](#downloadfilepath-cb-未実装)
-    * [downloadDir(path, cb) [未実装]](#downloaddirpath-cb-未実装)
-    * [runProject(path, cb)](#runprojectpath-cb)
-    * [pauseProject(cb)](#pauseprojectcb)
-    * [cleanProject(cb)](#cleanprojectcb)
-    * [stopProject(cb)](#stopprojectcb)
-    * [cleanComponent(id, cb) [新規作成、未実装]](#cleancomponentid-cb-新規作成未実装)
+    * [downloadFile(path, cb) [新規作成]](#downloadfilepath-cb-新規作成)
+    * [createNewFile(filename, cb)](#createnewfilefilename-cb)
+    * [createNewDir(dirname, cb)](#createnewdirdirname-cb)
+  * [workflow編集API](#workflow編集api)
+    * [getWorkflow(path,cb)](#getworkflowpathcb)
     * [createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]](#createnodenode-cb-検討中-引数増node渡)
     * [updateNode(index, property, value, cb) [変更あり]](#updatenodeindex-property-value-cb-変更)
     * [addValueToArrayProperty(index, property, value, cb) [新規作成、未実装]](#addvaluetoarraypropertyindex-property-value-cb-新規作成未実装)
@@ -54,20 +52,20 @@
     * [renameOutputFile(index, oldName, newName, cb) [新規作成、 未実装]](#renameoutputfileindex-oldname-newname-cb-新規作成-未実装)
     * [addFileLink(srcIndex, dstIndex, srcName, dstName, cb) [変更あり、 未実装]](#addfilelinksrcindex-dstindex-srcname-dstname-cb-変更-未実装)
     * [removeFileLink(srcIndex, dstIndex, srcName, dstName, cb) [変更あり、 未実装]](#removefilelinksrcindex-dstindex-srcname-dstname-cb-変更-未実装)
-    * [addFileLinkToLower (srcIndex, dstIndex, srcName, cb) [新規作成、 未実装]](#addfilelinktolower-srcindex-dstindex-srcname-cb-新規作成-未実装)
-    * [removeFileLinkToLower (srcIndex, dstIndex, srcName, cb) [新規作成、 未実装]](#removefilelinktolower-srcindex-dstindex-srcname-cb-新規作成-未実装)
-    * [addFileLinkToUpper (srcIndex, srcName, cb) [新規作成、 未実装]](#addfilelinktoupper-srcindex-srcname-cb-新規作成-未実装)
-    * [removeFileLinkToUpper (srcIndex, srcName, cb) [新規作成、 未実装]](#removefilelinktoupper-srcindex-srcname-cb-新規作成-未実装)
-    * [password(pw, cb)](#passwordpw-cb)
     * [getHostList(cb)](#gethostlistcb)
+  * [Project実行、編集関連API](#project実行編集関連api)
+    * [runProject(path, cb)](#runprojectpath-cb)
+    * [pauseProject(cb)](#pauseprojectcb)
+    * [cleanProject(cb)](#cleanprojectcb)
+    * [stopProject(cb)](#stopprojectcb)
+    * [cleanComponent(id, cb) [新規作成、未実装]](#cleancomponentid-cb-新規作成未実装)
+    * [password(pw, cb)](#passwordpw-cb)
     * [getTaskStateList(rootWorkflow, cb) [検討中] 引数のrootWorkflowは不要な気がする](#gettaskstatelistrootworkflow-cb-検討中-引数rootworkflow不要気)
+    * [getProjectState(projectJsonFile, cb)](#getprojectstateprojectjsonfile-cb)
     * [getProjectJson(projectJsonFile, cb)](#getprojectjsonprojectjsonfile-cb)
     * [updateProjectJson(update, cb)](#updateprojectjsonupdate-cb)
     * [saveProject(null, cb)](#saveprojectnull-cb)
     * [revertProject(null, cb)](#revertprojectnull-cb)
-    * [getProjectState(projectJsonFile, cb)](#getprojectstateprojectjsonfile-cb)
-    * [createNewFile(filename, cb)](#createnewfilefilename-cb)
-    * [createNewDir(dirname, cb)](#createnewdirdirname-cb)
 * [remotehost画面で発生する通信一覧(server -> client)](#remotehost画面発生通信一覧server-client)
     * [hostList(hostInfo[])](#hostlisthostinfo-1)
     * [fileList](#filelist-1)
@@ -206,7 +204,7 @@ componentのデータ形式は本ドキュメントには記載しないので�
 #### projectState(status)
 実行中のprojectの状態を送ります。
 
-#### taskStateList(taskState[]) [変更あり、未実装]
+#### taskStateList(taskState[]) [変更予定、未実施]
 実行中のtaskの状態を送ります。
 送られてくる配列には全てのtaskは含まれておらず、
 前回の送信時以降で、更新があった(もしくは新規に作成された)taskのみのデータが入っています。
@@ -275,23 +273,19 @@ projectJsonデータは、home画面のprojectListAPIで送られる、project�
 
 
 ## workflow画面で発生する通信一覧(client -> server)
+### File操作関連API
 #### getFileList(path, cb)
 - @param {string} path - ファイル一覧の送信を要求するディレクトリの絶対パス
 
 指定されたディレクトリ内に存在するファイル、ディレクトリ等の送信を要求します。
 データはfileListAPIで送られてきます。
 
-#### getSNDContents(path, cb) [新規作成, 未実装]
-- @param {string} path - ファイル一覧の送信を要求するSerialNumberDataのパス
+#### getSNDContents(path, name, cb) [新規作成]
+- @param {string} path - 対象となるSerialNumberDataの親ディレクトリ
+- @param {string} name - SNDの名前 (= globパターン)
 
-fileList APIで送られてきたSND(SerialNumberData)に含まれるファイル名の一覧の送信を要求されます。
+fileList APIで送られてきたSND(SerialNumberData)に含まれるファイル名の一覧の送信を要求します。
 データはfileListAPIで送られてきます。
-
-#### getWorkflow(path,cb)
-- @param {string} path - ワークフロー(又はPS, for等)のJSONファイルの絶対パス
-
-指定されたワークフローデータおよびその子、孫コンポーネントの送信を要求します。
-データはworkflowコンポーネントで送られてきます。
 
 #### removeFile(path, cb)
 - @param {string} path -削除対象ファイル/ディレクトリのパス
@@ -310,35 +304,28 @@ renameFileデータの形式は以下のとおり
 | newName  | string    |  変更後の名前
 
 
-#### downloadFile(path, cb) [未実装]
+#### downloadFile(path, cb) [新規作成]
 - @param {string} path - ダウンロードするファイルの絶対パス
 
 ファイルの送信を要求します。
 
-#### downloadDir(path, cb) [未実装]
-- @param {string} path - ダウンロードするディレクトリの絶対パス
+#### createNewFile(filename, cb)
+- @param {string} filename - 新規に作成するファイルの絶対パス
 
-指定されたディレクトリ以下の全ファイルを圧縮して送信することを要求します。
+空ファイルを作成する
 
-#### runProject(path, cb)
-- @param {string} path - 実行するプロジェクトのrootディレクトリの絶対パス
+#### createNewDir(dirname, cb)
+- @param {string} dirname - 新規に作成するディレクトリの絶対パス
 
-プロジェクトの実行を開始します。
+空ディレクトリを作成する
 
-#### pauseProject(cb)
-プロジェクトの実行を一時停止します。
 
-#### cleanProject(cb)
-プロジェクトを実行開始前の状態に戻します。
+### workflow編集API
+#### getWorkflow(path,cb)
+- @param {string} path - ワークフロー(又はPS, for等)のJSONファイルの絶対パス
 
-#### stopProject(cb)
-実行中のプロジェクトを停止し、実行開始前の状態に戻します。
-
-#### cleanComponent(id, cb) [新規作成、未実装]
-@param {staring} id - コンポーネントのID
-
-指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
-statusをnot-startedにします。
+指定されたワークフローデータおよびその子、孫コンポーネントの送信を要求します。
+データはworkflowコンポーネントで送られてきます。
 
 #### createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]
 新規ノードを作成します。
@@ -451,44 +438,45 @@ linkデータの形式はaddLink APIと同じ
 
 ファイル間の依存関係を削除します。
 
-#### addFileLinkToLower (srcIndex, dstIndex, srcName, cb) [新規作成、 未実装]
-- @param {string} srcIndex - 送信ノードのインデックス
-- @param {string} dstIndex - 受取ノードの親コンポーネントのインデックス
-- @param {string} srcName  - 送信ノードでの名前
+#### getHostList(cb)
+ホスト情報一覧をリクエストします。
 
-子階層へファイルを送信するハーフリンクを作成します。
+### Project実行、編集関連API
+#### runProject(path, cb)
+- @param {string} path - 実行するプロジェクトのrootディレクトリの絶対パス
 
-#### removeFileLinkToLower (srcIndex, dstIndex, srcName, cb) [新規作成、 未実装]
-- @param {string} srcIndex - 送信ノードのインデックス
-- @param {string} dstIndex - 受取ノードの親コンポーネントのインデックス
-- @param {string} srcName  - 送信ノードでの名前
+プロジェクトの実行を開始します。
 
-子階層へファイルを送信するハーフリンクを削除します。
+#### pauseProject(cb)
+プロジェクトの実行を一時停止します。
 
-#### addFileLinkToUpper (srcIndex, srcName, cb) [新規作成、 未実装]
-- @param {string} srcIndex - 送信ノードのインデックス
-- @param {string} srcName  - 送信ノードでの名前
+#### cleanProject(cb)
+プロジェクトを実行開始前の状態に戻します。
 
-親階層へファイルを送信するハーフリンクを作成します。
+#### stopProject(cb)
+実行中のプロジェクトを停止し、実行開始前の状態に戻します。
 
-#### removeFileLinkToUpper (srcIndex, srcName, cb) [新規作成、 未実装]
-- @param {string} srcIndex - 送信ノードのインデックス
-- @param {string} srcName  - 送信ノードでの名前
+#### cleanComponent(id, cb) [新規作成、未実装]
+@param {staring} id - コンポーネントのID
 
-親階層へファイルを送信するハーフリンクを削除します。
+指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
+statusをnot-startedにします。
 
 #### password(pw, cb)
 - @param {string} pw - パスワード
 
 askPassword APIで要求されたパスワードを送信します。
 
-#### getHostList(cb)
-ホスト情報一覧をリクエストします。
-
 #### getTaskStateList(rootWorkflow, cb) [検討中] 引数のrootWorkflowは不要な気がする
 - @param {string} rootWorkflow - rootWorkflowのファイル名
 
 taskStateListの送信を要求します。
+
+#### getProjectState(projectJsonFile, cb)
+- @param {string} projectJsonFile - projectJsonファイルのファイル名(cookieのprojectの値)
+
+projectStateの送信を要求
+
 
 #### getProjectJson(projectJsonFile, cb)
 - @param {string} projectJsonFile - projectJsonファイルのファイル名(cookieのprojectの値)
@@ -506,20 +494,6 @@ projectをsave(commit)する
 #### revertProject(null, cb)
 projectの状態を直前のcommitまで戻す
 
-#### getProjectState(projectJsonFile, cb)
-- @param {string} projectJsonFile - projectJsonファイルのファイル名(cookieのprojectの値)
-
-projectStateの送信を要求
-
-#### createNewFile(filename, cb)
-- @param {string} filename - 新規に作成するファイルの絶対パス
-
-空ファイルを作成する
-
-#### createNewDir(dirname, cb)
-- @param {string} dirname - 新規に作成するディレクトリの絶対パス
-
-空ディレクトリを作成する
 
 
 
