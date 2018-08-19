@@ -6,17 +6,17 @@
 * [全般的な注意事項](#全般的注意事項)
 * [home画面で発生する通信(server -> client)](#home画面発生通信server-client)
     * [projectList(project[])](#projectlistproject)
-    * [fileList(file[]) [変更あり, 未実装]](#filelistfile-変更-未実装)
+    * [fileList(file[]) [変更あり]](#filelistfile-変更)
     * [showMessage(message)](#showmessagemessage)
 * [home画面で発生する通信(client -> server)](#home画面発生通信client-server)
     * [getProjectList(cb)](#getprojectlistcb)
     * [getDirList(path, cb)](#getdirlistpath-cb)
     * [getDirListAndProjectJson(path, cb)](#getdirlistandprojectjsonpath-cb)
-    * [addProject(name, description, cb) [変更あり, 未実装]](#addprojectname-description-cb-変更-未実装)
-    * [importProject(jsonFilename, newName, description, cb) [変更あり, 未実装]](#importprojectjsonfilename-newname-description-cb-変更-未実装)
+    * [addProject(name, description, cb) [変更あり]](#addprojectname-description-cb-変更)
+    * [importProject(jsonFilename, newName, description, cb) [変更あり]](#importprojectjsonfilename-newname-description-cb-変更)
     * [removeProject(name, cb)](#removeprojectname-cb)
     * [renameProject(renameProject, cb)](#renameprojectrenameproject-cb)
-    * [reorderProject(newOrder, cb)](#reorderprojectneworder-cb)
+    * [reorderProject(newOrder, cb) [変更あり]](#reorderprojectneworder-cb-変更)
 * [workflow画面で発生する通信一覧(server -> client)](#workflow画面発生通信一覧server-client)
     * [fileList](#filelist)
     * [workflow(component[])](#workflowcomponent)
@@ -38,6 +38,7 @@
     * [pauseProject(cb)](#pauseprojectcb)
     * [cleanProject(cb)](#cleanprojectcb)
     * [stopProject(cb)](#stopprojectcb)
+    * [cleanComponent(id, cb) [新規作成、未実装]](#cleancomponentid-cb-新規作成未実装)
     * [createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]](#createnodenode-cb-検討中-引数増node渡)
     * [updateNode(index, property, value, cb) [変更あり]](#updatenodeindex-property-value-cb-変更)
     * [addValueToArrayProperty(index, property, value, cb) [新規作成、未実装]](#addvaluetoarraypropertyindex-property-value-cb-新規作成未実装)
@@ -70,6 +71,7 @@
 * [remotehost画面で発生する通信一覧(server -> client)](#remotehost画面発生通信一覧server-client)
     * [hostList(hostInfo[])](#hostlisthostinfo-1)
     * [fileList](#filelist-1)
+    * [JobSchedulerList(JobSchduler[]) [新規作成、未実装]](#jobschedulerlistjobschduler-新規作成未実装)
 * [remotehost画面で発生する通信一覧(client -> server)](#remotehost画面発生通信一覧client-server)
     * [getHostList(cb)](#gethostlistcb-1)
     * [addHost(hostInfo, cb)](#addhosthostinfo-cb)
@@ -107,6 +109,7 @@ APIの要求が正常に処理された場合はtrue, 継続不可能なエラ�
 登録済のプロジェクト一覧を送ります。
 
 projectデータの形式は以下のとおり。
+
 | property       | data type |  description
 |----------------|:---------:|------------------------------------------------------
 | name           | string    |
@@ -118,11 +121,12 @@ projectデータの形式は以下のとおり。
 | mtime          | string    | 最終更新時刻
 | id             | string    | プロジェクト毎に振られた一意なID文字列
 
-#### fileList(file[]) [変更あり, 未実装]
+#### fileList(file[]) [変更あり]
 
 getDirList APIで要求されたディレクトリ内のコンテンツを返します。
 
 fileデータの形式は以下のとおり。
+
 | property | data type |  description                                         
 |----------|:---------:|------------------------------------------------------
 | path     | string    | 要求された時のディレクトリパス
@@ -152,15 +156,15 @@ fileデータの形式は以下のとおり。
 
 getDirListと同様ですが、ディレクトリ一覧に加えて、もし存在すればprojectJsonファイルも送られます。
 
-#### addProject(name, description, cb) [変更あり, 未実装]
+#### addProject(name, description, cb) [変更あり]
 - @param { string }  name - {親ディレクトリの絶対パス}/{プロジェクト名}
-- @param {string} description - プロジェクトの説明文
+- @param { string } description - プロジェクトの説明文
 
 新規プロジェクトを作成します。
 実際に作成されるディレクトリ名はnameの後にsuffix(.wheel)が付けられます。
 descriptionを省略(デフォルト値を使う)場合は、nullを指定してください。
 
-#### importProject(jsonFilename, newName, description, cb) [変更あり, 未実装]
+#### importProject(jsonFilename, newName, description, cb) [変更あり]
 - @param {string} jsonFilename - {親ディレクトリの絶対パス}/{プロジェクトJsonファイル名}
 - @param {string} newName - インポート後のプロジェクト名
 - @param {string} description - インポート後のプロジェクト説明文
@@ -177,13 +181,14 @@ newName, descriptionともにnullを指定すると、インポート前のJson�
 既存プロジェクトのnameを変更し、プロジェクトルートディレクトリをnameに合わせて変更します。
 
 renameProjectデータの形式は以下のとおり
+
 | property | data type |  description                                         
 |----------|:---------:|------------------------------------------------------
 | id       | string    | プロジェクトID
 | path     | string    | プロジェクトディレクトリのパス
 | newName  | string    | 変更後の名前
 
-#### reorderProject(newOrder, cb)
+#### reorderProject(newOrder, cb) [変更あり]
 - @param {number []} newOrder - 旧並び順でのindex(0 origin)のリスト
 
 プロジェクトリストを引数に指定された順に並べ変えます。
@@ -194,23 +199,23 @@ renameProjectデータの形式は以下のとおり
 home画面の同名のAPIと同じ
 
 #### workflow(component[])
-[検討中]
-
 編集対象ワークフローと、その子および孫コンポーネントを送ります。
 
 componentのデータ形式は本ドキュメントには記載しないので、workflowComponent.jsを参照のこと。
 
 #### projectState(status)
-
 実行中のprojectの状態を送ります。
 
 #### taskStateList(taskState[]) [変更あり、未実装]
-
 実行中のtaskの状態を送ります。
+送られてくる配列には全てのtaskは含まれておらず、
+前回の送信時以降で、更新があった(もしくは新規に作成された)taskのみのデータが入っています。
 
 taskStateのデータ形式は以下のとおり。
+
 | property  | data type |  description                                         
 |-----------|:---------:|------------------------------------------------------
+| index     | string    | task毎に固有のID文字列
 | parent    | string    | 親コンポーネントのディレクトリパス
 | type      | string    | 親コンポーネントの種類
 | name      | string    | taskの名前
@@ -244,6 +249,7 @@ taskStateのデータ形式は以下のとおり。
 remotehost設定の一覧を送ります。
 
 hostInfoデータの形式は以下のとおり
+
 | property              | data type      |  description                                         
 |-----------------------|:--------------:|------------------------------------------------------
 | name                  | string         | 設定情報の表示名
@@ -296,6 +302,7 @@ fileList APIで送られてきたSND(SerialNumberData)に含まれるファイ�
 ファイル又はディレクトリ名の変更を要求します。
 
 renameFileデータの形式は以下のとおり
+
 | property | data type |  description                                         
 |----------|:---------:|------------------------------------------------------
 | path     | string    |  変更対象の親ディレクトリの絶対パス
@@ -327,10 +334,17 @@ renameFileデータの形式は以下のとおり
 #### stopProject(cb)
 実行中のプロジェクトを停止し、実行開始前の状態に戻します。
 
+#### cleanComponent(id, cb) [新規作成、未実装]
+@param {staring} id - コンポーネントのID
+
+指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
+statusをnot-startedにします。
+
 #### createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]
 新規ノードを作成します。
 
 nodeデータの形式は以下のとおり
+
 | property | data type |  description                                         
 |----------|-----------|------------------------------------------------------
 | type     | string    | ノードの種類
@@ -370,6 +384,7 @@ nodeデータの形式は以下のとおり
 
 linkデータの形式は以下のとおり
 なお、src, dstのインデックスは形式が変更される予定
+
 | property | data type |  description                                         
 |----------|-----------|------------------------------------------------------
 | src      | number    | link元ノードのindex番号
@@ -507,13 +522,24 @@ projectStateの送信を要求
 空ディレクトリを作成する
 
 
+
 ## remotehost画面で発生する通信一覧(server -> client)
-| hostList             | s->c        | ホスト情報の一覧                                      | hostInfo[]            |
 #### hostList(hostInfo[])
 workflow画面の同名のAPIと同じ
 
 #### fileList
 home画面の同名のAPIと同じ
+
+#### JobSchedulerList(JobSchduler[]) [新規作成、未実装]
+wheelが対応しているジョブスケジューラのリストを送る
+
+JobSchdulerのデータ形式は以下のとおり
+
+| property | data type |  description                                         
+|----------|-----------|------------------------------------------------------
+| name     | string    | ジョブスケジューラの設定名
+| queues   | string[]  | 対応しているキューの一覧
+
 
 ## remotehost画面で発生する通信一覧(client -> server)
 #### getHostList(cb)
@@ -546,6 +572,7 @@ ssh接続のテストを行います。
 ssh接続のテストを行います。
 
 sshTestのデータ形式は以下のとおり
+
 | property | data type |  description                                         
 |----------|-----------|------------------------------------------------------
 | host     | string    | ホスト名 or IPアドレス
@@ -558,6 +585,7 @@ sshTestのデータ形式は以下のとおり
 ユーザアカウントの一覧を送信します。
 
 accoutデータの形式は以下のとおり
+
 | property      | data type |  description                                         
 |---------------|-----------|------------------------------------------------------
 | name          | string    | ユーザ名

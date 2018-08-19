@@ -1,15 +1,20 @@
+const uuidv1 = require('uuid/v1');
+
 const {defaultFilename, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
+
 class BaseWorkflowComponent {
   constructor(pos, parent){
+    this.parent=parent;
+
+    /** cordinate in workflow editor screen
+     * {pos.x: pageX, pos.y: pageY}
+     */
+    this.pos=pos;
+
+    this.index=uuidv1();
     this.type=null;
     this.name=null;
     this.description=null;
-
-    /** relative path of its directory */
-    this.path=null;
-
-    /** position in parent workflow.nodes[] */
-    this.index=null;
 
     /** pointers to previous node */
     this.previous=[];
@@ -58,26 +63,6 @@ class BaseWorkflowComponent {
      */
     this.state='not-started';
 
-    /** cordinate in workflow editor screen
-     * {pos.x: pageX, pos.y: pageY}
-     */
-    this.pos=pos;
-
-    /**
-     * parent node
-     */
-    this.parent=parent;
-  }
-}
-
-/*
- * absrtuct class of workflow graph
- */
-class BaseTaskGraph extends BaseWorkflowComponent{
-  constructor(pos, parent){
-    super(pos, parent);
-    this.nodes=[];
-    this.jsonFile=null;
     /**
      * flag for clean up temporary working directory on remote host
      * 0: do cleanup
@@ -85,6 +70,17 @@ class BaseTaskGraph extends BaseWorkflowComponent{
      * 2: same as parent
      */
     this.cleanupFlag=2;
+  }
+}
+
+/*
+ * absrtuct class of components which can contain any other type of component
+ */
+class BaseComponentContainer extends BaseWorkflowComponent{
+  constructor(pos, parent){
+    super(pos, parent);
+    this.inputFiles.push({name: null, src: []});
+    this.outputFiles.push({name: null, dst: []});
   }
 }
 
@@ -103,8 +99,6 @@ class Task extends BaseWorkflowComponent{
     this.useJobScheduler=false;
     /** queue name */
     this.queue=null;
-    /** flag for clean up temporary working directory on remote host */
-    this.cleanupFlag=1;
     // note on filters
     // if include filter is set, matched files are transferd if it does not match exclude filter
     /** include filter for recieve files from remote host */
@@ -133,20 +127,18 @@ class If extends BaseWorkflowComponent{
   }
 }
 
-class Workflow extends BaseTaskGraph{
+class Workflow extends BaseComponentContainer{
   constructor(pos, parent){
     // define pseudo position for root workflow
     var pos2=pos || {x:0, y:0};
     super(pos2, parent);
-    this.jsonFile= `${defaultFilename}${extWF}`;
     this.type='workflow';
   }
 }
-class ParameterStudy extends BaseTaskGraph{
+class ParameterStudy extends BaseComponentContainer{
   constructor(...args){
     super(...args);
     this.type='parameterStudy';
-    this.jsonFile= `${defaultFilename}${extPS}`;
     this.parameterFile=null;
     this.numTotal=null;
     this.numFinished=null;
@@ -154,32 +146,29 @@ class ParameterStudy extends BaseTaskGraph{
   }
 }
 
-class For extends BaseTaskGraph{
+class For extends BaseComponentContainer{
   constructor(...args){
     super(...args);
     this.type='for';
-    this.jsonFile= `${defaultFilename}${extFor}`;
     this.start=null;
     this.end=null;
     this.step=null;
   }
 }
-class While extends BaseTaskGraph{
+class While extends BaseComponentContainer{
   constructor(...args){
     super(...args);
     this.type='while';
-    this.jsonFile= `${defaultFilename}${extWhile}`;
     this.condition=null;
   }
 }
 /*
  * loop over kind of array
  */
-class Foreach extends BaseTaskGraph{
+class Foreach extends BaseComponentContainer{
   constructor(pos){
     super(pos);
     this.type='foreach';
-    this.jsonFile= `${defaultFilename}${extForeach}`;
     this.indexList=[];
   }
 }

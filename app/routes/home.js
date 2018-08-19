@@ -2,9 +2,11 @@
 const fs = require("fs-extra");
 const os = require("os");
 const path = require("path");
+const {promisify} = require("util");
 
 const express = require('express');
 const nodegit = require("nodegit");
+const glob = require("glob");
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('home');
@@ -12,12 +14,11 @@ const fileBrowser = require("./fileBrowser");
 const {getDateString} = require('./utility');
 
 const compo = require("./workflowComponent");
-const {projectList, extWF, systemName, defaultCleanupRemoteRoot, defaultFilename, extProject, suffix, rootDir} = require('../db/db');
+const {projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir} = require('../db/db');
 
 const {escapeRegExp, isValidName} = require('./utility');
 //eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
-const ProjectJSON = new RegExp(`^.*${escapeRegExp(extProject)}$`);
 const noWheelDir = new RegExp(`^(?!^.*${escapeRegExp(suffix)}$).*$`);
 
 async function isDuplicateProjectName(newName){
@@ -41,58 +42,56 @@ async function isValidProjectName(name){
   return true
 }
 
+async function initGitRepo(root, user, email){
+  const repo = await nodegit.Repository.init(root, 0);
+  const author = nodegit.Signature.now(user, email);
+  const commiter= await author.dup();
+  const files = await promisify(glob)("**", {cwd: root});
+
+  return repo.createCommitOnHead(files, author, commiter, "create new project");
+}
+
 /**
  * create new project dir, initial files and new git repository
- * @param {string} root - project root path
- * @param {string} projectName      - project name without suffix(.wheel by default)
- * @returns {strint} - project Json file's absolute path
+ * @param {string} root - project root's absolute path
+ * @param {string} projectName - project name without suffix
+ * @param {string} description - project description text
  */
-async function createNewProject(root, name) {
-  await fs.mkdir(root)
+async function createNewProject(root, name, description) {
+  description = description !== null? description : "This is new project.";
+  await fs.ensureDir(root)
   // write root workflow
-  const rootWorkflowFilename = `${defaultFilename}${extWF}`;
-  const rootWorkflowFileFullpath=path.join(root, rootWorkflowFilename);
+  const rootWorkflowFileFullpath=path.join(root,componentJsonFilename);
   const rootWorkflow = new compo.factory('workflow');
   rootWorkflow.name=name;
-  rootWorkflow.path='./';
-  rootWorkflow.jsonFile='./'+rootWorkflowFilename;
   rootWorkflow.cleanupFlag = defaultCleanupRemoteRoot === 0 ? 0 : 1;
   logger.debug(rootWorkflow);
   await fs.writeJson(rootWorkflowFileFullpath, rootWorkflow, {spaces: 4});
 
   // write project JSON
-  const projectJsonFilename = `${systemName}${extProject}`;
   const timestamp=getDateString(true);
   const projectJson= {
-    "name": `${name}`,
-    "description": "This is new Project.",
+    "name": name,
+    "description": description,
     "state": "not-started",
-    "path": `./${projectJsonFilename}`,
-    "path_workflow": `./${rootWorkflowFilename}`,
+    "root" : root,
     "ctime": timestamp,
     "mtime": timestamp
   };
-  const projectJsonFileFullpath=path.join(root, projectJsonFilename);
+  const projectJsonFileFullpath=path.resolve(root, projectJsonFilename);
   logger.debug(projectJson);
   await fs.writeJson(projectJsonFileFullpath, projectJson, {spaces: 4});
-
-  let repo = await nodegit.Repository.init(root, 0);
-  const author = nodegit.Signature.now('wheel', "wheel@example.com"); //TODO replace user info
-  const commiter= await author.dup();
-  await repo.createCommitOnHead([projectJsonFilename, rootWorkflowFilename], author, commiter, "create new project");
-
-  return projectJsonFileFullpath;
+  return initGitRepo(root,  'wheel', "wheel@example.com"); //TODO replace by user info
 }
 
 async function getAllProject() {
-  const pj = await Promise.all(projectList.getAll()
-    .map(async (v)=>{
+  const pj = await Promise.all(projectList.getAll().map(async (v)=>{
       let rt;
       try{
-        const projectJson = await fs.readJSON(v.path)
+        const projectJson = await fs.readJson(path.join(v.path, projectJsonFilename))
         rt = Object.assign(projectJson, v);
       }catch(err){
-        logger.warn(v.path,"read failed but just ignore", err);
+        logger.warn(v,"read failed but just ignore", err);
         rt=false;
       }
       return rt
@@ -100,19 +99,26 @@ async function getAllProject() {
   return pj.filter((e)=>{return e});
 }
 
-function adaptorSendFiles (withFile, dirFilter, sio, msg) {
+async function adaptorSendFiles (withFile, sio, msg, cb) {
   const target = msg ? path.normalize(msg) : rootDir || os.homedir() || '/';
   const request = msg || target;
-  fileBrowser(sio, 'fileList', target, {
-    "request": request,
-    "sendFilename"  : withFile,
-    "filter"        : {
-      "all": noDotFiles,
-      "file": ProjectJSON,
-      "dir": dirFilter
-    },
-    "withParentDir" : true
-  });
+  try{
+    await fileBrowser(sio, 'fileList', target, {
+      "request": request,
+      "sendFilename"  : withFile,
+      "filter"        : {
+        "all": noDotFiles,
+        "file": new RegExp(`^.*${escapeRegExp(projectJsonFilename)}$`),
+        "dir": null
+      },
+      "withParentDir" : true
+    });
+  }catch(e){
+    logger.error("error occurred during reading directory",e);
+    cb(false);
+    return;
+  }
+  cb(true);
 }
 
 function removeTrailingPathSep(filename){
@@ -122,133 +128,188 @@ function removeTrailingPathSep(filename){
   return filename;
 }
 
-async function onAdd (sio, projectDir) {
-  logger.debug("onAdd", projectDir);
-  let pathDirectory = removeTrailingPathSep(projectDir);
-  if(!pathDirectory.endsWith(suffix)){
-    pathDirectory += suffix;
+// socket.IO event handlers
+async function onAddProject (emit, projectDir, description, cb) {
+  logger.debug("onAdd", projectDir, description);
+  let projectRootDir = removeTrailingPathSep(projectDir);
+  if(!projectRootDir.endsWith(suffix)){
+    projectRootDir += suffix;
   }
-  const projectName = path.basename(pathDirectory.slice(0,- suffix.length));
+  projectRootDir = path.resolve(projectRootDir);
 
-  if(! await isValidProjectName(projectName)) return;
+  const projectName = path.basename(projectRootDir.slice(0,- suffix.length));
+
+  if(! await isValidProjectName(projectName)){
+    logger.error('invalid project name');
+    cb(false);
+    return;
+  }
 
   try{
-    //projectJsonFilename will be used out of this scope
-    var projectJsonFilename = await createNewProject(pathDirectory, projectName);
+    await createNewProject(projectRootDir, projectName, description);
   }catch(e){
     logger.error('create project failed.',e);
+    cb(false);
     return
   }
-  projectList.unshift({path: projectJsonFilename});
+  projectList.unshift({path: projectRootDir});
   const newProjectList = await getAllProject();
-  sio.emit('projectList', newProjectList);
+  emit('projectList', newProjectList);
+  cb(true);
 }
 
-async function onImport(sio, projectJsonFilepath) {
+async function onImportProject(emit, projectJsonFilepath, cb) {
   logger.debug('import: ',projectJsonFilepath);
-
   const projectJson = await fs.readJson(projectJsonFilepath);
-  const projectName = projectJson.name;
 
-  if(! await isValidProjectName(projectName)) return;
-
+  //TODO read root workflow and validate
   const projectRootDir=path.dirname(projectJsonFilepath);
-  const newProjectRootDir = path.resolve(path.dirname(projectRootDir), projectName+suffix);
+  try{
+    await fs.access(path.resolve(projectRootDir, componentJsonFilename));
+  }catch(e){
+    logger.error('root workflow JSON file not found\n', e);
+    cb(false)
+    return
+  }
 
+  try{
+    await fs.access(path.resolve(projectRootDir, ".git"));
+  }catch(e){
+    if(e.code === "ENOENT"){
+      await initGitRepo(projectRootDir,  'wheel', "wheel@example.com"); //TODO replace by user info
+    }else{
+      logger.error("can not access to git repository", e);
+      cb(false)
+      return
+    }
+  }
+
+  const projectName = projectJson.name;
+  if(! await isValidProjectName(projectName)){
+    logger.error(projectName, "is not valid project name");
+    cb(false);
+    return;
+  }
+  const newProjectRootDir = path.resolve(path.dirname(projectRootDir), projectName+suffix);
   if(projectRootDir !== newProjectRootDir){
     try{
       await fs.move(projectRootDir, newProjectRootDir);
     }catch(e){
       logger.error('directory creation failed', e);
+      cb(false);
+      return
+    }
+    try{
+      projectJson.root= newProjectRootDir;
+      await fs.writeJson(path.resolve(newProjectRootDir, projectJsonFilename), projectJson);
+    }catch(e){
+      logger.error('rewrite project JSON failed', e);
+      cb(false);
       return
     }
   }
 
-  const filename=path.basename(projectJsonFilepath);
-  const projectJsonFilename = path.resolve(newProjectRootDir, filename);
-  projectList.unshift({path: projectJsonFilename});
+  projectList.unshift({path: newProjectRootDir});
   const newProjectList = await getAllProject();
-  sio.emit('projectList', newProjectList);
+  emit('projectList', newProjectList);
+  cb(true);
 }
 
-async function onRemove (sio, id) {
+async function onRemoveProject (emit, id, cb) {
   logger.debug('remove: ', id);
   const target = projectList.get(id);
-  const targetDir = path.dirname(target.path);
   try{
-    await fs.remove(targetDir);
+    await fs.remove(target.path);
   }catch(e){
-    logger.error('project directory remove failed: ', targetDir);
+    logger.error('project directory remove failed: ', target.path);
+    cb(false);
     return
   }
   await projectList.remove(id);
   const newProjectList = await getAllProject();
-  sio.emit('projectList', newProjectList);
+  emit('projectList', newProjectList);
+  cb(true);
 }
 
-async function onRename (sio, msg) {
+async function onRenameProject (emit, msg, cb) {
   logger.debug('rename:', msg);
   if (!(msg.hasOwnProperty('id') && msg.hasOwnProperty('newName')&& msg.hasOwnProperty('path'))) {
     logger.warn('illegal request ',msg);
+    cb(false);
     return;
   }
-  const projectJsonFilepath=msg.path;
+  const projectJsonFilepath=path.resolve(msg.path, projectJsonFilename);
   const newName = msg.newName;
 
-  if(! await isValidProjectName(newName)) return;
+  if(! await isValidProjectName(newName)){
+    logger.error('invalid project name', newName);
+    cb(false);
+    return;
+  }
 
-  const oldDir = path.dirname(projectJsonFilepath);
-  const parent = path.dirname(oldDir);
-  const newDir = path.resolve(parent, newName+suffix);
+  const oldDir = msg.path;
+  const newDir = path.resolve(path.dirname(oldDir), newName+suffix);
   try{
-    const  projectJson = await fs.readJson(projectJsonFilepath);
-    projectJson.name = newName;
-    await fs.writeJson(projectJsonFilepath, projectJson);
     await fs.move(oldDir, newDir);
+    const  projectJson = await fs.readJson(path.resolve(newDir, projectJsonFilename));
+    projectJson.name = newName;
+    projectJson.root = newDir;
+    await fs.writeJson(path.resolve(newDir, projectJsonFilename), projectJson);
+    const rootWorkflow = await fs.readJson(path.resolve(newDir, componentJsonFilename));
+    rootWorkflow.name = newName;
+    await fs.writeJson(path.resolve(newDir, componentJsonFilename), rootWorkflow);
+  //TODO git add and commit
   }catch(err){
     logger.error('rename project failed', err);
+    cb(false);
     return
   }
 
   //rewrite path in project List entry
   const target = projectList.get(msg.id);
-  const filename=path.basename(projectJsonFilepath);
-  target.path = path.resolve(newDir, filename);
+  target.path = newDir
   await projectList.update(target);
 
-  //rewrite name in projectJson file
-  const projectJson = await fs.readJSON(target.path)
-  projectJson.name = newName;
-  await fs.writeJson(target.path, projectJson,{spaces: 4});
-  //TODO git add and commit
-
   const newProjectList = await getAllProject();
-  sio.emit('projectList', newProjectList);
+  emit('projectList', newProjectList);
+  cb(true);
 }
 
-async function onReorder(sio, orderList) {
+async function onReorderProject(emit, orderList, cb) {
   logger.debug('reorder: ',orderList);
   await projectList.reorder(orderList);
   const pj = await getAllProject();
-  sio.emit('projectList', pj);
+  emit('projectList', pj);
+  cb(true)
 }
 
-async function onGetProjectList (sio){
+async function onGetProjectList (emit, cb){
+  logger.debug('getProjectList');
   const pj = await getAllProject();
-  sio.emit('projectList', pj);
+  emit('projectList', pj);
+  cb(true);
+}
+
+function onGetDirList(emit, msg, cb){
+  logger.debug('getDirList:', msg);
+ return adaptorSendFiles(false, emit, msg, cb);
+}
+function onGetDirListAndProjectJson(emit, msg, cb){
+  logger.debug('getDirListAndProjectJson:', msg);
+ return adaptorSendFiles(true, emit, msg, cb);
 }
 
 module.exports = function(io){
   let sio=io.of('/home');
   sio.on('connect', (socket) => {
-    socket.on('getProjectList', onGetProjectList.bind(null, socket));
-    socket.on('getDirList',     adaptorSendFiles.bind(null, false, null, socket));
-    socket.on('getDirListAndProjectJson', adaptorSendFiles.bind(null, true,  null, socket));
-    socket.on('addProject',     onAdd.bind(null, socket));
-    socket.on('importProject',  onImport.bind(null, socket));
-    socket.on('removeProject',  onRemove.bind(null, socket));
-    socket.on('renameProject',  onRename.bind(null, socket));
-    socket.on('reorderProject', onReorder.bind(null, socket));
+    socket.on('getProjectList', onGetProjectList.bind(null, socket.emit));
+    socket.on('getDirList',     onGetDirList.bind(null, socket.emit));
+    socket.on('getDirListAndProjectJson', onGetDirListAndProjectJson.bind(null, socket.emit));
+    socket.on('addProject',     onAddProject.bind(null, socket.emit));
+    socket.on('importProject',  onImportProject.bind(null, socket.emit));
+    socket.on('removeProject',  onRemoveProject.bind(null, socket.emit));
+    socket.on('renameProject',  onRenameProject.bind(null, socket.emit));
+    socket.on('reorderProject', onReorderProject.bind(null, socket.emit));
   });
   const router = express.Router();
   router.get('/', function (req, res) {

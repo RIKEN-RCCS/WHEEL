@@ -6,6 +6,7 @@ chai.use(chaiIterator);
 //testee
 const {removeInvalid, paramVecGenerator} = require("../../../app/routes/parameterParser");
 
+//test data
 const floatCalc = [{
     "target": "hoge",
     "keyword": "KEYWORD1",
@@ -57,6 +58,7 @@ const stringList= [{
       "baz"
     ]}];
 
+// actual test start here
 describe("#paramVecGenerator", function(){
   it("retuns calclated float values", function(){
     expect(paramVecGenerator(removeInvalid(floatCalc))).to.deep.iterate.over([
