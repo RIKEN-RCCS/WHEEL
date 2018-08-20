@@ -134,7 +134,6 @@ button:hover{
 }
 
 #projectList ul{
-  cursor: move;
   cursor: pointer;
   width: 100%;
   border-bottom-color: #222226;
@@ -143,6 +142,7 @@ button:hover{
   margin: 0;
   padding: 0;
   list-style-type: none;
+  align-items: center;
 }
 
 #projectList ul:hover{
@@ -151,19 +151,19 @@ button:hover{
 }
 
 .projectName{
-  padding: 8px 30px 0 10px;
+  padding: 0 30px 0 0;
   width: 270px;
   text-align: left;
 }
 
 .projectDescription{
-  padding: 8px 30px 0 0;
+  padding: 0 30px 0 0;
   width: 370px;
   text-align: left;
 }
 
 .projectPath{
-  padding: 8px 30px 0 0;
+  padding: 0 30px 0 0;
   width: 450px;
   text-align: left;
 }
@@ -174,7 +174,7 @@ button:hover{
 }
 
 .projectCreateDay, .projectUpdateDay, .projectState{
-  padding: 8px 30px 0 0;
+  padding: 0 30px 0 0;
   width: 170px;
   text-align: left;
 }
