@@ -3,7 +3,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const minimatch = require("minimatch");
 
-function getSNDs(fileList){
+function getSNDs(fileList, isDir){
   const reNumber= /\d+/g;
   const snds = [];
   const globs = new Set();
@@ -15,10 +15,11 @@ function getSNDs(fileList){
       const glob = filename.slice(0, result.index)+'*'+filename.slice(reNumber.lastIndex);
       if(! globs.has(glob)){
         globs.add(glob);
+        const type = isDir? "sndd": "snd";
         snds.push({
           path: e.path,
           name: glob,
-          type: "snd",
+          type: type,
           islink: false
         });
       }
@@ -37,9 +38,9 @@ function getSNDs(fileList){
  * @param {boolean} fileList.islink - file is symlink or not
  * @return {string[]} files and bundled SND globs these are not sorted
  */
-function bundleSNDFiles(fileList){
+function bundleSNDFiles(fileList, isDir){
   if(fileList.length <=0) return [];
-  const globs = getSNDs(fileList);
+  const globs = getSNDs(fileList, isDir);
 
   //remove bundled files
   const files = fileList.filter((e)=>{
@@ -127,8 +128,12 @@ async function getContents(targetDir, options={}) {
     dirList.push({"path": request, "name": "../", "type": "dir", "islink": false});
   }
 
-  const files = ! bundleSerialNumberData ?  fileList : bundleSNDFiles(fileList);
-
-  return dirList.sort(compare).concat(files.sort(compare));
+  if(bundleSerialNumberData ){
+    const dirs = bundleSNDFiles(dirList, true);
+    const files = bundleSNDFiles(fileList);
+    return dirs.sort(compare).concat(files.sort(compare));
+  }else{
+    return dirList.sort(compare).concat(fileList.sort(compare));
+  }
 }
 module.exports = getContents;

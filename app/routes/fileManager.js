@@ -11,12 +11,13 @@ const fileBrowser = require("./fileBrowser");
 const { gitAdd } = require('./project');
 const { getSystemFiles } = require('./utility');
 
-async function sendDirectoryContents(emit, target, request, withSND=true, withDir=true, allFilter=/.*/){
+async function sendDirectoryContents(emit, target, request, withSND=true, sendDir=true, sendFile=true, allFilter=/.*/){
   request = request || target;
   const result = await fileBrowser(target, {
     "request": request,
     "SND": withSND,
-    "sendDirname": withDir,
+    "sendDirname": sendDir,
+    "sendFilename": sendFile,
     "filter": {
       all: allFilter,
       file:getSystemFiles()
@@ -42,11 +43,13 @@ async function onGetFileList(uploader, emit, requestDir, cb){
   cb(true);
 }
 
-async function onGetSNDContents(emit, requestDir, glob, cb){
-  logger.debug(`getSNDContents event recieved: ${requestDir}/${glob}`);
+async function onGetSNDContents(emit, requestDir, glob, isDir, cb){
+  logger.debug("getSNDContents event recieved:", requestDir, glob, isDir);
   if(typeof cb !== "function") cb = ()=>{};
+  const sendDir = isDir;
+  const sendFile = !isDir;
   try{
-    await sendDirectoryContents(emit, requestDir, requestDir, false, false, minimatch.makeRe(glob));
+    await sendDirectoryContents(emit, requestDir, requestDir, false, sendDir, sendFile, minimatch.makeRe(glob));
   }catch(e){
     logger.error(requestDir,"read failed", e);
     cb(false);
