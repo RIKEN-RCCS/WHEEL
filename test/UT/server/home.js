@@ -30,6 +30,7 @@ home.__set__("logger", dummyLogger);
 //test data
 const testDirRoot = "WHEEL_TEST_TMP"
 const jsonArrayManager = require("../../../app/db/jsonArrayManager");
+const {projectJsonFilename, componentJsonFilename} = require("../../../app/db/db");
 let projectList;
 
 //helper functions
@@ -39,21 +40,21 @@ async function setupFiles(){
       fs.ensureDir(path.resolve(testDirRoot,"bar")),
       fs.ensureDir(path.resolve(testDirRoot,"baz"))
     ]);
-    await fs.writeJson(path.resolve(testDirRoot,"prj.wheel.json"),
+    await fs.writeJson(path.resolve(testDirRoot,projectJsonFilename),
       {
         name: "dummyProject",
         description: "dummy project",
         state: "not-started",
         root: path.resolve(process.cwd(), testDirRoot)
       });
-    await fs.writeJson(path.resolve(testDirRoot,"baz","prj.wheel.json"),
+    await fs.writeJson(path.resolve(testDirRoot,"baz",projectJsonFilename),
       {
         name: "baz",
         description: "dummy project",
         state: "not-started",
         root: path.resolve(process.cwd(), testDirRoot, "baz")
       });
-    await fs.writeJson(path.resolve(testDirRoot,"baz","define.wheel.json"),
+    await fs.writeJson(path.resolve(testDirRoot,"baz",componentJsonFilename),
       {
         name: "baz",
         type: 'workflow',
@@ -107,7 +108,7 @@ describe("home screen API test", function(){
     });
   });
   describe("#onGetDirListAndProjectJson", function(){
-    it("should send all dirs in WHEEL_TEST_TMP and prj.wheel.json file", async function(){
+    it("should send all dirs in WHEEL_TEST_TMP and project Json file", async function(){
       await onGetDirListAndProjectJson(emit, testDirRoot, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
@@ -119,7 +120,7 @@ describe("home screen API test", function(){
         {"path": path.resolve( testDirRoot ), "name": "bar", "type": "dir", "islink": false},
         {"path": path.resolve( testDirRoot ), "name": "baz", "type": "dir", "islink": false},
         {"path": path.resolve( testDirRoot ), "name": "../", "type": "dir", "islink": false},
-        {"path": path.resolve( testDirRoot ), "name": "prj.wheel.json", "type": "file", "islink": false}
+        {"path": path.resolve( testDirRoot ), "name": projectJsonFilename, "type": "file", "islink": false}
       ]);
     });
   });
@@ -137,13 +138,13 @@ describe("home screen API test", function(){
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(emit).to.have.been.calledOnce;
-        expect(testDirRoot+"/foo.wheel").to.be.a.directory().and.have.files(["prj.wheel.json", "define.wheel.json"]);
+        expect(testDirRoot+"/foo.wheel").to.be.a.directory().and.have.files([projectJsonFilename, componentJsonFilename]);
         expect(testDirRoot+"/foo.wheel/.git").to.be.a.directory();
-        const projectJSON = await fs.readJson(testDirRoot+"/foo.wheel/prj.wheel.json");
+        const projectJSON = await fs.readJson(path.join(testDirRoot,"foo.wheel", projectJsonFilename));
         expect(projectJSON.name).to.equal("foo");
         expect(projectJSON.description).to.equal("This is new project.");
-        expect(projectJSON.root).to.equal(path.resolve(testDirRoot+"/foo.wheel"));
-        const rootWF = await fs.readJson(testDirRoot+"/foo.wheel/define.wheel.json");
+        expect(projectJSON.root).to.equal(path.resolve(testDirRoot,"foo.wheel"));
+        const rootWF = await fs.readJson(path.join(testDirRoot,"foo.wheel", componentJsonFilename));
         expect(rootWF.type).to.equal("workflow");
         expect(rootWF.name).to.equal("foo");
         expect(rootWF.description).to.be.null;
@@ -156,17 +157,17 @@ describe("home screen API test", function(){
     });
     describe("#onImportProject", function(){
       it("should import WHEEL_TEST_TMP/baz", async function(){
-        await onImportProject(emit, path.resolve(testDirRoot, "baz", "prj.wheel.json"), cb);
+        await onImportProject(emit, path.resolve(testDirRoot, "baz", projectJsonFilename), cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(emit).to.have.been.calledOnce;
-        expect(testDirRoot+"/baz.wheel").to.be.a.directory().and.have.files(["prj.wheel.json", "define.wheel.json"]);
+        expect(testDirRoot+"/baz.wheel").to.be.a.directory().and.have.files([projectJsonFilename, componentJsonFilename]);
         expect(testDirRoot+"/baz.wheel/.git").to.be.a.directory();
-        const projectJSON = await fs.readJson(path.resolve(testDirRoot,"baz.wheel","prj.wheel.json"));
+        const projectJSON = await fs.readJson(path.resolve(testDirRoot,"baz.wheel",projectJsonFilename));
         expect(projectJSON.name).to.equal("baz");
         expect(projectJSON.description).to.equal("dummy project");
         expect(projectJSON.root).to.equal(path.resolve(testDirRoot,"baz.wheel"));
-        const rootWF = await fs.readJson(testDirRoot+"/baz.wheel/define.wheel.json");
+        const rootWF = await fs.readJson(path.join(testDirRoot,"baz.wheel",componentJsonFilename));
         expect(rootWF.type).to.equal("workflow");
         expect(rootWF.name).to.equal("baz");
         expect(rootWF.description).to.be.null;
@@ -201,13 +202,13 @@ describe("home screen API test", function(){
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(emit).to.have.been.calledOnce;
-        expect(path.join(testDirRoot,"foo2.wheel")).to.be.a.directory().and.have.files(["prj.wheel.json", "define.wheel.json"]);
+        expect(path.join(testDirRoot,"foo2.wheel")).to.be.a.directory().and.have.files([projectJsonFilename, componentJsonFilename]);
         expect(path.join(testDirRoot,"foo2.wheel/.git")).to.be.a.directory();
-        const projectJSON = await fs.readJson(path.join(testDirRoot,"foo2.wheel/prj.wheel.json"));
+        const projectJSON = await fs.readJson(path.join(testDirRoot,"foo2.wheel",projectJsonFilename));
         expect(projectJSON.name).to.equal("foo2");
         expect(projectJSON.description).to.equal("This is new project.");
         expect(projectJSON.root).to.equal(path.resolve(testDirRoot,"foo2.wheel"));
-        const rootWF = await fs.readJson(path.join(testDirRoot,"foo2.wheel/define.wheel.json"));
+        const rootWF = await fs.readJson(path.join(testDirRoot,"foo2.wheel",componentJsonFilename));
         expect(rootWF.type).to.equal("workflow");
         expect(rootWF.name).to.equal("foo2");
         expect(rootWF.description).to.be.null;
@@ -222,7 +223,7 @@ describe("home screen API test", function(){
       beforeEach(async function(){
         await onAddProject(emit, path.join(testDirRoot,"/foo"), null, cb);
         await onAddProject(emit, path.join(testDirRoot,"/bar"), null, cb);
-        await onImportProject(emit, path.resolve(testDirRoot, "baz", "prj.wheel.json"), cb);
+        await onImportProject(emit, path.resolve(testDirRoot, "baz", projectJsonFilename), cb);
         cb.reset();
       });
       it("should reorder projectList", async function(){

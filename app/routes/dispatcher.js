@@ -12,7 +12,7 @@ const {interval} = require('../db/db');
 const {exec} = require('./executer');
 const { addXSync, doCleanup, deliverOutputFiles} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
-const {isInitialNode} = require('./workflowEditor');
+const {isInitialNode} = require('./workflowUtil');
 const {emit, addDispatchedTask} = require('./project');
 
 // utility functions

@@ -60,13 +60,13 @@ class git extends EventEmitter{
     if(stats.isDirectory()){
       const p=[];
       klaw(absFilename)
-        .on('data', (item, fileStats)=>{
-          if(fileStats.isFile()){
-            const filename = replacePathsep(path.relative(this.rootDir, item));
+        .on('data', (item)=>{
+          if(item.stats.isFile()){
+            const filename = replacePathsep(path.relative(this.rootDir, item.path));
             p.push(this.index.addByPath(filename));
           }
         })
-        .on('error', (err, item)=>{
+        .on('error', (err)=>{
           throw new Error('fatal error occurred during recursive git add',err);
         });
       await Promise.all(p);
@@ -85,13 +85,13 @@ class git extends EventEmitter{
     if(stats.isDirectory()){
       const p=[];
       klaw(absFilename)
-        .on('data', (item, fileStats)=>{
-          if(fileStats && fileStats.isFile()){
-            const filename = replacePathsep(path.relative(this.rootDir, item));
+        .on('data', (item)=>{
+          if(item.stats.isFile()){
+            const filename = replacePathsep(path.relative(this.rootDir, item.path));
             p.push(this.index.removeByPath(filename));
           }
         })
-        .on('error', (err, item)=>{
+        .on('error', (err)=>{
           throw new Error('fatal error occurred during recursive git add',err);
         });
       await Promise.all(p);

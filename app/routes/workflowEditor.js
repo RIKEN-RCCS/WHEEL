@@ -6,9 +6,10 @@ const glob = require('glob');
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
-const component = require('./workflowComponent');
+const componentFactory = require('./workflowComponent');
 const {isValidName, isValidInputFilename, isValidOutputFilename, replacePathsep} = require('./utility');
-const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getRootDir} = require('./project');
+const {gitAdd, getCwf, getNode, pushNode, getCurrentDir, getRootDir, readProjectJson, writeProjectJson} = require('./project');
+const {componentJsonFilename} = require("../db/db");
 
 function isInitialNode(node){
   if(node === null) return false;
@@ -22,9 +23,6 @@ function isInitialNode(node){
   return true;
 }
 
-function hasChild(node){
-  return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
-}
 
 function _hasName(name, e){
   return e.name === name;
@@ -121,27 +119,6 @@ function _getFileLinkTargetNode(wf, index){
   }
 }
 
-/**
- * add suffix to dirname and make directory
- * @param basename dirname
- * @param suffix   number
- * @return actual directory name
- *
- * makeDir create "basenme+suffix" direcotry. suffix is increased until the dirname is no longer duplicated.
- */
-async function _makeDir(basename, suffix){
-  const dirname=basename+suffix;
-  return promisify(fs.mkdir)(dirname)
-    .then(()=>{
-      return dirname;
-    })
-    .catch((err)=>{
-      if(err.code === 'EEXIST') {
-        return _makeDir(basename, suffix+1);
-      }
-      logger.warn('mkdir failed', err);
-    });
-}
 
 function _getChildWorkflowFilename(label, node){
   return  path.resolve(getCurrentDir(label), node.path, node.jsonFile);
@@ -157,22 +134,6 @@ async function readChildWorkflow(label, node){
   return fs.readJson(_getChildWorkflowFilename(label, node));
 }
 
-async function createNode(label, request){
-  const parentRelativePath = replacePathsep(path.relative(getRootDir(label),getCurrentDir(label)));
-  const node=component.factory(request.type, request.pos, parentRelativePath);
-
-  const dirName=path.resolve(getCurrentDir(label),request.type);
-  const actualDirname = await _makeDir(dirName, 0)
-  node.name=path.basename(actualDirname);
-  node.path=node.name;
-  node.index=pushNode(label, node);
-  let filename = hasChild(node) ? node.jsonFile : '.gitkeep';
-  filename = path.resolve(getCurrentDir(label), node.path, filename);
-  const data = hasChild(node)? JSON.stringify(node,null,4) : '';
-  await promisify(fs.writeFile)(filename, data);
-  await gitAdd(label, filename);
-  return node.index
-}
 
 function removeNode(label, index){
   const cwf = getCwf(label);
@@ -557,7 +518,6 @@ async function delOutputFiles(label, node, value){
 
 
 module.exports.isInitialNode = isInitialNode;
-module.exports.hasChild= hasChild;
 module.exports.readChildWorkflow = readChildWorkflow;
 
 module.exports.createNode = createNode;

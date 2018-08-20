@@ -25,7 +25,7 @@ async function sendDirectoryContents(emit, target, request, withSND=true, withDi
   emit("fileList", result);
 }
 
-async function onGetFileList(uploaderDir, emit, requestDir, cb){
+async function onGetFileList(uploader, emit, requestDir, cb){
   logger.debug(`current dir = ${requestDir}`);
   if(typeof cb !== "function") cb = ()=>{};
   try{
@@ -33,7 +33,7 @@ async function onGetFileList(uploaderDir, emit, requestDir, cb){
     const targetDir = stats.isDirectory() ? requestDir : path.dirname(requestDir) ;
     if(targetDir !== requestDir) logger.debug('requested directory is not directory, show parent of reqested:', targetDir);
     await sendDirectoryContents(emit, targetDir, requestDir);
-    uploaderDir = targetDir;
+    uploader.dir = targetDir;
   }catch(e){
     logger.error(requestDir,"read failed", e);
     cb(false);
@@ -88,30 +88,28 @@ async function onRenameFile(emit, label, msg, cb){
 
   const  oldName = path.resolve(msg.path, msg.oldName);
   const  newName = path.resolve(msg.path, msg.newName);
-  try{
-    await fs.rename(oldName, newName);
-  }catch(e){
-    e.path = msg.path;
-    e.oldName = msg.oldName;
-    e.newName = msg.newName;
-    logger.error('renameFile failed: ',e);
+
+  if(oldName === newName){
+    logger.warn("rename to same file or directory name requested");
     cb(false);
-    return;
+    return
+  }
+  if(await fs.pathExists(newName)){
+    logger.error(newName, "is already exists");
+    cb(false);
+    return
   }
 
   try{
     await gitAdd(label, oldName, true);
+    await fs.move(oldName, newName);
     await gitAdd(label, newName, false);
-  }catch(e){
-    logger.error('rename succeeded but git add failed', e);
-    cb(false);
-    return;
-  }
-
-  try{
     await sendDirectoryContents(emit, msg.path);
   }catch(e){
-    logger.error("re-read directory failed", e);
+    e.path = msg.path;
+    e.oldName = msg.oldName;
+    e.newName = msg.newName;
+    logger.error('rename failed', e);
     cb(false);
     return;
   }
@@ -143,7 +141,7 @@ async function onCreateNewFile(emit, label, filename, cb){
   try{
     await fs.writeFile(filename, '')
     await gitAdd(label, filename);
-    await sendDirectoryContents(emit, msg.path);
+    await sendDirectoryContents(emit, path.dirname(filename));
   }catch(e){
     logger.error('create new file failed', e);
     cb(false);
@@ -157,7 +155,7 @@ async function onCreateNewDir(emit, label, dirname, cb){
     await fs.mkdir(dirname)
     await fs.writeFile(path.resolve(dirname,'.gitkeep'), '')
     await gitAdd(label, path.resolve(dirname,'.gitkeep'));
-    await sendDirectoryContents(emit, msg.path);
+    await sendDirectoryContents(emit, path.dirname(dirname));
   }catch(e){
     logger.error('create new directory failed', e);
     cb(false);
@@ -169,16 +167,19 @@ function registerListeners(socket, label){
   const uploader = new siofu();
   uploader.listen(socket);
   uploader.dir = os.homedir();
+  uploader.on("start", (event)=>{
+    logger.debug("upload request recieved", event.file);
+  });
   uploader.on("saved", async(event)=>{
-    logger.info(`upload completed ${event.file.pathName} [${event.file.size} Byte]`);
-    await gitAdd(label, event.file.pathName);
-    const result = await fileBrowser(socket, 'fileList', uploader.dir, {"filter": {file: getSystemFiles()}});
-    socket.emit("fileList", result);
+    const absFilename = event.file.pathName;
+    logger.info(`upload completed ${absFilename} [${event.file.size} Byte]`);
+    await gitAdd(label, absFilename);
+    await sendDirectoryContents(socket.emit.bind(socket), path.dirname(absFilename));
   });
   uploader.on("error", (event)=>{
-    logger.error("file upload failed", event);
+    logger.error("file upload failed", event.file, event.error);
   });
-  socket.on('getFileList',    onGetFileList.bind(null, uploader.dir, socket.emit.bind(socket)));
+  socket.on('getFileList',    onGetFileList.bind(null, uploader, socket.emit.bind(socket)));
   socket.on('getSNDContents', onGetSNDContents.bind(null, socket.emit.bind(socket)));
   socket.on('removeFile',     onRemoveFile.bind(null, socket.emit.bind(socket), label));
   socket.on('renameFile',     onRenameFile.bind(null, socket.emit.bind(socket), label));

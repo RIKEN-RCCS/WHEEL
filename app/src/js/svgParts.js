@@ -322,7 +322,7 @@ class SvgBox {
     this.outputGroup = this.draw.group();
     outputFiles.forEach((output, index) => {
       const text = this.draw
-        .text(output.name)
+        .text(output.name || "")
         .fill('#FFFFFF');
       this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
 
@@ -341,7 +341,7 @@ class SvgBox {
     this.inputGroup = this.draw.group();
     inputFiles.forEach((input, index) => {
       const text = this.draw
-        .text(input.name)
+        .text(input.name || "")
         .fill('#FFFFFF');
       //this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
       this.textHeight = 24;
@@ -567,7 +567,7 @@ class SvgParentFilesBox {
     this.outputGroup = this.draw.group();
     outputFiles.forEach((output, index) => {
       const text = this.draw
-        .text(output.name)
+        .text(output.name || "")
         .fill('#FFFFFF');
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
@@ -588,7 +588,7 @@ class SvgParentFilesBox {
     this.inputGroup = this.draw.group();
     inputFiles.forEach((input, index) => {
       const text = this.draw
-        .text(input.name)
+        .text(input.name || "")
         .fill('#FFFFFF');
       const fileNameInterval = 40;
       const x = 1072;

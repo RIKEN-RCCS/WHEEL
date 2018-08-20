@@ -230,12 +230,12 @@ $(() => {
         if (v !== null) v.remove();
       });
       nodes = [];
-      if (wf.nodes.length > 0) {
-        let names = wf.nodes.map((e) => {
+      if (wf.descendants.length > 0) {
+        let names = wf.descendants.map((e) => {
           return e != null ? e.name : null;
         });
         vm.names = names;
-        vm.node = wf.nodes[selectedNode];
+        vm.node = wf.descendants[selectedNode];
       }
       //remove parent node
       parentnode.forEach(function (vv) {
@@ -249,7 +249,7 @@ $(() => {
         vm.names = names;
         vm.node = wf[selectedParent];
       }
-      drawNodes(wf.nodes);
+      drawNodes(wf.descendants);
       drawParentFileRelation(wf);
       drawLinks(nodes);
       drawParentLinks(parentnode, nodes);
@@ -518,15 +518,18 @@ $(() => {
         let node = new svgNode.SvgNodeUI(svg, sio, v);
         node.onMousedown(function (e) {
           vm.node = v;
-          let nodeIndex = e.target.instance.parent('.node').data('index');
+          let nodeIndex = e.target.instance.parent('.node').data('ID');
           selectedNode = nodeIndex;
-          let name = nodesInWF[nodeIndex].name;
-          let nodePath = currentWorkDir + '/' + nodesInWF[nodeIndex].name;
+          const target = nodesInWF.find((e)=>{
+            return e.ID === nodeIndex;
+          });
+          let name = target.name;
+          let nodePath = currentWorkDir + '/' + name;
 
           fb.request('getFileList', nodePath, null);
           //プロパティ表示用相対パス
-          let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + nodesInWF[nodeIndex].name;
-          let nodeType = nodesInWF[nodeIndex].type;
+          let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + name;
+          let nodeType = target.type;
           //iconの変更
           let nodeIconPath = config.node_icon[nodeType];
           $('#img_node_type').attr("src", nodeIconPath);
@@ -534,7 +537,7 @@ $(() => {
           // taskコンポーネント時の描画処理
           if (nodeType === 'task') {
             //queuelistの設定
-            let useJobSchedulerFlag = nodesInWF[nodeIndex].useJobScheduler;
+            let useJobSchedulerFlag = target.useJobScheduler;
             console.log(useJobSchedulerFlag);
 
             // if (useJobSchedulerFlag === true) {
@@ -550,12 +553,12 @@ $(() => {
             // }
             //remotehostリストの設定
             sio.emit('getHostList', true);
-            remotehost = nodesInWF[nodeIndex].host;
-            selectedHostQueue = nodesInWF[nodeIndex].queue;
+            remotehost = target.host;
+            selectedHostQueue = target.queue;
             updateQueueList(remotehost, selectedHostQueue);
           }
 
-          $('#propertyTypeName').html(nodesInWF[nodeIndex].type);
+          $('#propertyTypeName').html(target.type);
           $('#componentPath').html(currentPropertyDir);
           $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
           //コンポーネント選択時のカラー着色
@@ -566,11 +569,10 @@ $(() => {
             let nodeType = e.target.instance.parent('.node').data('type');
             if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
               let nodeIndex = e.target.instance.parent('.node').data('index');
-              let name = nodesInWF[nodeIndex].name;
+              let name = target.name;
               let path = e.target.instance.parent('.node').data('path');
-              let json = e.target.instance.parent('.node').data('jsonFile');
               currentWorkDir = currentWorkDir + '/' + name;
-              currentWorkFlow = currentWorkDir + '/' + json;
+              currentWorkFlow = e.target.instance.parent('.node').data('ID');
               dirStack.push(currentWorkDir);
               wfStack.push(currentWorkFlow);
               nodeStack.push(name);
@@ -635,7 +637,7 @@ $(() => {
   * @param  files list in workflow Json
   */
   function drawParentFileRelation(parentwf) {
-    //selectedParent = nodeIndex;    
+    //selectedParent = nodeIndex;
     let node = new svgParentNode.SvgParentNodeUI(svg, sio, parentwf);
     parentnode.push(node);
   }

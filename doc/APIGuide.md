@@ -41,11 +41,11 @@
     * [updateNode(index, property, value, cb) [変更あり]](#updatenodeindex-property-value-cb-変更)
     * [addValueToArrayProperty(index, property, value, cb) [新規作成、未実装]](#addvaluetoarraypropertyindex-property-value-cb-新規作成未実装)
     * [delValueFromArrayProperty(index, property, value, cb) [新規作成、未実装]](#delvaluefromarraypropertyindex-property-value-cb-新規作成未実装)
-    * [removeNode(index, cb) [変更予定 indexの形式変更のため]](#removenodeindex-cb-変更予定-index形式変更)
+    * [removeNode(index, cb)](#removenodeindex-cb)
     * [addLink(link, cb) [検討中 引数を増やしてlinkをバラバラに渡す]](#addlinklink-cb-検討中-引数増link渡)
     * [removeLink(link, cb) [検討中 引数を増やしてlinkをバラバラに渡す]](#removelinklink-cb-検討中-引数増link渡)
-    * [addInputFile(index, name, cb) [新規作成、 未実装]](#addinputfileindex-name-cb-新規作成-未実装)
-    * [addOutputFile(index, name, cb) [新規作成、 未実装]](#addoutputfileindex-name-cb-新規作成-未実装)
+    * [addInputFile(index, name, cb) [新規作成]](#addinputfileindex-name-cb-新規作成)
+    * [addOutputFile(index, name, cb) [新規作成]](#addoutputfileindex-name-cb-新規作成)
     * [removeInputFile(index, name, cb) [新規作成、 未実装]](#removeinputfileindex-name-cb-新規作成-未実装)
     * [removeOutputFile(index, name, cb) [新規作成、 未実装]](#removeoutputfileindex-name-cb-新規作成-未実装)
     * [renameInputFile(index, oldName, newName, cb) [新規作成、 未実装]](#renameinputfileindex-oldname-newname-cb-新規作成-未実装)
@@ -354,6 +354,8 @@ nodeデータの形式は以下のとおり
 既存ノードの配列型プロパティに新規のエントリを追加します。
 なお、inputFiles, outputFilesは専用APIがあるので、現状ではforEachコンポーネントのindexListプロパティのみに使われます。
 
+TODO indexListの更新はupdateNodeでも可能なので、特に問題が無ければ本APIとdelValueFrom... APIは削除する
+
 #### delValueFromArrayProperty(index, property, value, cb) [新規作成、未実装]
 - @param {string} index - 変更対象ノードのindex
 - @param {string} property - 変更するプロパティ
@@ -361,7 +363,7 @@ nodeデータの形式は以下のとおり
 
 既存ノードの配列型プロパティからエントリを削除します。
 
-#### removeNode(index, cb) [変更予定 indexの形式変更のため]
+#### removeNode(index, cb)
 - @param {string} index - 削除するノードのindex
 
 既存のノードを削除します。
@@ -383,13 +385,13 @@ linkデータの形式は以下のとおり
 
 linkデータの形式はaddLink APIと同じ
 
-#### addInputFile(index, name, cb) [新規作成、 未実装]
+#### addInputFile(index, name, cb) [新規作成]
 - @param {string} index - inputFileエントリを追加するノードのインデックス
 - @param {string} name - inputFileの名前
 
 未接続のinputFileを指定されたノードに追加します。
 
-#### addOutputFile(index, name, cb) [新規作成、 未実装]
+#### addOutputFile(index, name, cb) [新規作成]
 - @param {string} index - outputFileエントリを追加するノードのインデックス
 - @param {string} name - outputFileの名前
 
@@ -417,7 +419,7 @@ linkデータの形式はaddLink APIと同じ
 #### renameOutputFile(index, oldName, newName, cb) [新規作成、 未実装]
 - @param {string} index - outputFileの名前を変更するノードのインデックス
 - @param {string} oldName - 元の名前
-- @param {string} newName - 変更後の
+- @param {string} newName - 変更後の名前
 
 指定されたoutputFileエントリの名前を変更します。
 

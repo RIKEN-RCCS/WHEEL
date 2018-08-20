@@ -1,7 +1,5 @@
 const uuidv1 = require('uuid/v1');
 
-const {defaultFilename, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-
 class BaseWorkflowComponent {
   constructor(pos, parent){
     this.parent=parent;
@@ -11,7 +9,7 @@ class BaseWorkflowComponent {
      */
     this.pos=pos;
 
-    this.index=uuidv1();
+    this.ID=uuidv1();
     this.type=null;
     this.name=null;
     this.description=null;
@@ -28,8 +26,8 @@ class BaseWorkflowComponent {
      * {
      *   name: "filename or dirname",
      *   src:[
-     *   {srcNode: "index of src node1", srcName: "name in src node1"},
-     *   {srcNode: "index of src node2", srcName: "name in src node2"},
+     *   {srcNode: "ID of src node1", srcName: "name in src node1"},
+     *   {srcNode: "ID of src node2", srcName: "name in src node2"},
      *   ]
      * }
      */
@@ -42,8 +40,8 @@ class BaseWorkflowComponent {
      * {
      *   name: "filename, dirname or glob pattern",
      *   dst:[
-     *     {dstNode: "index of dst node1", dstName: "name in dst node1"},
-     *     {dstNode: "index of dst node2", dstName: "name in dst node2"}
+     *     {dstNode: "ID of dst node1", dstName: "name in dst node1"},
+     *     {dstNode: "ID of dst node2", dstName: "name in dst node2"}
      *   ]
      * }
      */
@@ -77,8 +75,8 @@ class BaseWorkflowComponent {
  * absrtuct class of components which can contain any other type of component
  */
 class BaseComponentContainer extends BaseWorkflowComponent{
-  constructor(pos, parent){
-    super(pos, parent);
+  constructor(...args){
+    super(...args);
     this.inputFiles.push({name: null, src: []});
     this.outputFiles.push({name: null, dst: []});
   }
@@ -88,8 +86,8 @@ class BaseComponentContainer extends BaseWorkflowComponent{
  * javascript representation of wheel's task
  */
 class Task extends BaseWorkflowComponent{
-  constructor(pos, parent){
-    super(pos, parent);
+  constructor(...args){
+    super(...args);
     this.type='task';
     /** filename of entry point of this task */
     this.script=null;
@@ -112,8 +110,8 @@ class Task extends BaseWorkflowComponent{
  * representation of conditional branch
  */
 class If extends BaseWorkflowComponent{
-  constructor(pos){
-    super(pos);
+  constructor(...args){
+    super(...args);
     this.type='if';
     /**
      * shell script file name or javascript expression to determin condifion
@@ -128,10 +126,10 @@ class If extends BaseWorkflowComponent{
 }
 
 class Workflow extends BaseComponentContainer{
-  constructor(pos, parent){
+  constructor(pos, ...args){
     // define pseudo position for root workflow
     var pos2=pos || {x:0, y:0};
-    super(pos2, parent);
+    super(pos2, ...args);
     this.type='workflow';
   }
 }
@@ -166,8 +164,8 @@ class While extends BaseComponentContainer{
  * loop over kind of array
  */
 class Foreach extends BaseComponentContainer{
-  constructor(pos){
-    super(pos);
+  constructor(...args){
+    super(...args);
     this.type='foreach';
     this.indexList=[];
   }
@@ -204,4 +202,4 @@ function factory(type, ...args){
   return node;
 }
 
-module.exports.factory=factory;
+module.exports=factory;

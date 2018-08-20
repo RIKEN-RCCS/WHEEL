@@ -63,8 +63,8 @@ describe("fileManager UT", function(){
   });
   describe("#getFileList", function(){
     it("should send filelist", async function(){
-      let uploaderDir;
-      await onGetFileList(uploaderDir, emit, path.resolve(testDirRoot), cb);
+      const uploader={};
+      await onGetFileList(uploader, emit, path.resolve(testDirRoot), cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;

@@ -252,6 +252,7 @@ module.exports.deleteRootDispatcher  = deleteRootDispatcher;
 
 //operators for ProjectJson
 module.exports.readProjectJson       = readProjectJson;
+module.exports.writeProjectJson      = writeProjectJson;
 module.exports.updateProjectJson     = updateProjectJson;
 module.exports.setProjectState       = setProjectState;
 module.exports.getProjectState       = getProjectState;

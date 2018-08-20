@@ -31,7 +31,7 @@ export class SvgNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    this.group.data({ "index": node.index, "type": node.type }).draggable().addClass('node');
+    this.group.data({ "ID": node.ID, "type": node.type }).draggable().addClass('node');
 
     // draw node
     const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.nodes, node.numTotal, node.numFinished, node.numFailed);
@@ -42,7 +42,7 @@ export class SvgNodeUI {
     this.group.data({ "boxBbox": boxBbox });
 
     const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0);
-    upper.data({ "index": node.index });
+    upper.data({ "ID": node.ID });
     this.group.add(upper);
 
     const numLower = node.type === 'if' ? 3 : 2;
@@ -66,7 +66,7 @@ export class SvgNodeUI {
 
     node.inputFiles.forEach((input, fileIndex) => {
       const receptor = parts.createReceptor(svg, boxX, boxY, 0, textHeight * fileIndex);
-      receptor.data({ "index": node.index, "name": input.name });
+      receptor.data({ "ID": node.ID, "name": input.name });
       this.group.add(receptor);
     });
 
@@ -103,7 +103,7 @@ export class SvgNodeUI {
         let x = e.detail.p.x;
         let y = e.detail.p.y;
         if (x !== startX || y !== startY) {
-          sio.emit('updateNode', { index: node.index, property: 'pos', value: { 'x': x - diffX, 'y': y - diffY }, cmd: 'update' });
+          sio.emit('updateNode', { ID: node.ID, property: 'pos', value: { 'x': x - diffX, 'y': y - diffY }, cmd: 'update' });
         }
       });
   }
