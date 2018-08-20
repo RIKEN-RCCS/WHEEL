@@ -164,7 +164,7 @@ $(() => {
         window.open(`/editor?${params}`);
       }
     },
-    // TODO download editFileButton
+    // TODO download 
     // ,'download file': {
     //   name: 'Download',
     //   callback: function() {
