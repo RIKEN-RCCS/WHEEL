@@ -11,7 +11,7 @@ const projectListFilename = path.resolve(__dirname, config.projectListJsonFile);
 // export constants
 module.exports.suffix= ".wheel";
 module.exports.projectJsonFilename="prj.wheel.json";
-module.exports.componentJsonFilename="define.wheel.json";
+module.exports.componentJsonFilename="cmp.wheel.json";
 
 // re-export server settings
 module.exports.interval = config.interval;
