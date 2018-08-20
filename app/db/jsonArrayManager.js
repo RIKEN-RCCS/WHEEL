@@ -3,29 +3,22 @@ const {promisify} = require("util");
 
 const uuidv1 = require("uuid/v1");
 
-const {getLogger} = require('../logSettings');
-let logger = getLogger();
-
 class JsonArrayManager{
-  constructor(filename, altLogger = null){
+  constructor(filename){
     this.filename=filename;
-    if(altLogger !== null) logger = altLogger;
-
     this.data=[];
     try{
       this.data=fs.readJsonSync(this.filename);
     }catch(e){
       if(e.code === 'ENOENT'){
-        logger.debug(this.filename, 'is not exists. create new file');
-        fs.writeJsonSync(this.filename, this.data, {spaces: 4});
         this.write();
       }else{
-        logger.error('error occurred while reading', this.filename, e);
+        throw e;
       }
     }
   }
   async write(){
-    return    fs.writeJson(this.filename, this.data, {spaces: 4});
+    return fs.writeJson(this.filename, this.data, {spaces: 4});
   }
   /**
    * add new entry

@@ -5,8 +5,7 @@ const fs = require('fs-extra');
 const Mode = require('stat-mode');
 const glob = require('glob');
 
-const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-
+const {projectJsonFilename, componentJsonFilename} = require('../db/db');
 
 /**
  * replace path separator by native path separator
@@ -138,7 +137,7 @@ const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
 //whitelist
 const alphanumeric = 'a-zA-Z0-9';
 // due to escapeRegExp's spec, bars must be added separately any other regexp strings
-  //eslint-disable-next-line no-useless-escape
+//eslint-disable-next-line no-useless-escape
 const bars = '_\-';
 const pathseps = '/\\';
 const metaCharactors = '*?[]{}()!?+@.';
@@ -146,6 +145,7 @@ const metaCharactors = '*?[]{}()!?+@.';
  * determin specified name is valid file/directory name or not
  */
 function isValidName(name){
+  if(typeof name !== "string") return false;
   if(win32reservedName.test(name)) return false;
   const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric)+bars}]`);
   if(forbidonChars.test(name)) return false;
@@ -169,7 +169,7 @@ function isValidOutputFilename(name){
  * return regexp of systemfiles
  */
 function getSystemFiles(){
-  return new RegExp(`^(?!^.*(${escapeRegExp(extProject)}|${escapeRegExp(extWF)}|${escapeRegExp(extPS)}|${escapeRegExp(extFor)}|${escapeRegExp(extWhile)}|${escapeRegExp(extForeach)}|.gitkeep)$).*$`);
+  return new RegExp(`^(?!^.*(${escapeRegExp(projectJsonFilename)}|${escapeRegExp(componentJsonFilename)}|\.git.*)$).*$`);
 }
 
 /**

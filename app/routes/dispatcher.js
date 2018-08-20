@@ -12,7 +12,7 @@ const {interval} = require('../db/db');
 const {exec} = require('./executer');
 const { addXSync, doCleanup, deliverOutputFiles} = require('./utility');
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid}  = require('./parameterParser');
-const {isInitialNode} = require('./workflowEditor');
+const {isInitialNode} = require('./workflowUtil');
 const {emit, addDispatchedTask} = require('./project');
 
 // utility functions
@@ -271,7 +271,6 @@ class Dispatcher extends EventEmitter{
 
   async _dispatchTask(task){
     logger.debug('_dispatchTask called', task.name);
-    task.id=uuidv1(); // not used for now
     task.startTime = 'not started'; // to be assigned in executer
     task.endTime   = 'not finished'; // to be assigned in executer
     task.projectStartTime= this.projectStartTime;

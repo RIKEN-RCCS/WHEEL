@@ -13,7 +13,7 @@ const logger = getLogger('home');
 const fileBrowser = require("./fileBrowser");
 const {getDateString} = require('./utility');
 
-const compo = require("./workflowComponent");
+const componentFactory= require("./workflowComponent");
 const {projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir} = require('../db/db');
 
 const {escapeRegExp, isValidName} = require('./utility');
@@ -58,11 +58,11 @@ async function initGitRepo(root, user, email){
  * @param {string} description - project description text
  */
 async function createNewProject(root, name, description) {
-  description = description !== null? description : "This is new project.";
+  description = description != null ? description : "This is new project.";
   await fs.ensureDir(root)
   // write root workflow
   const rootWorkflowFileFullpath=path.join(root,componentJsonFilename);
-  const rootWorkflow = new compo.factory('workflow');
+  const rootWorkflow = new componentFactory('workflow');
   rootWorkflow.name=name;
   rootWorkflow.cleanupFlag = defaultCleanupRemoteRoot === 0 ? 0 : 1;
   logger.debug(rootWorkflow);
@@ -76,8 +76,10 @@ async function createNewProject(root, name, description) {
     "state": "not-started",
     "root" : root,
     "ctime": timestamp,
-    "mtime": timestamp
+    "mtime": timestamp,
+    componentPath: {}
   };
+  projectJson.componentPath[rootWorkflow.ID]="./";
   const projectJsonFileFullpath=path.resolve(root, projectJsonFilename);
   logger.debug(projectJson);
   await fs.writeJson(projectJsonFileFullpath, projectJson, {spaces: 4});
@@ -99,11 +101,11 @@ async function getAllProject() {
   return pj.filter((e)=>{return e});
 }
 
-async function adaptorSendFiles (withFile, sio, msg, cb) {
+async function adaptorSendFiles (withFile, emit, msg, cb) {
   const target = msg ? path.normalize(msg) : rootDir || os.homedir() || '/';
   const request = msg || target;
   try{
-    await fileBrowser(sio, 'fileList', target, {
+    const result = await fileBrowser(target, {
       "request": request,
       "sendFilename"  : withFile,
       "filter"        : {
@@ -113,6 +115,7 @@ async function adaptorSendFiles (withFile, sio, msg, cb) {
       },
       "withParentDir" : true
     });
+    emit("fileList", result);
   }catch(e){
     logger.error("error occurred during reading directory",e);
     cb(false);
@@ -128,9 +131,20 @@ function removeTrailingPathSep(filename){
   return filename;
 }
 
+async function sendProjectListIfExists(emit, cb){
+  try{
+    const pjList = await getAllProject();
+    if(pjList) emit('projectList', pjList);
+  }catch(e){
+    cb(false);
+  }
+  cb(true);
+}
+
 // socket.IO event handlers
 async function onAddProject (emit, projectDir, description, cb) {
   logger.debug("onAdd", projectDir, description);
+  if(typeof cb !== "function") cb = ()=>{};
   let projectRootDir = removeTrailingPathSep(projectDir);
   if(!projectRootDir.endsWith(suffix)){
     projectRootDir += suffix;
@@ -153,13 +167,12 @@ async function onAddProject (emit, projectDir, description, cb) {
     return
   }
   projectList.unshift({path: projectRootDir});
-  const newProjectList = await getAllProject();
-  emit('projectList', newProjectList);
-  cb(true);
+  await sendProjectListIfExists(emit, cb);
 }
 
 async function onImportProject(emit, projectJsonFilepath, cb) {
   logger.debug('import: ',projectJsonFilepath);
+  if(typeof cb !== "function") cb = ()=>{};
   const projectJson = await fs.readJson(projectJsonFilepath);
 
   //TODO read root workflow and validate
@@ -210,13 +223,12 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   }
 
   projectList.unshift({path: newProjectRootDir});
-  const newProjectList = await getAllProject();
-  emit('projectList', newProjectList);
-  cb(true);
+  await sendProjectListIfExists(emit, cb);
 }
 
 async function onRemoveProject (emit, id, cb) {
   logger.debug('remove: ', id);
+  if(typeof cb !== "function") cb = ()=>{};
   const target = projectList.get(id);
   try{
     await fs.remove(target.path);
@@ -226,13 +238,12 @@ async function onRemoveProject (emit, id, cb) {
     return
   }
   await projectList.remove(id);
-  const newProjectList = await getAllProject();
-  emit('projectList', newProjectList);
-  cb(true);
+  await sendProjectListIfExists(emit, cb);
 }
 
 async function onRenameProject (emit, msg, cb) {
   logger.debug('rename:', msg);
+  if(typeof cb !== "function") cb = ()=>{};
   if (!(msg.hasOwnProperty('id') && msg.hasOwnProperty('newName')&& msg.hasOwnProperty('path'))) {
     logger.warn('illegal request ',msg);
     cb(false);
@@ -258,6 +269,7 @@ async function onRenameProject (emit, msg, cb) {
     const rootWorkflow = await fs.readJson(path.resolve(newDir, componentJsonFilename));
     rootWorkflow.name = newName;
     await fs.writeJson(path.resolve(newDir, componentJsonFilename), rootWorkflow);
+    const repo = path.join(newDir, ".git");
   //TODO git add and commit
   }catch(err){
     logger.error('rename project failed', err);
@@ -269,47 +281,44 @@ async function onRenameProject (emit, msg, cb) {
   const target = projectList.get(msg.id);
   target.path = newDir
   await projectList.update(target);
-
-  const newProjectList = await getAllProject();
-  emit('projectList', newProjectList);
-  cb(true);
+  await sendProjectListIfExists(emit, cb);
 }
 
 async function onReorderProject(emit, orderList, cb) {
   logger.debug('reorder: ',orderList);
+  if(typeof cb !== "function") cb = ()=>{};
   await projectList.reorder(orderList);
-  const pj = await getAllProject();
-  emit('projectList', pj);
-  cb(true)
+  await sendProjectListIfExists(emit, cb);
 }
 
 async function onGetProjectList (emit, cb){
   logger.debug('getProjectList');
-  const pj = await getAllProject();
-  emit('projectList', pj);
-  cb(true);
+  if(typeof cb !== "function") cb = ()=>{};
+  await sendProjectListIfExists(emit, cb);
 }
 
 function onGetDirList(emit, msg, cb){
   logger.debug('getDirList:', msg);
+  if(typeof cb !== "function") cb = ()=>{};
  return adaptorSendFiles(false, emit, msg, cb);
 }
 function onGetDirListAndProjectJson(emit, msg, cb){
   logger.debug('getDirListAndProjectJson:', msg);
+  if(typeof cb !== "function") cb = ()=>{};
  return adaptorSendFiles(true, emit, msg, cb);
 }
 
 module.exports = function(io){
   let sio=io.of('/home');
   sio.on('connect', (socket) => {
-    socket.on('getProjectList', onGetProjectList.bind(null, socket.emit));
-    socket.on('getDirList',     onGetDirList.bind(null, socket.emit));
-    socket.on('getDirListAndProjectJson', onGetDirListAndProjectJson.bind(null, socket.emit));
-    socket.on('addProject',     onAddProject.bind(null, socket.emit));
-    socket.on('importProject',  onImportProject.bind(null, socket.emit));
-    socket.on('removeProject',  onRemoveProject.bind(null, socket.emit));
-    socket.on('renameProject',  onRenameProject.bind(null, socket.emit));
-    socket.on('reorderProject', onReorderProject.bind(null, socket.emit));
+    socket.on('getProjectList', onGetProjectList.bind(null, socket.emit.bind(socket)));
+    socket.on('getDirList',     onGetDirList.bind(null, socket.emit.bind(socket)));
+    socket.on('getDirListAndProjectJson', onGetDirListAndProjectJson.bind(null, socket.emit.bind(socket)));
+    socket.on('addProject',     onAddProject.bind(null, socket.emit.bind(socket)));
+    socket.on('importProject',  onImportProject.bind(null, socket.emit.bind(socket)));
+    socket.on('removeProject',  onRemoveProject.bind(null, socket.emit.bind(socket)));
+    socket.on('renameProject',  onRenameProject.bind(null, socket.emit.bind(socket)));
+    socket.on('reorderProject', onReorderProject.bind(null, socket.emit.bind(socket)));
   });
   const router = express.Router();
   router.get('/', function (req, res) {
