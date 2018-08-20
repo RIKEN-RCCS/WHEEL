@@ -31,7 +31,7 @@ class BaseWorkflowComponent {
      *   ]
      * }
      */
-    this.inputFiles=[];
+    this.inputFiles=[{name: null, src:[]}];
 
     /**
      * output files which will be passed to other node
@@ -45,7 +45,7 @@ class BaseWorkflowComponent {
      *   ]
      * }
      */
-    this.outputFiles=[];
+    this.outputFiles=[{name: null, dst:[]}];
 
     /**
      * node state
@@ -77,8 +77,6 @@ class BaseWorkflowComponent {
 class BaseComponentContainer extends BaseWorkflowComponent{
   constructor(...args){
     super(...args);
-    this.inputFiles.push({name: null, src: []});
-    this.outputFiles.push({name: null, dst: []});
   }
 }
 
