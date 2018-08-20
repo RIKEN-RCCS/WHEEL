@@ -13,7 +13,7 @@ const logger = getLogger('home');
 const fileBrowser = require("./fileBrowser");
 const {getDateString} = require('./utility');
 
-const compo = require("./workflowComponent");
+const componentFactory= require("./workflowComponent");
 const {projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir} = require('../db/db');
 
 const {escapeRegExp, isValidName} = require('./utility');
@@ -58,11 +58,11 @@ async function initGitRepo(root, user, email){
  * @param {string} description - project description text
  */
 async function createNewProject(root, name, description) {
-  description = description !== null? description : "This is new project.";
+  description = description != null ? description : "This is new project.";
   await fs.ensureDir(root)
   // write root workflow
   const rootWorkflowFileFullpath=path.join(root,componentJsonFilename);
-  const rootWorkflow = new compo.factory('workflow');
+  const rootWorkflow = new componentFactory('workflow');
   rootWorkflow.name=name;
   rootWorkflow.cleanupFlag = defaultCleanupRemoteRoot === 0 ? 0 : 1;
   logger.debug(rootWorkflow);
