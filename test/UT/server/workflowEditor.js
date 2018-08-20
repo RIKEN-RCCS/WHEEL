@@ -190,7 +190,7 @@ describe("workflow editor UT", function(){
     });
   });
   describe("#onUpdateNode", function(){
-    it("should rename node", async function(){
+    it("should rename wf1 to wf4", async function(){
       await onUpdateNode(emit, projectRootDir, ID.wf1, "name", "wf4", cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
