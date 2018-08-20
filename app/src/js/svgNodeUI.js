@@ -34,7 +34,10 @@ export class SvgNodeUI {
     this.group.data({ "index": node.index, "type": node.type }).draggable().addClass('node');
 
     // draw node
-    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.nodes, node.numTotal, node.numFinished, node.numFailed);
+    console.log(node);
+    console.log(node.nodes);
+
+    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.nodes, node.numTotal, node.numFinished, node.numFailed, node.host);
     const boxBbox = box.bbox();
     const boxX = box.x();
     const boxY = box.y();
@@ -271,11 +274,12 @@ export class SvgParentNodeUI {
     this.connectors = [];
     parentnode.outputFiles.forEach((output, fileIndex) => {
       //ファイル名の最大値程度
-      let connectorXpos = 180;
+      let connectorXpos = 240;
       //コネクター間の幅、コネクターの高さ
       let connectorYpos = 32;
-      let [plug, cable] = parts.createParentConnector(svg, connectorXpos, connectorYpos, 0, connectorYpos * 1.5 * fileIndex, sio);
-      //const boxBbox=plug.bbox();  
+      const connectorHeight = 32;
+      const connectorInterval = connectorHeight * 1.5;
+      let [plug, cable] = parts.createParentConnector(svg, connectorXpos, connectorYpos, 0, connectorInterval * fileIndex, sio);
       plug.data({ "name": output.name, "dst": output.dst });
       // let dstArray = [];
       // if (input.srcName === null) {
@@ -291,8 +295,12 @@ export class SvgParentNodeUI {
 
     // draw receptor
     parentnode.inputFiles.forEach((input, fileIndex) => {
-      const receptor = parts.createParentReceptor(svg, 16, 600, 0, 40 * fileIndex);
-      //receptor.data({"index": parentnode.index, "name": output.name});
+      const recepterHeight = 32;
+      const recepterInterval = recepterHeight * 1.5;
+      //-425 = -(108 +32 +221)
+      //     = -(ヘッダ + 初期位置補正 + 位置調整)
+      let recepterPosY = window.innerHeight - 361;
+      const receptor = parts.createParentReceptor(svg, 16, recepterPosY, 0, recepterInterval * fileIndex);
       receptor.data({ "index": "parent", "name": input.name });
 
       this.group.add(receptor);

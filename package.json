@@ -27,7 +27,7 @@
     "coverage": "nyc --reporter=html --reporter=text npm run fullTest",
     "coverage:server": "nyc --reporter=html --reporter=text npm run UT:server",
     "coverage:client": "nyc --reporter=html --reporter=text npm run UT:client",
-    "coverage:E2E":    "nyc --reporter=html --reporter=text npm run E2E",
+    "coverage:E2E": "nyc --reporter=html --reporter=text npm run E2E",
     "fullTest": "run-p UT:server UT:client E2E",
     "UT:server": "mocha --recursive test/UT/server/",
     "UT:client": "opener test/UT/client/index.html",
