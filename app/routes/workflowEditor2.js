@@ -67,13 +67,13 @@ async function getDescendantsID(projectRootDir, ID){
 async function updateComponentJson(projectRootDir, component, modifier){
   const componentJson = await getComponent(projectRootDir, component);
 
-  if(typeof modifier === "function") await modifier(component)
+  if(typeof modifier === "function") await modifier(componentJson)
 
   // resolve component json filename from parenet dirname, component.name, and componentJsonFilename constant
   // to avoid using old path in componentPath when component's name is changed
-  const parentDir = component.parent ? await getComponentDir(projectRootDir, component.parent) : projectRootDir;
-  const filename = path.resolve(parentDir, component.name, componentJsonFilename);
-  await fs.writeJson(filename, component, {spaces: 4});
+  const parentDir = componentJson.parent ? await getComponentDir(projectRootDir, componentJson.parent) : projectRootDir;
+  const filename = path.resolve(parentDir, componentJson.name, componentJsonFilename);
+  await fs.writeJson(filename, componentJson, {spaces: 4});
   return gitAdd(projectRootDir, filename);
 }
 
@@ -126,7 +126,7 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb){
   if(typeof cb !== "function") cb = ()=>{};
   logger.debug('updateNode event recieved:', projectRootDir, ID, prop, value);
   if(prop === "inputFiles" || prop === "outputFiles"){
-    logger.debug("updateNode does not support",prop,". please use renameInputFile or renameOutputFile");
+    logger.error("updateNode does not support",prop,". please use renameInputFile or renameOutputFile");
     cb(false);
     return;
   }

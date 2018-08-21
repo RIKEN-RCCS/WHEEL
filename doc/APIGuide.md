@@ -29,7 +29,7 @@
 * [workflow画面で発生する通信一覧(client -> server)](#workflow画面発生通信一覧client-server)
   * [File操作関連API](#file操作関連api)
     * [getFileList(path, cb)](#getfilelistpath-cb)
-    * [getSNDContents(path, name, cb) [新規作成]](#getsndcontentspath-name-cb-新規作成)
+    * [getSNDContents(path, name, idDir, cb) [新規作成]](#getsndcontentspath-name-iddir-cb-新規作成)
     * [removeFile(path, cb)](#removefilepath-cb)
     * [renameFile(renameFile, cb) [検討中 引数を増やしてrenameFileの中身をバラバラに渡す]](#renamefilerenamefile-cb-検討中-引数増renamefile中身渡)
     * [downloadFile(path, cb) [新規作成]](#downloadfilepath-cb-新規作成)
@@ -129,8 +129,15 @@ fileデータの形式は以下のとおり。
 |----------|:---------:|------------------------------------------------------
 | path     | string    | 要求された時のディレクトリパス
 | name     | string    | ファイル又はディレクトリ名
-| type     | string    | {dir, file, snd}のいずれか。
+| type     | string    | {dir, file, snd, sndd, deadlink}のいずれか。
 | islink   | boolean   | 送信されるデータがシンボリックリンクかどうかのフラグ
+
+typeの値の意味は次のとおり
+dir: ディレクトリ
+file: ファイル
+snd: 連番ファイル
+sndd: 連番ディレクトリ
+deadlink: リンク先の実体が無いシンボリックリンク
 
 
 #### showMessage(message)
@@ -280,9 +287,11 @@ projectJsonデータは、home画面のprojectListAPIで送られる、project�
 指定されたディレクトリ内に存在するファイル、ディレクトリ等の送信を要求します。
 データはfileListAPIで送られてきます。
 
-#### getSNDContents(path, name, cb) [新規作成]
+#### getSNDContents(path, name, idDir, cb) [新規作成]
 - @param {string} path - 対象となるSerialNumberDataの親ディレクトリ
 - @param {string} name - SNDの名前 (= globパターン)
+- @param {boolean} isDir - SNDを連番ディレクトリとみなす(true)か連番ファイルとみなす(false)かのフラグ
+
 
 fileList APIで送られてきたSND(SerialNumberData)に含まれるファイル名の一覧の送信を要求します。
 データはfileListAPIで送られてきます。

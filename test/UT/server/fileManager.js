@@ -36,7 +36,9 @@ describe("fileManager UT", function(){
       fs.ensureDir(path.join(testDirRoot, "foo")),
       fs.ensureDir(path.join(testDirRoot, "bar")),
       fs.ensureDir(path.join(testDirRoot, "baz")),
-      fs.ensureDir(path.join(testDirRoot, "foo_0")),
+      fs.ensureDir(path.join(testDirRoot, "foo_00")),
+      fs.ensureDir(path.join(testDirRoot, "foo_01")),
+      fs.ensureDir(path.join(testDirRoot, "foo_02")),
       fs.outputFile(path.join(testDirRoot, "foo_1"), "foo_1"),
       fs.outputFile(path.join(testDirRoot, "foo_2"), "foo_2"),
       fs.outputFile(path.join(testDirRoot, "foo_3"), "foo_3"),
@@ -74,7 +76,7 @@ describe("fileManager UT", function(){
         {"path": path.resolve(testDirRoot), "name": "bar", "type": "dir", "islink": false},
         {"path": path.resolve(testDirRoot), "name": "baz", "type": "dir", "islink": false},
         {"path": path.resolve(testDirRoot), "name": "foo", "type": "dir", "islink": false},
-        {"path": path.resolve(testDirRoot), "name": "foo_0", "type": "dir", "islink": false},
+        {"path": path.resolve(testDirRoot), "name": "foo_*", "type": "sndd", "islink": false},
         {"path": path.resolve(testDirRoot), "name": "linkbar", "type": "dir", "islink": true},
         {"path": path.resolve(testDirRoot), "name": "linkbaz", "type": "dir", "islink": true},
         {"path": path.resolve(testDirRoot), "name": "linkfoo", "type": "dir", "islink": true},
@@ -93,14 +95,38 @@ describe("fileManager UT", function(){
   });
   describe("#getSNDContents", function(){
     it("should send contens of SND", async function(){
-      await onGetSNDContents(emit, testDirRoot, "huga_*_200", cb);
+      await onGetSNDContents(emit, testDirRoot, "huga_*_200", false, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
       expect(emit).to.have.been.calledWith("fileList");
       expect(emit.args[0][1]).to.deep.equal([
         {"path": path.resolve(testDirRoot), "name": "huga_1_200", "type": "file", "islink": false},
-        {"path": path.resolve(testDirRoot), "name": "huga_4_200", "type": "file", "islink": false},
+        {"path": path.resolve(testDirRoot), "name": "huga_4_200", "type": "file", "islink": false}
+      ]);
+    });
+    it("should send foo_* files", async function(){
+      await onGetSNDContents(emit, testDirRoot, "foo_*", false, cb);
+      expect(cb).to.have.been.calledOnce;
+      expect(cb).to.have.been.calledWith(true);
+      expect(emit).to.have.been.calledOnce;
+      expect(emit).to.have.been.calledWith("fileList");
+      expect(emit.args[0][1]).to.deep.equal([
+        {"path": path.resolve(testDirRoot), "name": "foo_1", "type": "file", "islink": false},
+        {"path": path.resolve(testDirRoot), "name": "foo_2", "type": "file", "islink": false},
+        {"path": path.resolve(testDirRoot), "name": "foo_3", "type": "file", "islink": false}
+      ]);
+    });
+    it("should send foo_* directories", async function(){
+      await onGetSNDContents(emit, testDirRoot, "foo_*", true, cb);
+      expect(cb).to.have.been.calledOnce;
+      expect(cb).to.have.been.calledWith(true);
+      expect(emit).to.have.been.calledOnce;
+      expect(emit).to.have.been.calledWith("fileList");
+      expect(emit.args[0][1]).to.deep.equal([
+        {"path": path.resolve(testDirRoot), "name": "foo_00", "type": "dir", "islink": false},
+        {"path": path.resolve(testDirRoot), "name": "foo_01", "type": "dir", "islink": false},
+        {"path": path.resolve(testDirRoot), "name": "foo_02", "type": "dir", "islink": false}
       ]);
     });
   });
