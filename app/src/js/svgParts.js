@@ -196,7 +196,7 @@ export class SvgCable {
 }
 
 class SvgBox {
-  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host) {
+  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, descendants, numTotal, numFinished, numFailed, host) {
     this.draw = svg;
     this.type = type.toLowerCase();
 
@@ -223,10 +223,10 @@ class SvgBox {
 
     //子コンポーネントの表示
     let nodePosYInfo = [];
-    nodePosYInfo = this.getNodePosY(type, nodes);
-    const nodesViewField = this.createNodesViewField(type, bodyHeight, nodes, nodePosYInfo);
-    const nodesView = this.createNodes(type, bodyHeight, nodes);
-    const nodesIconField = this.createNodesIconField(type, bodyHeight, nodes);
+    nodePosYInfo = this.getNodePosY(type, descendants);
+    const nodesViewField = this.createNodesViewField(type, bodyHeight, descendants, nodePosYInfo);
+    const nodesView = this.createNodes(type, bodyHeight, descendants);
+    const nodesIconField = this.createNodesIconField(type, bodyHeight, descendants);
 
 
     this.width = 256; //画面デザイン上256pxとする
@@ -412,13 +412,13 @@ class SvgBox {
  * create children view field
  * @return view field
  */
-  getNodePosY(type, nodes) {
+  getNodePosY(type, descendants) {
     let nodePosYArray = [];
     let nodePosYInfo = [];
     if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
 
-      if (nodes.length > 0) {
-        nodes.forEach((node, index) => {
+      if (descendants.length > 0) {
+        descendants.forEach((node, index) => {
           if (node === null) {
             return;
           } else {
@@ -439,12 +439,12 @@ class SvgBox {
  * create children view field
  * @return view field
  */
-  createNodesViewField(type, bodyHeight, nodes, nodesPosInfo) {
+  createNodesViewField(type, bodyHeight, descendants, nodesPosInfo) {
     this.fieldGroup = this.draw.group();
     if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
-      if (nodes.length > 0) {
+      if (descendants.length > 0) {
         let viewFlag = false;
-        nodes.forEach((node, index) => {
+        descendants.forEach((node, index) => {
           if (node === null) {
             return;
           } else {
@@ -479,14 +479,14 @@ class SvgBox {
   }
 
   /**
-   * create nodes
-   * @return nodes
+   * create descendants
+   * @return descendants
    */
-  createNodes(type, bodyHeight, nodes) {
+  createNodes(type, bodyHeight, descendants) {
     this.nodeGroup = this.draw.group();
     if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
       let nodePosYArray = [];
-      nodes.forEach((node, index) => {
+      descendants.forEach((node, index) => {
         if (node === null) return;
         nodePosYArray.push(node.pos.y);
         const nodeColor = config.node_color[node.type];
@@ -525,10 +525,10 @@ class SvgBox {
    * create children icon field
    * @return button field
    */
-  createNodesIconField(type, bodyHeight, nodes) {
+  createNodesIconField(type, bodyHeight, descendants) {
     this.iconFieldGroup = this.draw.group();
     if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
-      nodes.forEach((node, index) => {
+      descendants.forEach((node, index) => {
         if (node === null) return;
 
         const iconFieldHeight = 24;
@@ -608,7 +608,13 @@ class SvgParentFilesBox {
       const text = this.draw
         .text(output.name || "")
         .fill('#FFFFFF');
-      let outputFileNameLength = output.name.length;
+      //暫定的な処理
+      let outputFileNameLength;
+      if (output.name === null) {
+        outputFileNameLength = 0;
+      } else {
+        outputFileNameLength = output.name.length;
+      }
       console.log(outputFileNameLength);
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
@@ -775,8 +781,8 @@ export function createUpper(svg, originX, originY, offsetX, offsetY) {
   return plug;
 }
 
-export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host) {
-  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host);
+export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, descendants, numTotal, numFinished, numFailed, host) {
+  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, descendants, numTotal, numFinished, numFailed, host);
   return [box.box, box.textHeight];
 }
 
