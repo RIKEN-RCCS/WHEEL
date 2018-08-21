@@ -35,9 +35,9 @@ export class SvgNodeUI {
 
     // draw node
     console.log(node);
-    console.log(node.descendants);
+    console.log(node.nodes);
 
-    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host);
+    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.nodes, node.numTotal, node.numFinished, node.numFailed, node.host);
     const boxBbox = box.bbox();
     const boxX = box.x();
     const boxY = box.y();
