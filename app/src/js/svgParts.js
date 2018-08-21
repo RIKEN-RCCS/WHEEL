@@ -397,7 +397,6 @@ class SvgBox {
     if (type === "task" && host !== "localhost") {
       type = 'remotetask'
     }
-    console.log(type);
     const statePosX = 8;
     const statePosY = 0;
     const nodeIconPath = config.node_icon[type];
@@ -430,7 +429,6 @@ class SvgBox {
       let minPosY = Math.min.apply(null, nodePosYArray);
       nodePosYInfo.push(maxPosY);
       nodePosYInfo.push(minPosY);
-      console.log(nodePosYInfo);
     }
     return nodePosYInfo;
   }
@@ -608,8 +606,12 @@ class SvgParentFilesBox {
       const text = this.draw
         .text(output.name || "")
         .fill('#FFFFFF');
-      let outputFileNameLength = output.name.length;
-      console.log(outputFileNameLength);
+      let outputFileNameLength;
+      if (output.name === null) {
+        outputFileNameLength = 0;
+      } else {
+        outputFileNameLength = output.name.length;
+      }
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
       // 240 = connectorの位置
@@ -637,8 +639,6 @@ class SvgParentFilesBox {
       const recepterInterval = recepterHeight * 1.5;
       const x = window.innerWidth - 248;
       const y = window.innerHeight - 361 + 32 + 5.6 + recepterInterval * index;
-      console.log(window.innerHeight);
-
       text.move(x, y);
       this.inputGroup.add(text);
     });
