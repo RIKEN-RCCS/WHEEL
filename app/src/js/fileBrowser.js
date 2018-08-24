@@ -154,7 +154,7 @@ export default class {
   }
   onRecvDefault() {
     this.socket.on(this.recvEventName, (fileList) => {
-      fileList.forEach((data)=>{
+      fileList.forEach((data) => {
         if (!this.isValidData(data)) return;
         //TODO select icon for SND
         const iconClass = data.type === 'dir' ? 'fa-folder-o' : 'fa-file-o';
@@ -212,7 +212,7 @@ export default class {
       return false;
     if (!data.hasOwnProperty('name'))
       return false;
-    if (! (data.hasOwnProperty('type') && (data.type === "file" || data.type === "dir" || data.type === "snd")))
+    if (!(data.hasOwnProperty('type') && (data.type === "file" || data.type === "dir" || data.type === "snd")))
       return false;
     if (!data.hasOwnProperty('islink'))
       return false;

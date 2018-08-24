@@ -196,7 +196,7 @@ export class SvgCable {
 }
 
 class SvgBox {
-  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed) {
+  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host) {
     this.draw = svg;
     this.type = type.toLowerCase();
 
@@ -204,13 +204,7 @@ class SvgBox {
     // upper parts (outerFrame)
     const titleHeight = config.box_appearance.titleHeight;
     const titleWidth = config.box_appearance.titleWidth;
-
     const opacity = config.box_appearance.opacity;
-    const strokeWidth = config.box_appearance.strokeWidth;
-    const marginHeight = config.box_appearance.marginHeight;
-    const marginWidth = titleHeight * 2;
-    const outputTextOffset = config.box_appearance.outputTextOffset;
-    const nodeColor = config.node_color[type];
 
     // create inner parts
     const input = this.createInputText(inputFiles);
@@ -220,22 +214,22 @@ class SvgBox {
     const inputBBox = input.bbox();
 
     const bodyHeight = titleHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
-    //const bodyHeight = marginHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
 
     this.height = bodyHeight + titleHeight;
 
     const title = this.createTitle(name);
-    const iconImage = this.createIconImage(type);
+    const iconImage = this.createIconImage(type, host);
     const taskState = this.createState(type, state, numTotal, numFinished, numFailed);
 
-    const nodesViewField = this.createNodesViewField(type, bodyHeight, nodes);
+    //子コンポーネントの表示
+    let nodePosYInfo = [];
+    nodePosYInfo = this.getNodePosY(type, nodes);
+    const nodesViewField = this.createNodesViewField(type, bodyHeight, nodes, nodePosYInfo);
     const nodesView = this.createNodes(type, bodyHeight, nodes);
     const nodesIconField = this.createNodesIconField(type, bodyHeight, nodes);
-    // const nodesButtonField = this.createNodesButtonField(type, bodyHeight, nodes);
-    // const nodesViewButton = this.createNodesButton(type, bodyHeight);
 
-    this.width = 256;
-    //this.width = Math.ceil(Math.max(inputBBox.width + outputBBox.width, title.bbox().width)) + marginWidth;
+
+    this.width = 256; //画面デザイン上256pxとする
 
     const outerFrame = this.createOuterFrame(type);
     const innerFrame = this.createInnerFrame();
@@ -258,10 +252,8 @@ class SvgBox {
       .addClass('box');
 
     // adjust size
-    //output.x(this.width);
     output.x(titleWidth);
 
-    //innerFrame.size(this.width - strokeWidth, bodyHeight);
     innerFrame.size(titleWidth, bodyHeight);
 
   }
@@ -298,7 +290,8 @@ class SvgBox {
         [titleWidth, titleHeight],
         [0, titleHeight],
       ])
-      .fill("rgba(68, 68, 73,0.5");
+      .fill("rgba(68, 68, 73,0.5")
+      .attr('class', 'titleFrame');
   }
   /**
    * create title
@@ -367,17 +360,31 @@ class SvgBox {
     const nodeStatePath = config.state_icon[state];
     const paraStuState = "Fin:" + numFinished + "Fail:" + numFailed + "(" + numTotal + ")";
     if (type === 'parameterStudy' && state === 'running') {
+      const calcProgress = (numFinished + numFailed) / numTotal * 100;
+      const radius = 7;
+      const diameter = radius * 2;
+      const circumference = 2.0 * radius * Math.PI;
+      const startPosition = circumference * 0.25;
+      const convertedPercentage = circumference * 0.01;
+      let progress = convertedPercentage * calcProgress;
       return this.draw
-        .text(paraStuState)
-        .fill('#FFFFFF')
-        .x(paraStuPosX)
-        .y(statePosY);
+        // .text(paraStuState)
+        // .fill('#FFFFFF')
+        // .x(paraStuPosX)
+        // .y(statePosY);
+        .circle(`${diameter}`)
+        .fill('rgba(0,0,0,0)')
+        .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
+        .x(statePosX + 11)
+        .y(statePosY + 9)
+        .addClass('psProgress');
     } else {
       return this.draw
         .image(nodeStatePath)
         .fill('#FFFFFF')
         .x(statePosX)
         .y(statePosY);
+
     }
   }
 
@@ -385,13 +392,15 @@ class SvgBox {
  * create workflow component icon
  * @return icon
  */
-  createIconImage(type) {
-    //今は決め打ちで適当に設定
+  createIconImage(type, host) {
+    //左隅に作成
+    if (type === "task" && host !== "localhost") {
+      type = 'remotetask'
+    }
     const statePosX = 8;
     const statePosY = 0;
     const nodeIconPath = config.node_icon[type];
     return this.draw
-      //.text(taskState)
       .image(nodeIconPath)
       .fill('#111')
       .x(statePosX)
@@ -402,7 +411,33 @@ class SvgBox {
  * create children view field
  * @return view field
  */
-  createNodesViewField(type, bodyHeight, nodes) {
+  getNodePosY(type, nodes) {
+    let nodePosYArray = [];
+    let nodePosYInfo = [];
+    if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
+
+      if (nodes.length > 0) {
+        nodes.forEach((node, index) => {
+          if (node === null) {
+            return;
+          } else {
+            nodePosYArray.push(node.pos.y);
+          }
+        });
+      }
+      let maxPosY = Math.max.apply(null, nodePosYArray);
+      let minPosY = Math.min.apply(null, nodePosYArray);
+      nodePosYInfo.push(maxPosY);
+      nodePosYInfo.push(minPosY);
+    }
+    return nodePosYInfo;
+  }
+
+  /**
+ * create children view field
+ * @return view field
+ */
+  createNodesViewField(type, bodyHeight, nodes, nodesPosInfo) {
     this.fieldGroup = this.draw.group();
     if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
       if (nodes.length > 0) {
@@ -414,8 +449,12 @@ class SvgBox {
             viewFlag = true;
           }
         });
+
         if (viewFlag === true) {
-          const titleHeight = 160;
+          // 子コンポート最小のy座標 + 子コンポーネントのy座標幅
+          // = nodesPosInfo[1] + nodesPosInfo[0] - nodesPosInfo[1] = nodesPosInfo[0]
+          // 48 = アイコンの縦幅(24)+ゆとり幅(24)
+          const titleHeight = nodesPosInfo[0] / 5 + 48;
           const titlewidth = 256;
           const nodeColor = "rgba(68, 68, 73, 0.5)";
           const field = this.draw
@@ -428,9 +467,9 @@ class SvgBox {
             .attr('class', 'viewNodesField')
             .stroke("#2F2F33")
             .fill(nodeColor);
-          const y = bodyHeight;
+          const y = bodyHeight + 1;
           field.move(0, y);
-          this.inputGroup.add(field);
+          this.fieldGroup.add(field);
         }
       }
     }
@@ -444,9 +483,10 @@ class SvgBox {
   createNodes(type, bodyHeight, nodes) {
     this.nodeGroup = this.draw.group();
     if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
+      let nodePosYArray = [];
       nodes.forEach((node, index) => {
         if (node === null) return;
-
+        nodePosYArray.push(node.pos.y);
         const nodeColor = config.node_color[node.type];
         const nodeIconPath = config.node_icon[node.type];
         const nodePosX = node.pos.x / 5;
@@ -552,11 +592,8 @@ class SvgParentFilesBox {
       .add(output)
       .move(x, y)
       .style('cursor', 'default')
-      .opacity(opacity)
-      .addClass('box');
-
-    // adjust size
-    output.x(titleWidth);
+      .opacity(opacity);
+    // .addClass('box');
   }
 
   /**
@@ -569,11 +606,19 @@ class SvgParentFilesBox {
       const text = this.draw
         .text(output.name || "")
         .fill('#FFFFFF');
+      let outputFileNameLength;
+      if (output.name === null) {
+        outputFileNameLength = 0;
+      } else {
+        outputFileNameLength = output.name.length;
+      }
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
-      const fileNameInterval = connectorInterval;
-      const x = -200;
-      const y = connectorHeight + fileNameInterval * index;
+      // 240 = connectorの位置
+      // 6.1 = 一文字あたりの文字の大きさ
+      const x = 240 - 8 - outputFileNameLength * 6.1;
+      // 5.6 = connectorの中間位置表示用
+      const y = connectorHeight + 5.6 + connectorInterval * index;
 
       text.move(x, y);
       this.outputGroup.add(text);
@@ -590,10 +635,10 @@ class SvgParentFilesBox {
       const text = this.draw
         .text(input.name || "")
         .fill('#FFFFFF');
-      const fileNameInterval = 40;
-      const x = 1072;
-      const y = 640 + fileNameInterval * index;
-      //const x = config.box_appearance.inputTextNamePosX;
+      const recepterHeight = 32;
+      const recepterInterval = recepterHeight * 1.5;
+      const x = window.innerWidth - 248;
+      const y = window.innerHeight - 361 + 32 + 5.6 + recepterInterval * index;
       text.move(x, y);
       this.inputGroup.add(text);
     });
@@ -730,8 +775,8 @@ export function createUpper(svg, originX, originY, offsetX, offsetY) {
   return plug;
 }
 
-export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed) {
-  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed);
+export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host) {
+  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host);
   return [box.box, box.textHeight];
 }
 
@@ -757,7 +802,7 @@ export function createParentConnector(svg, originX, originY, offsetX, offsetY, s
 export function createParentReceptor(svg, originX, originY, offsetX, offsetY) {
   const plug = svg.polygon(parentRPlug).fill(config.plug_color.file).addClass('receptorPlug');
   const bbox = plug.bbox();
-  plug.move(1050, originY + offsetY + calcFileBasePosY());
-  //plug.move(originX + offsetX - bbox.width / 2, originY + offsetY + calcFileBasePosY());
+  // 272 = Property Area width
+  plug.move(window.innerWidth - 272, originY + offsetY + calcFileBasePosY());
   return plug;
 }

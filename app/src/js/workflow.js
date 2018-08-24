@@ -105,11 +105,9 @@ $(() => {
           return name === val;
         })
         if (!dup) {
-          console.log("namecheck");
           sio.emit('updateNode', { index: this.node.index, property: 'name', value: this.node.name, cmd: 'update' });
           let currentComponentDir = currentWorkDir + '/' + val;
           fb.request('getFileList', currentComponentDir, null);
-          console.log(currentComponentDir);
           let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
           $('#componentPath').html(displayDirPath);
         } else {
@@ -165,7 +163,7 @@ $(() => {
         });
         window.open(`/editor?${params}`);
       }
-    }
+    },
     // TODO download 
     // ,'download file': {
     //   name: 'Download',
@@ -184,6 +182,40 @@ $(() => {
   // sio.on('download', (message) => {
   //   console.log(message.toString());
   // });
+
+  // file edit by button.
+  let filePath = '';
+  let filename = '';
+  $(document).on('click', '.file', function () {
+    filePath = $(this).attr("data-path");
+    filename = $(this).attr("data-name");
+  });
+
+  $('#editFileButton').click(function () {
+    if (filePath !== '') {
+      const path = filePath
+      const name = filename
+      const params = $.param({
+        "path": path,
+        "filename": name,
+        "pm": false
+      });
+      window.open(`/editor?${params}`);
+    }
+  });
+
+  $('#editPSFileButton').click(function () {
+    if (filePath !== '') {
+      const path = filePath
+      const name = filename
+      const params = $.param({
+        "path": path,
+        "filename": name,
+        "pm": true
+      });
+      window.open(`/editor?${params}`);
+    }
+  });
 
   // container of svg elements
   let nodes = [];
@@ -256,7 +288,6 @@ $(() => {
     });
 
     sio.on('taskStateList', (taskStateList) => {
-      console.log("get taskStateList");
       updateTaskStateTable(taskStateList);
     })
 
@@ -454,16 +485,22 @@ $(() => {
   });
 
   // function definition
+  var defaultDisplay = true;
   function showLog() {
     $('#logArea').show();
+    if (defaultDisplay === true) {
+      $('#logInfoLog').show();
+      $('#enableINFO').css('border-bottom-color', "#88BB00");
+    }
+    defaultDisplay = false;
     $('#displayLogButton').toggleClass('display', true);
-    $('#img_displayLogButton').attr("src", "/image/btn_openCloseD_n.png");
+    $('#displayLogButtonImg').attr("src", "/image/btn_openCloseD_n.png");
   }
 
   function hideLog() {
     $('#logArea').hide();
     $('#displayLogButton').toggleClass('display', false);
-    $('#img_displayLogButton').attr("src", "/image/btn_openCloseU_n.png");
+    $('#displayLogButtonImg').attr("src", "/image/btn_openCloseU_n.png");
   }
 
   // show or hide log area
@@ -621,14 +658,17 @@ $(() => {
   }
 
   function drawStrokeColor(node) {
-    $(`#${clickedNode}`).css('stroke', 'none');
-    var target = $(node.target).attr("id");
-    clickedNode = target;
-    $(`#${target}`).css('stroke-width', '1px');
-    $(`#${target}`).css('stroke', '#CCFF00');
+    $(`.titleFrame`).css('stroke', 'none');
+    var targetId = $(node.target).attr("id");
+    var targetClass = $(node.target).attr("class");
+
+    if (targetClass === "titleFrame") {
+      $(`#${targetId}`).css('stroke-width', '1px');
+      $(`#${targetId}`).css('stroke', '#CCFF00');
+    }
 
     $('#node_svg').on('mousedown', function (node) {
-      $(`#${clickedNode}`).css('stroke', 'none');
+      $(`#${targetId}`).css('stroke', 'none');
     });
   }
 
@@ -792,11 +832,11 @@ $(() => {
   });
 
   $('#drawer_button').click(function () {
-    $('#drawer_menu').toggleClass('action', true);
+    $('#drawerMenu').toggleClass('action', true);
   });
 
-  $('#drawer_menu').mouseleave(function () {
-    $('#drawer_menu').toggleClass('action', false);
+  $('#drawerMenu').mouseleave(function () {
+    $('#drawerMenu').toggleClass('action', false);
   });
 
   function getSelectLabel(index) {
