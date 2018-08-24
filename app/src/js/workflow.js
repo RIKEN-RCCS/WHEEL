@@ -62,8 +62,7 @@ $(() => {
         });
         if (duplicate) return
         this.newInputFilename = "";
-        let newVal = { name: filename, srcNode: null, srcName: null }
-        sio.emit('updateNode', { index: this.node.index, property: 'inputFiles', value: newVal, cmd: 'add' });
+        sio.emit('addInputFile', this.node.ID, filename);
       },
       addOutputFile: function () {
         let filename = this.newOutputFilename;
@@ -73,31 +72,29 @@ $(() => {
         });
         if (duplicate) return
         this.newOutputFilename = "";
-        let newVal = { name: filename, dst: [] }
-        sio.emit('updateNode', { index: this.node.index, property: 'outputFiles', value: newVal, cmd: 'add' });
+        sio.emit('addOutputFile', this.node.ID, filename);
       },
       addIndexOfForeach: function () {
-        let val = this.newIndexOfForeach;
-        if (val === "") return
-        let duplicate = this.node.indexList.some((e) => {
-          return e.label === val;
+        if (this.newIndexOfForeach === "") return
+        const duplicate = this.node.indexList.some((e) => {
+          return e.label === this.newIndexOfForeach;
         });
         if (duplicate) return
+        this.node.indexList.push(this.newIndexOfForeach);
         this.newIndexOfForeach = "";
-        let newVal = { label: val };
-        sio.emit('updateNode', { index: this.node.index, property: 'indexList', value: newVal, cmd: 'add' });
+        sio.emit('updateNode', this.node.ID, 'indexList', this.node.indexList);
       },
       delInputFile: function (i) {
-        let val = this.node.inputFiles[i]
-        sio.emit('updateNode', { index: this.node.index, property: 'inputFiles', value: val, cmd: 'del' });
+        sio.emit('removeInputFile', this.node.ID, this.node.inputFiles[i].name);
       },
       delOutputFile: function (i) {
-        let val = this.node.outputFiles[i]
-        sio.emit('updateNode', { index: this.node.index, property: 'outputFiles', value: val, cmd: 'del' });
+        sio.emit('removeOutputFile', this.node.ID, this.node.outputFiles[i].name);
       },
       delIndexOfForeach: function (i) {
-        let val = this.node.indexList[i]
-        sio.emit('updateNode', { index: this.node.index, property: 'indexList', value: val, cmd: 'del' });
+        const newIndexList = this.node.indexList.filter((e, index)=>{
+          return index !== i;
+        });
+        sio.emit('updateNode', this.node.ID, 'indexList', newIndexList);
       },
       updateNodeName: function () {
         let val = this.node.name;
@@ -105,7 +102,7 @@ $(() => {
           return name === val;
         })
         if (!dup) {
-          sio.emit('updateNode', { index: this.node.index, property: 'name', value: this.node.name, cmd: 'update' });
+          sio.emit('updateNode', this.node.ID, 'name', this.node.name);
           let currentComponentDir = currentWorkDir + '/' + val;
           fb.request('getFileList', currentComponentDir, null);
           let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
@@ -114,10 +111,9 @@ $(() => {
           console.log('duplicated name is not allowed!');
         }
       },
-      updateProperty: function (property, arrayFlag) {
+      updateProperty: function (property) {
         let val = this.node[property];
-        let cmd = arrayFlag ? 'updataArrayProperty' : 'update';
-        sio.emit('updateNode', { index: this.node.index, property: property, value: val, cmd: cmd });
+        sio.emit('updateNode', this.node.ID, property, val);
       },
       changeQueueListState: function (useJocSchedulerFlag) {
 
@@ -264,10 +260,16 @@ $(() => {
       nodes = [];
       if (wf.descendants.length > 0) {
         let names = wf.descendants.map((e) => {
-          return e != null ? e.name : null;
+          return e.name;
         });
         vm.names = names;
-        vm.node = wf.descendants[selectedNode];
+        vm.node = wf.descendants.find((e)=>{
+          return e.ID === selectedNode;
+        });
+        //for initial load
+        if(! vm.node){
+          vm.node = wf.descendants[0];
+        }
       }
       //remove parent node
       parentnode.forEach(function (vv) {

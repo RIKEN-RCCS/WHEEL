@@ -84,7 +84,7 @@ async function onWorkflowRequest(emit, projectRootDir, ID, cb){
   const workflowFilename=path.resolve(componentDir, componentJsonFilename);
   logger.info('open workflow:', componentDir);
   try{
-    //TODO pass ID
+    //TODO pass ID <-- why?
     await setCwf(projectRootDir, workflowFilename);
     await sendWorkflow(emit, projectRootDir);
   }catch(e){
@@ -243,8 +243,6 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb){
   logger.debug('removeNode event recieved:', projectRootDir, targetID);
   try{
     const nodeDir = await getComponentDir(projectRootDir, targetID);
-    const component = await fs.readJson(path.resolve(nodeDir, componentJsonFilename));
-
     const descendantsID = await getDescendantsID(projectRootDir, targetID);
 
     // remove all link/filelink to or from components to be removed
@@ -259,28 +257,16 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb){
       }
     });
 
-    //get all files to be removed
-    const removeFiles = [];
-    const asyncWalk = (root)=>{
-      return new Promise((resolve, reject)=>{
-        klaw(root)
-          .on('data', (item)=>{
-            removeFiles.push(item.path);
-          })
-          .on('end', ()=>{
-            resolve();
-          });
-      });
-    }
-    await asyncWalk(nodeDir);
+    //memo
+    // gitOperator.rm()内部で実際に存在するファイルを再帰的に探して
+    // git rmを行なっているので、先にファイルを削除するとエラーになる。
+    // しかし、実際にはファイルの削除が正常に終了したファイルから順にgit rmするべき
+    //
+    //git rm
+    await gitAdd(projectRootDir, nodeDir, true);
 
     //remove files
     await fs.remove(nodeDir);
-
-    //git rm
-    await Promise.all(removeFiles.map(async (e)=>{
-      await gitAdd(projectRootDir, e, true);
-    }));
 
     await sendWorkflow(emit, projectRootDir);
   }catch(e){
