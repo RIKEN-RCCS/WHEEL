@@ -2,7 +2,8 @@ const uuidv1 = require('uuid/v1');
 
 class BaseWorkflowComponent {
   constructor(pos, parent){
-    this.parent=parent;
+    // parent components's ID
+    this.parent = parent || "this is root";
 
     /** cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
@@ -31,7 +32,7 @@ class BaseWorkflowComponent {
      *   ]
      * }
      */
-    this.inputFiles=[{name: null, src:[]}];
+    this.inputFiles=[];
 
     /**
      * output files which will be passed to other node
@@ -45,7 +46,7 @@ class BaseWorkflowComponent {
      *   ]
      * }
      */
-    this.outputFiles=[{name: null, dst:[]}];
+    this.outputFiles=[];
 
     /**
      * node state
@@ -68,15 +69,6 @@ class BaseWorkflowComponent {
      * 2: same as parent
      */
     this.cleanupFlag=2;
-  }
-}
-
-/*
- * absrtuct class of components which can contain any other type of component
- */
-class BaseComponentContainer extends BaseWorkflowComponent{
-  constructor(...args){
-    super(...args);
   }
 }
 
@@ -123,7 +115,7 @@ class If extends BaseWorkflowComponent{
   }
 }
 
-class Workflow extends BaseComponentContainer{
+class Workflow extends BaseWorkflowComponent{
   constructor(pos, ...args){
     // define pseudo position for root workflow
     var pos2=pos || {x:0, y:0};
@@ -131,7 +123,7 @@ class Workflow extends BaseComponentContainer{
     this.type='workflow';
   }
 }
-class ParameterStudy extends BaseComponentContainer{
+class ParameterStudy extends BaseWorkflowComponent{
   constructor(...args){
     super(...args);
     this.type='parameterStudy';
@@ -142,7 +134,7 @@ class ParameterStudy extends BaseComponentContainer{
   }
 }
 
-class For extends BaseComponentContainer{
+class For extends BaseWorkflowComponent{
   constructor(...args){
     super(...args);
     this.type='for';
@@ -151,7 +143,7 @@ class For extends BaseComponentContainer{
     this.step=null;
   }
 }
-class While extends BaseComponentContainer{
+class While extends BaseWorkflowComponent{
   constructor(...args){
     super(...args);
     this.type='while';
@@ -161,7 +153,7 @@ class While extends BaseComponentContainer{
 /*
  * loop over kind of array
  */
-class Foreach extends BaseComponentContainer{
+class Foreach extends BaseWorkflowComponent{
   constructor(...args){
     super(...args);
     this.type='foreach';

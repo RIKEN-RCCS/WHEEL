@@ -62,8 +62,8 @@ async function setupFiles(){
         description: null,
         previous: [],
         next: [],
-        inputFiles :[{name: null, src: []}],
-        outputFiles:[{name: null, dst: []}],
+        inputFiles :[],
+        outputFiles:[],
         cleanupFlag: 2
       });
 }
@@ -150,8 +150,8 @@ describe("home screen API test", function(){
         expect(rootWF.description).to.be.null;
         expect(rootWF.previous).to.be.an('array').that.is.empty;
         expect(rootWF.next).to.be.an('array').that.is.empty;
-        expect(rootWF.inputFiles).to.deep.equal([{name: null, src: []}]);
-        expect(rootWF.outputFiles).to.deep.equal([{name: null, dst: []}]);
+        expect(rootWF.inputFiles).to.be.an('array').that.is.empty;
+        expect(rootWF.outputFiles).to.be.an('array').that.is.empty;
         expect(projectList.getByPosition(0).path).to.be.equal(path.resolve(testDirRoot,"foo.wheel"));
       });
     });
@@ -173,8 +173,8 @@ describe("home screen API test", function(){
         expect(rootWF.description).to.be.null;
         expect(rootWF.previous).to.be.an('array').that.is.empty;
         expect(rootWF.next).to.be.an('array').that.is.empty;
-        expect(rootWF.inputFiles).to.deep.equal([{name: null, src: []}]);
-        expect(rootWF.outputFiles).to.deep.equal([{name: null, dst: []}]);
+        expect(rootWF.inputFiles).to.be.an('array').that.is.empty;
+        expect(rootWF.outputFiles).to.be.an('array').that.is.empty;
         expect(projectList.getByPosition(0).path).to.be.equal(path.resolve(testDirRoot,"baz.wheel"));
       });
     });
@@ -214,8 +214,8 @@ describe("home screen API test", function(){
         expect(rootWF.description).to.be.null;
         expect(rootWF.previous).to.be.an('array').that.is.empty;
         expect(rootWF.next).to.be.an('array').that.is.empty;
-        expect(rootWF.inputFiles).to.deep.equal([{name: null, src: []}]);
-        expect(rootWF.outputFiles).to.deep.equal([{name: null, dst: []}]);
+        expect(rootWF.inputFiles).to.be.an('array').that.is.empty;
+        expect(rootWF.outputFiles).to.be.an('array').that.is.empty;
         expect(projectList.getByPosition(0).path).to.be.equal(path.resolve(testDirRoot,"foo2.wheel"));
       });
     });
