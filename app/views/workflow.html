@@ -68,9 +68,6 @@
       <img src="/image/btn_list_n.png" alt="List" title="List View">
     </button>
     <span id="breadcrumb"></span>
-    <div id="parentDirBtn">
-      <button>../</button>
-    </div>
     <div class="view_controler_right_area"></div>
   </div>
 
@@ -79,7 +76,7 @@
   <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
     <div id="project_tree_svg">
       <div id="project_table_container">
-        <table id="project_table">
+        <table id="projectTable">
           <thead id="project_table_head">
             <tr id="project_table_tr">
               <th class="componentName">Name</th>
@@ -174,6 +171,15 @@
           </div>
           <div>
             <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
+          </div>
+          <div>
+            <label for="stateField" id="propertyState">State</label>
+          </div>
+          <div>
+            <input type="text" v-model.lazy.trim="node.state" spellcheck="false" id="stateField" readonly>
+            <button v-on:click="" class="cleanStateButton">
+              <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
+            </button>
           </div>
           <div>
             <label for="descriptionInputField" id="propertyDescription">Description</label>
@@ -334,24 +340,30 @@
         <div id="fileBrowser" class="fileBrowser">
           <p id="fileDropArea">File List</p>
           <ul id="fileList"></ul>
+          <div id="editButtonsArea">
+            <button type="button" id="editFileButton" class="editButtons">
+              <img src="/image/img_file.png" alt="graph">
+            </button>
+            <button type="button" id="editPSFileButton" class="editButtons">
+              <img src="/image/img_file.png" alt="graph">
+            </button>
+          </div>
         </div>
       </div>
-
-      <!-- </div> -->
     </div>
   </div>
 
   <!-- 右ドロアーメニュー -->
-  <div id="drawer_menu" class="drawer_menu" data-position="right">
+  <div id="drawerMenu" data-position="right">
     <!-- Put your off canvas content here -->
     <div id="drawerMenuContents">
       <p id="menuTitle">Menu</p>
       <ul id="drawerMenuList">
         <li>
-          <a class="drawer_menu_item" href="/remotehost">remotehost</a>
+          <a class="drawerMenuItem" href="/remotehost" target="_blank">remotehost</a>
         </li>
         <li>
-          <a class="drawer_menu_item" href="/login">log out</a>
+          <a class="drawerMenuItem" href="/login">log out</a>
         </li>
       </ul>
     </div>
@@ -360,36 +372,28 @@
   <!-- ログボタン -->
   <div>
     <button type="button" id="displayLogButton" class="displayLogButton" value="Log">
-      <img src="/image/btn_openCloseU_n.png" alt="config" id="img_displayLogButton">
+      <img src="/image/btn_openCloseU_n.png" alt="config" id="displayLogButtonImg">
     </button>
   </div>
-  <div id="logArea" class="logArea">
-    <div id="logFilter">
-      <div id="logButtonArea">
-        <!-- <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug -->
-        <button type="button" id="enableDBG" class="logButton" value="node">Debug</button>
-        <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
-        <button type="button" id="enableWARN" class="logButton" value="node">Warn</button>
-        <button type="button" id="enableERR" class="logButton" value="node">Error</button>
-        <button type="button" id="enableStdout" class="logButton" value="node">Stdout</button>
-        <button type="button" id="enableStderr" class="logButton" value="node">Stderr</button>
-        <button type="button" id="enableSSHout" class="logButton" value="node">Stdout(SSH)</button>
-        <button type="button" id="enableSSHerr" class="logButton" value="node">Stderr(SSH)</button>
-      </div>
-      <div id="buttonPartition">
-        <button id="clear_log">All log clear</button>
-      </div>
-      <!-- <pre id="logText" class="logText"></pre> -->
-      <pre id="logDebugLog" class="logText"></pre>
-      <pre id="logInfoLog" class="logText"></pre>
-      <pre id="logWarnLog" class="logText"></pre>
-      <pre id="logStdoutLog" class="logText"></pre>
-      <pre id="logStderrLog" class="logText"></pre>
-      <pre id="logSSHoutLog" class="logText"></pre>
-      <pre id="logSSHerrLog" class="logText"></pre>
+  <div id="logArea">
+    <div id="logButtonArea">
+      <button type="button" id="enableDBG" class="logButton" value="node">Debug</button>
+      <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
+      <button type="button" id="enableStdout" class="logButton" value="node">Stdout</button>
+      <button type="button" id="enableStderr" class="logButton" value="node">Stderr</button>
+      <button type="button" id="enableSSHout" class="logButton" value="node">Stdout(SSH)</button>
+      <button type="button" id="enableSSHerr" class="logButton" value="node">Stderr(SSH)</button>
     </div>
+    <div id="buttonPartition">
+      <button id="logClearButton">All log clear</button>
+    </div>
+    <pre id="logDebugLog" class="logText"></pre>
+    <pre id="logInfoLog" class="logText"></pre>
+    <pre id="logStdoutLog" class="logText"></pre>
+    <pre id="logStderrLog" class="logText"></pre>
+    <pre id="logSSHoutLog" class="logText"></pre>
+    <pre id="logSSHerrLog" class="logText"></pre>
   </div>
-
 
   <!-- File Browser Dialog -->
   <!--   <div id="fileBrowser" class="fileBrowser">
