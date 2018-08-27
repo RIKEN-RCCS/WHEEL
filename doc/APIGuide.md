@@ -63,7 +63,7 @@
     * [getTaskStateList(rootWorkflow, cb) [検討中] 引数のrootWorkflowは不要な気がする](#gettaskstatelistrootworkflow-cb-検討中-引数rootworkflow不要気)
     * [getProjectState(projectJsonFile, cb)](#getprojectstateprojectjsonfile-cb)
     * [getProjectJson(projectJsonFile, cb)](#getprojectjsonprojectjsonfile-cb)
-    * [updateProjectJson(update, cb)](#updateprojectjsonupdate-cb)
+    * [updateProjectJson(property, value, cb) [変更あり]](#updateprojectjsonproperty-value-cb-変更)
     * [saveProject(null, cb)](#saveprojectnull-cb)
     * [revertProject(null, cb)](#revertprojectnull-cb)
 * [remotehost画面で発生する通信一覧(server -> client)](#remotehost画面発生通信一覧server-client)
@@ -162,7 +162,7 @@ deadlink: リンク先の実体が無いシンボリックリンク
 getDirListと同様ですが、ディレクトリ一覧に加えて、もし存在すればprojectJsonファイルも送られます。
 
 #### addProject(name, description, cb) [変更あり]
-- @param { string }  name - {親ディレクトリの絶対パス}/{プロジェクト名}
+- @param { string } name - {親ディレクトリの絶対パス}/{プロジェクト名}
 - @param { string } description - プロジェクトの説明文
 
 新規プロジェクトを作成します。
@@ -494,8 +494,9 @@ projectStateの送信を要求
 
 projectJsonの送信を要求
 
-#### updateProjectJson(update, cb)
-- @param {object} update - projectJsonのうち更新するデータのkey:valueペア
+#### updateProjectJson(property, value, cb) [変更あり]
+- @param {string} property - projectJsonのうち更新するデータのプロパティ
+- @param {string} value    - projectJsonのうち更新するデータの値
 
 projectJsonを更新する
 

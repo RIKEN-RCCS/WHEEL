@@ -2,14 +2,13 @@ const path = require("path");
 const {promisify} = require("util");
 
 const fs = require("fs-extra");
-const klaw = require('klaw');
 const pathIsInside = require("path-is-inside");
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const {projectJsonFilename, componentJsonFilename} = require('../db/db');
 const {sendWorkflow, getComponentDir, getComponent} = require("./workflowUtil");
-const {setCwf, getCwf, gitAdd} = require("./project");
+const {setCwd, getCwd, gitAdd} = require("./projectResource");
 const {replacePathsep, isValidName} = require('./utility');
 const componentFactory = require("./workflowComponent");
 
@@ -49,13 +48,13 @@ async function  updateComponentPath(projectRootDir, modifier){
   await gitAdd(projectRootDir, filename);
 }
 
-// even return search root it self
+// return value include search-root itself
 async function getDescendantsID(projectRootDir, ID){
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await fs.readJson(filename);
   const poi = await getComponentDir(projectRootDir, ID);
   const rt=[]
-  for([id, componentPath] of Object.entries(projectJson.componentPath)){
+  for(const [id, componentPath] of Object.entries(projectJson.componentPath)){
     if(pathIsInside(path.resolve(projectRootDir, componentPath), poi)){
       rt.push(id);
     }
@@ -66,9 +65,7 @@ async function getDescendantsID(projectRootDir, ID){
 // component can be one of "path of component Json file", "component json object", or "component's ID"
 async function updateComponentJson(projectRootDir, component, modifier){
   const componentJson = await getComponent(projectRootDir, component);
-
   if(typeof modifier === "function") await modifier(componentJson)
-
   // resolve component json filename from parenet dirname, component.name, and componentJsonFilename constant
   // to avoid using old path in componentPath when component's name is changed
   const parentDir = componentJson.parent ? await getComponentDir(projectRootDir, componentJson.parent) : projectRootDir;
@@ -81,11 +78,9 @@ async function onWorkflowRequest(emit, projectRootDir, ID, cb){
   if(typeof cb !== "function") cb = ()=>{};
   logger.debug('Workflow Request event recieved:', projectRootDir, ID);
   const componentDir = await getComponentDir(projectRootDir, ID);
-  const workflowFilename=path.resolve(componentDir, componentJsonFilename);
   logger.info('open workflow:', componentDir);
   try{
-    //TODO pass ID <-- why?
-    await setCwf(projectRootDir, workflowFilename);
+    await setCwd(projectRootDir, componentDir);
     await sendWorkflow(emit, projectRootDir);
   }catch(e){
     logger.error("read workflow failed", e);
@@ -96,10 +91,11 @@ async function onWorkflowRequest(emit, projectRootDir, ID, cb){
 
 async function onCreateNode(emit, projectRootDir, request, cb){
   if(typeof cb !== "function") cb = ()=>{};
-  logger.debug('create event recieved:', request);
+  logger.debug('createNode event recieved:', request);
   try{
-    const parentID = getCwf(projectRootDir).ID;
-    const parentDir = await getComponentDir(projectRootDir, parentID);
+    const parentDir = getCwd(projectRootDir);
+    const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
+    const parentID = parentJson.ID;
 
     // create component directory
     const absDirName = await _makeDir(path.resolve(parentDir,request.type), 0)
@@ -168,14 +164,6 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb){
   cb(true);
 }
 
-function onAddValueToArrayProperty(emit, projectRootDir, ID, property, value, cb){
-          // await addValue(projectRootDir, targetNode, property, value);
-}
-function onDelValueFromArrayProperty(emit, projectRootDir, ID, property, value, cb){
-            // await delValue(projectRootDir, targetNode, property, value);
-}
-
-// remove filelinkとremoveLinkに分ける
 async function removeAllLink(projectRootDir, targetID){
   const counterparts = new Map();
   const component = await getComponent(projectRootDir, targetID);
@@ -233,7 +221,7 @@ async function removeAllLink(projectRootDir, targetID){
     }
   }
 
-  return Promise.all(Array.from(counterparts, ([key, component])=>{
+  return Promise.all(Array.from(counterparts, ([, component])=>{
     return updateComponentJson(projectRootDir, component)
   }));
 }
@@ -604,8 +592,6 @@ function registerListeners(socket, projectRootDir){
   socket.on('getWorkflow',               onWorkflowRequest.bind(null, emit, projectRootDir));
   socket.on('createNode',                onCreateNode.bind(null, emit, projectRootDir));
   socket.on('updateNode',                onUpdateNode.bind(null, emit, projectRootDir));
-  socket.on('addValueToArrayProperty',   onAddValueToArrayProperty.bind(null,   emit, projectRootDir));
-  socket.on('delValueFromArrayProperty', onDelValueFromArrayProperty.bind(null, emit, projectRootDir));
   socket.on('removeNode',                onRemoveNode.bind(null, emit, projectRootDir));
   socket.on('addInputFile',              onAddInputFile.bind(null, emit, projectRootDir));
   socket.on('addOutputFile',             onAddOutputFile.bind(null, emit, projectRootDir));

@@ -8,7 +8,7 @@ const minimatch = require("minimatch");
 const { getLogger } = require('../logSettings');
 const logger = getLogger('workflow');
 const fileBrowser = require("./fileBrowser");
-const { gitAdd } = require('./project');
+const { gitAdd } = require('./projectResource');
 const { getSystemFiles } = require('./utility');
 
 async function sendDirectoryContents(emit, target, request, withSND=true, sendDir=true, sendFile=true, allFilter=/.*/){

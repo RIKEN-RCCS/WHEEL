@@ -1,5 +1,4 @@
 const fs = require("fs-extra");
-const {promisify} = require("util");
 
 const uuidv1 = require("uuid/v1");
 
@@ -27,7 +26,7 @@ class JsonArrayManager{
    */
   add(entry){
     entry.id=uuidv1();
-    this.data.push(entry)
+    this.data.push(entry);
     return this.write();
   }
   /**
@@ -35,7 +34,7 @@ class JsonArrayManager{
    */
   unshift(entry){
     entry.id=uuidv1();
-    this.data.unshift(entry)
+    this.data.unshift(entry);
     return this.write();
   }
   /**

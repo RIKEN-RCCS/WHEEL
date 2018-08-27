@@ -7,7 +7,7 @@ const glob = require("glob");
 const {getLogger} = require('../logSettings');
 const logger = getLogger('workflow');
 const {projectJsonFilename, componentJsonFilename} = require('../db/db');
-const {getCwf} = require("./project");
+const {getCwd} = require("./projectResource");
 
 function hasChild(node){
   return node.type === 'workflow' || node.type === 'parameterStudy' || node.type === 'for' || node.type === 'while' || node.type === 'foreach';
@@ -23,14 +23,6 @@ function isInitialNode(node){
     return !hasConnectedInputFile
   }
   return true;
-}
-
-async function readProjectJson(projectRootDir){
-  return fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
-}
-
-function isRunning(projectState){
-  return projectState === 'running' || projectState === 'paused';
 }
 
 async function getComponentDir(projectRootDir, targetID){
@@ -50,6 +42,7 @@ async function getComponent(projectRootDir, component){
       // component is ID of component
       componentJson = await fs.readJson(path.resolve(componentDir, componentJsonFilename));
     }
+    //if componentDir === undefined, component is regarded as already readed Json data
   }
   return componentJson;
 }
@@ -67,9 +60,7 @@ async function getChildren(projectRootDir, parentID){
 }
 
 async function sendWorkflow(emit, projectRootDir){
-  const { state } = await readProjectJson(projectRootDir);
-  const fromDispatcher = isRunning(state)
-  const wf=getCwf(projectRootDir, fromDispatcher);
+  const wf = await getComponent(projectRootDir, path.resolve(getCwd(projectRootDir), componentJsonFilename));
   const rt = Object.assign({}, wf);
   rt.descendants = await getChildren(projectRootDir, wf.ID);
   for(const child of rt.descendants){
@@ -83,11 +74,21 @@ async function sendWorkflow(emit, projectRootDir){
   }
   emit('workflow', rt);
 }
+//read and send projectJson
+async function sendProjectJson(emit, projectRootDir, state){
+  const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+  if(state){
+    projectJson.state = state;
+  }
+  emit("projectJson", projectJson);
+}
 
 module.exports ={
   hasChild: hasChild,
   isInitialNode: isInitialNode,
   getComponentDir: getComponentDir,
   getComponent: getComponent,
-  sendWorkflow: sendWorkflow
+  sendWorkflow: sendWorkflow,
+  getChildren: getChildren,
+  sendProjectJson: sendProjectJson
 }

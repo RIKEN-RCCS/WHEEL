@@ -4,7 +4,7 @@ const {projectJsonFilename, componentJsonFilename} = require("../../../app/db/db
 const componentFactory = require("../../../app/routes/workflowComponent");
 const {getComponentDir} = require("../../../app/routes/workflowUtil");
 const getSchema = require("../../../app/routes/workflowComponentSchemas");
-const project  = require("../../../app/routes/project");
+const {setCwd} = require("../../../app/routes/projectResource");
 
 // setup test framework
 const chai = require("chai");
@@ -29,7 +29,6 @@ const onRenameInputFile           = workflowEditor.__get__("onRenameInputFile");
 const onRenameOutputFile          = workflowEditor.__get__("onRenameOutputFile");
 const onAddLink                   = workflowEditor.__get__("onAddLink");
 const onRemoveLink                = workflowEditor.__get__("onRemoveLink");
-
 const onAddFileLink               = workflowEditor.__get__("onAddFileLink");
 const onRemoveFileLink            = workflowEditor.__get__("onRemoveFileLink");
 
@@ -39,7 +38,7 @@ const testDirRoot = "WHEEL_TEST_TMP"
 const emit = sinon.stub();
 const cb = sinon.stub();
 workflowEditor.__set__("logger", {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}); //default logger stub
-workflowEditor.__set__("logger", {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}});//show error message
+//workflowEditor.__set__("logger", {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}});//show error message
 //workflowEditor.__set__("logger", {error: console.log, warn: console.log, info: console.log, debug: console.log});//send all log to console
 workflowEditor.__set__("gitAdd", ()=>{});
 
@@ -274,7 +273,7 @@ describe("workflow editor UT", function(){
       fs.outputJson(path.join(testDirRoot, "testProject.wheel", "wf1", "wf2", componentJsonFilename), wf2, {spaces: 4}),
       fs.outputJson(path.join(testDirRoot, "testProject.wheel", "wf1", "wf2", "task2",componentJsonFilename), task2, {spaces: 4})
     ]);
-    await project.setCwf(projectRootDir, path.join(projectRootDir, componentJsonFilename));
+    setCwd(projectRootDir, projectRootDir);
   });
   afterEach(async function(){
     await fs.remove(testDirRoot);
@@ -292,7 +291,7 @@ describe("workflow editor UT", function(){
       expect(emit.args[0][1]).to.jsonSchema(rootSchema);
     });
     it("should send wf1, child, and grandson json data", async function(){
-      await project.setCwf(projectRootDir, path.join(projectRootDir, "wf1", componentJsonFilename));
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1"));
       await onWorkflowRequest(emit, projectRootDir, components.wf1.ID, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
@@ -323,7 +322,7 @@ describe("workflow editor UT", function(){
   });
   describe("#onCreateNode", function(){
     it("should create new node under wf1", async function(){
-      await project.setCwf(projectRootDir, path.join(projectRootDir, "wf1", componentJsonFilename));
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1"));
       await onCreateNode(emit, projectRootDir, {type: "task", pos: {x: 10, y: 10}}, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);

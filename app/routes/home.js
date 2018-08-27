@@ -2,24 +2,19 @@
 const fs = require("fs-extra");
 const os = require("os");
 const path = require("path");
-const {promisify} = require("util");
 
 const express = require('express');
-const nodegit = require("nodegit");
-const glob = require("glob");
 
 const {getLogger} = require('../logSettings');
 const logger = getLogger('home');
 const fileBrowser = require("./fileBrowser");
-const {getDateString} = require('./utility');
-
+const {gitAdd, gitCommit, gitInit} = require("./gitOperator");
 const componentFactory= require("./workflowComponent");
 const {projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir} = require('../db/db');
-
-const {escapeRegExp, isValidName} = require('./utility');
+const {getDateString, escapeRegExp, isValidName} = require('./utility');
 //eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
-const noWheelDir = new RegExp(`^(?!^.*${escapeRegExp(suffix)}$).*$`);
+//const noWheelDir = new RegExp(`^(?!^.*${escapeRegExp(suffix)}$).*$`);
 
 async function isDuplicateProjectName(newName){
   const currentProjectList = await getAllProject();
@@ -40,15 +35,6 @@ async function isValidProjectName(name){
     return false
   }
   return true
-}
-
-async function initGitRepo(root, user, email){
-  const repo = await nodegit.Repository.init(root, 0);
-  const author = nodegit.Signature.now(user, email);
-  const commiter= await author.dup();
-  const files = await promisify(glob)("**", {cwd: root});
-
-  return repo.createCommitOnHead(files, author, commiter, "create new project");
 }
 
 /**
@@ -83,7 +69,7 @@ async function createNewProject(root, name, description) {
   const projectJsonFileFullpath=path.resolve(root, projectJsonFilename);
   logger.debug(projectJson);
   await fs.writeJson(projectJsonFileFullpath, projectJson, {spaces: 4});
-  return initGitRepo(root,  'wheel', "wheel@example.com"); //TODO replace by user info
+  return gitInit(root,  'wheel', "wheel@example.com"); //TODO replace by user info
 }
 
 async function getAllProject() {
@@ -143,7 +129,7 @@ async function sendProjectListIfExists(emit, cb){
 
 // socket.IO event handlers
 async function onAddProject (emit, projectDir, description, cb) {
-  logger.debug("onAdd", projectDir, description);
+  logger.debug("add project event recieved:", projectDir, description);
   if(typeof cb !== "function") cb = ()=>{};
   let projectRootDir = removeTrailingPathSep(projectDir);
   if(!projectRootDir.endsWith(suffix)){
@@ -176,25 +162,14 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   const projectJson = await fs.readJson(projectJsonFilepath);
 
   //TODO read root workflow and validate
+  //TODO read componentJson and convert new format recursively
   const projectRootDir=path.dirname(projectJsonFilepath);
   try{
-    await fs.access(path.resolve(projectRootDir, componentJsonFilename));
+    await fs.pathExists(path.resolve(projectRootDir, componentJsonFilename));
   }catch(e){
     logger.error('root workflow JSON file not found\n', e);
     cb(false)
     return
-  }
-
-  try{
-    await fs.access(path.resolve(projectRootDir, ".git"));
-  }catch(e){
-    if(e.code === "ENOENT"){
-      await initGitRepo(projectRootDir,  'wheel', "wheel@example.com"); //TODO replace by user info
-    }else{
-      logger.error("can not access to git repository", e);
-      cb(false)
-      return
-    }
   }
 
   const projectName = projectJson.name;
@@ -221,7 +196,15 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
       return
     }
   }
-
+  if(! await fs.pathExists(path.resolve(newProjectRootDir, ".git"))){
+    try{
+      await gitInit(newProjectRootDir,  'wheel', "wheel@example.com"); //TODO replace by user info
+    }catch(e){
+      logger.error("can not access to git repository", e);
+      cb(false)
+      return
+    }
+  }
   projectList.unshift({path: newProjectRootDir});
   await sendProjectListIfExists(emit, cb);
 }
@@ -249,9 +232,8 @@ async function onRenameProject (emit, msg, cb) {
     cb(false);
     return;
   }
-  const projectJsonFilepath=path.resolve(msg.path, projectJsonFilename);
-  const newName = msg.newName;
 
+  const newName = msg.newName;
   if(! await isValidProjectName(newName)){
     logger.error('invalid project name', newName);
     cb(false);
@@ -269,8 +251,12 @@ async function onRenameProject (emit, msg, cb) {
     const rootWorkflow = await fs.readJson(path.resolve(newDir, componentJsonFilename));
     rootWorkflow.name = newName;
     await fs.writeJson(path.resolve(newDir, componentJsonFilename), rootWorkflow);
-    const repo = path.join(newDir, ".git");
-  //TODO git add and commit
+    await gitAdd(newDir, projectJsonFilename);
+    await gitAdd(newDir, componentJsonFilename);
+    //TODO get from user db
+    const name = "wheel";
+    const mail = "wheel.example.com";
+    await gitCommit(newDir, name, mail);
   }catch(err){
     logger.error('rename project failed', err);
     cb(false);

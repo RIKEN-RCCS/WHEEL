@@ -1,8 +1,11 @@
 const path = require("path");
 const EventEmitter = require('events');
+const {promisify} = require("util");
 const fs = require('fs-extra');
 const klaw = require('klaw');
 const nodegit = require("nodegit");
+const glob = require("glob");
+
 const {replacePathsep} = require('./utility');
 
 /**
@@ -20,26 +23,13 @@ class git extends EventEmitter{
       this._write();
     });
   }
+  // never call this function directly!!
+  // please use emit("wirteIndex") instead
   async _write(){
     setImmediate(async ()=>{
       await this.index.write();
       this.registerWriteIndex();
     });
-  }
-
-  /**
-   * create new repository
-   * this routine is not used for now
-   * @param {string} root - new repository's root directory
-   * @param {string} user - author's name
-   * @param {string} mail - author's mailaddress
-   */
-  async init(root, user, mail){
-  //TODO  'wheel', "wheel@example.com"
-  const repo = await nodegit.Repository.init(root, 0);
-  const author = nodegit.Signature.now(user, mail); //TODO replace user info
-  const commiter= await author.dup();
-  await repo.createCommitOnHead([projectJsonFilename, rootWorkflowFilename], author, commiter, "create new project");
   }
 
   /**
@@ -49,6 +39,21 @@ class git extends EventEmitter{
     const repoPath = path.resolve(this.rootDir, '.git');
     this.repo = await nodegit.Repository.open(repoPath);
     this.index = await this.repo.refreshIndex();
+  }
+
+
+  /**
+   * create new repository
+   * @param {string} root - new repository's root directory
+   * @param {string} user - author's name
+   * @param {string} mail - author's mailaddress
+   */
+  async init(root, user, mail){
+  const repo = await nodegit.Repository.init(path.join(root,".git"), 0);
+  const author = nodegit.Signature.now(user, mail);
+  const commiter= await author.dup();
+  const files = await promisify(glob)("**", {cwd: root});
+  await repo.createCommitOnHead(files, author, commiter, "create new project");
   }
 
   /**
@@ -126,6 +131,9 @@ class git extends EventEmitter{
 }
 
 const repos = new Map();
+
+//TODO 同時Openの最大値を決めて、それを越えたら古い順にcloseする (indexの取扱がどうなるか要確認)
+// return empty git instance if rootDir/.git is not exists
 async function getGitOperator(rootDir){
   if(! repos.has(rootDir)){
     const repo = new git(rootDir);
@@ -135,19 +143,47 @@ async function getGitOperator(rootDir){
   return repos.get(rootDir);
 }
 
-// for rapid
-async function gitAdd(rootDir, absFilename){
+// initialize repo and commit all files under the root directory
+async function gitInit(rootDir, user, mail){
+  const repo = new git(rootDir);
+  await repo.init(rootDir, user, mail);
+  repos.set(rootDir, repo);
+  return repo.open();
+}
+
+// commit already staged(indexed) files
+async function gitCommit(rootDir, name, mail){
+  const git = await getGitOperator(rootDir);
+  return git.commit(name, mail);
+}
+
+/**
+ * performe git add
+ * @param {string} rootDir  - directory path which has ".git" directory
+ * @param {string} filename - filename which should be add to repo.
+ * filename should be absolute path or relative path from rootDir.
+ */
+async function gitAdd(rootDir, filename){
+  const absFilename = path.isAbsolute(filename)? filename: path.resolve(rootDir, filename);
   const git = await getGitOperator(rootDir);
   return git.add(absFilename);
 }
 
-// for rapid (future release)
-async function gitRm(rootDir, absFilename){
+/**
+ * performe git rm recursively
+ * @param {string} rootDir  - directory path which has ".git" directory
+ * @param {string} filename - filename which should be add to repo.
+ * filename should be absolute path or relative path from rootDir.
+ */
+async function gitRm(rootDir, filename){
+  const absFilename = path.isAbsolute(filename)? filename: path.resolve(rootDir, filename);
   const git = await getGitOperator(rootDir);
   return git.rm(absFilename);
 }
 
 
-module.exports.add=gitAdd;
-module.exports.rm=gitRm;
+module.exports.gitInit = gitInit;
+module.exports.gitCommit=gitCommit;
+module.exports.gitAdd=gitAdd;
+module.exports.gitRm=gitRm;
 module.exports.getGitOperator=getGitOperator;

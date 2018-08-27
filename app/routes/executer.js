@@ -3,14 +3,12 @@ const path = require('path');
 const fs = require('fs-extra');
 const SBS = require("simple-batch-system");
 
-const {getLogger} = require('../logSettings');
-const logger = getLogger('workflow');
-
-const {getSsh, emit} = require('./project');
+const {getSsh, emit} = require('./projectResource');
 const {remoteHost, jobScheduler} = require('../db/db');
 const {addXSync, replacePathsep, getDateString, deliverOutputFiles} = require('./utility');
 
 const executers=[];
+let logger; //logger is injected when exec() is called;
 
 /**
  * set task component's status and notice it's changed
@@ -316,7 +314,7 @@ class Executer{
     return rt === 0? gatherFiles(this.ssh, task, rt):rt;
   }
 
-  localSubmit(task){
+  localSubmit(){
     logger.warn('localSubmit function is not implimented yet');
   }
 
@@ -388,7 +386,8 @@ function createExecuter(task){
  * enqueue task
  * @param {Task} task - instance of Task class (dfined in workflowComponent.js)
  */
-function exec(task){
+function exec(task, loggerInstance){
+  logger = loggerInstance;
   task.remotehostID=remoteHost.getID('name', task.host) || 'localhost';
   let executer = executers.find((e)=>{
     return e.remotehostID=== task.remotehostID && e.useJobScheduler=== task.useJobScheduler

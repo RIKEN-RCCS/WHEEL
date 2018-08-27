@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-const path = require('path');
 const opener = require('opener');
 const waitOn = require('wait-on');
 
@@ -10,12 +9,13 @@ let opt = {
   resources: [url],
   delay: 500,
   timeout: 3000
-}
+};
 waitOn(opt, (err)=>{
   if(err){
+    //eslint-disable-next-line no-console
     console.log('fatal error occurred during waiting http server up',err);
     return;
   }
   opener(url);
 });
-require('./index')
+require('./index');

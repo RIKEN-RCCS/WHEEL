@@ -1,6 +1,6 @@
 const {remoteHost, jobScheduler} = require('../db/db');
 const {getLogger} = require('../logSettings');
-const {getSsh} = require('./project');
+const {getSsh} = require('./projectResource');
 
 const logger = getLogger('workflow');
 
@@ -13,7 +13,8 @@ async function cancelRemoteJob(task, ssh){
   await ssh.exec(cancelCmd, {}, output, output);
   logger.debug('cacnel done', output.join());
 }
-async function cancelLocalJob(task){
+async function cancelLocalJob(){
+  //eslint-disable-next-line no-console
   console.log("not implimented yet!!");
 }
 async function killLocalProcess(task){

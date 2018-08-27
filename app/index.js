@@ -6,7 +6,6 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const siofu = require('socketio-file-upload');
-const ejs = require('ejs');
 const passport = require('passport');
 
 const {port} = require('./db/db');
@@ -15,7 +14,7 @@ const {getLogger, setSocketIO, setFilename, setMaxLogSize, setNumBackup, setComp
 /*
  * set up express, http and socket.io
  */
-var app = express();
+let app = express();
 //TODO if certification setting is available, use https instead
 const server = require('http').createServer(app);
 const sio = require('socket.io')(server);
@@ -27,6 +26,7 @@ setNumBackup(5);
 setCompress(true);
 
 const logger = getLogger();
+//eslint-disable-next-line no-console
 process.on('unhandledRejection', console.dir);
 
 // template engine
@@ -50,7 +50,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // routing
-var routes = {
+let routes = {
     "home":       require(path.resolve(__dirname, 'routes/home'))(sio),
     "workflow":   require(path.resolve(__dirname, 'routes/workflow'))(sio),
     "remotehost": require(path.resolve(__dirname, 'routes/remotehost'))(sio),
@@ -69,8 +69,8 @@ app.use('/editor',     routes.rapid);
 app.use('/remotehost', routes.remotehost);
 
 // port number
-var defaultPort = 443;
-var portNumber = parseInt(process.env.PORT) || port || defaultPort;
+let defaultPort = 443;
+let portNumber = parseInt(process.env.PORT) || port || defaultPort;
 if (portNumber < 0) {
     portNumber = defaultPort;
 }
@@ -78,7 +78,7 @@ app.set('port', port);
 
 // error handler
 //TODO special error handler for 404 should be placed here
-app.use(function (err, req, res, next) {
+app.use(function (err, req, res) {
     logger.error(err);
     // render the error page
     res.status(err.status || 500);
@@ -96,19 +96,19 @@ function onError(error) {
     if (error.syscall !== 'listen') {
         throw error;
     }
-    var bind = typeof port === 'string'
+    let bind = typeof port === 'string'
         ? 'Pipe ' + port
         : 'Port ' + port;
     // handle specific listen errors with friendly messages
     switch (error.code) {
         case 'EACCES':
             logger.error(bind + ' requires elevated privileges');
+        //eslint-disable-next-line no-process-exit
             process.exit(1);
-            break;
         case 'EADDRINUSE':
             logger.error(bind + ' is already in use');
+        //eslint-disable-next-line no-process-exit
             process.exit(1);
-            break;
         default:
             throw error;
     }
@@ -117,8 +117,8 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 function onListening() {
-    var addr = server.address();
-    var bind = typeof addr === 'string'
+    let addr = server.address();
+    let bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
     logger.info('Listening on ' + bind);

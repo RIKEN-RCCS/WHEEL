@@ -1,7 +1,7 @@
 const path = require('path');
 const log4js = require('log4js');
 
-log4js.addLayout('errorlog', function(config){
+log4js.addLayout('errorlog', function(){
   return function(logEvent){
     const tmp = logEvent.data.reduce((a,p)=>{
       if(p instanceof Error){
@@ -12,8 +12,8 @@ log4js.addLayout('errorlog', function(config){
         return a;
       }
     }, '');
-    return tmp
-  }
+    return tmp;
+  };
 });
 
 const defaultSettings = {
@@ -113,7 +113,7 @@ const defaultSettings = {
       "colour": "green"
     }
   }
-}
+};
 
 let ready=false;
 let firstCall = true;
@@ -125,7 +125,7 @@ function reset(){
       logSettings = Object.assign({}, defaultSettings);
       ready = false;
       resolve();
-      return
+      return;
     }
     log4js.shutdown((err)=>{
       if(err) reject();
@@ -160,6 +160,7 @@ function getLogger(cat, verbose){
   if(! ready) return null;
   if(firstCall){
     if(verbose){
+      //eslint-disable-next-line no-console
       console.log("getLogger called. current setting is as follows\n", logSettings);
     }
     log4js.configure(logSettings);
@@ -174,3 +175,4 @@ module.exports.setFilename=setFilename;
 module.exports.setMaxLogSize=setMaxLogSize;
 module.exports.setNumBackup=setNumBackup;
 module.exports.setCompress=setCompress;
+module.exports.reset = reset;

@@ -26,25 +26,6 @@ function replacePathsep(pathString){
 }
 
 /**
- * convert to posix-style path string and remove head and tail path separator
- */
-function normalizePath(pathString){
-  let rt=pathString;
-  // path.posix.sep('/') is disallowed as filename letter on windows OS
-  // but posix allow path.win32.sep('\').
-  if(pathString.includes(path.posix.sep)){
-    const pathObj=path.posix.parse(pathString);
-    rt = path.posix.join(pathObj.dir, pathObj.base);
-  }else if(pathString.includes(path.win32.sep)){
-    const pathObj=path.win32.parse(pathString);
-    rt = path.posix.join(pathObj.dir.split(path.win32.sep), pathObj.base);
-  }
-  return rt;
-}
-
-
-
-/**
  * check if ssh connection can be established
  * @param {hostinfo} hotsInfo - remote host setting
  * @param {string} password - password or passphrase for private key
@@ -169,6 +150,7 @@ function isValidOutputFilename(name){
  * return regexp of systemfiles
  */
 function getSystemFiles(){
+  //eslint-disable-next-line no-useless-escape
   return new RegExp(`^(?!^.*(${escapeRegExp(projectJsonFilename)}|${escapeRegExp(componentJsonFilename)}|\.git.*)$).*$`);
 }
 
