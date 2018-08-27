@@ -99,7 +99,6 @@
     "nyc": "^11.4.1",
     "rewire": "^3.0.2",
     "selenium-server": "^3.13.0",
-    "selenium-standalone": "^6.15.1",
     "sinon": "^4.4.2",
     "sinon-chai": "^2.14.0",
     "style-loader": "^0.19.0",

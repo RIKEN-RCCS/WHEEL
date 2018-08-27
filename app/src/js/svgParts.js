@@ -36,7 +36,7 @@ function collisionDetection(svg, counterpart, x, y) {
   let nearestPlug = null;
   // dropしたplugと対応する種類のplugのうち最も距離が近いものを探す
   svg.select(counterpart).each(function (i, v) {
-    let index = v[i].parent().node.instance.data('index');
+    let index = v[i].parent().node.instance.data('ID');
     let points = v[i].node.points;
     const connectorWidth = 16;
     const connectorHeight = 32;
@@ -687,7 +687,7 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
         console.log("not connect");
         return;
       }
-      const myIndex = plug.parent().node.instance.data('index');
+      const myIndex = plug.parent().node.instance.data('ID');
       if (hitIndex !== myIndex) {
         callback(myIndex, hitIndex, plug, hitPlug);
       }
@@ -757,7 +757,7 @@ export function createConnector(svg, originX, originY, offsetX, offsetY, sio) {
   return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, RPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
-    sio.emit('addFileLink', { src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName });
+    sio.emit('addFileLink', myIndex, srcName, hitIndex, dstName);
   });
 }
 
@@ -793,7 +793,7 @@ export function createParentConnector(svg, originX, originY, offsetX, offsetY, s
   return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
-    sio.emit('addFileLink', { src: myIndex, dst: hitIndex, srcName: srcName, dstName: dstName });
+    sio.emit('addFileLink', myIndex, srcName, hitIndex, dstName);
   });
 }
 

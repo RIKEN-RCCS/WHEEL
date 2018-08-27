@@ -264,7 +264,7 @@
           </div>
           <template v-for="(v, i) in node.indexList">
             <div>
-              <input type="text" v-model.lazy.trim="v.label" v-on:blur="updateProperty('indexList')" class="newIndexListField">
+              <input type="text" v-model.lazy.trim="node.indexList[i]" v-on:blur="updateProperty('indexList')" class="newIndexListField">
               <button v-on:click="delIndexOfForeach(i)" class="indexListButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>

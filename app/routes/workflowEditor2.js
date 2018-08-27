@@ -84,7 +84,7 @@ async function onWorkflowRequest(emit, projectRootDir, ID, cb){
   const workflowFilename=path.resolve(componentDir, componentJsonFilename);
   logger.info('open workflow:', componentDir);
   try{
-    //TODO pass ID
+    //TODO pass ID <-- why?
     await setCwf(projectRootDir, workflowFilename);
     await sendWorkflow(emit, projectRootDir);
   }catch(e){
@@ -243,8 +243,6 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb){
   logger.debug('removeNode event recieved:', projectRootDir, targetID);
   try{
     const nodeDir = await getComponentDir(projectRootDir, targetID);
-    const component = await fs.readJson(path.resolve(nodeDir, componentJsonFilename));
-
     const descendantsID = await getDescendantsID(projectRootDir, targetID);
 
     // remove all link/filelink to or from components to be removed
@@ -259,28 +257,16 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb){
       }
     });
 
-    //get all files to be removed
-    const removeFiles = [];
-    const asyncWalk = (root)=>{
-      return new Promise((resolve, reject)=>{
-        klaw(root)
-          .on('data', (item)=>{
-            removeFiles.push(item.path);
-          })
-          .on('end', ()=>{
-            resolve();
-          });
-      });
-    }
-    await asyncWalk(nodeDir);
+    //memo
+    // gitOperator.rm()内部で実際に存在するファイルを再帰的に探して
+    // git rmを行なっているので、先にファイルを削除するとエラーになる。
+    // しかし、実際にはファイルの削除が正常に終了したファイルから順にgit rmするべき
+    //
+    //git rm
+    await gitAdd(projectRootDir, nodeDir, true);
 
     //remove files
     await fs.remove(nodeDir);
-
-    //git rm
-    await Promise.all(removeFiles.map(async (e)=>{
-        await gitAdd(projectRootDir, e, true);
-    }));
 
     await sendWorkflow(emit, projectRootDir);
   }catch(e){
@@ -297,122 +283,320 @@ async function onAddInputFile(emit, projectRootDir, ID, name, cb){
     await updateComponentJson(projectRootDir, ID, (componentJson)=>{
       componentJson.inputFiles.push({name: name, src:[]});
     });
+    await sendWorkflow(emit, projectRootDir);
   }catch(e){
-    logger.error("addInputFail failed", e);
+    logger.error("addInputFile failed", e);
     cb(false)
     return;
   }
   cb(true);
 }
 async function onAddOutputFile(emit, projectRootDir, ID, name, cb){
-  return updateComponentJson(projectRootDir, ID, (componentJson)=>{
-    componentJson.outputFiles.push({name: name, dst:[]});
-  });
-}
-async function onRemoveInputFile(emit, projectRootDir, ID, name, cb){
-  return updateComponentJson(projectRootDir, ID, (componentJson)=>{
-    componentJson.inputFiles = componentJson.inputFiles.filter((inputFile)=>{
-      return name !== inputFile.name;
+  if(typeof cb !== "function") cb = ()=>{};
+  logger.debug('addOutputFile event recieved:', projectRootDir, ID, name);
+  try{
+    await updateComponentJson(projectRootDir, ID, (componentJson)=>{
+      componentJson.outputFiles.push({name: name, dst:[]});
     });
-  });
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("addOutputFile failed", e);
+    cb(false)
+    return;
+  }
+  cb(true)
+}
+
+async function onRemoveInputFile(emit, projectRootDir, ID, name, cb){
+  if(typeof cb !== "function") cb = ()=>{};
+  logger.debug('removeInputFile event recieved:', projectRootDir, ID, name);
+  const counterparts = new Set();
+  try{
+    await updateComponentJson(projectRootDir, ID, (componentJson)=>{
+      componentJson.inputFiles = componentJson.inputFiles.filter((inputFile)=>{
+        if(name === inputFile.name){
+          for(const src of inputFile.src){
+            //TODO 親子間のファイルLinkの仕様が固まったら、そっちも削除
+            counterparts.add(src.srcNode);
+          }
+          return false;
+        }else{
+          return true;
+        }
+      });
+    });
+    await Promise.all(Array.from(counterparts, (counterpartID)=>{
+      return updateComponentJson(projectRootDir, counterpartID, (componentJson)=>{
+        for(const outputFile of componentJson.outputFiles){
+          outputFile.dst = outputFile.dst.filter((dst)=>{
+            return dst.dstNode !== ID;
+          });
+        }
+      });
+    }));
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("removeInputFile failed", e);
+    cb(false);
+    return
+  }
+  cb(true);
 }
 async function onRemoveOutputFile(emit, projectRootDir, ID, name, cb){
-  return updateComponentJson(projectRootDir, ID, (componentJson)=>{
-    componentJson.outputFiles = componentJson.outputFiles.filter((outputFile)=>{
-      return name !== outputFile.name;
+  if(typeof cb !== "function") cb = ()=>{};
+  logger.debug('removeOutputFile event recieved:', projectRootDir, ID, name);
+  const counterparts = new Set();
+  try{
+    await updateComponentJson(projectRootDir, ID, (componentJson)=>{
+      componentJson.outputFiles = componentJson.outputFiles.filter((outputFile)=>{
+        if(name === outputFile.name){
+          for(const dst of outputFile.dst){
+            //TODO 親子間のファイルLinkの仕様が固まったら、そっちも削除
+            counterparts.add(dst.dstNode);
+          }
+          return false;
+        }else{
+          return true;
+        }
+      });
     });
-  });
+    await Promise.all(Array.from(counterparts, (counterpartID)=>{
+      return updateComponentJson(projectRootDir, counterpartID, (componentJson)=>{
+        for(const inputFile of componentJson.inputFiles){
+          inputFile.src = inputFile.src.filter((src)=>{
+            return src.srcNode !== ID;
+          });
+        }
+      });
+    }));
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("removeOutputFile failed", e);
+    cb(false);
+    return
+  }
+  cb(true);
 }
 async function onRenameInputFile(emit, projectRootDir, ID, oldName, newName, cb){
-  const counterparts = new Map();
-  await updateComponentJson(projectRootDir, ID, (componentJson)=>{
-    componentJson.inputFiles = componentJson.inputFiles.map((inputFile)=>{
-      if(inputFile.name === oldName){
-        inputFile.name = newName;
-        inputFile.src.forEach((e)=>{
-          counterparts.set(e.srcNode, e.srcName);
-        });
-      }
-      return inputFiles;
-    });
-  });
-  return Promise.all(Array.from(counterparts, ([key, component])=>{
-    return updateComponentJson(projectRootDir, key, (componentJson)=>{
-      for(const outputFile of componentJson.outputFiles){
-        for(const e of outputFile.dst){
-          if(dst.dstName === oldName) dst.dstName = newName;
+  if(typeof cb !== "function") cb = ()=>{};
+  logger.debug('renameIntputFile event recieved:', projectRootDir, ID, oldName, newName);
+  const counterparts = new Set();
+  try{
+    await updateComponentJson(projectRootDir, ID, (componentJson)=>{
+      componentJson.inputFiles = componentJson.inputFiles.map((inputFile)=>{
+        if(inputFile.name === oldName){
+          inputFile.name = newName;
+          inputFile.src.forEach((e)=>{
+            counterparts.add(e.srcNode);
+          });
         }
-      }
+        return inputFile;
+      });
     });
-  }));
+    await Promise.all(Array.from(counterparts, (counterpartID)=>{
+      return updateComponentJson(projectRootDir, counterpartID, (componentJson)=>{
+        for(const outputFile of componentJson.outputFiles){
+          for(const dst of outputFile.dst){
+            if(dst.dstNode === ID && dst.dstName === oldName) dst.dstName = newName;
+          }
+        }
+      });
+    }));
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("renameInputFile failed", e);
+    cb(false);
+    return
+  }
+  cb(true);
 }
 async function onRenameOutputFile(emit, projectRootDir, ID, oldName, newName, cb){
-  const counterparts = new Map();
-  await updateComponentJson(projectRootDir, ID, (componentJson)=>{
-    componentJson.outputFiles = componentJson.outputFiles.map((outputFile)=>{
-      if(outputFile.name === oldName){
-        outputFile.name = newName;
-        outputFile.dst.forEach((e)=>{
-          counterparts.set(e.dstNode, e.dstName);
-        });
-      }
-      return inputFiles;
-    });
-  });
-  return Promise.all(Array.from(counterparts, ([key, component])=>{
-    return updateComponentJson(projectRootDir, key, (componentJson)=>{
-      for(const inputFile of componentJson.inputFiles){
-        for(const e of inputFile.dst){
-          if(src.srcName === oldName) src.srcName = newName;
+  if(typeof cb !== "function") cb = ()=>{};
+  logger.debug('renameOuttputFile event recieved:', projectRootDir, ID, oldName, newName);
+  const counterparts = new Set();
+  try{
+    await updateComponentJson(projectRootDir, ID, (componentJson)=>{
+      componentJson.outputFiles = componentJson.outputFiles.map((outputFile)=>{
+        if(outputFile.name === oldName){
+          outputFile.name = newName;
+          outputFile.dst.forEach((e)=>{
+            counterparts.add(e.dstNode);
+          });
         }
-      }
+        return outputFile;
+      });
     });
-  }));
-}
-
-async function onAddLink(emit, projectRootDir, msg, cb){
-  logger.debug('addLink event recieved: ', msg);
-  addLink(projectRootDir, msg.src, msg.dst, msg.isElse);
-  try{
-    await write(projectRootDir)
+    await Promise.all(Array.from(counterparts, (counterpartID)=>{
+      return updateComponentJson(projectRootDir, counterpartID, (componentJson)=>{
+        for(const inputFile of componentJson.inputFiles){
+          for(const src of inputFile.src){
+            if(src.srcNode === ID && src.srcName === oldName) src.srcName = newName;
+          }
+        }
+      });
+    }));
     await sendWorkflow(emit, projectRootDir);
-  }catch(err){
-    logger.error('add link failed: ', err);
+  }catch(e){
+    logger.error("renameOutputFile failed", e);
+    cb(false);
+    return
   }
-}
-function onRemoveLink(emit, projectRootDir, msg, cb){
-  logger.debug('removeLink event recieved:', msg);
-  removeLink(projectRootDir, msg.src, msg.dst, msg.isElse);
-
-  write(projectRootDir)
-    .then(()=>{
-      sendWorkflow(emit, projectRootDir);
-    })
-    .catch((err)=>{
-      logger.error('remove link failed: ', err);
-    });
+  cb(true);
 }
 
-async function onAddFileLink(emit, projectRootDir, msg, cb){
-  logger.debug('addFileLink event recieved: ', msg);
-  addFileLink(projectRootDir, msg.src, msg.dst, msg.srcName, msg.dstName);
+/**
+ * @param {object}  msg
+ * @param {string}  msg.src - リンク元ID
+ * @param {string}  msg.dst - リンク先ID
+ * @param {boolean} msg.isElse - elseからのリンクかどうかのフラグ
+ */
+async function onAddLink(emit, projectRootDir, msg, cb){
+  if(typeof cb !== "function") cb = ()=>{};
+  logger.debug('addLink event recieved:', msg.src, msg.dst, msg.isElse);
+  if(msg.src === msg.dst){
+    logger.error("cyclic link is not allowed");
+    cb(false);
+    return;
+  }
   try{
-    await write(projectRootDir);
-      sendWorkflow(emit, projectRootDir);
-  }catch(err){
-    logger.error('add filelink failed:', err);
+    await Promise.all([
+      updateComponentJson(projectRootDir, msg.src, (componentJson)=>{
+        if(msg.isElse && !componentJson.else.includes(msg.dst)){
+          componentJson.else.push(msg.dst);
+        }else if(! componentJson.next.includes(msg.dst)){
+          componentJson.next.push(msg.dst);
+        }
+      }),
+      updateComponentJson(projectRootDir, msg.dst, (componentJson)=>{
+        if(!componentJson.previous.includes(msg.src)){
+          componentJson.previous.push(msg.src);
+        }
+      })
+    ]);
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("addLink failed", e);
+    cb(false);
+    return
   }
+  cb(true);
+}
+async function onRemoveLink(emit, projectRootDir, msg, cb){
+  if(typeof cb !== "function") cb = ()=>{};
+  logger.debug('removeLink event recieved:', msg.src, msg.dst);
+  try{
+    await Promise.all([
+      updateComponentJson(projectRootDir, msg.src, (componentJson)=>{
+        if(msg.isElse){
+          componentJson.else = componentJson.else.filter((e)=>{
+            return e !== msg.dst;
+          });
+        }else{
+          componentJson.next = componentJson.next.filter((e)=>{
+            return e !== msg.dst;
+          });
+        }
+      }),
+      updateComponentJson(projectRootDir, msg.dst, (componentJson)=>{
+          componentJson.previous = componentJson.previous.filter((e)=>{
+            return e !== msg.src;
+          });
+      })
+    ]);
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("removeLink failed", e);
+    cb(false);
+    return
+  }
+  cb(true);
 }
 
-async function onRemoveFileLink(emit, projectRootDir, msg, cb){
-  logger.debug('removeFileLink event recieved:', msg);
-  removeFileLink(projectRootDir, msg.src, msg.dst, msg.srcName, msg.dstName);
-  try{
-    await write(projectRootDir);
-      sendWorkflow(emit, projectRootDir);
-  }catch(err){
-    logger.error('remove file link failed:', err);
+async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, dstName, cb){
+  logger.debug('addFileLink event recieved:', srcNode, srcName, dstNode, dstName);
+  if(srcNode === dstNode){
+    logger.error("cyclic link is not allowed");
+    cb(false);
+    return;
   }
+  try{
+    const srcDir = await getComponentDir(projectRootDir, srcNode);
+    const dstDir = await getComponentDir(projectRootDir, dstNode);
+    if(path.dirname(dstDir) === srcDir){
+      //TODO
+      // link to parent
+    }else if(path.dirname(srcDir) === dstDir){
+      //TODO
+      // link to child
+    }else{
+      //normal case
+      await Promise.all([
+        updateComponentJson(projectRootDir, srcNode, (componentJson)=>{
+          const outputFile = componentJson.outputFiles.find((e)=>{
+            return e.name === srcName;
+          });
+          if(! outputFile.dst.includes({dstNode: dstNode, dstName: dstName})){
+            outputFile.dst.push({dstNode: dstNode, dstName: dstName});
+          }
+        }),
+        updateComponentJson(projectRootDir, dstNode, (componentJson)=>{
+          const inputFile = componentJson.inputFiles.find((e)=>{
+            return e.name === dstName;
+          });
+          if(! inputFile.src.includes({srcNode: srcNode, srcName: srcName})){
+            inputFile.src.push({srcNode: srcNode, srcName: srcName});
+          }
+        })
+      ]);
+    }
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("add file link failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode, dstName, cb){
+  logger.debug('removeFileLink event recieved:', srcNode, srcName, dstNode, dstName);
+  try{
+    const srcDir = await getComponentDir(projectRootDir, srcNode);
+    const dstDir = await getComponentDir(projectRootDir, dstNode);
+    if(path.dirname(dstDir) === srcDir){
+      //TODO
+      // link to parent
+    }else if(path.dirname(srcDir) === dstDir){
+      //TODO
+      // link to child
+    }else{
+      //normal case
+      await Promise.all([
+        updateComponentJson(projectRootDir, srcNode, (componentJson)=>{
+          const outputFile = componentJson.outputFiles.find((e)=>{
+            return e.name === srcName;
+          });
+          outputFile.dst = outputFile.dst.filter((e)=>{
+            return ! (e.dstNode === dstNode && e.dstName === dstName);
+          });
+        }),
+        updateComponentJson(projectRootDir, dstNode, (componentJson)=>{
+          const inputFile = componentJson.inputFiles.find((e)=>{
+            return e.name === dstName;
+          });
+          inputFile.src = inputFile.src.filter((e)=>{
+            return ! (e.srcNode === srcNode && e.srcName === srcName);
+          });
+        }),
+      ]);
+    }
+    await sendWorkflow(emit, projectRootDir);
+  }catch(e){
+    logger.error("remove file link failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
 }
 
 function registerListeners(socket, projectRootDir){

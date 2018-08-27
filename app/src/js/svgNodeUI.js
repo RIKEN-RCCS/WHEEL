@@ -103,7 +103,7 @@ export class SvgNodeUI {
         let x = e.detail.p.x;
         let y = e.detail.p.y;
         if (x !== startX || y !== startY) {
-          sio.emit('updateNode', { ID: node.ID, property: 'pos', value: { 'x': x - diffX, 'y': y - diffY }, cmd: 'update' });
+          sio.emit('updateNode', node.ID, 'pos', { 'x': x - diffX, 'y': y - diffY });
         }
       });
   }
@@ -117,7 +117,7 @@ export class SvgNodeUI {
     let srcPlug = this.lowerPlug;
     srcPlug.data('next').forEach((dstIndex) => {
       let dstPlug = upperPlugs.members.find((plug) => {
-        return plug.data('index') === dstIndex;
+        return plug.data('ID') === dstIndex;
       });
       const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
       cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
@@ -125,21 +125,21 @@ export class SvgNodeUI {
       this.nextLinks.push(cable);
 
       dstPlug.on('click', (e) => {
-        this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex, isElse: false });
+        this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: false });
       });
     });
     if (this.hasOwnProperty('lower2Plug')) {
       let srcPlug = this.lower2Plug;
       srcPlug.data('else').forEach((dstIndex) => {
         let dstPlug = upperPlugs.members.find((plug) => {
-          return plug.data('index') === dstIndex;
+          return plug.data('ID') === dstIndex;
         });
         const cable = new parts.SvgCable(this.svg, config.plug_color.elseFlow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dstIndex);
         this.elseLinks.push(cable);
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeLink', { src: this.group.data('index'), dst: dstIndex, isElse: true });
+          this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: true });
         });
       });
     }
@@ -148,7 +148,7 @@ export class SvgNodeUI {
     this.connectors.forEach((srcPlug) => {
       srcPlug.data('dst').forEach((dst) => {
         let dstPlug = receptorPlugs.members.find((plug) => {
-          return plug.data('index') === dst.dstNode && plug.data('name') === dst.dstName;
+          return plug.data('ID') === dst.dstNode && plug.data('name') === dst.dstName;
         });
 
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
@@ -157,7 +157,7 @@ export class SvgNodeUI {
         this.outputFileLinks.push(cable);
 
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeFileLink', { src: this.group.data('index'), srcName: srcPlug.data('name'), dst: dst.dstNode, dstName: dst.dstName });
+          this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
         });
       });
     });
@@ -255,7 +255,7 @@ export class SvgParentNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    this.group.data({ "index": 'parent', "type": parentnode.type }).addClass('parentnode');
+    this.group.data({ "ID": 'parent', "type": parentnode.type }).addClass('parentnode');
 
     // draw input output file name
     let fileNameXpos = 0;
@@ -298,7 +298,7 @@ export class SvgParentNodeUI {
       //     = -(ヘッダ + 初期位置補正 + 位置調整)
       let recepterPosY = window.innerHeight - 361;
       const receptor = parts.createParentReceptor(svg, 16, recepterPosY, 0, recepterInterval * fileIndex);
-      receptor.data({ "index": "parent", "name": input.name });
+      receptor.data({ "ID": "parent", "name": input.name });
 
       this.group.add(receptor);
     });
@@ -326,7 +326,7 @@ export class SvgParentNodeUI {
         let x = e.detail.p.x;
         let y = e.detail.p.y;
         if (x !== startX || y !== startY) {
-          this.sio.emit('updateNode', { index: parentnode.index, property: 'pos', value: { 'x': x - diffX, 'y': y - diffY }, cmd: 'update' });
+          this.sio.emit('updateNode', parentnode.ID, 'pos', { 'x': x - diffX, 'y': y - diffY });
         }
       });
   }
@@ -342,7 +342,7 @@ export class SvgParentNodeUI {
       srcPlug.data('dst').forEach((dst) => {
 
         let dstPlug = receptorPlugs.members.find((plug) => {
-          return plug.data('index') === dst.dstNode && plug.data('name') === dst.dstName;
+          return plug.data('ID') === dst.dstNode && plug.data('name') === dst.dstName;
         });
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
@@ -350,7 +350,7 @@ export class SvgParentNodeUI {
         this.outputFileLinks.push(cable);
 
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeFileLink', { src: this.group.data('index'), srcName: srcPlug.data('name'), dst: dst.dstNode, dstName: dst.dstName });
+          this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
         });
       });
     });

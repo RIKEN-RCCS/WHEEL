@@ -48,10 +48,10 @@
     * [addOutputFile(index, name, cb) [新規作成]](#addoutputfileindex-name-cb-新規作成)
     * [removeInputFile(index, name, cb) [新規作成、 未実装]](#removeinputfileindex-name-cb-新規作成-未実装)
     * [removeOutputFile(index, name, cb) [新規作成、 未実装]](#removeoutputfileindex-name-cb-新規作成-未実装)
-    * [renameInputFile(index, oldName, newName, cb) [新規作成、 未実装]](#renameinputfileindex-oldname-newname-cb-新規作成-未実装)
-    * [renameOutputFile(index, oldName, newName, cb) [新規作成、 未実装]](#renameoutputfileindex-oldname-newname-cb-新規作成-未実装)
-    * [addFileLink(srcIndex, dstIndex, srcName, dstName, cb) [変更あり、 未実装]](#addfilelinksrcindex-dstindex-srcname-dstname-cb-変更-未実装)
-    * [removeFileLink(srcIndex, dstIndex, srcName, dstName, cb) [変更あり、 未実装]](#removefilelinksrcindex-dstindex-srcname-dstname-cb-変更-未実装)
+    * [renameInputFile(index, oldName, newName, cb) [新規作成]](#renameinputfileindex-oldname-newname-cb-新規作成)
+    * [renameOutputFile(index, oldName, newName, cb) [新規作成]](#renameoutputfileindex-oldname-newname-cb-新規作成)
+    * [addFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]](#addfilelinksrcnode-srcname-dstnode-dstname-cb-変更)
+    * [removeFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]](#removefilelinksrcnode-srcname-dstnode-dstname-cb-変更)
     * [getHostList(cb)](#gethostlistcb)
   * [Project実行、編集関連API](#project実行編集関連api)
     * [runProject(path, cb)](#runprojectpath-cb)
@@ -418,14 +418,14 @@ linkデータの形式はaddLink APIと同じ
 
 指定された名前のoutputFileを削除します。同時にそのoutputFileに接続されていたfileLinkも全て削除します。
 
-#### renameInputFile(index, oldName, newName, cb) [新規作成、 未実装]
+#### renameInputFile(index, oldName, newName, cb) [新規作成]
 - @param {string} index - inputFileの名前を変更するノードのインデックス
 - @param {string} oldName - 元の名前
 - @param {string} newName - 変更後のの名前
 
 指定されたinputFileエントリの名前を変更します。
 
-#### renameOutputFile(index, oldName, newName, cb) [新規作成、 未実装]
+#### renameOutputFile(index, oldName, newName, cb) [新規作成]
 - @param {string} index - outputFileの名前を変更するノードのインデックス
 - @param {string} oldName - 元の名前
 - @param {string} newName - 変更後の名前
@@ -433,19 +433,19 @@ linkデータの形式はaddLink APIと同じ
 指定されたoutputFileエントリの名前を変更します。
 
 
-#### addFileLink(srcIndex, dstIndex, srcName, dstName, cb) [変更あり、 未実装]
-- @param {string} srcIndex - 送信ノードのインデックス
-- @param {string} dstIndex - 受取ノードのインデックス
-- @param {string} srcName  - 送信ノードでの名前
-- @param {string} dstName  - 受取ノードでの名前
+#### addFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]
+- @param {string} srcNode - 送信ノードのID
+- @param {string} srcName - 送信ノードでの名前
+- @param {string} dstNode - 受取ノードのID
+- @param {string} dstName - 受取ノードでの名前
 
 ファイル間の依存関係を追加します。
 
-#### removeFileLink(srcIndex, dstIndex, srcName, dstName, cb) [変更あり、 未実装]
-- @param {string} srcIndex - 送信ノードのインデックス
-- @param {string} dstIndex - 受取ノードのインデックス
-- @param {string} srcName  - 送信ノードでの名前
-- @param {string} dstName  - 受取ノードでの名前
+#### removeFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]
+- @param {string} srcNode - 送信ノードのID
+- @param {string} srcName - 送信ノードでの名前
+- @param {string} dstNode - 受取ノードのID
+- @param {string} dstName - 受取ノードでの名前
 
 ファイル間の依存関係を削除します。
 

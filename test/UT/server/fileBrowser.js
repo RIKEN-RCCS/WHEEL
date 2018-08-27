@@ -89,7 +89,7 @@ describe("file Browser UT", function(){
         {"path": path.resolve( testDirRoot ), "name": "linkpuyo", "type": "file", "islink": true}
       ]);
     });
-    it("should get directories only", async function(){
+    it("should get directories", async function(){
       const rt = await getContents(testDirRoot, {sendFilename: false});
       expect(rt).to.eql([
         {"path": path.resolve( testDirRoot ), "name": "bar", "type": "dir", "islink": false},
@@ -100,7 +100,7 @@ describe("file Browser UT", function(){
         {"path": path.resolve( testDirRoot ), "name": "linkfoo", "type": "dir", "islink": true}
       ]);
     });
-    it("should get files only", async function(){
+    it("should get files", async function(){
       const rt = await getContents(testDirRoot, {sendDirname: false});
       expect(rt).to.eql([
         {"path": path.resolve( testDirRoot ), "name": "foo_1", "type": "file", "islink": false},
