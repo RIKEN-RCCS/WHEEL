@@ -92,11 +92,15 @@ $(() => {
             height: $(window).height() * 0.9,
             width: $(window).width() * 0.6
         };
-        var html = '<p id="path"></p><ul id="fileList"></ul><div id="nameTextbox">New project name<input type="text" id="newProjectName"></div>';
+        var html = '<p id="path"></p><ul id="fileList"></ul>'
+            + '<div id="nameTextbox"><label id="projectNameLabel">New project name</label><input type="text" id="newProjectName"></div >'
+            + '<div id="descriptionTextbox"><label id="projectDescriptionLabel">Description</label><input type="text" id="description" placeholder="This is new project." ></div>';
         dialogWrapper('#dialog', html, dialogOptions).done(function () {
             var label = $('#newProjectName').val();
+            var description = $('#description').val();
+            if (description === "") description = null;
             if (label) {
-                socket.emit('addProject', fb.getRequestedPath() + '/' + label);
+                socket.emit('addProject', fb.getRequestedPath() + '/' + label, description);
             } else {
                 console.log('illegal label: ', label);
             }
@@ -141,11 +145,4 @@ $(() => {
 
     var pos = $("#titleUserName").offset();
     $("#userImg").css('right', window.innerWidth - pos.left + "px");
-
-    // document.body.addEventListener("click", function (event) {
-    //     var x = event.pageX;
-    //     var y = event.pageY;
-    //     console.log(x);
-    //     console.log(y);
-    // });
 });
