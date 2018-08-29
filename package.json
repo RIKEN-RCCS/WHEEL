@@ -25,7 +25,7 @@
     "profiler": "node --prof app/index",
     "mocha": "mocha",
     "lint": "eslint --fix app/*.js app/routes/*.js app/db/*.js",
-    "esw": "esw --no-color --watch --clear --cahnged --fix app/*.js app/routes/*.js app/db/*.js",
+    "esw": "esw --no-color --watch --clear --fix app/*.js app/routes/*.js app/db/*.js",
     "coverage": "nyc --reporter=html --reporter=text npm run fullTest",
     "coverage:server": "nyc --reporter=html --reporter=text npm run UT:server",
     "coverage:client": "nyc --reporter=html --reporter=text npm run UT:client",

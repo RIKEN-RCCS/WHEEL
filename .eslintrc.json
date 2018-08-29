@@ -1,23 +1,30 @@
 {
   "root": true,
-  "env": {
-    "es6": true,
-    "node": true
-  },
   "extends": [
     "eslint"
   ],
   "plugins": [
     "node"
   ],
+  "env": {
+    "node": true,
+    "es6": true
+  },
   "rules": {
+    "require-jsdoc": "warn",
+    "valid-jsdoc": "warn",
+    "no-param-reassign": "warn",
     "arrow-parens": ["error", "always"],
     "arrow-body-style": ["error", "always"],
-    "indent": ["error", 2, {"SwitchCase": 1}],
     "arrow-spacing":[
       "error",
       { "before": false, "after": false }
     ],
+    "camelcase": ["error", { "properties": "never" }],
+    "eqeqeq": ["error", "always", {"null": "ignore"}],
+    "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
+    "indent": ["error", 2, {"SwitchCase": 1}],
+    "no-use-before-define": ["error", { "functions": false }],
     "node/exports-style": [
       "error",
       "module.exports"
