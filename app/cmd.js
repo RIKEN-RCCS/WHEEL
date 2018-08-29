@@ -1,21 +1,23 @@
 #!/usr/bin/env node
-const opener = require('opener');
-const waitOn = require('wait-on');
+const opener = require("opener");
+const waitOn = require("wait-on");
 
-let {port} = require('./db/db');
-//TODO impliment argument parser and suppress opening browser in multi user mode
-let url = `http://localhost:${port}`;
-let opt = {
+const { port } = require("./db/db");
+
+// TODO impliment argument parser and suppress opening browser in multi user mode
+const url = `http://localhost:${port}`;
+const opt = {
   resources: [url],
   delay: 500,
   timeout: 3000
 };
+
 waitOn(opt, (err)=>{
-  if(err){
-    //eslint-disable-next-line no-console
-    console.log('fatal error occurred during waiting http server up',err);
+  if (err) {
+    // eslint-disable-next-line no-console
+    console.log("fatal error occurred during waiting http server up", err);
     return;
   }
   opener(url);
 });
-require('./index');
+require("./index");
