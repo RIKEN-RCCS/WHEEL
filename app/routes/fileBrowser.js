@@ -51,8 +51,8 @@ function bundleSNDFiles(fileList, isDir) {
 
   // remove bundled files
   const files = fileList.filter((e)=>{
-    for (const pattern of globs.map((e)=>{
-      return e.name;
+    for (const pattern of globs.map((g)=>{
+      return g.name;
     })) {
       if (minimatch(e.name, pattern)) {
         return false;

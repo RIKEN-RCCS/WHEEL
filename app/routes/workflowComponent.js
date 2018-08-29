@@ -1,3 +1,4 @@
+"use strict";
 const uuidv1 = require("uuid/v1");
 
 class BaseWorkflowComponent {
@@ -176,7 +177,7 @@ class Foreach extends BaseWorkflowComponent {
  * factory method for workflow component class
  */
 function factory(type, ...args) {
-  let node = null;
+  let node;
 
   switch (type) {
     case "task":
@@ -200,6 +201,8 @@ function factory(type, ...args) {
     case "foreach":
       node = new Foreach(...args);
       break;
+    default:
+      node = null;
   }
   return node;
 }

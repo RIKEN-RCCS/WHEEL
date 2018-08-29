@@ -1,4 +1,5 @@
-const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR !== undefined;
+"use strict";
+const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR;
 const fs = require("fs-extra");
 const path = require("path");
 
@@ -58,30 +59,33 @@ async function validateTask(component, parent, hosts) {
 
 }
 async function validateConditionalCheck(component) {
-  if (component.condition === undefined) {
+  if (component.hasOwnProperty("condition")) {
     return Promise.reject(new Error(`condition is not specified ${component.name}`));
   }
+  return Promise.resolve();
 }
 
 async function validateForLoop(component) {
-  if (component.start === undefined) {
+  if (component.hasOwnProperty("start")) {
     return Promise.reject(new Error(`start is not specified ${component.name}`));
   }
-  if (component.step === undefined) {
+  if (component.hasOwnProperty("step")) {
     return Promise.reject(new Error(`step is not specified ${component.name}`));
   }
-  if (component.end === undefined) {
+  if (component.hasOwnProperty("end")) {
     return Promise.reject(new Error(`end is not specified ${component.name}`));
   }
   if (component.step === 0 || (component.end - component.start) * component.step < 0) {
     return Promise.reject(new Error(`inifinite loop ${component.name}`));
   }
+  return Promise.resolve();
 }
 
 async function validateParameterStudy(component) {
-  if (component.parameterFile === null) {
+  if (component.hasOwnProperty("parameterFile")) {
     return Promise.reject(new Error(`parameter setting file is not specified ${component.name}`));
   }
+  return Promise.resolve();
 }
 
 async function validateForeach(component) {
@@ -91,6 +95,7 @@ async function validateForeach(component) {
   if (component.indexList.length <= 0) {
     return Promise.reject(new Error(`index list is empty ${component.name}`));
   }
+  return Promise.resolve();
 }
 
 /**
@@ -100,7 +105,7 @@ async function validateComponents(projectRootDir, prarentDir, hosts) {
   const promises = [];
   const children = await getChildren(prarentDir);
 
-  children.map((component)=>{
+  for (const component of children) {
     if (component.type === "task") {
       promises.push(validateTask(component, prarentDir, hosts));
     } else if (component.type === "if" || component.type === "while") {
@@ -115,7 +120,7 @@ async function validateComponents(projectRootDir, prarentDir, hosts) {
     if (hasChild(component)) {
       promises.push(validateComponents(projectRootDir, path.resolve(prarentDir, component.name), hosts));
     }
-  });
+  }
 
   const hasInitialNode = children.nodes.some((component)=>{
     return isInitialNode(component);
@@ -135,12 +140,10 @@ async function validationCheck(projectRootDir, sio) {
   let hosts = [];
 
   await validateComponents(projectRootDir, projectRootDir, hosts);
-
   hosts = Array.from(new Set(hosts)); // remove duplicate
 
   // ask password to user and make session to each remote hosts
-  await hosts.reduce(async(promise, remoteHostName)=>{
-    await promise;
+  for (const remoteHostName of hosts) {
     const id = remoteHost.getID("name", remoteHostName);
     const hostInfo = remoteHost.get(id);
 
@@ -161,6 +164,8 @@ async function validationCheck(projectRootDir, sio) {
     // remoteHostName is name property of remote host entry
     // hostInfo.host is hostname or IP address of remote host
     addSsh(projectRootDir, hostInfo.host, arssh);
+
+    // TODO loopで書き直す
     try {
 
       // 1st try
@@ -169,7 +174,7 @@ async function validationCheck(projectRootDir, sio) {
       if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
         return Promise.reject(e);
       }
-      const newPassword = await askPassword(sio, remoteHostName);
+      let newPassword = await askPassword(sio, remoteHostName);
 
       if (config.passphrase) {
         config.passphrase = newPassword;
@@ -182,11 +187,11 @@ async function validationCheck(projectRootDir, sio) {
 
         // 2nd try
         await arssh.canConnect();
-      } catch (e) {
-        if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
-          return Promise.reject(e);
+      } catch (e2) {
+        if (e2.reason !== "invalid passphrase" && e2.reason !== "authentication failure") {
+          return Promise.reject(e2);
         }
-        const newPassword = await askPassword(sio, remoteHostName);
+        newPassword = await askPassword(sio, remoteHostName);
 
         if (config.passphrase) {
           config.passphrase = newPassword;
@@ -199,15 +204,16 @@ async function validationCheck(projectRootDir, sio) {
 
           // 3rd try
           await arssh.canConnect();
-        } catch (e) {
-          if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
-            return Promise.reject(e);
+        } catch (e3) {
+          if (e3.reason !== "invalid passphrase" && e3.reason !== "authentication failure") {
+            return Promise.reject(e3);
           }
           return Promise.reject(new Error("wrong password for 3 times"));
         }
       }
     }
-  }, Promise.resolve());
+  }
+  return Promise.resolve();
 }
 
 
@@ -273,13 +279,13 @@ async function onRunProject(sio, projectRootDir, cb) {
         logger.debug("used heap size ", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       }, 30000);
     }
-    const projectState = await rootDispatcher.start();
+    const projectLastState = await rootDispatcher.start();
 
     if (memMeasurement) {
       logger.debug("used heap size immediately after execution=", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       clearInterval(timeout);
     }
-    await sendProjectJson(emit, projectRootDir, projectState);
+    await sendProjectJson(emit, projectRootDir, projectLastState);
   } catch (err) {
     logger.error("fatal error occurred while parsing workflow:", err);
     await sendProjectJson(emit, projectRootDir, "failed");
@@ -370,6 +376,7 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
   } catch (e) {
     logger.error("update project Json failed", e);
     cb(false);
+    return;
   }
   cb(true);
 }
@@ -382,6 +389,7 @@ async function onGetProjectState(emit, projectRootDir, cb) {
   } catch (e) {
     logger.error("send project state failed", e);
     cb(false);
+    return;
   }
   cb(true);
 }
@@ -392,6 +400,7 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
   } catch (e) {
     logger.error("send project state failed", e);
     cb(false);
+    return;
   }
   cb(true);
 }

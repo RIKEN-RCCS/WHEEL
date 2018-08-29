@@ -1,3 +1,4 @@
+"use strict";
 const eventNameTable = {
   DEBUG: "logDBG",
   INFO: "logINFO",

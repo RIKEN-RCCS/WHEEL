@@ -37,8 +37,8 @@ const testDirRoot = "WHEEL_TEST_TMP"
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-workflowEditor.__set__("logger", {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}); //default logger stub
-//workflowEditor.__set__("logger", {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}});//show error message
+//workflowEditor.__set__("logger", {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}); //default logger stub
+workflowEditor.__set__("logger", {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}});//show error message
 //workflowEditor.__set__("logger", {error: console.log, warn: console.log, info: console.log, debug: console.log});//send all log to console
 workflowEditor.__set__("gitAdd", ()=>{});
 
@@ -323,6 +323,7 @@ describe("workflow editor UT", function(){
   describe("#onCreateNode", function(){
     it("should create new node under wf1", async function(){
       setCwd(projectRootDir, path.join(projectRootDir, "wf1"));
+      //TODO check it !
       await onCreateNode(emit, projectRootDir, {type: "task", pos: {x: 10, y: 10}}, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);

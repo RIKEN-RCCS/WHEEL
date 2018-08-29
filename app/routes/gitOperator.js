@@ -1,3 +1,4 @@
+"use strict";
 const path = require("path");
 const EventEmitter = require("events");
 const { promisify } = require("util");
@@ -11,7 +12,7 @@ const { replacePathsep } = require("./utility");
 /**
  * git operation class
  */
-class git extends EventEmitter {
+class Git extends EventEmitter {
   constructor(rootDir) {
     super();
     this.rootDir = rootDir;
@@ -50,11 +51,11 @@ class git extends EventEmitter {
    * @param {string} user - author's name
    * @param {string} mail - author's mailaddress
    */
-  async init(root, user, mail) {
-    const repo = await nodegit.Repository.init(path.join(root, ".git"), 0);
+  async init(user, mail) {
+    const repo = await nodegit.Repository.init(path.join(this.rootDir, ".git"), 0);
     const author = nodegit.Signature.now(user, mail);
     const commiter = await author.dup();
-    const files = await promisify(glob)("**", { cwd: root });
+    const files = await promisify(glob)("**", { cwd: this.rootDir });
 
     await repo.createCommitOnHead(files, author, commiter, "create new project");
   }
@@ -150,7 +151,7 @@ const repos = new Map();
 // return empty git instance if rootDir/.git is not exists
 async function getGitOperator(rootDir) {
   if (!repos.has(rootDir)) {
-    const repo = new git(rootDir);
+    const repo = new Git(rootDir);
 
     repos.set(rootDir, repo);
     await repo.open();
@@ -160,9 +161,9 @@ async function getGitOperator(rootDir) {
 
 // initialize repo and commit all files under the root directory
 async function gitInit(rootDir, user, mail) {
-  const repo = new git(rootDir);
+  const repo = new Git(rootDir);
 
-  await repo.init(rootDir, user, mail);
+  await repo.init(user, mail);
   repos.set(rootDir, repo);
   return repo.open();
 }

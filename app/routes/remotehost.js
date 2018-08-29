@@ -43,14 +43,15 @@ async function trySshConnectionWrapper(hostInfo, password, cb) {
       if (err.config.hasOwnProperty("passphrase")) {
         err.config.passphrase = "passphrase  was defined but omitted";
       }
-      cb(false);
       logger.error(err);
+      cb(false);
+
     });
 }
 
 module.exports = function(io) {
   const sio = io.of("/remotehost");
-  const doAndEmit = function(func, msg) {
+  const doAndEmit = (func, msg)=>{
     func(msg).then(()=>{
       sio.emit("hostList", remoteHost.getAll());
     });
@@ -73,6 +74,7 @@ module.exports = function(io) {
     });
   });
 
+  // eslint-disable-next-line new-cap
   const router = express.Router();
 
   router.get("/", (req, res)=>{

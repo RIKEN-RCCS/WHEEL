@@ -1,3 +1,4 @@
+"use strict";
 const { promisify } = require("util");
 const path = require("path");
 
@@ -42,12 +43,12 @@ async function createSshConfig(hostInfo, password) {
     config.privateKey = config.privateKey.toString();
     if (password) {
       config.passphrase = password;
-      config.password = undefined;
+      config.password = null;
     }
   } else {
-    config.privateKey = undefined;
+    config.privateKey = null;
     if (password) {
-      config.passphrase = undefined;
+      config.passphrase = null;
       config.password = password;
     }
   }

@@ -1,4 +1,5 @@
-const child_process = require("child_process");
+"use strict";
+const childProcess = require("child_process");
 const path = require("path");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
@@ -33,9 +34,7 @@ async function replaceCRLF(filename) {
  * parse filter string from client and return validate glob pattern
  */
 function parseFilter(pattern) {
-  if (pattern.startsWith("{") && pattern.endsWith("}")) {
-    return pattern;
-  } if (!pattern.includes(",")) {
+  if ((pattern.startsWith("{") && pattern.endsWith("}")) || !pattern.includes(",")) {
     return pattern;
   }
   return `{${pattern}}`;
@@ -107,9 +106,7 @@ async function gatherFiles(ssh, task, rt) {
   // get outputFiles from remote server
   const outputFilesArray = task.outputFiles
     .filter((e)=>{
-      if (e.dst.length > 0) {
-        return e;
-      }
+      return e.dst.length > 0;
     })
     .map((e)=>{
       if (e.name.endsWith("/") || e.name.endsWith("\\")) {
@@ -224,7 +221,10 @@ class Executer {
         setTaskState(task, state);
 
         // to use retry function in the future release, return Promise.reject if task finished with non-zero value
-        return rt === 0 ? task.state : Promise.reject(rt);
+        if (state === "failed") {
+          return Promise.reject(rt);
+        }
+        return state;
       },
       retry: false,
       maxConcurrent: maxNumJob,
@@ -316,7 +316,7 @@ class Executer {
       if (task.currentIndex !== undefined) {
         options.env.WHEEL_CURRENT_INDEX = task.currentIndex.toString();
       }
-      const cp = child_process.spawn(script, options, (err)=>{
+      const cp = childProcess.spawn(script, options, (err)=>{
         if (err) {
           reject(err);
         }

@@ -1,3 +1,4 @@
+"use strict";
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 
@@ -36,13 +37,26 @@ function calcParamAxisSize(min, max, step) {
 }
 
 function getParamAxisSize(axis) {
-  if (axis.type === "string" || axis.type === "file") {
-    return axis.list.length;
-  } if (axis.type === "integer" || axis.type === "float") {
-    return calcParamAxisSize(axis.min, axis.max, axis.step);
+  let size;
+
+  switch (axis.type) {
+    case "string":
+      size = axis.list.length;
+      break;
+    case "file":
+      size = axis.list.length;
+      break;
+    case "integer":
+      size = calcParamAxisSize(axis.min, axis.max, axis.step);
+      break;
+    case "float":
+      size = calcParamAxisSize(axis.min, axis.max, axis.step);
+      break;
+    default:
+      logger.warn("invalid param type", axis.type);
+      size = 0;
   }
-  logger.warn("invalid param type", axis.type);
-  return 0;
+  return size;
 }
 
 function getDigitsAfterTheDecimalPoint(floatVal) {
@@ -118,9 +132,9 @@ function removeInvalid(paramSpace) {
   // TODO fix bug in rapid client.js
   paramSpace.forEach((e)=>{
     if (e.type === "integer") {
-      e.min = parseInt(e.min);
-      e.max = parseInt(e.max);
-      e.step = parseInt(e.step);
+      e.min = parseInt(e.min, 10);
+      e.max = parseInt(e.max, 10);
+      e.step = parseInt(e.step, 10);
     } else if (e.type === "float") {
       e.min = parseFloat(e.min);
       e.max = parseFloat(e.max);
@@ -132,13 +146,10 @@ function removeInvalid(paramSpace) {
     }
   });
   return paramSpace.filter((e)=>{
-    if (e.type === "file" || e.type === "string") {
-      if (e.list.length > 0) {
-        return true;
-      }
-    } else if (e.type === "integer" || e.type === "float") {
+    if (e.type === "integer" || e.type === "float") {
       return isValidParamAxis(e.min, e.max, e.step);
     }
+    return (e.type === "file" && e.list.length > 0) || (e.type === "string" && e.list.length > 0);
   });
 }
 

@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * send log message to client vi socketIO if level is higher than 40000(ERROR)
  */

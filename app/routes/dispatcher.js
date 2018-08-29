@@ -1,7 +1,8 @@
+"use strict";
 const fs = require("fs-extra");
 const path = require("path");
 const { promisify } = require("util");
-const child_process = require("child_process");
+const childProcess = require("child_process");
 const { EventEmitter } = require("events");
 
 const { interval } = require("../db/db");
@@ -12,22 +13,22 @@ const { isInitialNode, getChildren, getComponent } = require("./workflowUtil");
 const { emit, addDispatchedTask } = require("./projectResource");
 
 // utility functions
-function _forGetNextIndex(component) {
+function forGetNextIndex(component) {
   return component.hasOwnProperty("currentIndex") ? component.currentIndex + component.step : component.start;
 }
-function _forIsFinished(component) {
+function forIsFinished(component) {
   return (component.currentIndex > component.end && component.step > 0) || (component.currentIndex < component.end && component.step < 0);
 }
-function _whileGetNextIndex(component) {
+function whileGetNextIndex(component) {
   return component.hasOwnProperty("currentIndex") ? ++(component.currentIndex) : 0;
 }
-function _whileIsFinished(cwfDir, logger, component) {
+function whileIsFinished(cwfDir, logger, component) {
   const cwd = path.resolve(cwfDir, component.path);
   const condition = evalConditionSync(component.condition, cwd, component.currentIndex, logger);
 
   return !condition;
 }
-function _foreachGetNextIndex(component) {
+function foreachGetNextIndex(component) {
   if (component.hasOwnProperty("currentIndex")) {
     const i = component.indexList.findIndex((e)=>{
       return e.label === component.currentIndex;
@@ -42,11 +43,17 @@ function _foreachGetNextIndex(component) {
   return component.indexList[0].label;
 
 }
-function _foreachIsFinished(component) {
+function foreachIsFinished(component) {
   return component.currentIndex === undefined;
 }
 
-function _isFinishedState(state) {
+function loopInitialize(component) {
+  component.initialized = true;
+  component.originalPath = component.path;
+  component.originalName = component.name;
+}
+
+function isFinishedState(state) {
   return state === "finished" || state === "failed";
 }
 
@@ -66,6 +73,7 @@ function evalConditionSync(condition, cwd, currentIndex, logger) {
   } catch (e) {
     if (e.code === "ENOENT") {
       logger.debug("evalute ", condition);
+      // eslint-disable-next-line no-eval
       return eval(`var WHEEL_CURRENT_INDEX=${currentIndex};${condition}`);
     }
   }
@@ -80,7 +88,7 @@ function evalConditionSync(condition, cwd, currentIndex, logger) {
   if (currentIndex !== undefined) {
     options.env.WHEEL_CURRENT_INDEX = currentIndex.toString();
   }
-  return child_process.spawnSync(script, options).status === 0;
+  return childProcess.spawnSync(script, options).status === 0;
 }
 
 /**
@@ -210,7 +218,7 @@ class Dispatcher extends EventEmitter {
       return false;
     }
     const hasRunningTask = this.dispatchedTaskList.some((task)=>{
-      return !_isFinishedState(task.state);
+      return !isFinishedState(task.state);
     });
 
     return !hasRunningTask;
@@ -227,8 +235,10 @@ class Dispatcher extends EventEmitter {
     });
     return new Promise((resolve, reject)=>{
       const onStop = ()=>{
+        /* eslint-disable no-use-before-define */
         this.removeListener("error", onError);
         this.removeListener("done", onDone);
+        /* eslint-enable no-use-before-define */
         this.removeListener("stop", onStop);
       };
       const onDone = (isSuccess)=>{
@@ -347,11 +357,6 @@ class Dispatcher extends EventEmitter {
     }
   }
 
-  _loopInitialize(component) {
-    component.initialized = true;
-    component.originalPath = component.path;
-    component.originalName = component.name;
-  }
   async _loopFinalize(component, lastDir) {
     const dstDir = path.resolve(this.cwfDir, component.originalPath);
 
@@ -377,11 +382,11 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("_loopHandler called", component.name);
     component.childLoopRunning = true;
     if (!component.initialized) {
-      this._loopInitialize(component);
+      loopInitialize(component);
     }
 
     // determine old loop block directory
-    let srcDir = component.currentIndex == undefined ? component.path : `${component.originalPath}_${component.currentIndex}`;
+    let srcDir = component.hasOwnProperty("currentIndex") ? component.path : `${component.originalPath}_${component.currentIndex}`;
 
     srcDir = path.resolve(this.cwfDir, srcDir);
 
@@ -390,7 +395,8 @@ class Dispatcher extends EventEmitter {
 
     // end determination
     if (isFinished(component)) {
-      return this._loopFinalize(component, srcDir);
+      await this._loopFinalize(component, srcDir);
+      return;
     }
 
     // send back itself to searchList for next loop trip
@@ -510,7 +516,7 @@ class Dispatcher extends EventEmitter {
     for (const ID of component.previous) {
       const previous = await getComponent(this.projectRootDir, ID);
 
-      if (!_isFinishedState(previous.state)) {
+      if (!isFinishedState(previous.state)) {
         return false;
       }
     }
@@ -518,7 +524,7 @@ class Dispatcher extends EventEmitter {
       for (const ID of inputFile.src) {
         const previous = await getComponent(this.projectRootDir, ID);
 
-        if (!_isFinishedState(previous.state)) {
+        if (!isFinishedState(previous.state)) {
           return false;
         }
       }
@@ -527,7 +533,7 @@ class Dispatcher extends EventEmitter {
   }
 
   _cmdFactory(type) {
-    let cmd = function() {};
+    let cmd = ()=>{};
 
     switch (type.toLowerCase()) {
       case "task":
@@ -537,13 +543,13 @@ class Dispatcher extends EventEmitter {
         cmd = this._checkIf;
         break;
       case "for":
-        cmd = this._loopHandler.bind(this, _forGetNextIndex, _forIsFinished);
+        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished);
         break;
       case "while":
-        cmd = this._loopHandler.bind(this, _whileGetNextIndex, _whileIsFinished.bind(null, this.cwfDir, this.logger));
+        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger));
         break;
       case "foreach":
-        cmd = this._loopHandler.bind(this, _foreachGetNextIndex, _foreachIsFinished);
+        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished);
         break;
       case "workflow":
         cmd = this._delegate;
@@ -551,6 +557,8 @@ class Dispatcher extends EventEmitter {
       case "parameterstudy":
         cmd = this._PSHandler;
         break;
+      default:
+        this.logger("illegal type specified", type);
     }
     return cmd;
   }

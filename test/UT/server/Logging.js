@@ -83,7 +83,7 @@ describe("Unit test for log4js's helper functions", function(){
     it("should set compressFlag to File appender", function(){
       setCompress(1);
       const settings=logger.__get__("logSettings");
-      expect(settings.appenders.file.compress).to.be.true;
+      expect(settings.appenders.file.compress).to.be.false;
     });
     it("should set compressFlag to File appender", function(){
       setCompress("hoge");

@@ -1,8 +1,9 @@
+"use strict";
 const path = require("path");
 const os = require("os");
 
 const fs = require("fs-extra");
-const siofu = require("socketio-file-upload");
+const Siofu = require("socketio-file-upload");
 const minimatch = require("minimatch");
 
 const { getLogger } = require("../logSettings");
@@ -168,6 +169,7 @@ async function onCreateNewFile(emit, label, filename, cb) {
   } catch (e) {
     logger.error("create new file failed", e);
     cb(false);
+    return;
   }
   cb(true);
 }
@@ -184,12 +186,13 @@ async function onCreateNewDir(emit, label, dirname, cb) {
   } catch (e) {
     logger.error("create new directory failed", e);
     cb(false);
+    return;
   }
   cb(true);
 }
 
 function registerListeners(socket, label) {
-  const uploader = new siofu();
+  const uploader = new Siofu();
 
   uploader.listen(socket);
   uploader.dir = os.homedir();

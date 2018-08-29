@@ -1,5 +1,5 @@
+"use strict";
 const path = require("path");
-const { promisify } = require("util");
 
 const fs = require("fs-extra");
 const pathIsInside = require("path-is-inside");
@@ -20,23 +20,21 @@ const componentFactory = require("./workflowComponent");
  *
  * makeDir create "basenme+suffix" direcotry. suffix is increased until the dirname is no longer duplicated.
  */
-async function _makeDir(basename, suffix) {
+async function makeDir(basename, argSuffix) {
+  let suffix = argSuffix;
+
+  while (await fs.pathExists(basename + suffix)) {
+    ++suffix;
+  }
+
   const dirname = basename + suffix;
 
-  return promisify(fs.mkdir)(dirname)
-    .then(()=>{
-      return dirname;
-    })
-    .catch((err)=>{
-      if (err.code === "EEXIST") {
-        return _makeDir(basename, suffix + 1);
-      }
-      logger.warn("mkdir failed", err);
-    });
+  await fs.mkdir(dirname);
+  return dirname;
 }
 
 // this function is used as modifier of updateComponentPath
-async function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
+function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
   componentPath[ID] = replacePathsep(path.relative(projectRootDir, newPath));
 }
 
@@ -98,6 +96,7 @@ async function onWorkflowRequest(emit, projectRootDir, ID, cb) {
   } catch (e) {
     logger.error("read workflow failed", e);
     cb(false);
+    return;
   }
   cb(true);
 }
@@ -113,7 +112,7 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
     const parentID = parentJson.ID;
 
     // create component directory
-    const absDirName = await _makeDir(path.resolve(parentDir, request.type), 0);
+    const absDirName = await makeDir(path.resolve(parentDir, request.type), 0);
 
     const newComponent = componentFactory(request.type, request.pos, parentID);
 
@@ -246,8 +245,8 @@ async function removeAllLink(projectRootDir, targetID) {
     }
   }
 
-  return Promise.all(Array.from(counterparts, ([, component])=>{
-    return updateComponentJson(projectRootDir, component);
+  return Promise.all(Array.from(counterparts, ([, counterpart])=>{
+    return updateComponentJson(projectRootDir, counterpart);
   }));
 }
 
@@ -266,7 +265,7 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb) {
     }
 
     // remove all descendants and target component itself from componentPath
-    await updateComponentPath(projectRootDir, async(projectRootDir, componentPath)=>{
+    await updateComponentPath(projectRootDir, (root, componentPath)=>{
       for (const descendantID of descendantsID) {
         delete componentPath[descendantID];
       }
@@ -287,6 +286,7 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb) {
   } catch (e) {
     logger.error("remove node failed:", e);
     cb(false);
+    return;
   }
   cb(true);
 }

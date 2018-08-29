@@ -1,4 +1,5 @@
-class posSchema {
+"use strict";
+class PosSchema {
   constructor() {
     this.required = ["x", "y"];
     this.properties = {
@@ -29,7 +30,7 @@ class BaseWorkflowComponentSchema {
   }
 }
 
-class taskSchema extends BaseWorkflowComponentSchema {
+class TaskSchema extends BaseWorkflowComponentSchema {
   constructor() {
     super();
     this.required.push("script", "host", "useJobScheduler", "queue", "include", "exclude");
@@ -43,14 +44,14 @@ class taskSchema extends BaseWorkflowComponentSchema {
   }
 }
 
-class workflowSchema extends BaseWorkflowComponentSchema {
+class WorkflowSchema extends BaseWorkflowComponentSchema {
   constructor() {
     super();
     this.properties.type = { enum: ["workflow"] };
   }
 }
 
-class foreachSchema extends BaseWorkflowComponentSchema {
+class ForeachSchema extends BaseWorkflowComponentSchema {
   constructor() {
     super();
     this.properties.type = { enum: ["foreach"] };
@@ -59,16 +60,25 @@ class foreachSchema extends BaseWorkflowComponentSchema {
 }
 
 function getSchema(type) {
+  let rt;
+
   switch (type) {
     case "pos":
-      return new posSchema();
+      rt = new PosSchema();
+      break;
     case "task":
-      return new taskSchema();
+      rt = new TaskSchema();
+      break;
     case "workflow":
-      return new workflowSchema();
+      rt = new WorkflowSchema();
+      break;
     case "foreach":
-      return new foreachSchema();
+      rt = new ForeachSchema();
+      break;
+    default:
+      rt = null;
   }
+  return rt;
 }
 
 module.exports = getSchema;

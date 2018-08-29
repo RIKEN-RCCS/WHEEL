@@ -1,5 +1,6 @@
+"use strict";
 const path = require("path");
-const jsonArrayManager = require("./jsonArrayManager");
+const JsonArrayManager = require("./jsonArrayManager");
 
 const config = require("./server.json");
 const jobScheduler = require("./jobScheduler.json");
@@ -22,6 +23,6 @@ module.exports.defaultCleanupRemoteRoot = config.defaultCleanupRemoteRoot;
 module.exports.saltRound = config.saltRound;
 
 module.exports.jobScheduler = jobScheduler;
-module.exports.userAccount = new jsonArrayManager(userAccountFilename);
-module.exports.remoteHost = new jsonArrayManager(remotehostFilename);
-module.exports.projectList = new jsonArrayManager(projectListFilename);
+module.exports.userAccount = new JsonArrayManager(userAccountFilename);
+module.exports.remoteHost = new JsonArrayManager(remotehostFilename);
+module.exports.projectList = new JsonArrayManager(projectListFilename);

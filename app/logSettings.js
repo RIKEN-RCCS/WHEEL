@@ -1,3 +1,4 @@
+"use strict";
 const path = require("path");
 const log4js = require("log4js");
 
@@ -6,7 +7,8 @@ log4js.addLayout("errorlog", ()=>{
     const tmp = logEvent.data.reduce((a, p)=>{
       if (p instanceof Error) {
         return `${a}<br>${p.message}`;
-      } if (typeof p === "string") {
+      }
+      if (typeof p === "string") {
         return `${a} ${p}`;
       }
       return a;
@@ -130,7 +132,7 @@ function reset() {
     }
     log4js.shutdown((err)=>{
       if (err) {
-        reject();
+        reject(err);
       }
       logSettings = Object.assign({}, defaultSettings);
       ready = false;
@@ -150,7 +152,7 @@ function setNumBackup(num) {
   logSettings.appenders.file.backups = num;
 }
 function setCompress(TF) {
-  logSettings.appenders.file.compress = TF == true;
+  logSettings.appenders.file.compress = TF === true;
 }
 
 function setSocketIO(sio) {

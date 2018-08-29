@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+"use strict";
 const opener = require("opener");
 const waitOn = require("wait-on");
 

@@ -1,3 +1,4 @@
+"use strict";
 const path = require("path");
 const fs = require("fs-extra");
 const { promisify } = require("util");
@@ -38,22 +39,20 @@ async function getComponentDir(projectRootDir, targetID) {
 }
 
 async function getComponent(projectRootDir, component) {
-  let componentJson = component;
+  let componentJson = component; // component is treated as component Json object by default
 
   if (await fs.pathExists(component)) {
 
-    // component is path of componentJsonFile
+    // component is path of component Json file
     componentJson = await fs.readJson(component);
   } else {
     const componentDir = await getComponentDir(projectRootDir, component);
 
-    if (componentDir !== undefined) {
+    if (componentDir) {
 
-      // component is ID of component
+      // component is ID string of component
       componentJson = await fs.readJson(path.resolve(componentDir, componentJsonFilename));
     }
-
-    // if componentDir === undefined, component is regarded as already readed Json data
   }
   return componentJson;
 }
@@ -61,7 +60,7 @@ async function getComponent(projectRootDir, component) {
 async function getChildren(projectRootDir, parentID) {
   const dir = await getComponentDir(projectRootDir, parentID);
 
-  if (dir === undefined) {
+  if (!dir) {
     logger.error("illegal ID", parentID);
     return [];
   }

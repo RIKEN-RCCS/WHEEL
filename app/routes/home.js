@@ -9,7 +9,7 @@ const { getLogger } = require("../logSettings");
 const logger = getLogger("home");
 const fileBrowser = require("./fileBrowser");
 const { gitAdd, gitCommit, gitInit } = require("./gitOperator");
-const componentFactory = require("./workflowComponent");
+const ComponentFactory = require("./workflowComponent");
 const { projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
 const { getDateString, escapeRegExp, isValidName } = require("./utility");
 // eslint-disable-next-line no-useless-escape
@@ -53,7 +53,7 @@ async function createNewProject(root, name, description) {
 
   // write root workflow
   const rootWorkflowFileFullpath = path.join(root, componentJsonFilename);
-  const rootWorkflow = new componentFactory("workflow");
+  const rootWorkflow = new ComponentFactory("workflow");
 
   rootWorkflow.name = name;
   rootWorkflow.cleanupFlag = defaultCleanupRemoteRoot === 0 ? 0 : 1;
@@ -141,6 +141,7 @@ async function sendProjectListIfExists(emit, cb) {
     }
   } catch (e) {
     cb(false);
+    return;
   }
   cb(true);
 }
@@ -353,6 +354,7 @@ module.exports = function(io) {
     socket.on("renameProject", onRenameProject.bind(null, socket.emit.bind(socket)));
     socket.on("reorderProject", onReorderProject.bind(null, socket.emit.bind(socket)));
   });
+  // eslint-disable-next-line new-cap
   const router = express.Router();
 
   router.get("/", (req, res)=>{

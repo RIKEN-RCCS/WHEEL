@@ -73,7 +73,7 @@ app.use("/remotehost", routes.remotehost);
 
 // port number
 const defaultPort = 443;
-let portNumber = parseInt(process.env.PORT) || port || defaultPort;
+let portNumber = parseInt(process.env.PORT, 10) || port || defaultPort;
 
 if (portNumber < 0) {
   portNumber = defaultPort;

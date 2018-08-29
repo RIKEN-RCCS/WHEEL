@@ -47,6 +47,7 @@ module.exports = function(io) {
     socket.on("getAccountList", sendAccountList);
   });
 
+  // eslint-disable-next-line new-cap
   const router = express.Router();
 
   router.get("/", (req, res)=>{

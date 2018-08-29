@@ -1,3 +1,4 @@
+"use strict";
 const path = require("path");
 const { promisify } = require("util");
 const EventEmitter = require("events");
@@ -20,7 +21,7 @@ class Project extends EventEmitter {
 
 const projectDirs = new Map();
 
-function _getProject(projectRootDir) {
+function getProject(projectRootDir) {
   if (!projectDirs.has(projectRootDir)) {
     projectDirs.set(projectRootDir, new Project());
   }
@@ -28,30 +29,30 @@ function _getProject(projectRootDir) {
 }
 
 async function openProject(projectRootDir) {
-  const pj = _getProject(projectRootDir);
+  const pj = getProject(projectRootDir);
 
   pj.git = await getGitOperator(projectRootDir);
   setCwd(projectRootDir, projectRootDir);
 }
 
 function setCwd(projectRootDir, currentDir) {
-  const pj = _getProject(projectRootDir);
+  const pj = getProject(projectRootDir);
 
   pj.cwd = currentDir;
 }
 
 function getCwd(projectRootDir) {
-  return _getProject(projectRootDir).cwd;
+  return getProject(projectRootDir).cwd;
 }
 
 async function gitAdd(projectRootDir, absFilename, remove = false) {
-  const git = _getProject(projectRootDir).git;
+  const git = getProject(projectRootDir).git;
 
   return remove ? git.rm(absFilename) : git.add(absFilename);
 }
 
 async function commitProject(projectRootDir) {
-  const git = _getProject(projectRootDir).git;
+  const git = getProject(projectRootDir).git;
   const name = "wheel"; // TODO replace user info
   const email = `${name}@example.com`;
 
@@ -59,7 +60,7 @@ async function commitProject(projectRootDir) {
 }
 
 async function revertProject(projectRootDir) {
-  const git = _getProject(projectRootDir).git;
+  const git = getProject(projectRootDir).git;
 
   return git.resetHEAD();
 }
@@ -85,7 +86,7 @@ async function cleanProject(projectRootDir) {
  * disconnect and remove all ssh instance
  */
 function removeSsh(projectRootDir) {
-  const pj = _getProject(projectRootDir);
+  const pj = getProject(projectRootDir);
 
   for (const ssh of pj.ssh.values()) {
     ssh.disconnect();
@@ -94,34 +95,34 @@ function removeSsh(projectRootDir) {
 }
 
 function setRootDispatcher(projectRootDir, dispatcher) {
-  _getProject(projectRootDir).rootDispatcher = dispatcher;
+  getProject(projectRootDir).rootDispatcher = dispatcher;
 }
 function deleteRootDispatcher(projectRootDir) {
-  delete _getProject(projectRootDir).rootDispatcher;
+  delete getProject(projectRootDir).rootDispatcher;
 }
 function getRootDispatcher(projectRootDir) {
-  return _getProject(projectRootDir).rootDispatcher;
+  return getProject(projectRootDir).rootDispatcher;
 }
 
 function getSsh(projectRootDir, hostname) {
-  return _getProject(projectRootDir).ssh.get(hostname);
+  return getProject(projectRootDir).ssh.get(hostname);
 }
 function addSsh(projectRootDir, hostname, ssh) {
-  _getProject(projectRootDir).ssh.set(hostname, ssh);
+  getProject(projectRootDir).ssh.set(hostname, ssh);
 }
 
 function once(projectRootDir, eventName, cb) {
-  _getProject(projectRootDir).once(eventName, cb);
+  getProject(projectRootDir).once(eventName, cb);
 }
 function emit(projectRootDir, eventName) {
-  _getProject(projectRootDir).emit(eventName);
+  getProject(projectRootDir).emit(eventName);
 }
 
 function getTasks(projectRootDir) {
-  return _getProject(projectRootDir).tasks;
+  return getProject(projectRootDir).tasks;
 }
 function getTaskStateList(projectRootDir) {
-  return [..._getProject(projectRootDir).tasks].map((task)=>{
+  return [...getProject(projectRootDir).tasks].map((task)=>{
     return {
       name: task.name,
       description: task.description ? task.description : "",
@@ -133,10 +134,10 @@ function getTaskStateList(projectRootDir) {
   });
 }
 function clearDispatchedTasks(projectRootDir) {
-  _getProject(projectRootDir).tasks.clear();
+  getProject(projectRootDir).tasks.clear();
 }
 function addDispatchedTask(projectRootDir, task) {
-  _getProject(projectRootDir).tasks.add(task);
+  getProject(projectRootDir).tasks.add(task);
 }
 
 module.exports = {

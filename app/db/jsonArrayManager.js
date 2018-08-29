@@ -1,3 +1,4 @@
+"use strict";
 const fs = require("fs-extra");
 
 const uuidv1 = require("uuid/v1");
@@ -104,7 +105,7 @@ class JsonArrayManager {
   getID(key, value) {
     const entry = this.query(key, value);
 
-    return entry ? entry.id : undefined;
+    return entry ? entry.id : entry;
   }
 
   /**
@@ -114,9 +115,7 @@ class JsonArrayManager {
    */
   query(key, value) {
     return this.data.find((e)=>{
-      if (e[key] === value) {
-        return true;
-      }
+      return e[key] === value;
     });
   }
 
@@ -132,8 +131,8 @@ class JsonArrayManager {
    * @param {string[]} newOrder - array of indeces stored in new order
    */
   reorder(newOrder) {
-    if (this.data.length != newOrder.length) {
-      return;
+    if (this.data.length !== newOrder.length) {
+      return Promise.resolve();
     }
     const tmp = Array.from(this.data);
 

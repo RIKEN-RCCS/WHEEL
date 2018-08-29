@@ -5,6 +5,7 @@ const { promisify } = require("util");
 const klaw = require("klaw");
 
 const express = require("express");
+// eslint-disable-next-line new-cap
 const router = express.Router();
 
 const { add } = require("./gitOperator");
@@ -19,6 +20,7 @@ function searchGitRepo(filename) {
   const trial = path.resolve(dir, ".git");
 
   try {
+    // eslint-disable-next-line no-var
     var stats = fs.statSync(trial);
   } catch (e) {
     if (e.code !== "ENOENT") {
@@ -86,7 +88,7 @@ module.exports = function(io) {
     let filename = path.resolve(cwd, req.body.filename);
     let data = "";
 
-    if (req.body.mode == "json") {
+    if (req.body.mode === "json") {
       const parameter = {
         target_file: req.body.filename,
         target_param: req.body.param
@@ -106,7 +108,7 @@ module.exports = function(io) {
       });
 
       filename += ".json";
-      data = JSON.stringify(parameter, undefined, 4);
+      data = JSON.stringify(parameter, null, 4);
     } else {
       data = req.body.text;
     }

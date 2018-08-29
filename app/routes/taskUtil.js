@@ -1,3 +1,4 @@
+"use strict";
 const { remoteHost, jobScheduler } = require("../db/db");
 const { getLogger } = require("../logSettings");
 const { getSsh } = require("./projectResource");

@@ -1,3 +1,4 @@
+"use strict";
 const path = require("path");
 const express = require("express");
 
@@ -9,7 +10,7 @@ const { getComponent } = require("./workflowUtil");
 const { openProject } = require("./projectResource");
 
 module.exports = function(io) {
-  const projectRootDir = "project not loaded";
+  let projectRootDir = "project not loaded";
   const sio = io.of("/workflow");
 
   sio.on("connect", (socket)=>{
@@ -27,10 +28,11 @@ module.exports = function(io) {
     fileManager(socket, projectRootDir);
   });
 
+  // eslint-disable-next-line new-cap
   const router = express.Router();
 
   router.post("/", async(req, res)=>{
-    const projectRootDir = req.body.project;
+    projectRootDir = req.body.project;
 
     await openProject(projectRootDir);
     const { ID } = await getComponent(projectRootDir, path.resolve(projectRootDir, componentJsonFilename));
