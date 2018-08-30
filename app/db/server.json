@@ -4,7 +4,7 @@
     "useraccountJsonFile": "./useraccount.json",
     "projectListJsonFile": "./projectList.json",
     "interval": 1000,
-    "defaultCleanupRemoteRoot": 0,
+    "defaultCleanupRemoteRoot": true,
     "saltRound": 10,
     "admin": "admin"
 }

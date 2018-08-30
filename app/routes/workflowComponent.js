@@ -1,25 +1,27 @@
-const uuidv1 = require('uuid/v1');
+"use strict";
+const uuidv1 = require("uuid/v1");
 
 class BaseWorkflowComponent {
-  constructor(pos, parent){
+  constructor(pos, parent) {
+
     // parent components's ID
     this.parent = parent || "this is root";
 
     /** cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
      */
-    this.pos=pos;
+    this.pos = pos;
 
-    this.ID=uuidv1();
-    this.type=null;
-    this.name=null;
-    this.description=null;
+    this.ID = uuidv1();
+    this.type = null;
+    this.name = null;
+    this.description = null;
 
     /** pointers to previous node */
-    this.previous=[];
+    this.previous = [];
 
     /** pointers to next node */
-    this.next=[];
+    this.next = [];
 
     /**
      * input files from other node
@@ -32,7 +34,7 @@ class BaseWorkflowComponent {
      *   ]
      * }
      */
-    this.inputFiles=[];
+    this.inputFiles = [];
 
     /**
      * output files which will be passed to other node
@@ -46,7 +48,7 @@ class BaseWorkflowComponent {
      *   ]
      * }
      */
-    this.outputFiles=[];
+    this.outputFiles = [];
 
     /**
      * node state
@@ -60,7 +62,7 @@ class BaseWorkflowComponent {
      *  - 'finished'   finished
      *  - 'failed'     error occurred before task finish
      */
-    this.state='not-started';
+    this.state = "not-started";
 
     /**
      * flag for clean up temporary working directory on remote host
@@ -68,128 +70,141 @@ class BaseWorkflowComponent {
      * 1: do not cleanup
      * 2: same as parent
      */
-    this.cleanupFlag=2;
+    this.cleanupFlag = 2;
   }
 }
 
 /**
  * javascript representation of wheel's task
  */
-class Task extends BaseWorkflowComponent{
-  constructor(...args){
+class Task extends BaseWorkflowComponent {
+  constructor(...args) {
     super(...args);
-    this.type='task';
+    this.type = "task";
+
     /** filename of entry point of this task */
-    this.script=null;
+    this.script = null;
+
     /** hostname where this task will execute on */
-    this.host='localhost';
+    this.host = "localhost";
+
     /** run as batch job or not*/
-    this.useJobScheduler=false;
+    this.useJobScheduler = false;
+
     /** queue name */
-    this.queue=null;
+    this.queue = null;
+
     // note on filters
     // if include filter is set, matched files are transferd if it does not match exclude filter
     /** include filter for recieve files from remote host */
-    this.include=null;
+    this.include = null;
+
     /** exclude filter for recieve files from remote host */
-    this.exclude=null;
+    this.exclude = null;
   }
 }
 
 /**
  * representation of conditional branch
  */
-class If extends BaseWorkflowComponent{
-  constructor(...args){
+class If extends BaseWorkflowComponent {
+  constructor(...args) {
     super(...args);
-    this.type='if';
+    this.type = "if";
+
     /**
      * shell script file name or javascript expression to determin condifion
      * If script returns 0 or expression evaluted to truthy value,
      * next tasks will be executed, otherwise else tasks will be executed
      */
-    this.condition=null;
+    this.condition = null;
 
     /** task pointers which will be executed if condition is false */
-    this.else=[];
+    this.else = [];
   }
 }
 
-class Workflow extends BaseWorkflowComponent{
-  constructor(pos, ...args){
+class Workflow extends BaseWorkflowComponent {
+  constructor(pos, ...args) {
+
     // define pseudo position for root workflow
-    var pos2=pos || {x:0, y:0};
+    const pos2 = pos || { x: 0, y: 0 };
+
     super(pos2, ...args);
-    this.type='workflow';
+    this.type = "workflow";
   }
 }
-class ParameterStudy extends BaseWorkflowComponent{
-  constructor(...args){
+class ParameterStudy extends BaseWorkflowComponent {
+  constructor(...args) {
     super(...args);
-    this.type='parameterStudy';
-    this.parameterFile=null;
-    this.numTotal=null;
-    this.numFinished=null;
-    this.numFailed=null;
+    this.type = "parameterStudy";
+    this.parameterFile = null;
+    this.numTotal = null;
+    this.numFinished = null;
+    this.numFailed = null;
   }
 }
 
-class For extends BaseWorkflowComponent{
-  constructor(...args){
+class For extends BaseWorkflowComponent {
+  constructor(...args) {
     super(...args);
-    this.type='for';
-    this.start=null;
-    this.end=null;
-    this.step=null;
+    this.type = "for";
+    this.start = null;
+    this.end = null;
+    this.step = null;
   }
 }
-class While extends BaseWorkflowComponent{
-  constructor(...args){
+class While extends BaseWorkflowComponent {
+  constructor(...args) {
     super(...args);
-    this.type='while';
-    this.condition=null;
+    this.type = "while";
+    this.condition = null;
   }
 }
+
 /*
  * loop over kind of array
  */
-class Foreach extends BaseWorkflowComponent{
-  constructor(...args){
+class Foreach extends BaseWorkflowComponent {
+  constructor(...args) {
     super(...args);
-    this.type='foreach';
-    this.indexList=[];
+    this.type = "foreach";
+    this.indexList = [];
   }
 }
 
 /*
  * factory method for workflow component class
  */
-function factory(type, ...args){
-  var node=null;
-  switch(type){
-    case 'task':
-      node=new Task(...args);
+function factory(type, ...args) {
+  let node;
+
+  switch (type) {
+    case "task":
+      node = new Task(...args);
       break;
-    case 'workflow':
-      node=new Workflow(...args);
+    case "workflow":
+      node = new Workflow(...args);
       break;
-    case 'PS':
-      node=new ParameterStudy(...args);
+    case "PS":
+      node = new ParameterStudy(...args);
       break;
-    case 'if':
-      node=new If(...args);
+    case "if":
+      node = new If(...args);
       break;
-    case 'for':
-      node=new For(...args);
+    case "for":
+      node = new For(...args);
       break;
-    case 'while':
-      node=new While(...args);
+    case "while":
+      node = new While(...args);
       break;
-    case 'foreach':
-      node=new Foreach(...args);
+    case "foreach":
+      node = new Foreach(...args);
       break;
+    default:
+      node = null;
   }
   return node;
 }
 
-module.exports=factory;
+module.exports = factory;

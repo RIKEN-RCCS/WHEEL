@@ -23,7 +23,8 @@ const onReorderProject            = home.__get__("onReorderProject");
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const dummyLogger = {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};
+const dummySilentLogger = {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};
+const dummyLogger = {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};
 const dummyVerboseLogger = {error: console.log, warn: console.log, info: console.log, debug: console.log};
 home.__set__("logger", dummyLogger);
 
@@ -194,7 +195,7 @@ describe("home screen API test", function(){
     });
     describe("#onRenameProject", async function(){
       before(async function(){
-        await onAddProject(emit, testDirRoot+"/foo", null, cb);
+        await onAddProject(emit, path.join(testDirRoot,"foo"), null, cb);
       });
       it("should rename project foo to foo2", async function(){
         const id = projectList.getByPosition(0).id;
