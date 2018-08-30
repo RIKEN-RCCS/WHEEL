@@ -549,81 +549,77 @@ $(() => {
   let clickedNode = "temp";
   function drawNodes(nodesInWF) {
     console.log("drawnodes")
-    nodesInWF.forEach(function (v, i) {
-      // workflow内のnodeとSVG要素のnodeのindexが一致するようにnullで消されている時もnodesの要素は作成する
-      if (v === null) {
-        nodes.push(null);
-      } else {
-        let node = new svgNode.SvgNodeUI(svg, sio, v);
-        node.onMousedown(function (e) {
-          vm.node = v;
-          let nodeIndex = e.target.instance.parent('.node').data('ID');
-          selectedNode = nodeIndex;
-          const target = nodesInWF.find((e)=>{
-            return e.ID === nodeIndex;
-          });
-          let name = target.name;
-          let nodePath = currentWorkDir + '/' + name;
+    nodesInWF.forEach(function (v) {
+      let node = new svgNode.SvgNodeUI(svg, sio, v);
+      node.ID = v.ID;
+      node.onMousedown(function (e) {
+        vm.node = v;
+        let nodeIndex = e.target.instance.parent('.node').data('ID');
+        selectedNode = nodeIndex;
+        const target = nodesInWF.find((e)=>{
+          return e.ID === nodeIndex;
+        });
+        let name = target.name;
+        let nodePath = currentWorkDir + '/' + name;
 
-          fb.request('getFileList', nodePath, null);
-          //プロパティ表示用相対パス
-          let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + name;
-          let nodeType = target.type;
-          //iconの変更
-          let nodeIconPath = config.node_icon[nodeType];
-          $('#img_node_type').attr("src", nodeIconPath);
+        fb.request('getFileList', nodePath, null);
+        //プロパティ表示用相対パス
+        let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + name;
+        let nodeType = target.type;
+        //iconの変更
+        let nodeIconPath = config.node_icon[nodeType];
+        $('#img_node_type').attr("src", nodeIconPath);
 
-          // taskコンポーネント時の描画処理
-          if (nodeType === 'task') {
-            //queuelistの設定
-            let useJobSchedulerFlag = target.useJobScheduler;
-            console.log(useJobSchedulerFlag);
+        // taskコンポーネント時の描画処理
+        if (nodeType === 'task') {
+          //queuelistの設定
+          let useJobSchedulerFlag = target.useJobScheduler;
+          console.log(useJobSchedulerFlag);
 
-            // if (useJobSchedulerFlag === true) {
-            //   console.log("abled");
-            //   $('#queueSelectField').prop('disabled', false);
-            //   // $('#queueSelectField').css('background-color', '#000000');
-            //   // $('#queueSelectField').css('color', '#FFFFFF');
-            // } else {
-            //   console.log("disabled");
-            //   $('#queueSelectField').prop('disabled', true);
-            //   // $('#queueSelectField').css('background-color', '#333333');
-            //   // $('#queueSelectField').css('color', '#333333');
-            // }
-            //remotehostリストの設定
-            sio.emit('getHostList', true);
-            remotehost = target.host;
-            selectedHostQueue = target.queue;
-            updateQueueList(remotehost, selectedHostQueue);
+          // if (useJobSchedulerFlag === true) {
+          //   console.log("abled");
+          //   $('#queueSelectField').prop('disabled', false);
+          //   // $('#queueSelectField').css('background-color', '#000000');
+          //   // $('#queueSelectField').css('color', '#FFFFFF');
+          // } else {
+          //   console.log("disabled");
+          //   $('#queueSelectField').prop('disabled', true);
+          //   // $('#queueSelectField').css('background-color', '#333333');
+          //   // $('#queueSelectField').css('color', '#333333');
+          // }
+          //remotehostリストの設定
+          sio.emit('getHostList', true);
+          remotehost = target.host;
+          selectedHostQueue = target.queue;
+          updateQueueList(remotehost, selectedHostQueue);
+        }
+
+        $('#propertyTypeName').html(target.type);
+        $('#componentPath').html(currentPropertyDir);
+        $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
+        //コンポーネント選択時のカラー着色
+        drawStrokeColor(e);
+      })
+        .onDblclick(function (e) {
+          $('#property').hide();
+          let nodeType = e.target.instance.parent('.node').data('type');
+          if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
+            let nodeIndex = e.target.instance.parent('.node').data('index');
+            let name = target.name;
+            let path = e.target.instance.parent('.node').data('path');
+            currentWorkDir = currentWorkDir + '/' + name;
+            currentWorkFlow = e.target.instance.parent('.node').data('ID');
+            dirStack.push(currentWorkDir);
+            wfStack.push(currentWorkFlow);
+            nodeStack.push(name);
+            nodeTypeStack.push(nodeType);
+            process.nextTick(function () {
+              fb.request('getFileList', currentWorkDir, null);
+              sio.emit('getWorkflow', currentWorkFlow);
+            });
           }
-
-          $('#propertyTypeName').html(target.type);
-          $('#componentPath').html(currentPropertyDir);
-          $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
-          //コンポーネント選択時のカラー着色
-          drawStrokeColor(e);
-        })
-          .onDblclick(function (e) {
-            $('#property').hide();
-            let nodeType = e.target.instance.parent('.node').data('type');
-            if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
-              let nodeIndex = e.target.instance.parent('.node').data('index');
-              let name = target.name;
-              let path = e.target.instance.parent('.node').data('path');
-              currentWorkDir = currentWorkDir + '/' + name;
-              currentWorkFlow = e.target.instance.parent('.node').data('ID');
-              dirStack.push(currentWorkDir);
-              wfStack.push(currentWorkFlow);
-              nodeStack.push(name);
-              nodeTypeStack.push(nodeType);
-              process.nextTick(function () {
-                fb.request('getFileList', currentWorkDir, null);
-                sio.emit('getWorkflow', currentWorkFlow);
-              });
-            }
-          });
-        nodes.push(node);
-      }
+        });
+      nodes.push(node);
     });
   }
 
@@ -638,24 +634,27 @@ $(() => {
       }
     });
     nodes.forEach(function (node) {
-      if (node != null) {
-
-        node.nextLinks.forEach(function (cable) {
-          let dst = cable.cable.data('dst');
-          nodes[dst].previousLinks.push(cable);
+      node.nextLinks.forEach(function (cable) {
+        const dst = cable.cable.data('dst');
+        const target = nodes.find((e)=>{
+          return e.ID === dst;
         });
-        node.elseLinks.forEach(function (cable) {
-          let dst = cable.cable.data('dst');
-          nodes[dst].previousLinks.push(cable);
+        target.previousLinks.push(cable);
+      });
+      node.elseLinks.forEach(function (cable) {
+        const dst = cable.cable.data('dst');
+        const target = nodes.find((e)=>{
+          return e.ID === dst;
         });
-        node.outputFileLinks.forEach(function (cable) {
-          let dst = cable.cable.data('dst');
-          if (dst === 'parent') {
-            return;
-          }
-          nodes[dst].inputFileLinks.push(cable);
+        target.previousLinks.push(cable);
+      });
+      node.outputFileLinks.forEach(function (cable) {
+        const dst = cable.cable.data('dst');
+        const target = nodes.find((e)=>{
+          return e.ID === dst;
         });
-      }
+        target.inputFileLinks.push(cable);
+      });
     });
   }
 
