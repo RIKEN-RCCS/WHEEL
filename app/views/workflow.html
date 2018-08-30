@@ -28,8 +28,10 @@
 
   <!-- コントローラバー -->
   <span class="controler_bar_area">
-    <img src="/image/img_file.png" id="img_project" class="icon" />
-    <div id="project_name" class="controler_item"></div>
+    <img src="/image/img_folder.png" id="img_project" class="icon" />
+    <div id="projectInfo">
+      <div id="project_name" class="controler_item"></div>
+    </div>
     <div id="project_state" class="controler_item"></div>
     <figure id="run_menu" class="controler_button">
       <img src="/image/btn_play_n.png" class="img_btn_contoroler" id="run_button" title="Run" />
@@ -151,10 +153,6 @@
         <img src="/image/btn_openCloseR_n.png" alt="libraryButton" id="libraryButton">
       </button>
     </div>
-    <!-- プロパティボタンボタン -->
-    <!--     <div id="propertyButtonArea" class="propertyButtonArea">
-        <button type="button"  id="propertyButton" class="propertyButton"><img src="/image/btn_openCloseL_n.png" alt="propertyButton" id="propertyOCButton"></button>
-    </div> -->
     <!-- SVG描画領域 -->
     <div id="node_svg" class="node_svg"></div>
     <!-- プロパティ -->
@@ -342,20 +340,35 @@
           <ul id="fileList"></ul>
           <div id="editButtonsArea">
             <button type="button" id="editFileButton" class="editButtons">
-              <img src="/image/img_file.png" alt="graph">
+              <img src="/image/img_edit.png" alt="graph">
             </button>
             <button type="button" id="editPSFileButton" class="editButtons">
-              <img src="/image/img_file.png" alt="graph">
+              <img src="/image/img_edit_PS.png" alt="graph">
+            </button>
+            <button type="button" id="jupyterBootButton">
+              <img src="/image/img_jupyter.png" alt="graph" id="jupyterImg">
             </button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
+  <!-- 下ドロアーメニュー -->
+  <div id="projectInfoDrawer" data-position="top">
+    <div id="drawerMargin"></div>
+    <div id="drawerInfo">
+      <div id="projectDirectoryPathField">
+        <label>Project Directory Path</label>
+        <div id="projectDirectoryPath"></div>
+      </div>
+      <div id="projectDescriptionField">
+        <label>Description</label>
+        <input type="text" id="projectDescription">
+      </div>
+    </div>
+  </div>
   <!-- 右ドロアーメニュー -->
   <div id="drawerMenu" data-position="right">
-    <!-- Put your off canvas content here -->
     <div id="drawerMenuContents">
       <p id="menuTitle">Menu</p>
       <ul id="drawerMenuList">
@@ -395,15 +408,6 @@
     <pre id="logSSHerrLog" class="logText"></pre>
   </div>
 
-  <!-- File Browser Dialog -->
-  <!--   <div id="fileBrowser" class="fileBrowser">
-    <p id="path"></p>
-    <ul id="fileList"></ul>
-    <input type="file" id="fileSelector" name="uploadFiles" multiple />
-    <input type="button" id="fileBrowserCancelButton" value="Cancel" />
-  </div> -->
-
-  <!-- dialog for File Browser Rename and Remove command -->
 </body>
 
 </html>

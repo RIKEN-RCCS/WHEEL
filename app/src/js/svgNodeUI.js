@@ -297,7 +297,9 @@ export class SvgParentNodeUI {
       //-425 = -(108 +32 +221)
       //     = -(ヘッダ + 初期位置補正 + 位置調整)
       let recepterPosY = window.innerHeight - 361;
-      const receptor = parts.createParentReceptor(svg, 16, recepterPosY, 0, recepterInterval * fileIndex);
+      const propertyAreaWidth = 272;
+      let recepterPosX = window.innerWidth - propertyAreaWidth;
+      const receptor = parts.createParentReceptor(svg, recepterPosX, recepterPosY, 0, recepterInterval * fileIndex);
       receptor.data({ "ID": "parent", "name": input.name });
 
       this.group.add(receptor);

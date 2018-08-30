@@ -91,7 +91,7 @@ $(() => {
         sio.emit('removeOutputFile', this.node.ID, this.node.outputFiles[i].name);
       },
       delIndexOfForeach: function (i) {
-        const newIndexList = this.node.indexList.filter((e, index)=>{
+        const newIndexList = this.node.indexList.filter((e, index) => {
           return index !== i;
         });
         sio.emit('updateNode', this.node.ID, 'indexList', newIndexList);
@@ -213,6 +213,11 @@ $(() => {
     }
   });
 
+  //boot jupyter
+  $('#jypyterBootButton').click(function () {
+    //起動処理
+  });
+
   // container of svg elements
   let nodes = [];
   let parentnode = [];
@@ -229,7 +234,6 @@ $(() => {
   const svg = SVG('node_svg');
   sio.on('connect', function () {
     fb.request('getFileList', currentWorkDir, null);
-    console.log("connect");
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
@@ -250,7 +254,6 @@ $(() => {
     sio.on('workflow', function (wf) {
       nodeStack[nodeStack.length - 1] = wf.name;
       nodeTypeStack[nodeStack.length - 1] = wf.type;
-      console.log("get workflow");
       updateBreadrumb();
 
       // remove all node from workflow editor
@@ -263,11 +266,11 @@ $(() => {
           return e.name;
         });
         vm.names = names;
-        vm.node = wf.descendants.find((e)=>{
+        vm.node = wf.descendants.find((e) => {
           return e.ID === selectedNode;
         });
         //for initial load
-        if(! vm.node){
+        if (!vm.node) {
           vm.node = wf.descendants[0];
         }
       }
@@ -312,7 +315,8 @@ $(() => {
       let date = '' + now.getFullYear() + '/' + now.getMonth() + '/' + now.getDate() + ' ' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2);
       $('#project_create_date').text(projectJson.ctime);
       $('#project_update_date').text(projectJson.mtime);
-
+      $('#projectDirectoryPath').text(projectJson.root);
+      $('#projectDescription').attr("value", projectJson.description);
     });
 
     /*create host, queue selectbox*/
@@ -395,6 +399,12 @@ $(() => {
   });
   $('#revert_button').mouseleave(function () {
     $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
+  });
+
+  //change project description
+  $('#projectDescription').blur(function () {
+    var prjDesc = document.getElementById('projectDescription').value;
+    //socket.emit('updateProjectJson', 'description', prjDesc);
   });
 
   // hide property and select parent WF if background is clicked
@@ -545,8 +555,6 @@ $(() => {
    * draw nodes
    * @param nodeInWF node list in workflow Json
    */
-  var buttonFlag = false;
-  let clickedNode = "temp";
   function drawNodes(nodesInWF) {
     console.log("drawnodes")
     nodesInWF.forEach(function (v) {
@@ -556,7 +564,7 @@ $(() => {
         vm.node = v;
         let nodeIndex = e.target.instance.parent('.node').data('ID');
         selectedNode = nodeIndex;
-        const target = nodesInWF.find((e)=>{
+        const target = nodesInWF.find((e) => {
           return e.ID === nodeIndex;
         });
         let name = target.name;
@@ -572,21 +580,6 @@ $(() => {
 
         // taskコンポーネント時の描画処理
         if (nodeType === 'task') {
-          //queuelistの設定
-          let useJobSchedulerFlag = target.useJobScheduler;
-          console.log(useJobSchedulerFlag);
-
-          // if (useJobSchedulerFlag === true) {
-          //   console.log("abled");
-          //   $('#queueSelectField').prop('disabled', false);
-          //   // $('#queueSelectField').css('background-color', '#000000');
-          //   // $('#queueSelectField').css('color', '#FFFFFF');
-          // } else {
-          //   console.log("disabled");
-          //   $('#queueSelectField').prop('disabled', true);
-          //   // $('#queueSelectField').css('background-color', '#333333');
-          //   // $('#queueSelectField').css('color', '#333333');
-          // }
           //remotehostリストの設定
           sio.emit('getHostList', true);
           remotehost = target.host;
@@ -636,21 +629,21 @@ $(() => {
     nodes.forEach(function (node) {
       node.nextLinks.forEach(function (cable) {
         const dst = cable.cable.data('dst');
-        const target = nodes.find((e)=>{
+        const target = nodes.find((e) => {
           return e.ID === dst;
         });
         target.previousLinks.push(cable);
       });
       node.elseLinks.forEach(function (cable) {
         const dst = cable.cable.data('dst');
-        const target = nodes.find((e)=>{
+        const target = nodes.find((e) => {
           return e.ID === dst;
         });
         target.previousLinks.push(cable);
       });
       node.outputFileLinks.forEach(function (cable) {
         const dst = cable.cable.data('dst');
-        const target = nodes.find((e)=>{
+        const target = nodes.find((e) => {
           return e.ID === dst;
         });
         target.inputFileLinks.push(cable);
@@ -703,6 +696,17 @@ $(() => {
       }
     });
   }
+
+  var timer = 0;
+  window.onresize = function () {
+    if (timer > 0) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(function () {
+      //画面リサイズ終了200ミリ秒後に画面再描画する
+      sio.emit('getWorkflow', currentWorkFlow);
+    }, 200);
+  };
 
   function updateQueueList(remotehost, selectedHostQueue) {
     //json設定値を取得し、onで表示
@@ -840,6 +844,15 @@ $(() => {
     $('#drawerMenu').toggleClass('action', false);
   });
 
+  $('#projectInfo').hover(function () {
+    $('#projectInfoDrawer').toggleClass('action', true);
+
+  });
+
+  $('#projectInfoDrawer').mouseleave(function () {
+    $('#projectInfoDrawer').toggleClass('action', false);
+  });
+
   function getSelectLabel(index) {
     var obj = document.getElementById(index);
     var idx = obj.selectedIndex;       //インデックス番号を取得
@@ -880,13 +893,4 @@ $(() => {
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
-
-  //for debug
-  // document.body.addEventListener("click", function (event) {
-  //   var x = event.pageX;
-  //   var y = event.pageY;
-  //   console.log(x);
-  //   console.log(y);
-  // });
-
 });

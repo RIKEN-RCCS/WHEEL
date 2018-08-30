@@ -787,7 +787,6 @@ export function createFilesNameBox(svg, x, y, type, name, inputFiles, outputFile
 }
 
 //parent -> children connector
-//位置の変更が必要な可能性有
 export function createParentConnector(svg, originX, originY, offsetX, offsetY, sio) {
   // offsetY += calcFileBasePosY();
   return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
@@ -798,11 +797,9 @@ export function createParentConnector(svg, originX, originY, offsetX, offsetY, s
 }
 
 //children -> parent connector
-//位置の変更が必要な可能性有
 export function createParentReceptor(svg, originX, originY, offsetX, offsetY) {
   const plug = svg.polygon(parentRPlug).fill(config.plug_color.file).addClass('receptorPlug');
   const bbox = plug.bbox();
-  // 272 = Property Area width
-  plug.move(window.innerWidth - 272, originY + offsetY + calcFileBasePosY());
+  plug.move(originX + offsetX, originY + offsetY + calcFileBasePosY());
   return plug;
 }
