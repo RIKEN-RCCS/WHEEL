@@ -1,13 +1,11 @@
 "use strict";
 const path = require("path");
-
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
-
 const { port } = require("./db/db");
 const { getLogger, setSocketIO, setFilename, setMaxLogSize, setNumBackup, setCompress } = require("./logSettings");
 
@@ -15,11 +13,9 @@ const { getLogger, setSocketIO, setFilename, setMaxLogSize, setNumBackup, setCom
  * set up express, http and socket.io
  */
 const app = express();
-
-// TODO if certification setting is available, use https instead
+//TODO if certification setting is available, use https instead
 const server = require("http").createServer(app);
 const sio = require("socket.io")(server);
-
 setSocketIO(sio);
 setFilename(path.resolve(__dirname, "wheel.log"));
 setMaxLogSize(8388608);
@@ -27,15 +23,14 @@ setNumBackup(5);
 setCompress(true);
 
 const logger = getLogger();
-
-// eslint-disable-next-line no-console
+//eslint-disable-next-line no-console
 process.on("unhandledRejection", console.dir);
 
-// template engine
+//template engine
 app.set("views", path.resolve(__dirname, "views"));
 app.set("view engine", "ejs");
 
-// middlewares
+//middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -52,7 +47,7 @@ app.use(siofu.router);
 app.use(passport.initialize());
 app.use(passport.session());
 
-// routing
+//routing
 const routes = {
   home: require(path.resolve(__dirname, "routes/home"))(sio),
   workflow: require(path.resolve(__dirname, "routes/workflow"))(sio),
@@ -61,8 +56,7 @@ const routes = {
   admin: require(path.resolve(__dirname, "routes/admin"))(sio),
   rapid: require(path.resolve(__dirname, "routes/rapid"))(sio)
 };
-
-// TODO 起動時のオプションに応じて/に対するroutingをhomeとloginで切り替える
+//TODO 起動時のオプションに応じて/に対するroutingをhomeとloginで切り替える
 app.use("/", routes.home);
 app.use("/home", routes.home);
 app.use("/login", routes.login);
@@ -71,7 +65,7 @@ app.use("/workflow", routes.workflow);
 app.use("/editor", routes.rapid);
 app.use("/remotehost", routes.remotehost);
 
-// port number
+//port number
 const defaultPort = 443;
 let portNumber = parseInt(process.env.PORT, 10) || port || defaultPort;
 
@@ -80,17 +74,16 @@ if (portNumber < 0) {
 }
 app.set("port", port);
 
-// error handler
-// TODO special error handler for 404 should be placed here
+//error handler
+//TODO special error handler for 404 should be placed here
 app.use((err, req, res)=>{
   logger.error(err);
-
-  // render the error page
+  //render the error page
   res.status(err.status || 500);
   res.send("something broken!");
 });
 
-// Listen on provided port, on all network interfaces.
+//Listen on provided port, on all network interfaces.
 server.listen(port);
 server.on("error", onError);
 server.on("listening", onListening);
@@ -107,15 +100,15 @@ function onError(error) {
     : `Port ${port}`;
 
 
-  // handle specific listen errors with friendly messages
+  //handle specific listen errors with friendly messages
   switch (error.code) {
     case "EACCES":
       logger.error(`${bind} requires elevated privileges`);
-      // eslint-disable-next-line no-process-exit
+      //eslint-disable-next-line no-process-exit
       process.exit(1);
     case "EADDRINUSE":
       logger.error(`${bind} is already in use`);
-      // eslint-disable-next-line no-process-exit
+      //eslint-disable-next-line no-process-exit
       process.exit(1);
     default:
       throw error;
@@ -130,6 +123,5 @@ function onListening() {
   const bind = typeof addr === "string"
     ? `pipe ${addr}`
     : `port ${addr.port}`;
-
   logger.info(`Listening on ${bind}`);
 }

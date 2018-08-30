@@ -2,20 +2,18 @@
 const path = require("path");
 const { promisify } = require("util");
 const EventEmitter = require("events");
-
 const fs = require("fs-extra");
 const glob = require("glob");
-
 const { getGitOperator } = require("./gitOperator");
 
 
 class Project extends EventEmitter {
   constructor() {
     super();
-    this.cwd = null; // current working directory
-    this.rootDispatcher = null; // dispatcher for root workflow
-    this.ssh = new Map(); // ssh instances using in this project
-    this.tasks = new Set(); // tasks which is updated and not send to client
+    this.cwd = null; //current working directory
+    this.rootDispatcher = null; //dispatcher for root workflow
+    this.ssh = new Map(); //ssh instances using in this project
+    this.tasks = new Set(); //tasks which is updated and not send to client
   }
 }
 
@@ -30,14 +28,12 @@ function getProject(projectRootDir) {
 
 async function openProject(projectRootDir) {
   const pj = getProject(projectRootDir);
-
   pj.git = await getGitOperator(projectRootDir);
   setCwd(projectRootDir, projectRootDir);
 }
 
 function setCwd(projectRootDir, currentDir) {
   const pj = getProject(projectRootDir);
-
   pj.cwd = currentDir;
 }
 
@@ -47,21 +43,18 @@ function getCwd(projectRootDir) {
 
 async function gitAdd(projectRootDir, absFilename, remove = false) {
   const git = getProject(projectRootDir).git;
-
   return remove ? git.rm(absFilename) : git.add(absFilename);
 }
 
 async function commitProject(projectRootDir) {
   const git = getProject(projectRootDir).git;
-  const name = "wheel"; // TODO replace user info
+  const name = "wheel"; //TODO replace user info
   const email = `${name}@example.com`;
-
   return git.commit(name, email);
 }
 
 async function revertProject(projectRootDir) {
   const git = getProject(projectRootDir).git;
-
   return git.resetHEAD();
 }
 
@@ -70,13 +63,12 @@ async function cleanProject(projectRootDir) {
   const srces = await promisify(glob)("*", { cwd: rootDir });
 
 
-  // TODO should be optimized stride value(100);
+  //TODO should be optimized stride value(100);
   for (let i = 0; i < srces.length; i += 100) {
     const end = i + 100 < srces.length ? i + 100 : srces.length;
     const p = srces.slice(i, end).map((e)=>{
       return fs.remove(path.resolve(rootDir, e));
     });
-
     await Promise.all(p);
   }
   return revertProject(projectRootDir);
@@ -97,9 +89,11 @@ function removeSsh(projectRootDir) {
 function setRootDispatcher(projectRootDir, dispatcher) {
   getProject(projectRootDir).rootDispatcher = dispatcher;
 }
+
 function deleteRootDispatcher(projectRootDir) {
   delete getProject(projectRootDir).rootDispatcher;
 }
+
 function getRootDispatcher(projectRootDir) {
   return getProject(projectRootDir).rootDispatcher;
 }
@@ -107,6 +101,7 @@ function getRootDispatcher(projectRootDir) {
 function getSsh(projectRootDir, hostname) {
   return getProject(projectRootDir).ssh.get(hostname);
 }
+
 function addSsh(projectRootDir, hostname, ssh) {
   getProject(projectRootDir).ssh.set(hostname, ssh);
 }
@@ -114,13 +109,15 @@ function addSsh(projectRootDir, hostname, ssh) {
 function once(projectRootDir, eventName, cb) {
   getProject(projectRootDir).once(eventName, cb);
 }
-function emit(projectRootDir, eventName) {
+
+function emitEvent(projectRootDir, eventName) {
   getProject(projectRootDir).emit(eventName);
 }
 
 function getTasks(projectRootDir) {
   return getProject(projectRootDir).tasks;
 }
+
 function getTaskStateList(projectRootDir) {
   return [...getProject(projectRootDir).tasks].map((task)=>{
     return {
@@ -134,9 +131,11 @@ function getTaskStateList(projectRootDir) {
     };
   });
 }
+
 function clearDispatchedTasks(projectRootDir) {
   getProject(projectRootDir).tasks.clear();
 }
+
 function addDispatchedTask(projectRootDir, task) {
   getProject(projectRootDir).tasks.add(task);
 }
@@ -159,6 +158,6 @@ module.exports = {
   revertProject,
   commitProject,
   gitAdd,
-  emit,
+  emitEvent,
   once
 };

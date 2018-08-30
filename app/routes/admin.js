@@ -11,7 +11,6 @@ module.exports = function(io) {
 
   function sendAccountList() {
     const coppiedAccounts = JSON.parse(JSON.stringify(userAccount.getAll()));
-
     coppiedAccounts.forEach((account)=>{
       account.password = null;
     });
@@ -27,10 +26,10 @@ module.exports = function(io) {
     });
     socket.on("updateAccount", async(account)=>{
       logger.debug("updateAccount request recieved", JSON.stringify(account, ["name", "description", "gid", "uid"], 4));
-      if (account.password === null || account.password === undefined) {
+
+      if (!account.hasOwnProperty("password") || account.password === null || typeof account.password === "undefined") {
         const id = userAccount.getID("name", account.name);
         const oldPassword = userAccount.get(id).password;
-
         account.password = oldPassword;
       } else {
         logger.debug("password changed", account.name);
@@ -47,9 +46,8 @@ module.exports = function(io) {
     socket.on("getAccountList", sendAccountList);
   });
 
-  // eslint-disable-next-line new-cap
+  //eslint-disable-next-line new-cap
   const router = express.Router();
-
   router.get("/", (req, res)=>{
     res.sendFile(path.resolve(__dirname, "../views/admin.html"));
   });

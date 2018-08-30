@@ -18,7 +18,6 @@ function getSNDs(fileList, isDir) {
       if (!globs.has(glob)) {
         globs.add(glob);
         const type = isDir ? "sndd" : "snd";
-
         snds.push({
           path: e.path,
           name: glob,
@@ -48,19 +47,17 @@ function bundleSNDFiles(fileList, isDir) {
     return [];
   }
   const globs = getSNDs(fileList, isDir);
-
-  // remove bundled files
+  //remove bundled files
   const files = fileList.filter((e)=>{
     for (const pattern of globs.map((g)=>{
       return g.name;
     })) {
       if (minimatch(e.name, pattern)) {
         return false;
-      } // match one of globs
+      } //match one of globs
     }
     return true;
   });
-
   return files.concat(globs);
 }
 
@@ -68,6 +65,7 @@ function compare(a, b) {
   if (a.name < b.name) {
     return -1;
   }
+
   if (a.name > b.name) {
     return 1;
   }
@@ -104,12 +102,9 @@ async function getContents(targetDir, options = {}) {
   const allFilter = options.filter && options.filter.all;
   const dirFilter = options.filter && options.filter.dir;
   const fileFilter = options.filter && options.filter.file;
-
   const dirList = [];
   const fileList = [];
-
   const names = await fs.readdir(targetDir);
-
   await Promise.all(names.map(async(name)=>{
     if (allFilter && !allFilter.test(name)) {
       return;
@@ -128,6 +123,7 @@ async function getContents(targetDir, options = {}) {
       }
       fileList.push({ path: request, name, type: "file", islink: false });
     }
+
     if (stats.isSymbolicLink()) {
       try {
         const stats2 = await fs.stat(absoluteFilename);
@@ -138,6 +134,7 @@ async function getContents(targetDir, options = {}) {
           }
           dirList.push({ path: request, name, type: "dir", islink: true });
         }
+
         if (stats2.isFile() && sendFilename) {
           if (fileFilter && !fileFilter.test(name)) {
             return;
@@ -153,6 +150,7 @@ async function getContents(targetDir, options = {}) {
       }
     }
   }));
+
   if (withParentDir) {
     dirList.push({ path: request, name: "../", type: "dir", islink: false });
   }
@@ -160,7 +158,6 @@ async function getContents(targetDir, options = {}) {
   if (bundleSerialNumberData) {
     const dirs = bundleSNDFiles(dirList, true);
     const files = bundleSNDFiles(fileList);
-
     return dirs.sort(compare).concat(files.sort(compare));
   }
   return dirList.sort(compare).concat(fileList.sort(compare));

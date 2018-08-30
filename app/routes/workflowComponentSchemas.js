@@ -1,4 +1,5 @@
 "use strict";
+
 class PosSchema {
   constructor() {
     this.required = ["x", "y"];

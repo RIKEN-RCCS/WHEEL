@@ -20,7 +20,6 @@ function configure(config, layouts) {
     layout = layouts.layout(config.layout.type, config.layout);
   }
   const eventName = config.eventName || "showMessage";
-
   return socketIOAppender(layout, config.timezoneOffset, config.socketIO, eventName);
 }
 module.exports.configure = configure;

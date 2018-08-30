@@ -1,11 +1,9 @@
 "use strict";
 const path = require("path");
 const os = require("os");
-
 const fs = require("fs-extra");
 const Siofu = require("socketio-file-upload");
 const minimatch = require("minimatch");
-
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const fileBrowser = require("./fileBrowser");
@@ -24,15 +22,16 @@ async function sendDirectoryContents(emit, target, request, withSND = true, send
       file: getSystemFiles()
     }
   });
-
   emit("fileList", result);
 }
 
 async function onGetFileList(uploader, emit, requestDir, cb) {
   logger.debug(`current dir = ${requestDir}`);
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+
   try {
     const stats = await fs.stat(requestDir);
     const targetDir = stats.isDirectory() ? requestDir : path.dirname(requestDir);
@@ -52,6 +51,7 @@ async function onGetFileList(uploader, emit, requestDir, cb) {
 
 async function onGetSNDContents(emit, requestDir, glob, isDir, cb) {
   logger.debug("getSNDContents event recieved:", requestDir, glob, isDir);
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
@@ -70,9 +70,11 @@ async function onGetSNDContents(emit, requestDir, glob, isDir, cb) {
 
 async function onRemoveFile(emit, label, target, cb) {
   logger.debug(`removeFile event recieved: ${target}`);
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+
   try {
     await fs.remove(target, { force: true });
     await gitAdd(label, target, true);
@@ -81,9 +83,9 @@ async function onRemoveFile(emit, label, target, cb) {
     cb(false);
     return;
   }
+
   try {
     const parentDir = path.dirname(target);
-
     await sendDirectoryContents(emit, parentDir);
   } catch (e) {
     logger.error("re-read directory failed", e);
@@ -95,9 +97,11 @@ async function onRemoveFile(emit, label, target, cb) {
 
 async function onRenameFile(emit, label, msg, cb) {
   logger.debug(`renameFile event recieved: ${msg}`);
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+
   if (!(msg.hasOwnProperty("oldName") && msg.hasOwnProperty("newName") && msg.hasOwnProperty("path"))) {
     logger.warn(`illegal request ${msg}`);
     cb(false);
@@ -112,6 +116,7 @@ async function onRenameFile(emit, label, msg, cb) {
     cb(false);
     return;
   }
+
   if (await fs.pathExists(newName)) {
     logger.error(newName, "is already exists");
     cb(false);
@@ -136,6 +141,7 @@ async function onRenameFile(emit, label, msg, cb) {
 
 async function onDownloadFile(emit, msg, cb) {
   logger.debug("downloadFile event recieved: ", msg);
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
@@ -143,7 +149,6 @@ async function onDownloadFile(emit, msg, cb) {
 
   try {
     const file = await fs.readFile(filename);
-
     emit("downloadData", file);
   } catch (e) {
     if (e.code === "EISDIR") {
@@ -159,9 +164,11 @@ async function onDownloadFile(emit, msg, cb) {
 
 async function onCreateNewFile(emit, label, filename, cb) {
   logger.debug("createNewFile event recieved: ", filename);
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+
   try {
     await fs.writeFile(filename, "");
     await gitAdd(label, filename);
@@ -173,11 +180,14 @@ async function onCreateNewFile(emit, label, filename, cb) {
   }
   cb(true);
 }
+
 async function onCreateNewDir(emit, label, dirname, cb) {
   logger.debug("createNewDir event recieved: ", dirname);
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+
   try {
     await fs.mkdir(dirname);
     await fs.writeFile(path.resolve(dirname, ".gitkeep"), "");
@@ -193,7 +203,6 @@ async function onCreateNewDir(emit, label, dirname, cb) {
 
 function registerListeners(socket, label) {
   const uploader = new Siofu();
-
   uploader.listen(socket);
   uploader.dir = os.homedir();
   uploader.on("start", (event)=>{
@@ -201,7 +210,6 @@ function registerListeners(socket, label) {
   });
   uploader.on("saved", async(event)=>{
     const absFilename = event.file.pathName;
-
     logger.info(`upload completed ${absFilename} [${event.file.size} Byte]`);
     await gitAdd(label, absFilename);
     await sendDirectoryContents(socket.emit.bind(socket), path.dirname(absFilename));

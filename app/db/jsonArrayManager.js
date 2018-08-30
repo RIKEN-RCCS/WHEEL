@@ -1,12 +1,12 @@
 "use strict";
 const fs = require("fs-extra");
-
 const uuidv1 = require("uuid/v1");
 
 class JsonArrayManager {
   constructor(filename) {
     this.filename = filename;
     this.data = [];
+
     try {
       this.data = fs.readJsonSync(this.filename);
     } catch (e) {
@@ -17,6 +17,7 @@ class JsonArrayManager {
       }
     }
   }
+
   async write() {
     return fs.writeJson(this.filename, this.data, { spaces: 4 });
   }
@@ -49,7 +50,6 @@ class JsonArrayManager {
     const targetIndex = this.data.findIndex((e)=>{
       return e.id === entry.id;
     });
-
     Object.assign(this.data[targetIndex], entry);
     return this.write();
   }
@@ -74,7 +74,6 @@ class JsonArrayManager {
       return e.id === id;
     });
     const duplicate = Object.assign({}, target);
-
     duplicate.id = uuidv1();
     this.data.push(duplicate);
     return this.write();
@@ -104,7 +103,6 @@ class JsonArrayManager {
    */
   getID(key, value) {
     const entry = this.query(key, value);
-
     return entry ? entry.id : entry;
   }
 

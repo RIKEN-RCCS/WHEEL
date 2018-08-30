@@ -2,23 +2,20 @@
 const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR;
 const fs = require("fs-extra");
 const path = require("path");
-
 const ARsshClient = require("arssh2-client");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const Dispatcher = require("./dispatcher");
-
 const { getDateString, createSshConfig } = require("./utility");
 const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, commitProject, revertProject, cleanProject, once, getTasks, clearDispatchedTasks, gitAdd } = require("./projectResource");
+const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, commitProject, revertProject, cleanProject, once, getTasks, clearDispatchedTasks, gitAdd, emitEvent } = require("./projectResource");
 const { cancel } = require("./executer");
 const { isInitialNode, hasChild, getComponent } = require("./workflowUtil");
 const { killTask } = require("./taskUtil");
 
 async function getProjectState(projectRootDir) {
   const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
-
   return projectJson.state;
 }
 
@@ -49,16 +46,18 @@ async function validateTask(projectRootDir, component, parentID, hosts) {
   if (component.name === null) {
     return Promise.reject(new Error(`illegal path ${component.name}`));
   }
+
   if (component.host !== "localhost") {
     hosts.push(component.host);
   }
+
   if (component.script === null) {
     return Promise.reject(new Error(`script is not specified ${component.name}`));
   }
   const parentDir = await getComponentDir(projectRootDir, parentID);
-
   return fs.pathExists(path.resolve(parentDir, component.name, component.script));
 }
+
 async function validateConditionalCheck(component) {
   if (component.hasOwnProperty("condition")) {
     return Promise.reject(new Error(`condition is not specified ${component.name}`));
@@ -70,12 +69,15 @@ async function validateForLoop(component) {
   if (component.hasOwnProperty("start")) {
     return Promise.reject(new Error(`start is not specified ${component.name}`));
   }
+
   if (component.hasOwnProperty("step")) {
     return Promise.reject(new Error(`step is not specified ${component.name}`));
   }
+
   if (component.hasOwnProperty("end")) {
     return Promise.reject(new Error(`end is not specified ${component.name}`));
   }
+
   if (component.step === 0 || (component.end - component.start) * component.step < 0) {
     return Promise.reject(new Error(`inifinite loop ${component.name}`));
   }
@@ -93,6 +95,7 @@ async function validateForeach(component) {
   if (!Array.isArray(component.indexList)) {
     return Promise.reject(new Error(`index list is broken ${component.name}`));
   }
+
   if (component.indexList.length <= 0) {
     return Promise.reject(new Error(`index list is empty ${component.name}`));
   }
@@ -119,6 +122,7 @@ async function validateComponents(projectRootDir, parentID, hosts) {
     } else if (component.type === "foreach") {
       promises.push(validateForeach(component));
     }
+
     if (hasChild(component)) {
       promises.push(validateComponents(projectRootDir, component.ID, hosts));
     }
@@ -140,11 +144,10 @@ async function validateComponents(projectRootDir, parentID, hosts) {
  */
 async function validationCheck(projectRootDir, rootWfID, sio) {
   let hosts = [];
-
   await validateComponents(projectRootDir, rootWfID, hosts);
-  hosts = Array.from(new Set(hosts)); // remove duplicate
+  hosts = Array.from(new Set(hosts)); //remove duplicate
 
-  // ask password to user and make session to each remote hosts
+  //ask password to user and make session to each remote hosts
   for (const remoteHostName of hosts) {
     const id = remoteHost.getID("name", remoteHostName);
     const hostInfo = remoteHost.get(id);
@@ -159,18 +162,19 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
     if (hostInfo.renewInterval) {
       arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
     }
+
     if (hostInfo.renewDelay) {
       arssh.renewDelay = hostInfo.renewDelay * 1000;
     }
 
-    // remoteHostName is name property of remote host entry
-    // hostInfo.host is hostname or IP address of remote host
+    //remoteHostName is name property of remote host entry
+    //hostInfo.host is hostname or IP address of remote host
     addSsh(projectRootDir, hostInfo.host, arssh);
 
-    // TODO loopで書き直す
+    //TODO loopで書き直す
     try {
 
-      // 1st try
+      //1st try
       await arssh.canConnect();
     } catch (e) {
       if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
@@ -181,13 +185,15 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
       if (config.passphrase) {
         config.passphrase = newPassword;
       }
+
       if (config.password) {
         config.password = newPassword;
       }
       arssh.overwriteConfig(config);
+
       try {
 
-        // 2nd try
+        //2nd try
         await arssh.canConnect();
       } catch (e2) {
         if (e2.reason !== "invalid passphrase" && e2.reason !== "authentication failure") {
@@ -198,13 +204,15 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
         if (config.passphrase) {
           config.passphrase = newPassword;
         }
+
         if (config.password) {
           config.password = newPassword;
         }
         arssh.overwriteConfig(config);
+
         try {
 
-          // 3rd try
+          //3rd try
           await arssh.canConnect();
         } catch (e3) {
           if (e3.reason !== "invalid passphrase" && e3.reason !== "authentication failure") {
@@ -245,7 +253,6 @@ async function onRunProject(sio, projectRootDir, cb) {
     clearDispatchedTasks(projectRootDir);
   }
   await updateAndSendProjectJson(emit, projectRootDir, "running");
-
   const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), logger);
 
   if (rootWF.cleanupFlag === "2") {
@@ -253,16 +260,16 @@ async function onRunProject(sio, projectRootDir, cb) {
   }
   setRootDispatcher(projectRootDir, rootDispatcher);
 
-  // event listener for task state changed
+  //event listener for task state changed
   function onTaskStateChanged() {
     emit("taskStateList", getTaskStateList(projectRootDir));
-    sendWorkflow(emit, projectRootDir);
+    emitEvent("componentStateChanged");
     setTimeout(()=>{
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
     }, interval);
   }
 
-  // event listener for component state changed
+  //event listener for component state changed
   function onComponentStateChanged() {
     sendWorkflow(emit, projectRootDir);
     setTimeout(()=>{
@@ -273,7 +280,7 @@ async function onRunProject(sio, projectRootDir, cb) {
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
 
-  // project start here
+  //project start here
   try {
     let timeout;
 
@@ -302,13 +309,10 @@ async function onRunProject(sio, projectRootDir, cb) {
   emit("taskStateList", getTaskStateList(projectRootDir));
   sendWorkflow(emit, projectRootDir);
 
-
-  // TODO taskStateChanged とcomponentStateChangedのremoveListener
+  //TODO taskStateChanged とcomponentStateChangedのremoveListener
   rootDispatcher.remove();
   deleteRootDispatcher(projectRootDir);
   removeSsh(projectRootDir);
-
-  // TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
 
   if (memMeasurement) {
     logger.debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
@@ -327,11 +331,12 @@ async function onPauseProject(emit, projectRootDir, cb) {
     rootDispatcher.pause();
   }
 
-  // TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
+  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
   await cancelDispatchedTasks(projectRootDir);
   removeSsh(projectRootDir);
   await updateAndSendProjectJson(emit, projectRootDir, "paused");
 }
+
 async function onCleanProject(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -366,6 +371,7 @@ async function onSaveProject(emit, projectRootDir, cb) {
     logger.error(projectState, "project can not be saved");
   }
 }
+
 async function onRevertProject(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -385,7 +391,6 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
 
   try {
     const projectJson = await fs.readJson(filename);
-
     projectJson[prop] = value;
     await fs.writeJson(filename, projectJson, { spaces: 4 });
     await gitAdd(projectRootDir, filename);
@@ -401,9 +406,9 @@ async function onGetProjectState(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+
   try {
     const state = await getProjectState(projectRootDir);
-
     emit("projectState", state);
   } catch (e) {
     logger.error("send project state failed", e);
@@ -417,6 +422,7 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+
   try {
     await updateAndSendProjectJson(emit, projectRootDir);
   } catch (e) {
@@ -437,7 +443,6 @@ async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
 
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
-
   socket.on("runProject", onRunProject.bind(null, socket, projectRootDir));
   socket.on("pauseProject", onPauseProject.bind(null, emit, projectRootDir));
   socket.on("cleanProject", onCleanProject.bind(null, emit, projectRootDir));

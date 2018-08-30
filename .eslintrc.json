@@ -24,7 +24,37 @@
     "eqeqeq": ["error", "always", {"null": "ignore"}],
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
     "indent": ["error", 2, {"SwitchCase": 1}],
+    "lines-around-comment": ["error", {
+        "beforeBlockComment": true,
+        "beforeLineComment": false
+    }],
+    "lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
+    "newline-per-chained-call": "error",
     "no-use-before-define": ["error", { "functions": false }],
+    "no-warning-comments": "warn",
+    "padding-line-between-statements": [
+        "error",
+        {
+            "blankLine": "any",
+            "prev": ["const", "let", "var"],
+            "next": "*"
+        },
+        {
+            "blankLine": "always",
+            "prev": "*",
+            "next": [
+              "class",
+              "do",
+              "for",
+              "function",
+              "multiline-block-like",
+              "switch",
+              "try",
+              "while"
+            ]
+        }
+    ],
+    "spaced-comment": ["error", "never"],
     "node/exports-style": [
       "error",
       "module.exports"

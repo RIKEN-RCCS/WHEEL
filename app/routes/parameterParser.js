@@ -6,6 +6,7 @@ function isValidParamAxis(min, max, step) {
   if (max <= min) {
     return false;
   }
+
   if (step === 0) {
     return false;
   }
@@ -20,7 +21,6 @@ function calcParamAxisSize(min, max, step) {
   if (!min.isInteger || !max.isInteger || !step.isInteger) {
     const significantDigits = [min, max, step].reduce((a, e)=>{
       const digits = getDigitsAfterTheDecimalPoint(e);
-
       return Math.max(a, digits);
     }, 0);
     const iMax = max * 10 ** significantDigits;
@@ -61,7 +61,6 @@ function getParamAxisSize(axis) {
 
 function getDigitsAfterTheDecimalPoint(floatVal) {
   const strVal = floatVal.toString();
-
   return strVal.indexOf(".") !== -1 ? strVal.length - strVal.indexOf(".") - 1 : 0;
 }
 
@@ -74,10 +73,8 @@ function getNthValue(n, axis) {
   if (!Number.isInteger(rt)) {
     const significantDigits = [axis.min, axis.max, axis.step].reduce((a, e)=>{
       const digits = getDigitsAfterTheDecimalPoint(e);
-
       return Math.max(a, digits);
     }, 0);
-
     rt = rt.toFixed(significantDigits);
   }
   return rt.toString();
@@ -92,7 +89,6 @@ function getNthParamVec(n, ParamSpace) {
     const l = getParamAxisSize(axis);
     const j = n % l;
     const value = getNthValue(j, axis);
-
     paramVec.push({ key: axis.keyword, value, type: axis.type });
     n = Math.floor(n / l);
   }
@@ -102,7 +98,6 @@ function getNthParamVec(n, ParamSpace) {
 function getParamSize(ParamSpace) {
   return ParamSpace.reduce((p, a)=>{
     const paramAxisSize = getParamAxisSize(a);
-
     return paramAxisSize !== 0 ? p * paramAxisSize : p;
   }, 1);
 }
@@ -128,8 +123,8 @@ function getFilenames(ParamSpace) {
 
 function removeInvalid(paramSpace) {
 
-  // work around
-  // TODO fix bug in rapid client.js
+  //work around
+  //TODO fix bug in rapid client.js
   paramSpace.forEach((e)=>{
     if (e.type === "integer") {
       e.min = parseInt(e.min, 10);

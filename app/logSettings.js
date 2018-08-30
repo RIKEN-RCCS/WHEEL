@@ -1,20 +1,19 @@
 "use strict";
 const path = require("path");
 const log4js = require("log4js");
-
 log4js.addLayout("errorlog", ()=>{
   return function(logEvent) {
     const tmp = logEvent.data.reduce((a, p)=>{
       if (p instanceof Error) {
         return `${a}<br>${p.message}`;
       }
+
       if (typeof p === "string") {
         return `${a} ${p}`;
       }
       return a;
 
     }, "");
-
     return tmp;
   };
 });
@@ -117,7 +116,6 @@ const defaultSettings = {
     }
   }
 };
-
 let ready = false;
 let firstCall = true;
 let logSettings = Object.assign({}, defaultSettings);
@@ -145,12 +143,15 @@ function reset() {
 function setFilename(filename) {
   logSettings.appenders.file.filename = filename;
 }
+
 function setMaxLogSize(size) {
   logSettings.appenders.file.maxLogSize = size;
 }
+
 function setNumBackup(num) {
   logSettings.appenders.file.backups = num;
 }
+
 function setCompress(TF) {
   logSettings.appenders.file.compress = TF === true;
 }
@@ -165,9 +166,10 @@ function getLogger(cat, verbose) {
   if (!ready) {
     return null;
   }
+
   if (firstCall) {
     if (verbose) {
-      // eslint-disable-next-line no-console
+      //eslint-disable-next-line no-console
       console.log("getLogger called. current setting is as follows\n", logSettings);
     }
     log4js.configure(logSettings);

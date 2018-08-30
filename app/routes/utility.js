@@ -1,11 +1,9 @@
 "use strict";
 const { promisify } = require("util");
 const path = require("path");
-
 const fs = require("fs-extra");
 const Mode = require("stat-mode");
 const glob = require("glob");
-
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 
 /**
@@ -41,12 +39,14 @@ async function createSshConfig(hostInfo, password) {
   if (hostInfo.keyFile) {
     config.privateKey = await fs.readFile(hostInfo.keyFile);
     config.privateKey = config.privateKey.toString();
+
     if (password) {
       config.passphrase = password;
       config.password = null;
     }
   } else {
     config.privateKey = null;
+
     if (password) {
       config.passphrase = null;
       config.password = password;
@@ -63,7 +63,7 @@ async function createSshConfig(hostInfo, password) {
  * @returns {string} escaped regex string
  */
 function escapeRegExp(string) {
-  // eslint-disable-next-line no-useless-escape
+  //eslint-disable-next-line no-useless-escape
   return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
@@ -81,23 +81,27 @@ async function addX(file) {
   if (mode.owner.read) {
     u += 1;
   }
+
   if (mode.owner.write) {
     u += 2;
   }
+
   if (mode.group.read) {
     g += 1;
   }
+
   if (mode.group.write) {
     g += 2;
   }
+
   if (mode.others.read) {
     o += 1;
   }
+
   if (mode.others.write) {
     o += 2;
   }
   const modeString = u.toString() + g.toString() + o.toString();
-
   return fs.chmod(file, modeString);
 }
 
@@ -110,7 +114,6 @@ function getDateString(humanReadable = false) {
   const HH = `00${now.getHours()}`.slice(-2);
   const MM = `00${now.getMinutes()}`.slice(-2);
   const ss = `00${now.getSeconds()}`.slice(-2);
-
   return humanReadable ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
 }
 
@@ -124,20 +127,17 @@ function doCleanup(flag, parentFlag) {
 
   if (numFlag === 2) {
     const numParentFlag = parseInt(parentFlag, 10);
-
     return numParentFlag === 0;
   }
   return numFlag === 0;
 }
 
-// blacklist
+//blacklist
 const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
-
-// whitelist
+//whitelist
 const alphanumeric = "a-zA-Z0-9";
-
-// due to escapeRegExp's spec, bars must be added separately any other regexp strings
-// eslint-disable-next-line no-useless-escape
+//due to escapeRegExp's spec, bars must be added separately any other regexp strings
+//eslint-disable-next-line no-useless-escape
 const bars = "_\-";
 const pathseps = "/\\";
 const metaCharactors = "*?[]{}()!?+@.";
@@ -150,6 +150,7 @@ function isValidName(name) {
   if (typeof name !== "string") {
     return false;
   }
+
   if (win32reservedName.test(name)) {
     return false;
   }
@@ -172,6 +173,7 @@ function isValidInputFilename(name) {
   }
   return true;
 }
+
 function isValidOutputFilename(name) {
   if (win32reservedName.test(name)) {
     return false;
@@ -188,7 +190,7 @@ function isValidOutputFilename(name) {
  * return regexp of systemfiles
  */
 function getSystemFiles() {
-  // eslint-disable-next-line no-useless-escape
+  //eslint-disable-next-line no-useless-escape
   return new RegExp(`^(?!^.*(${escapeRegExp(projectJsonFilename)}|${escapeRegExp(componentJsonFilename)}|\.git.*)$).*$`);
 }
 
@@ -234,7 +236,7 @@ async function deliverOutputFiles(outputFiles, srcRoot) {
         let newPath = path.resolve(dst.dstRoot, dstName);
 
 
-        // dst is regard as directory if src match multi files or dst ends with path separator
+        //dst is regard as directory if src match multi files or dst ends with path separator
         if (srces.length > 1 || dstName.endsWith(path.sep)) {
           newPath = path.resolve(dst.dstRoot, dstName, srcFile);
         }

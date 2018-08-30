@@ -36,11 +36,11 @@ const emit = sinon.stub();
 const cb = sinon.stub();
 const dummySilentLogger = {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}; //default logger stub
 const dummyLogger = {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}; //show error message
-const dummyVerboseLogger = {error: console.log, warn: console.log, info: console.log, debug: console.log, stdout: console.log, stderr: console.log, SSHout:console.log, SSHerr: console.log}; //show error message
+const dummyVerboseLogger = {error: console.log, warn: console.log, info: console.log, debug: console.log, stdout: console.log, stderr: console.log, sshout:console.log, ssherr: console.log}; //show error message
 dummyLogger.stdout=sinon.stub();
 dummyLogger.stderr=sinon.stub();
-dummyLogger.SSHout=sinon.stub();
-dummyLogger.SSHerr=sinon.stub();
+dummyLogger.sshout=sinon.stub();
+dummyLogger.ssherr=sinon.stub();
 
 projectController.__set__("logger", dummyVerboseLogger);
 home.__set__("logger", dummySilentLogger);
@@ -62,8 +62,8 @@ describe("project Controller UT", function(){
     sio.emit.reset();
     dummyLogger.stdout.reset();
     dummyLogger.stderr.reset();
-    dummyLogger.SSHout.reset();
-    dummyLogger.SSHerr.reset();
+    dummyLogger.sshout.reset();
+    dummyLogger.ssherr.reset();
     await createNewProject(projectRootDir, "testProject");
     await openProject(projectRootDir);
   });
@@ -76,9 +76,18 @@ describe("project Controller UT", function(){
       const task0 = await fs.readJson(path.join(projectRootDir, "task0", componentJsonFilename));
       await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
       await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"),"#!/bin/bash\npwd\n");
+
+      // actual test start here
       await onRunProject(sio, projectRootDir, cb);
+
+      // assersions
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
+      expect(dummyLogger.stdout).to.have.been.calledOnce;
+      expect(dummyLogger.stdout).to.have.been.calledWith(path.resolve(projectRootDir, "task0"));
+      expect(dummyLogger.stderr).not.to.have.been.called;
+      expect(dummyLogger.sshout).not.to.have.been.called;
+      expect(dummyLogger.ssherr).not.to.have.been.called;
     });
   });
 });

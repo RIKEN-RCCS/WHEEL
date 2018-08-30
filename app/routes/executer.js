@@ -3,20 +3,19 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-
-const { getSsh, emit } = require("./projectResource");
+const { getSsh, emitEvent } = require("./projectResource");
 const { remoteHost, jobScheduler } = require("../db/db");
 const { addX, replacePathsep, getDateString, deliverOutputFiles } = require("./utility");
-
 const executers = [];
-let logger; // logger is injected when exec() is called;
+let logger; //logger is injected when exec() is called;
 
 /**
  * set task component's status and notice it's changed
  */
 function setTaskState(task, state) {
   task.state = state;
-  emit(task.label, "taskStateChanged");
+  fs.writeJson(task.jsonFilename, task);
+  emitEvent(task.label, "taskStateChanged");
 }
 
 /**
@@ -25,7 +24,6 @@ function setTaskState(task, state) {
  */
 async function replaceCRLF(filename) {
   let contents = await fs.readFile(filename);
-
   contents = contents.toString().replace(/\r\n/g, "\n");
   return fs.writeFile(filename, contents);
 }
@@ -44,6 +42,7 @@ function parseFilter(pattern) {
 function passToSSHout(data) {
   logger.sshout(data.toString().trim());
 }
+
 function passToSSHerr(data) {
   logger.ssherr(data.toString().trim());
 }
@@ -58,7 +57,6 @@ async function isFinished(JS, ssh, jobID) {
 
   if (rt !== 0) {
     const error = new Error("job stat command failed!");
-
     error.cmd = statCmd;
     error.rt = rt;
     return Promise.reject(error);
@@ -69,7 +67,6 @@ async function isFinished(JS, ssh, jobID) {
 
   if (!finished) {
     const reFailedState = new RegExp(JS.reFailedState, "m");
-
     finished = reFailedState.test(outputText);
     const reReturnCode = new RegExp(JS.reReturnCode, "m");
     const result = reReturnCode.exec(outputText);
@@ -83,17 +80,15 @@ async function isFinished(JS, ssh, jobID) {
   }
   logger.debug("is", jobID, "finished", finished, "\n", outputText);
 
-  return [finished, rt];
+  return finished ? rt : null;
 }
 
 async function prepareRemoteExecDir(ssh, task) {
   setTaskState(task, "stage-in");
   logger.debug(task.remoteWorkingDir, task.script);
   const localScriptPath = path.resolve(task.workingDir, task.script);
-
   await replaceCRLF(localScriptPath);
   const remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
-
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
   await ssh.send(task.workingDir, task.remoteWorkingDir);
   return ssh.chmod(remoteScriptPath, "744");
@@ -103,7 +98,7 @@ async function gatherFiles(ssh, task, rt) {
   setTaskState(task, "stage-out");
   logger.debug("start to get files from remote server if specified");
 
-  // get outputFiles from remote server
+  //get outputFiles from remote server
   const outputFilesArray = task.outputFiles
     .filter((e)=>{
       return e.dst.length > 0;
@@ -111,7 +106,6 @@ async function gatherFiles(ssh, task, rt) {
     .map((e)=>{
       if (e.name.endsWith("/") || e.name.endsWith("\\")) {
         const dirname = replacePathsep(e.name);
-
         return `${dirname}/*`;
       }
       return e.name;
@@ -120,28 +114,27 @@ async function gatherFiles(ssh, task, rt) {
 
   if (outputFilesArray.length > 0) {
     const outputFiles = `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
-
     logger.debug("try to get outputFiles", outputFiles, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir);
     await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null);
   }
 
-  // get files which match include filter
+  //get files which match include filter
   if (task.include) {
     const include = `${task.remoteWorkingDir}/${parseFilter(task.include)}`;
     const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
-
     logger.debug("try to get ", include, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir, "\n  exclude filter:", exclude);
     await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude);
   }
 
-  // clean up remote working directory
+  //clean up remote working directory
   if (task.doCleanup) {
     logger.debug("(remote) rm -fr", task.remoteWorkingDir);
+
     try {
       await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
     } catch (e) {
 
-      // just log and ignore error
+      //just log and ignore error
       logger.warn("remote cleanup failed but ignored", e);
     }
   }
@@ -164,11 +157,62 @@ function makeQueueOpt(task, JS, queues) {
   return queue !== "" ? ` ${JS.queueOpt}${queue}` : "";
 }
 
+
+/**
+ * execute task on localhost(=the machine which node.js is running on)
+ * @param {Task} task - task instance
+ * @returns {Promise} - resolve with retun value from script when script is finished
+ * rejected if child process is abnomaly terminated (e.g. permission error, signal occurred etc.)
+ */
+async function localExec(task) {
+  return new Promise(async(resolve, reject)=>{
+    setTaskState(task, "running");
+    const script = path.resolve(task.workingDir, task.script);
+    await addX(script);
+
+    //TODO env, uid, gidを設定する
+    const options = {
+      cwd: task.workingDir,
+      env: process.env,
+      shell: true
+    };
+
+    if (task.hasOwnProperty("currentIndex")) {
+      options.env.WHEEL_CURRENT_INDEX = task.currentIndex.toString();
+    }
+    const cp = childProcess.spawn(script, options, (err)=>{
+      if (err) {
+        reject(err);
+      }
+    });
+    cp.stdout.on("data", (data)=>{
+      logger.stdout(data.toString());
+    });
+    cp.stderr.on("data", (data)=>{
+      logger.stderr(data.toString());
+    });
+    cp.on("error", (err)=>{
+      cp.removeAlllisteners("exit");
+      reject(err);
+    });
+    cp.on("exit", (rt)=>{
+      logger.debug(task.name, "done. rt =", rt);
+      resolve(rt);
+    });
+    task.handler = cp;
+  });
+}
+
+function localSubmit() {
+  logger.warn("localSubmit function is not implimented yet");
+}
+
+
 class Executer {
   constructor(ssh, JS, maxNumJob, remotehostID, hostname, queues, execInterval, statusCheckInterval, maxStatusCheckError) {
 
-    // remotehostID and useJobScheduler flag is not used inside Executer class
-    // this 2 property is used as search key in exec();
+    //remotehostID and useJobScheduler flag is not used inside Executer class
+    //this 2 property is used as search key in exec();
     this.remotehostID = remotehostID;
     this.useJobScheduler = JS !== null;
 
@@ -181,7 +225,7 @@ class Executer {
       if (this.useJobScheduler) {
         logger.warn("local submit is not implimented yet!");
       }
-      this.exec = this.localExec;
+      this.exec = this.useJobScheduler ? localSubmit : localExec;
     } else {
       this.exec = this.useJobScheduler ? this.remoteSubmit : this.remoteExec;
     }
@@ -192,21 +236,20 @@ class Executer {
         const rt = await this.exec(task)
           .catch((e)=>{
 
-            // TODO jobのsubmitに失敗した時は、maxJobの設定を減らして再投入するような機構を入れる?
+            //TODO jobのsubmitに失敗した時は、maxJobの設定を減らして再投入するような機構を入れる?
             setTaskState(task, "failed");
             return Promise.reject(e);
           });
 
+        //prevent to overwrite killed task's property
         if (task.state === "not-started") {
-
-          // prevent to overwrite killed task's property
-          return;
+          return Promise.resolve();
         }
 
-        // record job finished time
+        //record job finished time
         task.endTime = getDateString(true);
 
-        // deliver files
+        //deliver files
         if (rt === 0) {
           const rt2 = await deliverOutputFiles(task.outputFiles, task.workingDir);
 
@@ -215,12 +258,11 @@ class Executer {
           }
         }
 
-        // update task status
+        //update task status
         const state = rt === 0 ? "finished" : "failed";
-
         setTaskState(task, state);
 
-        // to use retry function in the future release, return Promise.reject if task finished with non-zero value
+        //to use retry function in the future release, return Promise.reject if task finished with non-zero value
         if (state === "failed") {
           return Promise.reject(rt);
         }
@@ -231,38 +273,41 @@ class Executer {
       interval: execInterval * 1000,
       name: `executer ${hostname}`
     });
-    if (this.useJobScheduler) {
 
-      // TODO exec should be changed if local submit case
+    if (this.useJobScheduler) {
       this.statCheckQ = new SBS({
+      //TODO exec should be changed for local submit case
         exec: async(task)=>{
           if (task.state !== "running") {
             return false;
           }
           let statFailedCount = 0;
           let statCheckCount = 0;
-
           logger.debug(task.jobID, "status checked", statCheckCount);
           ++statCheckCount;
+
           try {
-            const [finished, rt] = await isFinished(JS, this.ssh, task.jobID);
+            const rt = await isFinished(JS, this.ssh, task.jobID);
 
-            if (finished) {
-              logger.info(task.jobID, "is finished (remote). rt =", rt);
-              await gatherFiles(this.ssh, task, rt);
-              return rt;
+            if (rt === null) {
+              //"not finished" is used for retry flag so reject with error is not prefered at this time
+              //eslint-disable-next-line prefer-promise-reject-errors
+              return Promise.reject("not finished");
             }
-            return Promise.reject("not finished");
-
+            logger.info(task.jobID, "is finished (remote). rt =", rt);
+            await gatherFiles(this.ssh, task, rt);
+            return rt;
           } catch (err) {
             ++statFailedCount;
             err.jobID = task.jobID;
             err.JS = JS;
             logger.warn("status check failed", err);
+
             if (statFailedCount > this.maxStatusCheckError) {
               return Promise.reject(new Error("job status check failed over", this.maxStatusCheckError, "times"));
             }
           }
+          return Promise.reject(new Error("never reach here!!"));
         },
         retry: (e)=>{
           return e === "not finished";
@@ -280,6 +325,7 @@ class Executer {
 
   submit(task) {
     task.sbsID = this.batch.qsub(task);
+
     if (task.sbsID !== null) {
       setTaskState(task, "waiting");
     }
@@ -289,55 +335,9 @@ class Executer {
         setTaskState(task, "failed");
       });
   }
+
   cancel(task) {
     return this.batch.qdel(task.sbsID);
-  }
-
-  /**
-   * execute task on localhost(=the machine which node.js is running on)
-   * @param {Task} task - task instance
-   * @returns {Promise} - resolve with retun value from script when script is finished
-   * rejected if child process is abnomaly terminated (e.g. permission error, signal occurred etc.)
-   */
-  async localExec(task) {
-    return new Promise(async(resolve, reject)=>{
-      setTaskState(task, "running");
-      const script = path.resolve(task.workingDir, task.script);
-
-      await addX(script);
-
-      // TODO env, uid, gidを設定する
-      const options = {
-        cwd: task.workingDir,
-        env: process.env,
-        shell: true
-      };
-
-      if (task.currentIndex !== undefined) {
-        options.env.WHEEL_CURRENT_INDEX = task.currentIndex.toString();
-      }
-      const cp = childProcess.spawn(script, options, (err)=>{
-        if (err) {
-          reject(err);
-        }
-      });
-
-      cp.stdout.on("data", (data)=>{
-        logger.stdout(data.toString());
-      });
-      cp.stderr.on("data", (data)=>{
-        logger.stderr(data.toString());
-      });
-      cp.on("error", (err)=>{
-        cp.removeAlllisteners("exit");
-        reject(err);
-      });
-      cp.on("exit", (rt)=>{
-        logger.debug(task.name, "done. rt =", rt);
-        resolve(rt);
-      });
-      task.handler = cp;
-    });
   }
 
   async remoteExec(task) {
@@ -345,25 +345,18 @@ class Executer {
     logger.debug("prepare done");
     setTaskState(task, "running");
     const cmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ./${task.script}`;
-
     logger.debug("exec (remote)", cmd);
 
-    // if exception occurred in ssh.exec, it will be catched in caller
+    //if exception occurred in ssh.exec, it will be catched in caller
     const rt = await this.ssh.exec(cmd, {}, passToSSHout, passToSSHerr);
-
     logger.debug(task.name, "(remote) done. rt =", rt);
     return rt === 0 ? gatherFiles(this.ssh, task, rt) : rt;
-  }
-
-  localSubmit() {
-    logger.warn("localSubmit function is not implimented yet");
   }
 
   async remoteSubmit(task) {
     await prepareRemoteExecDir(this.ssh, task);
 
     const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ./${task.script}`;
-
     logger.debug("submitting job (remote):", submitCmd);
     setTaskState(task, "running");
     const output = [];
@@ -371,7 +364,6 @@ class Executer {
 
     if (rt !== 0) {
       const err = new Error("submit command failed");
-
       err.cmd = submitCmd;
       err.rt = rt;
       return Promise.reject(err);
@@ -382,13 +374,11 @@ class Executer {
 
     if (result === null || result[1] === null) {
       const err = new Error("get jobID failed");
-
       err.cmd = submitCmd;
       err.outputText = outputText;
       return Promise.reject(err);
     }
     const jobID = result[1];
-
     task.jobID = jobID;
     logger.info("submit success:", submitCmd, jobID);
     return this.statCheckQ.qsubAndWait(task);
@@ -397,14 +387,17 @@ class Executer {
   setMaxNumJob(v) {
     this.batch.maxConcurrent = v;
   }
+
   setExecInterval(v) {
     this.batch.interval = v * 1000;
   }
+
   setStatusCheckInterval(v) {
     if (this.useJobScheduler) {
       this.statCheckQ.interval = v * 1000;
     }
   }
+
   setMaxStatusCheckError(v) {
     this.maxStatusCheckError = v;
   }
@@ -413,19 +406,15 @@ class Executer {
 function createExecuter(task) {
   logger.debug("createExecuter called");
   const onRemote = task.remotehostID !== "localhost";
-
   const hostinfo = onRemote ? remoteHost.get(task.remotehostID) : null;
   const ssh = onRemote ? getSsh(task.label, hostinfo.host) : null;
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
   const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
-
   const host = hostinfo != null ? hostinfo.host : null;
   const queues = hostinfo != null ? hostinfo.queue : null;
-
   const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
   const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
   const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;
-
   return new Executer(ssh, JS, maxNumJob, task.remotehostID, host, queues, execInterval, statusCheckInterval, maxStatusCheckError);
 }
 
@@ -440,7 +429,7 @@ function exec(task, loggerInstance) {
     return e.remotehostID === task.remotehostID && e.useJobScheduler === task.useJobScheduler;
   });
 
-  if (executer === undefined) {
+  if (typeof executer === "undefined") {
     logger.debug("create new executer for", task.host, " with job scheduler", task.useJobScheduler);
     executer = createExecuter(task);
     executers.push(executer);
@@ -451,35 +440,34 @@ function exec(task, loggerInstance) {
     const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
     const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
     const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;
-
     executer.setMaxNumJob(maxNumJob);
     executer.setExecInterval(execInterval);
     executer.setStatusCheckInterval(statusCheckInterval);
     executer.setMaxStatusCheckError(maxStatusCheckError);
   }
+
   if (task.remotehostID !== "localhost") {
     const hostinfo = remoteHost.get(task.remotehostID);
     const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
-
     task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
   }
 
-  // memo returned Promise is not used in dispatcher
+  //memo returned Promise is not used in dispatcher
   return executer.submit(task);
 }
 
 function cancel(task) {
-  if (task.sbsID === undefined) {
-    return;
+  if (task.hasOwnProperty("sbsID")) {
+    return false;
   }
   task.remotehostID = remoteHost.getID("name", task.host) || "localhost";
   const executer = executers.find((e)=>{
     return e.remotehostID === task.remotehostID && e.useJobScheduler === task.useJobScheduler;
   });
 
-  if (executer === undefined) {
+  if (typeof executer === "undefined") {
     logger.warn("executer for", task.remotehostID, " with job scheduler", task.useJobScheduler, "is not found");
-    return;
+    return false;
   }
   return executer.cancel(task);
 }

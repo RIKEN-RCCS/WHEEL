@@ -4,10 +4,10 @@ const uuidv1 = require("uuid/v1");
 class BaseWorkflowComponent {
   constructor(pos, parent) {
 
-    // parent components's ID
+    //parent components's ID
     this.parent = parent || "this is root";
 
-    /** cordinate in workflow editor screen
+    /**cordinate in workflow editor screen
      * {pos.x: pageX, pos.y: pageY}
      */
     this.pos = pos;
@@ -17,10 +17,10 @@ class BaseWorkflowComponent {
     this.name = null;
     this.description = null;
 
-    /** pointers to previous node */
+    /**pointers to previous node */
     this.previous = [];
 
-    /** pointers to next node */
+    /**pointers to next node */
     this.next = [];
 
     /**
@@ -82,24 +82,24 @@ class Task extends BaseWorkflowComponent {
     super(...args);
     this.type = "task";
 
-    /** filename of entry point of this task */
+    /**filename of entry point of this task */
     this.script = null;
 
-    /** hostname where this task will execute on */
+    /**hostname where this task will execute on */
     this.host = "localhost";
 
-    /** run as batch job or not*/
+    /**run as batch job or not*/
     this.useJobScheduler = false;
 
-    /** queue name */
+    /**queue name */
     this.queue = null;
 
-    // note on filters
-    // if include filter is set, matched files are transferd if it does not match exclude filter
-    /** include filter for recieve files from remote host */
+    //note on filters
+    //if include filter is set, matched files are transferd if it does not match exclude filter
+    /**include filter for recieve files from remote host */
     this.include = null;
 
-    /** exclude filter for recieve files from remote host */
+    /**exclude filter for recieve files from remote host */
     this.exclude = null;
   }
 }
@@ -119,7 +119,7 @@ class If extends BaseWorkflowComponent {
      */
     this.condition = null;
 
-    /** task pointers which will be executed if condition is false */
+    /**task pointers which will be executed if condition is false */
     this.else = [];
   }
 }
@@ -127,13 +127,13 @@ class If extends BaseWorkflowComponent {
 class Workflow extends BaseWorkflowComponent {
   constructor(pos, ...args) {
 
-    // define pseudo position for root workflow
+    //define pseudo position for root workflow
     const pos2 = pos || { x: 0, y: 0 };
-
     super(pos2, ...args);
     this.type = "workflow";
   }
 }
+
 class ParameterStudy extends BaseWorkflowComponent {
   constructor(...args) {
     super(...args);
@@ -154,6 +154,7 @@ class For extends BaseWorkflowComponent {
     this.step = null;
   }
 }
+
 class While extends BaseWorkflowComponent {
   constructor(...args) {
     super(...args);
