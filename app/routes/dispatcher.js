@@ -7,7 +7,7 @@ const { EventEmitter } = require("events");
 
 const { interval } = require("../db/db");
 const { exec } = require("./executer");
-const { addXSync, deliverOutputFiles } = require("./utility");
+const { addX, deliverOutputFiles, isFinishedState } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid } = require("./parameterParser");
 const { isInitialNode, getChildren, getComponent } = require("./workflowUtil");
 const { emit, addDispatchedTask } = require("./projectResource");
@@ -22,9 +22,9 @@ function forIsFinished(component) {
 function whileGetNextIndex(component) {
   return component.hasOwnProperty("currentIndex") ? ++(component.currentIndex) : 0;
 }
-function whileIsFinished(cwfDir, logger, component) {
+async function whileIsFinished(cwfDir, logger, component) {
   const cwd = path.resolve(cwfDir, component.path);
-  const condition = evalConditionSync(component.condition, cwd, component.currentIndex, logger);
+  const condition = await evalCondition(component.condition, cwd, component.currentIndex, logger);
 
   return !condition;
 }
@@ -35,7 +35,7 @@ function foreachGetNextIndex(component) {
     });
 
     if (i === -1 || i === component.indexList.length - 1) {
-      return undefined;
+      return null;
     }
     return component.indexList[i + 1].label;
 
@@ -44,7 +44,7 @@ function foreachGetNextIndex(component) {
 
 }
 function foreachIsFinished(component) {
-  return component.currentIndex === undefined;
+  return component.currentIndex === null;
 }
 
 function loopInitialize(component) {
@@ -53,42 +53,54 @@ function loopInitialize(component) {
   component.originalName = component.name;
 }
 
-function isFinishedState(state) {
-  return state === "finished" || state === "failed";
-}
-
 /**
  * evalute condition by executing external command or evalute JS expression
  * @param {string} condition - command name or javascript expression
  */
-function evalConditionSync(condition, cwd, currentIndex, logger) {
-  if (!(typeof condition === "string" || typeof condition === "boolean")) {
-    logger.warn("condition must be string or boolean");
-    return false;
-  }
-  const script = path.resolve(cwd, condition);
-
-  try {
-    fs.accessSync(script);
-  } catch (e) {
-    if (e.code === "ENOENT") {
-      logger.debug("evalute ", condition);
-      // eslint-disable-next-line no-eval
-      return eval(`var WHEEL_CURRENT_INDEX=${currentIndex};${condition}`);
+async function evalCondition(condition, cwd, currentIndex, logger) {
+  return new Promise(async(resolve, reject)=>{
+    if (typeof condition === "boolean") {
+      resolve(condition);
     }
-  }
-  logger.debug("execute ", script);
-  addXSync(script);
-  const dir = path.dirname(script);
-  const options = {
-    env: process.env,
-    cwd: dir
-  };
+    if (typeof condition !== "string") {
+      logger.warn("condition must be string or boolean");
+      reject(new Error(`illegal condition specified ${typeof condition} \n${condition}`));
+    }
+    const script = path.resolve(cwd, condition);
 
-  if (currentIndex !== undefined) {
-    options.env.WHEEL_CURRENT_INDEX = currentIndex.toString();
-  }
-  return childProcess.spawnSync(script, options).status === 0;
+    if (await fs.pathExists(script)) {
+      logger.debug("execute ", script);
+      await addX(script);
+      const dir = path.dirname(script);
+      const options = {
+        env: process.env,
+        cwd: dir
+      };
+
+      if (typeof currentIndex === "number") {
+        options.env.WHEEL_CURRENT_INDEX = currentIndex.toString();
+      }
+      const cp = childProcess.spawn(script, options, (err)=>{
+        if (err) {
+          reject(err);
+        }
+      });
+
+      cp.on("close", (code)=>{
+        resolve(code === 0);
+      });
+    } else {
+      logger.debug("evalute ", condition);
+      let conditionExpression;
+
+      if (typeof currentIndex === "number") {
+        conditionExpression += `var WHEEL_CURRENT_INDEX=${currentIndex};`;
+      }
+      conditionExpression += condition;
+      // eslint-disable-next-line no-eval
+      resolve(eval(conditionExpression));
+    }
+  });
 }
 
 /**
@@ -118,10 +130,11 @@ class Dispatcher extends EventEmitter {
 
     this.nextSearchList = [];
     this.children = new Set(); // child dispatcher instance
-    this.dispatchedTaskList = [];
+    this.runningTasks = [];
+    this.hasFailedTask = false;
+    this.isReady = this.asyncInit();
   }
-
-  async _dispatch() {
+  async asyncInit() {
 
     // overwrite doCleanup if parent's cleanupFlag is not "2"
     this.parentJson = await getComponent(this.projectRootDir, this.parentID);
@@ -136,6 +149,10 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("initial tasks : ", this.currentSearchList.map((e)=>{
       return e.name;
     }));
+  }
+
+  async _dispatch() {
+    await this.isReady;
     const promises = [];
 
     while (this.currentSearchList.length > 0) {
@@ -160,32 +177,32 @@ class Dispatcher extends EventEmitter {
               }
             })
         );
-      } else {
-        const cmd = this._cmdFactory(target.type);
-
-        setComponentState(this.projectRootDir, target, "running");
-        promises.push(
-          cmd.call(this, target)
-            .then(()=>{
-
-              // task component is not finished at this time
-              if (target.type === "task") {
-                return;
-              }
-              deliverOutputFiles(target.outputFiles, path.resolve(this.cwfDir, target.path))
-                .then((rt)=>{
-                  if (rt.length > 0) {
-                    this.logger.debug("deliverOutputFiles:\n", rt);
-                  }
-                });
-            })
-            .catch((err)=>{
-              setComponentState(this.projectRootDir, target, "failed");
-              return Promise.reject(err);
-            })
-        );
+        continue;
       }
-    }
+
+      setComponentState(this.projectRootDir, target, "running");
+      promises.push(
+        this._cmdFactory(target.type).call(this, target)
+          .then(()=>{
+
+            // task component is not finished at this time
+            if (target.type === "task") {
+              return;
+            }
+            deliverOutputFiles(target.outputFiles, path.resolve(this.cwfDir, target.path))
+              .then((rt)=>{
+                if (rt.length > 0) {
+                  this.logger.debug("deliverOutputFiles:\n", rt);
+                }
+              });
+          })
+          .catch((err)=>{
+            setComponentState(this.projectRootDir, target, "failed");
+            return Promise.reject(err);
+          })
+      );
+    }// end of while loop
+
     try {
       await Promise.all(promises);
     } catch (e) {
@@ -199,11 +216,7 @@ class Dispatcher extends EventEmitter {
     this.nextSearchList = [];
     if (this.isFinished()) {
       this.removeListener("dispatch", this._dispatch);
-      const hasFailed = this.dispatchedTaskList.some((task)=>{
-        return task.state === "failed";
-      });
-
-      this.emit("done", !hasFailed);
+      this.emit("done", this.hasFailedTask);
     } else {
 
       // call next dispatcher
@@ -214,14 +227,10 @@ class Dispatcher extends EventEmitter {
   }
 
   isFinished() {
-    if (this.currentSearchList.length > 0 || this.nextSearchList.length > 0) {
-      return false;
-    }
-    const hasRunningTask = this.dispatchedTaskList.some((task)=>{
+    this.runningTasks = this.runningTasks.filter((task)=>{
       return !isFinishedState(task.state);
     });
-
-    return !hasRunningTask;
+    return this.currentSearchList.length === 0 && this.nextSearchList.length === 0 && this.runningTasks.length === 0;
   }
   async start() {
     if (this.listenerCount("dispatch") === 0) {
@@ -307,13 +316,14 @@ class Dispatcher extends EventEmitter {
       task.doCleanup = task.cleanupFlag === "0";
     }
 
-    if (this.parentJson.currentIndex !== undefined) {
+    if (this.parentJson.hasOwnProperty("currentIndex")) {
       task.currentIndex = this.parentJson.currentIndex;
     }
-    exec(task, this.logger);
+    task.parentType = this.parentJson.type;
+    exec(task, this.logger); // exec is async function but dispatcher never wait end of task execution
 
     // following 2 containers are used for different purpose, please keep duplicated!
-    this.dispatchedTaskList.push(task);
+    this.runningTasks.push(task);
     addDispatchedTask(this.projectRootDir, task);
     this._addNextComponent(task);
   }
@@ -323,7 +333,7 @@ class Dispatcher extends EventEmitter {
     const cwd = path.resolve(this.cwfDir, component.path);
 
     // TODO read Json and get currentIndex
-    const condition = evalConditionSync(component.condition, cwd, this.wf.currentIndex, this.logger);
+    const condition = await evalCondition(component.condition, cwd, this.wf.currentIndex, this.logger);
 
     this._addNextComponent(component, !condition);
     setComponentState(this.projectRootDir, component, "finished");
@@ -340,7 +350,7 @@ class Dispatcher extends EventEmitter {
     const childDir = path.resolve(this.cwfDir, component.path);
     const childWF = await this._readChild(component);
 
-    if (component.currentIndex !== undefined) {
+    if (component.hasOwnProperty("currentIndex")) {
       childWF.currentIndex = component.currentIndex;
     }
     const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime);
@@ -377,7 +387,7 @@ class Dispatcher extends EventEmitter {
 
       // send back itself to searchList for next loop trip
       this.nextSearchList.push(component.index);
-      return;
+      return Promise.resolve();
     }
     this.logger.debug("_loopHandler called", component.name);
     component.childLoopRunning = true;
@@ -391,12 +401,12 @@ class Dispatcher extends EventEmitter {
     srcDir = path.resolve(this.cwfDir, srcDir);
 
     // update index variable(component.currentIndex)
-    component.currentIndex = getNextIndex(component);
+    component.currentIndex = await getNextIndex(component);
 
     // end determination
-    if (isFinished(component)) {
+    if (await isFinished(component)) {
       await this._loopFinalize(component, srcDir);
-      return;
+      return Promise.resolve();
     }
 
     // send back itself to searchList for next loop trip
@@ -426,6 +436,7 @@ class Dispatcher extends EventEmitter {
     }
     this.logger.debug("loop finished at index =", component.currentIndex);
     component.childLoopRunning = false;
+    return Promise.resolve();
   }
   async _PSHandler(component) {
     this.logger.debug("_PSHandler called", component.name);

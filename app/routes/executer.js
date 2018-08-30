@@ -1,12 +1,12 @@
 "use strict";
-const childProcess = require("child_process");
 const path = require("path");
+const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
 
 const { getSsh, emit } = require("./projectResource");
 const { remoteHost, jobScheduler } = require("../db/db");
-const { addXSync, replacePathsep, getDateString, deliverOutputFiles } = require("./utility");
+const { addX, replacePathsep, getDateString, deliverOutputFiles } = require("./utility");
 
 const executers = [];
 let logger; // logger is injected when exec() is called;
@@ -300,11 +300,11 @@ class Executer {
    * rejected if child process is abnomaly terminated (e.g. permission error, signal occurred etc.)
    */
   async localExec(task) {
-    return new Promise((resolve, reject)=>{
+    return new Promise(async(resolve, reject)=>{
       setTaskState(task, "running");
       const script = path.resolve(task.workingDir, task.script);
 
-      addXSync(script);
+      await addX(script);
 
       // TODO env, uid, gidを設定する
       const options = {

@@ -128,6 +128,7 @@ function getTaskStateList(projectRootDir) {
       description: task.description ? task.description : "",
       state: task.state,
       parent: task.parent,
+      parentType: task.parentType,
       startTime: task.startTime,
       endTime: task.endTime
     };

@@ -554,6 +554,9 @@ async function onRemoveLink(emit, projectRootDir, msg, cb) {
 }
 
 async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, dstName, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("addFileLink event recieved:", srcNode, srcName, dstNode, dstName);
   if (srcNode === dstNode) {
     logger.error("cyclic link is not allowed");
@@ -606,6 +609,9 @@ async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, ds
 }
 
 async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode, dstName, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("removeFileLink event recieved:", srcNode, srcName, dstNode, dstName);
   try {
     const srcDir = await getComponentDir(projectRootDir, srcNode);

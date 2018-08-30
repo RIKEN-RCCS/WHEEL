@@ -71,8 +71,8 @@ function escapeRegExp(string) {
  * add execute permission to file
  * @param {string} file - filename in absolute path
  */
-function addXSync(file) {
-  const stat = fs.statSync(file);
+async function addX(file) {
+  const stat = await fs.stat(file);
   const mode = new Mode(stat);
   let u = 4;
   let g = 4;
@@ -98,7 +98,7 @@ function addXSync(file) {
   }
   const modeString = u.toString() + g.toString() + o.toString();
 
-  fs.chmodSync(file, modeString);
+  return fs.chmod(file, modeString);
 }
 
 function getDateString(humanReadable = false) {
@@ -245,14 +245,21 @@ async function deliverOutputFiles(outputFiles, srcRoot) {
   return Promise.all(promises);
 }
 
-module.exports.escapeRegExp = escapeRegExp;
-module.exports.addXSync = addXSync;
-module.exports.getDateString = getDateString;
-module.exports.replacePathsep = replacePathsep;
-module.exports.doCleanup = doCleanup;
-module.exports.isValidName = isValidName;
-module.exports.isValidInputFilename = isValidInputFilename;
-module.exports.isValidOutputFilename = isValidOutputFilename;
-module.exports.getSystemFiles = getSystemFiles;
-module.exports.createSshConfig = createSshConfig;
-module.exports.deliverOutputFiles = deliverOutputFiles;
+function isFinishedState(state) {
+  return state === "finished" || state === "failed";
+}
+
+module.exports = {
+  escapeRegExp,
+  addX,
+  getDateString,
+  replacePathsep,
+  doCleanup,
+  isValidName,
+  isValidInputFilename,
+  isValidOutputFilename,
+  getSystemFiles,
+  createSshConfig,
+  deliverOutputFiles,
+  isFinishedState
+};

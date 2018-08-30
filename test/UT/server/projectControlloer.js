@@ -52,22 +52,29 @@ sio.emit = sinon.stub();
 //TODO pass stub to askPassword for remote task test
 //
 describe("project Controller UT", function(){
-  this.timeout(2000);
+  this.timeout(5000);
   before(async function(){
     await fs.remove(testDirRoot);
   });
   beforeEach(async function(){
+    emit.reset();
+    cb.reset();
+    sio.emit.reset();
+    dummyLogger.stdout.reset();
+    dummyLogger.stderr.reset();
+    dummyLogger.SSHout.reset();
+    dummyLogger.SSHerr.reset();
     await createNewProject(projectRootDir, "testProject");
     await openProject(projectRootDir);
   });
   afterEach(async function(){
     await fs.remove(testDirRoot);
   });
-  describe("#onRunProject", function(){
+  describe.only("#onRunProject", function(){
     it("should run local task workflow", async function(){
-      await onCreateNode(emit, projectRootDir, {type: "task", pos: {x: 10, y: 10}}, cb);
+      await onCreateNode(emit, projectRootDir, {type: "task", pos: {x: 10, y: 10}});
       const task0 = await fs.readJson(path.join(projectRootDir, "task0", componentJsonFilename));
-      await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh", cb);
+      await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
       await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"),"#!/bin/bash\npwd\n");
       await onRunProject(sio, projectRootDir, cb);
       expect(cb).to.have.been.calledOnce;

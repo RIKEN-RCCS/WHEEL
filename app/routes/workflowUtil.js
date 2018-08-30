@@ -64,7 +64,12 @@ async function getChildren(projectRootDir, parentID) {
     logger.error("illegal ID", parentID);
     return [];
   }
+
   const children = await promisify(glob)(path.join(dir, "*", componentJsonFilename));
+
+  if (children.length === 0) {
+    return [];
+  }
 
   return Promise.all(children.map((e)=>{
     return fs.readJson(e);
@@ -92,12 +97,14 @@ async function sendWorkflow(emit, projectRootDir) {
 }
 
 // read and send projectJson
-async function sendProjectJson(emit, projectRootDir, state) {
-  const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+async function updateAndSendProjectJson(emit, projectRootDir, state) {
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await fs.readJson(filename);
 
-  if (state) {
+  if (typeof state === "string") {
     projectJson.state = state;
   }
+  await fs.writeJson(filename, projectJson, {spaces: 4});
   emit("projectJson", projectJson);
 }
 
@@ -108,5 +115,5 @@ module.exports = {
   getComponent,
   sendWorkflow,
   getChildren,
-  sendProjectJson
+  updateAndSendProjectJson
 };

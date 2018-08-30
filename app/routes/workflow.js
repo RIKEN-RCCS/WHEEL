@@ -10,10 +10,14 @@ const { getComponent } = require("./workflowUtil");
 const { openProject } = require("./projectResource");
 
 module.exports = function(io) {
-  let projectRootDir = "project not loaded";
+  let projectRootDir = null;
   const sio = io.of("/workflow");
 
   sio.on("connect", (socket)=>{
+    if (projectRootDir === null) {
+      socket.emit("showMessage", "please reload browser");
+      return;
+    }
     socket.on("getHostList", ()=>{
       socket.emit("hostList", remoteHost.getAll());
     });
@@ -33,7 +37,6 @@ module.exports = function(io) {
 
   router.post("/", async(req, res)=>{
     projectRootDir = req.body.project;
-
     await openProject(projectRootDir);
     const { ID } = await getComponent(projectRootDir, path.resolve(projectRootDir, componentJsonFilename));
 

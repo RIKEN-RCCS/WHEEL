@@ -10,14 +10,14 @@ const Dispatcher = require("./dispatcher");
 
 const { getDateString, createSshConfig } = require("./utility");
 const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { getChildren, sendProjectJson, sendWorkflow } = require("./workflowUtil");
+const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir } = require("./workflowUtil");
 const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, commitProject, revertProject, cleanProject, once, getTasks, clearDispatchedTasks, gitAdd } = require("./projectResource");
 const { cancel } = require("./executer");
 const { isInitialNode, hasChild, getComponent } = require("./workflowUtil");
 const { killTask } = require("./taskUtil");
 
 async function getProjectState(projectRootDir) {
-  const projectJson = fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+  const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
 
   return projectJson.state;
 }
@@ -45,18 +45,19 @@ function askPassword(sio, hostname) {
   });
 }
 
-async function validateTask(component, parent, hosts) {
-  if (component.name == null) {
-    return Promise.reject(new Error(`illegal path ${component.null}`));
+async function validateTask(projectRootDir, component, parentID, hosts) {
+  if (component.name === null) {
+    return Promise.reject(new Error(`illegal path ${component.name}`));
   }
   if (component.host !== "localhost") {
     hosts.push(component.host);
   }
-  if (component.script == null) {
+  if (component.script === null) {
     return Promise.reject(new Error(`script is not specified ${component.name}`));
   }
-  return fs.pathExists(path.resolve(parent, component.name, component.script));
+  const parentDir = await getComponentDir(projectRootDir, parentID);
 
+  return fs.pathExists(path.resolve(parentDir, component.name, component.script));
 }
 async function validateConditionalCheck(component) {
   if (component.hasOwnProperty("condition")) {
@@ -101,13 +102,14 @@ async function validateForeach(component) {
 /**
  * validate all components in workflow and gather remote hosts which is used in tasks
  */
-async function validateComponents(projectRootDir, prarentDir, hosts) {
+async function validateComponents(projectRootDir, parentID, hosts) {
   const promises = [];
-  const children = await getChildren(prarentDir);
+  const children = await getChildren(projectRootDir, parentID);
+
 
   for (const component of children) {
     if (component.type === "task") {
-      promises.push(validateTask(component, prarentDir, hosts));
+      promises.push(validateTask(projectRootDir, component, parentID, hosts));
     } else if (component.type === "if" || component.type === "while") {
       promises.push(validateConditionalCheck(component));
     } else if (component.type === "for") {
@@ -118,11 +120,11 @@ async function validateComponents(projectRootDir, prarentDir, hosts) {
       promises.push(validateForeach(component));
     }
     if (hasChild(component)) {
-      promises.push(validateComponents(projectRootDir, path.resolve(prarentDir, component.name), hosts));
+      promises.push(validateComponents(projectRootDir, component.ID, hosts));
     }
   }
 
-  const hasInitialNode = children.nodes.some((component)=>{
+  const hasInitialNode = children.some((component)=>{
     return isInitialNode(component);
   });
 
@@ -136,10 +138,10 @@ async function validateComponents(projectRootDir, prarentDir, hosts) {
 /**
  * check if all scripts and remote host setting are available or not
  */
-async function validationCheck(projectRootDir, sio) {
+async function validationCheck(projectRootDir, rootWfID, sio) {
   let hosts = [];
 
-  await validateComponents(projectRootDir, projectRootDir, hosts);
+  await validateComponents(projectRootDir, rootWfID, hosts);
   hosts = Array.from(new Set(hosts)); // remove duplicate
 
   // ask password to user and make session to each remote hosts
@@ -218,6 +220,9 @@ async function validationCheck(projectRootDir, sio) {
 
 
 async function onRunProject(sio, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("run event recieved");
   const emit = sio.emit.bind(sio);
 
@@ -225,10 +230,11 @@ async function onRunProject(sio, projectRootDir, cb) {
     logger.debug("used heap size at start point =", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
   }
   const projectState = await getProjectState(projectRootDir);
+  const rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
 
   if (projectState === "not-started") {
     try {
-      await validationCheck(projectRootDir, sio);
+      await validationCheck(projectRootDir, rootWF.ID, sio);
     } catch (err) {
       logger.error("invalid root workflow:", err);
       removeSsh(projectRootDir);
@@ -236,10 +242,10 @@ async function onRunProject(sio, projectRootDir, cb) {
       return;
     }
     await commitProject(projectRootDir);
+    clearDispatchedTasks(projectRootDir);
   }
-  await sendProjectJson(emit, projectRootDir, "running");
+  await updateAndSendProjectJson(emit, projectRootDir, "running");
 
-  const rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
   const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), logger);
 
   if (rootWF.cleanupFlag === "2") {
@@ -249,9 +255,7 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   // event listener for task state changed
   function onTaskStateChanged() {
-    const tasks = getTaskStateList(projectRootDir);
-
-    emit("taskStateList", tasks);
+    emit("taskStateList", getTaskStateList(projectRootDir));
     sendWorkflow(emit, projectRootDir);
     setTimeout(()=>{
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
@@ -279,24 +283,23 @@ async function onRunProject(sio, projectRootDir, cb) {
         logger.debug("used heap size ", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       }, 30000);
     }
+
     const projectLastState = await rootDispatcher.start();
 
     if (memMeasurement) {
       logger.debug("used heap size immediately after execution=", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       clearInterval(timeout);
     }
-    await sendProjectJson(emit, projectRootDir, projectLastState);
+    await updateAndSendProjectJson(emit, projectRootDir, projectLastState);
   } catch (err) {
     logger.error("fatal error occurred while parsing workflow:", err);
-    await sendProjectJson(emit, projectRootDir, "failed");
+    await updateAndSendProjectJson(emit, projectRootDir, "failed");
+    cb(false);
+    return;
   }
 
-  // TODO fix following line
-  sendProjectJson(emit, projectRootDir);
-
-  const tasks = getTaskStateList(projectRootDir);
-
-  emit("taskStateList", tasks);
+  updateAndSendProjectJson(emit, projectRootDir);
+  emit("taskStateList", getTaskStateList(projectRootDir));
   sendWorkflow(emit, projectRootDir);
 
 
@@ -305,17 +308,18 @@ async function onRunProject(sio, projectRootDir, cb) {
   deleteRootDispatcher(projectRootDir);
   removeSsh(projectRootDir);
 
-  // TODO taskstate listはキープする必要ありここでclearしてはいけない
-  clearDispatchedTasks(projectRootDir);
-
   // TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
 
   if (memMeasurement) {
     logger.debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
   }
+  cb(true);
 }
 
-async function onPauseProject(emit, projectRootDir) {
+async function onPauseProject(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("pause event recieved");
   const rootDispatcher = getRootDispatcher(projectRootDir);
 
@@ -326,9 +330,12 @@ async function onPauseProject(emit, projectRootDir) {
   // TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
   await cancelDispatchedTasks(projectRootDir);
   removeSsh(projectRootDir);
-  await sendProjectJson(emit, projectRootDir, "paused");
+  await updateAndSendProjectJson(emit, projectRootDir, "paused");
 }
-async function onCleanProject(emit, projectRootDir) {
+async function onCleanProject(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("clean event recieved");
   const rootDispatcher = getRootDispatcher(projectRootDir);
 
@@ -342,28 +349,37 @@ async function onCleanProject(emit, projectRootDir) {
   await cleanProject(projectRootDir);
   await openProject(projectRootDir);
   await sendWorkflow(emit, projectRootDir);
-  await sendProjectJson(emit, projectRootDir, "not-started");
+  await updateAndSendProjectJson(emit, projectRootDir, "not-started");
 }
 
-async function onSaveProject(emit, projectRootDir) {
+async function onSaveProject(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("saveProject event recieved");
   const projectState = await getProjectState(projectRootDir);
 
   if (projectState === "not-started") {
     await commitProject(projectRootDir);
-    await sendProjectJson(emit, projectRootDir);
+    await updateAndSendProjectJson(emit, projectRootDir);
   } else {
     logger.error(projectState, "project can not be saved");
   }
 }
-async function onRevertProject(emit, projectRootDir) {
+async function onRevertProject(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("revertProject event recieved");
   await revertProject(projectRootDir);
-  await sendProjectJson(emit, projectRootDir, "not-started");
+  await updateAndSendProjectJson(emit, projectRootDir, "not-started");
   await sendWorkflow(emit, projectRootDir);
 }
 
 async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("updateProjectJson event recieved:", prop, value);
   const filename = path.resolve(projectRootDir, projectJsonFilename);
 
@@ -382,6 +398,9 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
 }
 
 async function onGetProjectState(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   try {
     const state = await getProjectState(projectRootDir);
 
@@ -395,8 +414,11 @@ async function onGetProjectState(emit, projectRootDir, cb) {
 }
 
 async function onGetProjectJson(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   try {
-    await sendProjectJson(emit, projectRootDir);
+    await updateAndSendProjectJson(emit, projectRootDir);
   } catch (e) {
     logger.error("send project state failed", e);
     cb(false);
@@ -405,11 +427,12 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
   cb(true);
 }
 
-async function onTaskStateListRequest(emit, projectRootDir, msg) {
+async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
   logger.debug("getTaskStateList event recieved:", msg);
-  const tasks = getTaskStateList(projectRootDir);
-
-  emit("taskStateList", tasks);
+  emit("taskStateList", getTaskStateList(projectRootDir));
 }
 
 function registerListeners(socket, projectRootDir) {
