@@ -50,7 +50,7 @@ class Git extends EventEmitter {
    * @param {string} mail - author's mailaddress
    */
   async init(user, mail) {
-    const repo = await nodegit.Repository.init(path.join(this.rootDir, ".git"), 0);
+    const repo = await nodegit.Repository.init(this.rootDir, 0);
     const author = nodegit.Signature.now(user, mail);
     const commiter = await author.dup();
     const files = await promisify(glob)("**", { cwd: this.rootDir });
