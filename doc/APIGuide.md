@@ -218,15 +218,15 @@ componentのデータ形式は本ドキュメントには記載しないので�
 
 taskStateのデータ形式は以下のとおり。
 
-| property  | data type |  description                                         
-|-----------|:---------:|------------------------------------------------------
-| index     | string    | task毎に固有のID文字列
-| parent    | string    | 親コンポーネントのディレクトリパス
-| type      | string    | 親コンポーネントの種類
-| name      | string    | taskの名前
-| startTime | string    | 実行開始日時(未実行のものはnull)
-| endTime   | string    | 実行完了日時(未完了のものはnull)
-| state     | string    | taskの状態
+| property   | data type |  description                                         
+|------------|:---------:|------------------------------------------------------
+| index      | string    | task毎に固有のID文字列
+| parent     | string    | 親コンポーネントのディレクトリパス
+| parentType | string    | 親コンポーネントの種類
+| name       | string    | taskの名前
+| startTime  | string    | 実行開始日時(未実行のものはnull)
+| endTime    | string    | 実行完了日時(未完了のものはnull)
+| state      | string    | taskの状態
 
 #### logXXXX(message)
 - @param {string} message - ログ出力
