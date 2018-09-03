@@ -390,13 +390,14 @@ async function onRenameInputFile(emit, projectRootDir, ID, index, newName, cb) {
     cb = ()=>{};
   }
   logger.debug("renameIntputFile event recieved:", projectRootDir, ID, index, newName);
-  if(index<0){
+
+  if (index < 0) {
     logger.warn("negative index");
     cb(false);
     return;
   }
   const targetComponent = await getComponent(projectRootDir, ID);
-  if(targetComponent.inputFiles.length -1 < index){
+  if (targetComponent.inputFiles.length - 1 < index) {
     logger.warn("index is too large");
     cb(false);
     return;
@@ -437,13 +438,14 @@ async function onRenameOutputFile(emit, projectRootDir, ID, index, newName, cb) 
     cb = ()=>{};
   }
   logger.debug("renameOuttputFile event recieved:", projectRootDir, ID, index, newName);
-  if(index<0){
+
+  if (index < 0) {
     logger.warn("negative index");
     cb(false);
     return;
   }
   const targetComponent = await getComponent(projectRootDir, ID);
-  if(targetComponent.outputFiles.length -1 < index){
+  if (targetComponent.outputFiles.length - 1 < index) {
     logger.warn("index is too large");
     cb(false);
     return;

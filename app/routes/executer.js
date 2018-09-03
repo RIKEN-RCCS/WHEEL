@@ -6,15 +6,17 @@ const SBS = require("simple-batch-system");
 const { getSsh, emitEvent } = require("./projectResource");
 const { remoteHost, jobScheduler } = require("../db/db");
 const { addX, replacePathsep, getDateString } = require("./utility");
+const {componentJsonReplacer} = require("./workflowUtil");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 
 /**
  * set task component's status and notice it's changed
  */
-function setTaskState(task, state) {
+async function setTaskState(task, state) {
   task.state = state;
-  fs.writeJson(task.jsonFilename, task);
+  // to avoid git add when task state is changed, we do not use updateComponentJson(in workflowUtil) here
+  await fs.writeJson(task.jsonFilename, task, {spaces:4, replacer: componentJsonReplacer});
   emitEvent(task.label, "taskStateChanged");
 }
 
@@ -83,7 +85,7 @@ async function isFinished(JS, ssh, jobID) {
 }
 
 async function prepareRemoteExecDir(ssh, task) {
-  setTaskState(task, "stage-in");
+  await setTaskState(task, "stage-in");
   logger.debug(task.remoteWorkingDir, task.script);
   const localScriptPath = path.resolve(task.workingDir, task.script);
   await replaceCRLF(localScriptPath);
@@ -94,7 +96,7 @@ async function prepareRemoteExecDir(ssh, task) {
 }
 
 async function gatherFiles(ssh, task, rt) {
-  setTaskState(task, "stage-out");
+  await setTaskState(task, "stage-out");
   logger.debug("start to get files from remote server if specified");
 
   //get outputFiles from remote server
@@ -163,7 +165,7 @@ function makeQueueOpt(task, JS, queues) {
  */
 async function localExec(task) {
   return new Promise(async(resolve, reject)=>{
-    setTaskState(task, "running");
+    await setTaskState(task, "running");
     const script = path.resolve(task.workingDir, task.script);
     await addX(script);
 
@@ -229,12 +231,13 @@ class Executer {
     this.batch = new SBS({
       exec: async(task)=>{
         task.startTime = getDateString(true);
-        const rt = await this.exec(task)
-          .catch((e)=>{
-            //TODO jobのsubmitに失敗した時は、maxJobの設定を減らして再投入するような機構を入れる?
-            setTaskState(task, "failed");
-            return Promise.reject(e);
-          });
+        let rt;
+        try{
+          rt = await this.exec(task)
+        }catch(e){
+          await setTaskState(task, "failed");
+          return Promise.reject(e);
+        }
 
         //prevent to overwrite killed task's property
         if (task.state === "not-started") {
@@ -246,7 +249,7 @@ class Executer {
 
         //update task status
         const state = rt === 0 ? "finished" : "failed";
-        setTaskState(task, state);
+        await setTaskState(task, state);
 
         //to use retry function in the future release, return Promise.reject if task finished with non-zero value
         if (state === "failed") {
@@ -309,17 +312,18 @@ class Executer {
     this.start = this.batch.start;
   }
 
-  submit(task) {
+  async submit(task) {
     task.sbsID = this.batch.qsub(task);
 
     if (task.sbsID !== null) {
-      setTaskState(task, "waiting");
+      await setTaskState(task, "waiting");
     }
-    return this.batch.qwait(task.sbsID)
-      .catch((e)=>{
-        logger.warn(task.name, "failed due to", e);
-        setTaskState(task, "failed");
-      });
+    try{
+      await this.batch.qwait(task.sbsID)
+    }catch(e){
+      logger.warn(task.name, "failed due to", e);
+      await setTaskState(task, "failed");
+    }
   }
 
   cancel(task) {
@@ -329,7 +333,7 @@ class Executer {
   async remoteExec(task) {
     await prepareRemoteExecDir(this.ssh, task);
     logger.debug("prepare done");
-    setTaskState(task, "running");
+    await setTaskState(task, "running");
     const cmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ./${task.script}`;
     logger.debug("exec (remote)", cmd);
 
@@ -344,7 +348,7 @@ class Executer {
 
     const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ./${task.script}`;
     logger.debug("submitting job (remote):", submitCmd);
-    setTaskState(task, "running");
+    await setTaskState(task, "running");
     const output = [];
     const rt = await this.ssh.exec(submitCmd, {}, output, output);
 

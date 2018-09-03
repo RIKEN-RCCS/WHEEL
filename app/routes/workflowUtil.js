@@ -118,6 +118,14 @@ async function updateAndSendProjectJson(emit, projectRootDir, state) {
   emit("projectJson", projectJson);
 }
 
+function componentJsonReplacer(key, value) {
+  if (["handler", "doCleanup", "sbsID"].includes(key)) {
+    //eslint-disable-next-line no-undefined
+    return undefined;
+  }
+  return value;
+}
+
 //component can be one of "path of component Json file", "component json object", or "component's ID"
 async function updateComponentJson(projectRootDir, component, modifier) {
   const componentJson = await getComponent(projectRootDir, component);
@@ -130,7 +138,7 @@ async function updateComponentJson(projectRootDir, component, modifier) {
   //to avoid using old path in componentPath when component's name is changed
   const parentDir = componentJson.parent ? await getComponentDir(projectRootDir, componentJson.parent) : projectRootDir;
   const filename = path.resolve(parentDir, componentJson.name, componentJsonFilename);
-  await fs.writeJson(filename, componentJson, { spaces: 4 });
+  await fs.writeJson(filename, componentJson, { spaces: 4, replacer:componentJsonReplacer});
   return gitAdd(projectRootDir, filename);
 }
 
@@ -143,5 +151,6 @@ module.exports = {
   getChildren,
   updateAndSendProjectJson,
   updateComponentJson,
-  getComponentRelativePath
+  getComponentRelativePath,
+  componentJsonReplacer
 };

@@ -521,7 +521,7 @@ class Dispatcher extends EventEmitter {
       const previous = await this._getComponent(ID);
 
       if (!isFinishedState(previous.state)) {
-        this.logger.debug(component.ID, "is not ready because",previous.ID, "is not finished");
+        this.logger.debug(component.ID, "is not ready because", previous.ID, "is not finished");
         return false;
       }
     }
@@ -531,7 +531,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state)) {
-          this.logger.debug(component.ID, "is not ready because",previous.ID, "(has file dependency)is not finished");
+          this.logger.debug(component.ID, "is not ready because", previous.ID, "(has file dependency)is not finished");
           return false;
         }
       }
@@ -556,11 +556,8 @@ class Dispatcher extends EventEmitter {
 
   async _setComponentState(component, state) {
     component.state = state; //update in memory
-    const filename = path.resolve(this.cwfDir, component.name, componentJsonFilename);
-    await updateComponentJson(this.projectRootDir, filename, (componentJson)=>{
-      //update Json file
-      componentJson.state = state;
-    });
+    // write to file
+    await updateComponentJson(this.projectRootDir, component);
     emitEvent(this.projectRootDir, "componentStateChanged");
   }
 
