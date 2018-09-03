@@ -521,6 +521,7 @@ class Dispatcher extends EventEmitter {
       const previous = await this._getComponent(ID);
 
       if (!isFinishedState(previous.state)) {
+        this.logger.debug(component.ID, "is not ready because",previous.ID, "is not finished");
         return false;
       }
     }
@@ -530,6 +531,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state)) {
+          this.logger.debug(component.ID, "is not ready because",previous.ID, "(has file dependency)is not finished");
           return false;
         }
       }

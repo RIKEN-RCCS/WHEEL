@@ -564,7 +564,7 @@ describe("workflow editor UT", function(){
   });
   describe("#onRenameInputFile", function(){
     it("should rename inputFile entry of wf1", async function(){
-      await onRenameInputFile(emit, projectRootDir, components.wf1.ID, "bar", "barbar", cb);
+      await onRenameInputFile(emit, projectRootDir, components.wf1.ID, 0, "barbar", cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -579,7 +579,7 @@ describe("workflow editor UT", function(){
   });
   describe("#onRenameOutputFile", function(){
     it("should rename outputFile entry of wf1", async function(){
-      await onRenameOutputFile(emit, projectRootDir, components.wf1.ID, "hoge", "hogehoge", cb);
+      await onRenameOutputFile(emit, projectRootDir, components.wf1.ID, 0, "hogehoge", cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;

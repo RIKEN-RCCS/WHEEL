@@ -385,23 +385,31 @@ async function onRemoveOutputFile(emit, projectRootDir, ID, name, cb) {
   cb(true);
 }
 
-async function onRenameInputFile(emit, projectRootDir, ID, oldName, newName, cb) {
+async function onRenameInputFile(emit, projectRootDir, ID, index, newName, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("renameIntputFile event recieved:", projectRootDir, ID, oldName, newName);
+  logger.debug("renameIntputFile event recieved:", projectRootDir, ID, index, newName);
+  if(index<0){
+    logger.warn("negative index");
+    cb(false);
+    return;
+  }
+  const targetComponent = await getComponent(projectRootDir, ID);
+  if(targetComponent.inputFiles.length -1 < index){
+    logger.warn("index is too large");
+    cb(false);
+    return;
+  }
+
   const counterparts = new Set();
+  const oldName = targetComponent.inputFiles[index].name;
 
   try {
-    await updateComponentJson(projectRootDir, ID, (componentJson)=>{
-      componentJson.inputFiles = componentJson.inputFiles.map((inputFile)=>{
-        if (inputFile.name === oldName) {
-          inputFile.name = newName;
-          inputFile.src.forEach((e)=>{
-            counterparts.add(e.srcNode);
-          });
-        }
-        return inputFile;
+    await updateComponentJson(projectRootDir, targetComponent, (componentJson)=>{
+      componentJson.inputFiles[index].name = newName;
+      componentJson.inputFiles[index].src.forEach((e)=>{
+        counterparts.add(e.srcNode);
       });
     });
     await Promise.all(Array.from(counterparts, (counterpartID)=>{
@@ -424,23 +432,31 @@ async function onRenameInputFile(emit, projectRootDir, ID, oldName, newName, cb)
   cb(true);
 }
 
-async function onRenameOutputFile(emit, projectRootDir, ID, oldName, newName, cb) {
+async function onRenameOutputFile(emit, projectRootDir, ID, index, newName, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("renameOuttputFile event recieved:", projectRootDir, ID, oldName, newName);
+  logger.debug("renameOuttputFile event recieved:", projectRootDir, ID, index, newName);
+  if(index<0){
+    logger.warn("negative index");
+    cb(false);
+    return;
+  }
+  const targetComponent = await getComponent(projectRootDir, ID);
+  if(targetComponent.outputFiles.length -1 < index){
+    logger.warn("index is too large");
+    cb(false);
+    return;
+  }
+
   const counterparts = new Set();
+  const oldName = targetComponent.outputFiles[index].name;
 
   try {
-    await updateComponentJson(projectRootDir, ID, (componentJson)=>{
-      componentJson.outputFiles = componentJson.outputFiles.map((outputFile)=>{
-        if (outputFile.name === oldName) {
-          outputFile.name = newName;
-          outputFile.dst.forEach((e)=>{
-            counterparts.add(e.dstNode);
-          });
-        }
-        return outputFile;
+    await updateComponentJson(projectRootDir, targetComponent, (componentJson)=>{
+      componentJson.outputFiles[index].name = newName;
+      componentJson.outputFiles[index].dst.forEach((e)=>{
+        counterparts.add(e.dstNode);
       });
     });
     await Promise.all(Array.from(counterparts, (counterpartID)=>{

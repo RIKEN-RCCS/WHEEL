@@ -111,6 +111,12 @@ $(() => {
           console.log('duplicated name is not allowed!');
         }
       },
+      renameInputFile: function(newName, index){
+        sio.emit("renameInputFile", this.node.ID, index, newName);
+      },
+      renameOutputFile: function(newName, index){
+        sio.emit("renameOutputFile", this.node.ID, index, newName);
+      },
       updateProperty: function (property) {
         let val = this.node[property];
         sio.emit('updateNode', this.node.ID, property, val);
