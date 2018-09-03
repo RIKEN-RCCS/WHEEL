@@ -12,7 +12,6 @@ log4js.addLayout("errorlog", ()=>{
         return `${a} ${p}`;
       }
       return a;
-
     }, "");
     return tmp;
   };

@@ -6,7 +6,8 @@ const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
-const { setCwd, getCwd, gitAdd } = require("./projectResource");
+const { setCwd, getCwd } = require("./projectResource");
+const { gitRm, gitAdd } = require("./gitOperator");
 const { replacePathsep, isValidName } = require("./utility");
 const componentFactory = require("./workflowComponent");
 
@@ -253,13 +254,10 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb) {
       }
     });
 
-    //memo
-    //gitOperator.rm()内部で実際に存在するファイルを再帰的に探して
-    //git rmを行なっているので、先にファイルを削除するとエラーになる。
-    //しかし、実際にはファイルの削除が正常に終了したファイルから順にgit rmするべき
-    //
+    //gitOperator.rm() only remove existing files from git repo if directory is passed
+    //so, gitRm and fs.remove must be called in this order
     //git rm
-    await gitAdd(projectRootDir, nodeDir, true);
+    await gitRm(projectRootDir, nodeDir);
 
     //remove files
     await fs.remove(nodeDir);
@@ -323,14 +321,12 @@ async function onRemoveInputFile(emit, projectRootDir, ID, name, cb) {
       componentJson.inputFiles = componentJson.inputFiles.filter((inputFile)=>{
         if (name === inputFile.name) {
           for (const src of inputFile.src) {
-
             //TODO 親子間のファイルLinkの仕様が固まったら、そっちも削除
             counterparts.add(src.srcNode);
           }
           return false;
         }
         return true;
-
       });
     });
     await Promise.all(Array.from(counterparts, (counterpartID)=>{
@@ -363,14 +359,12 @@ async function onRemoveOutputFile(emit, projectRootDir, ID, name, cb) {
       componentJson.outputFiles = componentJson.outputFiles.filter((outputFile)=>{
         if (name === outputFile.name) {
           for (const dst of outputFile.dst) {
-
             //TODO 親子間のファイルLinkの仕様が固まったら、そっちも削除
             counterparts.add(dst.dstNode);
           }
           return false;
         }
         return true;
-
       });
     });
     await Promise.all(Array.from(counterparts, (counterpartID)=>{
@@ -570,7 +564,6 @@ async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, ds
       //TODO
       //link to child
     } else {
-
       //normal case
       await Promise.all([
         updateComponentJson(projectRootDir, srcNode, (componentJson)=>{
@@ -621,7 +614,6 @@ async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode,
       //TODO
       //link to child
     } else {
-
       //normal case
       await Promise.all([
         updateComponentJson(projectRootDir, srcNode, (componentJson)=>{

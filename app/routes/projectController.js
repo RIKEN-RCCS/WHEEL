@@ -9,7 +9,8 @@ const Dispatcher = require("./dispatcher");
 const { getDateString, createSshConfig } = require("./utility");
 const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, commitProject, revertProject, cleanProject, once, getTasks, clearDispatchedTasks, gitAdd, emitEvent } = require("./projectResource");
+const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, emitEvent } = require("./projectResource");
+const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
 const { isInitialNode, hasChild, getComponent } = require("./workflowUtil");
 const { killTask } = require("./taskUtil");
@@ -173,7 +174,6 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
 
     //TODO loopで書き直す
     try {
-
       //1st try
       await arssh.canConnect();
     } catch (e) {
@@ -192,7 +192,6 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
       arssh.overwriteConfig(config);
 
       try {
-
         //2nd try
         await arssh.canConnect();
       } catch (e2) {
@@ -211,7 +210,6 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
         arssh.overwriteConfig(config);
 
         try {
-
           //3rd try
           await arssh.canConnect();
         } catch (e3) {
@@ -237,24 +235,41 @@ async function onRunProject(sio, projectRootDir, cb) {
   if (memMeasurement) {
     logger.debug("used heap size at start point =", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
   }
-  const projectState = await getProjectState(projectRootDir);
-  const rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
 
+  let projectJson;
+  try {
+    projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+  } catch (err) {
+    logger.error("get project state failed:", err);
+    cb(false);
+    return;
+  }
+
+  let rootWF;
+  try {
+    rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
+  } catch (err) {
+    logger.error("read root workflow component failed:", err);
+    cb(false);
+    return;
+  }
+
+  const projectState = projectJson.state;
   if (projectState === "not-started") {
     try {
       await validationCheck(projectRootDir, rootWF.ID, sio);
+      await gitCommit(projectRootDir, "wheel", "wheel@example.com"); //TODO replace name and mail
+      clearDispatchedTasks(projectRootDir);
     } catch (err) {
       logger.error("invalid root workflow:", err);
       removeSsh(projectRootDir);
       cb(false);
       return;
     }
-    await commitProject(projectRootDir);
-    clearDispatchedTasks(projectRootDir);
   }
   await updateAndSendProjectJson(emit, projectRootDir, "running");
-  const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), logger);
 
+  const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), logger, projectJson.componentPath);
   if (rootWF.cleanupFlag === "2") {
     rootDispatcher.doCleanup = defaultCleanupRemoteRoot;
   }
@@ -292,12 +307,12 @@ async function onRunProject(sio, projectRootDir, cb) {
     }
 
     const projectLastState = await rootDispatcher.start();
+    await updateAndSendProjectJson(emit, projectRootDir, projectLastState);
 
     if (memMeasurement) {
       logger.debug("used heap size immediately after execution=", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       clearInterval(timeout);
     }
-    await updateAndSendProjectJson(emit, projectRootDir, projectLastState);
   } catch (err) {
     logger.error("fatal error occurred while parsing workflow:", err);
     await updateAndSendProjectJson(emit, projectRootDir, "failed");
@@ -305,18 +320,26 @@ async function onRunProject(sio, projectRootDir, cb) {
     return;
   }
 
-  updateAndSendProjectJson(emit, projectRootDir);
-  emit("taskStateList", getTaskStateList(projectRootDir));
-  sendWorkflow(emit, projectRootDir);
-
   //TODO taskStateChanged とcomponentStateChangedのremoveListener
-  rootDispatcher.remove();
-  deleteRootDispatcher(projectRootDir);
-  removeSsh(projectRootDir);
 
-  if (memMeasurement) {
-    logger.debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
+  try {
+    //directly send last status just in case
+    await updateAndSendProjectJson(emit, projectRootDir);
+    emit("taskStateList", getTaskStateList(projectRootDir));
+    await sendWorkflow(emit, projectRootDir);
+    rootDispatcher.remove();
+    deleteRootDispatcher(projectRootDir);
+    removeSsh(projectRootDir);
+
+    if (memMeasurement) {
+      logger.debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
+    }
+  } catch (e) {
+    logger.warn("project execution is successfully finished but error occurred in cleanup process", e);
+    cb(false);
+    return;
   }
+
   cb(true);
 }
 
@@ -362,10 +385,10 @@ async function onSaveProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   logger.debug("saveProject event recieved");
-  const projectState = await getProjectState(projectRootDir);
 
+  const projectState = await getProjectState(projectRootDir);
   if (projectState === "not-started") {
-    await commitProject(projectRootDir);
+    await gitCommit(projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
     await updateAndSendProjectJson(emit, projectRootDir);
   } else {
     logger.error(projectState, "project can not be saved");
@@ -377,7 +400,7 @@ async function onRevertProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   logger.debug("revertProject event recieved");
-  await revertProject(projectRootDir);
+  await gitResetHEAD(projectRootDir);
   await updateAndSendProjectJson(emit, projectRootDir, "not-started");
   await sendWorkflow(emit, projectRootDir);
 }

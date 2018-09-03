@@ -4,7 +4,7 @@ const {projectJsonFilename, componentJsonFilename} = require("../../../app/db/db
 const componentFactory = require("../../../app/routes/workflowComponent");
 const {getComponentDir} = require("../../../app/routes/workflowUtil");
 const getSchema = require("../../../app/routes/workflowComponentSchemas");
-const {setCwd} = require("../../../app/routes/projectResource");
+const { openProject, setCwd } = require("../../../app/routes/projectResource");
 
 // setup test framework
 const chai = require("chai");
@@ -37,10 +37,13 @@ const testDirRoot = "WHEEL_TEST_TMP"
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-//workflowEditor.__set__("logger", {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}); //default logger stub
-workflowEditor.__set__("logger", {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}});//show error message
-//workflowEditor.__set__("logger", {error: console.log, warn: console.log, info: console.log, debug: console.log});//send all log to console
-workflowEditor.__set__("gitAdd", ()=>{});
+const dummySilentLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{} }; //default logger stub
+const dummyLogger = {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};    //show error message
+const dummyVerboseLogger = {error: console.log, warn: console.log, info: console.log, debug: console.log};    //show error message
+workflowEditor.__set__("logger", dummySilentLogger);
+const home = rewire("../../../app/routes/home");
+home.__set__("logger", dummySilentLogger);
+const createNewProject = home.__get__("createNewProject");
 
 const grandsonSchema={
   type: "array",
@@ -81,17 +84,9 @@ describe("workflow editor UT", function(){
      *  - wf1(hoge) -> foreach0(hoge)
      */
 
-    const projectJson ={
-      "name": "Project name",
-      "description": "dummy project.",
-      "state": "not-started",
-      "root" : path.resolve(testDirRoot),
-      "ctime": "not used for this test",
-      "mtime": "not used for this test",
-      "componentPath":{}
-    }
+    await createNewProject(projectRootDir, "dummy project");
+    const rootWf = await fs.readJson(path.join(projectRootDir, componentJsonFilename));
 
-    const rootWf = componentFactory("workflow");
     const task0 = componentFactory("task", {x:0, y:0}, rootWf.ID);
     const wf1 = componentFactory("workflow", {x:1, y:1},  rootWf.ID);
     const foreach0 = componentFactory("foreach", {x:1, y:1},  rootWf.ID);
@@ -99,7 +94,6 @@ describe("workflow editor UT", function(){
     const wf2 = componentFactory("workflow", {x:3, y:3},  wf1.ID);
     const task2 = componentFactory("task", {x:4, y:4},  wf2.ID);
 
-    rootWf.name ="root"
     task0.name = "task0";
     wf1.name="wf1";
     task1.name="task1";
@@ -255,6 +249,7 @@ describe("workflow editor UT", function(){
       maxItems: 3
     }
 
+    const projectJson = await fs.readJson(path.join(projectRootDir, projectJsonFilename));
     projectJson.componentPath[rootWf.ID]="./";
     projectJson.componentPath[task0.ID]="./task0";
     projectJson.componentPath[foreach0.ID]="./foreach0";
@@ -273,7 +268,7 @@ describe("workflow editor UT", function(){
       fs.outputJson(path.join(testDirRoot, "testProject.wheel", "wf1", "wf2", componentJsonFilename), wf2, {spaces: 4}),
       fs.outputJson(path.join(testDirRoot, "testProject.wheel", "wf1", "wf2", "task2",componentJsonFilename), task2, {spaces: 4})
     ]);
-    setCwd(projectRootDir, projectRootDir);
+    await openProject(projectRootDir);
   });
   afterEach(async function(){
     await fs.remove(testDirRoot);
@@ -396,7 +391,7 @@ describe("workflow editor UT", function(){
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(false);
       expect(emit).not.to.have.been.called;
-      expect(path.join(projectRootDir)).to.be.a.directory().with.contents(["task0", "wf1", "foreach0", projectJsonFilename, componentJsonFilename]);
+      expect(path.join(projectRootDir)).to.be.a.directory().with.contents([".git","task0", "wf1", "foreach0", projectJsonFilename, componentJsonFilename]);
     });
     it("should not update inputFiles", async function(){
       await onUpdateNode(emit, projectRootDir, components.task0.ID, "inputFiles", "hoge", cb);

@@ -23,7 +23,6 @@ async function isDuplicateProjectName(newName) {
 }
 
 async function isValidProjectName(name) {
-
   //check if project name contains allowed characters only
   if (!isValidName(name)) {
     logger.error(name, "is not allowed for project name");

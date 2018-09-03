@@ -44,7 +44,6 @@ async function trySshConnectionWrapper(hostInfo, password, cb) {
       }
       logger.error(err);
       cb(false);
-
     });
 }
 

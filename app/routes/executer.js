@@ -5,7 +5,7 @@ const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
 const { getSsh, emitEvent } = require("./projectResource");
 const { remoteHost, jobScheduler } = require("../db/db");
-const { addX, replacePathsep, getDateString, deliverOutputFiles } = require("./utility");
+const { addX, replacePathsep, getDateString } = require("./utility");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 
@@ -36,7 +36,6 @@ function parseFilter(pattern) {
     return pattern;
   }
   return `{${pattern}}`;
-
 }
 
 function passToSSHout(data) {
@@ -109,7 +108,6 @@ async function gatherFiles(ssh, task, rt) {
         return `${dirname}/*`;
       }
       return e.name;
-
     });
 
   if (outputFilesArray.length > 0) {
@@ -133,7 +131,6 @@ async function gatherFiles(ssh, task, rt) {
     try {
       await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
     } catch (e) {
-
       //just log and ignore error
       logger.warn("remote cleanup failed but ignored", e);
     }
@@ -210,7 +207,6 @@ function localSubmit() {
 
 class Executer {
   constructor(ssh, JS, maxNumJob, remotehostID, hostname, queues, execInterval, statusCheckInterval, maxStatusCheckError) {
-
     //remotehostID and useJobScheduler flag is not used inside Executer class
     //this 2 property is used as search key in exec();
     this.remotehostID = remotehostID;
@@ -235,7 +231,6 @@ class Executer {
         task.startTime = getDateString(true);
         const rt = await this.exec(task)
           .catch((e)=>{
-
             //TODO jobのsubmitに失敗した時は、maxJobの設定を減らして再投入するような機構を入れる?
             setTaskState(task, "failed");
             return Promise.reject(e);
@@ -248,15 +243,6 @@ class Executer {
 
         //record job finished time
         task.endTime = getDateString(true);
-
-        //deliver files
-        if (rt === 0) {
-          const rt2 = await deliverOutputFiles(task.outputFiles, task.workingDir);
-
-          if (rt2.length > 0) {
-            logger.debug("deliverOutputFiles:\n", rt2);
-          }
-        }
 
         //update task status
         const state = rt === 0 ? "finished" : "failed";

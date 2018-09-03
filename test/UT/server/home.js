@@ -26,7 +26,7 @@ const cb = sinon.stub();
 const dummySilentLogger = {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};
 const dummyLogger = {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};
 const dummyVerboseLogger = {error: console.log, warn: console.log, info: console.log, debug: console.log};
-home.__set__("logger", dummyLogger);
+home.__set__("logger", dummySilentLogger);
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP"

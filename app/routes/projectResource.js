@@ -4,7 +4,7 @@ const { promisify } = require("util");
 const EventEmitter = require("events");
 const fs = require("fs-extra");
 const glob = require("glob");
-const { getGitOperator } = require("./gitOperator");
+const { gitResetHEAD } = require("./gitOperator");
 
 
 class Project extends EventEmitter {
@@ -13,7 +13,7 @@ class Project extends EventEmitter {
     this.cwd = null; //current working directory
     this.rootDispatcher = null; //dispatcher for root workflow
     this.ssh = new Map(); //ssh instances using in this project
-    this.tasks = new Set(); //tasks which is updated and not send to client
+    this.tasks = new Set(); //dispatched tasks
   }
 }
 
@@ -27,8 +27,6 @@ function getProject(projectRootDir) {
 }
 
 async function openProject(projectRootDir) {
-  const pj = getProject(projectRootDir);
-  pj.git = await getGitOperator(projectRootDir);
   setCwd(projectRootDir, projectRootDir);
 }
 
@@ -41,27 +39,9 @@ function getCwd(projectRootDir) {
   return getProject(projectRootDir).cwd;
 }
 
-async function gitAdd(projectRootDir, absFilename, remove = false) {
-  const git = getProject(projectRootDir).git;
-  return remove ? git.rm(absFilename) : git.add(absFilename);
-}
-
-async function commitProject(projectRootDir) {
-  const git = getProject(projectRootDir).git;
-  const name = "wheel"; //TODO replace user info
-  const email = `${name}@example.com`;
-  return git.commit(name, email);
-}
-
-async function revertProject(projectRootDir) {
-  const git = getProject(projectRootDir).git;
-  return git.resetHEAD();
-}
-
 async function cleanProject(projectRootDir) {
   const rootDir = projectRootDir;
   const srces = await promisify(glob)("*", { cwd: rootDir });
-
 
   //TODO should be optimized stride value(100);
   for (let i = 0; i < srces.length; i += 100) {
@@ -71,7 +51,7 @@ async function cleanProject(projectRootDir) {
     });
     await Promise.all(p);
   }
-  return revertProject(projectRootDir);
+  return gitResetHEAD(projectRootDir);
 }
 
 /**
@@ -118,6 +98,7 @@ function getTasks(projectRootDir) {
   return getProject(projectRootDir).tasks;
 }
 
+//TODO remove from this module
 function getTaskStateList(projectRootDir) {
   return [...getProject(projectRootDir).tasks].map((task)=>{
     return {
@@ -155,9 +136,6 @@ module.exports = {
   getSsh,
   removeSsh,
   cleanProject,
-  revertProject,
-  commitProject,
-  gitAdd,
   emitEvent,
   once
 };

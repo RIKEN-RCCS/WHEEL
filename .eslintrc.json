@@ -32,6 +32,7 @@
     "newline-per-chained-call": "error",
     "no-use-before-define": ["error", { "functions": false }],
     "no-warning-comments": "warn",
+    "padded-blocks": ["error", "never"],
     "padding-line-between-statements": [
         "error",
         {
@@ -43,10 +44,24 @@
             "blankLine": "always",
             "prev": "*",
             "next": [
+              "block-like",
               "class",
               "do",
               "for",
               "function",
+              "multiline-block-like",
+              "switch",
+              "try",
+              "while"
+            ]
+        },
+        {
+            "blankLine": "any",
+            "prev": ["const","let", "var", "for", "while", "do", "block-like","multiline-block-like"],
+            "next": [
+              "block-like",
+              "do",
+              "for",
               "multiline-block-like",
               "switch",
               "try",
