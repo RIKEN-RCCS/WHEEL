@@ -604,8 +604,7 @@ $(() => {
           let nodeType = e.target.instance.parent('.node').data('type');
           if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
             let nodeIndex = e.target.instance.parent('.node').data('index');
-            let name = target.name;
-            let path = e.target.instance.parent('.node').data('path');
+            let name = e.target.instance.parent('.node').data('name');
             currentWorkDir = currentWorkDir + '/' + name;
             currentWorkFlow = e.target.instance.parent('.node').data('ID');
             dirStack.push(currentWorkDir);

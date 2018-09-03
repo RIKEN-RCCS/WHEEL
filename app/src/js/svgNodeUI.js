@@ -31,7 +31,7 @@ export class SvgNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    this.group.data({ "ID": node.ID, "type": node.type }).draggable().addClass('node');
+    this.group.data({ "ID": node.ID, "type": node.type, "name": node.name}).draggable().addClass('node');
 
     // draw node
     const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host);
