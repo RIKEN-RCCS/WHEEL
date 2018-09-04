@@ -346,15 +346,10 @@ class Dispatcher extends EventEmitter {
     await this._setComponentState(component, "finished");
   }
 
-  async _readChild(component) {
-    const childWorkflowFilename = path.resolve(this.cwfDir, component.path, component.jsonFile);
-    return fs.readJSON(childWorkflowFilename);
-  }
-
   async _delegate(component) {
     this.logger.debug("_delegate called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
-    const childWF = await this._readChild(component);
+    const childWF = await fs.readJson(path.join(childDir, componentJsonFilename));
 
     if (component.hasOwnProperty("currentIndex")) {
       childWF.currentIndex = component.currentIndex;
