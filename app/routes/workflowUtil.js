@@ -138,7 +138,7 @@ async function updateComponentJson(projectRootDir, component, modifier) {
   //to avoid using old path in componentPath when component's name is changed
   const parentDir = componentJson.parent ? await getComponentDir(projectRootDir, componentJson.parent) : projectRootDir;
   const filename = path.resolve(parentDir, componentJson.name, componentJsonFilename);
-  await fs.writeJson(filename, componentJson, { spaces: 4, replacer:componentJsonReplacer});
+  await fs.writeJson(filename, componentJson, { spaces: 4, replacer: componentJsonReplacer });
   return gitAdd(projectRootDir, filename);
 }
 

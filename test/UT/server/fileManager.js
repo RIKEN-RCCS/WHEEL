@@ -31,6 +31,7 @@ const testDirRoot = "WHEEL_TEST_TMP"
 
 describe("fileManager UT", function(){
   beforeEach(async function(){
+    await fs.remove(testDirRoot);
     cb.reset();
     emit.reset();
     await Promise.all([
@@ -61,7 +62,7 @@ describe("fileManager UT", function(){
       fs.ensureSymlink(path.join(testDirRoot, "foo_3"), path.join(testDirRoot, "linkpoyo"))
     ]);
   });
-  afterEach(async function(){
+  after(async function(){
     await fs.remove(testDirRoot);
   });
   describe("#getFileList", function(){

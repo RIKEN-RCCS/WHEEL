@@ -6,7 +6,7 @@ const SBS = require("simple-batch-system");
 const { getSsh, emitEvent } = require("./projectResource");
 const { remoteHost, jobScheduler } = require("../db/db");
 const { addX, replacePathsep, getDateString } = require("./utility");
-const {componentJsonReplacer} = require("./workflowUtil");
+const { componentJsonReplacer } = require("./workflowUtil");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 
@@ -15,8 +15,8 @@ let logger; //logger is injected when exec() is called;
  */
 async function setTaskState(task, state) {
   task.state = state;
-  // to avoid git add when task state is changed, we do not use updateComponentJson(in workflowUtil) here
-  await fs.writeJson(task.jsonFilename, task, {spaces:4, replacer: componentJsonReplacer});
+  //to avoid git add when task state is changed, we do not use updateComponentJson(in workflowUtil) here
+  await fs.writeJson(task.jsonFilename, task, { spaces: 4, replacer: componentJsonReplacer });
   emitEvent(task.label, "taskStateChanged");
 }
 
@@ -232,9 +232,9 @@ class Executer {
       exec: async(task)=>{
         task.startTime = getDateString(true);
         let rt;
-        try{
-          rt = await this.exec(task)
-        }catch(e){
+        try {
+          rt = await this.exec(task);
+        } catch (e) {
           await setTaskState(task, "failed");
           return Promise.reject(e);
         }
@@ -318,9 +318,9 @@ class Executer {
     if (task.sbsID !== null) {
       await setTaskState(task, "waiting");
     }
-    try{
-      await this.batch.qwait(task.sbsID)
-    }catch(e){
+    try {
+      await this.batch.qwait(task.sbsID);
+    } catch (e) {
       logger.warn(task.name, "failed due to", e);
       await setTaskState(task, "failed");
     }

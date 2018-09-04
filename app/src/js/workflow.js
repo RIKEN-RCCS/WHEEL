@@ -651,6 +651,7 @@ $(() => {
         const target = nodes.find((e) => {
           return e.ID === dst;
         });
+        if(typeof target === "undefined") return;
         target.inputFileLinks.push(cable);
       });
     });
@@ -694,9 +695,9 @@ $(() => {
     parentnode.forEach(function (node) {
       if (node != null) {
 
-        node.outputFileLinks.forEach(function (cable) {
+        node.inputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
-          nodes[dst].inputFileLinks.push(cable);
+          nodes[dst].outputFileLinks.push(cable);
         });
       }
     });

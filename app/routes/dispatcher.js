@@ -551,7 +551,7 @@ class Dispatcher extends EventEmitter {
 
   async _setComponentState(component, state) {
     component.state = state; //update in memory
-    // write to file
+    //write to file
     await updateComponentJson(this.projectRootDir, component);
     emitEvent(this.projectRootDir, "componentStateChanged");
   }

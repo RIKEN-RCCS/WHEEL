@@ -557,6 +557,15 @@ async function onRemoveLink(emit, projectRootDir, msg, cb) {
   cb(true);
 }
 
+
+async function isParent(projectRootDir, parentID, childID) {
+  const childJson = await getComponent(projectRootDir, childID);
+  if (childJson === null || typeof childID !== "string") {
+    return false;
+  }
+  return childJson.parent === parentID;
+}
+
 async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, dstName, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -570,17 +579,58 @@ async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, ds
   }
 
   try {
-    const srcDir = await getComponentDir(projectRootDir, srcNode);
-    const dstDir = await getComponentDir(projectRootDir, dstNode);
-
-    if (path.dirname(dstDir) === srcDir) {
-
-      //TODO
+    if (dstNode === "parent" || await isParent(projectRootDir, dstNode, srcNode)) {
       //link to parent
-    } else if (path.dirname(srcDir) === dstDir) {
-
-      //TODO
+      const parentDir = getCwd(projectRootDir);
+      const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
+      const parentID = parentJson.ID;
+      await Promise.all([
+        updateComponentJson(projectRootDir, srcNode, (componentJson)=>{
+          const outputFile = componentJson.outputFiles.find((e)=>{
+            return e.name === srcName;
+          });
+          if (!outputFile.dst.includes({ dstNode: parentID, dstName })) {
+            outputFile.dst.push({ dstNode: parentID, dstName });
+          }
+        }),
+        updateComponentJson(projectRootDir, parentJson, (componentJson)=>{
+          const outputFile = componentJson.outputFiles.find((e)=>{
+            return e.name === dstName;
+          });
+          if (!outputFile.hasOwnProperty("origin")) {
+            outputFile.origin = [];
+          }
+          if (!outputFile.origin.includes({ srcNode, srcName })) {
+            outputFile.origin.push({ srcNode, srcName });
+          }
+        })
+      ]);
+    } else if (srcNode === "parent" || await isParent(projectRootDir, srcNode, dstNode)) {
       //link to child
+      const parentDir = getCwd(projectRootDir);
+      const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
+      const parentID = parentJson.ID;
+      await Promise.all([
+        updateComponentJson(projectRootDir, parentJson, (componentJson)=>{
+          const inputFile = componentJson.inputFiles.find((e)=>{
+            return e.name === srcName;
+          });
+          if (!inputFile.hasOwnProperty("forwardTo")) {
+            inputFile.forwardTo = [];
+          }
+          if (!inputFile.forwardTo.includes({ dstNode, dstName })) {
+            inputFile.forwardTo.push({ dstNode, dstName });
+          }
+        }),
+        updateComponentJson(projectRootDir, dstNode, (componentJson)=>{
+          const inputFile = componentJson.inputFiles.find((e)=>{
+            return e.name === dstName;
+          });
+          if (!inputFile.src.includes({ srcNode: parentID, srcName })) {
+            inputFile.src.push({ srcNode: parentID, srcName });
+          }
+        })
+      ]);
     } else {
       //normal case
       await Promise.all([
@@ -588,7 +638,6 @@ async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, ds
           const outputFile = componentJson.outputFiles.find((e)=>{
             return e.name === srcName;
           });
-
           if (!outputFile.dst.includes({ dstNode, dstName })) {
             outputFile.dst.push({ dstNode, dstName });
           }
@@ -597,7 +646,6 @@ async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, ds
           const inputFile = componentJson.inputFiles.find((e)=>{
             return e.name === dstName;
           });
-
           if (!inputFile.src.includes({ srcNode, srcName })) {
             inputFile.src.push({ srcNode, srcName });
           }
@@ -620,17 +668,56 @@ async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode,
   logger.debug("removeFileLink event recieved:", srcNode, srcName, dstNode, dstName);
 
   try {
-    const srcDir = await getComponentDir(projectRootDir, srcNode);
-    const dstDir = await getComponentDir(projectRootDir, dstNode);
-
-    if (path.dirname(dstDir) === srcDir) {
-
-      //TODO
+    if (dstNode === "parent" || await isParent(projectRootDir, dstNode, srcNode)) {
       //link to parent
-    } else if (path.dirname(srcDir) === dstDir) {
-
-      //TODO
+      const parentDir = getCwd(projectRootDir);
+      const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
+      const parentID = parentJson.ID;
+      await Promise.all([
+        updateComponentJson(projectRootDir, srcNode, (componentJson)=>{
+          const outputFile = componentJson.outputFiles.find((e)=>{
+            return e.name === srcName;
+          });
+          outputFile.dst = outputFile.dst.filter((e)=>{
+            return e.dstNode !== parentID || e.dstName !== dstName;
+          });
+        }),
+        updateComponentJson(projectRootDir, parentJson, (componentJson)=>{
+          const outputFile = componentJson.outputFiles.find((e)=>{
+            return e.name === dstName;
+          });
+          if (outputFile.hasOwnProperty("origin")) {
+            outputFile.origin = outputFile.origin.filter((e)=>{
+              return e.srcNode !== srcNode || e.srcName !== srcName;
+            });
+          }
+        })
+      ]);
+    } else if (srcNode === "parent" || await isParent(projectRootDir, srcNode, dstNode)) {
       //link to child
+      const parentDir = getCwd(projectRootDir);
+      const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
+      const parentID = parentJson.ID;
+      await Promise.all([
+        updateComponentJson(projectRootDir, parentJson, (componentJson)=>{
+          const inputFile = componentJson.inputFiles.find((e)=>{
+            return e.name === srcName;
+          });
+          if (inputFile.hasOwnProperty("forwardTo")) {
+            inputFile.forwardTo = inputFile.forwardTo.filter((e)=>{
+              return e.dstNode !== dstNode || e.dstName !== dstName;
+            });
+          }
+        }),
+        updateComponentJson(projectRootDir, dstNode, (componentJson)=>{
+          const inputFile = componentJson.inputFiles.find((e)=>{
+            return e.name === dstName;
+          });
+          inputFile.src = inputFile.src.filter((e)=>{
+            return e.srcNode !== parentID || e.srcName !== srcName;
+          });
+        })
+      ]);
     } else {
       //normal case
       await Promise.all([
