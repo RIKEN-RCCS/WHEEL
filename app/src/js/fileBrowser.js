@@ -100,7 +100,7 @@ export default class {
         callback: function () {
           var path = $(this).data('path');
           var oldName = $(this).data('name');
-          var html = '<p id="fileRenameLabel">input new filename</p><input type="text" id="newName">';
+          var html = '<p class="dialogTitle">Rename file</p><input type="text" id="newName" class="dialogTextbox">';
           dialogWrapper('#dialog', html).done(function () {
             var newName = $('#newName').val();
             var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
@@ -114,7 +114,7 @@ export default class {
         callback: function () {
           var filename = $(this).data('name');
           var target = $(this).data('path') + '/' + filename;
-          var html = '<p id="fileDeleteLabel">Delete file</p><div id="deleteMessage">Are you sure you want to delete this file?</div>';
+          var html = '<p class="dialogTitle">Delete file</p><div id="deleteMessage">Are you sure you want to delete this file?</div>';
           dialogWrapper('#dialog', html).done(function () {
             $(fileList).remove(`:contains(${filename})`);
             socket.emit('removeFile', target);
@@ -158,10 +158,16 @@ export default class {
         if (!this.isValidData(data)) return;
         //TODO select icon for SND
         const iconClass = data.type === 'dir' ? 'fa-folder-o' : 'fa-file-o';
-        const normalIcon = `<i class="fa ${iconClass} fa-2x" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"></i>`;
-        const symlinkIcon = `<span class="fa-stack"><i class="fa ${iconClass} fa-stack-2x"></i><i class="fa fa-share fa-stack-1x"></i></span>`;
+        let iconImg;
+        if (iconClass === 'fa-folder-o') {
+          iconImg = `<img src="/image/img_folder.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
+        } else {
+          iconImg = `<img src="/image/img_file.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+        }
+        const normalIcon = iconImg;
+        const symlinkIcon = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"alt="graph">`;
         let icon = data.islink ? symlinkIcon : normalIcon;
-        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" class=${data.type}>${icon} ${data.name}</li>`);
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" class=${data.type}>${icon}${data.name}</li>`);
         var compare = this.compare;
         var lengthBefore = $(`${this.idFileList} li`).length;
         var counter = 0;
@@ -190,9 +196,26 @@ export default class {
     });
   }
   onDirDblClickDefault() {
+    let dirStack = [];
+    let rootDirPath = "";
     $(this.idFileList).on("dblclick", 'li,i', (event) => {
       if ($(event.target).data('isdir')) {
-        var target = $(event.target).data('path').trim() + '/' + $(event.target).data('name').trim();
+        if (dirStack.length === 0) {
+          dirStack.push($(event.target).data('path'));
+          rootDirPath = $(event.target).data('path');
+        }
+        //dblclicked at rootDir -> display rootDir
+        if (dirStack.length === 1 && $(event.target).data('name') === "../") {
+          dirStack.push($(event.target).data('path'));
+          var target = rootDirPath;
+        }
+        if ($(event.target).data('name') === "../") {
+          dirStack.pop();
+          var target = dirStack[dirStack.length - 1];
+        } else {
+          var target = $(event.target).data('path').trim() + '\\' + $(event.target).data('name').trim();
+          dirStack.push(target);
+        }
         this.request(this.sendEventName, target, null);
         $(this.idFileList).empty();
       }
@@ -201,6 +224,7 @@ export default class {
   changeColorsWhenSelected() {
     $(`${this.idFileList} li`).css('background-color', this.defaultColor);
     $(event.target).css('background-color', this.selectedItemColor);
+    console.log(event.target);
   }
   isValidPath(path1, path2) {
     var path1 = path1.replace(/\\/g, '/');
