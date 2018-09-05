@@ -53,7 +53,7 @@ sio.emit = sinon.stub();
 //TODO pass stub to askPassword for remote task test
 //
 describe("project Controller UT", function() {
-  this.timeout(10000);
+  this.timeout(20000);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
     emit.reset();
@@ -259,25 +259,25 @@ describe("project Controller UT", function() {
     });
     describe("file dependncy between parent and child", ()=>{
       beforeEach(async()=>{
-        await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
-        const wf0= await fs.readJson(path.join(projectRootDir, "workflow0", componentJsonFilename));
-        await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const parentTask0= await fs.readJson(path.join(projectRootDir, "task0", componentJsonFilename));
-        const parentTask1= await fs.readJson(path.join(projectRootDir, "task1", componentJsonFilename));
+        const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, wf0.ID, "name", "wf0");
+        const parentTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const parentTask1= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "name", "parentTask0");
         await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "name", "parentTask1");
         await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", "run.sh");
 
-        setCwd(projectRootDir, path.join(projectRootDir, "workflow0"));
-        await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const childTask0= await fs.readJson(path.join(projectRootDir, "workflow0", "task0", componentJsonFilename));
-        const childTask1= await fs.readJson(path.join(projectRootDir, "workflow0", "task1", componentJsonFilename));
+        setCwd(projectRootDir, path.join(projectRootDir, "wf0"));
+        const childTask0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const childTask1= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, childTask0.ID, "name", "childTask0");
         await onUpdateNode(emit, projectRootDir, childTask0.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, childTask1.ID, "name", "childTask1");
         await onUpdateNode(emit, projectRootDir, childTask1.ID, "script", "run.sh");
 
         // add file dependency
-        await fs.outputFile(path.join(projectRootDir, "task0", "a"), "a");
+        await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
         await onAddOutputFile(emit, projectRootDir, parentTask0.ID, "a");
         await onAddInputFile(emit, projectRootDir, wf0.ID, "b");
         await onAddInputFile(emit, projectRootDir, childTask0.ID, "c");
@@ -294,24 +294,24 @@ describe("project Controller UT", function() {
         await onAddFileLink(emit, projectRootDir, wf0.ID, "e", parentTask1.ID, "f");
 
         // create script
-        await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "task1", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "workflow0","task0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "workflow0","task1", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "parentTask0", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "parentTask1", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "wf0","childTask0", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "wf0","childTask1", "run.sh"), "#!/bin/bash\npwd\n");
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
-        expect(dummyLogger.stdout).to.have.been.calledOnce;
+        expect(dummyLogger.stdout.callCount).to.equal(4);
         const firstCall = dummyLogger.stdout.getCall(0);
-        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask0"));
         const secondCall = dummyLogger.stdout.getCall(1);
-        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "workflow0","task0"));
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "wf0","childTask0"));
         const thirdCall = dummyLogger.stdout.getCall(2);
-        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "workflow0","task1"));
+        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "wf0","childTask1"));
         const fourthCall = dummyLogger.stdout.getCall(3);
-        expect(fourthCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task1"));
+        expect(fourthCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask1"));
 
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
@@ -322,19 +322,43 @@ describe("project Controller UT", function() {
             status: "finished"
           }
         });
-        expect(path.resolve(projectRootDir, "workflow0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        expect(path.resolve(projectRootDir, "parentTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "parentTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "wf0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "wf0", "childTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "wf0", "childTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
             status: "finished"
           }
         });
 
-        expect(path.resolve(projectRootDir, "task0", "a")).to.be.a.file().with.contents("a");
-        expect(path.resolve(projectRootDir, "workflow0", "b")).to.be.not.a.file();
-        expect(path.resolve(projectRootDir, "workflow0", "task0", "c")).to.be.a.file().with.contents("a");
-        expect(path.resolve(projectRootDir, "workflow0", "task1", "d")).to.be.a.file().with.contents("a");
-        expect(path.resolve(projectRootDir, "workflow0", "e")).to.be.not.a.file();
-        expect(path.resolve(projectRootDir, "task1", "f")).to.be.a.file().with.contents("a");
+        expect(path.resolve(projectRootDir, "parentTask0", "a")).to.be.a.file().with.contents("a");
+        expect(path.resolve(projectRootDir, "wf0", "b")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "wf0", "childTask0", "c")).to.be.a.file().with.contents("a");
+        expect(path.resolve(projectRootDir, "wf0", "childTask1", "d")).to.be.a.file().with.contents("a");
+        expect(path.resolve(projectRootDir, "wf0", "e")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "parentTask1", "f")).to.be.a.file().with.contents("a");
       });
     });
   });

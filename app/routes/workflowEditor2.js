@@ -87,6 +87,7 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
     cb = ()=>{};
   }
   logger.debug("createNode event recieved:", request);
+  let rt = null;
 
   try {
     const parentDir = getCwd(projectRootDir);
@@ -102,14 +103,16 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
     //update path map
     await updateComponentPath(projectRootDir, changeComponentPath.bind(null, newComponent.ID, absDirName));
     await sendWorkflow(emit, projectRootDir);
+    rt = newComponent;
   } catch (e) {
     e.projectRootDir = projectRootDir;
     e.request = request;
     logger.error("create node failed", e);
     cb(false);
-    return;
+    return false;
   }
   cb(true);
+  return rt;
 }
 
 async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
