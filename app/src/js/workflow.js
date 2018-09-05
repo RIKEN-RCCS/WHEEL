@@ -142,7 +142,6 @@ $(() => {
   $('#graphView').prop('checked', true);
   $('#log_area').hide();
   $('#property').hide();
-  $('#parentDirBtn').hide();
   $('#taskLibraryMenu').hide();
 
   // setup socket.io client
@@ -258,7 +257,7 @@ $(() => {
 
     sio.on('showMessage', showMessage);
     sio.on('askPassword', (hostname) => {
-      const html = `<p id="sshConnectionLabel">Input SSH connection password for ${hostname}</p><input type=password id="password">`;
+      const html = `<p class="dialogTitle">Input SSH connection password for ${hostname}</p><input type=password id="password" class="dialogTextbox">`;
       dialogWrapper('#dialog', html)
         .done(() => {
           const password = $('#password').val();

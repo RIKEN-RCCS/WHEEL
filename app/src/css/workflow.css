@@ -543,15 +543,8 @@ img.btn_menu_n{
 }
 
 .cleanStateButton{
-    position: absolute;
-    cursor: pointer;
-    width: 22px;
-    height: 22px;
-    margin: 2px 0 0 5px;
-    padding: 0px;
-    border: 1px solid #5B5B5F;
-    background-color: #5B5B5F;
     right: 32px;
+    top: 67px;
 }
 
 #propertyDescription{
@@ -1439,7 +1432,7 @@ tspan{
     padding-left: 5px;
 }
 
-#newFileName.dialogTextbox, #newFolderName.dialogTextbox, #newName.dialogTextbox{
+#newFileName.dialogTextbox, #newFolderName.dialogTextbox, #newName.dialogTextbox, #password.dialogTextbox{
     background-color: #000000;
     width: 300px;
     height: 20px;

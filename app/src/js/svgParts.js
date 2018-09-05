@@ -614,11 +614,12 @@ class SvgParentFilesBox {
       }
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
-      // 240 = connectorの位置
-      // 6.1 = 一文字あたりの文字の大きさ
-      const x = 240 - 8 - outputFileNameLength * 6.1;
-      // 5.6 = connectorの中間位置表示用
-      const y = connectorHeight + 5.6 + connectorInterval * index;
+      const defaultConnectorXpos = 240;
+      const displayFontSize = 14;
+      const connectorMiddlePos = 5.6;
+      const x = 32;
+      //const x = defaultConnectorXpos - 8 - outputFileNameLength * displayFontSize;
+      const y = connectorHeight + connectorMiddlePos + connectorInterval * index;
 
       text.move(x, y);
       this.outputGroup.add(text);
@@ -637,8 +638,12 @@ class SvgParentFilesBox {
         .fill('#FFFFFF');
       const recepterHeight = 32;
       const recepterInterval = recepterHeight * 1.5;
-      const x = window.innerWidth - 248;
-      const y = window.innerHeight - 361 + 32 + 5.6 + recepterInterval * index;
+      const propertyAreaWidth = 248;
+      const defaultConnectorYpos = 361;
+      const connectorHeight = 32;
+      const connectorMiddlePos = 5.6;
+      const x = window.innerWidth - propertyAreaWidth;
+      const y = window.innerHeight - defaultConnectorYpos + connectorHeight + connectorMiddlePos + recepterInterval * index;
       text.move(x, y);
       this.inputGroup.add(text);
     });
