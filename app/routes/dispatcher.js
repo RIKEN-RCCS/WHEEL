@@ -152,7 +152,7 @@ class Dispatcher extends EventEmitter {
     this.children = new Set(); //child dispatcher instance
     this.runningTasks = [];
     this.hasFailedTask = false;
-    this.isReady = this._asyncInit();
+    this.isInitialized = this._asyncInit();
   }
 
   async _asyncInit() {
@@ -174,8 +174,8 @@ class Dispatcher extends EventEmitter {
   }
 
   async _dispatch() {
-    if (this.isReady !== true) {
-      await this.isReady;
+    if (this.isInitialized !== true) {
+      await this.isInitialized;
     }
     const promises = [];
 
@@ -188,7 +188,6 @@ class Dispatcher extends EventEmitter {
       }));
 
       const target = this.currentSearchList.shift();
-
       if (!await this._isReady(target)) {
         this.nextSearchList.push(target);
         continue;
@@ -293,7 +292,10 @@ class Dispatcher extends EventEmitter {
     const nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
     component.outputFiles.forEach((outputFile)=>{
       const tmp = outputFile.dst.map((e)=>{
-        if (e.dstNode !== "parent") {
+        if (e.hasOwnProperty("origin")) {
+          return null;
+        }
+        if (e.dstNode !== component.parent) {
           return e.dstNode;
         }
         return null;
@@ -523,6 +525,9 @@ class Dispatcher extends EventEmitter {
 
     for (const inputFile of component.inputFiles) {
       for (const src of inputFile.src) {
+        if (src.srcNode === component.parent) {
+          continue;
+        }
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state)) {
@@ -558,43 +563,72 @@ class Dispatcher extends EventEmitter {
 
 
   async _getOutputFiles(component) {
-    const dstRoot = this._getComponentDir(component.ID);
+    this.logger.debug(`getOutputFiles for ${component.name}`);
 
-    const p1 = [];
+    const promises = [];
     const deliverRecipes = new Set();
     for (const inputFile of component.inputFiles) {
+      const dstName = inputFile.name;
+
       //this component does not need the file
       if (inputFile.hasOwnProperty("forwardTo")) {
         continue;
       }
 
-      //resolve origin
+      //resolve real src
       for (const src of inputFile.src) {
-        const srcRoot = this._getComponentDir(src.srcNode);
-        p1.push(
-          this._getComponent(src.srcNode)
-            .then((srcComponent)=>{
-              const srcEntry = srcComponent.outputFiles.find((outputFile)=>{
-                return outputFile.name === src.srcName;
-              });
-              if (typeof srcEntry === "undefined") {
-                return;
-              }
-              if (srcEntry.hasOwnProperty("origin")) {
-                for (const e of srcEntry.origin) {
-                  const originSrcRoot = this._getComponentDir(e.srcNode);
-                  deliverRecipes.add({ dstName: inputFile.name, srcRoot: originSrcRoot, srcName: e.srcName });
+        //get files from upper level
+        if (src.srcNode === component.parent) {
+          promises.push(
+            this._getComponent(src.srcNode)
+              .then((srcComponent)=>{
+                const srcEntry = srcComponent.inputFiles.find((i)=>{
+                  if (!(i.name === src.srcName && i.hasOwnProperty("forwardTo"))) {
+                    return false;
+                  }
+                  const result = i.forwardTo.findIndex((e)=>{
+                    return e.dstNode === component.ID && e.dstName === inputFile.name;
+                  });
+                  return result !== -1;
+                });
+                if (typeof srcEntry === "undefined") {
+                  return;
                 }
-              } else {
-                deliverRecipes.add({ dstName: inputFile.name, srcRoot, srcName: src.srcName });
-              }
-            })
-        );
+                for (const e of srcEntry.src) {
+                  const originalSrcRoot = this._getComponentDir(e.srcNode);
+                  deliverRecipes.add({ dstName, srcRoot: originalSrcRoot, srcName: e.srcName });
+                }
+              })
+          );
+        } else {
+          const srcRoot = this._getComponentDir(src.srcNode);
+          promises.push(
+            this._getComponent(src.srcNode)
+              .then((srcComponent)=>{
+                const srcEntry = srcComponent.outputFiles.find((outputFile)=>{
+                  return outputFile.name === src.srcName;
+                });
+                if (typeof srcEntry === "undefined") {
+                  return;
+                }
+                //get files from lower level component
+                if (srcEntry.hasOwnProperty("origin")) {
+                  for (const e of srcEntry.origin) {
+                    const originalSrcRoot = this._getComponentDir(e.srcNode);
+                    deliverRecipes.add({ dstName, srcRoot: originalSrcRoot, srcName: e.srcName });
+                  }
+                } else {
+                  deliverRecipes.add({ dstName, srcRoot, srcName: src.srcName });
+                }
+              })
+          );
+        }
       }
     }
-    await Promise.all(p1);
+    await Promise.all(promises);
 
     //actual delive file process
+    const dstRoot = this._getComponentDir(component.ID);
     const p2 = [];
     for (const recipe of deliverRecipes) {
       const srces = await promisify(glob)(recipe.srcName, { cwd: recipe.srcRoot });

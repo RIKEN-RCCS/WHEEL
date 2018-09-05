@@ -19,10 +19,17 @@ function isInitialNode(node) {
   }
 
   if (node.inputFiles.length > 0) {
-    const hasConnectedInputFile = node.inputFiles.some((e)=>{
-      return e.srcNode !== null;
-    });
-    return !hasConnectedInputFile;
+    for (const inputFile of node.inputFiles) {
+      const isConnected = inputFile.src.some((e)=>{
+        if (e.srcNode === node.parent) {
+          return false;
+        }
+        return e.srcNode !== null;
+      });
+      if (isConnected) {
+        return false;
+      }
+    }
   }
   return true;
 }
