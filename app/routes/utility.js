@@ -1,9 +1,7 @@
 "use strict";
-const { promisify } = require("util");
 const path = require("path");
 const fs = require("fs-extra");
 const Mode = require("stat-mode");
-const glob = require("glob");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 
 /**
@@ -14,7 +12,6 @@ function convertPathSep(pathString) {
     return pathString.replace(new RegExp(`\\${path.win32.sep}`, "g"), path.sep);
   }
   return pathString.replace(new RegExp(path.posix.sep, "g"), path.sep);
-
 }
 
 /**
@@ -194,65 +191,13 @@ function getSystemFiles() {
   return new RegExp(`^(?!^.*(${escapeRegExp(projectJsonFilename)}|${escapeRegExp(componentJsonFilename)}|\.git.*)$).*$`);
 }
 
-/**
- * deliver src to dst
- * @param {string} src - absolute path of src file
- * @param {string} dst - absolute path of dst file
- * @param {string} type - type of srcfile only "file", "dir" or junction" is allowed and it will be passed to fs.symlink
- */
-async function deliverFile(src, dst, type) {
-  try {
-    await fs.remove(dst);
-    await fs.ensureSymlink(src, dst, type);
-    return `make symlink from ${src} to ${dst} (${type})`;
-  } catch (e) {
-    if (e.code === "EPERM") {
-      await fs.copy(src, dst);
-      return `make copy from ${src} to ${dst}`;
-    }
-    return Promise.reject(e);
-
-  }
-}
-
-/**
- * process outputFiles
- * @param {outputFile[]} outputFiles - array of outputFile entry
- * @param {string} srcRoot - root directory of src component
- */
-async function deliverOutputFiles(outputFiles, srcRoot) {
-  const promises = [];
-
-  for (const outputFile of outputFiles) {
-    const srces = await promisify(glob)(outputFile.name, { cwd: srcRoot });
-
-    for (const srcFile of srces) {
-      const oldPath = path.resolve(srcRoot, srcFile);
-      const stats = await fs.lstat(oldPath);
-      const type = stats.isDirectory() ? "dir" : "file";
-
-      for (const dst of outputFile.dst) {
-        const dstName = dst.dstName ? convertPathSep(dst.dstName) : "";
-        let newPath = path.resolve(dst.dstRoot, dstName);
-
-
-        //dst is regard as directory if src match multi files or dst ends with path separator
-        if (srces.length > 1 || dstName.endsWith(path.sep)) {
-          newPath = path.resolve(dst.dstRoot, dstName, srcFile);
-        }
-        promises.push(deliverFile(oldPath, newPath, type));
-      }
-    }
-  }
-  return Promise.all(promises);
-}
-
 function isFinishedState(state) {
   return state === "finished" || state === "failed";
 }
 
 module.exports = {
   escapeRegExp,
+  convertPathSep,
   addX,
   getDateString,
   replacePathsep,
@@ -262,6 +207,5 @@ module.exports = {
   isValidOutputFilename,
   getSystemFiles,
   createSshConfig,
-  deliverOutputFiles,
   isFinishedState
 };

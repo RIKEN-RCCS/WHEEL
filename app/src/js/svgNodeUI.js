@@ -31,7 +31,7 @@ export class SvgNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    this.group.data({ "ID": node.ID, "type": node.type }).draggable().addClass('node');
+    this.group.data({ "ID": node.ID, "type": node.type, "name": node.name}).draggable().addClass('node');
 
     // draw node
     const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host);
@@ -260,7 +260,7 @@ export class SvgParentNodeUI {
     // draw input output file name
     let fileNameXpos = 0;
     let fileNameYpos = 0;
-    const [box, textHeight] = parts.createFilesNameBox(svg, fileNameXpos, fileNameYpos, parentnode.type, parentnode.name, parentnode.inputFiles, parentnode.outputFiles);
+    const [box, textHeight] = parts.createFilesNameBox(svg, fileNameXpos, fileNameYpos, parentnode.type, parentnode.name, parentnode.outputFiles, parentnode.inputFiles);
     const boxBbox = box.bbox();
     const boxX = box.x();
     const boxY = box.y();
@@ -269,7 +269,7 @@ export class SvgParentNodeUI {
 
     // draw connector
     this.connectors = [];
-    parentnode.outputFiles.forEach((output, fileIndex) => {
+    parentnode.inputFiles.forEach((input, fileIndex) => {
       //ファイル名の最大値程度
       let connectorXpos = 240;
       //コネクター間の幅、コネクターの高さ
@@ -277,7 +277,7 @@ export class SvgParentNodeUI {
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
       let [plug, cable] = parts.createParentConnector(svg, connectorXpos, connectorYpos, 0, connectorInterval * fileIndex, sio);
-      plug.data({ "name": output.name, "dst": output.dst });
+      plug.data({ "name": input.name, "forwardTo": input.forwardTo });
       // let dstArray = [];
       // if (input.srcName === null) {
       //   dstArray = [];
@@ -291,7 +291,7 @@ export class SvgParentNodeUI {
     });
 
     // draw receptor
-    parentnode.inputFiles.forEach((input, fileIndex) => {
+    parentnode.outputFiles.forEach((output, fileIndex) => {
       const recepterHeight = 32;
       const recepterInterval = recepterHeight * 1.5;
       //-425 = -(108 +32 +221)
@@ -300,7 +300,7 @@ export class SvgParentNodeUI {
       const propertyAreaWidth = 272;
       let recepterPosX = window.innerWidth - propertyAreaWidth;
       const receptor = parts.createParentReceptor(svg, recepterPosX, recepterPosY, 0, recepterInterval * fileIndex);
-      receptor.data({ "ID": "parent", "name": input.name });
+      receptor.data({ "ID": parentnode.ID, "name": output.name });
 
       this.group.add(receptor);
     });
@@ -341,7 +341,7 @@ export class SvgParentNodeUI {
     let receptorPlugs = this.svg.select('.receptorPlug');
     this.connectors.forEach((srcPlug) => {
 
-      srcPlug.data('dst').forEach((dst) => {
+      srcPlug.data('forwardTo').forEach((dst) => {
 
         let dstPlug = receptorPlugs.members.find((plug) => {
           return plug.data('ID') === dst.dstNode && plug.data('name') === dst.dstName;

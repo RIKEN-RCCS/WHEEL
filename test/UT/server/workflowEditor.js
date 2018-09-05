@@ -4,7 +4,7 @@ const {projectJsonFilename, componentJsonFilename} = require("../../../app/db/db
 const componentFactory = require("../../../app/routes/workflowComponent");
 const {getComponentDir} = require("../../../app/routes/workflowUtil");
 const getSchema = require("../../../app/routes/workflowComponentSchemas");
-const {setCwd} = require("../../../app/routes/projectResource");
+const { openProject, setCwd } = require("../../../app/routes/projectResource");
 
 // setup test framework
 const chai = require("chai");
@@ -37,10 +37,13 @@ const testDirRoot = "WHEEL_TEST_TMP"
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-//workflowEditor.__set__("logger", {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}); //default logger stub
-workflowEditor.__set__("logger", {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}});//show error message
-//workflowEditor.__set__("logger", {error: console.log, warn: console.log, info: console.log, debug: console.log});//send all log to console
-workflowEditor.__set__("gitAdd", ()=>{});
+const dummySilentLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{} }; //default logger stub
+const dummyLogger = {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};    //show error message
+const dummyVerboseLogger = {error: console.log, warn: console.log, info: console.log, debug: console.log};    //show error message
+workflowEditor.__set__("logger", dummySilentLogger);
+const home = rewire("../../../app/routes/home");
+home.__set__("logger", dummySilentLogger);
+const createNewProject = home.__get__("createNewProject");
 
 const grandsonSchema={
   type: "array",
@@ -56,11 +59,15 @@ const grandsonSchema={
 describe("workflow editor UT", function(){
   let components;
   let wf1Schema;
+  let wf2Schema;
   let task0Schema;
+  let task1Schema;
+  let task2Schema;
   let foreach0Schema;
   let rootSchema;
   const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
   beforeEach(async function(){
+    await fs.remove(testDirRoot);
     cb.reset();
     emit.reset();
 
@@ -81,17 +88,9 @@ describe("workflow editor UT", function(){
      *  - wf1(hoge) -> foreach0(hoge)
      */
 
-    const projectJson ={
-      "name": "Project name",
-      "description": "dummy project.",
-      "state": "not-started",
-      "root" : path.resolve(testDirRoot),
-      "ctime": "not used for this test",
-      "mtime": "not used for this test",
-      "componentPath":{}
-    }
+    await createNewProject(projectRootDir, "dummy project");
+    const rootWf = await fs.readJson(path.join(projectRootDir, componentJsonFilename));
 
-    const rootWf = componentFactory("workflow");
     const task0 = componentFactory("task", {x:0, y:0}, rootWf.ID);
     const wf1 = componentFactory("workflow", {x:1, y:1},  rootWf.ID);
     const foreach0 = componentFactory("foreach", {x:1, y:1},  rootWf.ID);
@@ -99,7 +98,6 @@ describe("workflow editor UT", function(){
     const wf2 = componentFactory("workflow", {x:3, y:3},  wf1.ID);
     const task2 = componentFactory("task", {x:4, y:4},  wf2.ID);
 
-    rootWf.name ="root"
     task0.name = "task0";
     wf1.name="wf1";
     task1.name="task1";
@@ -115,8 +113,13 @@ describe("workflow editor UT", function(){
     task0.outputFiles.push({name: "foo", dst:[{dstNode: wf1.ID, dstName: "bar"}]});
     wf1.outputFiles.push({name: "hoge", dst:[{dstNode: foreach0.ID, dstName: "hoge"}]});
     wf1.inputFiles.push({name: "bar", src:[{srcNode: task0.ID, srcName: "foo"}]});
-    task1.inputFiles.push({name: "baz", src:[{srcNode: task0.ID, srcName: "foo"}]});
     foreach0.inputFiles.push({name: "hoge", src:[{srcNode: wf1.ID, srcName: "hoge"}]});
+    task1.outputFiles.push({name: "a", dst:[]});
+    task1.inputFiles.push({name: "f", src:[]});
+    wf2.inputFiles.push({name: "b", src:[]});
+    wf2.outputFiles.push({name: "e", dst:[]});
+    task2.inputFiles.push({name: "c", src:[]});
+    task2.outputFiles.push({name: "d", dst:[]});
 
     components={
       root: rootWf,
@@ -183,6 +186,43 @@ describe("workflow editor UT", function(){
     wf1Schema.properties.outputFiles.minItems=1;
     wf1Schema.properties.outputFiles.maxItems=1;
 
+    wf2Schema = getSchema("workflow");
+    wf2Schema.properties.name = { enum:["wf2"]};
+    wf2Schema.properties.ID = {enum: [components.wf2.ID]};
+    wf2Schema.properties.parent = {enum: [components.wf1.ID]};
+    wf2Schema.properties.next.minItems=0;
+    wf2Schema.properties.next.maxItems=0;
+    wf2Schema.properties.previous.minItems=0;
+    wf2Schema.properties.previous.maxItems=0;
+    wf2Schema.properties.inputFiles.items = [
+      {
+        properties:{
+          name: {enum: ["b"]},
+          src: {
+            type: "array",
+            minItems: 0,
+            maxItems: 0
+          }
+        }
+      }
+    ];
+    wf2Schema.properties.inputFiles.minItems=1;
+    wf2Schema.properties.inputFiles.maxItems=1;
+    wf2Schema.properties.outputFiles.items = [
+      {
+        properties:{
+          name: {enum: ["e"]},
+          dst: {
+            type: "array",
+            minItems: 0,
+            maxItems: 0
+          }
+        }
+      }
+    ];
+    wf2Schema.properties.outputFiles.minItems=1;
+    wf2Schema.properties.outputFiles.maxItems=1;
+
     task0Schema = getSchema("task");
     task0Schema.properties.name = { enum:["task0"]};
     task0Schema.properties.ID = {enum: [components.task0.ID]};
@@ -212,6 +252,76 @@ describe("workflow editor UT", function(){
     ];
     task0Schema.properties.outputFiles.minItems = 1;
     task0Schema.properties.outputFiles.maxItems = 1;
+
+    task1Schema = getSchema("task");
+    task1Schema.properties.name = { enum:["task1"]};
+    task1Schema.properties.ID = {enum: [components.task1.ID]};
+    task1Schema.properties.parent = {enum: [components.wf1.ID]};
+    task1Schema.properties.next.minItems = 0;
+    task1Schema.properties.next.maxItems = 0;
+    task1Schema.properties.outputFiles.items = [
+      {
+        properties: {
+          name: {enum: ["a"]},
+          dst: {
+            type: "array",
+            minItems: 0,
+            maxItems: 0
+          }
+        }
+      }
+    ];
+    task1Schema.properties.outputFiles.minItems = 1;
+    task1Schema.properties.outputFiles.maxItems = 1;
+    task1Schema.properties.inputFiles.items = [
+      {
+        properties:{
+          name: {enum: ["f"]},
+          src: {
+            type: "array",
+            minItems: 0,
+            maxItems: 0
+          }
+        }
+      }
+    ];
+    task1Schema.properties.inputFiles.minItems = 1;
+    task1Schema.properties.inputFiles.maxItems = 1;
+
+    task2Schema = getSchema("task");
+    task2Schema.properties.name = { enum:["task2"]};
+    task2Schema.properties.ID = {enum: [components.task2.ID]};
+    task2Schema.properties.parent = {enum: [components.wf2.ID]};
+    task2Schema.properties.next.minItems = 0;
+    task2Schema.properties.next.maxItems = 0;
+    task2Schema.properties.outputFiles.items = [
+      {
+        properties:{
+          name: {enum: ["d"]},
+          dst: {
+            type: "array",
+            minItems: 0,
+            maxItems: 0
+          }
+        }
+      }
+    ];
+    task2Schema.properties.outputFiles.minItems = 1;
+    task2Schema.properties.outputFiles.maxItems = 1;
+    task2Schema.properties.inputFiles.items = [
+      {
+        properties:{
+          name: {enum: ["c"]},
+          src: {
+            type: "array",
+            minItems: 0,
+            maxItems: 0
+          }
+        }
+      }
+    ];
+    task2Schema.properties.inputFiles.minItems = 1;
+    task2Schema.properties.inputFiles.maxItems = 1;
 
     foreach0Schema = getSchema("foreach");
     foreach0Schema.properties.name = { enum:["foreach0"]};
@@ -255,6 +365,7 @@ describe("workflow editor UT", function(){
       maxItems: 3
     }
 
+    const projectJson = await fs.readJson(path.join(projectRootDir, projectJsonFilename));
     projectJson.componentPath[rootWf.ID]="./";
     projectJson.componentPath[task0.ID]="./task0";
     projectJson.componentPath[foreach0.ID]="./foreach0";
@@ -273,9 +384,9 @@ describe("workflow editor UT", function(){
       fs.outputJson(path.join(testDirRoot, "testProject.wheel", "wf1", "wf2", componentJsonFilename), wf2, {spaces: 4}),
       fs.outputJson(path.join(testDirRoot, "testProject.wheel", "wf1", "wf2", "task2",componentJsonFilename), task2, {spaces: 4})
     ]);
-    setCwd(projectRootDir, projectRootDir);
+    await openProject(projectRootDir);
   });
-  afterEach(async function(){
+  after(async function(){
     await fs.remove(testDirRoot);
   });
 
@@ -396,7 +507,7 @@ describe("workflow editor UT", function(){
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(false);
       expect(emit).not.to.have.been.called;
-      expect(path.join(projectRootDir)).to.be.a.directory().with.contents(["task0", "wf1", "foreach0", projectJsonFilename, componentJsonFilename]);
+      expect(path.join(projectRootDir)).to.be.a.directory().with.contents([".git","task0", "wf1", "foreach0", projectJsonFilename, componentJsonFilename]);
     });
     it("should not update inputFiles", async function(){
       await onUpdateNode(emit, projectRootDir, components.task0.ID, "inputFiles", "hoge", cb);
@@ -569,7 +680,7 @@ describe("workflow editor UT", function(){
   });
   describe("#onRenameInputFile", function(){
     it("should rename inputFile entry of wf1", async function(){
-      await onRenameInputFile(emit, projectRootDir, components.wf1.ID, "bar", "barbar", cb);
+      await onRenameInputFile(emit, projectRootDir, components.wf1.ID, 0, "barbar", cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -584,7 +695,7 @@ describe("workflow editor UT", function(){
   });
   describe("#onRenameOutputFile", function(){
     it("should rename outputFile entry of wf1", async function(){
-      await onRenameOutputFile(emit, projectRootDir, components.wf1.ID, "hoge", "hogehoge", cb);
+      await onRenameOutputFile(emit, projectRootDir, components.wf1.ID, 0, "hogehoge", cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -661,6 +772,130 @@ describe("workflow editor UT", function(){
       expect(path.join(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema(foreach0Schema);
       expect(emit.args[0][1]).to.jsonSchema(rootSchema);
     });
+    it("should add new file link from upper level to task2 via wf2", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, "parent",   "b", components.task2.ID, "c");
+
+      wf2Schema.properties.inputFiles.items[0].properties.forwardTo={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["c"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["dstName", "dstNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.inputFiles.items[0].properties.src.items=[{
+        properties:{
+          srcName: {enum:["b"]},
+          srcNode: {enum:[components.wf2.ID]}
+        },
+        required: ["srcName", "srcNode"]
+      }];
+      task2Schema.properties.inputFiles.items[0].properties.src.minItems=1;
+      task2Schema.properties.inputFiles.items[0].properties.src.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+    });
+    it("should add new file link from upper level to task2 via wf2 with wf2's ID", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, components.wf2.ID,   "b", components.task2.ID, "c");
+
+      wf2Schema.properties.inputFiles.items[0].properties.forwardTo={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["c"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["dstName", "dstNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.inputFiles.items[0].properties.src.items=[{
+        properties:{
+          srcName: {enum:["b"]},
+          srcNode: {enum:[components.wf2.ID]}
+        },
+        required: ["srcName", "srcNode"]
+      }];
+      task2Schema.properties.inputFiles.items[0].properties.src.minItems=1;
+      task2Schema.properties.inputFiles.items[0].properties.src.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+    });
+    it("should add new file link from task2 to upper level via wf2", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, components.task2.ID, "d", "parent", "e");
+
+      wf2Schema.properties.outputFiles.items[0].properties.origin={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["d"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["srcName", "srcNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.outputFiles.items[0].properties.dst.items=[{
+        properties:{
+          dstName: {enum:["e"]},
+          dstNode: {enum:[components.wf2.ID]}
+        },
+        required: ["dstName", "dstNode"]
+      }];
+      task2Schema.properties.outputFiles.items[0].properties.dst.minItems=1;
+      task2Schema.properties.outputFiles.items[0].properties.dst.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+    });
+    it("should add new file link from task2 to upper level via wf2 with wf2's ID", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, components.task2.ID, "d", components.wf2.ID, "e");
+
+      wf2Schema.properties.outputFiles.items[0].properties.origin={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["d"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["srcName", "srcNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.outputFiles.items[0].properties.dst.items=[{
+        properties:{
+          dstName: {enum:["e"]},
+          dstNode: {enum:[components.wf2.ID]}
+        },
+        required: ["dstName", "dstNode"]
+      }];
+      task2Schema.properties.outputFiles.items[0].properties.dst.minItems=1;
+      task2Schema.properties.outputFiles.items[0].properties.dst.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+    });
   });
   describe("#onRemoveFileLink", function(){
     it("should remove file link from task0 to wf1", async function(){
@@ -680,6 +915,188 @@ describe("workflow editor UT", function(){
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
       expect(emit.args[0][1]).to.jsonSchema(rootSchema);
+    });
+    it("should add new file link from upper level to task2 via wf2 and remove ", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, "parent",   "b", components.task2.ID, "c");
+
+      wf2Schema.properties.inputFiles.items[0].properties.forwardTo={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["c"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["dstName", "dstNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.inputFiles.items[0].properties.src.items=[{
+        properties:{
+          srcName: {enum:["b"]},
+          srcNode: {enum:[components.wf2.ID]}
+        },
+        required: ["srcName", "srcNode"]
+      }];
+      task2Schema.properties.inputFiles.items[0].properties.src.minItems=1;
+      task2Schema.properties.inputFiles.items[0].properties.src.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+
+      await onRemoveFileLink(emit, projectRootDir, "parent",   "b", components.task2.ID, "c");
+
+      wf2Schema.properties.inputFiles.items[0].properties.forwardTo={
+        type: "array",
+        minItems: 0,
+        maxItems: 0
+      };
+      task2Schema.properties.inputFiles.items[0].properties.src.items=[];
+      task2Schema.properties.inputFiles.items[0].properties.src.minItems=0;
+      task2Schema.properties.inputFiles.items[0].properties.src.maxItems=0;
+
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+
+    });
+    it("should add new file link from upper level to task2 via wf2 and remove with wf2's ID", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, components.wf2.ID,   "b", components.task2.ID, "c");
+
+      wf2Schema.properties.inputFiles.items[0].properties.forwardTo={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["c"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["dstName", "dstNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.inputFiles.items[0].properties.src.items=[{
+        properties:{
+          srcName: {enum:["b"]},
+          srcNode: {enum:[components.wf2.ID]}
+        },
+        required: ["srcName", "srcNode"]
+      }];
+      task2Schema.properties.inputFiles.items[0].properties.src.minItems=1;
+      task2Schema.properties.inputFiles.items[0].properties.src.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+
+      await onRemoveFileLink(emit, projectRootDir, "parent",   "b", components.task2.ID, "c");
+
+      wf2Schema.properties.inputFiles.items[0].properties.forwardTo={
+        type: "array",
+        minItems: 0,
+        maxItems: 0
+      };
+      task2Schema.properties.inputFiles.items[0].properties.src.items=[];
+      task2Schema.properties.inputFiles.items[0].properties.src.minItems=0;
+      task2Schema.properties.inputFiles.items[0].properties.src.maxItems=0;
+
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+
+    });
+    it("should add new file link from task2 to upper level via wf2 and remove", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, components.task2.ID, "d", "parent", "e");
+
+      wf2Schema.properties.outputFiles.items[0].properties.origin={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["d"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["srcName", "srcNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.outputFiles.items[0].properties.dst.items=[{
+        properties:{
+          dstName: {enum:["e"]},
+          dstNode: {enum:[components.wf2.ID]}
+        },
+        required: ["dstName", "dstNode"]
+      }];
+      task2Schema.properties.outputFiles.items[0].properties.dst.minItems=1;
+      task2Schema.properties.outputFiles.items[0].properties.dst.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+
+      await onRemoveFileLink(emit, projectRootDir, components.task2.ID, "d", "parent", "e");
+
+      wf2Schema.properties.outputFiles.items[0].properties.origin={
+        type: "array",
+        minItems: 0,
+        maxItems: 0
+      };
+      task2Schema.properties.outputFiles.items[0].properties.dst.items=[];
+      task2Schema.properties.outputFiles.items[0].properties.dst.minItems=0;
+      task2Schema.properties.outputFiles.items[0].properties.dst.maxItems=0;
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+    });
+    it("should add new file link from task2 to upper level via wf2 and remove with wf2's ID", async function(){
+      setCwd(projectRootDir, path.join(projectRootDir, "wf1", "wf2"));
+      await onAddFileLink(emit, projectRootDir, components.task2.ID, "d", "parent", "e");
+
+      wf2Schema.properties.outputFiles.items[0].properties.origin={
+        type: "array",
+          items: [
+            {
+              properties:{
+                dstName: {enum:["d"]},
+                dstNode: {enum:[components.task2.ID]}
+              },
+              required: ["srcName", "srcNode"]
+            }
+        ],
+        minItems: 1,
+        maxItems: 1
+      };
+      task2Schema.properties.outputFiles.items[0].properties.dst.items=[{
+        properties:{
+          dstName: {enum:["e"]},
+          dstNode: {enum:[components.wf2.ID]}
+        },
+        required: ["dstName", "dstNode"]
+      }];
+      task2Schema.properties.outputFiles.items[0].properties.dst.minItems=1;
+      task2Schema.properties.outputFiles.items[0].properties.dst.maxItems=1;
+
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+
+      await onRemoveFileLink(emit, projectRootDir, components.task2.ID, "d", components.wf2.ID, "e");
+
+      wf2Schema.properties.outputFiles.items[0].properties.origin={
+        type: "array",
+        minItems: 0,
+        maxItems: 0
+      };
+      task2Schema.properties.outputFiles.items[0].properties.dst.items=[];
+      task2Schema.properties.outputFiles.items[0].properties.dst.minItems=0;
+      task2Schema.properties.outputFiles.items[0].properties.dst.maxItems=0;
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
     });
   });
 });

@@ -196,7 +196,7 @@
           </div>
           <template v-for="(inputFile, index) in node.inputFiles">
             <div>
-              <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="updateProperty('inputFiles')" class="newInputFileNameInputField">
+              <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="renameInputFile(inputFile.name, index)" class="newInputFileNameInputField">
               <button v-on:click="delInputFile(index)" class="inputAddDelButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>
@@ -213,7 +213,7 @@
           </div>
           <template v-for="(outputFile, index) in node.outputFiles">
             <div>
-              <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="updateProperty('outputFiles')" class="newOutputFileNameInputField">
+              <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="renameOutputFile(outputFile.name, index)" class="newOutputFileNameInputField">
               <button v-on:click="delOutputFile(index)" class="outputAddDelButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>

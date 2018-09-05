@@ -6,17 +6,14 @@ const glob = require("glob");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { getCwd, gitAdd } = require("./projectResource");
+const { getCwd } = require("./projectResource");
+const { gitAdd } = require("./gitOperator");
 
 function hasChild(node) {
   return node.type === "workflow" || node.type === "parameterStudy" || node.type === "for" || node.type === "while" || node.type === "foreach";
 }
 
 function isInitialNode(node) {
-  if (node === null) {
-    return false;
-  }
-
   if (node.previous.length > 0) {
     return false;
   }
@@ -36,22 +33,37 @@ async function getComponentDir(projectRootDir, targetID) {
   return componentPath ? path.resolve(projectRootDir, componentPath) : componentPath;
 }
 
+async function getComponentRelativePath(projectRootDir, targetID, srcID) {
+  const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+  const srcPath = srcID ? projectJson.componentPath[srcID] : projectRootDir;
+  const targetPath = projectJson.componentPath[targetID];
+
+  if (typeof targetPath === "undefined") {
+    return targetPath;
+  }
+  return path.relative(srcPath, targetPath);
+}
+
 async function getComponent(projectRootDir, component) {
   let componentJson = component; //component is treated as component Json object by default
+  if (typeof component === "string") {
+    const isFilePath = await fs.pathExists(component);
 
-  if (await fs.pathExists(component)) {
+    if (isFilePath) {
+      //component is path of component Json file
+      componentJson = await fs.readJson(component);
+    } else {
+      //component should be ID string
+      const componentDir = await getComponentDir(projectRootDir, component);
 
-    //component is path of component Json file
-    componentJson = await fs.readJson(component);
-  } else {
-    const componentDir = await getComponentDir(projectRootDir, component);
-
-    if (componentDir) {
-
-      //component is ID string of component
-      componentJson = await fs.readJson(path.resolve(componentDir, componentJsonFilename));
+      if (await fs.pathExists(componentDir)) {
+        componentJson = await fs.readJson(path.resolve(componentDir, componentJsonFilename));
+      } else {
+        componentJson = null;
+      }
     }
   }
+
   return componentJson;
 }
 
@@ -106,6 +118,14 @@ async function updateAndSendProjectJson(emit, projectRootDir, state) {
   emit("projectJson", projectJson);
 }
 
+function componentJsonReplacer(key, value) {
+  if (["handler", "doCleanup", "sbsID"].includes(key)) {
+    //eslint-disable-next-line no-undefined
+    return undefined;
+  }
+  return value;
+}
+
 //component can be one of "path of component Json file", "component json object", or "component's ID"
 async function updateComponentJson(projectRootDir, component, modifier) {
   const componentJson = await getComponent(projectRootDir, component);
@@ -118,7 +138,7 @@ async function updateComponentJson(projectRootDir, component, modifier) {
   //to avoid using old path in componentPath when component's name is changed
   const parentDir = componentJson.parent ? await getComponentDir(projectRootDir, componentJson.parent) : projectRootDir;
   const filename = path.resolve(parentDir, componentJson.name, componentJsonFilename);
-  await fs.writeJson(filename, componentJson, { spaces: 4 });
+  await fs.writeJson(filename, componentJson, { spaces: 4, replacer: componentJsonReplacer });
   return gitAdd(projectRootDir, filename);
 }
 
@@ -130,5 +150,7 @@ module.exports = {
   sendWorkflow,
   getChildren,
   updateAndSendProjectJson,
-  updateComponentJson
+  updateComponentJson,
+  getComponentRelativePath,
+  componentJsonReplacer
 };

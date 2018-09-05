@@ -4,14 +4,39 @@ const path = require("path");
 const { promisify } = require("util");
 const childProcess = require("child_process");
 const { EventEmitter } = require("events");
+const glob = require("glob");
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
-const { addX, deliverOutputFiles, isFinishedState } = require("./utility");
+const { addX, isFinishedState } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid } = require("./parameterParser");
-const { isInitialNode, getChildren, getComponent, updateComponentJson } = require("./workflowUtil");
+const { isInitialNode, getChildren, updateComponentJson } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
 
-//utility functions
+/**
+ * deliver src to dst
+ * @param {string} src - absolute path of src path
+ * @param {string} dst - absolute path of dst path
+ *
+ */
+async function deliverFile(src, dst) {
+  const stats = await fs.lstat(src);
+  const type = stats.isDirectory() ? "dir" : "file";
+
+  try {
+    await fs.remove(dst);
+    await fs.ensureSymlink(src, dst, type);
+    return `make symlink from ${src} to ${dst} (${type})`;
+  } catch (e) {
+    if (e.code === "EPERM") {
+      await fs.copy(src, dst, { overwrite: false });
+      return `make copy from ${src} to ${dst}`;
+    }
+    return Promise.reject(e);
+  }
+}
+
+
+//private functions
 function forGetNextIndex(component) {
   return component.hasOwnProperty("currentIndex") ? component.currentIndex + component.step : component.start;
 }
@@ -40,10 +65,8 @@ function foreachGetNextIndex(component) {
       return null;
     }
     return component.indexList[i + 1].label;
-
   }
   return component.indexList[0].label;
-
 }
 
 function foreachIsFinished(component) {
@@ -109,45 +132,51 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
 /**
  * parse workflow graph and dispatch ready tasks to executer
  * @param {string} projectRootDir - root directory path of project
- * @param {string} parentID       - parent component's ID
- * @param {string} cwfDir         - currently dispatching workflow directory
+ * @param {string} cwfID          - current dispatching workflow ID
+ * @param {string} cwfDir         - current dispatching workflow directory (absolute path);
  * @param {string} startTime      - project start time
+ * @param {Object} logger         - logger instance from log4js
+ * @param {Object} componentPath  - componentPath in project Json
  */
 class Dispatcher extends EventEmitter {
-  constructor(projectRootDir, parentID, cwfDir, startTime, logger) {
+  constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath) {
     super();
     this.projectRootDir = projectRootDir;
-    this.parentID = parentID;
+    this.cwfID = cwfID;
     this.cwfDir = cwfDir;
     this.projectStartTime = startTime;
     this.logger = logger;
+    this.componentPath = componentPath;
 
     this.nextSearchList = [];
     this.children = new Set(); //child dispatcher instance
     this.runningTasks = [];
     this.hasFailedTask = false;
-    this.isReady = this.asyncInit();
+    this.isReady = this._asyncInit();
   }
 
-  async asyncInit() {
+  async _asyncInit() {
+    this.cwfJson = await fs.readJson(path.resolve(this.cwfDir, componentJsonFilename));
 
     //overwrite doCleanup if parent's cleanupFlag is not "2"
-    this.parentJson = await getComponent(this.projectRootDir, this.parentID);
-
-    if (this.parentJson.cleanupFlag !== "2") {
-      this.doCleanup = this.parentJson.cleanupFlag === "0";
+    if (this.cwfJson.cleanupFlag !== "2") {
+      this.doCleanup = this.cwfJson.cleanupFlag === "0";
     }
-    const childComponents = await getChildren(this.projectRootDir, this.parentID);
+    const childComponents = await getChildren(this.projectRootDir, this.cwfID);
     this.currentSearchList = childComponents.filter((component)=>{
       return isInitialNode(component);
     });
     this.logger.debug("initial tasks : ", this.currentSearchList.map((e)=>{
       return e.name;
     }));
+
+    return true;
   }
 
   async _dispatch() {
-    await this.isReady;
+    if (this.isReady !== true) {
+      await this.isReady;
+    }
     const promises = [];
 
     while (this.currentSearchList.length > 0) {
@@ -157,6 +186,7 @@ class Dispatcher extends EventEmitter {
       this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
         return e.name;
       }));
+
       const target = this.currentSearchList.shift();
 
       if (!await this._isReady(target)) {
@@ -164,35 +194,11 @@ class Dispatcher extends EventEmitter {
         continue;
       }
 
-      if (target.state === "finished") {
-        promises.push(
-          deliverOutputFiles(target.outputFiles, path.resolve(this.cwfDir, target.path))
-            .then((rt)=>{
-              if (rt.length > 0) {
-                this.logger.debug("deliverOutputFiles:\n", rt);
-              }
-            })
-        );
-        continue;
-      }
-
-      await this._setComponentState(this.projectRootDir, target, "running");
+      await this._setComponentState(target, "running");
       promises.push(
         this._cmdFactory(target.type).call(this, target)
-          .then(()=>{
-            //task component is not finished at this time
-            if (target.type === "task") {
-              return;
-            }
-            deliverOutputFiles(target.outputFiles, path.resolve(this.cwfDir, target.path))
-              .then((rt)=>{
-                if (rt.length > 0) {
-                  this.logger.debug("deliverOutputFiles:\n", rt);
-                }
-              });
-          })
           .catch(async(err)=>{
-            await this._setComponentState(this.projectRootDir, target, "failed");
+            await this._setComponentState(target, "failed");
             return Promise.reject(err);
           })
       );
@@ -209,11 +215,10 @@ class Dispatcher extends EventEmitter {
     this.currentSearchList = Array.from(tmp.values());
     this.nextSearchList = [];
 
-    if (this.isFinished()) {
+    if (this._isFinished()) {
       this.removeListener("dispatch", this._dispatch);
       this.emit("done", this.hasFailedTask);
     } else {
-
       //call next dispatcher
       setTimeout(()=>{
         this.emit("dispatch");
@@ -221,7 +226,7 @@ class Dispatcher extends EventEmitter {
     }
   }
 
-  isFinished() {
+  _isFinished() {
     this.runningTasks = this.runningTasks.filter((task)=>{
       return !isFinishedState(task.state);
     });
@@ -284,32 +289,25 @@ class Dispatcher extends EventEmitter {
     this.nextSearchList = [];
   }
 
-  _addNextComponent(component, useElse = false) {
-    const nextComponents = useElse ? Array.from(component.else) : Array.from(component.next);
+  async _addNextComponent(component, useElse = false) {
+    const nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
     component.outputFiles.forEach((outputFile)=>{
       const tmp = outputFile.dst.map((e)=>{
         if (e.dstNode !== "parent") {
           return e.dstNode;
         }
         return null;
-
       }).filter((e)=>{
         return e !== null;
       });
-      Array.prototype.push.apply(nextComponents, tmp);
+      Array.prototype.push.apply(nextComponentIDs, tmp);
     });
+    const nextComponents = await Promise.all(nextComponentIDs.map((id)=>{
+      return this._getComponent(id);
+    }));
+
     Array.prototype.push.apply(this.nextSearchList, nextComponents);
   }
-
-  async _setComponentState(projectRootDir, component, state) {
-    component.state = state;
-    const filename = path.resolve(this.cwfDir, component.name, componentJsonFilename);
-    updateComponentJson(this.projectRootDir, filename, (componentJson)=>{
-      componentJson.state = state;
-    });
-    emitEvent(projectRootDir, "componentStateChanged");
-  }
-
 
   async _dispatchTask(task) {
     this.logger.debug("_dispatchTask called", task.name);
@@ -326,16 +324,17 @@ class Dispatcher extends EventEmitter {
       task.doCleanup = task.cleanupFlag === "0";
     }
 
-    if (this.parentJson.hasOwnProperty("currentIndex")) {
-      task.currentIndex = this.parentJson.currentIndex;
+    if (this.cwfJson.hasOwnProperty("currentIndex")) {
+      task.currentIndex = this.cwfJson.currentIndex;
     }
-    task.parentType = this.parentJson.type;
+    task.parentType = this.cwfJson.type;
+
     exec(task, this.logger); //exec is async function but dispatcher never wait end of task execution
 
-    //following 2 containers are used for different purpose, please keep duplicated!
+    //runnintTasks in this class and dispatchedTask in Project class is for different purpose, please keep duplicate!
     this.runningTasks.push(task);
     addDispatchedTask(this.projectRootDir, task);
-    this._addNextComponent(task);
+    await this._addNextComponent(task);
   }
 
   async _checkIf(component) {
@@ -343,32 +342,27 @@ class Dispatcher extends EventEmitter {
     const cwd = path.resolve(this.cwfDir, component.path);
     //TODO read Json and get currentIndex
     const condition = await evalCondition(component.condition, cwd, this.wf.currentIndex, this.logger);
-    this._addNextComponent(component, !condition);
-    await this._setComponentState(this.projectRootDir, component, "finished");
-  }
-
-  async _readChild(component) {
-    const childWorkflowFilename = path.resolve(this.cwfDir, component.path, component.jsonFile);
-    return fs.readJSON(childWorkflowFilename);
+    await this._addNextComponent(component, !condition);
+    await this._setComponentState(component, "finished");
   }
 
   async _delegate(component) {
     this.logger.debug("_delegate called", component.name);
-    const childDir = path.resolve(this.cwfDir, component.path);
-    const childWF = await this._readChild(component);
+    const childDir = path.resolve(this.cwfDir, component.name);
+    const childWF = await fs.readJson(path.join(childDir, componentJsonFilename));
 
     if (component.hasOwnProperty("currentIndex")) {
       childWF.currentIndex = component.currentIndex;
     }
-    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime);
+    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath);
     this.children.add(child);
 
     //exception should be catched in caller
     try {
       const state = await child.start();
-      await this._setComponentState(this.projectRootDir, component, state);
+      await this._setComponentState(component, state);
     } finally {
-      this._addNextComponent(component);
+      await this._addNextComponent(component);
     }
   }
 
@@ -383,13 +377,12 @@ class Dispatcher extends EventEmitter {
     delete component.currentIndex;
     component.name = component.originalName;
     component.path = component.originalPath;
-    this._addNextComponent(component);
+    await this._addNextComponent(component);
     component.state = component.hasFaild ? "failed" : "finished";
   }
 
   async _loopHandler(getNextIndex, isFinished, component) {
     if (component.childLoopRunning) {
-
       //send back itself to searchList for next loop trip
       this.nextSearchList.push(component.index);
       return Promise.resolve();
@@ -464,7 +457,6 @@ class Dispatcher extends EventEmitter {
         let v = e.value;
 
         if (e.type === "file") {
-
           //TODO /以外のメタキャラクタも置換する
           v = (e.value).replace(path.sep, "_");
         }
@@ -514,30 +506,112 @@ class Dispatcher extends EventEmitter {
       promises.push(p);
     }
     await Promise.all(promises);
-    this._addNextComponent(component);
+    await this._addNextComponent(component);
     const state = component.numFailed > 0 ? "failed" : "finished";
-    await this._setComponentState(this.projectRootDir, component, state);
+    await this._setComponentState(component, state);
   }
 
   async _isReady(component) {
     for (const ID of component.previous) {
-      const previous = await getComponent(this.projectRootDir, ID);
+      const previous = await this._getComponent(ID);
 
       if (!isFinishedState(previous.state)) {
+        this.logger.debug(component.ID, "is not ready because", previous.ID, "is not finished");
         return false;
       }
     }
 
     for (const inputFile of component.inputFiles) {
-      for (const ID of inputFile.src) {
-        const previous = await getComponent(this.projectRootDir, ID);
+      for (const src of inputFile.src) {
+        const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state)) {
+          this.logger.debug(component.ID, "is not ready because", previous.ID, "(has file dependency)is not finished");
           return false;
         }
       }
     }
+
+    await this._getOutputFiles(component);
     return true;
+  }
+
+  _getComponentDir(id) {
+    const originalCwfDir = this.componentPath[this.cwfID];
+    const originalDir = this.componentPath[id];
+    const relativePath = path.relative(originalCwfDir, originalDir);
+
+    return path.resolve(this.cwfDir, relativePath);
+  }
+
+  async _getComponent(id) {
+    const componentDir = this._getComponentDir(id);
+    return fs.readJson(path.resolve(this.cwfDir, componentDir, componentJsonFilename));
+  }
+
+  async _setComponentState(component, state) {
+    component.state = state; //update in memory
+    //write to file
+    await updateComponentJson(this.projectRootDir, component);
+    emitEvent(this.projectRootDir, "componentStateChanged");
+  }
+
+
+  async _getOutputFiles(component) {
+    const dstRoot = this._getComponentDir(component.ID);
+
+    const p1 = [];
+    const deliverRecipes = new Set();
+    for (const inputFile of component.inputFiles) {
+      //this component does not need the file
+      if (inputFile.hasOwnProperty("forwardTo")) {
+        continue;
+      }
+
+      //resolve origin
+      for (const src of inputFile.src) {
+        const srcRoot = this._getComponentDir(src.srcNode);
+        p1.push(
+          this._getComponent(src.srcNode)
+            .then((srcComponent)=>{
+              const srcEntry = srcComponent.outputFiles.find((outputFile)=>{
+                return outputFile.name === src.srcName;
+              });
+              if (typeof srcEntry === "undefined") {
+                return;
+              }
+              if (srcEntry.hasOwnProperty("origin")) {
+                for (const e of srcEntry.origin) {
+                  const originSrcRoot = this._getComponentDir(e.srcNode);
+                  deliverRecipes.add({ dstName: inputFile.name, srcRoot: originSrcRoot, srcName: e.srcName });
+                }
+              } else {
+                deliverRecipes.add({ dstName: inputFile.name, srcRoot, srcName: src.srcName });
+              }
+            })
+        );
+      }
+    }
+    await Promise.all(p1);
+
+    //actual delive file process
+    const p2 = [];
+    for (const recipe of deliverRecipes) {
+      const srces = await promisify(glob)(recipe.srcName, { cwd: recipe.srcRoot });
+      const hasGlob = glob.hasMagic(recipe.srcName);
+      for (const srcFile of srces) {
+        const oldPath = path.resolve(recipe.srcRoot, srcFile);
+        let newPath = path.resolve(dstRoot, recipe.dstName);
+
+        //dst is regard as directory if srcName has glob pattern or dstName ends with path separator
+        //if newPath is existing Directory, src will also be copied under newPath directory
+        if (hasGlob || recipe.dstName.endsWith(path.posix.sep) || recipe.dstName.endsWith(path.win32.sep)) {
+          newPath = path.resolve(newPath, srcFile);
+        }
+        p2.push(deliverFile(oldPath, newPath));
+      }
+    }
+    return Promise.all(p2);
   }
 
   _cmdFactory(type) {

@@ -5,16 +5,18 @@ const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
 const { getSsh, emitEvent } = require("./projectResource");
 const { remoteHost, jobScheduler } = require("../db/db");
-const { addX, replacePathsep, getDateString, deliverOutputFiles } = require("./utility");
+const { addX, replacePathsep, getDateString } = require("./utility");
+const { componentJsonReplacer } = require("./workflowUtil");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 
 /**
  * set task component's status and notice it's changed
  */
-function setTaskState(task, state) {
+async function setTaskState(task, state) {
   task.state = state;
-  fs.writeJson(task.jsonFilename, task);
+  //to avoid git add when task state is changed, we do not use updateComponentJson(in workflowUtil) here
+  await fs.writeJson(task.jsonFilename, task, { spaces: 4, replacer: componentJsonReplacer });
   emitEvent(task.label, "taskStateChanged");
 }
 
@@ -36,7 +38,6 @@ function parseFilter(pattern) {
     return pattern;
   }
   return `{${pattern}}`;
-
 }
 
 function passToSSHout(data) {
@@ -84,7 +85,7 @@ async function isFinished(JS, ssh, jobID) {
 }
 
 async function prepareRemoteExecDir(ssh, task) {
-  setTaskState(task, "stage-in");
+  await setTaskState(task, "stage-in");
   logger.debug(task.remoteWorkingDir, task.script);
   const localScriptPath = path.resolve(task.workingDir, task.script);
   await replaceCRLF(localScriptPath);
@@ -95,7 +96,7 @@ async function prepareRemoteExecDir(ssh, task) {
 }
 
 async function gatherFiles(ssh, task, rt) {
-  setTaskState(task, "stage-out");
+  await setTaskState(task, "stage-out");
   logger.debug("start to get files from remote server if specified");
 
   //get outputFiles from remote server
@@ -109,7 +110,6 @@ async function gatherFiles(ssh, task, rt) {
         return `${dirname}/*`;
       }
       return e.name;
-
     });
 
   if (outputFilesArray.length > 0) {
@@ -133,7 +133,6 @@ async function gatherFiles(ssh, task, rt) {
     try {
       await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
     } catch (e) {
-
       //just log and ignore error
       logger.warn("remote cleanup failed but ignored", e);
     }
@@ -166,7 +165,7 @@ function makeQueueOpt(task, JS, queues) {
  */
 async function localExec(task) {
   return new Promise(async(resolve, reject)=>{
-    setTaskState(task, "running");
+    await setTaskState(task, "running");
     const script = path.resolve(task.workingDir, task.script);
     await addX(script);
 
@@ -210,7 +209,6 @@ function localSubmit() {
 
 class Executer {
   constructor(ssh, JS, maxNumJob, remotehostID, hostname, queues, execInterval, statusCheckInterval, maxStatusCheckError) {
-
     //remotehostID and useJobScheduler flag is not used inside Executer class
     //this 2 property is used as search key in exec();
     this.remotehostID = remotehostID;
@@ -233,13 +231,13 @@ class Executer {
     this.batch = new SBS({
       exec: async(task)=>{
         task.startTime = getDateString(true);
-        const rt = await this.exec(task)
-          .catch((e)=>{
-
-            //TODO jobのsubmitに失敗した時は、maxJobの設定を減らして再投入するような機構を入れる?
-            setTaskState(task, "failed");
-            return Promise.reject(e);
-          });
+        let rt;
+        try {
+          rt = await this.exec(task);
+        } catch (e) {
+          await setTaskState(task, "failed");
+          return Promise.reject(e);
+        }
 
         //prevent to overwrite killed task's property
         if (task.state === "not-started") {
@@ -249,18 +247,9 @@ class Executer {
         //record job finished time
         task.endTime = getDateString(true);
 
-        //deliver files
-        if (rt === 0) {
-          const rt2 = await deliverOutputFiles(task.outputFiles, task.workingDir);
-
-          if (rt2.length > 0) {
-            logger.debug("deliverOutputFiles:\n", rt2);
-          }
-        }
-
         //update task status
         const state = rt === 0 ? "finished" : "failed";
-        setTaskState(task, state);
+        await setTaskState(task, state);
 
         //to use retry function in the future release, return Promise.reject if task finished with non-zero value
         if (state === "failed") {
@@ -323,17 +312,18 @@ class Executer {
     this.start = this.batch.start;
   }
 
-  submit(task) {
+  async submit(task) {
     task.sbsID = this.batch.qsub(task);
 
     if (task.sbsID !== null) {
-      setTaskState(task, "waiting");
+      await setTaskState(task, "waiting");
     }
-    return this.batch.qwait(task.sbsID)
-      .catch((e)=>{
-        logger.warn(task.name, "failed due to", e);
-        setTaskState(task, "failed");
-      });
+    try {
+      await this.batch.qwait(task.sbsID);
+    } catch (e) {
+      logger.warn(task.name, "failed due to", e);
+      await setTaskState(task, "failed");
+    }
   }
 
   cancel(task) {
@@ -343,7 +333,7 @@ class Executer {
   async remoteExec(task) {
     await prepareRemoteExecDir(this.ssh, task);
     logger.debug("prepare done");
-    setTaskState(task, "running");
+    await setTaskState(task, "running");
     const cmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ./${task.script}`;
     logger.debug("exec (remote)", cmd);
 
@@ -358,7 +348,7 @@ class Executer {
 
     const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ./${task.script}`;
     logger.debug("submitting job (remote):", submitCmd);
-    setTaskState(task, "running");
+    await setTaskState(task, "running");
     const output = [];
     const rt = await this.ssh.exec(submitCmd, {}, output, output);
 

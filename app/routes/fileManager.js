@@ -7,7 +7,7 @@ const minimatch = require("minimatch");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const fileBrowser = require("./fileBrowser");
-const { gitAdd } = require("./projectResource");
+const { gitAdd, gitRm } = require("./gitOperator");
 const { getSystemFiles } = require("./utility");
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
@@ -77,7 +77,7 @@ async function onRemoveFile(emit, label, target, cb) {
 
   try {
     await fs.remove(target, { force: true });
-    await gitAdd(label, target, true);
+    await gitRm(label, target);
   } catch (err) {
     logger.warn(`removeFile failed: ${err}`);
     cb(false);
@@ -124,9 +124,9 @@ async function onRenameFile(emit, label, msg, cb) {
   }
 
   try {
-    await gitAdd(label, oldName, true);
+    await gitRm(label, oldName);
     await fs.move(oldName, newName);
-    await gitAdd(label, newName, false);
+    await gitAdd(label, newName);
     await sendDirectoryContents(emit, msg.path);
   } catch (e) {
     e.path = msg.path;

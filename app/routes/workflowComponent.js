@@ -3,7 +3,6 @@ const uuidv1 = require("uuid/v1");
 
 class BaseWorkflowComponent {
   constructor(pos, parent) {
-
     //parent components's ID
     this.parent = parent || "this is root";
 
@@ -126,7 +125,6 @@ class If extends BaseWorkflowComponent {
 
 class Workflow extends BaseWorkflowComponent {
   constructor(pos, ...args) {
-
     //define pseudo position for root workflow
     const pos2 = pos || { x: 0, y: 0 };
     super(pos2, ...args);

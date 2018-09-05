@@ -161,6 +161,5 @@ async function getContents(targetDir, options = {}) {
     return dirs.sort(compare).concat(files.sort(compare));
   }
   return dirList.sort(compare).concat(fileList.sort(compare));
-
 }
 module.exports = getContents;

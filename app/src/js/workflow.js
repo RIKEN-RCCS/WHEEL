@@ -111,6 +111,12 @@ $(() => {
           console.log('duplicated name is not allowed!');
         }
       },
+      renameInputFile: function(newName, index){
+        sio.emit("renameInputFile", this.node.ID, index, newName);
+      },
+      renameOutputFile: function(newName, index){
+        sio.emit("renameOutputFile", this.node.ID, index, newName);
+      },
       updateProperty: function (property) {
         let val = this.node[property];
         sio.emit('updateNode', this.node.ID, property, val);
@@ -598,8 +604,7 @@ $(() => {
           let nodeType = e.target.instance.parent('.node').data('type');
           if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
             let nodeIndex = e.target.instance.parent('.node').data('index');
-            let name = target.name;
-            let path = e.target.instance.parent('.node').data('path');
+            let name = e.target.instance.parent('.node').data('name');
             currentWorkDir = currentWorkDir + '/' + name;
             currentWorkFlow = e.target.instance.parent('.node').data('ID');
             dirStack.push(currentWorkDir);
@@ -646,6 +651,7 @@ $(() => {
         const target = nodes.find((e) => {
           return e.ID === dst;
         });
+        if(typeof target === "undefined") return;
         target.inputFileLinks.push(cable);
       });
     });
@@ -689,9 +695,9 @@ $(() => {
     parentnode.forEach(function (node) {
       if (node != null) {
 
-        node.outputFileLinks.forEach(function (cable) {
+        node.inputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
-          nodes[dst].inputFileLinks.push(cable);
+          nodes[dst].outputFileLinks.push(cable);
         });
       }
     });

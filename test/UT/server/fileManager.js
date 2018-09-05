@@ -25,11 +25,13 @@ const cb = sinon.stub();
 // fileManager.__set__("logger", {error: console.log, warn: console.log, info: console.log, debug: console.log});//send all log to console
 fileManager.__set__("logger", {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}}); //default logger stub
 fileManager.__set__("gitAdd", sinon.stub());
+fileManager.__set__("gitRm", sinon.stub());
 
 const testDirRoot = "WHEEL_TEST_TMP"
 
 describe("fileManager UT", function(){
   beforeEach(async function(){
+    await fs.remove(testDirRoot);
     cb.reset();
     emit.reset();
     await Promise.all([
@@ -60,7 +62,7 @@ describe("fileManager UT", function(){
       fs.ensureSymlink(path.join(testDirRoot, "foo_3"), path.join(testDirRoot, "linkpoyo"))
     ]);
   });
-  afterEach(async function(){
+  after(async function(){
     await fs.remove(testDirRoot);
   });
   describe("#getFileList", function(){

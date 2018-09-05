@@ -62,26 +62,33 @@ class Git extends EventEmitter {
    * @param {string} absFilePath - target filepath
    */
   async add(absFilename) {
-    const stats = await fs.stat(absFilename);
+    return new Promise(async(resolve, reject)=>{
+      const stats = await fs.stat(absFilename);
 
-    if (stats.isDirectory()) {
-      const p = [];
-      klaw(absFilename)
-        .on("data", (item)=>{
-          if (item.stats.isFile()) {
-            const filename = replacePathsep(path.relative(this.rootDir, item.path));
-            p.push(this.index.addByPath(filename));
-          }
-        })
-        .on("error", (err)=>{
-          throw new Error("fatal error occurred during recursive git add", err);
-        });
-      await Promise.all(p);
-    } else {
-      const filename = replacePathsep(path.relative(this.rootDir, absFilename));
-      await this.index.addByPath(filename);
-    }
-    this.emit("writeIndex");
+      if (stats.isDirectory()) {
+        const p = [];
+        klaw(absFilename)
+          .on("data", (item)=>{
+            if (item.stats.isFile()) {
+              const filename = replacePathsep(path.relative(this.rootDir, item.path));
+              p.push(this.index.addByPath(filename));
+            }
+          })
+          .on("error", (err)=>{
+            reject(new Error("fatal error occurred during recursive git add", err));
+          })
+          .on("end", async()=>{
+            await Promise.all(p);
+            this.emit("writeIndex");
+            resolve();
+          });
+      } else {
+        const filename = replacePathsep(path.relative(this.rootDir, absFilename));
+        await this.index.addByPath(filename);
+        this.emit("writeIndex");
+        resolve();
+      }
+    });
   }
 
   /**
@@ -89,26 +96,33 @@ class Git extends EventEmitter {
    * @param {string} absFilePath - target filepath
    */
   async rm(absFilename) {
-    const stats = await fs.stat(absFilename);
+    return new Promise(async(resolve, reject)=>{
+      const stats = await fs.stat(absFilename);
 
-    if (stats.isDirectory()) {
-      const p = [];
-      klaw(absFilename)
-        .on("data", (item)=>{
-          if (item.stats.isFile()) {
-            const filename = replacePathsep(path.relative(this.rootDir, item.path));
-            p.push(this.index.removeByPath(filename));
-          }
-        })
-        .on("error", (err)=>{
-          throw new Error("fatal error occurred during recursive git add", err);
-        });
-      await Promise.all(p);
-    } else {
-      const filename = replacePathsep(path.relative(this.rootDir, absFilename));
-      await this.index.removeByPath(filename);
-    }
-    this.emit("writeIndex");
+      if (stats.isDirectory()) {
+        const p = [];
+        klaw(absFilename)
+          .on("data", (item)=>{
+            if (item.stats.isFile()) {
+              const filename = replacePathsep(path.relative(this.rootDir, item.path));
+              p.push(this.index.removeByPath(filename));
+            }
+          })
+          .on("error", (err)=>{
+            reject(new Error("fatal error occurred during recursive git add", err));
+          })
+          .on("end", async()=>{
+            await Promise.all(p);
+            this.emit("writeIndex");
+            resolve();
+          });
+      } else {
+        const filename = replacePathsep(path.relative(this.rootDir, absFilename));
+        await this.index.removeByPath(filename);
+        this.emit("writeIndex");
+        resolve();
+      }
+    });
   }
 
   /**
@@ -184,9 +198,19 @@ async function gitRm(rootDir, filename) {
   return git.rm(absFilename);
 }
 
+/**
+ * performe git reset HEAD
+ * @param {string} rootDir  - directory path which has ".git" directory
+ */
+async function gitResetHEAD(rootDir) {
+  const git = await getGitOperator(rootDir);
+  return git.resetHEAD();
+}
+
 
 module.exports.gitInit = gitInit;
 module.exports.gitCommit = gitCommit;
 module.exports.gitAdd = gitAdd;
 module.exports.gitRm = gitRm;
+module.exports.gitResetHEAD = gitResetHEAD;
 module.exports.getGitOperator = getGitOperator;

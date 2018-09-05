@@ -26,7 +26,7 @@ const cb = sinon.stub();
 const dummySilentLogger = {error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};
 const dummyLogger = {error: console.log, warn: ()=>{}, info: ()=>{}, debug: ()=>{}};
 const dummyVerboseLogger = {error: console.log, warn: console.log, info: console.log, debug: console.log};
-home.__set__("logger", dummyLogger);
+home.__set__("logger", dummySilentLogger);
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP"
@@ -71,6 +71,7 @@ async function setupFiles(){
 
 describe("home screen API test", function(){
   before(async function(){
+    await fs.remove(testDirRoot);
     await setupFiles();
     projectList = new jsonArrayManager(path.join(testDirRoot, "testProjectList.json"));
     home.__set__("projectList", projectList);
@@ -127,11 +128,14 @@ describe("home screen API test", function(){
   });
 
   describe("test with real file operation", function(){
-    afterEach(async function(){
+    beforeEach(async function(){
       await fs.remove(testDirRoot);
       await setupFiles();
       projectList = new jsonArrayManager(path.join(testDirRoot, "testProjectList.json"));
       home.__set__("projectList", projectList);
+    });
+    after(async function(){
+      await fs.remove(testDirRoot);
     });
     describe("#onAddProject", function(){
       it("should create new project directory WHEEL_TEST_TMP/foo.wheel", async function(){
@@ -180,8 +184,8 @@ describe("home screen API test", function(){
       });
     });
     describe("#onRemoveProject", function(){
-      before(async function(){
-        await onAddProject(emit, testDirRoot+"/foo", null, cb);
+      beforeEach(async function(){
+        await onAddProject(sinon.stub(), testDirRoot+"/foo", null);
       });
       it("should remove project from filesystem and projectList", async function(){
         const id = projectList.getByPosition(0).id;
@@ -194,8 +198,8 @@ describe("home screen API test", function(){
       });
     });
     describe("#onRenameProject", async function(){
-      before(async function(){
-        await onAddProject(emit, path.join(testDirRoot,"foo"), null, cb);
+      beforeEach(async function(){
+        await onAddProject(sinon.stub(), path.join(testDirRoot,"foo"), null);
       });
       it("should rename project foo to foo2", async function(){
         const id = projectList.getByPosition(0).id;

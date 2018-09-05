@@ -37,6 +37,7 @@ describe("file Browser UT", function(){
     "2_baz"
   ].map((e)=>{return {"path": testDirRoot, "name": e, "type": "file", "islink": false}});
   beforeEach(async function(){
+    await fs.remove(testDirRoot);
     await Promise.all([
       fs.ensureDir(path.join(testDirRoot, "foo")),
       fs.ensureDir(path.join(testDirRoot, "bar")),
@@ -61,7 +62,7 @@ describe("file Browser UT", function(){
       fs.ensureSymlink(path.join(testDirRoot, "foo_3"), path.join(testDirRoot, "linkpoyo"))
     ]);
   });
-  afterEach(async function(){
+  after(async function(){
     await fs.remove(testDirRoot);
   });
   describe("#getContents", function(){

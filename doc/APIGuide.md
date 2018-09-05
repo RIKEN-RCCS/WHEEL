@@ -48,8 +48,8 @@
     * [addOutputFile(index, name, cb) [新規作成]](#addoutputfileindex-name-cb-新規作成)
     * [removeInputFile(index, name, cb) [新規作成、 未実装]](#removeinputfileindex-name-cb-新規作成-未実装)
     * [removeOutputFile(index, name, cb) [新規作成、 未実装]](#removeoutputfileindex-name-cb-新規作成-未実装)
-    * [renameInputFile(index, oldName, newName, cb) [新規作成]](#renameinputfileindex-oldname-newname-cb-新規作成)
-    * [renameOutputFile(index, oldName, newName, cb) [新規作成]](#renameoutputfileindex-oldname-newname-cb-新規作成)
+    * [renameInputFile(index, newName, cb) [新規作成]](#renameinputfileindex-newname-cb-新規作成)
+    * [renameOutputFile(index, newName, cb) [新規作成]](#renameoutputfileindex-newname-cb-新規作成)
     * [addFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]](#addfilelinksrcnode-srcname-dstnode-dstname-cb-変更)
     * [removeFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]](#removefilelinksrcnode-srcname-dstnode-dstname-cb-変更)
     * [getHostList(cb)](#gethostlistcb)
@@ -418,16 +418,14 @@ linkデータの形式はaddLink APIと同じ
 
 指定された名前のoutputFileを削除します。同時にそのoutputFileに接続されていたfileLinkも全て削除します。
 
-#### renameInputFile(index, oldName, newName, cb) [新規作成]
+#### renameInputFile(index, newName, cb) [新規作成]
 - @param {string} index - inputFileの名前を変更するノードのインデックス
-- @param {string} oldName - 元の名前
 - @param {string} newName - 変更後のの名前
 
 指定されたinputFileエントリの名前を変更します。
 
-#### renameOutputFile(index, oldName, newName, cb) [新規作成]
+#### renameOutputFile(index, newName, cb) [新規作成]
 - @param {string} index - outputFileの名前を変更するノードのインデックス
-- @param {string} oldName - 元の名前
 - @param {string} newName - 変更後の名前
 
 指定されたoutputFileエントリの名前を変更します。

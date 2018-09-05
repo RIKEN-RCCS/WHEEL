@@ -42,7 +42,6 @@ router.get("/", (req, res)=>{
 });
 router.post("/", (req, res, next)=>{
   passport.authenticate("local", async(err, user, info)=>{
-
     //exception occurred
     if (err) {
       return next(err);
@@ -59,7 +58,6 @@ router.post("/", (req, res, next)=>{
     res.cookie("user", user);
     const url = user === admin ? "/admin" : "/home";
     return res.redirect(url);
-
   })(req, res, next);
 });
 module.exports = router;

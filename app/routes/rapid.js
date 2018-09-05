@@ -31,7 +31,6 @@ function searchGitRepo(filename) {
     return dir;
   }
   return searchGitRepo(dir);
-
 }
 
 module.exports = function(io) {

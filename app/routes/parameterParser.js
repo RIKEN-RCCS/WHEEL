@@ -78,7 +78,6 @@ function getNthValue(n, axis) {
     rt = rt.toFixed(significantDigits);
   }
   return rt.toString();
-
 }
 
 function getNthParamVec(n, ParamSpace) {
@@ -122,7 +121,6 @@ function getFilenames(ParamSpace) {
 }
 
 function removeInvalid(paramSpace) {
-
   //work around
   //TODO fix bug in rapid client.js
   paramSpace.forEach((e)=>{
