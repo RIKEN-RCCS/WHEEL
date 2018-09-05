@@ -542,6 +542,18 @@ img.btn_menu_n{
     margin: 0;
 }
 
+.cleanStateButton{
+    position: absolute;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0 5px;
+    padding: 0px;
+    border: 1px solid #5B5B5F;
+    background-color: #5B5B5F;
+    right: 32px;
+}
+
 #propertyDescription{
     margin: 8px 0 0 0;
     display: inline-block;
@@ -1446,7 +1458,7 @@ tspan{
     font-size: 16px;
 }
 
-#deleteMessage{
+#deleteMessage, #cleanMessage{
     margin-top: 6px;
     color: #FFFFFF;    
     padding: 0 16px 0 16px;

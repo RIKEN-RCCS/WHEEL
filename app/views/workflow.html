@@ -69,6 +69,9 @@
     <button type="button" name="view" value="list" id="listView" class="btn_view_change">
       <img src="/image/btn_list_n.png" alt="List" title="List View">
     </button>
+    <div id="parentDirBtn">
+      <button>../</button>
+    </div>
     <span id="breadcrumb"></span>
     <div class="view_controler_right_area"></div>
   </div>
@@ -163,21 +166,17 @@
           <span id="propertyType">
             <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
             <p id="propertyTypeName"></p>
+            <div v-if="node.hasOwnProperty('script') && (node.state ==='finished' || node.state ==='failed')" id="stateButton">
+              <button v-on:click="cleanComponentState()" class="cleanStateButton">
+                <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
+              </button>
+            </div>
           </span>
           <div>
             <label for="nameInputField" id="propertyName">Name</label>
           </div>
           <div>
             <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField" v-on:blur="updateNodeName">
-          </div>
-          <div>
-            <label for="stateField" id="propertyState">State</label>
-          </div>
-          <div>
-            <input type="text" v-model.lazy.trim="node.state" spellcheck="false" id="stateField" readonly>
-            <button v-on:click="" class="cleanStateButton">
-              <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
-            </button>
           </div>
           <div>
             <label for="descriptionInputField" id="propertyDescription">Description</label>

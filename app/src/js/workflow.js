@@ -111,10 +111,10 @@ $(() => {
           console.log('duplicated name is not allowed!');
         }
       },
-      renameInputFile: function(newName, index){
+      renameInputFile: function (newName, index) {
         sio.emit("renameInputFile", this.node.ID, index, newName);
       },
-      renameOutputFile: function(newName, index){
+      renameOutputFile: function (newName, index) {
         sio.emit("renameOutputFile", this.node.ID, index, newName);
       },
       updateProperty: function (property) {
@@ -122,8 +122,18 @@ $(() => {
         sio.emit('updateNode', this.node.ID, property, val);
       },
       changeQueueListState: function (useJocSchedulerFlag) {
-
-      }
+      },
+      cleanComponentState: function () {
+        const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure you want to clean this state?</div>'
+        dialogWrapper('#dialog', html)
+          .done(function () {
+            //TODO add cleanState API
+            // let newFileName = $('#newFileName').val();
+            // let newFilePath = fb.getRequestedPath() + "/" + newFileName;
+            // sio.emit('createNewFile', newFilePath, (result) => {
+            // });
+          });
+      },
     }
   });
 
@@ -651,7 +661,7 @@ $(() => {
         const target = nodes.find((e) => {
           return e.ID === dst;
         });
-        if(typeof target === "undefined") return;
+        if (typeof target === "undefined") return;
         target.inputFileLinks.push(cable);
       });
     });
