@@ -4,54 +4,55 @@ const expect = chai.expect;
 const chaiWebdriver = require('chai-webdriverio').default;
 chai.use(chaiWebdriver(browser));
 
-describe("#home", function(){
-  const url='/';
-  const testProjectName="CreateRenameDeleteProjectTest";
-  const renamedTestProjectName="CreateRenameDeleteProjectTest2";
+describe("#home", function () {
+  const url = '/';
+  const testProjectName = "CreateRenameDeleteProjectTest";
+  const renamedTestProjectName = "CreateRenameDeleteProjectTest2";
 
-  it("Home screen is drawn", function(){
+  it("Home screen is drawn", function () {
     browser.url(url);
     expect(browser.getTitle()).to.equal("WHEEL home");
-    expect('#pageName').to.have.text("Home");
+    expect('#pageNameLabel').to.have.text("Home");
   });
-  it("create, rename and delete project", function(){
+  it("create, rename and delete project", function () {
     //Xpath for top of the project list
-    const firstProject='//*[@id="projectList"]/ul[1]/li[1]';
+    const firstProject = '//*[@id="projectList"]/ul[1]/li[1]';
     //Xpath for "rename" in context menu
-    const renameMenu= '/html/body/ul/li[2]';
+    const renameMenu = '/html/body/ul/li[2]';
     //Xpath for "delete" in context menu
-    const deleteMenu= '/html/body/ul/li[3]';
+    const deleteMenu = '/html/body/ul/li[3]';
     //Xpath for ok button in dialogue
-    const okBtn= "/html/body/div[5]/div[3]/div/button[2]";
+    const okBtn = "/html/body/div[5]/div[3]/div/button[2]";
 
     // create new project
     browser.url(url)
-    .click('#newButton')
-    .setValue('#newProjectName', testProjectName)
-    .click(okBtn)
-    .waitForVisible(firstProject);
+      .click('#newButton')
+      .setValue('#newProjectName', testProjectName)
+      .click(okBtn)
+      .waitForVisible(firstProject);
 
     // check if the top of project list has testProjectName
     expect(firstProject).to.have.text(testProjectName);
 
     // rename project
     browser.rightClick(firstProject)
-    .click(renameMenu)
-    .setValue('#renamedProjectName', renamedTestProjectName)
-    .click(okBtn)
-    .waitForVisible(firstProject);
+      .click(renameMenu)
+      .setValue('#renamedProjectName', renamedTestProjectName)
+      .click(okBtn)
+      .waitUntil(function () {
+        return browser.getText(firstProject) === 'CreateRenameDeleteProjectTest2'
+      }, 5000, 'expected text to be different after 5s');
 
     // check if the top of project list has renamedTestProjectName
     expect(firstProject).to.have.text(renamedTestProjectName);
 
     // delete project
     browser.rightClick(firstProject)
-    .click(deleteMenu)
-    .click(okBtn)
-    .waitForVisible(firstProject);
+      .click(deleteMenu)
+      .click(okBtn)
+      .waitForExist('.projectName', 3000, false);
 
-    // check if the top of project list does not have renamedTestProjectName
-    // TODO project listが空になった時の対応
-    expect(firstProject).not.to.have.text(renamedTestProjectName);
+    // // check if the top of project list does not have renamedTestProjectName
+    expect(browser.isExisting('.projectName') === false);
   });
 });
