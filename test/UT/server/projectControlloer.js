@@ -257,7 +257,7 @@ describe("project Controller UT", function() {
         });
       });
     });
-    describe("file dependncy between parent and child", ()=>{
+    describe("file dependency between parent and child", ()=>{
       beforeEach(async()=>{
         const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, wf0.ID, "name", "wf0");
