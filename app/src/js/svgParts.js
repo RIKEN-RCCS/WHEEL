@@ -368,10 +368,6 @@ class SvgBox {
       const convertedPercentage = circumference * 0.01;
       let progress = convertedPercentage * calcProgress;
       return this.draw
-        // .text(paraStuState)
-        // .fill('#FFFFFF')
-        // .x(paraStuPosX)
-        // .y(statePosY);
         .circle(`${diameter}`)
         .fill('rgba(0,0,0,0)')
         .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
@@ -451,18 +447,21 @@ class SvgBox {
         });
 
         if (viewFlag === true) {
-          // 子コンポート最小のy座標 + 子コンポーネントのy座標幅
-          // = nodesPosInfo[1] + nodesPosInfo[0] - nodesPosInfo[1] = nodesPosInfo[0]
-          // 48 = アイコンの縦幅(24)+ゆとり幅(24)
-          const titleHeight = nodesPosInfo[0] / 5 + 48;
-          const titlewidth = 256;
+          const iconSize = 24;
+          const headerHeight = 110;
+          const childrenViewAreaHeightLimit = headerHeight + iconSize + bodyHeight;
+          const viewWidth = 256;
+          let viewHeight = nodesPosInfo[0] / 5 + iconSize * 1.5;
+          // if (viewHeight > childrenViewAreaHeightLimit) {
+          //   viewHeight = childrenViewAreaHeightLimit - iconSize;
+          // }
           const nodeColor = "rgba(68, 68, 73, 0.5)";
           const field = this.draw
             .polygon([
               [0, 0],
-              [titlewidth, 0],
-              [titlewidth, titleHeight],
-              [0, titleHeight],
+              [viewWidth, 0],
+              [viewWidth, viewHeight],
+              [0, viewHeight],
             ])
             .attr('class', 'viewNodesField')
             .stroke("#2F2F33")
@@ -496,24 +495,18 @@ class SvgBox {
           .image(correctNodeIconPath)
           .attr('class', 'viewNodes')
           .fill(nodeColor);
-        const x = nodePosX;
+        let x = nodePosX;
         const y = nodePosY + bodyHeight;
-
-        if (x > 232 || y > 134 + bodyHeight) {
-          if (x > 232 && y < 134 + bodyHeight) {
-            img.move(232, y);
-          }
-          if (x < 232 && y > 134 + bodyHeight) {
-            img.move(x, 134 + bodyHeight);
-          }
-          if (x > 232 && y > 134 + bodyHeight) {
-            img.move(232, 134 + bodyHeight);
-          }
-        } else {
-          img.move(x, y);
+        const conponentWidth = 256;
+        const iconSize = 24;
+        const childrenViewAreaWidthLimit = conponentWidth - iconSize;
+        if (x < 0) {
+          x = 0;
+        } else if (x > childrenViewAreaWidthLimit) {
+          x = childrenViewAreaWidthLimit;
         }
+        img.move(x, y);
         this.nodeGroup.add(img);
-
       });
     }
     return this.nodeGroup;
@@ -543,21 +536,17 @@ class SvgBox {
           ])
           .fill(nodeColor)
           .attr('class', 'viewNodes');
-        const x = nodePosX;
+        let x = nodePosX;
         const y = nodePosY + bodyHeight;
-        if (x > 232 || y > 134 + bodyHeight) {
-          if (x > 232 && y < 134 + bodyHeight) {
-            iconField.move(232, y);
-          }
-          if (x < 232 && y > 134 + bodyHeight) {
-            iconField.move(x, 134 + bodyHeight);
-          }
-          if (x > 232 && y > 134 + bodyHeight) {
-            iconField.move(232, 134 + bodyHeight);
-          }
-        } else {
-          iconField.move(x, y);
+        const conponentWidth = 256;
+        const iconSize = 24;
+        const childrenViewAreaWidthLimit = conponentWidth - iconSize;
+        if (x < 0) {
+          x = 0;
+        } else if (x > childrenViewAreaWidthLimit) {
+          x = childrenViewAreaWidthLimit;
         }
+        iconField.move(x, y);
         this.fieldGroup.add(iconField);
       });
     }
@@ -614,11 +603,12 @@ class SvgParentFilesBox {
       }
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
-      // 240 = connectorの位置
-      // 6.1 = 一文字あたりの文字の大きさ
-      const x = 240 - 8 - outputFileNameLength * 6.1;
-      // 5.6 = connectorの中間位置表示用
-      const y = connectorHeight + 5.6 + connectorInterval * index;
+      const defaultConnectorXpos = 240;
+      const displayFontSize = 14;
+      const connectorMiddlePos = 5.6;
+      const x = 32;
+      //const x = defaultConnectorXpos - 8 - outputFileNameLength * displayFontSize;
+      const y = connectorHeight + connectorMiddlePos + connectorInterval * index;
 
       text.move(x, y);
       this.outputGroup.add(text);
@@ -637,8 +627,12 @@ class SvgParentFilesBox {
         .fill('#FFFFFF');
       const recepterHeight = 32;
       const recepterInterval = recepterHeight * 1.5;
-      const x = window.innerWidth - 248;
-      const y = window.innerHeight - 361 + 32 + 5.6 + recepterInterval * index;
+      const propertyAreaWidth = 248;
+      const defaultConnectorYpos = 361;
+      const connectorHeight = 32;
+      const connectorMiddlePos = 5.6;
+      const x = window.innerWidth - propertyAreaWidth;
+      const y = window.innerHeight - defaultConnectorYpos + connectorHeight + connectorMiddlePos + recepterInterval * index;
       text.move(x, y);
       this.inputGroup.add(text);
     });
