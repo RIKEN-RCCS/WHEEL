@@ -85,6 +85,7 @@ function loopInitialize(component) {
  */
 async function evalCondition(condition, cwd, currentIndex, logger) {
   return new Promise(async(resolve, reject)=>{
+    //condition is always string for now. but keep following just in case
     if (typeof condition === "boolean") {
       resolve(condition);
     }
@@ -117,7 +118,7 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
       });
     } else {
       logger.debug("evalute ", condition);
-      let conditionExpression;
+      let conditionExpression = "";
 
       if (typeof currentIndex === "number") {
         conditionExpression += `var WHEEL_CURRENT_INDEX=${currentIndex};`;
@@ -210,8 +211,14 @@ class Dispatcher extends EventEmitter {
     }
 
     //remove duplicated entry
-    const tmp = new Set(this.nextSearchList);
-    this.currentSearchList = Array.from(tmp.values());
+    const nextIDs = Array.from(new Set(this.nextSearchList.map((e)=>{
+      return e.ID;
+    })));
+    this.currentSearchList = nextIDs.map((id)=>{
+      return this.nextSearchList.find((e)=>{
+        return e.ID === id;
+      });
+    });
     this.nextSearchList = [];
 
     if (this._isFinished()) {
@@ -341,9 +348,9 @@ class Dispatcher extends EventEmitter {
 
   async _checkIf(component) {
     this.logger.debug("_checkIf called", component.name);
-    const cwd = path.resolve(this.cwfDir, component.path);
-    //TODO read Json and get currentIndex
-    const condition = await evalCondition(component.condition, cwd, this.wf.currentIndex, this.logger);
+    const childDir = path.resolve(this.cwfDir, component.name);
+    const currentIndex = this.cwfJson.hasOwnProperty("currentIndex") ? this.cwfJson.currentIndex : null;
+    const condition = await evalCondition(component.condition, childDir, currentIndex, this.logger);
     await this._addNextComponent(component, !condition);
     await this._setComponentState(component, "finished");
   }

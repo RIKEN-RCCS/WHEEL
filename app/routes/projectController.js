@@ -43,7 +43,7 @@ function askPassword(sio, hostname) {
   });
 }
 
-async function validateTask(projectRootDir, component, parentID, hosts) {
+async function validateTask(projectRootDir, component, hosts) {
   if (component.name === null) {
     return Promise.reject(new Error(`illegal path ${component.name}`));
   }
@@ -52,30 +52,30 @@ async function validateTask(projectRootDir, component, parentID, hosts) {
     hosts.push(component.host);
   }
 
-  if (component.script === null) {
+  if (!(component.hasOwnProperty("script") && typeof component.script === "string")) {
     return Promise.reject(new Error(`script is not specified ${component.name}`));
   }
-  const parentDir = await getComponentDir(projectRootDir, parentID);
-  return fs.pathExists(path.resolve(parentDir, component.name, component.script));
+  const componentDir = await getComponentDir(projectRootDir, component.ID);
+  return fs.access(path.resolve(componentDir, component.script));
 }
 
 async function validateConditionalCheck(component) {
-  if (component.hasOwnProperty("condition")) {
+  if (!(component.hasOwnProperty("condition") && typeof component.condition === "string")) {
     return Promise.reject(new Error(`condition is not specified ${component.name}`));
   }
   return Promise.resolve();
 }
 
 async function validateForLoop(component) {
-  if (component.hasOwnProperty("start")) {
+  if (!(component.hasOwnProperty("start") && typeof component.start === "number")) {
     return Promise.reject(new Error(`start is not specified ${component.name}`));
   }
 
-  if (component.hasOwnProperty("step")) {
+  if (!(component.hasOwnProperty("step") && typeof component.step === "number")) {
     return Promise.reject(new Error(`step is not specified ${component.name}`));
   }
 
-  if (component.hasOwnProperty("end")) {
+  if (!(component.hasOwnProperty("end") && typeof component.end === "number")) {
     return Promise.reject(new Error(`end is not specified ${component.name}`));
   }
 
@@ -85,11 +85,12 @@ async function validateForLoop(component) {
   return Promise.resolve();
 }
 
-async function validateParameterStudy(component) {
-  if (component.hasOwnProperty("parameterFile")) {
+async function validateParameterStudy(projectRootDir, component) {
+  if (!(component.hasOwnProperty("parameterFile") && typeof component.parameterFile === "string")) {
     return Promise.reject(new Error(`parameter setting file is not specified ${component.name}`));
   }
-  return Promise.resolve();
+  const componentDir = await getComponentDir(projectRootDir, component.ID);
+  return fs.access(path.resolve(componentDir, component.parameterFile));
 }
 
 async function validateForeach(component) {
@@ -113,13 +114,13 @@ async function validateComponents(projectRootDir, parentID, hosts) {
 
   for (const component of children) {
     if (component.type === "task") {
-      promises.push(validateTask(projectRootDir, component, parentID, hosts));
+      promises.push(validateTask(projectRootDir, component, hosts));
     } else if (component.type === "if" || component.type === "while") {
       promises.push(validateConditionalCheck(component));
     } else if (component.type === "for") {
       promises.push(validateForLoop(component));
     } else if (component.type === "parameterStudy") {
-      promises.push(validateParameterStudy(component));
+      promises.push(validateParameterStudy(projectRootDir, component));
     } else if (component.type === "foreach") {
       promises.push(validateForeach(component));
     }
