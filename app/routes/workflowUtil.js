@@ -106,6 +106,9 @@ async function sendWorkflow(emit, projectRootDir) {
     if (hasChild(child)) {
       const grandson = await getChildren(projectRootDir, child.ID);
       child.descendants = grandson.map((e)=>{
+        if (e.type === "task") {
+          return { type: e.type, pos: e.pos, host: e.host, useJobScheduler: e.useJobScheduler };
+        }
         return { type: e.type, pos: e.pos };
       });
     }
