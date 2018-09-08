@@ -72,8 +72,7 @@ describe("project Controller UT", function() {
   describe("#onRunProject", function (){
     describe("one local task", function (){
       beforeEach(async function (){
-        await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const task0 = await fs.readJson(path.join(projectRootDir, "task0", componentJsonFilename));
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
         await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
@@ -432,12 +431,12 @@ describe("project Controller UT", function() {
         });
       });
     });
-    describe.only("task in a For component", function (){
+    describe("task in a For component", function (){
       beforeEach(async function (){
         const for0= await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, for0.ID, "start", "0");
-        await onUpdateNode(emit, projectRootDir, for0.ID, "end", "2");
-        await onUpdateNode(emit, projectRootDir, for0.ID, "step", "1");
+        await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
+        await onUpdateNode(emit, projectRootDir, for0.ID, "end", 2);
+        await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
         setCwd(projectRootDir, path.join(projectRootDir, "for0"));
         const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
@@ -449,11 +448,11 @@ describe("project Controller UT", function() {
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         const firstCall = dummyLogger.stdout.getCall(0);
-        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0","task0"));
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0","task0"));
         const secondCall = dummyLogger.stdout.getCall(1);
-        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0","task0"));
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1","task0"));
         const thirdCall = dummyLogger.stdout.getCall(2);
-        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0","task0"));
+        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_2","task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
@@ -469,7 +468,147 @@ describe("project Controller UT", function() {
             status: "finished"
           }
         });
+        expect(path.resolve(projectRootDir, "for0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "for0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "for0_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
         expect(path.resolve(projectRootDir, "for0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+      });
+    });
+    describe("task in a While component", function (){
+      beforeEach(async function (){
+        const while0= await onCreateNode(emit, projectRootDir, { type: "while", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
+        setCwd(projectRootDir, path.join(projectRootDir, "while0"));
+        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+        await fs.outputFile(path.join(projectRootDir, "while0","task0", "run.sh"), "#!/bin/bash\npwd\n");
+      });
+      it("should run project and successfully finish", async function(){
+        await onRunProject(sio, projectRootDir, cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(dummyLogger.stdout).to.have.been.calledTwice
+        const firstCall = dummyLogger.stdout.getCall(0);
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "while0_0","task0"));
+        const secondCall = dummyLogger.stdout.getCall(1);
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "while0_1","task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "while0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "while0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "while0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "while0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+      });
+    });
+    describe("task in a Foreach component", function (){
+      beforeEach(async function (){
+        const foreach0= await onCreateNode(emit, projectRootDir, { type: "foreach", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, foreach0.ID, "indexList", ["foo", "bar", "baz", "fizz"]);
+        setCwd(projectRootDir, path.join(projectRootDir, "foreach0"));
+        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+        await fs.outputFile(path.join(projectRootDir, "foreach0","task0", "run.sh"), "#!/bin/bash\npwd\n");
+      });
+      it("should run project and successfully finish", async function(){
+        await onRunProject(sio, projectRootDir, cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(dummyLogger.stdout.callCount).to.equal(4);
+        const firstCall = dummyLogger.stdout.getCall(0);
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_foo","task0"));
+        const secondCall = dummyLogger.stdout.getCall(1);
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_bar","task0"));
+        const thirdCall = dummyLogger.stdout.getCall(2);
+        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_baz","task0"));
+        const fourthCall = dummyLogger.stdout.getCall(3);
+        expect(fourthCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_fizz","task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "foreach0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "foreach0_foo", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "foreach0_bar", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "foreach0_baz", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            status: "finished"
+          }
+        });
+        expect(path.resolve(projectRootDir, "foreach0_fizz", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
             status: "finished"
