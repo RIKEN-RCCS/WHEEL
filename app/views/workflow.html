@@ -163,7 +163,7 @@
           <span id="propertyType">
             <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
             <p id="propertyTypeName"></p>
-            <div v-if="node.hasOwnProperty('script') && (node.state ==='finished' || node.state ==='failed')" id="stateButton">
+            <div v-if="node.state ==='finished' || node.state ==='failed'" id="stateButton">
               <button v-on:click="cleanComponentState()" class="cleanStateButton">
                 <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
               </button>
@@ -320,6 +320,9 @@
         <p id="componentPath"></p>
         <input type="file" id="fileSelector" name="uploadFiles" multiple />
         <div id="fileEditButton">
+          <button type="button" id="jupyterBootButton" class="createFileDirButton">
+            <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" alt="graph">
+          </button>
           <button type="button" id="createFolderButton" class="createFileDirButton">
             <img src="/image/btn_addFolder_n.png" alt="graph">
           </button>
@@ -340,9 +343,6 @@
             </button>
             <button type="button" id="editPSFileButton" class="editButtons">
               <img src="/image/img_edit_PS.png" alt="graph">
-            </button>
-            <button type="button" id="jupyterBootButton">
-              <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" alt="graph" id="jupyterImg">
             </button>
           </div>
         </div>

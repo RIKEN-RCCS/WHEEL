@@ -229,7 +229,7 @@ $(() => {
   });
 
   //boot jupyter
-  $('#jypyterBootButton').click(function () {
+  $('#jupyterBootButton').click(function () {
     //起動処理
   });
 
@@ -859,9 +859,8 @@ $(() => {
     $('#drawerMenu').toggleClass('action', false);
   });
 
-  $('#projectInfo').hover(function () {
+  $('#projectInfo').click(function () {
     $('#projectInfoDrawer').toggleClass('action', true);
-
   });
 
   $('#projectInfoDrawer').mouseleave(function () {

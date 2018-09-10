@@ -126,6 +126,10 @@ img.btn_menu_n{
 }
 
 /* 下ドロワー*/
+#projectInfo{
+    cursor: pointer;
+}
+
 #projectInfoDrawer {
     width: 100%;
     transition: all .5s;
@@ -735,33 +739,22 @@ img.btn_menu_n{
     cursor: pointer;
     width: 24px;
     height: 24px;
-    margin: 0 0 0 8px;
+    margin: 8px 0 0 8px;
     padding: 0px;
     border: 0;
     background-color: #222226;
 }
 
-#fileEditButton{
-    margin: 8px 0 0 124px;
+#createFolderButton{
+    margin: 8px 0 0 100px;
 }
 
 #editButtonsArea{
-    margin: 8px 0 0 124px;
+    margin: 8px 0 0 154px;
 }
 
 #jupyterBootButton{
-    cursor: pointer;
-    width: 24px;
-    height: 27px;
-    margin: 0 0 0 8px;
-    padding: 0px;
-    border: 0;
-    background-color: #222226;
-}
-
-#jupyterImg{
-    width: 24px;
-    height: 27px;
+    margin: 8px 0 0 0;
 }
 
 #startInputField, #endInputField, #stepInputField{
@@ -771,7 +764,7 @@ img.btn_menu_n{
 #fileList{
   margin: auto;
   padding-left: 0px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 #fileDropArea{
@@ -782,6 +775,8 @@ img.btn_menu_n{
 
 .filebrowseList{
     color:balck;
+    vertical-align: middle;
+    margin: 1px;
 }
 
 .dataNameLabel{
