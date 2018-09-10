@@ -9,7 +9,7 @@ const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
 const { addX, isFinishedState, readJsonGreedy } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid } = require("./parameterParser");
-const { isInitialNode, getChildren, updateComponentJson } = require("./workflowUtil");
+const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
 
 /**
@@ -367,8 +367,14 @@ class Dispatcher extends EventEmitter {
 
     //exception should be catched in caller
     try {
-      const state = await child.start();
-      await this._setComponentState(component, state);
+      childWF.state = await child.start();
+      await fs.writeJson(path.join(childDir, componentJsonFilename), childWF, { spaces: 4, replacer: componentJsonReplacer });
+
+      //if component type is not workflow, it must be copied component of PS, for, while or foreach
+      //so, it is no need to emit "componentStateChanged" here.
+      if (component.type === "workflow") {
+        emitEvent(this.projectRootDir, "componentStateChanged");
+      }
     } finally {
       await this._addNextComponent(component);
     }
@@ -444,7 +450,7 @@ class Dispatcher extends EventEmitter {
 
   async _PSHandler(component) {
     this.logger.debug("_PSHandler called", component.name);
-    const srcDir = path.resolve(this.cwfDir, component.path);
+    const srcDir = path.resolve(this.cwfDir, component.name);
     const paramSettingsFilename = path.resolve(srcDir, component.parameterFile);
     const paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
     const targetFile = paramSettings.target_file;
@@ -467,7 +473,7 @@ class Dispatcher extends EventEmitter {
           v = (e.value).replace(path.sep, "_");
         }
         return `${p}_${e.key}_${v}`;
-      }, component.path);
+      }, component.name);
       dstDir = path.resolve(this.cwfDir, dstDir);
 
       //copy file which is specified as parameter
@@ -561,8 +567,10 @@ class Dispatcher extends EventEmitter {
 
   async _setComponentState(component, state) {
     component.state = state; //update in memory
+    const componentDir = this._getComponentDir(component.ID);
     //write to file
-    await updateComponentJson(this.projectRootDir, component);
+    //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
+    await fs.writeJson(path.join(componentDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
     emitEvent(this.projectRootDir, "componentStateChanged");
   }
 

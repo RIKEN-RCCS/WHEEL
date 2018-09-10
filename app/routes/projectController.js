@@ -9,7 +9,7 @@ const Dispatcher = require("./dispatcher");
 const { getDateString, createSshConfig, readJsonGreedy } = require("./utility");
 const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, emitEvent } = require("./projectResource");
+const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, emitEvent, removeListener } = require("./projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
 const { isInitialNode, hasChild, getComponent } = require("./workflowUtil");
@@ -287,10 +287,12 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //event listener for component state changed
   function onComponentStateChanged() {
-    sendWorkflow(emit, projectRootDir);
-    setTimeout(()=>{
-      once(projectRootDir, "componentStateChanged", onComponentStateChanged);
-    }, interval);
+    sendWorkflow(emit, projectRootDir)
+      .then(()=>{
+        setTimeout(()=>{
+          once(projectRootDir, "componentStateChanged", onComponentStateChanged);
+        }, interval);
+      });
   }
 
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
@@ -321,7 +323,8 @@ async function onRunProject(sio, projectRootDir, cb) {
     return;
   }
 
-  //TODO taskStateChanged とcomponentStateChangedのremoveListener
+  removeListener(projectRootDir, "taskStateChanged", onTaskStateChanged);
+  removeListener(projectRootDir, "componentStateChanged", onComponentStateChanged);
 
   try {
     //directly send last status just in case

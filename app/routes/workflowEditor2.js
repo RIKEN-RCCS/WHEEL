@@ -93,6 +93,7 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
     const parentDir = getCwd(projectRootDir);
     const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
     const parentID = parentJson.ID;
+
     //create component directory and Json file
     const absDirName = await makeDir(path.resolve(parentDir, request.type), 0);
     const newComponent = componentFactory(request.type, request.pos, parentID);

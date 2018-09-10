@@ -15,7 +15,7 @@ let logger; //logger is injected when exec() is called;
  */
 async function setTaskState(task, state) {
   task.state = state;
-  //to avoid git add when task state is changed, we do not use updateComponentJson(in workflowUtil) here
+  //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
   await fs.writeJson(task.jsonFilename, task, { spaces: 4, replacer: componentJsonReplacer });
   emitEvent(task.label, "taskStateChanged");
 }

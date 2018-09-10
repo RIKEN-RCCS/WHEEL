@@ -94,6 +94,10 @@ function emitEvent(projectRootDir, eventName) {
   getProject(projectRootDir).emit(eventName);
 }
 
+function removeListener(projectRootDir, eventName, fn) {
+  getProject(projectRootDir).removeListener(eventName, fn);
+}
+
 function getTasks(projectRootDir) {
   return getProject(projectRootDir).tasks;
 }
@@ -103,6 +107,8 @@ function getTaskStateList(projectRootDir) {
   return [...getProject(projectRootDir).tasks].map((task)=>{
     return {
       name: task.name,
+      ID: task.ID,
+      subID: task.subID,
       description: task.description ? task.description : "",
       state: task.state,
       parent: task.parent,
@@ -137,5 +143,6 @@ module.exports = {
   removeSsh,
   cleanProject,
   emitEvent,
-  once
+  once,
+  removeListener
 };

@@ -3,8 +3,6 @@ const path = require("path");
 const fs = require("fs-extra");
 const { promisify } = require("util");
 const glob = require("glob");
-const { getLogger } = require("../logSettings");
-const logger = getLogger("workflow");
 const { readJsonGreedy } = require("./utility");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getCwd } = require("./projectResource");
@@ -77,12 +75,9 @@ async function getComponent(projectRootDir, component) {
 
 async function getChildren(projectRootDir, parentID) {
   const dir = await getComponentDir(projectRootDir, parentID);
-
   if (!dir) {
-    logger.error("illegal ID", parentID);
     return [];
   }
-
   const children = await promisify(glob)(path.join(dir, "*", componentJsonFilename));
 
   if (children.length === 0) {
