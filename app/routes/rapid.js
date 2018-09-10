@@ -6,7 +6,7 @@ const klaw = require("klaw");
 const express = require("express");
 //eslint-disable-next-line new-cap
 const router = express.Router();
-const { add } = require("./gitOperator");
+const { gitAdd } = require("./gitOperator");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("rapid");
 
@@ -109,7 +109,7 @@ module.exports = function(io) {
     promisify(fs.writeFile)(filename, data)
       .then(()=>{
         const repoPath = searchGitRepo(filename);
-        add(repoPath, filename);
+        gitAdd(repoPath, filename);
       })
       .then(()=>{
         res.send(`Ok: ${filename} saved`);
