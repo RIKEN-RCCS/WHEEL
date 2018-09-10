@@ -745,6 +745,16 @@ img.btn_menu_n{
     background-color: #222226;
 }
 
+.createFileDirButton, .editButtons{
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    margin: 8px 0 0 8px;
+    padding: 0px;
+    border: 0;
+    background-color: #222226;
+}
+
 #createFolderButton{
     margin: 8px 0 0 100px;
 }
@@ -755,6 +765,17 @@ img.btn_menu_n{
 
 #jupyterBootButton{
     margin: 8px 0 0 0;
+    padding: 0;
+    cursor: pointer;
+    width: 24px;
+    height: 29px;
+    border: 0;
+    background-color: #222226;
+}
+
+#jupyterImg{
+    width: 24px;
+    height: 29px;
 }
 
 #startInputField, #endInputField, #stepInputField{
