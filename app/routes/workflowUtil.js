@@ -5,6 +5,7 @@ const { promisify } = require("util");
 const glob = require("glob");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
+const { readJsonGreedy } = require("./utility");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getCwd } = require("./projectResource");
 const { gitAdd } = require("./gitOperator");
@@ -35,13 +36,13 @@ function isInitialNode(node) {
 }
 
 async function getComponentDir(projectRootDir, targetID) {
-  const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
   const componentPath = projectJson.componentPath[targetID];
   return componentPath ? path.resolve(projectRootDir, componentPath) : componentPath;
 }
 
 async function getComponentRelativePath(projectRootDir, targetID, srcID) {
-  const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
   const srcPath = srcID ? projectJson.componentPath[srcID] : projectRootDir;
   const targetPath = projectJson.componentPath[targetID];
 
@@ -58,13 +59,13 @@ async function getComponent(projectRootDir, component) {
 
     if (isFilePath) {
       //component is path of component Json file
-      componentJson = await fs.readJson(component);
+      componentJson = await readJsonGreedy(component);
     } else {
       //component should be ID string
       const componentDir = await getComponentDir(projectRootDir, component);
 
       if (await fs.pathExists(componentDir)) {
-        componentJson = await fs.readJson(path.resolve(componentDir, componentJsonFilename));
+        componentJson = await readJsonGreedy(path.resolve(componentDir, componentJsonFilename));
       } else {
         componentJson = null;
       }
@@ -89,7 +90,7 @@ async function getChildren(projectRootDir, parentID) {
   }
 
   return Promise.all(children.map((e)=>{
-    return fs.readJson(e);
+    return readJsonGreedy(e);
   }));
 }
 
@@ -119,7 +120,7 @@ async function sendWorkflow(emit, projectRootDir) {
 //read and send projectJson
 async function updateAndSendProjectJson(emit, projectRootDir, state) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
-  const projectJson = await fs.readJson(filename);
+  const projectJson = await readJsonGreedy(filename);
 
   if (typeof state === "string") {
     projectJson.state = state;

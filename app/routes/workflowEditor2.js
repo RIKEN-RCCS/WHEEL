@@ -8,7 +8,7 @@ const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
 const { setCwd, getCwd } = require("./projectResource");
 const { gitRm, gitAdd } = require("./gitOperator");
-const { replacePathsep, isValidName } = require("./utility");
+const { replacePathsep, isValidName, readJsonGreedy } = require("./utility");
 const componentFactory = require("./workflowComponent");
 
 /**
@@ -38,7 +38,7 @@ function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
 
 async function updateComponentPath(projectRootDir, modifier) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
-  const projectJson = await fs.readJson(filename);
+  const projectJson = await readJsonGreedy(filename);
 
   if (typeof modifier === "function") {
     await modifier(projectRootDir, projectJson.componentPath);
@@ -51,7 +51,7 @@ async function updateComponentPath(projectRootDir, modifier) {
 //return value include search-root itself
 async function getDescendantsID(projectRootDir, ID) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
-  const projectJson = await fs.readJson(filename);
+  const projectJson = await readJsonGreedy(filename);
   const poi = await getComponentDir(projectRootDir, ID);
   const rt = [];
 
@@ -93,17 +93,16 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
     const parentDir = getCwd(projectRootDir);
     const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
     const parentID = parentJson.ID;
-    //create component directory
+    //create component directory and Json file
     const absDirName = await makeDir(path.resolve(parentDir, request.type), 0);
     const newComponent = componentFactory(request.type, request.pos, parentID);
-    await updateComponentJson(projectRootDir, newComponent, (json)=>{
-      json.name = path.basename(absDirName);
-    });
+    newComponent.name = path.basename(absDirName);
+    rt = newComponent;
+    await updateComponentJson(projectRootDir, newComponent);
 
     //update path map
     await updateComponentPath(projectRootDir, changeComponentPath.bind(null, newComponent.ID, absDirName));
     await sendWorkflow(emit, projectRootDir);
-    rt = newComponent;
   } catch (e) {
     e.projectRootDir = projectRootDir;
     e.request = request;

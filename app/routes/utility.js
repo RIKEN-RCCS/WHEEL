@@ -2,6 +2,7 @@
 const path = require("path");
 const fs = require("fs-extra");
 const Mode = require("stat-mode");
+const promiseRetry = require("promise-retry");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 
 /**
@@ -195,6 +196,38 @@ function isFinishedState(state) {
   return state === "finished" || state === "failed";
 }
 
+async function readJsonGreedy(filename) {
+  return promiseRetry(async(retry)=>{
+    const buf = await fs.readFile(filename)
+      .catch((e)=>{
+        if (e.code === "ENOENT") {
+          retry();
+        }
+        throw (e);
+      });
+    const strData = buf.toString("utf8").replace(/^\uFEFF/, "");
+    if (strData.length === 0) {
+      retry();
+    }
+    let jsonData;
+    try {
+      jsonData = JSON.parse(strData);
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        retry();
+      }
+      throw (e);
+    }
+    //need check by jsonSchema but it may cause performance problem
+    return jsonData;
+  },
+  {
+    retries: 10,
+    minTimeout: 1000,
+    factor: 1
+  });
+}
+
 module.exports = {
   escapeRegExp,
   convertPathSep,
@@ -207,5 +240,6 @@ module.exports = {
   isValidOutputFilename,
   getSystemFiles,
   createSshConfig,
-  isFinishedState
+  isFinishedState,
+  readJsonGreedy
 };

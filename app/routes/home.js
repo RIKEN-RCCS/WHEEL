@@ -9,7 +9,7 @@ const fileBrowser = require("./fileBrowser");
 const { gitAdd, gitCommit, gitInit } = require("./gitOperator");
 const ComponentFactory = require("./workflowComponent");
 const { projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
-const { getDateString, escapeRegExp, isValidName } = require("./utility");
+const { getDateString, escapeRegExp, isValidName, readJsonGreedy } = require("./utility");
 //eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
 
@@ -72,7 +72,7 @@ async function getAllProject() {
     let rt;
 
     try {
-      const projectJson = await fs.readJson(path.join(v.path, projectJsonFilename));
+      const projectJson = await readJsonGreedy(path.join(v.path, projectJsonFilename));
       rt = Object.assign(projectJson, v);
     } catch (err) {
       logger.warn(v, "read failed but just ignore", err);
@@ -176,7 +176,7 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   }
   let projectJson;
   try {
-    projectJson = await fs.readJson(projectJsonFilepath);
+    projectJson = await readJsonGreedy(projectJsonFilepath);
   } catch (e) {
     logger.error("root workflow JSON file read error\n", e);
     cb(false);
@@ -186,7 +186,7 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
 
   let rootWF;
   try {
-    rootWF = await fs.readJson(path.join(projectRootDir, componentJsonFilename));
+    rootWF = await readJsonGreedy(path.join(projectRootDir, componentJsonFilename));
   } catch (e) {
     logger.error("root workflow JSON file read error\n", e);
     cb(false);
@@ -301,11 +301,11 @@ async function onRenameProject(emit, msg, cb) {
 
   try {
     await fs.move(oldDir, newDir);
-    const projectJson = await fs.readJson(path.resolve(newDir, projectJsonFilename));
+    const projectJson = await readJsonGreedy(path.resolve(newDir, projectJsonFilename));
     projectJson.name = newName;
     projectJson.root = newDir;
     await fs.writeJson(path.resolve(newDir, projectJsonFilename), projectJson);
-    const rootWorkflow = await fs.readJson(path.resolve(newDir, componentJsonFilename));
+    const rootWorkflow = await readJsonGreedy(path.resolve(newDir, componentJsonFilename));
     rootWorkflow.name = newName;
     await fs.writeJson(path.resolve(newDir, componentJsonFilename), rootWorkflow);
     await gitAdd(newDir, projectJsonFilename);
