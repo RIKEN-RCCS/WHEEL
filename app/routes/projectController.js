@@ -6,7 +6,7 @@ const ARsshClient = require("arssh2-client");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const Dispatcher = require("./dispatcher");
-const { getDateString, createSshConfig } = require("./utility");
+const { getDateString, createSshConfig, readJsonGreedy } = require("./utility");
 const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir } = require("./workflowUtil");
 const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, emitEvent } = require("./projectResource");
@@ -16,7 +16,7 @@ const { isInitialNode, hasChild, getComponent } = require("./workflowUtil");
 const { killTask } = require("./taskUtil");
 
 async function getProjectState(projectRootDir) {
-  const projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
   return projectJson.state;
 }
 
@@ -239,7 +239,7 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   let projectJson;
   try {
-    projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+    projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
   } catch (err) {
     logger.error("get project state failed:", err);
     cb(false);
@@ -414,7 +414,7 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
 
   try {
-    const projectJson = await fs.readJson(filename);
+    const projectJson = await readJsonGreedy(filename);
     projectJson[prop] = value;
     await fs.writeJson(filename, projectJson, { spaces: 4 });
     await gitAdd(projectRootDir, filename);

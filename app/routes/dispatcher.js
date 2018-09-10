@@ -7,7 +7,7 @@ const { EventEmitter } = require("events");
 const glob = require("glob");
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
-const { addX, isFinishedState } = require("./utility");
+const { addX, isFinishedState, readJsonGreedy } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid } = require("./parameterParser");
 const { isInitialNode, getChildren, updateComponentJson } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
@@ -156,7 +156,7 @@ class Dispatcher extends EventEmitter {
   }
 
   async _asyncInit() {
-    this.cwfJson = await fs.readJson(path.resolve(this.cwfDir, componentJsonFilename));
+    this.cwfJson = await readJsonGreedy(path.resolve(this.cwfDir, componentJsonFilename));
 
     //overwrite doCleanup if parent's cleanupFlag is not "2"
     if (this.cwfJson.cleanupFlag !== "2") {
@@ -357,7 +357,7 @@ class Dispatcher extends EventEmitter {
   async _delegate(component) {
     this.logger.debug("_delegate called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
-    const childWF = await fs.readJson(path.join(childDir, componentJsonFilename));
+    const childWF = await readJsonGreedy(path.join(childDir, componentJsonFilename));
 
     if (component.hasOwnProperty("currentIndex")) {
       childWF.currentIndex = component.currentIndex;
@@ -555,7 +555,8 @@ class Dispatcher extends EventEmitter {
 
   async _getComponent(id) {
     const componentDir = this._getComponentDir(id);
-    return fs.readJson(path.resolve(this.cwfDir, componentDir, componentJsonFilename));
+    const filename = path.resolve(this.cwfDir, componentDir, componentJsonFilename);
+    return readJsonGreedy(filename);
   }
 
   async _setComponentState(component, state) {
