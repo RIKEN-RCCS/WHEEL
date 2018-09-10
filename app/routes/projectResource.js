@@ -26,7 +26,7 @@ function getProject(projectRootDir) {
   return projectDirs.get(projectRootDir);
 }
 
-async function openProject(projectRootDir) {
+function openProject(projectRootDir) {
   setCwd(projectRootDir, projectRootDir);
 }
 

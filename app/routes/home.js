@@ -17,24 +17,18 @@ const noDotFiles = /^[^\.].*$/;
 
 async function isDuplicateProjectName(newName) {
   const currentProjectList = await getAllProject();
-  return currentProjectList.some((e)=>{
+  const rt = currentProjectList.some((e)=>{
     return e.name === newName;
   });
+  return rt;
 }
 
-async function isValidProjectName(name) {
-  //check if project name contains allowed characters only
-  if (!isValidName(name)) {
-    logger.error(name, "is not allowed for project name");
-    return false;
+async function avoidDuplicatedProjectName(basename, argSuffix) {
+  let suffixNumber = argSuffix;
+  while (await isDuplicateProjectName(basename + suffixNumber)) {
+    ++suffixNumber;
   }
-
-  //check if project name is already used
-  if (await isDuplicateProjectName(name)) {
-    logger.error(name, "is already used");
-    return false;
-  }
-  return true;
+  return basename + suffixNumber;
 }
 
 /**
@@ -152,8 +146,13 @@ async function onAddProject(emit, projectDir, description, cb) {
 
   const projectName = path.basename(projectRootDir.slice(0, -suffix.length));
 
-  if (!await isValidProjectName(projectName)) {
-    logger.error("invalid project name");
+  if (!isValidName(projectName)) {
+    logger.error(projectName, "is not allowed for project name");
+    cb(false);
+    return;
+  }
+  if (!await isDuplicateProjectName) {
+    logger.error(projectName, "is already used");
     cb(false);
     return;
   }
@@ -175,25 +174,40 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  const projectJson = await fs.readJson(projectJsonFilepath);
-  //TODO read root workflow and validate
-  //TODO read componentJson and convert new format recursively
+  let projectJson;
+  try {
+    projectJson = await fs.readJson(projectJsonFilepath);
+  } catch (e) {
+    logger.error("root workflow JSON file read error\n", e);
+    cb(false);
+    return;
+  }
   const projectRootDir = path.dirname(projectJsonFilepath);
 
+  let rootWF;
   try {
-    await fs.pathExists(path.resolve(projectRootDir, componentJsonFilename));
+    rootWF = await fs.readJson(path.join(projectRootDir, componentJsonFilename));
   } catch (e) {
-    logger.error("root workflow JSON file not found\n", e);
+    logger.error("root workflow JSON file read error\n", e);
     cb(false);
     return;
   }
 
-  const projectName = projectJson.name;
+  //TODO convert new format recursively
 
-  if (!await isValidProjectName(projectName)) {
-    logger.error(projectName, "is not valid project name");
+  let projectName = projectJson.name;
+  if (!isValidName(projectName)) {
+    logger.error(projectName, "is not allowed for project name");
     cb(false);
     return;
+  }
+  if (await isDuplicateProjectName(projectName)) {
+    const reResult = /.*(\d+)$/.exec(projectName);
+    projectName = reResult === null ? projectName : projectName.slice(0, reResult.index);
+    const suffixNumber = reResult === null ? 0 : reResult[1];
+    const newName = await avoidDuplicatedProjectName(projectName, suffixNumber);
+    logger.warn(projectName, "is already used. so this project is renamed to", newName);
+    projectName = newName;
   }
   const newProjectRootDir = path.resolve(path.dirname(projectRootDir), projectName + suffix);
 
@@ -201,16 +215,26 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
     try {
       await fs.move(projectRootDir, newProjectRootDir);
     } catch (e) {
-      logger.error("directory creation failed", e);
+      logger.error("directory move failed", e);
       cb(false);
       return;
     }
 
     try {
       projectJson.root = newProjectRootDir;
+      projectJson.name = projectName;
       await fs.writeJson(path.resolve(newProjectRootDir, projectJsonFilename), projectJson);
     } catch (e) {
       logger.error("rewrite project JSON failed", e);
+      cb(false);
+      return;
+    }
+
+    try {
+      rootWF.name = projectName;
+      await fs.writeJson(path.resolve(newProjectRootDir, componentJsonFilename), rootWF);
+    } catch (e) {
+      logger.error("rewrite root WF JSON failed", e);
       cb(false);
       return;
     }
@@ -224,6 +248,8 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
       cb(false);
       return;
     }
+  } else {
+    //gitAdd
   }
   projectList.unshift({ path: newProjectRootDir });
   await sendProjectListIfExists(emit, cb);
@@ -263,11 +289,12 @@ async function onRenameProject(emit, msg, cb) {
 
   const newName = msg.newName;
 
-  if (!await isValidProjectName(newName)) {
-    logger.error("invalid project name", newName);
+  if (!isValidName(newName)) {
+    logger.error(newName, "is not allowed for project name");
     cb(false);
     return;
   }
+  //TODO call isDuplicate separately
 
   const oldDir = msg.path;
   const newDir = path.resolve(path.dirname(oldDir), newName + suffix);

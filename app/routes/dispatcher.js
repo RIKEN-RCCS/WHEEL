@@ -50,7 +50,7 @@ function whileGetNextIndex(component) {
 }
 
 async function whileIsFinished(cwfDir, logger, component) {
-  const cwd = path.resolve(cwfDir, component.path);
+  const cwd = path.resolve(cwfDir, component.name);
   const condition = await evalCondition(component.condition, cwd, component.currentIndex, logger);
   return !condition;
 }
@@ -58,15 +58,15 @@ async function whileIsFinished(cwfDir, logger, component) {
 function foreachGetNextIndex(component) {
   if (component.hasOwnProperty("currentIndex")) {
     const i = component.indexList.findIndex((e)=>{
-      return e.label === component.currentIndex;
+      return e === component.currentIndex;
     });
 
     if (i === -1 || i === component.indexList.length - 1) {
       return null;
     }
-    return component.indexList[i + 1].label;
+    return component.indexList[i + 1];
   }
-  return component.indexList[0].label;
+  return component.indexList[0];
 }
 
 function foreachIsFinished(component) {
@@ -75,7 +75,6 @@ function foreachIsFinished(component) {
 
 function loopInitialize(component) {
   component.initialized = true;
-  component.originalPath = component.path;
   component.originalName = component.name;
 }
 
@@ -85,6 +84,7 @@ function loopInitialize(component) {
  */
 async function evalCondition(condition, cwd, currentIndex, logger) {
   return new Promise(async(resolve, reject)=>{
+    //condition is always string for now. but keep following just in case
     if (typeof condition === "boolean") {
       resolve(condition);
     }
@@ -117,7 +117,7 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
       });
     } else {
       logger.debug("evalute ", condition);
-      let conditionExpression;
+      let conditionExpression = "";
 
       if (typeof currentIndex === "number") {
         conditionExpression += `var WHEEL_CURRENT_INDEX=${currentIndex};`;
@@ -210,8 +210,14 @@ class Dispatcher extends EventEmitter {
     }
 
     //remove duplicated entry
-    const tmp = new Set(this.nextSearchList);
-    this.currentSearchList = Array.from(tmp.values());
+    const nextIDs = Array.from(new Set(this.nextSearchList.map((e)=>{
+      return e.ID;
+    })));
+    this.currentSearchList = nextIDs.map((id)=>{
+      return this.nextSearchList.find((e)=>{
+        return e.ID === id;
+      });
+    });
     this.nextSearchList = [];
 
     if (this._isFinished()) {
@@ -341,9 +347,9 @@ class Dispatcher extends EventEmitter {
 
   async _checkIf(component) {
     this.logger.debug("_checkIf called", component.name);
-    const cwd = path.resolve(this.cwfDir, component.path);
-    //TODO read Json and get currentIndex
-    const condition = await evalCondition(component.condition, cwd, this.wf.currentIndex, this.logger);
+    const childDir = path.resolve(this.cwfDir, component.name);
+    const currentIndex = this.cwfJson.hasOwnProperty("currentIndex") ? this.cwfJson.currentIndex : null;
+    const condition = await evalCondition(component.condition, childDir, currentIndex, this.logger);
     await this._addNextComponent(component, !condition);
     await this._setComponentState(component, "finished");
   }
@@ -369,16 +375,16 @@ class Dispatcher extends EventEmitter {
   }
 
   async _loopFinalize(component, lastDir) {
-    const dstDir = path.resolve(this.cwfDir, component.originalPath);
+    const dstDir = path.resolve(this.cwfDir, component.originalName);
 
     if (lastDir !== dstDir) {
       this.logger.debug("copy ", lastDir, "to", dstDir);
       await fs.copy(lastDir, dstDir);
     }
+    this.logger.debug("loop finished", component.name);
     delete component.initialized;
     delete component.currentIndex;
     component.name = component.originalName;
-    component.path = component.originalPath;
     await this._addNextComponent(component);
     component.state = component.hasFaild ? "failed" : "finished";
   }
@@ -386,7 +392,7 @@ class Dispatcher extends EventEmitter {
   async _loopHandler(getNextIndex, isFinished, component) {
     if (component.childLoopRunning) {
       //send back itself to searchList for next loop trip
-      this.nextSearchList.push(component.index);
+      this.nextSearchList.push(component);
       return Promise.resolve();
     }
     this.logger.debug("_loopHandler called", component.name);
@@ -397,7 +403,7 @@ class Dispatcher extends EventEmitter {
     }
 
     //determine old loop block directory
-    let srcDir = component.hasOwnProperty("currentIndex") ? component.path : `${component.originalPath}_${component.currentIndex}`;
+    let srcDir = component.hasOwnProperty("currentIndex") ? `${component.originalName}_${component.currentIndex}` : component.name;
     srcDir = path.resolve(this.cwfDir, srcDir);
 
     //update index variable(component.currentIndex)
@@ -410,19 +416,15 @@ class Dispatcher extends EventEmitter {
     }
 
     //send back itself to searchList for next loop trip
-    this.nextSearchList.push(component.index);
+    this.nextSearchList.push(component);
 
     const newComponent = Object.assign({}, component);
     newComponent.name = `${component.originalName}_${component.currentIndex}`;
-    newComponent.path = newComponent.name;
     const dstDir = path.resolve(this.cwfDir, newComponent.name);
 
     try {
       await fs.copy(srcDir, dstDir); //fs-extra's copy overwrites dst by default
-      const childWF = await this._readChild(component);
-      childWF.name = newComponent.name;
-      childWF.path = newComponent.path;
-      await fs.writeJson(path.resolve(dstDir, newComponent.jsonFile), childWF, { spaces: 4 });
+      await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4 });
       await this._delegate(newComponent);
 
       if (newComponent.state === "failed") {
@@ -433,8 +435,10 @@ class Dispatcher extends EventEmitter {
       this.logger.warn("fatal error occurred during loop child dispatching.", e);
       return Promise.reject(e);
     }
-    this.logger.debug("loop finished at index =", component.currentIndex);
-    component.childLoopRunning = false;
+    if (component.childLoopRunning) {
+      this.logger.debug("finished for index =", component.currentIndex);
+      component.childLoopRunning = false;
+    }
     return Promise.resolve();
   }
 

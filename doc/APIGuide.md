@@ -438,6 +438,8 @@ linkデータの形式はaddLink APIと同じ
 - @param {string} dstName - 受取ノードでの名前
 
 ファイル間の依存関係を追加します。
+親階層とのファイル依存関係であれば、srcNode, dstNodeにはIDの代わりに"parent"という文字列を指定することもできます。
+
 
 #### removeFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]
 - @param {string} srcNode - 送信ノードのID
@@ -446,6 +448,7 @@ linkデータの形式はaddLink APIと同じ
 - @param {string} dstName - 受取ノードでの名前
 
 ファイル間の依存関係を削除します。
+親階層とのファイル依存関係であれば、srcNode, dstNodeにはIDの代わりに"parent"という文字列を指定することもできます。
 
 #### getHostList(cb)
 ホスト情報一覧をリクエストします。
