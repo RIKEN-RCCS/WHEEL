@@ -196,7 +196,7 @@ export class SvgCable {
 }
 
 class SvgBox {
-  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host) {
+  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler) {
     this.draw = svg;
     this.type = type.toLowerCase();
 
@@ -218,7 +218,7 @@ class SvgBox {
     this.height = bodyHeight + titleHeight;
 
     const title = this.createTitle(name);
-    const iconImage = this.createIconImage(type, host);
+    const iconImage = this.createIconImage(type, host, useJobScheduler);
     const taskState = this.createState(type, state, numTotal, numFinished, numFailed);
 
     //子コンポーネントの表示
@@ -388,10 +388,22 @@ class SvgBox {
  * create workflow component icon
  * @return icon
  */
-  createIconImage(type, host) {
+  createIconImage(type, host, useJobScheduler) {
     //左隅に作成
-    if (type === "task" && host !== "localhost") {
-      type = 'remotetask'
+    if (type === "task") {
+      if (host === "localhost") {
+        if (useJobScheduler === true) {
+          type = 'taskAndUsejobscheluler';
+        } else {
+          type = 'task';
+        }
+      } else {
+        if (useJobScheduler === true) {
+          type = 'remotetaskAndUsejobscheluler';
+        } else {
+          type = 'remotetask';
+        }
+      }
     }
     const statePosX = 8;
     const statePosY = 0;
@@ -769,8 +781,8 @@ export function createUpper(svg, originX, originY, offsetX, offsetY) {
   return plug;
 }
 
-export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host) {
-  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host);
+export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler) {
+  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler);
   return [box.box, box.textHeight];
 }
 
