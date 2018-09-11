@@ -151,7 +151,8 @@ class Dispatcher extends EventEmitter {
     this.nextSearchList = [];
     this.children = new Set(); //child dispatcher instance
     this.runningTasks = [];
-    this.hasFailedTask = false;
+    this.hasFailedComponent = false;
+    this.hasUnknownComponent = false;
     this.isInitialized = this._asyncInit();
   }
 
@@ -198,6 +199,7 @@ class Dispatcher extends EventEmitter {
         this._cmdFactory(target.type).call(this, target)
           .catch(async(err)=>{
             await this._setComponentState(target, "failed");
+            this.hasFailedComponent = true;
             return Promise.reject(err);
           })
       );
@@ -222,7 +224,14 @@ class Dispatcher extends EventEmitter {
 
     if (this._isFinished()) {
       this.removeListener("dispatch", this._dispatch);
-      this.emit("done", this.hasFailedTask);
+      let state = "finished";
+      if (this.hasUnknownComponent) {
+        state = "unknown";
+      }
+      if (this.hasFailedComponent) {
+        state = "failed";
+      }
+      this.emit("done", state);
     } else {
       //call next dispatcher
       setTimeout(()=>{
@@ -233,6 +242,12 @@ class Dispatcher extends EventEmitter {
 
   _isFinished() {
     this.runningTasks = this.runningTasks.filter((task)=>{
+      if (task.state === "unknown") {
+        this.hasUnknownComponent = true;
+      }
+      if (task.state === "faild") {
+        this.hasFailedComponent = true;
+      }
       return !isFinishedState(task.state);
     });
     return this.currentSearchList.length === 0 && this.nextSearchList.length === 0 && this.runningTasks.length === 0;
@@ -258,10 +273,9 @@ class Dispatcher extends EventEmitter {
         this.removeListener("stop", onStop);
       };
 
-      const onDone = (isSuccess)=>{
+      const onDone = (state)=>{
         onStop();
-        const projectState = isSuccess ? "finished" : "failed";
-        resolve(projectState);
+        resolve(state);
       };
 
       const onError = (err)=>{
@@ -324,7 +338,6 @@ class Dispatcher extends EventEmitter {
     task.projectStartTime = this.projectStartTime;
     task.projectRootDir = this.projectRootDir;
     task.workingDir = path.resolve(this.cwfDir, task.name);
-    task.jsonFilename = path.join(task.workingDir, componentJsonFilename);
 
     if (task.cleanupFlag === "2") {
       task.doCleanup = this.doCleanup;

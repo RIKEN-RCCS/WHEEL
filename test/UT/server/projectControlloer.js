@@ -88,13 +88,19 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -130,25 +136,31 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -189,25 +201,31 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task0", "a")).to.be.a.file().with.contents("a");
@@ -236,13 +254,19 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "workflow0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -309,37 +333,43 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "parentTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "parentTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "wf0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "wf0", "childTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "wf0", "childTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
 
@@ -390,43 +420,55 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "not-started"
+            state: {enum: ["not-started"]}
           }
         });
         expect(path.resolve(projectRootDir, "if0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "if1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "if2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "if3", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -459,37 +501,43 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -518,31 +566,37 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "while0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "while0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "while0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "while0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -575,43 +629,49 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "foreach0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_foo", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_bar", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_baz", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_fizz", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -678,49 +738,55 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "parentTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "parentTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -765,31 +831,37 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "PS0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
@@ -825,49 +897,55 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0","for1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_0","for1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_0","for1_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_0","for1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_1","for1_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
         expect(path.resolve(projectRootDir, "for0_1","for1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            status: "finished"
+            state: {enum: ["finished"]}
           }
         });
       });
