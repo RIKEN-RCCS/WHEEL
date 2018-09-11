@@ -78,8 +78,8 @@ async function onRemoveFile(emit, label, target, cb) {
   }
 
   try {
-    await fs.remove(target, { force: true });
     await gitRm(label, target);
+    await fs.remove(target, { force: true });
   } catch (err) {
     logger.warn(`removeFile failed: ${err}`);
     cb(false);
