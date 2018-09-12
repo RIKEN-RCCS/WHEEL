@@ -499,7 +499,24 @@ class SvgBox {
         if (node === null) return;
         nodePosYArray.push(node.pos.y);
         const nodeColor = config.node_color[node.type];
-        const nodeIconPath = config.node_icon[node.type];
+        let nodetype = node.type
+        if (nodetype === "task") {
+          if (node.host === "localhost") {
+            if (node.useJobScheduler === true) {
+              nodetype = 'taskAndUsejobscheluler';
+            } else {
+              nodetype = 'task';
+            }
+          } else {
+            if (node.useJobScheduler === true) {
+              nodetype = 'remotetaskAndUsejobscheluler';
+            } else {
+              nodetype = 'remotetask';
+            }
+          }
+        }
+        const nodeIconPath = config.node_icon[nodetype];
+        console.log(nodetype);
         const nodePosX = node.pos.x / 5;
         const nodePosY = node.pos.y / 5;
         const correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
