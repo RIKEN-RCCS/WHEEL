@@ -29,7 +29,7 @@ const onAddInputFile = workflowEditor.__get__("onAddInputFile");
 const onAddOutputFile = workflowEditor.__get__("onAddOutputFile");
 const onAddLink = workflowEditor.__get__("onAddLink");
 const onAddFileLink = workflowEditor.__get__("onAddFileLink");
-const { openProject, setCwd} = require("../../../app/routes/projectResource");
+const { openProject, setCwd } = require("../../../app/routes/projectResource");
 
 //stubs
 const emit = sinon.stub();
@@ -39,10 +39,10 @@ const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, 
 //never change dummyLogger !!
 //because dummyLogger is used in this test assertions
 //if you need to check log output, assign console.log to each member of dummyLogger as follows
-// dummyLogger.error=console.log;
-// dummyLogger.warn=console.log;
-// dummyLogger.info=console.log;
-// dummyLogger.debug=console.log;
+//dummyLogger.error=console.log;
+//dummyLogger.warn=console.log;
+//dummyLogger.info=console.log;
+//dummyLogger.debug=console.log;
 projectController.__set__("logger", dummyLogger);
 home.__set__("logger", dummyLogger);
 workflowEditor.__set__("logger", dummyLogger);
@@ -54,7 +54,7 @@ sio.emit = sinon.stub();
 //
 describe("project Controller UT", function() {
   this.timeout(0);
-  beforeEach(async function () {
+  beforeEach(async()=>{
     await fs.remove(testDirRoot);
     emit.reset();
     cb.reset();
@@ -66,17 +66,17 @@ describe("project Controller UT", function() {
     await createNewProject(projectRootDir, "testProject");
     await openProject(projectRootDir);
   });
-  after(async function (){
+  after(async()=>{
     await fs.remove(testDirRoot);
   });
-  describe("#onRunProject", function (){
-    describe("one local task", function (){
-      beforeEach(async function (){
+  describe("#onRunProject", ()=>{
+    describe("one local task", ()=>{
+      beforeEach(async()=>{
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
         await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
@@ -88,25 +88,25 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("3 local tasks with execution order dependency", function (){
-      beforeEach(async function (){
+    describe("3 local tasks with execution order dependency", ()=>{
+      beforeEach(async()=>{
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task2 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
@@ -119,7 +119,7 @@ describe("project Controller UT", function() {
         await onAddLink(emit, projectRootDir, { src: task0.ID, dst: task1.ID, isElse: false });
         await onAddLink(emit, projectRootDir, { src: task1.ID, dst: task2.ID, isElse: false });
       });
-      it("should run project and successfully finish", async function (){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
@@ -136,37 +136,37 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("3 local tasks with file dependency", function (){
-      beforeEach(async function (){
+    describe("3 local tasks with file dependency", ()=>{
+      beforeEach(async()=>{
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task2 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
@@ -184,7 +184,7 @@ describe("project Controller UT", function() {
         await onAddFileLink(emit, projectRootDir, task0.ID, "a", task1.ID, "b");
         await onAddFileLink(emit, projectRootDir, task1.ID, "b", task2.ID, "c");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
@@ -201,31 +201,31 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task0", "a")).to.be.a.file().with.contents("a");
@@ -233,64 +233,64 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, "task2", "c")).to.be.a.file().with.contents("a");
       });
     });
-    describe("task in the sub workflow", function (){
-      beforeEach(async function (){
-        const wf0= await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
+    describe("task in the sub workflow", ()=>{
+      beforeEach(async()=>{
+        const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
         setCwd(projectRootDir, path.join(projectRootDir, "workflow0"));
-        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "workflow0","task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "workflow0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
         const firstCall = dummyLogger.stdout.getCall(0);
-        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "workflow0","task0"));
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "workflow0", "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "workflow0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("file dependency between parent and child", function (){
-      beforeEach(async function(){
+    describe("file dependency between parent and child", ()=>{
+      beforeEach(async()=>{
         const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, wf0.ID, "name", "wf0");
         const parentTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const parentTask1= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const parentTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, parentTask0.ID, "name", "parentTask0");
         await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", "run.sh");
         await onUpdateNode(emit, projectRootDir, parentTask1.ID, "name", "parentTask1");
         await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", "run.sh");
 
         setCwd(projectRootDir, path.join(projectRootDir, "wf0"));
-        const childTask0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const childTask1= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const childTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const childTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, childTask0.ID, "name", "childTask0");
         await onUpdateNode(emit, projectRootDir, childTask0.ID, "script", "run.sh");
         await onUpdateNode(emit, projectRootDir, childTask1.ID, "name", "childTask1");
         await onUpdateNode(emit, projectRootDir, childTask1.ID, "script", "run.sh");
 
-        // add file dependency
+        //add file dependency
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
         await onAddOutputFile(emit, projectRootDir, parentTask0.ID, "a");
         await onAddInputFile(emit, projectRootDir, wf0.ID, "b");
@@ -307,13 +307,13 @@ describe("project Controller UT", function() {
         await onAddFileLink(emit, projectRootDir, childTask1.ID, "d", "parent", "e");
         await onAddFileLink(emit, projectRootDir, wf0.ID, "e", parentTask1.ID, "f");
 
-        // create script
+        //create script
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "run.sh"), "#!/bin/bash\npwd\n");
         await fs.outputFile(path.join(projectRootDir, "parentTask1", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "wf0","childTask0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "wf0","childTask1", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "wf0", "childTask0", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "wf0", "childTask1", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
@@ -321,9 +321,9 @@ describe("project Controller UT", function() {
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask0"));
         const secondCall = dummyLogger.stdout.getCall(1);
-        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "wf0","childTask0"));
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "wf0", "childTask0"));
         const thirdCall = dummyLogger.stdout.getCall(2);
-        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "wf0","childTask1"));
+        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "wf0", "childTask1"));
         const fourthCall = dummyLogger.stdout.getCall(3);
         expect(fourthCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask1"));
 
@@ -333,43 +333,43 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "parentTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "parentTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "wf0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "wf0", "childTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "wf0", "childTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
 
@@ -381,12 +381,12 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, "parentTask1", "f")).to.be.a.file().with.contents("a");
       });
     });
-    describe("If component", function(){
-      beforeEach(async function(){
-        const if0=await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
-        const if1=await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
-        const if2=await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
-        const if3=await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
+    describe("If component", ()=>{
+      beforeEach(async()=>{
+        const if0 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
+        const if1 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
+        const if2 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
+        const if3 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, if0.ID, "condition", "run.sh");
@@ -395,20 +395,20 @@ describe("project Controller UT", function() {
         await onUpdateNode(emit, projectRootDir, if3.ID, "condition", "(()=>{return false})()");
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
         await onUpdateNode(emit, projectRootDir, task1.ID, "script", "run.sh");
-        await onAddLink(emit, projectRootDir, {src: if0.ID, dst: task0.ID, isElse: false});
-        await onAddLink(emit, projectRootDir, {src: if0.ID, dst: task1.ID, isElse: true});
-        await onAddLink(emit, projectRootDir, {src: if1.ID, dst: task1.ID, isElse: false});
-        await onAddLink(emit, projectRootDir, {src: if1.ID, dst: task0.ID, isElse: true});
-        await onAddLink(emit, projectRootDir, {src: if2.ID, dst: task0.ID, isElse: false});
-        await onAddLink(emit, projectRootDir, {src: if2.ID, dst: task1.ID, isElse: true});
-        await onAddLink(emit, projectRootDir, {src: if3.ID, dst: task1.ID, isElse: false});
-        await onAddLink(emit, projectRootDir, {src: if3.ID, dst: task0.ID, isElse: true});
+        await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task0.ID, isElse: false });
+        await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task1.ID, isElse: true });
+        await onAddLink(emit, projectRootDir, { src: if1.ID, dst: task1.ID, isElse: false });
+        await onAddLink(emit, projectRootDir, { src: if1.ID, dst: task0.ID, isElse: true });
+        await onAddLink(emit, projectRootDir, { src: if2.ID, dst: task0.ID, isElse: false });
+        await onAddLink(emit, projectRootDir, { src: if2.ID, dst: task1.ID, isElse: true });
+        await onAddLink(emit, projectRootDir, { src: if3.ID, dst: task1.ID, isElse: false });
+        await onAddLink(emit, projectRootDir, { src: if3.ID, dst: task0.ID, isElse: true });
         await fs.outputFile(path.join(projectRootDir, "if0", "run.sh"), "#!/bin/bash\nexit 0\n");
         await fs.outputFile(path.join(projectRootDir, "if1", "run.sh"), "#!/bin/bash\nexit 1\n");
         await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
         await fs.outputFile(path.join(projectRootDir, "task1", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
@@ -420,267 +420,267 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["not-started"]}
+            state: { enum: ["not-started"] }
           }
         });
         expect(path.resolve(projectRootDir, "if0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "if1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "if2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "if3", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("task in a For component", function (){
-      beforeEach(async function (){
-        const for0= await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
+    describe("task in a For component", ()=>{
+      beforeEach(async()=>{
+        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
         await onUpdateNode(emit, projectRootDir, for0.ID, "end", 2);
         await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
         setCwd(projectRootDir, path.join(projectRootDir, "for0"));
-        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "for0","task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "for0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         const firstCall = dummyLogger.stdout.getCall(0);
-        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0","task0"));
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "task0"));
         const secondCall = dummyLogger.stdout.getCall(1);
-        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1","task0"));
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1", "task0"));
         const thirdCall = dummyLogger.stdout.getCall(2);
-        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_2","task0"));
+        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_2", "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("task in a While component", function (){
-      beforeEach(async function (){
-        const while0= await onCreateNode(emit, projectRootDir, { type: "while", pos: { x: 10, y: 10 } });
+    describe("task in a While component", ()=>{
+      beforeEach(async()=>{
+        const while0 = await onCreateNode(emit, projectRootDir, { type: "while", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
         setCwd(projectRootDir, path.join(projectRootDir, "while0"));
-        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "while0","task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "while0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
-        expect(dummyLogger.stdout).to.have.been.calledTwice
+        expect(dummyLogger.stdout).to.have.been.calledTwice;
         const firstCall = dummyLogger.stdout.getCall(0);
-        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "while0_0","task0"));
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "while0_0", "task0"));
         const secondCall = dummyLogger.stdout.getCall(1);
-        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "while0_1","task0"));
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "while0_1", "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "while0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "while0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "while0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "while0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("task in a Foreach component", function (){
-      beforeEach(async function (){
-        const foreach0= await onCreateNode(emit, projectRootDir, { type: "foreach", pos: { x: 10, y: 10 } });
+    describe("task in a Foreach component", ()=>{
+      beforeEach(async()=>{
+        const foreach0 = await onCreateNode(emit, projectRootDir, { type: "foreach", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, foreach0.ID, "indexList", ["foo", "bar", "baz", "fizz"]);
         setCwd(projectRootDir, path.join(projectRootDir, "foreach0"));
-        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "foreach0","task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "foreach0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout.callCount).to.equal(4);
         const firstCall = dummyLogger.stdout.getCall(0);
-        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_foo","task0"));
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_foo", "task0"));
         const secondCall = dummyLogger.stdout.getCall(1);
-        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_bar","task0"));
+        expect(secondCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_bar", "task0"));
         const thirdCall = dummyLogger.stdout.getCall(2);
-        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_baz","task0"));
+        expect(thirdCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_baz", "task0"));
         const fourthCall = dummyLogger.stdout.getCall(3);
-        expect(fourthCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_fizz","task0"));
+        expect(fourthCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_fizz", "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "foreach0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_foo", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_bar", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_baz", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "foreach0_fizz", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("file dependency between task in the For component", function (){
-      beforeEach(async function (){
-        const for0= await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
-        const parentTask0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const parentTask1= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+    describe("file dependency between task in the For component", ()=>{
+      beforeEach(async()=>{
+        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
+        const parentTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const parentTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
         await onUpdateNode(emit, projectRootDir, for0.ID, "end", 2);
         await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
@@ -697,7 +697,7 @@ describe("project Controller UT", function() {
         await onAddFileLink(emit, projectRootDir, for0.ID, "e", parentTask1.ID, "f");
 
         setCwd(projectRootDir, path.join(projectRootDir, "for0"));
-        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
         await onAddInputFile(emit, projectRootDir, task0.ID, "c");
         await onAddOutputFile(emit, projectRootDir, task0.ID, "d");
@@ -709,21 +709,21 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "parentTask1", "run.sh"), "#!/bin/bash\npwd\n");
         await fs.outputFile(path.join(projectRootDir, "for0", "task0", "run.sh"), "#!/bin/bash\npwd\necho -n $WHEEL_CURRENT_INDEX > d\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout.callCount).to.equal(5);
         expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask0"));
-        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0","task0"));
-        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1","task0"));
-        expect(dummyLogger.stdout.getCall(3)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_2","task0"));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "task0"));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1", "task0"));
+        expect(dummyLogger.stdout.getCall(3)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_2", "task0"));
         expect(dummyLogger.stdout.getCall(4)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask1"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
-        expect(path.resolve(projectRootDir, "parentTask0","a")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0","b")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "parentTask0", "a")).to.be.a.file().with.content("a");
+        expect(path.resolve(projectRootDir, "for0", "b")).not.to.be.a.path();
         expect(path.resolve(projectRootDir, "for0", "task0", "c")).to.be.a.file().with.content("a");
         expect(path.resolve(projectRootDir, "for0", "task0", "d")).to.be.a.file().with.content("2");
         expect(path.resolve(projectRootDir, "for0_0", "task0", "c")).to.be.a.file().with.content("a");
@@ -732,220 +732,220 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, "for0_1", "task0", "d")).to.be.a.file().with.content("1");
         expect(path.resolve(projectRootDir, "for0_2", "task0", "c")).to.be.a.file().with.content("a");
         expect(path.resolve(projectRootDir, "for0_2", "task0", "d")).to.be.a.file().with.content("2");
-        expect(path.resolve(projectRootDir, "for0","e")).not.to.be.a.path();
-        expect(path.resolve(projectRootDir, "parentTask1","f")).to.be.a.file().with.content("2");
+        expect(path.resolve(projectRootDir, "for0", "e")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "parentTask1", "f")).to.be.a.file().with.content("2");
 
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "parentTask0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "parentTask1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("task in PS", function(){
-      beforeEach(async function(){
+    describe("task in PS", ()=>{
+      beforeEach(async()=>{
         const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
         await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
         const parameterSetting = {
-          "target_file": "input.txt",
-          "target_param": [
+          target_file: "input.txt",
+          target_param: [
             {
-              "target": "hoge",
-              "keyword": "KEYWORD1",
-              "type": "integer",
-              "min": "1",
-              "max": "3",
-              "step": "1",
-              "list": ""
+              target: "hoge",
+              keyword: "KEYWORD1",
+              type: "integer",
+              min: "1",
+              max: "3",
+              step: "1",
+              list: ""
             }
           ]
-        }
-        await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, {spaces: 4});
+        };
+        await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
 
         setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
-        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "PS0", "task0","run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
-        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","task0"));
-        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","task0"));
-        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","task0"));
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "PS0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });
     });
-    describe("task in nested loop", function(){
-      beforeEach(async function (){
-        const for0= await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
+    describe("task in nested loop", ()=>{
+      beforeEach(async()=>{
+        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
         await onUpdateNode(emit, projectRootDir, for0.ID, "end", 1);
         await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
 
         setCwd(projectRootDir, path.join(projectRootDir, "for0"));
-        const for1= await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
+        const for1 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, for1.ID, "name", "for1");
         await onUpdateNode(emit, projectRootDir, for1.ID, "start", 0);
         await onUpdateNode(emit, projectRootDir, for1.ID, "end", 1);
         await onUpdateNode(emit, projectRootDir, for1.ID, "step", 1);
 
         setCwd(projectRootDir, path.join(projectRootDir, "for0", "for1"));
-        const task0= await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "for0", "for1","task0","run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "for0", "for1", "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should run project and successfully finish", async function(){
+      it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout.callCount).to.equal(4);
-        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "for1_0","task0"));
-        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "for1_1","task0"));
-        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1", "for1_0","task0"));
-        expect(dummyLogger.stdout.getCall(3)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1", "for1_1","task0"));
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "for1_0", "task0"));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "for1_1", "task0"));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1", "for1_0", "task0"));
+        expect(dummyLogger.stdout.getCall(3)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_1", "for1_1", "task0"));
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
         expect(path.resolve(projectRootDir, "for0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
-        expect(path.resolve(projectRootDir, "for0","for1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        expect(path.resolve(projectRootDir, "for0", "for1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
-        expect(path.resolve(projectRootDir, "for0_0","for1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        expect(path.resolve(projectRootDir, "for0_0", "for1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
-        expect(path.resolve(projectRootDir, "for0_0","for1_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        expect(path.resolve(projectRootDir, "for0_0", "for1_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
-        expect(path.resolve(projectRootDir, "for0_0","for1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        expect(path.resolve(projectRootDir, "for0_0", "for1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
-        expect(path.resolve(projectRootDir, "for0_1","for1_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        expect(path.resolve(projectRootDir, "for0_1", "for1_0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
-        expect(path.resolve(projectRootDir, "for0_1","for1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        expect(path.resolve(projectRootDir, "for0_1", "for1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
-            state: {enum: ["finished"]}
+            state: { enum: ["finished"] }
           }
         });
       });

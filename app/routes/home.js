@@ -13,6 +13,8 @@ const { getDateString, escapeRegExp, isValidName, readJsonGreedy, convertPathSep
 //eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
 
+const oldProjectJsonFilename = "swf.prj.json";
+
 //const noWheelDir = new RegExp(`^(?!^.*${escapeRegExp(suffix)}$).*$`);
 
 async function isDuplicateProjectName(newName) {
@@ -52,6 +54,7 @@ async function createNewProject(root, name, description) {
   //write project JSON
   const timestamp = getDateString(true);
   const projectJson = {
+    version: 2,
     name,
     description,
     state: "not-started",
@@ -95,7 +98,7 @@ async function adaptorSendFiles(withFile, emit, msg, cb) {
       sendFilename: withFile,
       filter: {
         all: noDotFiles,
-        file: new RegExp(`^.*(?:${escapeRegExp(projectJsonFilename)}|swf\\.prj\\.json)$`),
+        file: new RegExp(`^.*(?:${escapeRegExp(projectJsonFilename)}|${escapeRegExp(oldProjectJsonFilename)})$`),
         dir: null
       },
       withParentDir: true
@@ -168,12 +171,40 @@ async function onAddProject(emit, projectDir, description, cb) {
   await sendProjectListIfExists(emit, cb);
 }
 
+async function convertProjectFormat(projectJsonFilepath) {
+  const projectRoot = path.dirname(projectJsonFilepath);
+  //read project json file
+  //convert project json file
+  //write project json file
+  //
+  //read root workflow
+  //convert and write root workflow and its children
+  //recursive call for wf, ps, for, while, foreach
+}
+
 async function onImportProject(emit, projectJsonFilepath, cb) {
   logger.debug("import: ", projectJsonFilepath);
+  projectJsonFilepath = convertPathSep(projectJsonFilepath);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+  //TODO projectJsonFilepathが古い名前だったら、データ形式の変換を行う
+  const reOldProjectJsonFilename = new RegExp(escapeRegExp(oldProjectJsonFilename));
+
+  if (reOldProjectJsonFilename.test(projectJsonFilepath)) {
+    logger.debug("converting old format project");
+
+    try {
+      await convertProjectFormat(projectJsonFilepath);
+    } catch (e) {
+      logger.error("fatal error occurred while converting old format project", e);
+      cb(false);
+      return;
+    }
+  }
+
+
   let projectJson;
   try {
     projectJson = await readJsonGreedy(projectJsonFilepath);

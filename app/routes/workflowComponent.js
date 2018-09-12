@@ -60,6 +60,7 @@ class BaseWorkflowComponent {
      *  - 'stage-out'  (task only) transfering files from  remote host
      *  - 'finished'   finished
      *  - 'failed'     error occurred before task finish
+     *  - 'unknown'    failed to check status (e.g. qstat command failed)
      */
     this.state = "not-started";
 

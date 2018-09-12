@@ -38,12 +38,13 @@ root          | projectRootディレクトリの絶対パス
 ctime         | プロジェクト作成日時
 mtime         | 最終更新時刻
 componentPath | プロジェクトに含まれる全コンポーネントのIDとprojectRootからの相対パス
+version       | データフォーマットのバージョン番号(最新は2)
 
 プロジェクトには、プログラム実行などの個々の処理を表す複数のworkflowComponentが含まれています。
 workflowComponentの詳細は後のクラス構造の章で述べます。
 
 個々のworkflowComponentの実体は、projectRoot以下のディレクトリで
-コンポーネントの属性値などは当該ディレクトリ内に"define.wheel.json"という名前のJSONファイルとして
+コンポーネントの属性値などは当該ディレクトリ内に"cmp.wheel.json"という名前のJSONファイルとして
 保存されます。なお、projectRootディレクトリ自体は必ずworkflowコンポーネントとなっており、
 プロジェクト内の全てのコンポーネントはrootのワークフローの子孫コンポーネントとなります。
 
