@@ -160,13 +160,22 @@ export default class {
         const iconClass = data.type === 'dir' ? 'fa-folder-o' : 'fa-file-o';
         let iconImg;
         if (iconClass === 'fa-folder-o') {
-          iconImg = `<img src="/image/img_folder.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
+          if (data.islink === false) {
+            iconImg = `<img src="/image/img_folder.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
+          } else {
+            iconImg = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
+          }
         } else {
-          iconImg = `<img src="/image/img_file.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+          if (data.islink === false) {
+            iconImg = `<img src="/image/img_file.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+          } else {
+            iconImg = `<img src="/image/img_filelink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+          }
         }
-        const normalIcon = iconImg;
-        const symlinkIcon = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"alt="graph">`;
-        let icon = data.islink ? symlinkIcon : normalIcon;
+        // const normalIcon = iconImg;
+        // const symlinkIcon = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"alt="graph">`;
+        // let icon = data.islink ? symlinkIcon : normalIcon;
+        let icon = iconImg;
         var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" class=${data.type}>${icon}${data.name}</li>`);
         var compare = this.compare;
         var lengthBefore = $(`${this.idFileList} li`).length;
@@ -224,7 +233,6 @@ export default class {
   changeColorsWhenSelected() {
     $(`${this.idFileList} li`).css('background-color', this.defaultColor);
     $(event.target).css('background-color', this.selectedItemColor);
-    console.log(event.target);
   }
   isValidPath(path1, path2) {
     var path1 = path1.replace(/\\/g, '/');

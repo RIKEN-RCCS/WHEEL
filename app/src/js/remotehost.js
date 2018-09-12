@@ -173,8 +173,8 @@ $(() => {
   function browseServerFiles() {
     const html = '<p id="path"></p><ul id=fileList></ul>';
     const dialogOptions = {
-      height: $(window).height() * 0.50,
-      width: $(window).width() * 0.50
+      height: $(window).height() * 0.90,
+      width: $(window).width() * 0.60
     };
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     dialogWrapper('#dialog', html, dialogOptions)

@@ -347,12 +347,31 @@ input::-webkit-input-placeholder {
 /* keyFile Browse Dialog */
 #dialog{
   color: #FFFFFF;
-  border: none;
-  margin-top: 4px;
-  padding-left: 5px;
-  display:none;
 }
 
+li {
+  list-style: none;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  word-wrap: break-word;
+}
+
+li:hover{
+  overflow: visible;
+  white-space: normal;
+}
+
+#fileList {
+  font-size: 14px;
+  margin: 0;
+  padding-left: 8px;
+}
+
+.filebrowseList {
+  vertical-align: middle;
+  margin: 1px;
+}
 /* Confirm Cancel Button Area */
 #confirmCancelButtonArea{
   padding: 34px 0 24px 0;
