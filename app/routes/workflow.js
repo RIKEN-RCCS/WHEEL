@@ -214,7 +214,7 @@ async function onWorkflowRequest(sio, label, argWorkflowFilename){
   await setCwf(label, workflowFilename);
   getProjectState(label);
   const projectState=getProjectState(label);
-  sendWorkflow(sio, label, isRunning(projectState));
+  await sendWorkflow(sio, label, isRunning(projectState));
 }
 
 async function onCreateNode(sio, label, msg){
@@ -225,7 +225,7 @@ async function onCreateNode(sio, label, msg){
 
   try{
     await write(label);
-    sendWorkflow(sio, label);
+    await sendWorkflow(sio, label);
   }catch(err){
     logger.error('node create failed', err);
   }
@@ -271,7 +271,7 @@ async function onUpdateNode(sio, label, msg){
     }
     try{
       await write(label)
-      sendWorkflow(sio, label);
+      await sendWorkflow(sio, label);
     }catch(err){
       logger.error('node update failed', err);
     }
@@ -298,7 +298,7 @@ async function onRemoveNode(sio, label, index){
       try{
         await fs.remove(dirName);
         await write(label);
-        sendWorkflow(sio, label);
+        await sendWorkflow(sio, label);
       }catch(err){
         logger.error('remove node failed: ', err);
       }
@@ -309,8 +309,8 @@ async function onAddLink(sio, label, msg){
   logger.debug('addLink event recieved: ', msg);
   addLink(label, msg.src, msg.dst, msg.isElse);
   try{
-    await write(label)
-      sendWorkflow(sio, label);
+    await write(label);
+    await sendWorkflow(sio, label);
   }catch(err){
     logger.error('add link failed: ', err);
   }
@@ -333,7 +333,7 @@ async function onAddFileLink(sio, label, msg){
   addFileLink(label, msg.src, msg.dst, msg.srcName, msg.dstName);
   try{
     await write(label);
-      sendWorkflow(sio, label);
+    await sendWorkflow(sio, label);
   }catch(err){
     logger.error('add filelink failed:', err);
   }
@@ -344,7 +344,7 @@ async function onRemoveFileLink(sio, label, msg){
   removeFileLink(label, msg.src, msg.dst, msg.srcName, msg.dstName);
   try{
     await write(label);
-      sendWorkflow(sio, label);
+    await sendWorkflow(sio, label);
   }catch(err){
     logger.error('remove file link failed:', err);
   }
@@ -384,18 +384,22 @@ async function onRunProject(sio, label){
   function onTaskStateChanged(){
     const tasks=getTaskStateList(label);
     sio.emit('taskStateList', tasks);
-    sendWorkflow(sio, label, true);
-    setTimeout(()=>{
-      once(label, 'taskStateChanged', onTaskStateChanged);
-    },interval);
+    sendWorkflow(sio, label, true)
+      .then(()=>{
+        setTimeout(()=>{
+          once(label, 'taskStateChanged', onTaskStateChanged);
+        },interval);
+      });
   }
 
   // event listener for component state changed
   function onComponentStateChanged(){
-    sendWorkflow(sio, label, true);
-    setTimeout(()=>{
-      once(label, 'componentStateChanged', onComponentStateChanged);
-    }, interval);
+    sendWorkflow(sio, label, true)
+      .then(()=>{
+        setTimeout(()=>{
+          once(label, 'componentStateChanged', onComponentStateChanged);
+        }, interval);
+      });
   }
 
   once(label, 'taskStateChanged', onTaskStateChanged);

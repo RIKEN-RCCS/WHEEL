@@ -767,7 +767,7 @@ $(() => {
     const html = '<p class="dialogTitle">New file name (ex. aaa.txt)</p><input type=text id="newFileName" class="dialogTextbox">'
     dialogWrapper('#dialog', html)
       .done(function () {
-        let newFileName = $('#newFileName').val();
+        let newFileName = $('#newFileName').val().trim();
         let newFilePath = fb.getRequestedPath() + "/" + newFileName;
         sio.emit('createNewFile', newFilePath, (result) => {
         });
@@ -778,7 +778,7 @@ $(() => {
     const html = '<p class="dialogTitle">New folder name</p><input id="newFolderName" type=text class="dialogTextbox">'
     dialogWrapper('#dialog', html)
       .done(function () {
-        let newFolderName = $('#newFolderName').val();
+        let newFolderName = $('#newFolderName').val().trim();
         let newFolderPath = fb.getRequestedPath() + "/" + newFolderName;
         sio.emit('createNewDir', newFolderPath, (result) => {
         });

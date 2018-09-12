@@ -56,7 +56,7 @@ function passToSSHerr(data){
 async function isFinished(JS, ssh, jobID){
   const statCmd=`${JS.stat} ${jobID}`;
   const output=[];
-  const rt = await ssh.exec(statCmd, {}, output, output);
+  let rt = await ssh.exec(statCmd, {}, output, output);
   if(rt !== 0){
     const error = new Error("job stat command failed!");
     error.cmd = statCmd;
@@ -69,8 +69,16 @@ async function isFinished(JS, ssh, jobID){
   if(! finished){
     const reFailedState  = new RegExp(JS.reFailedState, "m");
     finished=reFailedState.test(outputText);
+    const reReturnCode = new RegExp(JS.reReturnCode, "m");
+    const result  = reReturnCode.exec(outputText);
+    if(result === null || result[1] === null){
+      logger.warn("get return code failed, rt is overwrited");
+      logger.debug(result);
+      rt = -1;
+    }else{
+      rt = result[1];
+    }
   }
-  //note: following line will not be written anyware for now
   logger.debug('is',jobID,'finished', finished,'\n',outputText);
 
   return [finished, rt];
@@ -170,6 +178,7 @@ class Executer{
         task.startTime = getDateString(true);
         const rt = await this.exec(task)
           .catch((e)=>{
+            //TODO jobのsubmitに失敗した時は、maxJobの設定を減らして再投入するような機構を入れる?
             setTaskState(task, "failed");
             return Promise.reject(e);
           });
