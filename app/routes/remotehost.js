@@ -7,11 +7,11 @@ const { getLogger } = require("../logSettings");
 const logger = getLogger("remotehost");
 const fileBrowser = require("./fileBrowser");
 const { remoteHost, rootDir } = require("../db/db");
-const { createSshConfig } = require("./utility");
+const { createSshConfig, convertPathSep } = require("./utility");
 
 async function sendFileList(sio, request) {
   logger.debug(`current dir = ${request}`);
-  const target = request ? path.normalize(request) : rootDir || os.homedir() || "/";
+  const target = request ? path.normalize(convertPathSep(request)) : rootDir || os.homedir() || "/";
   const result = await fileBrowser(target, {
     request,
     withParentDir: true

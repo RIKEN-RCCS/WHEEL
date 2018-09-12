@@ -8,7 +8,7 @@ const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const fileBrowser = require("./fileBrowser");
 const { gitAdd, gitRm } = require("./gitOperator");
-const { getSystemFiles } = require("./utility");
+const { getSystemFiles, convertPathSep } = require("./utility");
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
   request = request || target;
@@ -26,6 +26,7 @@ async function sendDirectoryContents(emit, target, request, withSND = true, send
 }
 
 async function onGetFileList(uploader, emit, requestDir, cb) {
+  requestDir = convertPathSep(requestDir);
   logger.debug(`current dir = ${requestDir}`);
 
   if (typeof cb !== "function") {
@@ -50,6 +51,7 @@ async function onGetFileList(uploader, emit, requestDir, cb) {
 }
 
 async function onGetSNDContents(emit, requestDir, glob, isDir, cb) {
+  requestDir = convertPathSep(requestDir);
   logger.debug("getSNDContents event recieved:", requestDir, glob, isDir);
 
   if (typeof cb !== "function") {
@@ -76,8 +78,8 @@ async function onRemoveFile(emit, label, target, cb) {
   }
 
   try {
-    await fs.remove(target, { force: true });
     await gitRm(label, target);
+    await fs.remove(target, { force: true });
   } catch (err) {
     logger.warn(`removeFile failed: ${err}`);
     cb(false);

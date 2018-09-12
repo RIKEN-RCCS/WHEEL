@@ -4,7 +4,7 @@ const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
 const { getSsh, emitEvent } = require("./projectResource");
-const { remoteHost, jobScheduler } = require("../db/db");
+const { remoteHost, jobScheduler, componentJsonFilename } = require("../db/db");
 const { addX, replacePathsep, getDateString } = require("./utility");
 const { componentJsonReplacer } = require("./workflowUtil");
 const executers = [];
@@ -16,7 +16,7 @@ let logger; //logger is injected when exec() is called;
 async function setTaskState(task, state) {
   task.state = state;
   //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
-  await fs.writeJson(task.jsonFilename, task, { spaces: 4, replacer: componentJsonReplacer });
+  await fs.writeJson(path.resolve(task.workingDir, componentJsonFilename), task, { spaces: 4, replacer: componentJsonReplacer });
   emitEvent(task.label, "taskStateChanged");
 }
 

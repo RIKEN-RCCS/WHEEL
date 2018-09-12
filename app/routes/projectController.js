@@ -1,23 +1,41 @@
 "use strict";
+const { promisify } = require("util");
 const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR;
 const fs = require("fs-extra");
 const path = require("path");
 const ARsshClient = require("arssh2-client");
+const glob = require("glob");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const Dispatcher = require("./dispatcher");
 const { getDateString, createSshConfig, readJsonGreedy } = require("./utility");
 const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir } = require("./workflowUtil");
+const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
 const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, emitEvent, removeListener } = require("./projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
-const { isInitialNode, hasChild, getComponent } = require("./workflowUtil");
 const { killTask } = require("./taskUtil");
 
 async function getProjectState(projectRootDir) {
   const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
   return projectJson.state;
+}
+async function getState(projectRootDir) {
+  const componentJsonFiles = await promisify(glob)(path.join("**", componentJsonFilename), { cwd: projectRootDir });
+  const states = await Promise.all(componentJsonFiles.map(async(jsonFile)=>{
+    const component = await readJsonGreedy(path.resolve(projectRootDir, jsonFile));
+    return component.state;
+  }));
+  let projectState = "finished";
+  for (const state of states) {
+    if (state === "unknown") {
+      return "unknown";
+    }
+    if (state === "failed") {
+      projectState = "failed";
+    }
+  }
+  return projectState;
 }
 
 function cancelDispatchedTasks(projectRootDir) {
@@ -309,7 +327,11 @@ async function onRunProject(sio, projectRootDir, cb) {
       }, 30000);
     }
 
-    const projectLastState = await rootDispatcher.start();
+    rootWF.state = await rootDispatcher.start();
+    const filename = path.resolve(projectRootDir, componentJsonFilename);
+    await fs.writeJson(filename, rootWF, { spaces: 4, replacer: componentJsonReplacer });
+
+    const projectLastState = await getState(projectRootDir);
     await updateAndSendProjectJson(emit, projectRootDir, projectLastState);
 
     if (memMeasurement) {

@@ -9,7 +9,7 @@ const fileBrowser = require("./fileBrowser");
 const { gitAdd, gitCommit, gitInit } = require("./gitOperator");
 const ComponentFactory = require("./workflowComponent");
 const { projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
-const { getDateString, escapeRegExp, isValidName, readJsonGreedy } = require("./utility");
+const { getDateString, escapeRegExp, isValidName, readJsonGreedy, convertPathSep } = require("./utility");
 //eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
 
@@ -86,7 +86,7 @@ async function getAllProject() {
 }
 
 async function adaptorSendFiles(withFile, emit, msg, cb) {
-  const target = msg ? path.normalize(msg) : rootDir || os.homedir() || "/";
+  const target = msg ? path.normalize(convertPathSep(msg)) : rootDir || os.homedir() || "/";
   const request = msg || target;
 
   try {
@@ -95,7 +95,7 @@ async function adaptorSendFiles(withFile, emit, msg, cb) {
       sendFilename: withFile,
       filter: {
         all: noDotFiles,
-        file: new RegExp(`^.*${escapeRegExp(projectJsonFilename)}$`),
+        file: new RegExp(`^.*(?:${escapeRegExp(projectJsonFilename)}|swf\\.prj\\.json)$`),
         dir: null
       },
       withParentDir: true
