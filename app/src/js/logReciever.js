@@ -10,8 +10,8 @@ export default function (socket) {
     // initial enable log
     socket.on('logDBG', addDebugLog);
     socket.on('logINFO', addInfoLog);
-    socket.on('logWARN', addWarnLog);
-    socket.on('logERR', addErrLog);
+    socket.on('logWARN', addInfoLog);
+    socket.on('logERR', addInfoLog);
     socket.on('logStdout', addStdoutLog);
     socket.on('logStderr', addStderrLog);
     socket.on('logSSHout', addSSHoutLog);
@@ -59,12 +59,14 @@ export default function (socket) {
 
             case "enableSSHout":
                 receiveSSHoutLog = true;
+                $('#enableINFO').css('color', "#FFFFFF");
                 $('#logSSHoutLog').show();
                 $('#enableSSHout').css('border-bottom-color', "#88BB00");
                 break;
 
             case "enableSSHerr":
                 receiveSSHerrLog = true;
+                $('#enableINFO').css('color', "#FFFFFF");
                 $('#logSSHerrLog').show();
                 $('#enableSSHerr').css('border-bottom-color', "#88BB00");
                 break;
@@ -85,26 +87,6 @@ function addDebugLog(msg) {
 
 function addInfoLog(msg) {
     if (receiveINFOLog === false && firstRecieveFlag === false) {
-        $('#enableINFO').css('color', "red");
-    }
-    $('#logInfoLog').append(msg.toString() + '\n');
-    var target = $('#logInfoLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
-}
-
-function addWarnLog(msg) {
-    if (receiveINFOLog === false) {
-        $('#enableINFO').css('color', "red");
-    }
-    $('#logInfoLog').append(msg.toString() + '\n');
-    var target = $('#logInfoLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
-}
-
-function addErrLog(msg) {
-    if (receiveINFOLog === false) {
         $('#enableINFO').css('color', "red");
     }
     $('#logInfoLog').append(msg.toString() + '\n');
