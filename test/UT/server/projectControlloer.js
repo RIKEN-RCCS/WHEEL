@@ -867,6 +867,138 @@ describe("project Controller UT", function() {
         });
       });
     });
+    describe.skip"task in nested PS(does not work for now)", ()=>{
+      beforeEach(async()=>{
+        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+
+        setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
+        const ps1 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, ps1.ID, "name", "PS1");
+        await onUpdateNode(emit, projectRootDir, ps1.ID, "parameterFile", "input.txt.json");
+
+        setCwd(projectRootDir, path.join(projectRootDir, "PS0", "PS1"));
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "PS1", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+
+        await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "PS1", "input.txt"), "%%KEYWORD1%%");
+        const parameterSetting = {
+          target_file: "input.txt",
+          target_param: [
+            {
+              target: "hoge",
+              keyword: "KEYWORD1",
+              type: "integer",
+              min: "1",
+              max: "3",
+              step: "1",
+              list: ""
+            }
+          ]
+        };
+        await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
+        await fs.writeJson(path.join(projectRootDir, "PS0", "PS1", "input.txt.json"), parameterSetting, { spaces: 4 });
+      });
+      it("should run project and successfully finish", async()=>{
+        await onRunProject(sio, projectRootDir, cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(dummyLogger.stdout.callCount).to.equal(9)
+        // expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_1", "task0"));
+        // expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_2", "task0"));
+        // expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_3", "task0"));
+        // expect(dummyLogger.stdout.getCall(3)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_1", "task0"));
+        // expect(dummyLogger.stdout.getCall(4)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_2", "task0"));
+        // expect(dummyLogger.stdout.getCall(5)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_3", "task0"));
+        // expect(dummyLogger.stdout.getCall(6)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_1", "task0"));
+        // expect(dummyLogger.stdout.getCall(7)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_2", "task0"));
+        // expect(dummyLogger.stdout.getCall(8)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_3", "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0", "PS1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "PS1_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "PS1_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "PS1_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "PS1_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "PS1_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "PS1_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "PS1_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "PS1_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "PS1_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+
+      });
+    });
     describe("task in nested loop", ()=>{
       beforeEach(async()=>{
         const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
