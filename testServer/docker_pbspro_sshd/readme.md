@@ -21,7 +21,7 @@ you can submit any job  in the container
 > docker kill pbs
 ```
 
-## custmize
+## customize
 ### how to change pbsuser's password
 replace "hoge" in Dockerfile's line 12  ```echo "hoge"|passwd --stdin pbsuser``` to desired password
 
