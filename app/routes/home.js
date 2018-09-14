@@ -17,17 +17,19 @@ const oldProjectJsonFilename = "swf.prj.json";
 
 //const noWheelDir = new RegExp(`^(?!^.*${escapeRegExp(suffix)}$).*$`);
 
-async function isDuplicateProjectName(newName) {
-  const currentProjectList = await getAllProject();
+function isDuplicateProjectName(newName) {
+  const currentProjectList = projectList.getAll();
+  if(currentProjectList.length ===0)return false;
   const rt = currentProjectList.some((e)=>{
-    return e.name === newName;
+    const projectName = path.basename(e.path.slice(0, -suffix.length));
+    return projectName === newName;
   });
   return rt;
 }
 
-async function avoidDuplicatedProjectName(basename, argSuffix) {
+function avoidDuplicatedProjectName(basename, argSuffix) {
   let suffixNumber = argSuffix;
-  while (await isDuplicateProjectName(basename + suffixNumber)) {
+  while (isDuplicateProjectName(basename + suffixNumber)) {
     ++suffixNumber;
   }
   return basename + suffixNumber;
@@ -140,7 +142,7 @@ async function onAddProject(emit, projectDir, description, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  let projectRootDir = removeTrailingPathSep(projectDir);
+  let projectRootDir = path.normalize(removeTrailingPathSep(convertPathSep(projectDir)));
 
   if (!projectRootDir.endsWith(suffix)) {
     projectRootDir += suffix;
@@ -154,7 +156,7 @@ async function onAddProject(emit, projectDir, description, cb) {
     cb(false);
     return;
   }
-  if (!await isDuplicateProjectName) {
+  if (isDuplicateProjectName(projectName)) {
     logger.error(projectName, "is already used");
     cb(false);
     return;
@@ -232,11 +234,11 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
     cb(false);
     return;
   }
-  if (await isDuplicateProjectName(projectName)) {
+  if (isDuplicateProjectName(projectName)) {
     const reResult = /.*(\d+)$/.exec(projectName);
     projectName = reResult === null ? projectName : projectName.slice(0, reResult.index);
     const suffixNumber = reResult === null ? 0 : reResult[1];
-    const newName = await avoidDuplicatedProjectName(projectName, suffixNumber);
+    const newName = avoidDuplicatedProjectName(projectName, suffixNumber);
     logger.warn(projectName, "is already used. so this project is renamed to", newName);
     projectName = newName;
   }
