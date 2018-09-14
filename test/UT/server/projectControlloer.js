@@ -39,10 +39,10 @@ const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, 
 //never change dummyLogger !!
 //because dummyLogger is used in this test assertions
 //if you need to check log output, assign console.log to each member of dummyLogger as follows
-//dummyLogger.error=console.log;
-//dummyLogger.warn=console.log;
-//dummyLogger.info=console.log;
-//dummyLogger.debug=console.log;
+// dummyLogger.error=console.log;
+// dummyLogger.warn=console.log;
+// dummyLogger.info=console.log;
+// dummyLogger.debug=console.log;
 projectController.__set__("logger", dummyLogger);
 home.__set__("logger", dummyLogger);
 workflowEditor.__set__("logger", dummyLogger);
@@ -98,9 +98,10 @@ describe("project Controller UT", function() {
           }
         });
         expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
-          required: ["state"],
+          required: ["state", "ancestorsName"],
           properties: {
-            state: { enum: ["finished"] }
+            state: { enum: ["finished"] },
+            ancestorsName: {enum: [""]}
           }
         });
       });
@@ -948,6 +949,71 @@ describe("project Controller UT", function() {
             state: { enum: ["finished"] }
           }
         });
+      });
+    });
+    describe("check ancestors prop in task component", ()=>{
+      beforeEach(async()=>{
+        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
+        await onUpdateNode(emit, projectRootDir, for0.ID, "end", 1);
+        await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
+
+        setCwd(projectRootDir, path.join(projectRootDir, "for0"));
+        const while0 = await onCreateNode(emit, projectRootDir, { type: "while", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
+
+        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0"));
+        const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
+
+        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0"));
+        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        await fs.outputFile(path.join(projectRootDir,"for0", "while0", "workflow0", "PS0", "input.txt"), "%%KEYWORD1%%");
+        const parameterSetting = {
+          target_file: "input.txt",
+          target_param: [
+            {
+              target: "hoge",
+              keyword: "KEYWORD1",
+              type: "integer",
+              min: "1",
+              max: "2",
+              step: "1",
+              list: ""
+            }
+          ]
+        };
+        await fs.writeJson(path.join(projectRootDir,"for0", "while0", "workflow0", "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
+
+        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0"));
+        const foreach0 = await onCreateNode(emit, projectRootDir, { type: "foreach", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, foreach0.ID, "indexList", ["foo", "bar"]);
+
+        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0"));
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+        await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+      });
+      it("should have acestors name and type in task object",async ()=>{
+        await onRunProject(sio, projectRootDir, cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        for(const i1 of ["for0_0", "for0_1"]){
+          for(const i2 of ["while0_0", "while0_1"]){
+            for(const i3 of ["PS0_KEYWORD1_1", "PS0_KEYWORD1_2"]){
+              for(const i4 of ["foreach0_foo", "foreach0_bar"]){
+                expect(path.resolve(projectRootDir, i1, i2, "workflow0", i3, i4, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+                  required: ["state","ancestorsName", "ancestorsType"],
+                  properties: {
+                    state: { enum: ["finished"] },
+                    ancestorsName: { type: "string", enum: [`${i1}/${i2}/workflow0/${i3}/${i4}`] },
+                    ancestorsType: { type: "string", enum: ["for/while/workflow/parameterStudy/foreach"] }
+                  }
+                });
+              }
+            }
+          }
+        }
       });
     });
   });

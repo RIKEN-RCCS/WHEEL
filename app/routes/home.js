@@ -19,7 +19,9 @@ const oldProjectJsonFilename = "swf.prj.json";
 
 function isDuplicateProjectName(newName) {
   const currentProjectList = projectList.getAll();
-  if(currentProjectList.length ===0)return false;
+  if (currentProjectList.length === 0) {
+    return false;
+  }
   const rt = currentProjectList.some((e)=>{
     const projectName = path.basename(e.path.slice(0, -suffix.length));
     return projectName === newName;

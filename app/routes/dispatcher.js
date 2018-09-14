@@ -139,7 +139,7 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
  * @param {Object} componentPath  - componentPath in project Json
  */
 class Dispatcher extends EventEmitter {
-  constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath) {
+  constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath, ancestorsType) {
     super();
     this.projectRootDir = projectRootDir;
     this.cwfID = cwfID;
@@ -147,6 +147,7 @@ class Dispatcher extends EventEmitter {
     this.projectStartTime = startTime;
     this.logger = logger;
     this.componentPath = componentPath;
+    this.ancestorsType = ancestorsType;
 
     this.nextSearchList = [];
     this.children = new Set(); //child dispatcher instance
@@ -339,6 +340,9 @@ class Dispatcher extends EventEmitter {
     task.projectRootDir = this.projectRootDir;
     task.workingDir = path.resolve(this.cwfDir, task.name);
 
+    task.ancestorsName = path.relative(task.projectRootDir, path.dirname(task.workingDir));
+    task.ancestorsType = this.ancestorsType;
+
     if (task.cleanupFlag === "2") {
       task.doCleanup = this.doCleanup;
     } else {
@@ -375,7 +379,9 @@ class Dispatcher extends EventEmitter {
     if (component.hasOwnProperty("currentIndex")) {
       childWF.currentIndex = component.currentIndex;
     }
-    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath);
+
+    const ancestorsType = typeof this.ancestorsType === "string" ? `${this.ancestorsType}/${component.type}` : component.type;
+    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath, ancestorsType);
     this.children.add(child);
 
     //exception should be catched in caller
@@ -442,6 +448,7 @@ class Dispatcher extends EventEmitter {
     const dstDir = path.resolve(this.cwfDir, newComponent.name);
 
     try {
+      this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir); //fs-extra's copy overwrites dst by default
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4 });
       await this._delegate(newComponent);
