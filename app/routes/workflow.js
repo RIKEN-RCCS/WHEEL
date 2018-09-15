@@ -4,7 +4,7 @@ const express = require("express");
 const fileManager = require("./fileManager");
 const workflowEditor = require("./workflowEditor2");
 const projectController = require("./projectController");
-const { remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
+const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterURL } = require("../db/db");
 const { getComponent } = require("./workflowUtil");
 const { openProject } = require("./projectResource");
 
@@ -39,6 +39,8 @@ module.exports = function(io) {
     res.cookie("root", ID);
     res.cookie("rootDir", projectRootDir);
     res.cookie("project", path.resolve(projectRootDir, projectJsonFilename));
+    res.cookie("jupyterURL", getJupyterURL());
+    res.cookie("jupyterToken", getJupyterToken());
     res.sendFile(path.resolve(__dirname, "../views/workflow.html"));
   });
   return router;

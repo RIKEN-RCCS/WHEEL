@@ -31,6 +31,8 @@ $(() => {
   }
   let rootWorkflow = Cookies.get('root');
   let rootDir = Cookies.get('rootDir');
+  const jupyterURL = Cookies.get('jupyterURL');
+  const jupyterToken= Cookies.get('jupyterToken');
   let currentWorkFlow = rootWorkflow;
   let currentWorkDir = rootDir;
   let currentNode = '';
@@ -134,6 +136,11 @@ $(() => {
             // });
           });
       },
+      openJupyterNotebook: function(){
+        const dirPath = currentWorkDir + '/' + this.node.name;
+        const url = `${jupyterURL}tree${dirPath}?token=${jupyterToken}`;
+        window.open(url);
+      }
     }
   });
 
@@ -226,11 +233,6 @@ $(() => {
       });
       window.open(`/editor?${params}`);
     }
-  });
-
-  //boot jupyter
-  $('#jupyterBootButton').click(function () {
-    //起動処理
   });
 
   // container of svg elements

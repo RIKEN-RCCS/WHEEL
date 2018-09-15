@@ -6,5 +6,7 @@
     "interval": 1000,
     "defaultCleanupRemoteRoot": true,
     "saltRound": 10,
-    "admin": "admin"
+    "admin": "admin",
+    "jupyter": true,
+    "jupyterPort": "auto"
 }
