@@ -504,8 +504,8 @@ class Dispatcher extends EventEmitter {
         .map((e)=>{
           return path.resolve(srcDir, e.value);
         });
-      const options = {};
 
+      const options = { overwrite: component.forceOverwrite };
       options.filter = function(filename) {
         return !ignoreFiles.filter((e)=>{
           return !includeFiles.includes(e);
@@ -514,13 +514,14 @@ class Dispatcher extends EventEmitter {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir, options);
 
-      let data = await promisify(fs.readFile)(path.resolve(srcDir, targetFile));
+      let data = await fs.readFile(path.resolve(srcDir, targetFile));
       data = data.toString();
       paramVec.forEach((e)=>{
         data = data.replace(new RegExp(`%%${e.key}%%`, "g"), e.value.toString());
       });
       const rewriteFile = path.resolve(dstDir, targetFile);
-      await promisify(fs.writeFile)(rewriteFile, data); //fs.writeFile overwrites existing file
+      //targetFile is always overwrited!!
+      await fs.writeFile(rewriteFile, data); //fs.writeFile overwrites existing file
 
       const newComponent = Object.assign({}, component);
       newComponent.name = path.relative(this.cwfDir, dstDir);

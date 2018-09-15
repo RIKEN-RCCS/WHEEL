@@ -313,6 +313,12 @@
             <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField" v-on:blur="updateProperty('exclude')">
           </div>
         </div>
+        <div v-if="node.hasOwnProperty('forceOverwrite')">
+          <div>
+            <input type="checkbox" v-model="node.forceOverwrite" id="forceOverwriteCheckbox" v-on:change="updateProperty('forceOverwrite')">
+            force overwrite
+          </div>
+        </div>
       </div>
       <!--ファイル編集 -->
       <div id="filesEdit">
