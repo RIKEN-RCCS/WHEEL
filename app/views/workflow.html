@@ -320,7 +320,7 @@
         <p id="componentPath"></p>
         <input type="file" id="fileSelector" name="uploadFiles" multiple />
         <div id="fileEditButton">
-          <button type="button" id="jupyterBootButton">
+          <button type="button" id="jupyterBootButton" v-on:click.stop="openJupyterNotebook">
             <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" id="jupyterImg" alt="graph">
           </button>
           <button type="button" id="createFolderButton" class="createFileDirButton">

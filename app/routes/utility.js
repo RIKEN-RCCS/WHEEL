@@ -4,7 +4,7 @@ const fs = require("fs-extra");
 const Mode = require("stat-mode");
 const promiseRetry = require("promise-retry");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
-const {escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename} = require("../lib/utility");
+const { escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
 
 /**
  * replace path separator by native path separator
@@ -175,5 +175,8 @@ module.exports = {
   createSshConfig,
   isFinishedState,
   readJsonGreedy,
-escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename
+  escapeRegExp,
+  isValidName,
+  isValidInputFilename,
+  isValidOutputFilename
 };
