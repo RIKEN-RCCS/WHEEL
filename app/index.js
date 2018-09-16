@@ -131,6 +131,7 @@ if (jupyter) {
     logger.debug(`get error from jupyter process: ${err}`);
   });
   process.on("exit", ()=>{
+    //eslint-disable-next-line no-console
     console.log(`kill jupyter process(${cp.pid}) before exit`);
     cp.kill();
   });

@@ -165,7 +165,6 @@ async function readJsonGreedy(filename) {
 }
 
 module.exports = {
-  escapeRegExp,
   convertPathSep,
   addX,
   getDateString,
