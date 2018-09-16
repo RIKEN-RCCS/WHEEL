@@ -755,6 +755,17 @@ img.btn_menu_n{
     background-color: #222226;
 }
 
+#dirBackButton{
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: #222226;
+    color: #FFFFFF;
+}
+
 #createFolderButton{
     margin: 8px 0 0 100px;
 }
@@ -1263,6 +1274,7 @@ img.btn_menu_n{
     padding-left: 16px;
 }
 
+/* リストビュー画面 */
 #projectTable{
     margin :0;
     position: absolute;
@@ -1278,12 +1290,11 @@ img.btn_menu_n{
     width: 100%;
     border: none;
     overflow: auto;
-    font-size: 14px;
+    font-size: 0;
     user-select: none;
     margin: 0;
 }
 
-/* リストビュー画面 */
 #project_table_body{
     height:800px;
     width: calc(100% - 16px);
@@ -1318,7 +1329,7 @@ img.btn_menu_n{
     padding: 0 0 4px 0;
     text-align: left;
     font-weight: inherit;
-    padding-right:41px; 
+    padding-right:42px; 
 }
 
 .project_table_component{
@@ -1327,47 +1338,87 @@ img.btn_menu_n{
 }
 
 
-.componentName{
+.componentNameLabel{
     display: inline-block;
     width: 224px;
     border-radius: 3px;
-    padding-right: 38px;
+    font-size: 14px;
+}
+
+.componentStateLabel{
+    display: inline-block;    
+    width: 90px;
+    font-size: 14px;
+}
+
+.componentStartTimeLabel{
+    display: inline-block;        
+    width: 150px;
+    font-size: 14px;
+}
+
+.componentEndTimeLabel{
+    display: inline-block;        
+    width: 150px;
+    font-size: 14px;
+}
+
+.componentDescriptionLabel{
+    display: inline-block;            
+    width: 256px;
+    font-size: 14px;
+}
+
+
+.componentName{
+    display: inline-block;
+    width: 224px;
+    height: 32px;
+    border-radius: 3px;
+    font-size: 14px;
 }
 
 .componentState{
     display: inline-block;    
     padding-right: 44px;
+    font-size: 14px;
     width: 90px;
 }
 
+.stateIcon{
+    vertical-align: middle;
+}
+
 .componentStartTime{
-    display: inline-block;        
-    padding: 9px 44px 10px 0px;
-        width: 150px;    
+    display: inline-block;
+    padding-right: 44px;
+    width: 150px;
+    font-size: 14px;
 }
 
 .componentEndTime{
     display: inline-block;        
-    padding: 9px 44px 10px 0px;
-    width: 150px;    
+    padding-right: 44px;
+    width: 150px;
+    font-size: 14px;
 }
 
 .componentDescription{
     display: inline-block;            
-    padding: 9px 44px 10px 0px;
+    padding-right: 44px;
     width: 256px;
+    font-size: 14px;
 }
 
 .nameLabel{
     display: inline-flex;
     position: relative;
-    top: -9px;
+    top: -11px;
 }
 
 .stateLabel{
     display: inline-flex;
     position: relative;
-    top: -9px;
     padding-left: 4px;
 }
 

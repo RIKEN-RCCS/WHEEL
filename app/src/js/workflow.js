@@ -29,10 +29,11 @@ $(() => {
   if (projectFilePath == null) {
     throw new Error('illegal access');
   }
+  let rootId = [''];
   let rootWorkflow = Cookies.get('root');
   let rootDir = Cookies.get('rootDir');
   const jupyterURL = Cookies.get('jupyterURL');
-  const jupyterToken= Cookies.get('jupyterToken');
+  const jupyterToken = Cookies.get('jupyterToken');
   let currentWorkFlow = rootWorkflow;
   let currentWorkDir = rootDir;
   let currentNode = '';
@@ -105,9 +106,9 @@ $(() => {
         })
         if (!dup) {
           sio.emit('updateNode', this.node.ID, 'name', this.node.name);
-          let currentComponentDir = currentWorkDir + '/' + val;
+          let currentComponentDir = currentWorkDir + "\\" + val;
           fb.request('getFileList', currentComponentDir, null);
-          let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
+          let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
           $('#componentPath').html(displayDirPath);
         } else {
           console.log('duplicated name is not allowed!');
@@ -126,7 +127,7 @@ $(() => {
       changeQueueListState: function (useJocSchedulerFlag) {
       },
       cleanComponentState: function () {
-        const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure you want to clean this state?</div>'
+        const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure to clean this state?</div>'
         dialogWrapper('#dialog', html)
           .done(function () {
             //TODO add cleanState API
@@ -136,12 +137,13 @@ $(() => {
             // });
           });
       },
-      openJupyterNotebook: function(){
+      openJupyterNotebook: function () {
         const dirPath = currentWorkDir + '/' + this.node.name;
         const url = `${jupyterURL}tree${dirPath}?token=${jupyterToken}`;
         window.open(url);
       }
     }
+
   });
 
   // set default view
@@ -155,58 +157,42 @@ $(() => {
   const sio = io('/workflow');
 
   // setup FileBrowser
-  const fb = new FileBrowser(sio, '#fileList', 'fileList', true, {
-    'edit': {
-      name: 'edit',
-      callback: function () {
-        const path = $(this).data('path');
-        const filename = $(this).data('name');
-        const params = $.param({
-          "path": path,
-          "filename": filename,
-          "pm": false
-        });
-        window.open(`/editor?${params}`);
-      }
-    },
-    'edit for parameter survey': {
-      name: 'edit for PS',
-      callback: function () {
-        const path = $(this).data('path');
-        const filename = $(this).data('name');
-        const params = $.param({
-          "path": path,
-          "filename": filename,
-          "pm": true
-        });
-        window.open(`/editor?${params}`);
-      }
-    },
-    // TODO download 
-    // ,'download file': {
-    //   name: 'Download',
-    //   callback: function() {
-    //     const path = $(this).data('path');
-    //     const filename = $(this).data('name');
-    //     const message= {
-    //       "path": path,
-    //       "name": filename
-    //     };
-    //     sio.emit('download', message);
-    //   }
-    // }
-  });
-
+  const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
   // sio.on('download', (message) => {
   //   console.log(message.toString());
   // });
 
   // file edit by button.
+  let filePathStack = [];
   let filePath = '';
+  let filePathLatest = '';
   let filename = '';
   $(document).on('click', '.file', function () {
     filePath = $(this).attr("data-path");
     filename = $(this).attr("data-name");
+  });
+
+  $(document).on('dblclick', '.dir, .snd, .sndd', function () {
+    filePath = $(this).attr("data-path");
+    filename = $(this).attr("data-name");
+    let currentDirPath = filePath.replace(projectRootDir, "") + "\\" + filename;
+    filePathStack.push(filePath);
+    $('#componentPath').html("." + currentDirPath);
+    let backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}">../</button>`;
+    $('#dirBackButtonArea').html(backDirHtml);
+  });
+
+  $(document).on('click', '#dirBackButton', function () {
+    if (filePathStack.length !== 0) {
+      filePath = filePathStack[filePathStack.length - 1];
+      let fileListDirPath = "." + filePath.replace(projectRootDir, "");
+      fb.request('getFileList', filePath, null);
+      $('#componentPath').html(fileListDirPath);
+      filePathStack.pop();
+    }
+    if (filePathStack.length === 0) {
+      $('#dirBackButton').css("display", "none");
+    }
   });
 
   $('#editFileButton').click(function () {
@@ -310,12 +296,15 @@ $(() => {
     });
 
     sio.on('taskStateList', (taskStateList) => {
+      console.log(taskStateList);
       updateTaskStateTable(taskStateList);
     })
 
     // TODO 現在のプロジェクト状態の取得をサーバにリクエストする
     sio.on('projectJson', (projectJson) => {
-
+      rootId = Object.keys(projectJson.componentPath).filter((key) => {
+        return projectJson.componentPath[key] === './'
+      });
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
       presentState = projectJson.state;
@@ -585,11 +574,10 @@ $(() => {
           return e.ID === nodeIndex;
         });
         let name = target.name;
-        let nodePath = currentWorkDir + '/' + name;
-
+        let nodePath = currentWorkDir + "\\" + name;
         fb.request('getFileList', nodePath, null);
         //プロパティ表示用相対パス
-        let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + name;
+        let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + name;
         let nodeType = target.type;
         //iconの変更
         let nodeIconPath = config.node_icon[nodeType];
@@ -603,7 +591,6 @@ $(() => {
           selectedHostQueue = target.queue;
           updateQueueList(remotehost, selectedHostQueue);
         }
-
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
         $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
@@ -755,7 +742,6 @@ $(() => {
   function updateBreadrumb() {
     let breadcrumb = $('#breadcrumb');
     breadcrumb.empty();
-
     for (let index = 0; index < nodeStack.length; index++) {
       if (0 < index) {
         breadcrumb.append(`<span class="img_pankuzuArrow_icon"><img src="/image/img_pankuzuArrow.png"  /></span>`)
@@ -785,12 +771,28 @@ $(() => {
     }
   }
 
+  let taskStateTable = $('#project_table_body');
   function updateTaskStateTable(taskStateList) {
+    //送られてくるデータが差分になれば、emptyする必要なし
     $('#project_table_body').empty();
-    let taskStateTable = $('#project_table_body');
     for (let i = 0; i < taskStateList.length; i++) {
+      let parent = taskStateList[i].parent;
+      let parentNodeType = taskStateList[i].parentType;
+      let parentNodeIconPath = config.node_icon[parentNodeType];
+      let parentNodeColor = config.node_color[parentNodeType];
+      let subWorkflow = 'false';
+      if (parent !== rootId[0]) {
+        if (i === 0) {
+          addParentInfoListView(i, parentNodeType, parentNodeIconPath, parentNodeColor);
+        } else {
+          if (parent !== taskStateList[i - 1].parent) {
+            addParentInfoListView(i, parentNodeType, parentNodeIconPath, parentNodeColor);
+          }
+        }
+        subWorkflow = true;
+      }
+
       let nodeType = "task";
-      //親のコンポーネント表示の際はプロパティ「parent」を使用する
       let nodeState = taskStateList[i].state;
       if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
         nodeState = 'running'
@@ -802,14 +804,30 @@ $(() => {
       let id = `taskLabel_${i}`;
 
       taskStateTable.append(`<tr class="project_table_component" ><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
-      <td class="componentState"><img src=${nodeComponentState}><label class="stateLabel">${taskStateList[i].state}</label></td>
+      <td class="componentState"><img src=${nodeComponentState} class="stateIcon"><label class="stateLabel">${taskStateList[i].state}</label></td>
       <td class="componentStartTime">${taskStateList[i].startTime}</td>
       <td class="componentEndTime">${taskStateList[i].endTime}</td>
       <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
 
       $(`#${id}`).css("background-color", nodeColor);
-
+      if (subWorkflow === true) {
+        $(`#${id}`).css("margin-left", "32px");
+      } else {
+        $(`#${id}`).css("margin-right", "32px");
+      }
     }
+  }
+
+  function addParentInfoListView(i, parentNodeType, parentNodeIconPath, parentNodeColor) {
+    //add parent Info.
+    let parentId = `parent_${i}`;
+    // taskStateTable.append(`<tr class="project_table_component" ><td id=${parentId} class="componentName"><img src=${parentNodeIconPath} class="workflow_component_icon"><label class="nameLabel">${parentNodeType}</label></td>
+    //     <td class="componentState"></td>
+    //     <td class="componentStartTime"></td>
+    //     <td class="componentEndTime"></td>
+    //     <td class="componentDescription"></tr>`);
+    taskStateTable.append(`<tr class="project_table_component" ><td id=${parentId} class="componentName"><img src=${parentNodeIconPath} class="workflow_component_icon"><label class="nameLabel">${parentNodeType}</label></td></tr>`);
+    $(`#${parentId}`).css("background-color", parentNodeColor);
   }
   // //Queueリストの有効、無効処理
   // $(function () {
@@ -909,4 +927,12 @@ $(() => {
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
+
+  // document.body.addEventListener("click", function (event) {
+  //   var x = event.pageX;
+  //   var y = event.pageY;
+  //   console.log(x);
+  //   console.log(y);
+  // });
+
 });
