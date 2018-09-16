@@ -33,7 +33,7 @@ $(() => {
   let rootWorkflow = Cookies.get('root');
   let rootDir = Cookies.get('rootDir');
   const jupyterURL = Cookies.get('jupyterURL');
-  const jupyterToken= Cookies.get('jupyterToken');
+  const jupyterToken = Cookies.get('jupyterToken');
   let currentWorkFlow = rootWorkflow;
   let currentWorkDir = rootDir;
   let currentNode = '';
@@ -136,14 +136,11 @@ $(() => {
             // sio.emit('createNewFile', newFilePath, (result) => {
             // });
           });
-<<<<<<< HEAD
-=======
       },
-      openJupyterNotebook: function(){
+      openJupyterNotebook: function () {
         const dirPath = currentWorkDir + '/' + this.node.name;
         const url = `${jupyterURL}tree${dirPath}?token=${jupyterToken}`;
         window.open(url);
->>>>>>> 07f6d7be31586ed0242f8746c1698c56089f419b
       }
     }
 
