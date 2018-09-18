@@ -84,7 +84,7 @@
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "chai-fs": "^2.0.0",
-    "chai-iterator": "git+https://github.com/harrysarson/chai-iterator.git#chai4",
+    "chai-iterator": "^3.0.0",
     "chai-webdriverio": "^0.4.3",
     "chokidar-cli": "^1.2.0",
     "chromedriver": "^2.40.0",
