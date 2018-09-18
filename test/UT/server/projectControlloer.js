@@ -867,7 +867,7 @@ describe("project Controller UT", function() {
         });
       });
     });
-    describe.skip"task in nested PS(does not work for now)", ()=>{
+    describe.skip("task in nested PS(does not work for now)", ()=>{
       beforeEach(async()=>{
         const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
