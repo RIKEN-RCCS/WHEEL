@@ -12,11 +12,21 @@
   "PBSPro":{
     "submit": "qsub",
     "queueOpt": "-q",
-    "stat": "qstat -xf -F dsv -D ','",
+    "stat": "qstat -xf",
     "del": "qdel",
     "reJobID": "(\\d+).*",
-    "reFinishedState": ",substate\\=92",
-    "reReturnCode": ",Exit_status\\=(\\d+)",
-    "reFailedState": ",substate\\=(91|93)"
+    "reFinishedState": "substate \\= 92$",
+    "reReturnCode": "Exit_status \\= (\\d+)$",
+    "reFailedState": "substate \\= (91|93)$"
+  },
+    "PBS-dars":{
+    "submit": "qsub",
+    "queueOpt": "-q",
+    "stat": "tracejob -q -n 3 ",
+    "del": "qdel",
+    "reJobID": "(\\d+).*",
+    "reFinishedState": "Exit_status\\=0",
+    "reReturnCode": "Exit_status\\=(\\d+)",
+    "reFailedState": "Exit_status\\=[1-9]"
   }
 }
