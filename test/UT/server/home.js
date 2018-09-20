@@ -25,10 +25,10 @@ const onReorderProject = home.__get__("onReorderProject");
 const emit = sinon.stub();
 const cb = sinon.stub();
 const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{} };
-// dummyLogger.error = console.log;
-// dummyLogger.warn = console.log;
-// dummyLogger.info = console.log;
-// dummyLogger.debug = console.log;
+//dummyLogger.error = console.log;
+//dummyLogger.warn = console.log;
+//dummyLogger.info = console.log;
+//dummyLogger.debug = console.log;
 home.__set__("logger", dummyLogger);
 
 //test data
@@ -39,6 +39,7 @@ let projectList;
 
 //helper functions
 const getSchema = require("../../../app/db/jsonSchemas");
+
 /*
  *
  *   root-+-- foo
@@ -161,7 +162,7 @@ describe("home screen API test", ()=>{
       ]);
     });
   });
-  describe("#onAddProject", function (){
+  describe("#onAddProject", ()=>{
     it("should create new project directory WHEEL_TEST_TMP/foo.wheel", async()=>{
       await onAddProject(emit, `${testDirRoot}/foo`, null, cb);
       expect(cb).to.have.been.calledOnce;
@@ -186,9 +187,9 @@ describe("home screen API test", ()=>{
       expect(rootWF.outputFiles).to.be.an("array").that.is.empty;
       expect(projectList.getByPosition(0).path).to.be.equal(path.resolve(testDirRoot, "foo.wheel"));
     });
-    it("should not create new project which has the same name as any other existing project", async ()=>{
+    it("should not create new project which has the same name as any other existing project", async()=>{
       await onAddProject(emit, `${testDirRoot}/foo`, null);
-      fs.ensureDir(path.resolve(testDirRoot, "bar","foo")),
+      fs.ensureDir(path.resolve(testDirRoot, "bar", "foo")),
       await onAddProject(emit, `${testDirRoot}/bar/foo`, null, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(false);

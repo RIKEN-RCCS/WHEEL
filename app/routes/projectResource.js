@@ -87,7 +87,10 @@ function addSsh(projectRootDir, hostname, ssh) {
 }
 
 function once(projectRootDir, eventName, cb) {
-  getProject(projectRootDir).once(eventName, cb);
+  const pj = getProject(projectRootDir);
+  if (pj.listenerCount(eventName) === 0) {
+    pj.once(eventName, cb);
+  }
 }
 
 function emitEvent(projectRootDir, eventName) {
