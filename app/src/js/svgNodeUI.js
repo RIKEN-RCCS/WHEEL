@@ -41,23 +41,23 @@ export class SvgNodeUI {
     this.group.add(box);
     this.group.data({ "boxBbox": boxBbox });
 
-    const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0);
-    upper.data({ "ID": node.ID });
+    const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0, node.name);
+    upper.data({ "type": '.upperPlug', "ID": node.ID });
     this.group.add(upper);
 
     const numLower = node.type === 'if' ? 3 : 2;
     let tmp = null;
     if (numLower === 2) {
-      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio);
+      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio, node.name);
     } else {
-      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio);
+      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio, node.name);
     }
     this.lowerPlug.data({ "next": node.next });
     this.group.add(this.lowerPlug).add(tmp);
 
     this.connectors = [];
     node.outputFiles.forEach((output, fileIndex) => {
-      let [plug, cable] = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight * fileIndex, sio);
+      let [plug, cable] = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight * fileIndex, sio, node.name);
       plug.data({ "name": output.name, "dst": output.dst });
       this.group.add(plug);
       this.group.add(cable);
@@ -71,7 +71,7 @@ export class SvgNodeUI {
     });
 
     if (numLower === 3) {
-      [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.elseFlow, sio)
+      [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.elseFlow, sio, node.name)
       this.lower2Plug.addClass('elsePlug').data({ "else": node.else });
       this.group.add(this.lower2Plug).add(tmp);
     }
@@ -89,8 +89,8 @@ export class SvgNodeUI {
     // register drag and drop behavior
     this.group
       .on('dragstart', (e) => {
-        diffX = e.detail.p.x - e.target.instance.select('.box').first().x();
-        diffY = e.detail.p.y - e.target.instance.select('.box').first().y()
+        diffX = e.detail.p.x - e.target.instance.select('.' + `${node.name}` + '_box').first().x();
+        diffY = e.detail.p.y - e.target.instance.select('.' + `${node.name}` + '_box').first().y()
         startX = e.detail.p.x;
         startY = e.detail.p.y;
       })
