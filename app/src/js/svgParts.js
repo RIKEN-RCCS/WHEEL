@@ -198,6 +198,7 @@ export class SvgCable {
 class SvgBox {
   constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler) {
     this.draw = svg;
+    this.box = this.draw.group();
     this.type = type.toLowerCase();
 
     // read draw settings from config
@@ -219,7 +220,16 @@ class SvgBox {
 
     const title = this.createTitle(name);
     const iconImage = this.createIconImage(type, host, useJobScheduler);
-    const taskState = this.createState(type, state, numTotal, numFinished, numFailed);
+
+    let taskState;
+    let psState, psState2;
+    if (type !== "parameterStudy") {
+      taskState = this.createState(state);
+    } else {
+      psState = this.createStateForPS(state, numTotal, numFinished);
+      psState2 = this.createStateForPS2(state, numTotal, numFinished, numFailed);
+    }
+
 
     //子コンポーネントの表示
     let nodePosYInfo = [];
@@ -234,14 +244,12 @@ class SvgBox {
     const outerFrame = this.createOuterFrame(type);
     const innerFrame = this.createInnerFrame();
 
-    this.box = this.draw.group();
     this.box
       .add(outerFrame)
       .add(innerFrame)
       .add(title)
       .add(input)
       .add(output)
-      .add(taskState)
       .add(iconImage)
       .add(nodesViewField)
       .add(nodesIconField)
@@ -249,8 +257,16 @@ class SvgBox {
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
-      .addClass('box');
+      .addClass(`${name}` + '_box');
 
+    if (type !== "parameterStudy") {
+      this.box
+        .add(taskState)
+    } else {
+      this.box
+        .add(psState)
+        .add(psState2);
+    }
     // adjust size
     output.x(titleWidth);
 
@@ -350,17 +366,31 @@ class SvgBox {
  * create state
  * @return state element
  */
-  createState(type, state, numTotal, numFinished, numFailed) {
+
+  createState(state) {
     const statePosX = 220;
     const statePosY = 0;
-    const paraStuPosX = 120;
     if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
       state = 'running'
     }
     const nodeStatePath = config.state_icon[state];
-    const paraStuState = "Fin:" + numFinished + "Fail:" + numFailed + "(" + numTotal + ")";
-    if (type === 'parameterStudy' && state === 'running') {
-      const calcProgress = (numFinished + numFailed) / numTotal * 100;
+    return this.draw
+      .image(nodeStatePath)
+      .fill('#FFFFFF')
+      .x(statePosX)
+      .y(statePosY);
+  }
+
+  createStateForPS(state, numTotal, numFinished) {
+    const statePosX = 220;
+    const statePosY = 0;
+    if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
+      state = 'running'
+    }
+    const nodeStatePath = config.state_icon[state];
+    //const paraStuState = "Fin:" + numFinished + "Fail:" + numFailed + "(" + numTotal + ")";
+    if (state === 'running') {
+      const calcProgress = numFinished / numTotal * 100;
       const radius = 7;
       const diameter = radius * 2;
       const circumference = 2.0 * radius * Math.PI;
@@ -380,7 +410,39 @@ class SvgBox {
         .fill('#FFFFFF')
         .x(statePosX)
         .y(statePosY);
+    }
+  }
 
+  createStateForPS2(state, numTotal, numFinished, numFailed) {
+    const statePosX = 220;
+    const statePosY = 0;
+    if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
+      state = 'running'
+    }
+    const nodeStatePath = config.state_icon[state];
+    if (state === 'running') {
+      const calcProgress = numFinished / numTotal * 100;
+      const calcProgress2 = numFailed / numTotal * 100;
+      const radius = 7;
+      const diameter = radius * 2;
+      const circumference = 2.0 * radius * Math.PI;
+      const startPosition = circumference * 0.25;
+      const convertedPercentage = circumference * 0.01;
+      let progress = convertedPercentage * calcProgress;
+      let progress2 = convertedPercentage * calcProgress2;
+      return this.draw
+        .circle(`${diameter}`)
+        .fill('rgba(0,0,0,0)')
+        .stroke({ color: '#E60000', width: `${diameter}`, dashoffset: `${startPosition + 1 - progress}`, dasharray: `${progress2},${circumference - progress2}` })
+        .x(statePosX + 11)
+        .y(statePosY + 9)
+        .addClass('psProgress2');
+    } else {
+      return this.draw
+        .image(nodeStatePath)
+        .fill('#FFFFFF')
+        .x(statePosX)
+        .y(statePosY);
     }
   }
 
@@ -516,7 +578,6 @@ class SvgBox {
           }
         }
         const nodeIconPath = config.node_icon[nodetype];
-        console.log(nodetype);
         const nodePosX = node.pos.x / 5;
         const nodePosY = node.pos.y / 5;
         const correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
@@ -672,9 +733,16 @@ class SvgParentFilesBox {
 }
 
 //plug
-function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback) {
+function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, name, callback) {
   //plugの位置（originX,originY）を決める
-  let plug = svg.polygon(plugShape).fill(color);
+  let plug;
+  if (plugShape === DPlug) {
+    plug = svg.polygon(plugShape).fill(color).addClass(`${name}` + '_lowerPlug');
+    // plug = svg.polygon(plugShape).fill(color).addClass('lowerPlug');
+  } else {
+    plug = svg.polygon(plugShape).fill(color);
+  }
+  // let plug = svg.polygon(plugShape).fill(color);
   const bbox = plug.bbox();
   //originX -= bbox.width / 2; RPlugは影響なし 
   if (moveY) originX -= bbox.width / 2;//lowerのとき
@@ -769,15 +837,15 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
 }
 
 
-export function createLower(svg, originX, originY, offsetX, offsetY, color, sio) {
-  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, true, color, DPlug, 'DU', '.upperPlug', function (myIndex, hitIndex, plug) {
+export function createLower(svg, originX, originY, offsetX, offsetY, color, sio, name) {
+  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, true, color, DPlug, 'DU', '.upperPlug', name, function (myIndex, hitIndex, plug) {
     sio.emit('addLink', { src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug') });
   });
 }
 
-export function createConnector(svg, originX, originY, offsetX, offsetY, sio) {
+export function createConnector(svg, originX, originY, offsetX, offsetY, sio, name) {
   offsetY += calcFileBasePosY();
-  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, RPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
+  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, RPlug, 'RL', '.receptorPlug', name, function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
     sio.emit('addFileLink', myIndex, srcName, hitIndex, dstName);
@@ -791,7 +859,7 @@ export function createReceptor(svg, originX, originY, offsetX, offsetY) {
   return plug;
 }
 
-export function createUpper(svg, originX, originY, offsetX, offsetY) {
+export function createUpper(svg, originX, originY, offsetX, offsetY, name) {
   const plug = svg.polygon(UPlug).fill(config.plug_color.flow).addClass('upperPlug');
   const bbox = plug.bbox();
   plug.move(originX + offsetX - bbox.width / 2, originY + offsetY - bbox.height);

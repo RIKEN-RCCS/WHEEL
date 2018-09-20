@@ -35,8 +35,9 @@ export default class {
         isDir = false;
       }
       this.socket.emit(sendEventName, path, recvEventName, isDir);
+    } else {
+      this.socket.emit(sendEventName, path);
     }
-    this.socket.emit(sendEventName, path);
     this.requestedPath = path;
     this.sendEventName = sendEventName;
     if (!recvEventName) this.recvEventName = recvEventName;
@@ -137,7 +138,10 @@ export default class {
   registerContextMenu(additionalMenu) {
     const fileList = `${this.idFileList} li`;
     $.contextMenu({
-      'selector': fileList,
+      selector: fileList,
+      position: function (opt, x, y) {
+        opt.$menu.css({ top: y, left: x + 1 })
+      },
       build: this.createContextMenu.bind(this, additionalMenu)
     });
   }
