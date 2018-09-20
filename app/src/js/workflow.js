@@ -296,7 +296,6 @@ $(() => {
     });
 
     sio.on('taskStateList', (taskStateList) => {
-      console.log(taskStateList);
       updateTaskStateTable(taskStateList);
     })
 
@@ -439,18 +438,35 @@ $(() => {
   // setup context menu
   $.contextMenu({
     selector: 'g',
-    autoHide: true,
-    reposition: false,
+    // autoHide: true,
+    // reposition: false,
     itemClickEvent: "click",
+    position: function (opt, x, y) {
+      opt.$menu.css({ top: y, left: x + 1 })
+    },
     items: {
-      "delete": {
-        "name": "delete",
+      'delete': {
+        name: "Delete",
         callback: function () {
           sio.emit('removeNode', selectedNode);
         }
       }
     }
   });
+
+  /**
+ * get mouse positoin where contextmenu is created
+ * @param option second argument of callback function of jquery.contextMenu
+ */
+  function getClickPosition(option) {
+    const parentOffset = $(option.selector).offset();
+    const clickPosition = option.$menu.position();
+    const position = {
+      x: Math.round(clickPosition.left - parentOffset.left),
+      y: Math.round(clickPosition.top - parentOffset.top)
+    };
+    return position;
+  }
 
   //タスクのドラッグアンドドロップ操作
   $('#workflowComponents ul').mouseover(function () {
@@ -533,20 +549,6 @@ $(() => {
   });
 
   /**
-   * get mouse positoin where contextmenu is created
-   * @param option second argument of callback function of jquery.contextMenu
-   */
-  function getClickPosition(option) {
-    const parentOffset = $(option.selector).offset();
-    const clickPosition = option.$menu.position();
-    const position = {
-      x: Math.round(clickPosition.left - parentOffset.left),
-      y: Math.round(clickPosition.top - parentOffset.top)
-    };
-    return position;
-  }
-
-  /**
    * check if filename is already in inputFiles or outputFiles
    * @param files inputFiles or outputFiles of any workflow component
    * @param filename testee
@@ -562,7 +564,6 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   function drawNodes(nodesInWF) {
-    console.log("drawnodes")
     nodesInWF.forEach(function (v) {
       let node = new svgNode.SvgNodeUI(svg, sio, v);
       node.ID = v.ID;
@@ -773,25 +774,12 @@ $(() => {
 
   let taskStateTable = $('#project_table_body');
   function updateTaskStateTable(taskStateList) {
+    console.log(taskStateList);
     //送られてくるデータが差分になれば、emptyする必要なし
     $('#project_table_body').empty();
     for (let i = 0; i < taskStateList.length; i++) {
-      let parent = taskStateList[i].parent;
-      let parentNodeType = taskStateList[i].parentType;
-      let parentNodeIconPath = config.node_icon[parentNodeType];
-      let parentNodeColor = config.node_color[parentNodeType];
-      let subWorkflow = 'false';
-      if (parent !== rootId[0]) {
-        if (i === 0) {
-          addParentInfoListView(i, parentNodeType, parentNodeIconPath, parentNodeColor);
-        } else {
-          if (parent !== taskStateList[i - 1].parent) {
-            addParentInfoListView(i, parentNodeType, parentNodeIconPath, parentNodeColor);
-          }
-        }
-        subWorkflow = true;
-      }
-
+      let ancestorsNameList = [];
+      let ancestorsTypeList = [];
       let nodeType = "task";
       let nodeState = taskStateList[i].state;
       if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
@@ -800,21 +788,40 @@ $(() => {
       let nodeIconPath = config.node_icon[nodeType];
       let nodeColor = config.node_color[nodeType];
       let nodeComponentState = config.state_icon[nodeState];
-
       let id = `taskLabel_${i}`;
 
-      taskStateTable.append(`<tr class="project_table_component" ><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
-      <td class="componentState"><img src=${nodeComponentState} class="stateIcon"><label class="stateLabel">${taskStateList[i].state}</label></td>
-      <td class="componentStartTime">${taskStateList[i].startTime}</td>
-      <td class="componentEndTime">${taskStateList[i].endTime}</td>
-      <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
-
-      $(`#${id}`).css("background-color", nodeColor);
-      if (subWorkflow === true) {
-        $(`#${id}`).css("margin-left", "32px");
+      if (taskStateList[i].ancestorsName === "") {
+        taskStateTable.append(`<tr class="project_table_component" ><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
+        <td class="componentState"><img src=${nodeComponentState} class="stateIcon"><label class="stateLabel">${taskStateList[i].state}</label></td>
+        <td class="componentStartTime">${taskStateList[i].startTime}</td>
+        <td class="componentEndTime">${taskStateList[i].endTime}</td>
+        <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
+        $(`#${id}`).css("background-color", nodeColor);
       } else {
-        $(`#${id}`).css("margin-right", "32px");
+        ancestorsNameList = taskStateList[i].ancestorsName.split('\\');
+        ancestorsTypeList = taskStateList[i].ancestorsType.split('/');
+        let ancestorsId;
+        let j;
+        let taskId = `task_${taskStateList[i].name}_${i}_${j}`;
+        for (j = 0; j < ancestorsNameList.length; j++) {
+          let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
+          ancestorsId = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
+          taskStateTable.append(`<tr class="project_table_component" ><td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
+          $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
+          let loopMarginArea = 32 * j;
+          $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
+        }
+        taskStateTable.append(`<tr class="project_table_component" ><td id="${taskId}" class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
+        <td class="componentState"><img src=${nodeComponentState} class="stateIcon"><label class="stateLabel">${taskStateList[i].state}</label></td>
+        <td class="componentStartTime">${taskStateList[i].startTime}</td>
+        <td class="componentEndTime">${taskStateList[i].endTime}</td>
+        <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
+        let marginArea = 32 * ancestorsNameList.length;
+        $(`#${taskId}`).css("margin-left", marginArea + "px");
+        $(`.componentNameLabel`).css("margin-right", marginArea + "px");
+        $(`#${taskId}`).css("background-color", nodeColor);
       }
+
     }
   }
 
@@ -928,11 +935,11 @@ $(() => {
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
 
+  //for debug
   // document.body.addEventListener("click", function (event) {
   //   var x = event.pageX;
   //   var y = event.pageY;
   //   console.log(x);
   //   console.log(y);
   // });
-
 });

@@ -1329,7 +1329,7 @@ img.btn_menu_n{
     padding: 0 0 4px 0;
     text-align: left;
     font-weight: inherit;
-    padding-right:42px; 
+    /* padding-right:42px;  */
 }
 
 .project_table_component{
@@ -1337,30 +1337,36 @@ img.btn_menu_n{
     border-bottom-color: #222226;
 }
 
-
 .componentNameLabel{
     display: inline-block;
-    width: 224px;
+    width: 232px;
     border-radius: 3px;
     font-size: 14px;
+    border-collapse: separate;
 }
 
-.componentStateLabel{
+th.componentStateLabel{
     display: inline-block;    
     width: 90px;
     font-size: 14px;
+    margin-right:44px; 
+    border-collapse: separate;
 }
 
 .componentStartTimeLabel{
     display: inline-block;        
     width: 150px;
     font-size: 14px;
+    margin-right:44px; 
+    border-collapse: separate;
 }
 
 .componentEndTimeLabel{
     display: inline-block;        
     width: 150px;
     font-size: 14px;
+    margin-right:44px; 
+    border-collapse: separate;
 }
 
 .componentDescriptionLabel{

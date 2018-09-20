@@ -48,7 +48,7 @@ $(() => {
                 name: 'Delete',
                 callback: function () {
                     var targetID = $(this).data('id');
-                    var html = '<p id="deleteLabel">Delete project</p><div id="deleteMessage">Are you sure you want to delete project?</div>';
+                    var html = '<p id="deleteLabel">Delete project</p><div id="deleteMessage">Are you sure to delete project?</div>';
                     dialogWrapper('#dialogContext', html).done(function () {
                         socket.emit('removeProject', targetID);
                     });
