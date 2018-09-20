@@ -9,12 +9,53 @@ describe("#home", function () {
   const testProjectName = "CreateRenameDeleteProjectTest";
   const renamedTestProjectName = "CreateRenameDeleteProjectTest2";
 
-  it("Home screen is drawn", function () {
-    browser.url(url);
-    expect(browser.getTitle()).to.equal("WHEEL home");
-    expect('#pageNameLabel').to.have.text("Home");
-  });
-  it("create, rename and delete project", function () {
+  // it("Home screen is drawn", function () {
+  //   browser.url(url);
+  //   expect(browser.getTitle()).to.equal("WHEEL home");
+  //   expect('#pageNameLabel').to.have.text("Home");
+  // });
+  // it("create, rename and delete project", function () {
+  //   //Xpath for top of the project list
+  //   const firstProject = '//*[@id="projectList"]/ul[1]/li[1]';
+  //   //Xpath for "rename" in context menu
+  //   const renameMenu = '/html/body/ul/li[2]';
+  //   //Xpath for "delete" in context menu
+  //   const deleteMenu = '/html/body/ul/li[3]';
+  //   //Xpath for ok button in dialogue
+  //   const okBtn = "/html/body/div[5]/div[3]/div/button[2]";
+
+  //   // create new project
+  //   browser.url(url)
+  //     .click('#newButton')
+  //     .setValue('#newProjectName', testProjectName)
+  //     .click(okBtn)
+  //     .waitForVisible(firstProject);
+
+  //   // check if the top of project list has testProjectName
+  //   expect(firstProject).to.have.text(testProjectName);
+
+  //   // rename project
+  //   browser.rightClick(firstProject)
+  //     .click(renameMenu)
+  //     .setValue('#renamedProjectName', renamedTestProjectName)
+  //     .click(okBtn)
+  //     .waitUntil(function () {
+  //       return browser.getText(firstProject) === 'CreateRenameDeleteProjectTest2'
+  //     }, 5000, 'expected text to be different after 5s');
+
+  //   // check if the top of project list has renamedTestProjectName
+  //   expect(firstProject).to.have.text(renamedTestProjectName);
+
+  //   // delete project
+  //   browser.rightClick(firstProject)
+  //     .click(deleteMenu)
+  //     .click(okBtn)
+  //     .waitForExist('.projectName', 3000, true);
+
+  //   // check if the top of project list does not have renamedTestProjectName
+  //   expect(browser.isExisting('.projectName') === false);
+  // });
+  it("dblclick action check", function () {
     //Xpath for top of the project list
     const firstProject = '//*[@id="projectList"]/ul[1]/li[1]';
     //Xpath for "rename" in context menu
@@ -24,35 +65,39 @@ describe("#home", function () {
     //Xpath for ok button in dialogue
     const okBtn = "/html/body/div[5]/div[3]/div/button[2]";
 
-    // create new project
+    const taskXpath = '//*[@id="SvgjsG1008"]';
+
+
+    // // create new project
+    // browser.url(url)
+    //   .click('#newButton')
+    //   .setValue('#newProjectName', testProjectName)
+    //   .click(okBtn)
+    //   .waitForVisible(firstProject);
+
     browser.url(url)
-      .click('#newButton')
-      .setValue('#newProjectName', testProjectName)
-      .click(okBtn)
-      .waitForVisible(firstProject);
+      .waitForExist(firstProject, 3000, false);
 
-    // check if the top of project list has testProjectName
-    expect(firstProject).to.have.text(testProjectName);
+    browser.doubleClick(firstProject)
+      .waitForExist('#project_name', 3000, false);
 
-    // rename project
-    browser.rightClick(firstProject)
-      .click(renameMenu)
-      .setValue('#renamedProjectName', renamedTestProjectName)
-      .click(okBtn)
-      .waitUntil(function () {
-        return browser.getText(firstProject) === 'CreateRenameDeleteProjectTest2'
-      }, 5000, 'expected text to be different after 5s');
+    // // workflow画面に遷移
+    // browser.doubleClick(firstProject)
+    //   .waitForExist('#project_name', 3000, false);
 
-    // check if the top of project list has renamedTestProjectName
-    expect(firstProject).to.have.text(renamedTestProjectName);
+    const taskComponentName = '.task0_box';
+    browser.click(`${taskComponentName}`);
 
-    // delete project
-    browser.rightClick(firstProject)
-      .click(deleteMenu)
-      .click(okBtn)
-      .waitForExist('.projectName', 3000, false);
+    browser.dragAndDrop('.lowerPlug', '.upperPlug');
 
-    // // check if the top of project list does not have renamedTestProjectName
-    expect(browser.isExisting('.projectName') === false);
+    // browser.click('#title')
+    //   .waitForExist('.projectName', 3000, false);
+
+    // // delete project
+    // browser.rightClick(firstProject)
+    //   .click(deleteMenu)
+    //   .click(okBtn)
+    //   .waitForExist('.projectName', 3000, true);
   });
+
 });

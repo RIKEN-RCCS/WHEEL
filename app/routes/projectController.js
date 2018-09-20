@@ -11,7 +11,7 @@ const Dispatcher = require("./dispatcher");
 const { getDateString, createSshConfig, readJsonGreedy } = require("./utility");
 const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, emitEvent, removeListener } = require("./projectResource");
+const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener } = require("./projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
 const { killTask } = require("./taskUtil");
@@ -300,7 +300,6 @@ async function onRunProject(sio, projectRootDir, cb) {
     //差分保存用のmapをprojectResouce内に用意し
     //socketIO.emit()する毎にクリア、emit(taskStateChanged)のラッパー内で差分保存用mapに入力
     emit("taskStateList", getTaskStateList(projectRootDir));
-    emitEvent("componentStateChanged");
     setTimeout(()=>{
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
     }, interval);

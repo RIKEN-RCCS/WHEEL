@@ -81,11 +81,11 @@
         <table id="projectTable">
           <thead id="project_table_head">
             <tr id="project_table_tr">
-              <th class="componentName">Name</th>
-              <th class="componentState">State</th>
-              <th class="componentStartTime">Execution Date</th>
-              <th class="componentEndTime">Finish Date</th>
-              <th class="componentDescription">Description</th>
+              <th class="componentNameLabel">Name</th>
+              <th class="componentStateLabel">State</th>
+              <th class="componentStartTimeLabel">Execution Date</th>
+              <th class="componentEndTimeLabel">Finish Date</th>
+              <th class="componentDescriptionLabel">Description</th>
             </tr>
           </thead>
           <div id="tableBody">
@@ -144,7 +144,7 @@
           </li>
           <li id="img_foreach_name">Foreach</li>
         </ul>
-        <!-- <li a href="foreach" id="foreach" class="type" draggable="true">foreach</li>         -->
+        <!-- <li a href="foreach" id="foreach" class="type" draggable="true">foreach</li> -->
       </div>
     </div>
     <!-- ライブラリーボタン -->
@@ -313,6 +313,12 @@
             <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField" v-on:blur="updateProperty('exclude')">
           </div>
         </div>
+        <div v-if="node.hasOwnProperty('forceOverwrite')">
+          <div>
+            <input type="checkbox" v-model="node.forceOverwrite" id="forceOverwriteCheckbox" v-on:change="updateProperty('forceOverwrite')">
+            force overwrite
+          </div>
+        </div>
       </div>
       <!--ファイル編集 -->
       <div id="filesEdit">
@@ -320,7 +326,7 @@
         <p id="componentPath"></p>
         <input type="file" id="fileSelector" name="uploadFiles" multiple />
         <div id="fileEditButton">
-          <button type="button" id="jupyterBootButton">
+          <button type="button" id="jupyterBootButton" v-on:click.stop="openJupyterNotebook">
             <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" id="jupyterImg" alt="graph">
           </button>
           <button type="button" id="createFolderButton" class="createFileDirButton">
@@ -336,6 +342,9 @@
         <div id="dialog"></div>
         <div id="fileBrowser" class="fileBrowser">
           <p id="fileDropArea">File List</p>
+          <div v-if="node.type ==='workflow' || node.type ==='for' || node.type ==='foreach' || node.type ==='while' || node.type ==='parameterStudy'"
+            id="dirBackButtonArea">
+          </div>
           <ul id="fileList"></ul>
           <div id="editButtonsArea">
             <button type="button" id="editFileButton" class="editButtons">

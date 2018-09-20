@@ -26,8 +26,18 @@ export default class {
       this.registerContextMenu(additionalMenu);
     }
   }
-  request(sendEventName, path, recvEventName) {
-    this.socket.emit(sendEventName, path);
+  request(sendEventName, path, recvEventName, sndType) {
+    if (sndType === 'snd' || sndType === 'sndd') {
+      let isDir;
+      if (sndType === 'sndd') {
+        isDir = true;
+      } else {
+        isDir = false;
+      }
+      this.socket.emit(sendEventName, path, recvEventName, isDir);
+    } else {
+      this.socket.emit(sendEventName, path);
+    }
     this.requestedPath = path;
     this.sendEventName = sendEventName;
     if (!recvEventName) this.recvEventName = recvEventName;
@@ -128,7 +138,10 @@ export default class {
   registerContextMenu(additionalMenu) {
     const fileList = `${this.idFileList} li`;
     $.contextMenu({
-      'selector': fileList,
+      selector: fileList,
+      position: function (opt, x, y) {
+        opt.$menu.css({ top: y, left: x + 1 })
+      },
       build: this.createContextMenu.bind(this, additionalMenu)
     });
   }
@@ -156,27 +169,32 @@ export default class {
     this.socket.on(this.recvEventName, (fileList) => {
       fileList.forEach((data) => {
         if (!this.isValidData(data)) return;
-        //TODO select icon for SND
-        const iconClass = data.type === 'dir' ? 'fa-folder-o' : 'fa-file-o';
         let iconImg;
-        if (iconClass === 'fa-folder-o') {
+        if (data.type === 'dir') {
           if (data.islink === false) {
-            iconImg = `<img src="/image/img_folder.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
+            iconImg = `<img src="/image/img_folder.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
           } else {
-            iconImg = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
-          }
-        } else {
-          if (data.islink === false) {
-            iconImg = `<img src="/image/img_file.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-          } else {
-            iconImg = `<img src="/image/img_filelink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+            iconImg = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
           }
         }
-        // const normalIcon = iconImg;
-        // const symlinkIcon = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"alt="graph">`;
-        // let icon = data.islink ? symlinkIcon : normalIcon;
+        if (data.type === 'file') {
+          if (data.islink === false) {
+            iconImg = `<img src="/image/img_file.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+          } else {
+            iconImg = `<img src="/image/img_filelink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+          }
+        }
+        if (data.type === 'snd') {
+          iconImg = `<img src="/image/img_SND.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+        }
+        if (data.type === 'sndd') {
+          iconImg = `<img src="/image/img_SNDD.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+        }
+        if (data.type === 'deadlink') {
+          iconImg = `<img src="/image/img_deadlink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
+        }
         let icon = iconImg;
-        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" class=${data.type}>${icon}${data.name}</li>`);
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class=${data.type}>${icon}${data.name}</li>`);
         var compare = this.compare;
         var lengthBefore = $(`${this.idFileList} li`).length;
         var counter = 0;
@@ -208,7 +226,8 @@ export default class {
     let dirStack = [];
     let rootDirPath = "";
     $(this.idFileList).on("dblclick", 'li,i', (event) => {
-      if ($(event.target).data('isdir')) {
+      console.log($(event.target).data('type'));
+      if ($(event.target).data('type') === 'dir') {
         if (dirStack.length === 0) {
           dirStack.push($(event.target).data('path'));
           rootDirPath = $(event.target).data('path');
@@ -225,8 +244,13 @@ export default class {
           var target = $(event.target).data('path').trim() + '\\' + $(event.target).data('name').trim();
           dirStack.push(target);
         }
+        console.log(this.sendEventName);
         this.request(this.sendEventName, target, null);
         $(this.idFileList).empty();
+      }
+      if ($(event.target).data('type') === 'snd' || $(event.target).data('type') === 'sndd') {
+        var target = $(event.target).data('path').trim();
+        this.request('getSNDContents', target, $(event.target).data('name'), $(event.target).data('type'));
       }
     });
   }

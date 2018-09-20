@@ -17,7 +17,8 @@ async function setTaskState(task, state) {
   task.state = state;
   //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
   await fs.writeJson(path.resolve(task.workingDir, componentJsonFilename), task, { spaces: 4, replacer: componentJsonReplacer });
-  emitEvent(task.label, "taskStateChanged");
+  emitEvent(task.projectRootDir, "taskStateChanged");
+  emitEvent(task.projectRootDir, "componentStateChanged");
 }
 
 /**
@@ -397,7 +398,7 @@ function createExecuter(task) {
   logger.debug("createExecuter called");
   const onRemote = task.remotehostID !== "localhost";
   const hostinfo = onRemote ? remoteHost.get(task.remotehostID) : null;
-  const ssh = onRemote ? getSsh(task.label, hostinfo.host) : null;
+  const ssh = onRemote ? getSsh(task.projectRootDir, hostinfo.host) : null;
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
   const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
   const host = hostinfo != null ? hostinfo.host : null;

@@ -147,9 +147,11 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
         return;
       }
       const newDir = path.resolve(path.dirname(nodeDir), value);
+      await gitRm(projectRootDir, nodeDir);
       await fs.move(nodeDir, newDir);
       await updateComponentJson(projectRootDir, path.resolve(newDir, componentJsonFilename), update);
       await updateComponentPath(projectRootDir, changeComponentPath.bind(null, ID, newDir));
+      await gitAdd(projectRootDir, newDir);
     } else {
       await updateComponentJson(projectRootDir, path.resolve(nodeDir, componentJsonFilename), update);
     }

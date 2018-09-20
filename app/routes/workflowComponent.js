@@ -141,6 +141,7 @@ class ParameterStudy extends BaseWorkflowComponent {
     this.numTotal = null;
     this.numFinished = null;
     this.numFailed = null;
+    this.forceOverwrite = false;
   }
 }
 

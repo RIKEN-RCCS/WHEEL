@@ -129,6 +129,18 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
   });
 }
 
+async function replaceTargetFile(srcDir, dstDir, targetFile, paramVec) {
+  const tmp = await fs.readFile(path.resolve(srcDir, targetFile));
+  let data = tmp.toString();
+  paramVec.forEach((e)=>{
+    data = data.replace(new RegExp(`%%${e.key}%%`, "g"), e.value.toString());
+  });
+  const rewriteFile = path.resolve(dstDir, targetFile);
+  //fs.writeFile will overwrites existing file.
+  //so, targetFile is always overwrited!!
+  await fs.writeFile(rewriteFile, data);
+}
+
 /**
  * parse workflow graph and dispatch ready tasks to executer
  * @param {string} projectRootDir - root directory path of project
@@ -139,7 +151,7 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
  * @param {Object} componentPath  - componentPath in project Json
  */
 class Dispatcher extends EventEmitter {
-  constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath) {
+  constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath, ancestorsType) {
     super();
     this.projectRootDir = projectRootDir;
     this.cwfID = cwfID;
@@ -147,6 +159,7 @@ class Dispatcher extends EventEmitter {
     this.projectStartTime = startTime;
     this.logger = logger;
     this.componentPath = componentPath;
+    this.ancestorsType = ancestorsType;
 
     this.nextSearchList = [];
     this.children = new Set(); //child dispatcher instance
@@ -197,6 +210,13 @@ class Dispatcher extends EventEmitter {
       await this._setComponentState(target, "running");
       promises.push(
         this._cmdFactory(target.type).call(this, target)
+          .then(()=>{
+            if (target.state === "unknown") {
+              this.hasUnknownComponent = true;
+            } else if (target.state === "failed") {
+              this.hasFailedComponent = true;
+            }
+          })
           .catch(async(err)=>{
             await this._setComponentState(target, "failed");
             this.hasFailedComponent = true;
@@ -227,8 +247,7 @@ class Dispatcher extends EventEmitter {
       let state = "finished";
       if (this.hasUnknownComponent) {
         state = "unknown";
-      }
-      if (this.hasFailedComponent) {
+      } else if (this.hasFailedComponent) {
         state = "failed";
       }
       this.emit("done", state);
@@ -245,7 +264,7 @@ class Dispatcher extends EventEmitter {
       if (task.state === "unknown") {
         this.hasUnknownComponent = true;
       }
-      if (task.state === "faild") {
+      if (task.state === "failed") {
         this.hasFailedComponent = true;
       }
       return !isFinishedState(task.state);
@@ -339,6 +358,9 @@ class Dispatcher extends EventEmitter {
     task.projectRootDir = this.projectRootDir;
     task.workingDir = path.resolve(this.cwfDir, task.name);
 
+    task.ancestorsName = path.relative(task.projectRootDir, path.dirname(task.workingDir));
+    task.ancestorsType = this.ancestorsType;
+
     if (task.cleanupFlag === "2") {
       task.doCleanup = this.doCleanup;
     } else {
@@ -370,18 +392,14 @@ class Dispatcher extends EventEmitter {
   async _delegate(component) {
     this.logger.debug("_delegate called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
-    const childWF = await readJsonGreedy(path.join(childDir, componentJsonFilename));
-
-    if (component.hasOwnProperty("currentIndex")) {
-      childWF.currentIndex = component.currentIndex;
-    }
-    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath);
+    const ancestorsType = typeof this.ancestorsType === "string" ? `${this.ancestorsType}/${component.type}` : component.type;
+    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath, ancestorsType);
     this.children.add(child);
 
     //exception should be catched in caller
     try {
-      childWF.state = await child.start();
-      await fs.writeJson(path.join(childDir, componentJsonFilename), childWF, { spaces: 4, replacer: componentJsonReplacer });
+      component.state = await child.start();
+      await fs.writeJson(path.join(childDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
 
       //if component type is not workflow, it must be copied component of PS, for, while or foreach
       //so, it is no need to emit "componentStateChanged" here.
@@ -439,9 +457,11 @@ class Dispatcher extends EventEmitter {
 
     const newComponent = Object.assign({}, component);
     newComponent.name = `${component.originalName}_${component.currentIndex}`;
+    newComponent.subComponent = true;
     const dstDir = path.resolve(this.cwfDir, newComponent.name);
 
     try {
+      this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir); //fs-extra's copy overwrites dst by default
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4 });
       await this._delegate(newComponent);
@@ -476,9 +496,12 @@ class Dispatcher extends EventEmitter {
 
     const promises = [];
     component.numTotal = getParamSize(paramSpace);
+    //reset counter
+    component.numFailed = 0;
+    component.numFinished = 0;
 
     for (const paramVec of paramVecGenerator(paramSpace)) {
-      let dstDir = paramVec.reduce((p, e)=>{
+      const newName = paramVec.reduce((p, e)=>{
         let v = e.value;
 
         if (e.type === "file") {
@@ -487,9 +510,9 @@ class Dispatcher extends EventEmitter {
         }
         return `${p}_${e.key}_${v}`;
       }, component.name);
-      dstDir = path.resolve(this.cwfDir, dstDir);
+      const dstDir = path.resolve(this.cwfDir, newName);
 
-      //copy file which is specified as parameter
+      //pick up files which is specified as parameter
       const includeFiles = paramVec
         .filter((e)=>{
           return e.type === "file";
@@ -497,8 +520,8 @@ class Dispatcher extends EventEmitter {
         .map((e)=>{
           return path.resolve(srcDir, e.value);
         });
-      const options = {};
 
+      const options = { overwrite: component.forceOverwrite };
       options.filter = function(filename) {
         return !ignoreFiles.filter((e)=>{
           return !includeFiles.includes(e);
@@ -507,17 +530,12 @@ class Dispatcher extends EventEmitter {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir, options);
 
-      let data = await promisify(fs.readFile)(path.resolve(srcDir, targetFile));
-      data = data.toString();
-      paramVec.forEach((e)=>{
-        data = data.replace(new RegExp(`%%${e.key}%%`, "g"), e.value.toString());
-      });
-      const rewriteFile = path.resolve(dstDir, targetFile);
-      await promisify(fs.writeFile)(rewriteFile, data); //fs.writeFile overwrites existing file
+      await replaceTargetFile(srcDir, dstDir, targetFile, paramVec);
 
       const newComponent = Object.assign({}, component);
-      newComponent.name = path.relative(this.cwfDir, dstDir);
-      newComponent.path = newComponent.name;
+      newComponent.name = newName;
+      newComponent.subComponent = true;
+      await fs.writeJson(path.join(dstDir, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
       const p = this._delegate(newComponent)
         .then(()=>{
           if (newComponent.state === "finished") {

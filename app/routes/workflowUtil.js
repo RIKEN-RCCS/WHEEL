@@ -78,15 +78,19 @@ async function getChildren(projectRootDir, parentID) {
   if (!dir) {
     return [];
   }
-  const children = await promisify(glob)(path.join(dir, "*", componentJsonFilename));
 
+  const children = await promisify(glob)(path.join(dir, "*", componentJsonFilename));
   if (children.length === 0) {
     return [];
   }
 
-  return Promise.all(children.map((e)=>{
+  const rt = await Promise.all(children.map((e)=>{
     return readJsonGreedy(e);
   }));
+
+  return rt.filter((e)=>{
+    return !e.subComponent;
+  });
 }
 
 async function sendWorkflow(emit, projectRootDir) {
