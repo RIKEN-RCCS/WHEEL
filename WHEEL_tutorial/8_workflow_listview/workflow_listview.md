@@ -17,7 +17,7 @@
 Stateは、以下のように分類され、表示されます。
 
 | State名 | State説明 |
-|----|----|----|
+|----|----|
 | waiting | 処理の実行待ち |
 | queued | ステージイン待ち |
 | stage-in | ステージイン中 |
@@ -33,6 +33,6 @@ Stateは、以下のように分類され、表示されます。
 の4つの状態で細分化され、表示されます。  
 
 複数個コンポーネント、また、Parameter Study, For, Foreach, Whileなどの1つのコンポーネントにて複数回の処理が実行される場合は、  
-実行順にリスト表示されます。例としてParameter Study実行時のリスト画面を示します。
+実行順にリスト表示されます。例としてFor実行時のリスト画面を示します。
 
-![img](./img/PS_finished.png "PS_component_list")  
+![img](./img/for_finished.png "For_component_list")  
