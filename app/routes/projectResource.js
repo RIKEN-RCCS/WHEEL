@@ -14,6 +14,7 @@ class Project extends EventEmitter {
     this.rootDispatcher = null; //dispatcher for root workflow
     this.ssh = new Map(); //ssh instances using in this project
     this.tasks = new Set(); //dispatched tasks
+    this.updatedTasks = new Set(); //temporaly container which have only updated Tasks
   }
 }
 
@@ -105,23 +106,29 @@ function getTasks(projectRootDir) {
   return getProject(projectRootDir).tasks;
 }
 
-//TODO remove from this module
-function getTaskStateList(projectRootDir) {
-  return [...getProject(projectRootDir).tasks].map((task)=>{
-    return {
-      name: task.name,
-      ID: task.ID,
-      subID: task.subID,
-      description: task.description ? task.description : "",
-      state: task.state,
-      parent: task.parent,
-      parentType: task.parentType,
-      ancestorsName: task.ancestorsName,
-      ancestorsType: task.ancestorsType,
-      startTime: task.startTime,
-      endTime: task.endTime
-    };
-  });
+function taskStateFilter(task) {
+  return {
+    name: task.name,
+    ID: task.ID,
+    subID: task.subID,
+    description: task.description ? task.description : "",
+    state: task.state,
+    parent: task.parent,
+    parentType: task.parentType,
+    ancestorsName: task.ancestorsName,
+    ancestorsType: task.ancestorsType,
+    startTime: task.startTime,
+    endTime: task.endTime
+  };
+}
+
+function getTaskStateList(projectRootDir, updateOnly = false) {
+  if (updateOnly) {
+    const updatedTaskStateList = [...getProject(projectRootDir).updatedTasks].map(taskStateFilter);
+    getProject(projectRootDir).updatedTasks.clear();
+    return updatedTaskStateList;
+  }
+  return [...getProject(projectRootDir).tasks].map(taskStateFilter);
 }
 
 function clearDispatchedTasks(projectRootDir) {
@@ -132,6 +139,10 @@ function addDispatchedTask(projectRootDir, task) {
   getProject(projectRootDir).tasks.add(task);
 }
 
+function addUpdatedTask(projectRootDir, task) {
+  getProject(projectRootDir).updatedTasks.add(task);
+}
+
 module.exports = {
   openProject,
   setCwd,
@@ -140,6 +151,7 @@ module.exports = {
   getRootDispatcher,
   deleteRootDispatcher,
   addDispatchedTask,
+  addUpdatedTask,
   clearDispatchedTasks,
   getTasks,
   getTaskStateList,

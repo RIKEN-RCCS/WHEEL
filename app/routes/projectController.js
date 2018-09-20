@@ -296,10 +296,7 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //event listener for task state changed
   function onTaskStateChanged() {
-    //TODO ここで取得するtask state listは差分のみにする
-    //差分保存用のmapをprojectResouce内に用意し
-    //socketIO.emit()する毎にクリア、emit(taskStateChanged)のラッパー内で差分保存用mapに入力
-    emit("taskStateList", getTaskStateList(projectRootDir));
+    emit("taskStateList", getTaskStateList(projectRootDir, true));
     setTimeout(()=>{
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
     }, interval);
