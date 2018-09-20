@@ -101,7 +101,7 @@ describe("project Controller UT", function() {
           required: ["state", "ancestorsName"],
           properties: {
             state: { enum: ["finished"] },
-            ancestorsName: {enum: [""]}
+            ancestorsName: { enum: [""] }
           }
         });
       });
@@ -905,16 +905,16 @@ describe("project Controller UT", function() {
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
-        expect(dummyLogger.stdout.callCount).to.equal(9)
-        // expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_1", "task0"));
-        // expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_2", "task0"));
-        // expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_3", "task0"));
-        // expect(dummyLogger.stdout.getCall(3)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_1", "task0"));
-        // expect(dummyLogger.stdout.getCall(4)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_2", "task0"));
-        // expect(dummyLogger.stdout.getCall(5)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_3", "task0"));
-        // expect(dummyLogger.stdout.getCall(6)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_1", "task0"));
-        // expect(dummyLogger.stdout.getCall(7)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_2", "task0"));
-        // expect(dummyLogger.stdout.getCall(8)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_3", "task0"));
+        expect(dummyLogger.stdout.callCount).to.equal(9);
+        //expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_1", "task0"));
+        //expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_2", "task0"));
+        //expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_3", "task0"));
+        //expect(dummyLogger.stdout.getCall(3)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_1", "task0"));
+        //expect(dummyLogger.stdout.getCall(4)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_2", "task0"));
+        //expect(dummyLogger.stdout.getCall(5)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2","PS1_KEYWORD1_3", "task0"));
+        //expect(dummyLogger.stdout.getCall(6)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_1", "task0"));
+        //expect(dummyLogger.stdout.getCall(7)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_2", "task0"));
+        //expect(dummyLogger.stdout.getCall(8)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3","PS1_KEYWORD1_3", "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
@@ -996,7 +996,6 @@ describe("project Controller UT", function() {
             state: { enum: ["finished"] }
           }
         });
-
       });
     });
     describe("task in nested loop", ()=>{
@@ -1100,7 +1099,7 @@ describe("project Controller UT", function() {
         setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0"));
         const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
-        await fs.outputFile(path.join(projectRootDir,"for0", "while0", "workflow0", "PS0", "input.txt"), "%%KEYWORD1%%");
+        await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "input.txt"), "%%KEYWORD1%%");
         const parameterSetting = {
           target_file: "input.txt",
           target_param: [
@@ -1115,7 +1114,7 @@ describe("project Controller UT", function() {
             }
           ]
         };
-        await fs.writeJson(path.join(projectRootDir,"for0", "while0", "workflow0", "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
+        await fs.writeJson(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
 
         setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0"));
         const foreach0 = await onCreateNode(emit, projectRootDir, { type: "foreach", pos: { x: 10, y: 10 } });
@@ -1126,16 +1125,17 @@ describe("project Controller UT", function() {
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
         await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
       });
-      it("should have acestors name and type in task object",async ()=>{
+      it("should have acestors name and type in task object", async()=>{
         await onRunProject(sio, projectRootDir, cb);
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
-        for(const i1 of ["for0_0", "for0_1"]){
-          for(const i2 of ["while0_0", "while0_1"]){
-            for(const i3 of ["PS0_KEYWORD1_1", "PS0_KEYWORD1_2"]){
-              for(const i4 of ["foreach0_foo", "foreach0_bar"]){
+
+        for (const i1 of ["for0_0", "for0_1"]) {
+          for (const i2 of ["while0_0", "while0_1"]) {
+            for (const i3 of ["PS0_KEYWORD1_1", "PS0_KEYWORD1_2"]) {
+              for (const i4 of ["foreach0_foo", "foreach0_bar"]) {
                 expect(path.resolve(projectRootDir, i1, i2, "workflow0", i3, i4, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
-                  required: ["state","ancestorsName", "ancestorsType"],
+                  required: ["state", "ancestorsName", "ancestorsType"],
                   properties: {
                     state: { enum: ["finished"] },
                     ancestorsName: { type: "string", enum: [`${i1}/${i2}/workflow0/${i3}/${i4}`] },
@@ -1146,6 +1146,148 @@ describe("project Controller UT", function() {
             }
           }
         }
+      });
+    });
+    describe("force overwrite flag in PS", ()=>{
+      beforeEach(async()=>{
+        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
+        const parameterSetting = {
+          target_file: "input.txt",
+          target_param: [
+            {
+              target: "hoge",
+              keyword: "KEYWORD1",
+              type: "integer",
+              min: "1",
+              max: "3",
+              step: "1",
+              list: ""
+            }
+          ]
+        };
+        await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
+
+        setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd\nexit 1\n");
+
+        //1st run
+        await onRunProject(sio, projectRootDir);
+        //modify run.sh
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd |tee result.log\n");
+        setCwd(projectRootDir, path.join(projectRootDir));
+        //reset logger's call count
+        dummyLogger.stdout.reset();
+        dummyLogger.stderr.reset();
+        dummyLogger.sshout.reset();
+        dummyLogger.ssherr.reset();
+      });
+      it("should not overwrite files and run project ", async()=>{
+        await onRunProject(sio, projectRootDir, cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(dummyLogger.stdout).to.have.been.calledThrice;
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "result.log")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "result.log")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "result.log")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+      });
+      it("should overwrite files and run project ", async()=>{
+        const ps0 = await fs.readJson(path.join(projectRootDir, "PS0", componentJsonFilename));
+        await onUpdateNode(emit, projectRootDir, ps0.ID, "forceOverwrite", true);
+        await onRunProject(sio, projectRootDir, cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(dummyLogger.stdout).to.have.been.calledThrice;
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0")}\n`);
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0")}\n`);
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0")}\n`);
       });
     });
   });
