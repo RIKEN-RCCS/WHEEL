@@ -440,7 +440,7 @@ function exec(task, loggerInstance) {
 
   if (task.remotehostID !== "localhost") {
     const hostinfo = remoteHost.get(task.remotehostID);
-    const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
+    const localWorkingDir = replacePathsep(path.relative(task.projectRootDir, task.workingDir));
     task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
   }
 
