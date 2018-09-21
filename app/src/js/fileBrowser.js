@@ -129,6 +129,9 @@ export default class {
     const fileList = `${this.idFileList} li`;
     $.contextMenu({
       'selector': fileList,
+      position: function (opt, x, y) {
+        opt.$menu.css({ top: y, left: x + 1 });
+      },
       build: this.createContextMenu.bind(this, additionalMenu)
     });
   }

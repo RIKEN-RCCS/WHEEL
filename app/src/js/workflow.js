@@ -390,12 +390,13 @@ $(() => {
   // setup context menu
   $.contextMenu({
     selector: 'g',
-    autoHide: true,
-    reposition: false,
     itemClickEvent: "click",
+    position: function (opt, x, y) {
+      opt.$menu.css({ top: y, left: x + 1 });
+    },
     items: {
       "delete": {
-        "name": "delete",
+        "name": "Delete",
         callback: function () {
           sio.emit('removeNode', selectedNode);
         }
