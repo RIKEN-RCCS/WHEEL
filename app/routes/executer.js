@@ -3,7 +3,7 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-const { getSsh, emitEvent } = require("./projectResource");
+const { getSsh, emitEvent, addUpdatedTask } = require("./projectResource");
 const { remoteHost, jobScheduler, componentJsonFilename } = require("../db/db");
 const { addX, replacePathsep, getDateString } = require("./utility");
 const { componentJsonReplacer } = require("./workflowUtil");
@@ -15,6 +15,7 @@ let logger; //logger is injected when exec() is called;
  */
 async function setTaskState(task, state) {
   task.state = state;
+  addUpdatedTask(task.projectRootDir, task);
   //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
   await fs.writeJson(path.resolve(task.workingDir, componentJsonFilename), task, { spaces: 4, replacer: componentJsonReplacer });
   emitEvent(task.projectRootDir, "taskStateChanged");
@@ -439,7 +440,7 @@ function exec(task, loggerInstance) {
 
   if (task.remotehostID !== "localhost") {
     const hostinfo = remoteHost.get(task.remotehostID);
-    const localWorkingDir = replacePathsep(path.relative(task.rwfDir, task.workingDir));
+    const localWorkingDir = replacePathsep(path.relative(task.projectRootDir, task.workingDir));
     task.remoteWorkingDir = replacePathsep(path.posix.join(hostinfo.path, task.projectStartTime, localWorkingDir));
   }
 

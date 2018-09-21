@@ -12,11 +12,21 @@
   "PBSPro":{
     "submit": "qsub",
     "queueOpt": "-q",
-    "stat": "qstat -xf -F dsv -D ','",
+    "stat": "qstat -xf",
     "del": "qdel",
     "reJobID": "(\\d+).*",
-    "reFinishedState": ",substate\\=92",
-    "reReturnCode": ",Exit_status\\=(\\d+)",
-    "reFailedState": ",substate\\=(91|93)"
+    "reFinishedState": "substate \\= 92$",
+    "reReturnCode": "Exit_status \\= (\\d+)$",
+    "reFailedState": "substate \\= (91|93)$"
+  },
+  "SLURM":{
+    "submit": "sbatch",
+    "queueOpt": "-p",
+    "stat": "sacct -P --delimiter=, -o State,ExitCode -n -j ",
+    "del": "scancel",
+    "reJobID": "Submitted batch job (\\d+)",
+    "reFinishedState": "^COMPLETED,0",
+    "reReturnCode": " .*(\\d+):\\d+$",
+    "reFailedState": "^(COMPLETED|FAILED|CANCELLED|DEADLINE|NODE_FAIL|TIMEOUT)"
   }
 }

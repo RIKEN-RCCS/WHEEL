@@ -545,6 +545,10 @@ class Dispatcher extends EventEmitter {
           } else {
             this.logger.warn("child state is illegal", newComponent.state);
           }
+          fs.writeJson(path.join(srcDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer })
+            .then(()=>{
+              emitEvent(this.projectRootDir, "componentStateChanged");
+            });
         });
       promises.push(p);
     }
