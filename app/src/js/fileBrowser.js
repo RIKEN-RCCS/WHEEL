@@ -226,7 +226,6 @@ export default class {
     let dirStack = [];
     let rootDirPath = "";
     $(this.idFileList).on("dblclick", 'li,i', (event) => {
-      console.log($(event.target).data('type'));
       if ($(event.target).data('type') === 'dir') {
         if (dirStack.length === 0) {
           dirStack.push($(event.target).data('path'));
@@ -244,7 +243,6 @@ export default class {
           var target = $(event.target).data('path').trim() + '\\' + $(event.target).data('name').trim();
           dirStack.push(target);
         }
-        console.log(this.sendEventName);
         this.request(this.sendEventName, target, null);
         $(this.idFileList).empty();
       }
@@ -268,7 +266,7 @@ export default class {
       return false;
     if (!data.hasOwnProperty('name'))
       return false;
-    if (!(data.hasOwnProperty('type') && (data.type === "file" || data.type === "dir" || data.type === "snd")))
+    if (!(data.hasOwnProperty('type') && (data.type === "file" || data.type === "dir" || data.type === "snd" || data.type === "sndd")))
       return false;
     if (!data.hasOwnProperty('islink'))
       return false;
