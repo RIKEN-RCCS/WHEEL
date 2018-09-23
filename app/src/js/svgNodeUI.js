@@ -42,7 +42,7 @@ export class SvgNodeUI {
     this.group.data({ "boxBbox": boxBbox });
 
     const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0, node.name);
-    upper.data({ "type": '.upperPlug', "ID": node.ID });
+    upper.data({ "type": 'upperPlug', "ID": node.ID }).attr('id', `${node.name}` + '_upper');
     this.group.add(upper);
 
     const numLower = node.type === 'if' ? 3 : 2;
@@ -52,7 +52,7 @@ export class SvgNodeUI {
     } else {
       [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio, node.name);
     }
-    this.lowerPlug.data({ "next": node.next });
+    this.lowerPlug.data({ "next": node.next }).attr('id', `${node.name}` + '_lower');
     this.group.add(this.lowerPlug).add(tmp);
 
     this.connectors = [];

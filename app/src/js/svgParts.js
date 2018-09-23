@@ -389,7 +389,7 @@ class SvgBox {
     }
     const nodeStatePath = config.state_icon[state];
     //const paraStuState = "Fin:" + numFinished + "Fail:" + numFailed + "(" + numTotal + ")";
-    if (state === 'running') {
+    if (state === 'running' && numTotal !== null) {
       const calcProgress = numFinished / numTotal * 100;
       const radius = 7;
       const diameter = radius * 2;
@@ -420,7 +420,7 @@ class SvgBox {
       state = 'running'
     }
     const nodeStatePath = config.state_icon[state];
-    if (state === 'running') {
+    if (state === 'running' && numTotal !== null) {
       const calcProgress = numFinished / numTotal * 100;
       const calcProgress2 = numFailed / numTotal * 100;
       const radius = 7;

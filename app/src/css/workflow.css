@@ -851,6 +851,11 @@ img.btn_menu_n{
     background-color: gray;
 }
 
+.backButton{
+    width: 24px;
+    height: 24px;
+}
+
 .subtitle {
     color: rgb(240, 240, 240);
     padding: 10px 0 0 20px;
@@ -1169,7 +1174,7 @@ img.btn_menu_n{
     float: left;
 }
 
-.node_svg {
+#node_svg {
     float: right;
     height: 100%;
     width: 100%;

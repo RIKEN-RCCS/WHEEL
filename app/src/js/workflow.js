@@ -43,6 +43,8 @@ $(() => {
   let wfStack = [rootWorkflow];
   //for 'save' button control
   let presentState = '';
+  //taskStateList
+  let updateList = [];
 
   let projectRootDir = currentWorkDir;
 
@@ -175,10 +177,18 @@ $(() => {
   $(document).on('dblclick', '.dir, .snd, .sndd', function () {
     filePath = $(this).attr("data-path");
     filename = $(this).attr("data-name");
+    const datatype = $(this).attr("data-type");
     let currentDirPath = filePath.replace(projectRootDir, "") + "\\" + filename;
     filePathStack.push(filePath);
     $('#componentPath').html("." + currentDirPath);
-    let backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}">../</button>`;
+    let backDirHtml;
+    if (datatype === "snd") {
+      backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}"><img src="/image/img_filesToSND.png" alt="config" class="backButton"></button>`;
+    } else if (datatype === "sndd") {
+      backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}"><img src="/image/img_dirsToSNDD.png" alt="config" class="backButton"></button>`;
+    } else {
+      backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}">../</button>`;
+    }
     $('#dirBackButtonArea').html(backDirHtml);
   });
 
@@ -296,7 +306,10 @@ $(() => {
     });
 
     sio.on('taskStateList', (taskStateList) => {
-      updateTaskStateTable(taskStateList);
+      Array.prototype.push.apply(updateList, taskStateList);
+      let updatedList = updateTaskStateList(updateList);
+      let arrangedTaskStateList = arrangeTaskStateTable(updatedList);
+      updateTaskStateTable(arrangedTaskStateList);
     })
 
     // TODO 現在のプロジェクト状態の取得をサーバにリクエストする
@@ -351,12 +364,14 @@ $(() => {
 
   // register btn click event listeners
   $('#run_menu').on('click', function () {
+    updateList.splice(0, updateList.length);
     sio.emit('runProject', rootWorkflow);
   });
   $('#pause_menu').on('click', function () {
     sio.emit('pauseProject', true);
   });
   $('#clean_menu').on('click', function () {
+    updateList.splice(0, updateList.length);
     // パンくずリストをrootに更新
     let rootNodeStack = nodeStack[0];
     let rootDirStack = dirStack[0];
@@ -416,6 +431,9 @@ $(() => {
   $('#node_svg').on('mousedown', function () {
     fb.request('getFileList', currentWorkDir, null);
     $('#property').hide();
+    // property Files Area initialize
+    filePathStack = [];
+    $('#dirBackButton').css("display", "none");
   });
 
   // setup file uploader
@@ -427,7 +445,6 @@ $(() => {
   $('#listView').click(function () {
     $('#workflow_manage_area').hide();
     $('#project_manage_area').show();
-    sio.emit('getTaskStateList', rootWorkflow);
   });
   $('#graphView').click(function () {
     $('#project_manage_area').hide();
@@ -487,7 +504,6 @@ $(() => {
       var objectName = event.dataTransfer.getData("text");
       var xCoordinate = event.offsetX;
       var yCoordinate = event.offsetY;
-
       const pos = { x: xCoordinate, y: yCoordinate };
       sio.emit('createNode', { "type": objectName, "pos": pos });
     };
@@ -773,9 +789,47 @@ $(() => {
   }
 
   let taskStateTable = $('#project_table_body');
+  function updateTaskStateList(taskList) {
+    for (let i = taskList.length - 2; i >= 0; i--) {
+      for (let j = taskList.length - 1; j > i; j--) {
+        let targetAncestorsNameAndParent = taskList[i].ancestorsName + taskList[i].parent + taskList[i].ID;
+        let ancestorsNameAndParent = taskList[j].ancestorsName + taskList[j].parent + taskList[j].ID;
+        let sortFlag = false;
+        if (targetAncestorsNameAndParent === ancestorsNameAndParent) {
+          sortFlag = true;
+        }
+        if (sortFlag === true) {
+          taskList.splice(i, 1);
+        }
+      }
+    }
+    return taskList;
+  }
+
+  let maxancestorsLength = 0;
+  function arrangeTaskStateTable(taskStateList) {
+    var arrangedList = taskStateList.slice();
+    //arrange taskStateList if list length > 2
+    if (taskStateList.length > 2) {
+      for (let i = 2; i < taskStateList.length; i++) {
+        for (let j = 0; j < i; j++) {
+          let targetAncestorsNameAndParent = arrangedList[i].ancestorsName + arrangedList[i].parent;
+          let ancestorsNameAndParent = arrangedList[j].ancestorsName + arrangedList[j].parent;
+          let sortFlag = false;
+          if (targetAncestorsNameAndParent === ancestorsNameAndParent) {
+            sortFlag = true;
+          }
+          if (sortFlag === true) {
+            arrangedList.splice(j + 1, 0, arrangedList[i]);
+            arrangedList.splice(i + 1, 1);
+          }
+        }
+      }
+    }
+    return arrangedList;
+  }
+
   function updateTaskStateTable(taskStateList) {
-    console.log(taskStateList);
-    //送られてくるデータが差分になれば、emptyする必要なし
     $('#project_table_body').empty();
     for (let i = 0; i < taskStateList.length; i++) {
       let ancestorsNameList = [];
@@ -797,19 +851,49 @@ $(() => {
         <td class="componentEndTime">${taskStateList[i].endTime}</td>
         <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
         $(`#${id}`).css("background-color", nodeColor);
+        $(`#${id}`).css("margin-right", maxancestorsLength * 32 + "px");
       } else {
         ancestorsNameList = taskStateList[i].ancestorsName.split('\\');
         ancestorsTypeList = taskStateList[i].ancestorsType.split('/');
+        if (maxancestorsLength < ancestorsNameList.length) {
+          maxancestorsLength = ancestorsNameList.length;
+        }
+        let previousAncestorsNameList;
+        let taskId;
         let ancestorsId;
         let j;
-        let taskId = `task_${taskStateList[i].name}_${i}_${j}`;
-        for (j = 0; j < ancestorsNameList.length; j++) {
-          let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
-          ancestorsId = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
-          taskStateTable.append(`<tr class="project_table_component" ><td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
-          $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
-          let loopMarginArea = 32 * j;
-          $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
+        if (i === 0) {
+          for (j = 0; j < ancestorsNameList.length; j++) {
+            let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
+            ancestorsId = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
+            taskStateTable.append(`<tr class="project_table_component" ><td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
+            $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
+            let loopMarginArea = 32 * j;
+            let parentMarginRight = (maxancestorsLength - j) * 32;
+            $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
+            $(`#${ancestorsId}`).css("margin-right", parentMarginRight + "px");
+          }
+        } else {
+          previousAncestorsNameList = taskStateList[i - 1].ancestorsName.split('\\');
+          taskId = `task_${taskStateList[i].name}_${i}_${j}`;
+          let viewFlag = [];
+          for (let k = 0; k < ancestorsNameList.length; k++) {
+            if (previousAncestorsNameList[k] === ancestorsNameList[k]) {
+              viewFlag.push(false);
+            } else {
+              viewFlag.push(true);
+            }
+          }
+          for (j = 0; j < ancestorsNameList.length; j++) {
+            if (viewFlag[j]) {
+              let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
+              ancestorsId = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
+              taskStateTable.append(`<tr class="project_table_component" ><td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
+              $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
+              let loopMarginArea = 32 * j;
+              $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
+            }
+          }
         }
         taskStateTable.append(`<tr class="project_table_component" ><td id="${taskId}" class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
         <td class="componentState"><img src=${nodeComponentState} class="stateIcon"><label class="stateLabel">${taskStateList[i].state}</label></td>
@@ -817,39 +901,14 @@ $(() => {
         <td class="componentEndTime">${taskStateList[i].endTime}</td>
         <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
         let marginArea = 32 * ancestorsNameList.length;
+        let marginRight = (maxancestorsLength - ancestorsNameList.length) * 32;
         $(`#${taskId}`).css("margin-left", marginArea + "px");
-        $(`.componentNameLabel`).css("margin-right", marginArea + "px");
+        $(`#${taskId}`).css("margin-right", marginRight + "px");
+        $(`.componentNameLabel`).css("margin-right", maxancestorsLength * 32 + "px");
         $(`#${taskId}`).css("background-color", nodeColor);
       }
-
     }
   }
-
-  function addParentInfoListView(i, parentNodeType, parentNodeIconPath, parentNodeColor) {
-    //add parent Info.
-    let parentId = `parent_${i}`;
-    // taskStateTable.append(`<tr class="project_table_component" ><td id=${parentId} class="componentName"><img src=${parentNodeIconPath} class="workflow_component_icon"><label class="nameLabel">${parentNodeType}</label></td>
-    //     <td class="componentState"></td>
-    //     <td class="componentStartTime"></td>
-    //     <td class="componentEndTime"></td>
-    //     <td class="componentDescription"></tr>`);
-    taskStateTable.append(`<tr class="project_table_component" ><td id=${parentId} class="componentName"><img src=${parentNodeIconPath} class="workflow_component_icon"><label class="nameLabel">${parentNodeType}</label></td></tr>`);
-    $(`#${parentId}`).css("background-color", parentNodeColor);
-  }
-  // //Queueリストの有効、無効処理
-  // $(function () {
-  //   $(document).on('change', '#useJobSchedulerFlagField', function () {
-  //     if ($('#useJobSchedulerFlagField').prop('checked')) {
-  //       $('#queueSelectField').prop('disabled', false);
-  //       $('#queueSelectField').css('background-color', '#000000');
-  //       $('#queueSelectField').css('color', '#FFFFFF');
-  //     } else {
-  //       $('#queueSelectField').prop('disabled', true);
-  //       $('#queueSelectField').css('background-color', '#333333');
-  //       $('#queueSelectField').css('color', '#333333');
-  //     }
-  //   });
-  // });
 
   //プロパティエリアのファイル、フォルダー新規作成
   $('#createFileButton').click(function () {
