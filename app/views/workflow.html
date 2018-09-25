@@ -225,21 +225,22 @@
           <div v-if="node.hasOwnProperty('host')">
             <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
           </div>
-          <select name="remotehost" v-model.lazy.trim="node.host" v-if="node.hasOwnProperty('host')" id="remotehostSelectField" v-on:blur="updateProperty('host')">
+          <select name="remotehost"  v-if="node.hasOwnProperty('host')" v-model="node.host" id="remotehostSelectField" v-on:change="updateQueueList(); updateProperty('host');">
             <option value="localhost">localhost</option>
+            <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
           </select>
           <div v-if="node.hasOwnProperty('useJobScheduler')">
             <label for="parameterRemotehost" id="propertyuseJobScheduler">UseJobScheduler</label>
           </div>
           <div id="checkboxArea">
-            <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:blur="updateProperty('useJobScheduler')"
+            <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:change="updateQueueList();updateProperty('useJobScheduler')"
               name="check" id="useJobSchedulerFlagField" value="true">
           </div>
           <div v-show="node.hasOwnProperty('queue')">
             <label for="parameterRemotehost" id="propertyQueue">Queue</label>
           </div>
-          <select name="queue" v-model.lazy.trim="node.queue" v-show="node.hasOwnProperty('queue')" id="queueSelectField" v-on:blur="updateProperty('queue')">
-            <option value="null"></option>
+          <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField" v-on:change="updateProperty('queue')" v-bind:disabled="node.useJobScheduler !== true">
+            <option v-for="v in queueList" v-bind:value="v" v-bind:key="v">{{ v}}</option>
           </select>
           <div v-if="node.hasOwnProperty('parameterFile')">
             <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>

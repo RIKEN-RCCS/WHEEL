@@ -51,6 +51,8 @@ $(() => {
       newInputFilename: "",
       newOutputFilename: "",
       newIndexOfForeach: "",
+      hostList:[],
+      queueList:[],
       names: []
     },
     methods: {
@@ -116,13 +118,20 @@ $(() => {
           console.log('duplicated name is not allowed!');
         }
       },
+      updateQueueList: function(){
+        const hostInfo = this.hostList.find((e)=>{
+          return e.name === this.node.host;
+        });
+        if(typeof hostInfo === "undefined"){
+          this.queueList = [];
+          return;
+        }
+        this.queueList = hostInfo.queue.split(',');
+      },
       updateProperty: function (property, arrayFlag) {
         let val = this.node[property];
         let cmd = arrayFlag ? 'updataArrayProperty' : 'update';
         sio.emit('updateNode', { index: this.node.index, property: property, value: val, cmd: cmd });
-      },
-      changeQueueListState: function (useJocSchedulerFlag) {
-
       }
     }
   });
@@ -192,10 +201,6 @@ $(() => {
 
   // container of hostlist info
   let selectedParent = 0;
-  let remotehost = '';
-  let remotehostArray = [];
-  let remotehostDataArray = [];
-  let queueArray = [];
   let selectedHostQueue = '';
 
   const svg = SVG('node_svg');
@@ -284,27 +289,12 @@ $(() => {
 
     /*create host, queue selectbox*/
     sio.on('hostList', function (hostlist) {
-      remotehostDataArray = hostlist;
-      let remotehostSelectField = $('#remotehostSelectField');
-      remotehostSelectField.empty();
-      remotehostArray = [];
-
-      remotehostSelectField.append(`<option value="localhost">localhost</option>`);
-      for (let index = 0; index < hostlist.length; index++) {
-        remotehostSelectField.append(`<option value="${hostlist[index].name}">${hostlist[index].name}</option>`);
-        remotehostArray.push(hostlist[index].name);
-      }
-      //selectboxへの設定
-      remotehostSelectField.val(remotehost);
-      $('#remotehostSelectField').change(function () {
-        let selectedHost = $('#remotehostSelectField option:selected').text();
-        updateQueueList(selectedHost, selectedHostQueue);
-      });
+      console.log("get hostList");
+      vm.hostList = hostlist;
     });
 
     //setup log reciever
     logReciever(sio);
-
   });
 
   // register btn click event listeners
@@ -534,26 +524,9 @@ $(() => {
 
           // taskコンポーネント時の描画処理
           if (nodeType === 'task') {
-            //queuelistの設定
-            let useJobSchedulerFlag = nodesInWF[nodeIndex].useJobScheduler;
-            console.log(useJobSchedulerFlag);
-
-            // if (useJobSchedulerFlag === true) {
-            //   console.log("abled");
-            //   $('#queueSelectField').prop('disabled', false);
-            //   // $('#queueSelectField').css('background-color', '#000000');
-            //   // $('#queueSelectField').css('color', '#FFFFFF');
-            // } else {
-            //   console.log("disabled");
-            //   $('#queueSelectField').prop('disabled', true);
-            //   // $('#queueSelectField').css('background-color', '#333333');
-            //   // $('#queueSelectField').css('color', '#333333');
-            // }
-            //remotehostリストの設定
+            //remotehostリストの要求
             sio.emit('getHostList', true);
-            remotehost = nodesInWF[nodeIndex].host;
-            selectedHostQueue = nodesInWF[nodeIndex].queue;
-            updateQueueList(remotehost, selectedHostQueue);
+            //他の処理はhtml側参照のこと
           }
 
           $('#propertyTypeName').html(nodesInWF[nodeIndex].type);
@@ -660,33 +633,6 @@ $(() => {
         });
       }
     });
-  }
-
-  function updateQueueList(remotehost, selectedHostQueue) {
-    //json設定値を取得し、onで表示
-    let queueSelectField = $('#queueSelectField');
-    queueArray = [];
-    queueSelectField.empty();
-    if (remotehost === 'localhost') {
-      queueArray = [];
-    } else {
-      let hostListIndex = remotehostArray.indexOf(remotehost);
-      let queueList;
-      //プロジェクトに設定されているremotehostが存在しないとき何も表示しない
-      if (hostListIndex === -1) {
-        queueList = "";
-      } else {
-        queueList = remotehostDataArray[hostListIndex].queue;
-      }
-      if (queueList !== "") {
-        queueArray = queueList.split(',');
-      }
-      queueSelectField.append(`<option value="null"></option>`);
-    }
-    for (let index = 0; index < queueArray.length; index++) {
-      queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
-    }
-    queueSelectField.val(selectedHostQueue);
   }
 
   function updateBreadrumb() {
