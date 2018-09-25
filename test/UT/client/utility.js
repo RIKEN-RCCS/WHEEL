@@ -14,10 +14,16 @@ describe("#isValidName", ()=>{
   it("should allow name which starts with number", ()=>{
     expect(isValidName("41aa3f")).to.be.true;
   });
-  it("should not allow name including '-'", ()=>{
+  it("should not allow empty string", ()=>{
+    expect(isValidName("")).to.be.false;
+  });
+  it("should not allow name only with white spaces", ()=>{
+    expect(isValidName("     ")).to.be.false;
+  });
+  it("should allow name including '-'", ()=>{
     expect(isValidName("aa-bb")).to.be.true;
   });
-  it("should not allow name including '_'", ()=>{
+  it("should allow name including '_'", ()=>{
     expect(isValidName("aa_bb")).to.be.true;
   });
   it("should not allow name including '?'", ()=>{
@@ -59,16 +65,16 @@ describe("#isValidInputFileName", ()=>{
   it("should allow name which starts with number", ()=>{
     expect(isValidInputFilename("41aa3f")).to.be.true;
   });
-  it("should not allow name including '-'", ()=>{
+  it("should allow name including '-'", ()=>{
     expect(isValidInputFilename("aa-bb")).to.be.true;
   });
-  it("should not allow name including '_'", ()=>{
+  it("should allow name including '_'", ()=>{
     expect(isValidInputFilename("aa_bb")).to.be.true;
   });
   it("should not allow name including '?'", ()=>{
     expect(isValidInputFilename("aa?bb")).to.be.false;
   });
-  it("should not allow name including '.'", ()=>{
+  it("should allow name including '.'", ()=>{
     expect(isValidInputFilename("aa.bb")).to.be.true;
   });
   it("should not allow name including '*'", ()=>{
@@ -86,10 +92,10 @@ describe("#isValidInputFileName", ()=>{
   it("should not allow name including ']'", ()=>{
     expect(isValidInputFilename("aa]bb")).to.be.false;
   });
-  it("should not allow name including \\", ()=>{
+  it("should allow name including \\", ()=>{
     expect(isValidInputFilename("aa\\bb")).to.be.true;
   });
-  it("should not allow name including /", ()=>{
+  it("should allow name including /", ()=>{
     expect(isValidInputFilename("aa/bb")).to.be.true;
   });
   it("should not allow name including UTF8", ()=>{
@@ -104,37 +110,37 @@ describe("#isValidOutputFileName", ()=>{
   it("should allow name which starts with number", ()=>{
     expect(isValidOutputFilename("41aa3f")).to.be.true;
   });
-  it("should not allow name including '-'", ()=>{
+  it("should allow name including '-'", ()=>{
     expect(isValidOutputFilename("aa-bb")).to.be.true;
   });
-  it("should not allow name including '_'", ()=>{
+  it("should allow name including '_'", ()=>{
     expect(isValidOutputFilename("aa_bb")).to.be.true;
   });
-  it("should not allow name including '?'", ()=>{
+  it("should allow name including '?'", ()=>{
     expect(isValidOutputFilename("aa?bb")).to.be.true;
   });
-  it("should not allow name including '.'", ()=>{
+  it("should allow name including '.'", ()=>{
     expect(isValidOutputFilename("aa.bb")).to.be.true;
   });
-  it("should not allow name including '*'", ()=>{
+  it("should allow name including '*'", ()=>{
     expect(isValidOutputFilename("aa*bb")).to.be.true;
   });
-  it("should not allow name including '{'", ()=>{
+  it("should allow name including '{'", ()=>{
     expect(isValidOutputFilename("aa{bb")).to.be.true;
   });
-  it("should not allow name including '}'", ()=>{
+  it("should allow name including '}'", ()=>{
     expect(isValidOutputFilename("aa}bb")).to.be.true;
   });
-  it("should not allow name including '['", ()=>{
+  it("should allow name including '['", ()=>{
     expect(isValidOutputFilename("aa[bb")).to.be.true;
   });
-  it("should not allow name including ']'", ()=>{
+  it("should allow name including ']'", ()=>{
     expect(isValidOutputFilename("aa]bb")).to.be.true;
   });
-  it("should not allow name including \\", ()=>{
+  it("should allow name including \\", ()=>{
     expect(isValidOutputFilename("aa\\bb")).to.be.true;
   });
-  it("should not allow name including /", ()=>{
+  it("should allow name including /", ()=>{
     expect(isValidOutputFilename("aa/bb")).to.be.true;
   });
   it("should not allow name including UTF8", ()=>{
