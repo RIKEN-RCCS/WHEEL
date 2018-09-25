@@ -401,6 +401,14 @@ function createExecuter(task) {
   const hostinfo = onRemote ? remoteHost.get(task.remotehostID) : null;
   const ssh = onRemote ? getSsh(task.projectRootDir, hostinfo.host) : null;
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
+  if (JS === null) {
+    logger.error();
+    const err = new Error("illegal job Scheduler specifies");
+    err.JS = hostinfo.jobScheduler;
+    err.task = task.name;
+    err.hostinfo = hostinfo;
+    throw err;
+  }
   const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
   const host = hostinfo != null ? hostinfo.host : null;
   const queues = hostinfo != null ? hostinfo.queue : null;

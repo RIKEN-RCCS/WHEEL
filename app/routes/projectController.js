@@ -9,7 +9,7 @@ const { getLogger } = require("../logSettings");
 const logger = getLogger("workflow");
 const Dispatcher = require("./dispatcher");
 const { getDateString, createSshConfig, readJsonGreedy } = require("./utility");
-const { interval, remoteHost, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
+const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
 const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener } = require("./projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
@@ -68,6 +68,13 @@ async function validateTask(projectRootDir, component, hosts) {
 
   if (component.host !== "localhost") {
     hosts.push(component.host);
+  }
+
+  if (component.useJobScheduler) {
+    const hostinfo = remoteHost.query("name", component.host);
+    if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
+      return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
+    }
   }
 
   if (!(component.hasOwnProperty("script") && typeof component.script === "string")) {
