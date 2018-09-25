@@ -401,11 +401,12 @@ function createExecuter(task) {
   const hostinfo = onRemote ? remoteHost.get(task.remotehostID) : null;
   const ssh = onRemote ? getSsh(task.projectRootDir, hostinfo.host) : null;
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
-  if (JS === null) {
+  //TODO remove onRemote after local submit is supported
+  if (onRemote && JS === null) {
     logger.error();
     const err = new Error("illegal job Scheduler specifies");
-    err.JS = hostinfo.jobScheduler;
     err.task = task.name;
+    err.useJobScheduler = task.useJobScheduler;
     err.hostinfo = hostinfo;
     throw err;
   }
