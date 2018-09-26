@@ -109,11 +109,13 @@ $(() => {
           return name === val;
         })
         if (!dup) {
-          sio.emit('updateNode', this.node.ID, 'name', this.node.name);
-          let currentComponentDir = currentWorkDir + "\\" + val;
-          fb.request('getFileList', currentComponentDir, null);
-          let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
-          $('#componentPath').html(displayDirPath);
+          sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result)=>{
+            if(result !== true)return;
+            const currentComponentDir = currentWorkDir + "\\" + val;
+            fb.request('getFileList', currentComponentDir, null);
+            const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
+            $('#componentPath').html(displayDirPath);
+          });
         } else {
           console.log('duplicated name is not allowed!');
         }
