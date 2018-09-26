@@ -169,7 +169,7 @@ async function gitInit(rootDir, user, mail) {
 }
 
 //commit already staged(indexed) files
-async function gitCommit(rootDir, name, mail, message="save project") {
+async function gitCommit(rootDir, name, mail, message = "save project") {
   const git = await getGitOperator(rootDir);
   return git.commit(name, mail, message);
 }
