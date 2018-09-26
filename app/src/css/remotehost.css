@@ -190,7 +190,7 @@ header {
 
 /* buttonArea */
 #buttonArea{
-  padding: 8px 0 24px 16px;
+  padding: 12px 0 8px 16px;
 }
 
 #buttonArea button{
@@ -299,7 +299,7 @@ input::-webkit-input-placeholder {
 /* New Remote Host Registration  */
 #hostRegFormArea{
   display: inline-flex;
-  padding: 24px 0 0 16px;
+  padding: 12px 0 0 16px;
 }
 
 #hostRegFormArea label{
@@ -374,7 +374,7 @@ li:hover{
 }
 /* Confirm Cancel Button Area */
 #confirmCancelButtonArea{
-  padding: 34px 0 24px 0;
+  padding: 12px 0 60px 0;
 }
 
 #confirmCancelButtonArea button{

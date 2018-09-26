@@ -107,6 +107,12 @@
       <label id="hostRegTitleLabel">Host Registration</label>
     </div>
 
+    <!-- Confirm Cancel Button Area -->
+    <div id="confirmCancelButtonArea">
+      <button v-on:click="onEditAreaOKButton" v-bind:disabled="hasError" id="confirmButton">Confirm</button>
+      <button v-on:click="onEditAreaCancelButton" id="cancelButton">Cancel</button>
+    </div>
+
     <!-- New Remote Host Registration -->
     <div id="hostRegFormArea">
       <div id="leftFormArea">
@@ -219,11 +225,11 @@
     <!-- keyFile Browse Dialog -->
     <div id="dialog"></div>
 
-    <!-- Confirm Cancel Button Area -->
+    <!-- Confirm Cancel Button Area
     <div id="confirmCancelButtonArea">
       <button v-on:click="onEditAreaOKButton" v-bind:disabled="hasError" id="confirmButton">Confirm</button>
       <button v-on:click="onEditAreaCancelButton" id="cancelButton">Cancel</button>
-    </div>
+    </div> -->
 
     <!-- Delete Check Dialog -->
     <div id="deleteCheckDialog">
