@@ -323,6 +323,16 @@ img.btn_menu_n{
 #img_pankuzuArrow{
     margin: 0;
 }
+
+#cbMessageArea{
+    position: absolute;
+    right: 18px;
+    width: 200px;
+    height: 24px;
+    font-size: 14px;
+    text-align: right;
+    color: #222226;
+}
 /*ビューコントローラー末尾*/
 
 

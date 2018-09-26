@@ -109,21 +109,14 @@ $(() => {
           return name === val;
         })
         if (!dup) {
-<<<<<<< HEAD
-          console.log("test");
-          let currentComponentDir = currentWorkDir + "\\" + val;
-          sio.emit('updateNode', this.node.ID, 'name', this.node.name, cbMessage(val));
-          let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
-          $('#componentPath').html(displayDirPath);
-=======
-          sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result)=>{
-            if(result !== true)return;
+          sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result) => {
+            if (result !== true) return;
             const currentComponentDir = currentWorkDir + "\\" + val;
             fb.request('getFileList', currentComponentDir, null);
             const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
             $('#componentPath').html(displayDirPath);
+            $('#cbMessageArea').text(val);
           });
->>>>>>> a57751452b10ca62ad75692e28c1f2fb1d3ae329
         } else {
           console.log('duplicated name is not allowed!');
         }
