@@ -329,7 +329,11 @@ async function onRenameProject(emit, msg, cb) {
     cb(false);
     return;
   }
-  //TODO call isDuplicate separately
+  if (isDuplicateProjectName(newName)) {
+    logger.error(newName, "is already exists");
+    cb(false);
+    return;
+  }
 
   const oldDir = msg.path;
   const newDir = path.resolve(path.dirname(oldDir), newName + suffix);
