@@ -69,7 +69,7 @@ $(() => {
         });
         if (duplicate) return
         this.newInputFilename = "";
-        sio.emit('addInputFile', this.node.ID, filename);
+        sio.emit('addInputFile', this.node.ID, filename, cbMessage(filename));
       },
       addOutputFile: function () {
         let filename = this.newOutputFilename;
@@ -79,7 +79,7 @@ $(() => {
         });
         if (duplicate) return
         this.newOutputFilename = "";
-        sio.emit('addOutputFile', this.node.ID, filename);
+        sio.emit('addOutputFile', this.node.ID, filename, cbMessage(filename));
       },
       addIndexOfForeach: function () {
         if (this.newIndexOfForeach === "") return
@@ -109,9 +109,9 @@ $(() => {
           return name === val;
         })
         if (!dup) {
-          sio.emit('updateNode', this.node.ID, 'name', this.node.name);
+          console.log("test");
           let currentComponentDir = currentWorkDir + "\\" + val;
-          fb.request('getFileList', currentComponentDir, null);
+          sio.emit('updateNode', this.node.ID, 'name', this.node.name, cbMessage(val));
           let displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
           $('#componentPath').html(displayDirPath);
         } else {
@@ -126,7 +126,7 @@ $(() => {
       },
       updateProperty: function (property) {
         let val = this.node[property];
-        sio.emit('updateNode', this.node.ID, property, val);
+        sio.emit('updateNode', this.node.ID, property, val, cbMessage(val));
       },
       changeQueueListState: function (useJocSchedulerFlag) {
       },
@@ -178,6 +178,7 @@ $(() => {
   let filePathStack = [];
   let filePath = '';
   let filename = '';
+
   $(document).on('click', '.file', function () {
     filePath = $(this).attr("data-path");
     filename = $(this).attr("data-name");
@@ -225,6 +226,7 @@ $(() => {
       });
       window.open(`/editor?${params}`);
     }
+    filePath = '';
   });
 
   $('#editPSFileButton').click(function () {
@@ -238,6 +240,7 @@ $(() => {
       });
       window.open(`/editor?${params}`);
     }
+    filePath = '';
   });
 
   // container of svg elements
@@ -351,6 +354,11 @@ $(() => {
     logReciever(sio);
   });
 
+  // for E2E
+  function cbMessage(val) {
+    $('#cbMessageArea').text(val);
+  }
+
   // register btn click event listeners
   $('#run_menu').on('click', function () {
     updateList.splice(0, updateList.length);
@@ -454,9 +462,9 @@ $(() => {
   });
 
   /**
- * get mouse positoin where contextmenu is created
- * @param option second argument of callback function of jquery.contextMenu
- */
+  * get mouse positoin where contextmenu is created
+  * @param option second argument of callback function of jquery.contextMenu
+  */
   function getClickPosition(option) {
     const parentOffset = $(option.selector).offset();
     const clickPosition = option.$menu.position();
