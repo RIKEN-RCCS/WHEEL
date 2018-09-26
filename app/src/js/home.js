@@ -72,7 +72,7 @@ $(() => {
             let displayPjPath = pjPath.replace(deleteWord, "");
 
             $('#projectList').append(`<ul class="project" data-path="${pj.path}" data-id="${pj.id}" data-name="${pj.name}">
-            <li class="projectName">${pj.name}</li>
+            <li class="projectName" id="prj_${pj.name}">${pj.name}</li>
             <li class="projectDescription">${pj.description}</li>
             <li class="projectPath">${displayPjPath}</li>
             <li class="projectCreateDay">${pj.ctime}</li>
