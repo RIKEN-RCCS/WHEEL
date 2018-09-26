@@ -418,12 +418,18 @@ class Dispatcher extends EventEmitter {
       this.logger.debug("copy ", lastDir, "to", dstDir);
       await fs.copy(lastDir, dstDir);
     }
+
     this.logger.debug("loop finished", component.name);
     delete component.initialized;
     delete component.currentIndex;
+    delete component.subComponent;
     component.name = component.originalName;
     await this._addNextComponent(component);
     component.state = component.hasFaild ? "failed" : "finished";
+    //write to file
+    //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
+    const componentDir = this._getComponentDir(component.ID);
+    await fs.writeJson(path.join(componentDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
   }
 
   async _loopHandler(getNextIndex, isFinished, component) {

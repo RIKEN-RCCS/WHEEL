@@ -3,6 +3,7 @@
 
 //blacklist
 const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
+const onlyWhilteSpace = /^\s*$/;
 //whitelist
 const alphanumeric = "a-zA-Z0-9";
 //due to escapeRegExp's spec, bars must be added separately any other regexp strings
@@ -22,31 +23,39 @@ function escapeRegExp(string) {
   return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
+function isSane(name){
+  if (typeof name !== "string") {
+    return false;
+  }
+  if(onlyWhilteSpace.test(name)){
+    return false
+  }
+  if (win32reservedName.test(name)) {
+    return false;
+  }
+  return true;
+}
 
 /**
  * determin specified name is valid file/directory name or not
  */
 function isValidName(name) {
-  if (typeof name !== "string") {
+  if(! isSane(name)){
     return false;
   }
 
-  if (win32reservedName.test(name)) {
-    return false;
-  }
   const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric) + bars}]`);
-
   if (forbidonChars.test(name)) {
     return false;
   }
   return true;
 }
 function isValidInputFilename(name) {
-  if (win32reservedName.test(name)) {
+  if(! isSane(name)){
     return false;
   }
-  const forbidonChars = new RegExp(`[^${escapeRegExp(`${alphanumeric + pathseps}.`) + bars}]`);
 
+  const forbidonChars = new RegExp(`[^${escapeRegExp(`${alphanumeric + pathseps}.`) + bars}]`);
   if (forbidonChars.test(name)) {
     return false;
   }
@@ -54,11 +63,11 @@ function isValidInputFilename(name) {
 }
 
 function isValidOutputFilename(name) {
-  if (win32reservedName.test(name)) {
+  if(! isSane(name)){
     return false;
   }
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric + pathseps + metaCharactors) + bars}]`);
 
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric + pathseps + metaCharactors) + bars}]`);
   if (forbidonChars.test(name)) {
     return false;
   }

@@ -56,6 +56,8 @@ $(() => {
       newInputFilename: "",
       newOutputFilename: "",
       newIndexOfForeach: "",
+      hostList:[],
+      queueList:[],
       names: []
     },
     methods: {
@@ -143,6 +145,16 @@ $(() => {
         const dirPath = currentWorkDir + '/' + this.node.name;
         const url = `${jupyterURL}tree${dirPath}?token=${jupyterToken}`;
         window.open(url);
+      },
+      updateQueueList: function(){
+        const hostInfo = this.hostList.find((e)=>{
+          return e.name === this.node.host;
+        });
+        if(typeof hostInfo === "undefined"){
+          this.queueList = [];
+          return;
+        }
+        this.queueList = hostInfo.queue.split(',');
       }
     }
 
@@ -238,11 +250,6 @@ $(() => {
 
   // container of hostlist info
   let selectedParent = 0;
-  let remotehost = '';
-  let remotehostArray = [];
-  let remotehostDataArray = [];
-  let queueArray = [];
-  let selectedHostQueue = '';
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
@@ -339,27 +346,12 @@ $(() => {
 
     /*create host, queue selectbox*/
     sio.on('hostList', function (hostlist) {
-      remotehostDataArray = hostlist;
-      let remotehostSelectField = $('#remotehostSelectField');
-      remotehostSelectField.empty();
-      remotehostArray = [];
-
-      remotehostSelectField.append(`<option value="localhost">localhost</option>`);
-      for (let index = 0; index < hostlist.length; index++) {
-        remotehostSelectField.append(`<option value="${hostlist[index].name}">${hostlist[index].name}</option>`);
-        remotehostArray.push(hostlist[index].name);
-      }
-      //selectboxへの設定
-      remotehostSelectField.val(remotehost);
-      $('#remotehostSelectField').change(function () {
-        let selectedHost = $('#remotehostSelectField option:selected').text();
-        updateQueueList(selectedHost, selectedHostQueue);
-      });
+      console.log("get hostList");
+      vm.hostList = hostlist;
     });
 
     //setup log reciever
     logReciever(sio);
-
   });
 
   // register btn click event listeners
@@ -604,9 +596,6 @@ $(() => {
         if (nodeType === 'task') {
           //remotehostリストの設定
           sio.emit('getHostList', true);
-          remotehost = target.host;
-          selectedHostQueue = target.queue;
-          updateQueueList(remotehost, selectedHostQueue);
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
@@ -728,33 +717,6 @@ $(() => {
       sio.emit('getWorkflow', currentWorkFlow);
     }, 200);
   };
-
-  function updateQueueList(remotehost, selectedHostQueue) {
-    //json設定値を取得し、onで表示
-    let queueSelectField = $('#queueSelectField');
-    queueArray = [];
-    queueSelectField.empty();
-    if (remotehost === 'localhost') {
-      queueArray = [];
-    } else {
-      let hostListIndex = remotehostArray.indexOf(remotehost);
-      let queueList;
-      //プロジェクトに設定されているremotehostが存在しないとき何も表示しない
-      if (hostListIndex === -1) {
-        queueList = "";
-      } else {
-        queueList = remotehostDataArray[hostListIndex].queue;
-      }
-      if (queueList !== "") {
-        queueArray = queueList.split(',');
-      }
-      queueSelectField.append(`<option value="null"></option>`);
-    }
-    for (let index = 0; index < queueArray.length; index++) {
-      queueSelectField.append(`<option value=${queueArray[index]}>${queueArray[index]}</option>`);
-    }
-    queueSelectField.val(selectedHostQueue);
-  }
 
   function updateBreadrumb() {
     let breadcrumb = $('#breadcrumb');

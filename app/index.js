@@ -98,6 +98,7 @@ if (jupyter) {
     "--no-browser",
     `--port ${jupyterPortNumber}`,
     "--port-retries=0",
+    "--ip=*",
     "--notebook-dir=/"
   ];
 
