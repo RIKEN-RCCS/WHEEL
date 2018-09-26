@@ -2,11 +2,15 @@
 const fs = require("fs-extra");
 const os = require("os");
 const path = require("path");
+const { promisify } = require("util");
 const express = require("express");
+const uuidv1 = require("uuid/v1");
+const glob = require("glob");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("home");
 const fileBrowser = require("./fileBrowser");
-const { gitAdd, gitCommit, gitInit } = require("./gitOperator");
+const { gitAdd, gitRm, gitCommit, gitInit, gitResetHEAD } = require("./gitOperator");
+const { hasChild } = require("./workflowUtil");
 const ComponentFactory = require("./workflowComponent");
 const { projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
 const { getDateString, escapeRegExp, isValidName, readJsonGreedy, convertPathSep } = require("./utility");
@@ -82,13 +86,15 @@ async function getAllProject() {
       const projectJson = await readJsonGreedy(path.join(v.path, projectJsonFilename));
       rt = Object.assign(projectJson, v);
     } catch (err) {
-      logger.warn(v, "read failed but just ignore", err);
-      rt = false;
+      logger.warn(v, "read failed remove from the list");
+      projectList.remove(v.id);
+      rt = null;
     }
     return rt;
   }));
+
   return pj.filter((e)=>{
-    return e;
+    return e!==null;
   });
 }
 
@@ -175,15 +181,118 @@ async function onAddProject(emit, projectDir, description, cb) {
   await sendProjectListIfExists(emit, cb);
 }
 
+function getComponentJsonFilename(type) {
+  let filename = null;
+  if (type === "workflow") {
+    filename = "define.wf.json";
+  } else if (type === "parameterStudy") {
+    filename = "define.ps.json";
+  } else if (type === "for") {
+    filename = "define.fr.json";
+  } else if (type === "while") {
+    filename = "define.wl.json";
+  } else if (type === "foreach") {
+    filename = "define.fe.json";
+  }
+  return filename;
+}
+
+async function convertComponentJson(projectRootDir, componentPath, parentComponentJson, parentID) {
+  logger.debug(`converting: ${parentComponentJson}`);
+  const componentJson = await fs.readJson(parentComponentJson);
+  delete componentJson.jsonFile;
+  delete componentJson.path;
+  delete componentJson.index;
+
+  componentJson.parent = parentID;
+  componentJson.ID = uuidv1();
+
+  //add ID to child components and register tor componentPath
+  for (const node of componentJson.nodes) {
+    node.parent = componentJson.ID;
+    node.ID = uuidv1();
+    componentPath[node.ID] = path.relative(projectRootDir, path.join(path.dirname(parentComponentJson), node.name));
+  }
+  //fix next, else, previous, inputFiles, outputFiles then write json file and recursive call if component has child
+  for (const node of componentJson.nodes) {
+    node.next = node.next.map((index)=>{
+      return componentJson.nodes[index].ID;
+    });
+    node.previous = node.previous.map((index)=>{
+      return componentJson.nodes[index].ID;
+    });
+    if(node.type === "if"){
+      node.else = node.else.map((index)=>{
+        return componentJson.nodes[index].ID;
+      });
+    }
+    node.inputFiles = node.inputFiles.map((inputFile)=>{
+      const srcID = inputFile.srcNode === "parent" ? componentJson.ID : componentJson.nodes[inputFile.srcNode].ID;
+      return { name: inputFile.name, src: [{ srcNode: srcID, srcName: inputFile.srcName }] };
+    });
+    node.outputFiles = node.outputFiles.map((outputFile)=>{
+      const dst = outputFile.dst.map((e)=>{
+        const dstID = e.dstNode === "parent" ? componentJson.ID : componentJson.nodes[e.dstNode].ID;
+        return { dstNode: dstID, dstName: e.dstName };
+      });
+      return { name: outputFile.name, dst };
+    });
+
+
+    const filename = path.resolve(path.dirname(parentComponentJson), node.name, componentJsonFilename);
+    await fs.writeJson(filename, node, {spaces:4});
+    await gitAdd(projectRootDir, filename);
+    logger.debug(`write converted componentJson file to ${filename}`);
+    logger.debug(node);
+
+    if (hasChild(node.type)) {
+      const oldComponentJsonFilename = getComponentJsonFilename(node.type);
+      await convertComponentJson(projectRootDir, componentPath, path.resolve(path.dirname(parentComponentJson), node.name, oldComponentJsonFilename, node.ID));
+    }
+  }
+
+  delete componentJson.nodes;
+  await gitRm(projectRootDir, parentComponentJson);
+  await fs.remove(parentComponentJson);
+  return componentJson;
+}
+
 async function convertProjectFormat(projectJsonFilepath) {
-  const projectRoot = path.dirname(projectJsonFilepath);
-  //read project json file
-  //convert project json file
-  //write project json file
-  //
-  //read root workflow
-  //convert and write root workflow and its children
-  //recursive call for wf, ps, for, while, foreach
+  const projectRootDir = path.dirname(projectJsonFilepath);
+  const projectJson = await fs.readJson(projectJsonFilepath);
+  const rootWorkflow = path.resolve(projectRootDir, projectJson.path_workflow);
+  projectJson.version = 2;
+  delete projectJson.path;
+  delete projectJson.path_workflow;
+  projectJson.root = projectRootDir;
+  projectJson.mtime = getDateString(true);
+  projectJson.componentPath = {};
+
+  try {
+    const rootWF = await convertComponentJson(projectRootDir, projectJson.componentPath, path.resolve(projectRootDir, rootWorkflow), "this is root");
+    projectJson.componentPath[rootWF.ID]="./";
+    await fs.writeJson(path.resolve(projectRootDir, componentJsonFilename), rootWF, {spaces: 4});
+  } catch (e) {
+    //revert by clean project
+    const files = await promisify(glob)(`./**/${componentJsonFilename}`, { cwd: projectRootDir });
+    await Promise.all(files.map((file)=>{
+      return fs.remove(path.resolve(projectRootDir, file));
+    }));
+    await gitResetHEAD(projectRootDir);
+    throw (e);
+  }
+
+  await fs.writeJson(path.resolve(projectRootDir, projectJsonFilename), projectJson, {spaces:4});
+  logger.debug(`write converted projectJson file to ${path.resolve(projectRootDir, projectJsonFilename)}`);
+  logger.debug(projectJson);
+
+  // remove old project Json file
+  await gitRm(projectRootDir, projectJsonFilepath);
+  await fs.remove(projectJsonFilepath);
+  await gitAdd(projectRootDir, path.resolve(projectRootDir, projectJsonFilename));
+    const name = "wheel";
+    const mail = "wheel.example.com";
+  await gitCommit(projectRootDir, name, mail, "convert old format project");
 }
 
 async function onImportProject(emit, projectJsonFilepath, cb) {
@@ -193,14 +302,14 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  //TODO projectJsonFilepathが古い名前だったら、データ形式の変換を行う
-  const reOldProjectJsonFilename = new RegExp(escapeRegExp(oldProjectJsonFilename));
 
-  if (reOldProjectJsonFilename.test(projectJsonFilepath)) {
+  const reOldProjectJsonFilename = new RegExp(escapeRegExp(oldProjectJsonFilename));
+  if (reOldProjectJsonFilename.test(projectJsonFilepath) && !await fs.pathExists(path.resolve(path.dirname(projectJsonFilepath), projectJsonFilename))) {
     logger.debug("converting old format project");
 
     try {
       await convertProjectFormat(projectJsonFilepath);
+      projectJsonFilepath = path.resolve(path.dirname(projectJsonFilepath), projectJsonFilename);
     } catch (e) {
       logger.error("fatal error occurred while converting old format project", e);
       cb(false);

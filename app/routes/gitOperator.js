@@ -130,12 +130,12 @@ class Git extends EventEmitter {
    * @param {string} name - name for both author and commiter
    * @param {string} mail - e-mail address for both author and commiter
    */
-  async commit(name, mail) {
+  async commit(name, mail, message) {
     const author = nodegit.Signature.now(name, mail);
     const commiter = await author.dup();
     const oid = await this.index.writeTree();
     const headCommit = await this.repo.getHeadCommit();
-    return this.repo.createCommit("HEAD", author, commiter, "save project", oid, [headCommit]);
+    return this.repo.createCommit("HEAD", author, commiter, message, oid, [headCommit]);
   }
 
   /**
@@ -169,9 +169,9 @@ async function gitInit(rootDir, user, mail) {
 }
 
 //commit already staged(indexed) files
-async function gitCommit(rootDir, name, mail) {
+async function gitCommit(rootDir, name, mail, message="save project") {
   const git = await getGitOperator(rootDir);
-  return git.commit(name, mail);
+  return git.commit(name, mail, message);
 }
 
 /**
