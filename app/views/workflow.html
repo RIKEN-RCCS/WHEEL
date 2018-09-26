@@ -225,7 +225,7 @@
           <div v-if="node.hasOwnProperty('host')">
             <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
           </div>
-          <select name="remotehost"  v-if="node.hasOwnProperty('host')" v-model="node.host" id="remotehostSelectField" v-on:change="updateQueueList(); updateProperty('host');">
+          <select name="remotehost" v-if="node.hasOwnProperty('host')" v-model="node.host" id="remotehostSelectField" v-on:change="updateQueueList(); updateProperty('host');">
             <option value="localhost">localhost</option>
             <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
           </select>
@@ -239,7 +239,8 @@
           <div v-show="node.hasOwnProperty('queue')">
             <label for="parameterRemotehost" id="propertyQueue">Queue</label>
           </div>
-          <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField" v-on:change="updateProperty('queue')" v-bind:disabled="node.useJobScheduler !== true">
+          <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField" v-on:change="updateProperty('queue')"
+            v-bind:disabled="node.useJobScheduler !== true">
             <option v-for="v in queueList" v-bind:value="v" v-bind:key="v">{{ v}}</option>
           </select>
           <div v-if="node.hasOwnProperty('parameterFile')">

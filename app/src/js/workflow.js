@@ -56,8 +56,8 @@ $(() => {
       newInputFilename: "",
       newOutputFilename: "",
       newIndexOfForeach: "",
-      hostList:[],
-      queueList:[],
+      hostList: [],
+      queueList: [],
       names: []
     },
     methods: {
@@ -134,10 +134,8 @@ $(() => {
         const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure to clean this state?</div>'
         dialogWrapper('#dialog', html)
           .done(function () {
-            //TODO add cleanState API
-            // let newFileName = $('#newFileName').val();
-            // let newFilePath = fb.getRequestedPath() + "/" + newFileName;
-            // sio.emit('createNewFile', newFilePath, (result) => {
+            //TODO add cleanComponet API
+            // sio.emit('cleanComponet', this.node.ID, (result) => {
             // });
           });
       },
@@ -146,11 +144,11 @@ $(() => {
         const url = `${jupyterURL}tree${dirPath}?token=${jupyterToken}`;
         window.open(url);
       },
-      updateQueueList: function(){
-        const hostInfo = this.hostList.find((e)=>{
+      updateQueueList: function () {
+        const hostInfo = this.hostList.find((e) => {
           return e.name === this.node.host;
         });
-        if(typeof hostInfo === "undefined"){
+        if (typeof hostInfo === "undefined") {
           this.queueList = [];
           return;
         }
@@ -179,7 +177,6 @@ $(() => {
   // file edit by button.
   let filePathStack = [];
   let filePath = '';
-  let filePathLatest = '';
   let filename = '';
   $(document).on('click', '.file', function () {
     filePath = $(this).attr("data-path");
@@ -413,15 +410,8 @@ $(() => {
     $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
   });
 
-  //change project description
-  $('#projectDescription').blur(function () {
-    var prjDesc = document.getElementById('projectDescription').value;
-    //socket.emit('updateProjectJson', 'description', prjDesc);
-  });
-
   // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function () {
-    fb.request('getFileList', currentWorkDir, null);
     $('#property').hide();
     // property Files Area initialize
     filePathStack = [];
@@ -913,6 +903,13 @@ $(() => {
 
   $('#projectInfoDrawer').mouseleave(function () {
     $('#projectInfoDrawer').toggleClass('action', false);
+  });
+
+  //change project description
+  $('#projectDescription').blur(function () {
+    console.log("test");
+    var prjDesc = document.getElementById('projectDescription').value;
+    sio.emit('updateProjectJson', 'description', prjDesc);
   });
 
   function getSelectLabel(index) {
