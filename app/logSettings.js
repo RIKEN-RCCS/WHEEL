@@ -29,6 +29,12 @@ const defaultSettings = {
       backups: 5,
       compress: true
     },
+    multi: {
+      type: "multiFile",
+      property: "logFilename",
+      base: "",
+      extension: ""
+    },
     workflow: {
       type: path.resolve(__dirname, "log2client"),
       namespace: "workflow"
@@ -49,7 +55,7 @@ const defaultSettings = {
     workflow: {
       appenders: [
         "console",
-        "file",
+        "multi",
         "workflow",
         "errorlog"
       ],

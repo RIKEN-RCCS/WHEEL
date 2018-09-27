@@ -5,13 +5,11 @@ const fs = require("fs-extra");
 const path = require("path");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
-const { getLogger } = require("../logSettings");
-const logger = getLogger("workflow");
 const Dispatcher = require("./dispatcher");
 const { getDateString, createSshConfig, readJsonGreedy } = require("./utility");
 const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener } = require("./projectResource");
+const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger } = require("./projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
 const { killTask } = require("./taskUtil");
@@ -46,7 +44,7 @@ function cancelDispatchedTasks(projectRootDir) {
     const canceled = cancel(task);
 
     if (!canceled) {
-      killTask(task);
+      killTask(projectRootDir, task);
     }
     task.state = "not-started";
   }
@@ -255,18 +253,18 @@ async function onRunProject(sio, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("run event recieved");
+  getLogger(projectRootDir).debug("run event recieved");
   const emit = sio.emit.bind(sio);
 
   if (memMeasurement) {
-    logger.debug("used heap size at start point =", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
+    getLogger(projectRootDir).debug("used heap size at start point =", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
   }
 
   let projectJson;
   try {
     projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
   } catch (err) {
-    logger.error("get project state failed:", err);
+    getLogger(projectRootDir).error("get project state failed:", err);
     cb(false);
     return;
   }
@@ -275,7 +273,7 @@ async function onRunProject(sio, projectRootDir, cb) {
   try {
     rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
   } catch (err) {
-    logger.error("read root workflow component failed:", err);
+    getLogger(projectRootDir).error("read root workflow component failed:", err);
     cb(false);
     return;
   }
@@ -287,7 +285,7 @@ async function onRunProject(sio, projectRootDir, cb) {
       await gitCommit(projectRootDir, "wheel", "wheel@example.com"); //TODO replace name and mail
       clearDispatchedTasks(projectRootDir);
     } catch (err) {
-      logger.error("invalid root workflow:", err);
+      getLogger(projectRootDir).error("invalid root workflow:", err);
       removeSsh(projectRootDir);
       cb(false);
       return;
@@ -295,7 +293,7 @@ async function onRunProject(sio, projectRootDir, cb) {
   }
   await updateAndSendProjectJson(emit, projectRootDir, "running");
 
-  const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), logger, projectJson.componentPath);
+  const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), getLogger(projectRootDir), projectJson.componentPath);
   if (rootWF.cleanupFlag === "2") {
     rootDispatcher.doCleanup = defaultCleanupRemoteRoot;
   }
@@ -327,9 +325,9 @@ async function onRunProject(sio, projectRootDir, cb) {
     let timeout;
 
     if (memMeasurement) {
-      logger.debug("used heap size just before execution", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
+      getLogger(projectRootDir).debug("used heap size just before execution", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       timeout = setInterval(()=>{
-        logger.debug("used heap size ", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
+        getLogger(projectRootDir).debug("used heap size ", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       }, 30000);
     }
 
@@ -341,11 +339,11 @@ async function onRunProject(sio, projectRootDir, cb) {
     await updateAndSendProjectJson(emit, projectRootDir, projectLastState);
 
     if (memMeasurement) {
-      logger.debug("used heap size immediately after execution=", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
+      getLogger(projectRootDir).debug("used heap size immediately after execution=", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
       clearInterval(timeout);
     }
   } catch (err) {
-    logger.error("fatal error occurred while parsing workflow:", err);
+    getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
     await updateAndSendProjectJson(emit, projectRootDir, "failed");
     cb(false);
     return;
@@ -364,10 +362,10 @@ async function onRunProject(sio, projectRootDir, cb) {
     removeSsh(projectRootDir);
 
     if (memMeasurement) {
-      logger.debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
+      getLogger(projectRootDir).debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
     }
   } catch (e) {
-    logger.warn("project execution is successfully finished but error occurred in cleanup process", e);
+    getLogger(projectRootDir).warn("project execution is successfully finished but error occurred in cleanup process", e);
     cb(false);
     return;
   }
@@ -379,7 +377,7 @@ async function onPauseProject(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("pause event recieved");
+  getLogger(projectRootDir).debug("pause event recieved");
   const rootDispatcher = getRootDispatcher(projectRootDir);
 
   if (rootDispatcher) {
@@ -396,7 +394,7 @@ async function onCleanProject(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("clean event recieved");
+  getLogger(projectRootDir).debug("clean event recieved");
   const rootDispatcher = getRootDispatcher(projectRootDir);
 
   if (rootDispatcher) {
@@ -416,14 +414,14 @@ async function onSaveProject(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("saveProject event recieved");
+  getLogger(projectRootDir).debug("saveProject event recieved");
 
   const projectState = await getProjectState(projectRootDir);
   if (projectState === "not-started") {
     await gitCommit(projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
     await updateAndSendProjectJson(emit, projectRootDir);
   } else {
-    logger.error(projectState, "project can not be saved");
+    getLogger(projectRootDir).error(projectState, "project can not be saved");
   }
 }
 
@@ -431,7 +429,7 @@ async function onRevertProject(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("revertProject event recieved");
+  getLogger(projectRootDir).debug("revertProject event recieved");
   await gitResetHEAD(projectRootDir);
   await updateAndSendProjectJson(emit, projectRootDir, "not-started");
   await sendWorkflow(emit, projectRootDir);
@@ -441,7 +439,7 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("updateProjectJson event recieved:", prop, value);
+  getLogger(projectRootDir).debug("updateProjectJson event recieved:", prop, value);
   const filename = path.resolve(projectRootDir, projectJsonFilename);
 
   try {
@@ -450,7 +448,7 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
     await fs.writeJson(filename, projectJson, { spaces: 4 });
     await gitAdd(projectRootDir, filename);
   } catch (e) {
-    logger.error("update project Json failed", e);
+    getLogger(projectRootDir).error("update project Json failed", e);
     cb(false);
     return;
   }
@@ -466,7 +464,7 @@ async function onGetProjectState(emit, projectRootDir, cb) {
     const state = await getProjectState(projectRootDir);
     emit("projectState", state);
   } catch (e) {
-    logger.error("send project state failed", e);
+    getLogger(projectRootDir).error("send project state failed", e);
     cb(false);
     return;
   }
@@ -481,7 +479,7 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
   try {
     await updateAndSendProjectJson(emit, projectRootDir);
   } catch (e) {
-    logger.error("send project state failed", e);
+    getLogger(projectRootDir).error("send project state failed", e);
     cb(false);
     return;
   }
@@ -492,7 +490,7 @@ async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("getTaskStateList event recieved:", msg);
+  getLogger(projectRootDir).debug("getTaskStateList event recieved:", msg);
   emit("taskStateList", getTaskStateList(projectRootDir));
 }
 

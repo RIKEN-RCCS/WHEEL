@@ -43,9 +43,9 @@ const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, 
 // dummyLogger.warn=console.log;
 // dummyLogger.info=console.log;
 // dummyLogger.debug=console.log;
-projectController.__set__("logger", dummyLogger);
+projectController.__set__("getLogger", ()=>{return dummyLogger});
+workflowEditor.__set__("getLogger", ()=>{return dummyLogger});
 home.__set__("logger", dummyLogger);
-workflowEditor.__set__("logger", dummyLogger);
 
 const sio = {};
 sio.emit = sinon.stub();

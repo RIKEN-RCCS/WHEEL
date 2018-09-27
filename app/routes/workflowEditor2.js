@@ -2,11 +2,9 @@
 const path = require("path");
 const fs = require("fs-extra");
 const pathIsInside = require("path-is-inside");
-const { getLogger } = require("../logSettings");
-const logger = getLogger("workflow");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
-const { setCwd, getCwd } = require("./projectResource");
+const { setCwd, getCwd, getLogger } = require("./projectResource");
 const { gitRm, gitAdd } = require("./gitOperator");
 const { replacePathsep, isValidName, readJsonGreedy } = require("./utility");
 const componentFactory = require("./workflowComponent");
@@ -67,15 +65,15 @@ async function onWorkflowRequest(emit, projectRootDir, ID, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("Workflow Request event recieved:", projectRootDir, ID);
+  getLogger(projectRootDir).debug("Workflow Request event recieved:", projectRootDir, ID);
   const componentDir = await getComponentDir(projectRootDir, ID);
-  logger.info("open workflow:", componentDir);
+  getLogger(projectRootDir).info("open workflow:", componentDir);
 
   try {
     await setCwd(projectRootDir, componentDir);
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("read workflow failed", e);
+    getLogger(projectRootDir).error("read workflow failed", e);
     cb(false);
     return;
   }
@@ -86,7 +84,7 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("createNode event recieved:", request);
+  getLogger(projectRootDir).debug("createNode event recieved:", request);
   let rt = null;
 
   try {
@@ -107,7 +105,7 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
   } catch (e) {
     e.projectRootDir = projectRootDir;
     e.request = request;
-    logger.error("create node failed", e);
+    getLogger(projectRootDir).error("create node failed", e);
     cb(false);
     return false;
   }
@@ -119,16 +117,16 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("updateNode event recieved:", projectRootDir, ID, prop, value);
+  getLogger(projectRootDir).debug("updateNode event recieved:", projectRootDir, ID, prop, value);
 
   if (prop === "inputFiles" || prop === "outputFiles") {
-    logger.error("updateNode does not support", prop, ". please use renameInputFile or renameOutputFile");
+    getLogger(projectRootDir).error("updateNode does not support", prop, ". please use renameInputFile or renameOutputFile");
     cb(false);
     return;
   }
 
   if (prop === "path") {
-    logger.error("path property is deprecated. please use 'name' instead.");
+    getLogger(projectRootDir).error("path property is deprecated. please use 'name' instead.");
     cb(false);
     return;
   }
@@ -142,7 +140,7 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
 
     if (prop === "name") {
       if (nodeDir === projectRootDir || !isValidName(value)) {
-        logger.debug("updateNode can not rename root workflow");
+        getLogger(projectRootDir).debug("updateNode can not rename root workflow");
         cb(false);
         return;
       }
@@ -161,7 +159,7 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
     e.ID = ID;
     e.prop = prop;
     e.value = value;
-    logger.error("update node failed", e);
+    getLogger(projectRootDir).error("update node failed", e);
     cb(false);
     return;
   }
@@ -241,7 +239,7 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("removeNode event recieved:", projectRootDir, targetID);
+  getLogger(projectRootDir).debug("removeNode event recieved:", projectRootDir, targetID);
 
   try {
     const nodeDir = await getComponentDir(projectRootDir, targetID);
@@ -269,7 +267,7 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb) {
 
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("remove node failed:", e);
+    getLogger(projectRootDir).error("remove node failed:", e);
     cb(false);
     return;
   }
@@ -280,7 +278,7 @@ async function onAddInputFile(emit, projectRootDir, ID, name, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("addInputFile event recieved:", projectRootDir, ID, name);
+  getLogger(projectRootDir).debug("addInputFile event recieved:", projectRootDir, ID, name);
 
   try {
     await updateComponentJson(projectRootDir, ID, (componentJson)=>{
@@ -288,7 +286,7 @@ async function onAddInputFile(emit, projectRootDir, ID, name, cb) {
     });
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("addInputFile failed", e);
+    getLogger(projectRootDir).error("addInputFile failed", e);
     cb(false);
     return;
   }
@@ -299,7 +297,7 @@ async function onAddOutputFile(emit, projectRootDir, ID, name, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("addOutputFile event recieved:", projectRootDir, ID, name);
+  getLogger(projectRootDir).debug("addOutputFile event recieved:", projectRootDir, ID, name);
 
   try {
     await updateComponentJson(projectRootDir, ID, (componentJson)=>{
@@ -307,7 +305,7 @@ async function onAddOutputFile(emit, projectRootDir, ID, name, cb) {
     });
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("addOutputFile failed", e);
+    getLogger(projectRootDir).error("addOutputFile failed", e);
     cb(false);
     return;
   }
@@ -318,7 +316,7 @@ async function onRemoveInputFile(emit, projectRootDir, ID, name, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("removeInputFile event recieved:", projectRootDir, ID, name);
+  getLogger(projectRootDir).debug("removeInputFile event recieved:", projectRootDir, ID, name);
   const counterparts = new Set();
 
   try {
@@ -345,7 +343,7 @@ async function onRemoveInputFile(emit, projectRootDir, ID, name, cb) {
     }));
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("removeInputFile failed", e);
+    getLogger(projectRootDir).error("removeInputFile failed", e);
     cb(false);
     return;
   }
@@ -356,7 +354,7 @@ async function onRemoveOutputFile(emit, projectRootDir, ID, name, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("removeOutputFile event recieved:", projectRootDir, ID, name);
+  getLogger(projectRootDir).debug("removeOutputFile event recieved:", projectRootDir, ID, name);
   const counterparts = new Set();
 
   try {
@@ -383,7 +381,7 @@ async function onRemoveOutputFile(emit, projectRootDir, ID, name, cb) {
     }));
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("removeOutputFile failed", e);
+    getLogger(projectRootDir).error("removeOutputFile failed", e);
     cb(false);
     return;
   }
@@ -394,16 +392,16 @@ async function onRenameInputFile(emit, projectRootDir, ID, index, newName, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("renameIntputFile event recieved:", projectRootDir, ID, index, newName);
+  getLogger(projectRootDir).debug("renameIntputFile event recieved:", projectRootDir, ID, index, newName);
 
   if (index < 0) {
-    logger.warn("negative index");
+    getLogger(projectRootDir).warn("negative index");
     cb(false);
     return;
   }
   const targetComponent = await getComponent(projectRootDir, ID);
   if (targetComponent.inputFiles.length - 1 < index) {
-    logger.warn("index is too large");
+    getLogger(projectRootDir).warn("index is too large");
     cb(false);
     return;
   }
@@ -431,7 +429,7 @@ async function onRenameInputFile(emit, projectRootDir, ID, index, newName, cb) {
     }));
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("renameInputFile failed", e);
+    getLogger(projectRootDir).error("renameInputFile failed", e);
     cb(false);
     return;
   }
@@ -442,16 +440,16 @@ async function onRenameOutputFile(emit, projectRootDir, ID, index, newName, cb) 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("renameOuttputFile event recieved:", projectRootDir, ID, index, newName);
+  getLogger(projectRootDir).debug("renameOuttputFile event recieved:", projectRootDir, ID, index, newName);
 
   if (index < 0) {
-    logger.warn("negative index");
+    getLogger(projectRootDir).warn("negative index");
     cb(false);
     return;
   }
   const targetComponent = await getComponent(projectRootDir, ID);
   if (targetComponent.outputFiles.length - 1 < index) {
-    logger.warn("index is too large");
+    getLogger(projectRootDir).warn("index is too large");
     cb(false);
     return;
   }
@@ -479,7 +477,7 @@ async function onRenameOutputFile(emit, projectRootDir, ID, index, newName, cb) 
     }));
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("renameOutputFile failed", e);
+    getLogger(projectRootDir).error("renameOutputFile failed", e);
     cb(false);
     return;
   }
@@ -496,10 +494,10 @@ async function onAddLink(emit, projectRootDir, msg, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("addLink event recieved:", msg.src, msg.dst, msg.isElse);
+  getLogger(projectRootDir).debug("addLink event recieved:", msg.src, msg.dst, msg.isElse);
 
   if (msg.src === msg.dst) {
-    logger.error("cyclic link is not allowed");
+    getLogger(projectRootDir).error("cyclic link is not allowed");
     cb(false);
     return;
   }
@@ -521,7 +519,7 @@ async function onAddLink(emit, projectRootDir, msg, cb) {
     ]);
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("addLink failed", e);
+    getLogger(projectRootDir).error("addLink failed", e);
     cb(false);
     return;
   }
@@ -532,7 +530,7 @@ async function onRemoveLink(emit, projectRootDir, msg, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("removeLink event recieved:", msg.src, msg.dst);
+  getLogger(projectRootDir).debug("removeLink event recieved:", msg.src, msg.dst);
 
   try {
     await Promise.all([
@@ -555,7 +553,7 @@ async function onRemoveLink(emit, projectRootDir, msg, cb) {
     ]);
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("removeLink failed", e);
+    getLogger(projectRootDir).error("removeLink failed", e);
     cb(false);
     return;
   }
@@ -575,10 +573,10 @@ async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, ds
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("addFileLink event recieved:", srcNode, srcName, dstNode, dstName);
+  getLogger(projectRootDir).debug("addFileLink event recieved:", srcNode, srcName, dstNode, dstName);
 
   if (srcNode === dstNode) {
-    logger.error("cyclic link is not allowed");
+    getLogger(projectRootDir).error("cyclic link is not allowed");
     cb(false);
     return;
   }
@@ -659,7 +657,7 @@ async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, ds
     }
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("add file link failed", e);
+    getLogger(projectRootDir).error("add file link failed", e);
     cb(false);
     return;
   }
@@ -670,7 +668,7 @@ async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode,
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  logger.debug("removeFileLink event recieved:", srcNode, srcName, dstNode, dstName);
+  getLogger(projectRootDir).debug("removeFileLink event recieved:", srcNode, srcName, dstNode, dstName);
 
   try {
     if (dstNode === "parent" || await isParent(projectRootDir, dstNode, srcNode)) {
@@ -746,7 +744,7 @@ async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode,
     }
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
-    logger.error("remove file link failed", e);
+    getLogger(projectRootDir).error("remove file link failed", e);
     cb(false);
     return;
   }

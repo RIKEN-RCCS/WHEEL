@@ -78,7 +78,7 @@ app.set("port", port);
 //error handler
 //TODO special error handler for 404 should be placed here
 app.use((err, req, res)=>{
-  logger.error(err);
+  logger.error("TODO: fix me");
   //render the error page
   res.status(err.status || 500);
   res.send("something broken!");
