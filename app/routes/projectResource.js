@@ -45,7 +45,7 @@ function getCwd(projectRootDir) {
 
 async function cleanProject(projectRootDir) {
   const rootDir = projectRootDir;
-  const srces = await promisify(glob)("*", { cwd: rootDir });
+  const srces = await promisify(glob)("*", { cwd: rootDir, ignore: "wheel.log" });
 
   //TODO should be optimized stride value(100);
   for (let i = 0; i < srces.length; i += 100) {
