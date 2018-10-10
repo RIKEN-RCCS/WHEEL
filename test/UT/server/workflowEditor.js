@@ -37,10 +37,7 @@ const testDirRoot = "WHEEL_TEST_TMP";
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{} }; //show error message
-workflowEditor.__set__("getLogger", ()=>{return dummyLogger});
 const home = rewire("../../../app/routes/home");
-home.__set__("logger", dummyLogger);
 const createNewProject = home.__get__("createNewProject");
 
 const grandsonSchema = {

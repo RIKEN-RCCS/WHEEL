@@ -121,15 +121,14 @@ const defaultSettings = {
     }
   }
 };
-let ready = false;
+
 let firstCall = true;
 let logSettings = Object.assign({}, defaultSettings);
 
 function reset() {
   return new Promise((resolve, reject)=>{
+    logSettings = Object.assign({}, defaultSettings);
     if (firstCall) {
-      logSettings = Object.assign({}, defaultSettings);
-      ready = false;
       resolve();
       return;
     }
@@ -137,8 +136,18 @@ function reset() {
       if (err) {
         reject(err);
       }
-      logSettings = Object.assign({}, defaultSettings);
-      ready = false;
+      firstCall = true;
+      resolve();
+    });
+  });
+}
+
+function shutdown(){
+  return new Promise((resolve, reject)=>{
+    log4js.shutdown((err)=>{
+      if (err) {
+        reject(err);
+      }
       firstCall = true;
       resolve();
     });
@@ -164,14 +173,28 @@ function setCompress(TF) {
 function setSocketIO(sio) {
   logSettings.appenders.workflow.socketIO = sio;
   logSettings.appenders.errorlog.socketIO = sio;
-  ready = true;
+}
+/**
+ * setup log4js
+ * @param {object} sio - SocketIO instance
+ * @param {string} filename - general log file name
+ * @param {number} size - max size of log file
+ * @param {number} num - max back up files to keep
+ * @param {boolean} compress - backup files to be compressed or not
+ */
+function setup(sio, filename, size, num, compress){
+  setSocketIO(sio);
+  setFilename(filename);
+  setMaxLogSize(size);
+  setNumBackup(num);
+  setCompress(compress)
+}
+
+function getCurrentSettings(){
+  return logSettings;
 }
 
 function getLogger(cat, verbose) {
-  if (!ready) {
-    return null;
-  }
-
   if (firstCall) {
     if (verbose) {
       //eslint-disable-next-line no-console
@@ -180,13 +203,27 @@ function getLogger(cat, verbose) {
     log4js.configure(logSettings);
     firstCall = false;
   }
-  return log4js.getLogger(cat);
+  const logger =log4js.getLogger(cat);
+    if(process.env.WHEEL_DISABLE_LOG != false){
+      //eslint-disable-next-line no-console
+      console.log("logging is disabled because WHEEL_DISABLE_LOG is set to ",process.env.WHEEL_DISABLE_LOG);
+      logger.level="off";
+    }
+  return logger;
 }
 
+function enableLogging(){
+  isDisable = false;
+}
+function disbaleLogging(){
+  isDisable = true;
+}
+module.exports.getCurrentSettings = getCurrentSettings;
 module.exports.getLogger = getLogger;
 module.exports.setSocketIO = setSocketIO;
 module.exports.setFilename = setFilename;
 module.exports.setMaxLogSize = setMaxLogSize;
 module.exports.setNumBackup = setNumBackup;
 module.exports.setCompress = setCompress;
-module.exports.reset = reset;
+module.exports.setup = setup;
+module.exports.shutdown = shutdown;

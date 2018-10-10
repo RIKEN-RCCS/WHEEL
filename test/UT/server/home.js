@@ -24,12 +24,6 @@ const onReorderProject = home.__get__("onReorderProject");
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{} };
-//dummyLogger.error = console.log;
-//dummyLogger.warn = console.log;
-//dummyLogger.info = console.log;
-//dummyLogger.debug = console.log;
-home.__set__("logger", dummyLogger);
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";
