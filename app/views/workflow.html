@@ -234,14 +234,14 @@
             <label for="parameterRemotehost" id="propertyuseJobScheduler">UseJobScheduler</label>
           </div>
           <div id="checkboxArea">
-            <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:change="updateQueueList();updateProperty('useJobScheduler')"
+            <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:change="updateQueueList();updateProperty('useJobScheduler');"
               name="check" id="useJobSchedulerFlagField" value="true">
           </div>
           <div v-show="node.hasOwnProperty('queue')">
             <label for="parameterRemotehost" id="propertyQueue">Queue</label>
           </div>
           <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField" v-on:change="updateProperty('queue')"
-            v-bind:disabled="node.useJobScheduler !== true">
+            v-bind:disabled="node.useJobScheduler !== true" v-bind:class="{queueSelectFieldColor: node.useJobScheduler}">
             <option v-for="v in queueList" v-bind:value="v" v-bind:key="v">{{ v}}</option>
           </select>
           <div v-if="node.hasOwnProperty('parameterFile')">
@@ -293,11 +293,14 @@
           </div>
           <div id="flags">
             <div>
-              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="0">clean up</div>
+              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="0"
+                id="cleanUpFlag0">clean up</div>
             <div>
-              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="1">keep files</div>
-            <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="2"
-              checked=>Follow parent setting
+              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="1"
+                id="cleanUpFlag1">keep files</div>
+            <div>
+              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="2"
+                id="cleanUpFlag2" checked>Follow parent setting</div>
           </div>
         </div>
         <div v-if="node.hasOwnProperty('include')">

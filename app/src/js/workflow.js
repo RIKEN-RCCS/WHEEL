@@ -69,7 +69,10 @@ $(() => {
         });
         if (duplicate) return
         this.newInputFilename = "";
-        sio.emit('addInputFile', this.node.ID, filename, cbMessage(filename));
+        sio.emit('addInputFile', this.node.ID, filename, (result) => {
+          if (result !== true) return;
+          $('#cbMessageArea').text(filename);
+        });
       },
       addOutputFile: function () {
         let filename = this.newOutputFilename;
@@ -79,7 +82,10 @@ $(() => {
         });
         if (duplicate) return
         this.newOutputFilename = "";
-        sio.emit('addOutputFile', this.node.ID, filename, cbMessage(filename));
+        sio.emit('addOutputFile', this.node.ID, filename, (result) => {
+          if (result !== true) return;
+          $('#cbMessageArea').text(filename);
+        });
       },
       addIndexOfForeach: function () {
         if (this.newIndexOfForeach === "") return
@@ -129,9 +135,10 @@ $(() => {
       },
       updateProperty: function (property) {
         let val = this.node[property];
-        sio.emit('updateNode', this.node.ID, property, val, cbMessage(val));
-      },
-      changeQueueListState: function (useJocSchedulerFlag) {
+        sio.emit('updateNode', this.node.ID, property, val, (result) => {
+          if (result !== true) return;
+          $('#cbMessageArea').text(val);
+        });
       },
       cleanComponentState: function () {
         const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure to clean this state?</div>'
@@ -356,11 +363,6 @@ $(() => {
     //setup log reciever
     logReciever(sio);
   });
-
-  // for E2E
-  function cbMessage(val) {
-    $('#cbMessageArea').text(val);
-  }
 
   // register btn click event listeners
   $('#run_menu').on('click', function () {
