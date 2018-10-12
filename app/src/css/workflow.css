@@ -323,6 +323,16 @@ img.btn_menu_n{
 #img_pankuzuArrow{
     margin: 0;
 }
+
+#cbMessageArea{
+    position: absolute;
+    right: 18px;
+    width: 200px;
+    height: 24px;
+    font-size: 14px;
+    text-align: right;
+    color: #222226;
+}
 /*ビューコントローラー末尾*/
 
 
@@ -504,7 +514,7 @@ img.btn_menu_n{
 }
 
 #propertyArea{
-    margin: 16px;
+    margin: 12px;
 }
 
 #propertyButtonArea{
@@ -618,8 +628,7 @@ img.btn_menu_n{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
 }
 
-#remotehostSelectField, 
-#queueSelectField{
+#remotehostSelectField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -628,6 +637,28 @@ img.btn_menu_n{
     border: 0;
     color: #FFFFFF;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+}
+
+#queueSelectField{
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 20px;
+    width: 198px;
+    background-color: #333333;
+    border: 0;
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+}
+
+.queueSelectFieldColor{
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 20px;
+    width: 198px;
+    border: 0;
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    background-color: #000000 !important;
 }
 
 #checkboxArea{
@@ -704,7 +735,7 @@ img.btn_menu_n{
 }
 
 #remoteFileTransferSetthing{
-    padding: 16px;
+    padding: 12px;
     border-top: solid 1px #000000;
 }
 
@@ -767,7 +798,7 @@ img.btn_menu_n{
 }
 
 #createFolderButton{
-    margin: 8px 0 0 100px;
+    margin: 8px 0 0 98px;
 }
 
 #editButtonsArea{

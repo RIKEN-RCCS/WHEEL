@@ -69,7 +69,10 @@ $(() => {
         });
         if (duplicate) return
         this.newInputFilename = "";
-        sio.emit('addInputFile', this.node.ID, filename);
+        sio.emit('addInputFile', this.node.ID, filename, (result) => {
+          if (result !== true) return;
+          $('#cbMessageArea').text(filename);
+        });
       },
       addOutputFile: function () {
         let filename = this.newOutputFilename;
@@ -79,7 +82,10 @@ $(() => {
         });
         if (duplicate) return
         this.newOutputFilename = "";
-        sio.emit('addOutputFile', this.node.ID, filename);
+        sio.emit('addOutputFile', this.node.ID, filename, (result) => {
+          if (result !== true) return;
+          $('#cbMessageArea').text(filename);
+        });
       },
       addIndexOfForeach: function () {
         if (this.newIndexOfForeach === "") return
@@ -109,12 +115,13 @@ $(() => {
           return name === val;
         })
         if (!dup) {
-          sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result)=>{
-            if(result !== true)return;
+          sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result) => {
+            if (result !== true) return;
             const currentComponentDir = currentWorkDir + "\\" + val;
             fb.request('getFileList', currentComponentDir, null);
             const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
             $('#componentPath').html(displayDirPath);
+            $('#cbMessageArea').text(val);
           });
         } else {
           console.log('duplicated name is not allowed!');
@@ -128,9 +135,10 @@ $(() => {
       },
       updateProperty: function (property) {
         let val = this.node[property];
-        sio.emit('updateNode', this.node.ID, property, val);
-      },
-      changeQueueListState: function (useJocSchedulerFlag) {
+        sio.emit('updateNode', this.node.ID, property, val, (result) => {
+          if (result !== true) return;
+          $('#cbMessageArea').text(val);
+        });
       },
       cleanComponentState: function () {
         const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure to clean this state?</div>'
@@ -180,6 +188,7 @@ $(() => {
   let filePathStack = [];
   let filePath = '';
   let filename = '';
+
   $(document).on('click', '.file', function () {
     filePath = $(this).attr("data-path");
     filename = $(this).attr("data-name");
@@ -227,6 +236,7 @@ $(() => {
       });
       window.open(`/editor?${params}`);
     }
+    filePath = '';
   });
 
   $('#editPSFileButton').click(function () {
@@ -240,6 +250,7 @@ $(() => {
       });
       window.open(`/editor?${params}`);
     }
+    filePath = '';
   });
 
   // container of svg elements
@@ -456,9 +467,9 @@ $(() => {
   });
 
   /**
- * get mouse positoin where contextmenu is created
- * @param option second argument of callback function of jquery.contextMenu
- */
+  * get mouse positoin where contextmenu is created
+  * @param option second argument of callback function of jquery.contextMenu
+  */
   function getClickPosition(option) {
     const parentOffset = $(option.selector).offset();
     const clickPosition = option.$menu.position();
