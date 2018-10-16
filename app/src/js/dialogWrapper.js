@@ -13,16 +13,24 @@ export default function (dialogID, html, options) {
         modal: true,
         width: 'auto',
         height: 'auto',
-        buttons: {
-            "Cancel": function () {
-                def.reject();
-                $(this).dialog('close');
+        buttons: [
+            {
+                text: 'Cancel',
+                class: 'cancelButton',
+                click: function () {
+                    def.reject();
+                    $(this).dialog('close');
+                }
             },
-            "OK": function () {
-                def.resolve();
-                $(this).dialog('close');
+            {
+                text: 'OK',
+                class: 'okButton',
+                click: function () {
+                    def.resolve();
+                    $(this).dialog('close');
+                }
             }
-        }
+        ]
     });
     //Enter key event
     $(dialogID).keypress(function (e) {

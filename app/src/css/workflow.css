@@ -331,7 +331,8 @@ img.btn_menu_n{
     height: 24px;
     font-size: 14px;
     text-align: right;
-    color: #222226;
+    /* color: #222226; */
+    color: white;
 }
 /*ビューコントローラー末尾*/
 

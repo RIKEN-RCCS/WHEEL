@@ -95,7 +95,10 @@ $(() => {
         if (duplicate) return
         this.node.indexList.push(this.newIndexOfForeach);
         this.newIndexOfForeach = "";
-        sio.emit('updateNode', this.node.ID, 'indexList', this.node.indexList);
+        sio.emit('updateNode', this.node.ID, 'indexList', this.node.indexList, (result) => {
+          if (result !== true) return;
+          $('#cbMessageArea').text(this.node.indexList);
+        });
       },
       delInputFile: function (i) {
         sio.emit('removeInputFile', this.node.ID, this.node.inputFiles[i].name);
