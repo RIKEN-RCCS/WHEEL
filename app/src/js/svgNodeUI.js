@@ -41,8 +41,9 @@ export class SvgNodeUI {
     this.group.add(box);
     this.group.data({ "boxBbox": boxBbox });
 
+    //draw plugs
     const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0, node.name);
-    upper.data({ "type": 'upperPlug', "ID": node.ID }).attr('id', `${node.name}` + '_upper');
+    upper.data({ "type": 'upperPlug', "ID": node.ID }).attr('id', `${node.name}_upper`);
     this.group.add(upper);
 
     const numLower = node.type === 'if' ? 3 : 2;
@@ -52,13 +53,13 @@ export class SvgNodeUI {
     } else {
       [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio, node.name);
     }
-    this.lowerPlug.data({ "next": node.next }).attr('id', `${node.name}` + '_lower');
+    this.lowerPlug.addClass('lowerPlug').data({ "next": node.next }).attr('id', `${node.name}_lower`);
     this.group.add(this.lowerPlug).add(tmp);
 
     this.connectors = [];
     node.outputFiles.forEach((output, fileIndex) => {
       let [plug, cable] = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight * fileIndex, sio, node.name);
-      plug.data({ "name": output.name, "dst": output.dst });
+      plug.data({ "name": output.name, "dst": output.dst }).attr('id', `${node.name}_${output.name}_connector`);
       this.group.add(plug);
       this.group.add(cable);
       this.connectors.push(plug);
@@ -66,13 +67,13 @@ export class SvgNodeUI {
 
     node.inputFiles.forEach((input, fileIndex) => {
       const receptor = parts.createReceptor(svg, boxX, boxY, 0, textHeight * fileIndex);
-      receptor.data({ "ID": node.ID, "name": input.name });
+      receptor.data({ "ID": node.ID, "name": input.name }).attr('id', `${node.name}_${input.name}_receptor`);
       this.group.add(receptor);
     });
 
     if (numLower === 3) {
       [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.elseFlow, sio, node.name)
-      this.lower2Plug.addClass('elsePlug').data({ "else": node.else });
+      this.lower2Plug.addClass('elsePlug').data({ "else": node.else }).attr('id', `${node.name}_else`);
       this.group.add(this.lower2Plug).add(tmp);
     }
 
@@ -121,7 +122,7 @@ export class SvgNodeUI {
       });
       const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
       cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
-      cable.cable.data('dst', dstIndex);
+      cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
       this.nextLinks.push(cable);
 
       dstPlug.on('click', (e) => {
@@ -136,7 +137,7 @@ export class SvgNodeUI {
         });
         const cable = new parts.SvgCable(this.svg, config.plug_color.elseFlow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
-        cable.cable.data('dst', dstIndex);
+        cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
         this.elseLinks.push(cable);
         dstPlug.on('click', (e) => {
           this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: true });
@@ -153,7 +154,7 @@ export class SvgNodeUI {
 
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
-        cable.cable.data('dst', dst.dstNode);
+        cable.cable.data('dst', dst.dstNode).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
         this.outputFileLinks.push(cable);
 
         dstPlug.on('click', (e) => {
@@ -340,9 +341,7 @@ export class SvgParentNodeUI {
     let boxBbox = this.group.data('boxBbox');
     let receptorPlugs = this.svg.select('.receptorPlug');
     this.connectors.forEach((srcPlug) => {
-
       srcPlug.data('forwardTo').forEach((dst) => {
-
         let dstPlug = receptorPlugs.members.find((plug) => {
           return plug.data('ID') === dst.dstNode && plug.data('name') === dst.dstName;
         });

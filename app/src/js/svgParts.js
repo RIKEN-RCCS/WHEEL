@@ -320,7 +320,8 @@ class SvgBox {
       .text(name)
       .fill('#FFFFFF')
       .x(titlePosX)
-      .y(titlePosY);
+      .y(titlePosY)
+      .addClass('componentTitle');
   }
 
   /**
@@ -352,7 +353,6 @@ class SvgBox {
       const text = this.draw
         .text(input.name || "")
         .fill('#FFFFFF');
-      //this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
       this.textHeight = 24;
       const x = config.box_appearance.inputTextNamePosX;
       const y = 32 + this.textHeight * index;
@@ -526,9 +526,6 @@ class SvgBox {
           const childrenViewAreaHeightLimit = headerHeight + iconSize + bodyHeight;
           const viewWidth = 256;
           let viewHeight = nodesPosInfo[0] / 5 + iconSize * 1.5;
-          // if (viewHeight > childrenViewAreaHeightLimit) {
-          //   viewHeight = childrenViewAreaHeightLimit - iconSize;
-          // }
           const nodeColor = "rgba(68, 68, 73, 0.5)";
           const field = this.draw
             .polygon([
@@ -697,7 +694,6 @@ class SvgParentFilesBox {
       const displayFontSize = 14;
       const connectorMiddlePos = 5.6;
       const x = 32;
-      //const x = defaultConnectorXpos - 8 - outputFileNameLength * displayFontSize;
       const y = connectorHeight + connectorMiddlePos + connectorInterval * index;
 
       text.move(x, y);
@@ -735,14 +731,7 @@ class SvgParentFilesBox {
 //plug
 function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, name, callback) {
   //plugの位置（originX,originY）を決める
-  let plug;
-  if (plugShape === DPlug) {
-    plug = svg.polygon(plugShape).fill(color).addClass(`${name}` + '_lowerPlug');
-    // plug = svg.polygon(plugShape).fill(color).addClass('lowerPlug');
-  } else {
-    plug = svg.polygon(plugShape).fill(color);
-  }
-  // let plug = svg.polygon(plugShape).fill(color);
+  let plug = svg.polygon(plugShape).fill(color);
   const bbox = plug.bbox();
   //originX -= bbox.width / 2; RPlugは影響なし 
   if (moveY) originX -= bbox.width / 2;//lowerのとき

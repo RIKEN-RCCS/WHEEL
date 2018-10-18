@@ -9,7 +9,10 @@ exports.config = {
     // directory is where your package.json resides, so `wdio` will be called from there.
     //
     specs: [
-        'test/E2E/*.js'
+        'test/E2E/home.js',
+        'test/E2E/createComponentTestProject.js',
+        'test/E2E/workflow.js',
+        'test/E2E/deleteComponentTestProject.js'
     ],
     // Patterns to exclude.
     exclude: [
@@ -145,8 +148,8 @@ exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      */
     onPrepare: function (config, capabilities) {
-      const {spawn} = require("child_process");
-      config.wheelProcess = spawn("npm", ["start"], {shell: true});
+        const { spawn } = require("child_process");
+        config.wheelProcess = spawn("npm", ["start"], { shell: true });
     },
     /**
      * Gets executed just before initialising the webdriver session and test framework. It allows you
@@ -172,7 +175,7 @@ exports.config = {
      */
     // beforeCommand: function (commandName, args) {
     // },
-    
+
     /**
      * Hook that gets executed before the suite starts
      * @param {Object} suite suite details
@@ -209,7 +212,7 @@ exports.config = {
      */
     // afterSuite: function (suite) {
     // },
-    
+
     /**
      * Runs after a WebdriverIO command gets executed
      * @param {String} commandName hook command name
@@ -242,7 +245,7 @@ exports.config = {
      * @param {Object} config wdio configuration object
      * @param {Array.<Object>} capabilities list of capabilities details
      */
-    onComplete: function(exitCode, config, capabilities) {
-      config.wheelProcess.kill();
+    onComplete: function (exitCode, config, capabilities) {
+        config.wheelProcess.kill();
     }
 }
