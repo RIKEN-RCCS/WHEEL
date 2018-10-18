@@ -16,9 +16,6 @@ function socketIOAppender(layout, timezoneOffset, socket, namespace) {
 
     if (eventName) {
       socket.of(namespace).emit(eventName, layout(loggingEvent, timezoneOffset));
-    } else {
-      //eslint-disable-next-line no-console
-      console.log("eventName for", loggingEvent.level.levelStr, "can not found");
     }
   };
 }

@@ -81,7 +81,7 @@ async function isFinished(JS, ssh, jobID) {
       rt = result[1];
     }
   }
-  logger.debug("is", jobID, "finished", finished, "\n", outputText);
+  logger.trace("is", jobID, "finished", finished, "\n", outputText);
 
   return finished ? rt : null;
 }

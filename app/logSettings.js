@@ -19,8 +19,13 @@ log4js.addLayout("errorlog", ()=>{
 
 const defaultSettings = {
   appenders: {
-    console: {
+    flexConsole: {
       type: path.resolve(__dirname, "flexibleConsoleLog")
+    },
+    console: {
+      type: "loglevelFilter",
+      appender: "flexConsole",
+      level: "debug"
     },
     file: {
       type: "file",
@@ -59,7 +64,7 @@ const defaultSettings = {
         "workflow",
         "errorlog"
       ],
-      level: "debug"
+      level: "trace"
     },
     home: {
       appenders: [
@@ -212,6 +217,8 @@ function getLogger(cat, verbose) {
       console.log("logging is disabled because WHEEL_DISABLE_LOG is set to ", process.env.WHEEL_DISABLE_LOG);
     }
     logger.level = "off";
+  }else{
+    logger.level = "trace";
   }
   return logger;
 }
