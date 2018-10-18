@@ -17,10 +17,7 @@ class Project extends EventEmitter {
     this.tasks = new Set(); //dispatched tasks
     this.updatedTasks = new Set(); //temporaly container which have only updated Tasks
     this.logger = orgGetLogger("workflow");
-    if(process.env.WHEEL_DISABLE_LOG != false){
-      this.logger.level="off";
-    }
-    this.logger.addContext("logFilename", path.join(projectRootDir,"wheel.log") );
+    this.logger.addContext("logFilename", path.join(projectRootDir, "wheel.log"));
   }
 }
 
@@ -149,7 +146,7 @@ function addUpdatedTask(projectRootDir, task) {
   getProject(projectRootDir).updatedTasks.add(task);
 }
 
-function getLogger(projectRootDir){
+function getLogger(projectRootDir) {
   return getProject(projectRootDir).logger;
 }
 

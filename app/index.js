@@ -8,7 +8,7 @@ const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
 const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterURL, getJupyterURL } = require("./db/db");
-const { getLogger, setup} = require("./logSettings");
+const { getLogger, setup } = require("./logSettings");
 
 /*
  * set up express, http and socket.io
@@ -18,7 +18,7 @@ const app = express();
 const server = require("http").createServer(app);
 const sio = require("socket.io")(server);
 
-// setup logger
+//setup logger
 setup(sio, path.resolve(__dirname, "wheel.log"), 8388608, 5, true);
 const logger = getLogger();
 //eslint-disable-next-line no-console

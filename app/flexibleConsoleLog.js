@@ -1,12 +1,14 @@
-'use strict';
+"use strict";
 
+//eslint-disable-next-line no-console
 const consoleLog = console.log.bind(console);
 
 function consoleAppender(layout, timezoneOffset) {
-  return (loggingEvent) => {
-    if(!loggingEvent.isDisable){
-      consoleLog(layout(loggingEvent, timezoneOffset));
+  return (loggingEvent)=>{
+    if (process.env.hasOwnProperty("WHEEL_DISABLE_CONSOLELOG")) {
+      return;
     }
+    consoleLog(layout(loggingEvent, timezoneOffset));
   };
 }
 

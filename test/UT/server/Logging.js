@@ -79,10 +79,12 @@ describe("Unit test for log4js's helper functions", ()=>{
     beforeEach(async()=>{
       setup(sio, logFilename, 4096)
       sio.emit.resetHistory();
+      delete process.env.WHEEL_DISABLE_LOG;
     });
     afterEach(async()=>{
       await shutdown();
       await fs.remove(logFilename);
+      process.env.WHEEL_DISABLE_LOG = 1;
     });
     it("should output to default logger", ()=>{
       const logger = getLogger();

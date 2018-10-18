@@ -20,7 +20,7 @@ log4js.addLayout("errorlog", ()=>{
 const defaultSettings = {
   appenders: {
     console: {
-      type: "console"
+      type: path.resolve(__dirname, "flexibleConsoleLog")
     },
     file: {
       type: "file",
@@ -128,6 +128,7 @@ let logSettings = Object.assign({}, defaultSettings);
 function reset() {
   return new Promise((resolve, reject)=>{
     logSettings = Object.assign({}, defaultSettings);
+
     if (firstCall) {
       resolve();
       return;
@@ -142,7 +143,7 @@ function reset() {
   });
 }
 
-function shutdown(){
+function shutdown() {
   return new Promise((resolve, reject)=>{
     log4js.shutdown((err)=>{
       if (err) {
@@ -174,23 +175,24 @@ function setSocketIO(sio) {
   logSettings.appenders.workflow.socketIO = sio;
   logSettings.appenders.errorlog.socketIO = sio;
 }
+
 /**
  * setup log4js
- * @param {object} sio - SocketIO instance
+ * @param {Object} sio - SocketIO instance
  * @param {string} filename - general log file name
  * @param {number} size - max size of log file
  * @param {number} num - max back up files to keep
  * @param {boolean} compress - backup files to be compressed or not
  */
-function setup(sio, filename, size, num, compress){
+function setup(sio, filename, size, num, compress) {
   setSocketIO(sio);
   setFilename(filename);
   setMaxLogSize(size);
   setNumBackup(num);
-  setCompress(compress)
+  setCompress(compress);
 }
 
-function getCurrentSettings(){
+function getCurrentSettings() {
   return logSettings;
 }
 
@@ -203,27 +205,26 @@ function getLogger(cat, verbose) {
     log4js.configure(logSettings);
     firstCall = false;
   }
-  const logger =log4js.getLogger(cat);
-    if(process.env.WHEEL_DISABLE_LOG != false){
+  const logger = log4js.getLogger(cat);
+  if (process.env.hasOwnProperty("WHEEL_DISABLE_LOG")) {
+    if (verbose) {
       //eslint-disable-next-line no-console
-      console.log("logging is disabled because WHEEL_DISABLE_LOG is set to ",process.env.WHEEL_DISABLE_LOG);
-      logger.level="off";
+      console.log("logging is disabled because WHEEL_DISABLE_LOG is set to ", process.env.WHEEL_DISABLE_LOG);
     }
+    logger.level = "off";
+  }
   return logger;
 }
 
-function enableLogging(){
-  isDisable = false;
-}
-function disbaleLogging(){
-  isDisable = true;
-}
-module.exports.getCurrentSettings = getCurrentSettings;
-module.exports.getLogger = getLogger;
-module.exports.setSocketIO = setSocketIO;
-module.exports.setFilename = setFilename;
-module.exports.setMaxLogSize = setMaxLogSize;
-module.exports.setNumBackup = setNumBackup;
-module.exports.setCompress = setCompress;
-module.exports.setup = setup;
-module.exports.shutdown = shutdown;
+module.exports = {
+  getCurrentSettings,
+  getLogger,
+  setSocketIO,
+  setFilename,
+  setMaxLogSize,
+  setNumBackup,
+  setCompress,
+  setup,
+  shutdown,
+  reset
+};

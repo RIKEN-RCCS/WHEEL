@@ -35,7 +35,7 @@ function calcParamAxisSize(min, max, step) {
 }
 
 function getParamAxisSize(axis) {
-  let size=0;
+  let size = 0;
 
   switch (axis.type) {
     case "string":
