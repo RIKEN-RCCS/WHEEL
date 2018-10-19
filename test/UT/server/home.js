@@ -196,7 +196,7 @@ describe("home screen API test", ()=>{
       await onAddProject(emit, `${testDirRoot}/bar/foo`, null, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(false);
-      expect(emit).to.have.been.calledOnce;
+      expect(emit).to.have.been.calledTwice;
       expect(path.join(testDirRoot, "bar", "foo.wheel")).not.to.be.a.path;
     });
   });
