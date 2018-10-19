@@ -150,6 +150,10 @@ function getLogger(projectRootDir) {
   return getProject(projectRootDir).logger;
 }
 
+function setSio(projectRootDir, sio){
+  getProject(projectRootDir).logger.addContext("sio", sio);
+}
+
 module.exports = {
   openProject,
   setCwd,
@@ -169,5 +173,6 @@ module.exports = {
   emitEvent,
   once,
   removeListener,
-  getLogger
+  getLogger,
+  setSio
 };

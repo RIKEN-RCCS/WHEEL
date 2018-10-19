@@ -527,6 +527,7 @@ function onGetDirListAndProjectJson(emit, msg, cb) {
 module.exports = function(io) {
   const sio = io.of("/home");
   sio.on("connect", (socket)=>{
+    logger.addContext("sio", socket)
     socket.on("getProjectList", onGetProjectList.bind(null, socket.emit.bind(socket)));
     socket.on("getDirList", onGetDirList.bind(null, socket.emit.bind(socket)));
     socket.on("getDirListAndProjectJson", onGetDirListAndProjectJson.bind(null, socket.emit.bind(socket)));

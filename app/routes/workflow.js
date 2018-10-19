@@ -6,7 +6,7 @@ const workflowEditor = require("./workflowEditor2");
 const projectController = require("./projectController");
 const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterURL } = require("../db/db");
 const { getComponent } = require("./workflowUtil");
-const { openProject } = require("./projectResource");
+const { openProject, setSio } = require("./projectResource");
 
 module.exports = function(io) {
   let projectRootDir = null;
@@ -16,6 +16,7 @@ module.exports = function(io) {
       socket.emit("showMessage", "please reload browser");
       return;
     }
+    setSio(projectRootDir, socket);
     socket.on("getHostList", ()=>{
       socket.emit("hostList", remoteHost.getAll());
     });

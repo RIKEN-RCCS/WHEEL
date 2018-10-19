@@ -24,6 +24,15 @@ const onReorderProject = home.__get__("onReorderProject");
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
+const sio = {
+  of() {
+    return this;
+  }
+};
+sio.emit = emit;
+
+const logger = home.__get__("logger");
+logger.addContext("sio", sio);
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";

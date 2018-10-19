@@ -50,13 +50,23 @@ function passToSSHerr(data) {
   logger.ssherr(data.toString().trim());
 }
 
+function getReturnCode(outputText, reReturnCode){
+  const result = reReturnCode.exec(outputText);
+
+  if (result === null || result[1] === null) {
+    logger.warn("get return code failed, rt is overwrited by -1");
+    return -1;
+  }
+  return result[1];
+}
+
 /**
  * check if job is finished or not on remote server
  */
 async function isFinished(JS, ssh, jobID) {
   const statCmd = `${JS.stat} ${jobID}`;
   const output = [];
-  let rt = await ssh.exec(statCmd, {}, output, output);
+  const rt = await ssh.exec(statCmd, {}, output, output);
 
   if (rt !== 0) {
     const error = new Error("job stat command failed!");
@@ -71,19 +81,12 @@ async function isFinished(JS, ssh, jobID) {
   if (!finished) {
     const reFailedState = new RegExp(JS.reFailedState, "m");
     finished = reFailedState.test(outputText);
-    const reReturnCode = new RegExp(JS.reReturnCode, "m");
-    const result = reReturnCode.exec(outputText);
-
-    if (result === null || result[1] === null) {
-      logger.warn("get return code failed, rt is overwrited");
-      rt = -1;
-    } else {
-      rt = result[1];
-    }
   }
   logger.trace("is", jobID, "finished", finished, "\n", outputText);
-
-  return finished ? rt : null;
+  if(finished){
+    return getReturnCode(outputText, new RegExp(JS.reReturnCode, "m"));
+  }
+  return null;
 }
 
 async function prepareRemoteExecDir(ssh, task) {
@@ -250,7 +253,7 @@ class Executer {
         task.endTime = getDateString(true);
 
         //update task status
-        const state = rt === 0 ? "finished" : "failed";
+        const state = rt === "0" ? "finished" : "failed";
         await setTaskState(task, state);
 
         //to use retry function in the future release, return Promise.reject if task finished with non-zero value
@@ -272,6 +275,7 @@ class Executer {
           if (task.state !== "running") {
             return false;
           }
+          //TODO to be checked!!
           let statFailedCount = 0;
           let statCheckCount = 0;
           logger.debug(task.jobID, "status checked", statCheckCount);

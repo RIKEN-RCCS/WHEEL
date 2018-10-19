@@ -40,9 +40,8 @@ const defaultSettings = {
       base: "",
       extension: ""
     },
-    workflow: {
-      type: path.resolve(__dirname, "log2client"),
-      namespace: "workflow"
+    socketIO: {
+      type: path.resolve(__dirname, "log2client")
     },
     errorlog: {
       type: path.resolve(__dirname, "errorlog"),
@@ -61,7 +60,7 @@ const defaultSettings = {
       appenders: [
         "console",
         "multi",
-        "workflow",
+        "socketIO",
         "errorlog"
       ],
       level: "trace"
@@ -176,21 +175,14 @@ function setCompress(TF) {
   logSettings.appenders.file.compress = TF === true;
 }
 
-function setSocketIO(sio) {
-  logSettings.appenders.workflow.socketIO = sio;
-  logSettings.appenders.errorlog.socketIO = sio;
-}
-
 /**
  * setup log4js
- * @param {Object} sio - SocketIO instance
  * @param {string} filename - general log file name
  * @param {number} size - max size of log file
  * @param {number} num - max back up files to keep
  * @param {boolean} compress - backup files to be compressed or not
  */
-function setup(sio, filename, size, num, compress) {
-  setSocketIO(sio);
+function setup(filename, size, num, compress) {
   setFilename(filename);
   setMaxLogSize(size);
   setNumBackup(num);
@@ -226,7 +218,6 @@ function getLogger(cat, verbose) {
 module.exports = {
   getCurrentSettings,
   getLogger,
-  setSocketIO,
   setFilename,
   setMaxLogSize,
   setNumBackup,

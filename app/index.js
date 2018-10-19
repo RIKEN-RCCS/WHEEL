@@ -19,7 +19,7 @@ const server = require("http").createServer(app);
 const sio = require("socket.io")(server);
 
 //setup logger
-setup(sio, path.resolve(__dirname, "wheel.log"), 8388608, 5, true);
+setup(path.resolve(__dirname, "wheel.log"), 8388608, 5, true);
 const logger = getLogger();
 //eslint-disable-next-line no-console
 process.on("unhandledRejection", console.dir);

@@ -3,9 +3,10 @@
 /**
  * send log message to client vi socketIO if level is higher than 40000(ERROR)
  */
-function socketIOAppender(layout, timezoneOffset, socket, eventName) {
+function socketIOAppender(layout, timezoneOffset, eventName) {
   return (loggingEvent)=>{
     const namespace = loggingEvent.categoryName;
+    const socket = loggingEvent.context.sio;
 
     if (loggingEvent.level.level >= 40000) {
       socket.of(namespace).emit(eventName, layout(loggingEvent, timezoneOffset));
@@ -20,6 +21,6 @@ function configure(config, layouts) {
     layout = layouts.layout(config.layout.type, config.layout);
   }
   const eventName = config.eventName || "showMessage";
-  return socketIOAppender(layout, config.timezoneOffset, config.socketIO, eventName);
+  return socketIOAppender(layout, config.timezoneOffset, eventName);
 }
 module.exports.configure = configure;
