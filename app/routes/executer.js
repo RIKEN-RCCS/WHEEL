@@ -84,7 +84,8 @@ async function isFinished(JS, ssh, jobID) {
   }
   logger.trace("is", jobID, "finished", finished, "\n", outputText);
   if(finished){
-    return getReturnCode(outputText, new RegExp(JS.reReturnCode, "m"));
+    const strRt = getReturnCode(outputText, new RegExp(JS.reReturnCode, "m"));
+    return parseInt(strRt);
   }
   return null;
 }
@@ -253,7 +254,7 @@ class Executer {
         task.endTime = getDateString(true);
 
         //update task status
-        const state = rt === "0" ? "finished" : "failed";
+        const state = rt === 0 ? "finished" : "failed";
         await setTaskState(task, state);
 
         //to use retry function in the future release, return Promise.reject if task finished with non-zero value

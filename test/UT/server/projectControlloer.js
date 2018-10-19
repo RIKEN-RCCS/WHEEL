@@ -37,7 +37,11 @@ const cb = sinon.stub();
 const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show error message
 projectController.__set__("getLogger", ()=>{return dummyLogger});
 
-const sio = {};
+const sio = {
+  // of() {
+  //   return this;
+  // }
+};
 sio.emit = sinon.stub();
 //
 //TODO pass stub to askPassword for remote task test

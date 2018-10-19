@@ -192,7 +192,7 @@ describe("home screen API test", ()=>{
     });
     it("should not create new project which has the same name as any other existing project", async()=>{
       await onAddProject(emit, `${testDirRoot}/foo`, null);
-      fs.ensureDir(path.resolve(testDirRoot, "bar", "foo")),
+      fs.ensureDir(path.resolve(testDirRoot, "bar", "foo"));
       await onAddProject(emit, `${testDirRoot}/bar/foo`, null, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(false);
