@@ -146,11 +146,14 @@ function makeEnv(task){
 function makeQueueOpt(task, JS, queues){
   let queue = "";
   const queueList = queues.split(',');
-  if(task.queue in queueList){
-    queue = task.queue;
-  }else if (queueList.length > 0){
-    queue = queueList[0];
+  queue = queueList.find((e)=>{
+    return task.queue === e;
+  });
+
+  if(typeof queue === 'undefined'){
+    queue = queueList.length > 0?queueList[0]:"";
   }
+
   return queue!==""?` ${JS.queueOpt}${queue}`:"";
 }
 
