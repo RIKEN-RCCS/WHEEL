@@ -165,6 +165,7 @@ async function onDownloadFile(emit, projectRootDir, msg, cb) {
 
 async function onCreateNewFile(emit, projectRootDir, filename, cb) {
   getLogger(projectRootDir).debug("createNewFile event recieved: ", filename);
+  filename = convertPathSep(filename);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -184,6 +185,7 @@ async function onCreateNewFile(emit, projectRootDir, filename, cb) {
 
 async function onCreateNewDir(emit, projectRootDir, dirname, cb) {
   getLogger(projectRootDir).debug("createNewDir event recieved: ", dirname);
+  dirname = convertPathSep(dirname);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
