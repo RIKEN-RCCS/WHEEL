@@ -51,7 +51,8 @@
       <div id="hostPropertyArea">
         <table id="propertyTable" name="A">
           <template v-for="(host, index) in hostList">
-            <tr v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" v-bind:id="host.name">
+            <tr v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" v-bind:id="host.name"
+              class="hostListInfo">
               <td class="label">
                 {{ host.name }}</td>
               <td class="connectionCheck">
