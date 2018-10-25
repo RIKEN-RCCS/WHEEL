@@ -704,7 +704,6 @@ $(() => {
     });
     parentnode.forEach(function (node) {
       if (node != null) {
-
         node.inputFileLinks.forEach(function (cable) {
           let dst = cable.cable.data('dst');
           nodes[dst].outputFileLinks.push(cable);

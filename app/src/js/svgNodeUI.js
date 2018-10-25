@@ -27,7 +27,6 @@ export class SvgNodeUI {
     this.previousLinks = [];
     this.outputFileLinks = [];
     this.inputFileLinks = [];
-    this.inputParentFileLinks = [];
 
     /** svg representation of this node */
     this.group = svg.group();
@@ -90,8 +89,8 @@ export class SvgNodeUI {
     // register drag and drop behavior
     this.group
       .on('dragstart', (e) => {
-        diffX = e.detail.p.x - e.target.instance.select('.' + `${node.name}` + '_box').first().x();
-        diffY = e.detail.p.y - e.target.instance.select('.' + `${node.name}` + '_box').first().y()
+        diffX = e.detail.p.x - e.target.instance.select(`.${node.name}_box`).first().x();
+        diffY = e.detail.p.y - e.target.instance.select(`.${node.name}_box`).first().y()
         startX = e.detail.p.x;
         startY = e.detail.p.y;
       })
@@ -124,7 +123,6 @@ export class SvgNodeUI {
       cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
       cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
       this.nextLinks.push(cable);
-
       dstPlug.on('click', (e) => {
         this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: false });
       });
@@ -185,10 +183,6 @@ export class SvgNodeUI {
     this.inputFileLinks.forEach((v) => {
       v.dragEndPoint(offsetX, offsetY, boxBbox);
     });
-    this.inputParentFileLinks.forEach((v) => {
-      v.dragEndPoint(offsetX, offsetY, boxBbox);
-    });
-
   }
 
   /**
@@ -315,8 +309,8 @@ export class SvgParentNodeUI {
     // register drag and drop behavior
     this.group
       .on('dragstart', (e) => {
-        diffX = e.detail.p.x - e.target.instance.select('.box').first().x();
-        diffY = e.detail.p.y - e.target.instance.select('.box').first().y()
+        diffX = e.detail.p.x - e.target.instance.select(`.${node.name}_box`).first().x();
+        diffY = e.detail.p.y - e.target.instance.select(`.${node.name}_box`).first().y()
         startX = e.detail.p.x;
         startY = e.detail.p.y;
       })
