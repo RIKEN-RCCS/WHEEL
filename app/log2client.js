@@ -10,15 +10,13 @@ const eventNameTable = {
   SSHERR: "logSSHerr"
 };
 
-function socketIOAppender(layout, timezoneOffset, socket, namespace) {
+function socketIOAppender(layout, timezoneOffset) {
   return (loggingEvent)=>{
     const eventName = eventNameTable[loggingEvent.level.levelStr];
+    const socket = loggingEvent.context.sio;
 
     if (eventName) {
-      socket.of(namespace).emit(eventName, layout(loggingEvent, timezoneOffset));
-    } else {
-      //eslint-disable-next-line no-console
-      console.log("eventName for", loggingEvent.level.levelStr, "can not found");
+      socket.emit(eventName, layout(loggingEvent, timezoneOffset));
     }
   };
 }
@@ -29,6 +27,6 @@ function configure(config, layouts) {
   if (config.layout) {
     layout = layouts.layout(config.layout.type, config.layout);
   }
-  return socketIOAppender(layout, config.timezoneOffset, config.socketIO, config.namespace);
+  return socketIOAppender(layout, config.timezoneOffset);
 }
 module.exports.configure = configure;

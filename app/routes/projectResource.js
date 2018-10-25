@@ -5,16 +5,19 @@ const EventEmitter = require("events");
 const fs = require("fs-extra");
 const glob = require("glob");
 const { gitResetHEAD } = require("./gitOperator");
+const orgGetLogger = require("../logSettings").getLogger;
 
 
 class Project extends EventEmitter {
-  constructor() {
+  constructor(projectRootDir) {
     super();
     this.cwd = null; //current working directory
     this.rootDispatcher = null; //dispatcher for root workflow
     this.ssh = new Map(); //ssh instances using in this project
     this.tasks = new Set(); //dispatched tasks
     this.updatedTasks = new Set(); //temporaly container which have only updated Tasks
+    this.logger = orgGetLogger("workflow");
+    this.logger.addContext("logFilename", path.join(projectRootDir, "wheel.log"));
   }
 }
 
@@ -22,7 +25,7 @@ const projectDirs = new Map();
 
 function getProject(projectRootDir) {
   if (!projectDirs.has(projectRootDir)) {
-    projectDirs.set(projectRootDir, new Project());
+    projectDirs.set(projectRootDir, new Project(projectRootDir));
   }
   return projectDirs.get(projectRootDir);
 }
@@ -42,7 +45,7 @@ function getCwd(projectRootDir) {
 
 async function cleanProject(projectRootDir) {
   const rootDir = projectRootDir;
-  const srces = await promisify(glob)("*", { cwd: rootDir });
+  const srces = await promisify(glob)("*", { cwd: rootDir, ignore: "wheel.log" });
 
   //TODO should be optimized stride value(100);
   for (let i = 0; i < srces.length; i += 100) {
@@ -143,6 +146,14 @@ function addUpdatedTask(projectRootDir, task) {
   getProject(projectRootDir).updatedTasks.add(task);
 }
 
+function getLogger(projectRootDir) {
+  return getProject(projectRootDir).logger;
+}
+
+function setSio(projectRootDir, sio){
+  getProject(projectRootDir).logger.addContext("sio", sio);
+}
+
 module.exports = {
   openProject,
   setCwd,
@@ -161,5 +172,7 @@ module.exports = {
   cleanProject,
   emitEvent,
   once,
-  removeListener
+  removeListener,
+  getLogger,
+  setSio
 };

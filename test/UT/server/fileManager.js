@@ -22,8 +22,6 @@ const onCreateNewDir = fileManager.__get__("onCreateNewDir");
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-//fileManager.__set__("logger", {error: console.log, warn: console.log, info: console.log, debug: console.log});//send all log to console
-fileManager.__set__("logger", { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{} }); //default logger stub
 fileManager.__set__("gitAdd", sinon.stub());
 fileManager.__set__("gitRm", sinon.stub());
 
@@ -68,7 +66,7 @@ describe("fileManager UT", ()=>{
   describe("#getFileList", ()=>{
     it("should send filelist", async()=>{
       const uploader = {};
-      await onGetFileList(uploader, emit, path.resolve(testDirRoot), cb);
+      await onGetFileList(uploader, emit, "dummy", path.resolve(testDirRoot), cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -97,7 +95,7 @@ describe("fileManager UT", ()=>{
   });
   describe("#getSNDContents", ()=>{
     it("should send contens of SND", async()=>{
-      await onGetSNDContents(emit, testDirRoot, "huga_*_200", false, cb);
+      await onGetSNDContents(emit, "dummy", testDirRoot, "huga_*_200", false, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -108,7 +106,7 @@ describe("fileManager UT", ()=>{
       ]);
     });
     it("should send foo_* files", async()=>{
-      await onGetSNDContents(emit, testDirRoot, "foo_*", false, cb);
+      await onGetSNDContents(emit, "dummy", testDirRoot, "foo_*", false, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -120,7 +118,7 @@ describe("fileManager UT", ()=>{
       ]);
     });
     it("should send foo_* directories", async()=>{
-      await onGetSNDContents(emit, testDirRoot, "foo_*", true, cb);
+      await onGetSNDContents(emit, "dummy", testDirRoot, "foo_*", true, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -190,7 +188,7 @@ describe("fileManager UT", ()=>{
   });
   describe("#downloadFile", ()=>{
     it("should send file", async()=>{
-      await onDownloadFile(emit, { path: testDirRoot, name: "foo_1" }, cb);
+      await onDownloadFile(emit,"dummy",  { path: testDirRoot, name: "foo_1" }, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;
@@ -199,7 +197,7 @@ describe("fileManager UT", ()=>{
       expect(sendData.toString()).to.equal("foo_1");
     });
     it("should not send directory", async()=>{
-      await onDownloadFile(emit, { path: testDirRoot, name: "foo" }, cb);
+      await onDownloadFile(emit, "dummy", { path: testDirRoot, name: "foo" }, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(false);
       expect(emit).not.to.have.been.called;

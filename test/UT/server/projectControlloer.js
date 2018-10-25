@@ -35,19 +35,13 @@ const { openProject, setCwd } = require("../../../app/routes/projectResource");
 const emit = sinon.stub();
 const cb = sinon.stub();
 const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show error message
+projectController.__set__("getLogger", ()=>{return dummyLogger});
 
-//never change dummyLogger !!
-//because dummyLogger is used in this test assertions
-//if you need to check log output, assign console.log to each member of dummyLogger as follows
-// dummyLogger.error=console.log;
-// dummyLogger.warn=console.log;
-// dummyLogger.info=console.log;
-// dummyLogger.debug=console.log;
-projectController.__set__("logger", dummyLogger);
-home.__set__("logger", dummyLogger);
-workflowEditor.__set__("logger", dummyLogger);
-
-const sio = {};
+const sio = {
+  // of() {
+  //   return this;
+  // }
+};
 sio.emit = sinon.stub();
 //
 //TODO pass stub to askPassword for remote task test

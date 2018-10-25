@@ -4,11 +4,10 @@ const os = require("os");
 const fs = require("fs-extra");
 const Siofu = require("socketio-file-upload");
 const minimatch = require("minimatch");
-const { getLogger } = require("../logSettings");
-const logger = getLogger("workflow");
 const fileBrowser = require("./fileBrowser");
 const { gitAdd, gitRm } = require("./gitOperator");
 const { getSystemFiles, convertPathSep } = require("./utility");
+const { getLogger } = require("./projectResource");
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
   request = request || target;
@@ -25,9 +24,9 @@ async function sendDirectoryContents(emit, target, request, withSND = true, send
   emit("fileList", result);
 }
 
-async function onGetFileList(uploader, emit, requestDir, cb) {
+async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
   requestDir = convertPathSep(requestDir);
-  logger.debug(`current dir = ${requestDir}`);
+  getLogger(projectRootDir).debug(`current dir = ${requestDir}`);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -38,21 +37,21 @@ async function onGetFileList(uploader, emit, requestDir, cb) {
     const targetDir = stats.isDirectory() ? requestDir : path.dirname(requestDir);
 
     if (targetDir !== requestDir) {
-      logger.debug("requested directory is not directory, show parent of reqested:", targetDir);
+      getLogger(projectRootDir).debug("requested directory is not directory, show parent of reqested:", targetDir);
     }
     await sendDirectoryContents(emit, targetDir, requestDir);
     uploader.dir = targetDir;
   } catch (e) {
-    logger.error(requestDir, "read failed", e);
+    getLogger(projectRootDir).error(requestDir, "read failed", e);
     cb(false);
     return;
   }
   cb(true);
 }
 
-async function onGetSNDContents(emit, requestDir, glob, isDir, cb) {
+async function onGetSNDContents(emit, projectRootDir, requestDir, glob, isDir, cb) {
   requestDir = convertPathSep(requestDir);
-  logger.debug("getSNDContents event recieved:", requestDir, glob, isDir);
+  getLogger(projectRootDir).debug("getSNDContents event recieved:", requestDir, glob, isDir);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -63,25 +62,25 @@ async function onGetSNDContents(emit, requestDir, glob, isDir, cb) {
   try {
     await sendDirectoryContents(emit, requestDir, requestDir, false, sendDir, sendFile, minimatch.makeRe(glob));
   } catch (e) {
-    logger.error(requestDir, "read failed", e);
+    getLogger(projectRootDir).error(requestDir, "read failed", e);
     cb(false);
     return;
   }
   cb(true);
 }
 
-async function onRemoveFile(emit, label, target, cb) {
-  logger.debug(`removeFile event recieved: ${target}`);
+async function onRemoveFile(emit, projectRootDir, target, cb) {
+  getLogger(projectRootDir).debug(`removeFile event recieved: ${target}`);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
 
   try {
-    await gitRm(label, target);
+    await gitRm(projectRootDir, target);
     await fs.remove(target, { force: true });
   } catch (err) {
-    logger.warn(`removeFile failed: ${err}`);
+    getLogger(projectRootDir).warn(`removeFile failed: ${err}`);
     cb(false);
     return;
   }
@@ -90,22 +89,22 @@ async function onRemoveFile(emit, label, target, cb) {
     const parentDir = path.dirname(target);
     await sendDirectoryContents(emit, parentDir);
   } catch (e) {
-    logger.error("re-read directory failed", e);
+    getLogger(projectRootDir).error("re-read directory failed", e);
     cb(false);
     return;
   }
   cb(true);
 }
 
-async function onRenameFile(emit, label, msg, cb) {
-  logger.debug(`renameFile event recieved: ${msg}`);
+async function onRenameFile(emit, projectRootDir, msg, cb) {
+  getLogger(projectRootDir).debug(`renameFile event recieved: ${msg}`);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
 
   if (!(msg.hasOwnProperty("oldName") && msg.hasOwnProperty("newName") && msg.hasOwnProperty("path"))) {
-    logger.warn(`illegal request ${msg}`);
+    getLogger(projectRootDir).warn(`illegal request ${msg}`);
     cb(false);
     return;
   }
@@ -114,35 +113,35 @@ async function onRenameFile(emit, label, msg, cb) {
   const newName = path.resolve(msg.path, msg.newName);
 
   if (oldName === newName) {
-    logger.warn("rename to same file or directory name requested");
+    getLogger(projectRootDir).warn("rename to same file or directory name requested");
     cb(false);
     return;
   }
 
   if (await fs.pathExists(newName)) {
-    logger.error(newName, "is already exists");
+    getLogger(projectRootDir).error(newName, "is already exists");
     cb(false);
     return;
   }
 
   try {
-    await gitRm(label, oldName);
+    await gitRm(projectRootDir, oldName);
     await fs.move(oldName, newName);
-    await gitAdd(label, newName);
+    await gitAdd(projectRootDir, newName);
     await sendDirectoryContents(emit, msg.path);
   } catch (e) {
     e.path = msg.path;
     e.oldName = msg.oldName;
     e.newName = msg.newName;
-    logger.error("rename failed", e);
+    getLogger(projectRootDir).error("rename failed", e);
     cb(false);
     return;
   }
   cb(true);
 }
 
-async function onDownloadFile(emit, msg, cb) {
-  logger.debug("downloadFile event recieved: ", msg);
+async function onDownloadFile(emit, projectRootDir, msg, cb) {
+  getLogger(projectRootDir).debug("downloadFile event recieved: ", msg);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -154,9 +153,9 @@ async function onDownloadFile(emit, msg, cb) {
     emit("downloadData", file);
   } catch (e) {
     if (e.code === "EISDIR") {
-      logger.error("download directory is not supported for now");
+      getLogger(projectRootDir).error("download directory is not supported for now");
     } else {
-      logger.error("file download failed", e);
+      getLogger(projectRootDir).error("file download failed", e);
     }
     cb(false);
     return;
@@ -164,8 +163,9 @@ async function onDownloadFile(emit, msg, cb) {
   cb(true);
 }
 
-async function onCreateNewFile(emit, label, filename, cb) {
-  logger.debug("createNewFile event recieved: ", filename);
+async function onCreateNewFile(emit, projectRootDir, filename, cb) {
+  getLogger(projectRootDir).debug("createNewFile event recieved: ", filename);
+  filename = convertPathSep(filename);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -173,18 +173,19 @@ async function onCreateNewFile(emit, label, filename, cb) {
 
   try {
     await fs.writeFile(filename, "");
-    await gitAdd(label, filename);
+    await gitAdd(projectRootDir, filename);
     await sendDirectoryContents(emit, path.dirname(filename));
   } catch (e) {
-    logger.error("create new file failed", e);
+    getLogger(projectRootDir).error("create new file failed", e);
     cb(false);
     return;
   }
   cb(true);
 }
 
-async function onCreateNewDir(emit, label, dirname, cb) {
-  logger.debug("createNewDir event recieved: ", dirname);
+async function onCreateNewDir(emit, projectRootDir, dirname, cb) {
+  getLogger(projectRootDir).debug("createNewDir event recieved: ", dirname);
+  dirname = convertPathSep(dirname);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -193,39 +194,39 @@ async function onCreateNewDir(emit, label, dirname, cb) {
   try {
     await fs.mkdir(dirname);
     await fs.writeFile(path.resolve(dirname, ".gitkeep"), "");
-    await gitAdd(label, path.resolve(dirname, ".gitkeep"));
+    await gitAdd(projectRootDir, path.resolve(dirname, ".gitkeep"));
     await sendDirectoryContents(emit, path.dirname(dirname));
   } catch (e) {
-    logger.error("create new directory failed", e);
+    getLogger(projectRootDir).error("create new directory failed", e);
     cb(false);
     return;
   }
   cb(true);
 }
 
-function registerListeners(socket, label) {
+function registerListeners(socket, projectRootDir) {
   const uploader = new Siofu();
   uploader.listen(socket);
   uploader.dir = os.homedir();
   uploader.on("start", (event)=>{
-    logger.debug("upload request recieved", event.file);
+    getLogger(projectRootDir).debug("upload request recieved", event.file);
   });
   uploader.on("saved", async(event)=>{
     const absFilename = event.file.pathName;
-    logger.info(`upload completed ${absFilename} [${event.file.size} Byte]`);
-    await gitAdd(label, absFilename);
+    getLogger(projectRootDir).info(`upload completed ${absFilename} [${event.file.size} Byte]`);
+    await gitAdd(projectRootDir, absFilename);
     await sendDirectoryContents(socket.emit.bind(socket), path.dirname(absFilename));
   });
   uploader.on("error", (event)=>{
-    logger.error("file upload failed", event.file, event.error);
+    getLogger(projectRootDir).error("file upload failed", event.file, event.error);
   });
-  socket.on("getFileList", onGetFileList.bind(null, uploader, socket.emit.bind(socket)));
-  socket.on("getSNDContents", onGetSNDContents.bind(null, socket.emit.bind(socket)));
-  socket.on("removeFile", onRemoveFile.bind(null, socket.emit.bind(socket), label));
-  socket.on("renameFile", onRenameFile.bind(null, socket.emit.bind(socket), label));
-  socket.on("downloadFile", onDownloadFile.bind(null, socket.emit.bind(socket)));
-  socket.on("createNewFile", onCreateNewFile.bind(null, socket.emit.bind(socket), label));
-  socket.on("createNewDir", onCreateNewDir.bind(null, socket.emit.bind(socket), label));
+  socket.on("getFileList", onGetFileList.bind(null, uploader, socket.emit.bind(socket), projectRootDir));
+  socket.on("getSNDContents", onGetSNDContents.bind(null, socket.emit.bind(socket), projectRootDir));
+  socket.on("removeFile", onRemoveFile.bind(null, socket.emit.bind(socket), projectRootDir));
+  socket.on("renameFile", onRenameFile.bind(null, socket.emit.bind(socket), projectRootDir));
+  socket.on("downloadFile", onDownloadFile.bind(null, socket.emit.bind(socket), projectRootDir));
+  socket.on("createNewFile", onCreateNewFile.bind(null, socket.emit.bind(socket), projectRootDir));
+  socket.on("createNewDir", onCreateNewDir.bind(null, socket.emit.bind(socket), projectRootDir));
 }
 
 module.exports = registerListeners;

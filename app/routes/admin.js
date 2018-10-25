@@ -18,6 +18,7 @@ module.exports = function(io) {
   }
 
   sio.on("connect", (socket)=>{
+    logger.addContext("sio", socket)
     socket.on("addAccount", async(account)=>{
       logger.debug("addAccount request recieved", JSON.stringify(account, ["name", "description", "gid", "uid"], 4));
       account.password = await bcrypt.hash(account.password, saltRound);

@@ -8,7 +8,7 @@ const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
 const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterURL, getJupyterURL } = require("./db/db");
-const { getLogger, setSocketIO, setFilename, setMaxLogSize, setNumBackup, setCompress } = require("./logSettings");
+const { getLogger, setup } = require("./logSettings");
 
 /*
  * set up express, http and socket.io
@@ -17,12 +17,9 @@ const app = express();
 //TODO if certification setting is available, use https instead
 const server = require("http").createServer(app);
 const sio = require("socket.io")(server);
-setSocketIO(sio);
-setFilename(path.resolve(__dirname, "wheel.log"));
-setMaxLogSize(8388608);
-setNumBackup(5);
-setCompress(true);
 
+//setup logger
+setup(path.resolve(__dirname, "wheel.log"), 8388608, 5, true);
 const logger = getLogger();
 //eslint-disable-next-line no-console
 process.on("unhandledRejection", console.dir);
@@ -78,7 +75,7 @@ app.set("port", port);
 //error handler
 //TODO special error handler for 404 should be placed here
 app.use((err, req, res)=>{
-  logger.error(err);
+  logger.error("TODO: fix me");
   //render the error page
   res.status(err.status || 500);
   res.send("something broken!");

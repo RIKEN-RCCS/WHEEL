@@ -20,16 +20,7 @@ const rewire = require("rewire");
 process.on("unhandledRejection", console.dir);
 
 //testee
-const logger = rewire("../../../app/logSettings.js");
-const getLogger = logger.__get__("getLogger");
-const setSocketIO = logger.__get__("setSocketIO");
-const setFilename = logger.__get__("setFilename");
-const setMaxLogSize = logger.__get__("setMaxLogSize");
-const setNumBackup = logger.__get__("setNumBackup");
-const setCompress = logger.__get__("setCompress");
-const reset = logger.__get__("reset");
-const settings = logger.__get__("logSettings");
-settings.appenders.errorlog.type = "./app/errorlog";
+const {setup, getLogger, setFilename, setMaxLogSize, setNumBackup, setCompress, shutdown, getCurrentSettings}= require("../../../app/logSettings.js");
 
 //stubs
 const sio = {
@@ -44,65 +35,56 @@ describe("Unit test for log4js's helper functions", ()=>{
     it("should set filename to File appender", ()=>{
       const filename = "hoge";
       setFilename(filename);
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.filename).to.eql(filename);
+      expect(getCurrentSettings().appenders.file.filename).to.eql(filename);
     });
   });
   describe("#setMaxLogSize", ()=>{
     it("should set maxLogSize to File appender", ()=>{
       const maxLogSize = 42;
       setMaxLogSize(maxLogSize);
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.maxLogSize).to.eql(maxLogSize);
+      expect(getCurrentSettings().appenders.file.maxLogSize).to.eql(maxLogSize);
     });
   });
   describe("#setNumBackup", ()=>{
     it("should set numBackup to File appender", ()=>{
       const numBackup = 12;
       setNumBackup(numBackup);
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.backups).to.eql(numBackup);
+      expect(getCurrentSettings().appenders.file.backups).to.eql(numBackup);
     });
   });
   describe("#setCompress", ()=>{
     it("should set compressFlag to File appender", ()=>{
       setCompress(true);
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.compress).to.be.true;
+      expect(getCurrentSettings().appenders.file.compress).to.be.true;
     });
     it("should set compressFlag to File appender", ()=>{
       setCompress(false);
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.compress).to.be.false;
+      expect(getCurrentSettings().appenders.file.compress).to.be.false;
     });
     it("should set compressFlag to File appender", ()=>{
       setCompress(0);
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.compress).to.be.false;
+      expect(getCurrentSettings().appenders.file.compress).to.be.false;
     });
     it("should set compressFlag to File appender", ()=>{
       setCompress(1);
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.compress).to.be.false;
+      expect(getCurrentSettings().appenders.file.compress).to.be.false;
     });
     it("should set compressFlag to File appender", ()=>{
       setCompress("hoge");
-      const settings = logger.__get__("logSettings");
-      expect(settings.appenders.file.compress).to.be.false;
+      expect(getCurrentSettings().appenders.file.compress).to.be.false;
     });
   });
   describe("#log", ()=>{
     const logFilename = "./loggingTest.log";
     beforeEach(async()=>{
-      await reset();
-      setFilename(logFilename);
-      setMaxLogSize(4096);
-      setSocketIO(sio);
+      setup(logFilename, 4096)
       sio.emit.resetHistory();
+      delete process.env.WHEEL_DISABLE_LOG;
     });
     afterEach(async()=>{
-      await reset();
+      await shutdown();
       await fs.remove(logFilename);
+      process.env.WHEEL_DISABLE_LOG = 1;
     });
     it("should output to default logger", ()=>{
       const logger = getLogger();
@@ -112,6 +94,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to workflow logger", ()=>{
       const logger = getLogger("workflow");
+      logger.addContext("sio", sio)
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledThrice;
@@ -124,6 +107,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to home logger", ()=>{
       const logger = getLogger("home");
+      logger.addContext("sio", sio)
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledOnce;
@@ -133,6 +117,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to remotehost logger", ()=>{
       const logger = getLogger("remotehost");
+      logger.addContext("sio", sio)
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledOnce;
@@ -142,6 +127,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to login logger", ()=>{
       const logger = getLogger("login");
+      logger.addContext("sio", sio)
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledOnce;
@@ -151,6 +137,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to admin logger", ()=>{
       const logger = getLogger("admin");
+      logger.addContext("sio", sio)
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledOnce;
@@ -160,6 +147,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to rapid logger", ()=>{
       const logger = getLogger("rapid");
+      logger.addContext("sio", sio)
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledOnce;

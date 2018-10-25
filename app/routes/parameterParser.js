@@ -1,6 +1,4 @@
 "use strict";
-const { getLogger } = require("../logSettings");
-const logger = getLogger("workflow");
 
 function isValidParamAxis(min, max, step) {
   if (max <= min) {
@@ -37,7 +35,7 @@ function calcParamAxisSize(min, max, step) {
 }
 
 function getParamAxisSize(axis) {
-  let size;
+  let size = 0;
 
   switch (axis.type) {
     case "string":
@@ -52,9 +50,6 @@ function getParamAxisSize(axis) {
     case "float":
       size = calcParamAxisSize(axis.min, axis.max, axis.step);
       break;
-    default:
-      logger.warn("invalid param type", axis.type);
-      size = 0;
   }
   return size;
 }

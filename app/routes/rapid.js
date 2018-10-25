@@ -36,6 +36,7 @@ function searchGitRepo(filename) {
 module.exports = function(io) {
   const sio = io.of("/rapid");
   sio.on("connect", (socket)=>{
+    logger.addContext("sio", socket)
     socket.on("getFileTree", (cwd)=>{
       const tree = [];
       tree.push({ id: cwd, parent: "#", text: cwd });

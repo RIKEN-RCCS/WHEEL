@@ -24,12 +24,15 @@ const onReorderProject = home.__get__("onReorderProject");
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{} };
-//dummyLogger.error = console.log;
-//dummyLogger.warn = console.log;
-//dummyLogger.info = console.log;
-//dummyLogger.debug = console.log;
-home.__set__("logger", dummyLogger);
+const sio = {
+  of() {
+    return this;
+  }
+};
+sio.emit = emit;
+
+const logger = home.__get__("logger");
+logger.addContext("sio", sio);
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";
@@ -189,11 +192,11 @@ describe("home screen API test", ()=>{
     });
     it("should not create new project which has the same name as any other existing project", async()=>{
       await onAddProject(emit, `${testDirRoot}/foo`, null);
-      fs.ensureDir(path.resolve(testDirRoot, "bar", "foo")),
+      fs.ensureDir(path.resolve(testDirRoot, "bar", "foo"));
       await onAddProject(emit, `${testDirRoot}/bar/foo`, null, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(false);
-      expect(emit).to.have.been.calledOnce;
+      expect(emit).to.have.been.calledTwice;
       expect(path.join(testDirRoot, "bar", "foo.wheel")).not.to.be.a.path;
     });
   });
