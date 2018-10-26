@@ -257,8 +257,6 @@ export class SvgParentNodeUI {
     let fileNameYpos = 0;
     const [box, textHeight] = parts.createFilesNameBox(svg, fileNameXpos, fileNameYpos, parentnode.type, parentnode.name, parentnode.outputFiles, parentnode.inputFiles);
     const boxBbox = box.bbox();
-    const boxX = box.x();
-    const boxY = box.y();
     this.group.add(box);
     this.group.data({ "boxBbox": boxBbox });
 
@@ -272,14 +270,7 @@ export class SvgParentNodeUI {
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
       let [plug, cable] = parts.createParentConnector(svg, connectorXpos, connectorYpos, 0, connectorInterval * fileIndex, sio);
-      plug.data({ "name": input.name, "forwardTo": input.forwardTo });
-      // let dstArray = [];
-      // if (input.srcName === null) {
-      //   dstArray = [];
-      // } else {
-      //   dstArray = [input.srcNode, input.srcName];
-      // }
-      // plug.data({ "name": input.name, "dst": dstArray });
+      plug.data({ "name": input.name, "forwardTo": input.forwardTo }).attr('id', `${parentnode.name}_${input.name}_connector`);
       this.group.add(plug);
       this.group.add(cable);
       this.connectors.push(plug);
@@ -295,37 +286,10 @@ export class SvgParentNodeUI {
       const propertyAreaWidth = 272;
       let recepterPosX = window.innerWidth - propertyAreaWidth;
       const receptor = parts.createParentReceptor(svg, recepterPosX, recepterPosY, 0, recepterInterval * fileIndex);
-      receptor.data({ "ID": parentnode.ID, "name": output.name });
+      receptor.data({ "ID": parentnode.ID, "name": output.name }).attr('id', `${parentnode.name}_${output.name}_receptor`);
 
       this.group.add(receptor);
     });
-
-    // difference between box origin and mouse pointer
-    let diffX = 0;
-    let diffY = 0;
-    // mouse pointer coordinate on dragstart
-    let startX = 0;
-    let startY = 0;
-    // register drag and drop behavior
-    this.group
-      .on('dragstart', (e) => {
-        diffX = e.detail.p.x - e.target.instance.select(`.${node.name}_box`).first().x();
-        diffY = e.detail.p.y - e.target.instance.select(`.${node.name}_box`).first().y()
-        startX = e.detail.p.x;
-        startY = e.detail.p.y;
-      })
-      .on('dragmove', (e) => {
-        let dx = e.detail.p.x - startX;
-        let dy = e.detail.p.y - startY;
-        this.reDrawParentLinks(dx, dy)
-      })
-      .on('dragend', (e) => {
-        let x = e.detail.p.x;
-        let y = e.detail.p.y;
-        if (x !== startX || y !== startY) {
-          this.sio.emit('updateNode', parentnode.ID, 'pos', { 'x': x - diffX, 'y': y - diffY });
-        }
-      });
   }
 
   /**
@@ -341,27 +305,13 @@ export class SvgParentNodeUI {
         });
         const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
-        cable.cable.data('dst', dst.dstNode);
-        this.outputFileLinks.push(cable);
+        cable.cable.data('dst', dst.dstNode).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
+        this.inputFileLinks.push(cable);
 
         dstPlug.on('click', (e) => {
           this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
         });
       });
-    });
-  }
-  /**
-   * redraw cables between Lower-Upper and Connector-Receptor respectively
-   * @param offsetX x coordinate difference from dragstart
-   * @param offsetY y coordinate difference from dragstart
-   */
-  reDrawParentLinks(offsetX, offsetY) {
-    let boxBbox = this.group.data('boxBbox');
-    this.outputFileLinks.forEach((v) => {
-      v.dragStartPoint(offsetX, offsetY, boxBbox);
-    });
-    this.inputFileLinks.forEach((v) => {
-      v.dragEndPoint(offsetX, offsetY, boxBbox);
     });
   }
 
