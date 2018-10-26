@@ -26,7 +26,7 @@
     "del": "scancel",
     "reJobID": "Submitted batch job (\\d+)",
     "reFinishedState": "^COMPLETED,0",
-    "reReturnCode": " .*(\\d+):\\d+$",
+    "reReturnCode": "^COMPLETED,(\\d+):\\d+$",
     "reFailedState": "^(COMPLETED|FAILED|CANCELLED|DEADLINE|NODE_FAIL|TIMEOUT)"
   }
 }

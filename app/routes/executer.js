@@ -51,7 +51,8 @@ function passToSSHerr(data) {
 }
 
 function getReturnCode(outputText, reReturnCode) {
-  const result = reReturnCode.exec(outputText);
+  const re = new RegExp(reReturnCode, "m");
+  const result = re.exec(outputText);
 
   if (result === null || result[1] === null) {
     logger.warn("get return code failed, rt is overwrited by -1");
@@ -85,7 +86,7 @@ async function isFinished(JS, ssh, jobID) {
   logger.trace("is", jobID, "finished", finished, "\n", outputText);
 
   if (finished) {
-    const strRt = getReturnCode(outputText, new RegExp(JS.reReturnCode, "m"));
+    const strRt = getReturnCode(outputText, JS.reReturnCode);
     return parseInt(strRt, 10);
   }
   return null;
