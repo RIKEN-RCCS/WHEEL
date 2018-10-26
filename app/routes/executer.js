@@ -50,7 +50,7 @@ function passToSSHerr(data) {
   logger.ssherr(data.toString().trim());
 }
 
-function getReturnCode(outputText, reReturnCode){
+function getReturnCode(outputText, reReturnCode) {
   const result = reReturnCode.exec(outputText);
 
   if (result === null || result[1] === null) {
@@ -83,9 +83,10 @@ async function isFinished(JS, ssh, jobID) {
     finished = reFailedState.test(outputText);
   }
   logger.trace("is", jobID, "finished", finished, "\n", outputText);
-  if(finished){
+
+  if (finished) {
     const strRt = getReturnCode(outputText, new RegExp(JS.reReturnCode, "m"));
-    return parseInt(strRt);
+    return parseInt(strRt, 10);
   }
   return null;
 }

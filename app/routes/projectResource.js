@@ -150,7 +150,7 @@ function getLogger(projectRootDir) {
   return getProject(projectRootDir).logger;
 }
 
-function setSio(projectRootDir, sio){
+function setSio(projectRootDir, sio) {
   getProject(projectRootDir).logger.addContext("sio", sio);
 }
 

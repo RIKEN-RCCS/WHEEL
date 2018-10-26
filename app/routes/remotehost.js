@@ -56,7 +56,7 @@ module.exports = function(io) {
     });
   };
   sio.on("connect", (socket)=>{
-    logger.addContext("sio", socket)
+    logger.addContext("sio", socket);
     socket.on("getHostList", ()=>{
       socket.emit("hostList", remoteHost.getAll());
     });

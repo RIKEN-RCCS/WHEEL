@@ -209,7 +209,7 @@ function getLogger(cat, verbose) {
       console.log("logging is disabled because WHEEL_DISABLE_LOG is set to ", process.env.WHEEL_DISABLE_LOG);
     }
     logger.level = "off";
-  }else{
+  } else {
     logger.level = "trace";
   }
   return logger;
