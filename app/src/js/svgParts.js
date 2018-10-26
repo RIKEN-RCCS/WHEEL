@@ -208,18 +208,17 @@ class SvgBox {
     const opacity = config.box_appearance.opacity;
 
     // create inner parts
+    this.width = 256; //画面デザイン上256pxとする
+    const innerFrame = this.createInnerFrame();
+    const outerFrame = this.createOuterFrame(type);
     const input = this.createInputText(inputFiles);
     const output = this.createOutputText(outputFiles);
-
-    const outputBBox = output.bbox();
     const inputBBox = input.bbox();
-
-    const bodyHeight = titleHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
-
-    this.height = bodyHeight + titleHeight;
-
+    const outputBBox = output.bbox();
     const title = this.createTitle(name);
     const iconImage = this.createIconImage(type, host, useJobScheduler);
+    const bodyHeight = titleHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
+    this.height = bodyHeight + titleHeight;
 
     let taskState;
     let psState, psState2;
@@ -230,19 +229,12 @@ class SvgBox {
       psState2 = this.createStateForPS2(state, numTotal, numFinished, numFailed);
     }
 
-
     //子コンポーネントの表示
     let nodePosYInfo = [];
     nodePosYInfo = this.getNodePosY(type, nodes);
     const nodesViewField = this.createNodesViewField(type, bodyHeight, nodes, nodePosYInfo);
     const nodesView = this.createNodes(type, bodyHeight, nodes);
     const nodesIconField = this.createNodesIconField(type, bodyHeight, nodes);
-
-
-    this.width = 256; //画面デザイン上256pxとする
-
-    const outerFrame = this.createOuterFrame(type);
-    const innerFrame = this.createInnerFrame();
 
     this.box
       .add(outerFrame)
@@ -271,7 +263,6 @@ class SvgBox {
     output.x(titleWidth);
 
     innerFrame.size(titleWidth, bodyHeight);
-
   }
 
   /**
@@ -653,10 +644,8 @@ class SvgParentFilesBox {
 
     const input = this.createInputText(inputFiles);
     const output = this.createOutputText(outputFiles);
-
-    const outputBBox = output.bbox();
     const inputBBox = input.bbox();
-
+    const outputBBox = output.bbox();
     const bodyHeight = titleHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
 
     this.height = bodyHeight + titleHeight;
@@ -691,9 +680,9 @@ class SvgParentFilesBox {
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
       const defaultConnectorXpos = 240;
-      const displayFontSize = 14;
       const connectorMiddlePos = 5.6;
-      const x = 32;
+
+      const x = defaultConnectorXpos - text.bbox().width - config.box_appearance.outputTextOffset;
       const y = connectorHeight + connectorMiddlePos + connectorInterval * index;
 
       text.move(x, y);

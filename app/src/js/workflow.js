@@ -332,7 +332,7 @@ $(() => {
       updateTaskStateTable(arrangedTaskStateList);
     })
 
-    // TODO 現在のプロジェクト状態の取得をサーバにリクエストする
+    //get project state infomation.
     sio.on('projectJson', (projectJson) => {
       rootId = Object.keys(projectJson.componentPath).filter((key) => {
         return projectJson.componentPath[key] === './'
@@ -343,10 +343,20 @@ $(() => {
 
       if (projectJson.state === 'running') {
         $('#project_state').css('background-color', '#88BB00');
+        $('#run_button').attr("src", "/image/btn_play_d.png");
+        $('#pause_button').attr("src", "/image/btn_pause_n.png");
       } else if (projectJson.state === 'failed') {
         $('#project_state').css('background-color', '#E60000');
+        $('#pause_button').attr("src", "/image/btn_pause_n.png");
+        $('#run_button').attr("src", "/image/btn_play_n.png");
+      } else if (projectJson.state === 'paused') {
+        $('#project_state').css('background-color', '#444480');
+        $('#pause_button').attr("src", "/image/btn_pause_d.png");
+        $('#run_button').attr("src", "/image/btn_play_n.png");
       } else {
         $('#project_state').css('background-color', '#000000');
+        $('#pause_button').attr("src", "/image/btn_pause_n.png");
+        $('#run_button').attr("src", "/image/btn_play_n.png");
       }
 
       let now = new Date();
@@ -636,6 +646,7 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   function drawLinks(nodes) {
+    console.log("link draw");
     nodes.forEach(function (node) {
       if (node != null) {
         node.drawLinks();
@@ -703,13 +714,13 @@ $(() => {
       }
     });
     parentnode.forEach(function (node) {
-      if (node != null) {
-
-        node.inputFileLinks.forEach(function (cable) {
-          let dst = cable.cable.data('dst');
-          nodes[dst].outputFileLinks.push(cable);
+      node.inputFileLinks.forEach(function (cable) {
+        const dst = cable.cable.data('dst');
+        const target = nodes.find((e) => {
+          return e.ID === dst;
         });
-      }
+        target.inputFileLinks.push(cable);
+      });
     });
   }
 
@@ -923,7 +934,6 @@ $(() => {
 
   //change project description
   $('#projectDescription').blur(function () {
-    console.log("test");
     var prjDesc = document.getElementById('projectDescription').value;
     sio.emit('updateProjectJson', 'description', prjDesc);
   });
@@ -939,17 +949,25 @@ $(() => {
 
   //header buttons
   $('#run_button').mouseover(function () {
-    $('#run_button').attr("src", "/image/btn_play_h.png");
+    if (presentState !== 'running') {
+      $('#run_button').attr("src", "/image/btn_play_h.png");
+    }
   });
   $('#run_button').mouseleave(function () {
-    $('#run_button').attr("src", "/image/btn_play_n.png");
+    if (presentState !== 'running') {
+      $('#run_button').attr("src", "/image/btn_play_n.png");
+    }
   });
 
   $('#pause_button').mouseover(function () {
-    $('#pause_button').attr("src", "/image/btn_pause_h.png");
+    if (presentState !== 'paused') {
+      $('#pause_button').attr("src", "/image/btn_pause_h.png");
+    }
   });
   $('#pause_button').mouseleave(function () {
-    $('#pause_button').attr("src", "/image/btn_pause_n.png");
+    if (presentState !== 'paused') {
+      $('#pause_button').attr("src", "/image/btn_pause_n.png");
+    }
   });
 
   $('#stop_button').mouseover(function () {

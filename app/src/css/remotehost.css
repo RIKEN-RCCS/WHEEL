@@ -165,13 +165,13 @@ header {
   border-collapse: collapse;
 }
 
-#hostListInfo{
+.hostListInfo{
   border: 1px solid #2F2F33;
   border-bottom-color: #222226;
   height: 40px;
 }
 
-#hostListInfo:hover{
+.hostListInfo:hover{
   background-color: rgba(204, 255, 0, 0.1);
 }
 
@@ -300,6 +300,7 @@ input::-webkit-input-placeholder {
 #hostRegFormArea{
   display: inline-flex;
   padding: 12px 0 0 16px;
+
 }
 
 #hostRegFormArea label{
