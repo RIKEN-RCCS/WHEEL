@@ -218,7 +218,7 @@ export default class {
   }
   onClickDefault() {
     $(this.idFileList).on("click", 'li,i', (event) => {
-      this.changeColorsWhenSelected();
+      this.changeColorsWhenSelected(event);
       this.lastClicked = $(event.target).data('name').trim();
     });
   }
@@ -252,9 +252,9 @@ export default class {
       }
     });
   }
-  changeColorsWhenSelected() {
+  changeColorsWhenSelected(e) {
     $(`${this.idFileList} li`).css('background-color', this.defaultColor);
-    $(event.target).css('background-color', this.selectedItemColor);
+    $(e.target).css('background-color', this.selectedItemColor);
   }
   isValidPath(path1, path2) {
     var path1 = path1.replace(/\\/g, '/');

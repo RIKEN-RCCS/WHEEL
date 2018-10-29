@@ -249,7 +249,7 @@ class SvgBox {
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
-      .addClass(`${name}` + '_box');
+      .addClass(`${name}_box`);
 
     if (type !== "parameterStudy") {
       this.box
