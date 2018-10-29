@@ -50,8 +50,9 @@ function passToSSHerr(data) {
   logger.ssherr(data.toString().trim());
 }
 
-function getReturnCode(outputText, reReturnCode){
-  const result = reReturnCode.exec(outputText);
+function getReturnCode(outputText, reReturnCode) {
+  const re = new RegExp(reReturnCode, "m");
+  const result = re.exec(outputText);
 
   if (result === null || result[1] === null) {
     logger.warn("get return code failed, rt is overwrited by -1");
@@ -83,9 +84,10 @@ async function isFinished(JS, ssh, jobID) {
     finished = reFailedState.test(outputText);
   }
   logger.trace("is", jobID, "finished", finished, "\n", outputText);
-  if(finished){
-    const strRt = getReturnCode(outputText, new RegExp(JS.reReturnCode, "m"));
-    return parseInt(strRt);
+
+  if (finished) {
+    const strRt = getReturnCode(outputText, JS.reReturnCode);
+    return parseInt(strRt, 10);
   }
   return null;
 }
@@ -154,11 +156,14 @@ function makeQueueOpt(task, JS, queues) {
   let queue = "";
   const queueList = queues.split(",");
 
-  if (task.queue in queueList) {
-    queue = task.queue;
-  } else if (queueList.length > 0) {
-    queue = queueList[0];
+  queue = queueList.find((e)=>{
+    return task.queue === e;
+  });
+
+  if(typeof queue === 'undefined'){
+    queue = queueList.length > 0?queueList[0]:"";
   }
+
   return queue !== "" ? ` ${JS.queueOpt}${queue}` : "";
 }
 
