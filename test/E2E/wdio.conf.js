@@ -10,6 +10,7 @@ exports.config = {
     //
     specs: [
         'test/E2E/home.js',
+        'test/E2E/remotehost.js',
         'test/E2E/createComponentTestProject.js',
         'test/E2E/workflow.js',
         'test/E2E/deleteComponentTestProject.js'
