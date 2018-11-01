@@ -462,7 +462,7 @@ class Dispatcher extends EventEmitter {
     this.nextSearchList.push(component);
 
     const newComponent = Object.assign({}, component);
-    const v = component.currentIndex.replace(new RegExp(path.sep,"g"), "_");
+    const v = component.currentIndex.replace(new RegExp(path.sep, "g"), "_");
     newComponent.name = `${component.originalName}_${v}`;
     newComponent.subComponent = true;
     const dstDir = path.resolve(this.cwfDir, newComponent.name);
@@ -509,7 +509,7 @@ class Dispatcher extends EventEmitter {
 
     for (const paramVec of paramVecGenerator(paramSpace)) {
       const newName = paramVec.reduce((p, e)=>{
-        const v = (e.value).replace(new RegExp(path.sep,"g"), "_");
+        const v = (e.value).replace(new RegExp(path.sep, "g"), "_");
         return `${p}_${e.key}_${v}`;
       }, component.name);
       const dstDir = path.resolve(this.cwfDir, newName);
