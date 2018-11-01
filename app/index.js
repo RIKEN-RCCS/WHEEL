@@ -73,12 +73,14 @@ if (portNumber < 0) {
 app.set("port", port);
 
 //error handler
-//TODO special error handler for 404 should be placed here
-app.use((err, req, res)=>{
-  logger.error("TODO: fix me");
+app.use((err, req, res, next)=>{
   //render the error page
   res.status(err.status || 500);
   res.send("something broken!");
+});
+//handle 404 not found
+app.use((req, res, next)=>{
+  res.status(404).send("reqested page is not found");
 });
 
 //Listen on provided port, on all network interfaces.
