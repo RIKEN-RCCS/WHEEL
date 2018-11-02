@@ -17,7 +17,9 @@ async function cancelLocalJob(task){
   console.log("not implimented yet!!");
 }
 async function killLocalProcess(task){
-  if(task.handler && task.handler.connect) task.handler.kill();
+  if(task.handler && !task.handler.connected){
+    task.handler.kill();
+  }
 }
 
 async function killTask(task){
