@@ -164,6 +164,22 @@ async function readJsonGreedy(filename) {
   });
 }
 
+/**
+ * replace illegal chars as path string
+ * @param {string} path - string which should be sanitized
+ * @return {string} - sanitized path
+ */
+function sanitizePath(path, replacer="_"){
+  //replace path.sep by '_'
+  const re = path.sep === path.win32.sep? '\\':'/';
+  let sanitized = path.replace(new RegExp(re, "g"), replacer);
+
+  //remove trailing path.sep
+  sanitize = sanitize.endsWith(path.sep)?sanitize.slice(0,-1):sanitize;
+
+  return sanitized;
+}
+
 module.exports = {
   convertPathSep,
   addX,
@@ -177,5 +193,6 @@ module.exports = {
   escapeRegExp,
   isValidName,
   isValidInputFilename,
-  isValidOutputFilename
+  isValidOutputFilename,
+  sanitizePath
 };
