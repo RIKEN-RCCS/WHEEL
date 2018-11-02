@@ -9,7 +9,7 @@ function socketIOAppender(layout, timezoneOffset, eventName) {
     const socket = loggingEvent.context.sio;
 
     if (loggingEvent.level.level >= 40000) {
-      socket.of(namespace).emit(eventName, layout(loggingEvent, timezoneOffset));
+      socket.emit(eventName, layout(loggingEvent, timezoneOffset));
     }
   };
 }
