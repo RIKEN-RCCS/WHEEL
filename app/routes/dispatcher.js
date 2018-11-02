@@ -509,7 +509,10 @@ class Dispatcher extends EventEmitter {
 
     for (const paramVec of paramVecGenerator(paramSpace)) {
       const newName = paramVec.reduce((p, e)=>{
-        const v = (e.value).replace(new RegExp(path.sep, "g"), "_");
+        let v = (e.value).replace(new RegExp(path.sep, "g"), "_");
+        if(v.endsWith("_")){
+          v = v.slice(0,-1);
+        }
         return `${p}_${e.key}_${v}`;
       }, component.name);
       const dstDir = path.resolve(this.cwfDir, newName);

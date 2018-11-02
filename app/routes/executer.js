@@ -410,9 +410,10 @@ function createExecuter(task) {
   const onRemote = task.remotehostID !== "localhost";
   const hostinfo = onRemote ? remoteHost.get(task.remotehostID) : null;
   const ssh = onRemote ? getSsh(task.projectRootDir, hostinfo.host) : null;
-  const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
+
   //TODO remove onRemote after local submit is supported
-  if (onRemote && JS === null) {
+  const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
+  if (onRemote && task.useJobScheduler  && JS === null) {
     logger.error();
     const err = new Error("illegal job Scheduler specifies");
     err.task = task.name;
