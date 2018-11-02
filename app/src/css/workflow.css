@@ -1188,7 +1188,6 @@ td {
 
 #project_tree_svg{
     margin: 24px 16px 16px 16px;
-    height: calc(100% - 40px);
     width: 100%;
 }
 
