@@ -1174,7 +1174,7 @@ td {
 }
 /* リストビュー画面 */
 #project_table_body{
-    height:800px;
+    height: 100%;
     width: calc(100% - 16px);
     position: fixed;
     overflow: auto;
