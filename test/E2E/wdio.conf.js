@@ -13,7 +13,8 @@ exports.config = {
         'test/E2E/remotehost.js',
         'test/E2E/createComponentTestProject.js',
         'test/E2E/workflow.js',
-        'test/E2E/deleteComponentTestProject.js'
+        'test/E2E/deleteComponentTestProject.js',
+        'test/E2E/executeTestProject.js'
     ],
     // Patterns to exclude.
     exclude: [

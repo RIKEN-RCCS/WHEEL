@@ -1332,7 +1332,7 @@ img.btn_menu_n{
 }
 
 #project_table_body{
-    height:800px;
+    height: 100%;
     width: calc(100% - 16px);
     position: fixed;
     overflow: auto;
@@ -1346,7 +1346,6 @@ img.btn_menu_n{
 
 #project_tree_svg{
     margin: 24px 16px 16px 16px;
-    height: calc(100% - 40px);
     width: 100%;
 }
 
