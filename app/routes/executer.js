@@ -160,8 +160,8 @@ function makeQueueOpt(task, JS, queues) {
     return task.queue === e;
   });
 
-  if(typeof queue === 'undefined'){
-    queue = queueList.length > 0?queueList[0]:"";
+  if (typeof queue === "undefined") {
+    queue = queueList.length > 0 ? queueList[0] : "";
   }
 
   return queue !== "" ? ` ${JS.queueOpt}${queue}` : "";

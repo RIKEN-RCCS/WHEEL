@@ -66,19 +66,23 @@ class Git extends EventEmitter {
       const stats = await fs.stat(absFilename);
 
       if (stats.isDirectory()) {
-        const p = [];
+        const filenames = [];
         klaw(absFilename)
           .on("data", (item)=>{
             if (item.stats.isFile()) {
               const filename = replacePathsep(path.relative(this.rootDir, item.path));
-              p.push(this.index.addByPath(filename));
+              filenames.push(filename);
             }
           })
           .on("error", (err)=>{
             reject(new Error("fatal error occurred during recursive git add", err));
           })
           .on("end", async()=>{
-            await Promise.all(p);
+            await Promise.all(
+              filenames.map((filename)=>{
+                return this.index.addByPath(filename);
+              })
+            );
             this.emit("writeIndex");
             resolve();
           });
