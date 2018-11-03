@@ -18,7 +18,7 @@ async function cancelLocalJob() {
 }
 
 async function killLocalProcess(task) {
-  if (task.handler && task.handler.connect) {
+  if(task.handler && task.handler.killed === false){
     task.handler.kill();
   }
 }
