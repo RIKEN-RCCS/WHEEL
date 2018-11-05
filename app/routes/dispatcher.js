@@ -173,10 +173,17 @@ class Dispatcher extends EventEmitter{
     this.nextSearchList=[];
     if(this.isFinished()){
       this.removeListener('dispatch', this._dispatch);
-      const hasFailed=this.dispatchedTaskList.some((task)=>{
+      const hasFailedTask=this.dispatchedTaskList.some((task)=>{
         return task.state === 'failed';
       });
-      this.emit('done', !hasFailed);
+      const hasFailedComponent=this.nodes
+        .filter((node)=>{
+          return node !== null;
+        })
+        .some((node)=>{
+          return node.state === 'failed';
+        });
+      this.emit('done', !hasFailedTask && !hasFailedComponent);
     }else{
       //call next dispatcher
       setTimeout(()=>{
