@@ -7,7 +7,7 @@ const { EventEmitter } = require("events");
 const glob = require("glob");
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
-const { addX, isFinishedState, readJsonGreedy } = require("./utility");
+const { addX, isFinishedState, readJsonGreedy, sanitizePath } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid } = require("./parameterParser");
 const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
@@ -462,8 +462,7 @@ class Dispatcher extends EventEmitter {
     this.nextSearchList.push(component);
 
     const newComponent = Object.assign({}, component);
-    const v = component.currentIndex.replace(new RegExp(path.sep, "g"), "_");
-    newComponent.name = `${component.originalName}_${v}`;
+    newComponent.name = `${component.originalName}_${sanitizePath(component.currentIndex)}`;
     newComponent.subComponent = true;
     const dstDir = path.resolve(this.cwfDir, newComponent.name);
 
@@ -509,11 +508,7 @@ class Dispatcher extends EventEmitter {
 
     for (const paramVec of paramVecGenerator(paramSpace)) {
       const newName = paramVec.reduce((p, e)=>{
-        let v = (e.value).replace(new RegExp(path.sep, "g"), "_");
-        if(v.endsWith("_")){
-          v = v.slice(0,-1);
-        }
-        return `${p}_${e.key}_${v}`;
+        return `${p}_${e.key}_${sanitizePath(e.value)}`;
       }, component.name);
       const dstDir = path.resolve(this.cwfDir, newName);
 

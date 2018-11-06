@@ -174,8 +174,8 @@ function sanitizePath(path, replacer="_"){
   const re = path.sep === path.win32.sep? '\\':'/';
   let sanitized = path.replace(new RegExp(re, "g"), replacer);
 
-  //remove trailing path.sep
-  sanitize = sanitize.endsWith(path.sep)?sanitize.slice(0,-1):sanitize;
+  //remove trailing replacer
+  sanitize = sanitize.endsWith(replacer)?sanitize.slice(0,-1):sanitize;
 
   return sanitized;
 }
