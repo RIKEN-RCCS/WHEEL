@@ -1,6 +1,7 @@
 "use strict";
 const path = require("path");
 const log4js = require("log4js");
+const   { logFilename, numLogFiles, maxLogSize, compressLogFile } = require("./db/db");
 log4js.addLayout("errorlog", ()=>{
   return function(logEvent) {
     const tmp = logEvent.data.reduce((a, p)=>{
@@ -29,16 +30,19 @@ const defaultSettings = {
     },
     file: {
       type: "file",
-      filename: path.resolve(__dirname, "../wheel.log"),
-      maxLogSize: 8388608,
-      backups: 5,
-      compress: true
+      filename: path.resolve(__dirname, logFilename),
+      maxLogSize: maxLogSize,
+      backups: numLogFiles,
+      compress: compressLogFile
     },
     multi: {
       type: "multiFile",
       property: "logFilename",
       base: "",
-      extension: ""
+      extension: "",
+      maxLogSize: maxLogSize,
+      backups: numLogFiles,
+      compress: compressLogFile
     },
     socketIO: {
       type: path.resolve(__dirname, "log2client")
@@ -160,19 +164,23 @@ function shutdown() {
 }
 
 function setFilename(filename) {
+  // this function will not affect project log filename to keep file
   logSettings.appenders.file.filename = filename;
 }
 
 function setMaxLogSize(size) {
   logSettings.appenders.file.maxLogSize = size;
+  logSettings.appenders.multi.maxLogSize = size;
 }
 
 function setNumBackup(num) {
   logSettings.appenders.file.backups = num;
+  logSettings.appenders.multi.backups = num;
 }
 
 function setCompress(TF) {
   logSettings.appenders.file.compress = TF === true;
+  logSettings.appenders.multi.compress = TF === true;
 }
 
 /**

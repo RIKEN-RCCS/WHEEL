@@ -41,6 +41,12 @@ module.exports.defaultCleanupRemoteRoot = config.defaultCleanupRemoteRoot;
 module.exports.saltRound = config.saltRound;
 module.exports.jupyter = config.jupyter;
 module.exports.jupyterPort = config.jupyterPort;
+module.exports.logFilename     =config.logFilename
+module.exports.numLogFiles     =config.numLogFiles
+module.exports.maxLogSize      =config.maxLogSize
+module.exports.compressLogFile =config.compressLogFile
+
+
 
 module.exports.jobScheduler = jobScheduler;
 module.exports.userAccount = new JsonArrayManager(userAccountFilename);

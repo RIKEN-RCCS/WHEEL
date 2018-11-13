@@ -8,5 +8,9 @@
     "saltRound": 10,
     "admin": "admin",
     "jupyter": true,
-    "jupyterPort": "auto"
+    "jupyterPort": "auto",
+    "logFilename": "wheel.log",
+    "numLogFiles": 5,
+    "maxLogSize": 8388608,
+    "compressLogFile": true
 }
