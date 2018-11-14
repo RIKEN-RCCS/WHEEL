@@ -122,7 +122,7 @@ $(() => {
             if (result !== true) return;
             const currentComponentDir = currentWorkDir + "\\" + val;
             fb.request('getFileList', currentComponentDir, null);
-            const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + val;
+            const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
             $('#componentPath').html(displayDirPath);
             $('#cbMessageArea').text(val);
           });
@@ -201,9 +201,10 @@ $(() => {
     filePath = $(this).attr("data-path");
     filename = $(this).attr("data-name");
     const datatype = $(this).attr("data-type");
-    let currentDirPath = filePath.replace(projectRootDir, "") + "\\" + filename;
+    let replacePath = projectRootDir + "\\";
+    let currentDirPath = filePath.replace(replacePath, "") + "/" + filename;
     filePathStack.push(filePath);
-    $('#componentPath').html("." + currentDirPath);
+    $('#componentPath').html("./" + currentDirPath);
     let backDirHtml;
     if (datatype === "snd") {
       backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}"><img src="/image/img_filesToSND.png" alt="config" class="backButton"></button>`;
@@ -218,7 +219,8 @@ $(() => {
   $(document).on('click', '#dirBackButton', function () {
     if (filePathStack.length !== 0) {
       filePath = filePathStack[filePathStack.length - 1];
-      let fileListDirPath = "." + filePath.replace(projectRootDir, "");
+      let replacePath = projectRootDir + "\\";
+      let fileListDirPath = "./" + filePath.replace(replacePath, "");
       fb.request('getFileList', filePath, null);
       $('#componentPath').html(fileListDirPath);
       filePathStack.pop();
@@ -602,7 +604,7 @@ $(() => {
         let nodePath = currentWorkDir + "\\" + name;
         fb.request('getFileList', nodePath, null);
         //プロパティ表示用相対パス
-        let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "\\" + name;
+        let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + name;
         let nodeType = target.type;
         //iconの変更
         let nodeIconPath = config.node_icon[nodeType];
@@ -646,7 +648,6 @@ $(() => {
    * @param nodeInWF node list in workflow Json
    */
   function drawLinks(nodes) {
-    console.log("link draw");
     nodes.forEach(function (node) {
       if (node != null) {
         node.drawLinks();
