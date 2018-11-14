@@ -40,6 +40,7 @@ module.exports = function(io) {
     res.cookie("root", ID);
     res.cookie("rootDir", projectRootDir);
     res.cookie("project", path.resolve(projectRootDir, projectJsonFilename));
+    console.log(getJupyterURL());
     res.cookie("jupyterURL", getJupyterURL());
     res.cookie("jupyterToken", getJupyterToken());
     res.sendFile(path.resolve(__dirname, "../views/workflow.html"));

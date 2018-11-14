@@ -115,9 +115,7 @@ function getFilenames(ParamSpace) {
   }, []);
 }
 
-function removeInvalid(paramSpace) {
-  //work around
-  //TODO fix bug in rapid client.js
+function workAroundForVersion1(paramSpace){
   paramSpace.forEach((e)=>{
     if (e.type === "integer") {
       e.min = parseInt(e.min, 10);
@@ -133,6 +131,10 @@ function removeInvalid(paramSpace) {
       });
     }
   });
+  return paramSpace
+}
+
+function removeInvalid(paramSpace) {
   return paramSpace.filter((e)=>{
     if (e.type === "integer" || e.type === "float") {
       return isValidParamAxis(e.min, e.max, e.step);
@@ -141,7 +143,10 @@ function removeInvalid(paramSpace) {
   });
 }
 
-module.exports.paramVecGenerator = paramVecGenerator;
-module.exports.getParamSize = getParamSize;
-module.exports.getFilenames = getFilenames;
-module.exports.removeInvalid = removeInvalid;
+module.exports={
+  paramVecGenerator,
+  getParamSize,
+  getFilenames,
+  removeInvalid,
+  workAroundForVersion1
+}

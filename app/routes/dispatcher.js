@@ -8,7 +8,7 @@ const glob = require("glob");
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
 const { addX, isFinishedState, readJsonGreedy, sanitizePath } = require("./utility");
-const { paramVecGenerator, getParamSize, getFilenames, removeInvalid } = require("./parameterParser");
+const { paramVecGenerator, getParamSize, getFilenames, removeInvalid, workAroundForVersion1 } = require("./parameterParser");
 const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
 
@@ -37,6 +37,38 @@ async function deliverFile(src, dst) {
 
 
 //private functions
+function getTargetFile(paramSettings){
+  return [paramSettings.target_file]
+}
+function getTargetFiles(paramSettings){
+  return paramSettings.targetFiles
+}
+function removeInvalidv1(target_param){
+  return removeInvalid(workAroundForVersion1(target_param));
+}
+
+function getScatterFiles(srcDir, paramSettings){
+}
+
+async function scatterFiles(){
+}
+
+async function gatherFiles(){
+}
+async function doNothing(){
+}
+
+function makeCmd(version){
+  if(version === 2){
+    return [getTargetFiles, removeInvalid, getScatterFiles, scatterFiles, gatherFiles]
+  }else{
+    // version 1 (=unversioned)
+    return [getTargetFile, removeInvalidv1, ()=>{return []}, doNothing, doNothing];
+  }
+}
+
+
+
 function forGetNextIndex(component) {
   return component.hasOwnProperty("currentIndex") ? component.currentIndex + component.step : component.start;
 }
@@ -129,16 +161,19 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
   });
 }
 
-async function replaceTargetFile(srcDir, dstDir, targetFile, paramVec) {
-  const tmp = await fs.readFile(path.resolve(srcDir, targetFile));
-  let data = tmp.toString();
-  paramVec.forEach((e)=>{
-    data = data.replace(new RegExp(`%%${e.key}%%`, "g"), e.value.toString());
-  });
-  const rewriteFile = path.resolve(dstDir, targetFile);
-  //fs.writeFile will overwrites existing file.
-  //so, targetFile is always overwrited!!
-  await fs.writeFile(rewriteFile, data);
+async function replaceTargetFile(srcDir, dstDir, targetFiles, paramVec) {
+  const promises=[];
+  for(const targetFile of targetFiles){
+    const tmp = await fs.readFile(path.resolve(srcDir, targetFile));
+    let data = tmp.toString();
+    paramVec.forEach((e)=>{
+      data = data.replace(new RegExp(`%%${e.key}%%`, "g"), e.value.toString());
+    });
+    //fs.writeFile will overwrites existing file.
+    //so, targetFile is always overwrited!!
+    promises.push(fs.writeFile(path.resolve(dstDir, targetFile), data));
+  }
+  return Promise.all(promises);
 }
 
 /**
@@ -491,14 +526,22 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("_PSHandler called", component.name);
     const srcDir = path.resolve(this.cwfDir, component.name);
     const paramSettingsFilename = path.resolve(srcDir, component.parameterFile);
-    const paramSettings = JSON.parse(await promisify(fs.readFile)(paramSettingsFilename));
-    const targetFile = paramSettings.target_file;
-    const paramSpace = removeInvalid(paramSettings.target_param);
+    const paramSettings = await readJsonGreedy(path.resolve(srcDir, component.parameterFile));
+
+    const [getTargetFiles, getParamSpace, getScatterFiles, scatterFiles, gatherFiles] = makeCmd(paramSettings.version);
+
+    const targetFiles = getTargetFiles(paramSettings);
+    const paramSpace =  getParamSpace(paramSettings.target_param);
+
     //ignore all filenames in file type parameter space and parameter study setting file
-    const ignoreFiles = getFilenames(paramSpace).map((e)=>{
-      return path.resolve(srcDir, e);
-    });
-    ignoreFiles.push(paramSettingsFilename);
+    const ignoreFiles = [paramSettingsFilename]
+      .concat(
+        getFilenames(paramSpace),
+        targetFiles,
+        getScatterFiles()
+      ).map((e)=>{
+        return path.resolve(srcDir, e);
+      });
 
     const promises = [];
     component.numTotal = getParamSize(paramSpace);
@@ -530,7 +573,8 @@ class Dispatcher extends EventEmitter {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir, options);
 
-      await replaceTargetFile(srcDir, dstDir, targetFile, paramVec);
+      await replaceTargetFile(srcDir, dstDir, targetFiles, paramVec);
+      await scatterFiles();//TODO
 
       const newComponent = Object.assign({}, component);
       newComponent.name = newName;
@@ -553,6 +597,7 @@ class Dispatcher extends EventEmitter {
       promises.push(p);
     }
     await Promise.all(promises);
+    await gatherFiles(); //TODO
     await this._addNextComponent(component);
     const state = component.numFailed > 0 ? "failed" : "finished";
     await this._setComponentState(component, state);

@@ -4,7 +4,7 @@ const chaiIterator = require("chai-iterator");
 chai.use(chaiIterator);
 
 //testee
-const { removeInvalid, paramVecGenerator } = require("../../../app/routes/parameterParser");
+const { workAroundForVersion1, paramVecGenerator } = require("../../../app/routes/parameterParser");
 
 //test data
 const floatCalc = [{
@@ -66,33 +66,33 @@ const stringList = [{
 //actual test start here
 describe("#paramVecGenerator", ()=>{
   it("retuns calclated float values", ()=>{
-    expect(paramVecGenerator(removeInvalid(floatCalc))).to.deep.iterate.over([
+    expect(paramVecGenerator(workAroundForVersion1(floatCalc))).to.deep.iterate.over([
       [{ key: "KEYWORD1", value: "0.3", type: "float" }],
       [{ key: "KEYWORD1", value: "0.4", type: "float" }],
       [{ key: "KEYWORD1", value: "0.5", type: "float" }],
       [{ key: "KEYWORD1", value: "0.6", type: "float" }]]);
   });
   it("retuns calclated int values", ()=>{
-    expect(paramVecGenerator(removeInvalid(intCalc))).to.deep.iterate.over([
+    expect(paramVecGenerator(workAroundForVersion1(intCalc))).to.deep.iterate.over([
       [{ key: "KEYWORD1", value: "1", type: "integer" }],
       [{ key: "KEYWORD1", value: "2", type: "integer" }],
       [{ key: "KEYWORD1", value: "3", type: "integer" }]]);
   });
   it("retuns float values in the list", ()=>{
-    expect(paramVecGenerator(removeInvalid(floatList))).to.deep.iterate.over([
+    expect(paramVecGenerator(workAroundForVersion1(floatList))).to.deep.iterate.over([
       [{ key: "KEYWORD1", value: "3.14", type: "string" }],
       [{ key: "KEYWORD1", value: "0.08", type: "string" }],
       [{ key: "KEYWORD1", value: "9.2", type: "string" }]]);
   });
   it("retuns int values in the list", ()=>{
-    expect(paramVecGenerator(removeInvalid(intList))).to.deep.iterate.over([
+    expect(paramVecGenerator(workAroundForVersion1(intList))).to.deep.iterate.over([
       [{ key: "KEYWORD1", value: "1", type: "string" }],
       [{ key: "KEYWORD1", value: "5", type: "string" }],
       [{ key: "KEYWORD1", value: "9", type: "string" }],
       [{ key: "KEYWORD1", value: "13", type: "string" }]]);
   });
   it("retuns string values in the list", ()=>{
-    expect(paramVecGenerator(removeInvalid(stringList))).to.deep.iterate.over([
+    expect(paramVecGenerator(workAroundForVersion1(stringList))).to.deep.iterate.over([
       [{ key: "KEYWORD1", value: "foo", type: "string" }],
       [{ key: "KEYWORD1", value: "bar", type: "string" }],
       [{ key: "KEYWORD1", value: "baz", type: "string" }]]);
