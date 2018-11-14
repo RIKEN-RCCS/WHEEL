@@ -24,6 +24,10 @@ module.exports.systemName= config.system_name;
 module.exports.defaultFilename= config.default_filename;
 module.exports.defaultCleanupRemoteRoot = config.defaultCleanupRemoteRoot;
 module.exports.saltRound = config.saltRound;
+module.exports.logFilename = config.logFilename;
+module.exports.numLogFiles = config.numLogFiles;
+module.exports.maxLogSize = config.maxLogSize;
+module.exports.compressLogFile = config.compressLogFile;
 
 module.exports.jobScheduler = jobScheduler;
 module.exports.userAccount = new jsonArrayManager(userAccountFilename);

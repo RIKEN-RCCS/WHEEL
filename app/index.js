@@ -9,7 +9,7 @@ const siofu = require('socketio-file-upload');
 const ejs = require('ejs');
 const passport = require('passport');
 
-const {port} = require('./db/db');
+const {port, logFilename, numLogFiles, maxLogSize, compressLogFile} = require('./db/db');
 const {getLogger, setSocketIO, setFilename, setMaxLogSize, setNumBackup, setCompress} = require('./logSettings');
 
 /*
@@ -20,11 +20,12 @@ var app = express();
 const server = require('http').createServer(app);
 const sio = require('socket.io')(server);
 
+
 setSocketIO(sio);
-setFilename(path.resolve(__dirname, "wheel.log"));
-setMaxLogSize(8388608);
-setNumBackup(5);
-setCompress(true);
+setFilename(path.resolve(__dirname, logFilename));
+setMaxLogSize(maxLogSize);
+setNumBackup(numLogFiles);
+setCompress(compressLogFile);
 
 const logger = getLogger();
 process.on('unhandledRejection', console.dir);

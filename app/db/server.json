@@ -1,5 +1,5 @@
 {
-    "port": 8089,
+    "port": 8189,
     "remotehost": "./remotehost.json",
     "useraccount": "./useraccount.json",
     "projectList": "./projectList.json",
@@ -30,5 +30,9 @@
     },
     "system_name": "swf",
     "default_filename": "define",
-    "submit_script": "submit.sh"
+    "submit_script": "submit.sh",
+    "logFilename": "wheel.log",
+    "numLogFiles": 5,
+    "maxLogSize": 8388608,
+    "compressLogFile": true
 }
