@@ -73,7 +73,7 @@
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "chai-fs": "^2.0.0",
-    "chai-iterator": "git+https://github.com/harrysarson/chai-iterator.git#chai4",
+    "chai-iterator": "^3.0.0",
     "cross-env": "^5.0.5",
     "css-loader": "^0.28.7",
     "eslint": "^4.7.2",
