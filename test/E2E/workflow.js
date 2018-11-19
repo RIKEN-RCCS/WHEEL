@@ -99,7 +99,7 @@ describe("#workflow", function () {
       .setValue('.newInputFileNameInputField', testInputFiles)
       .click('.inputAddDelButton')
       .click('#node_svg')
-      .waitForVisible(`#${renameTaskComponentName}_${testInputFiles}_receptor`, 10000);
+      .waitForVisible(`#${renameTaskComponentName}_${testInputFiles}_receptor`, 100000);
     expect(browser.getText('#cbMessageArea')).to.equal(testInputFiles);
     expect(browser.getAttribute(`#${renameTaskComponentName}_${testInputFiles}_receptor`, 'data-name')).to.equal(testInputFiles);
 
@@ -108,7 +108,7 @@ describe("#workflow", function () {
       .setValue('.newOutputFileNameInputField', testOutputFiles)
       .click('.outputAddDelButton')
       .click('#node_svg')
-      .waitForVisible(`#${renameTaskComponentName}_${testOutputFiles}_connector`, 10000);
+      .waitForVisible(`#${renameTaskComponentName}_${testOutputFiles}_connector`, 100000);
     expect(browser.getText('#cbMessageArea')).to.equal(testOutputFiles);
     expect(browser.getAttribute(`#${renameTaskComponentName}_${testOutputFiles}_connector`, 'data-name')).to.equal(testOutputFiles);
 
@@ -172,7 +172,7 @@ describe("#workflow", function () {
       .setValue('.newInputFileNameInputField', testInputFiles)
       .click('.inputAddDelButton')
       .click('#node_svg')
-      .waitForVisible(`#workflow0_${testInputFiles}_receptor`, 10000);
+      .waitForVisible(`#workflow0_${testInputFiles}_receptor`, 100000);
     expect(browser.getText('#cbMessageArea')).to.equal(testInputFiles);
     expect(browser.getAttribute(`#workflow0_${testInputFiles}_receptor`, 'data-name')).to.equal(testInputFiles);
   });
@@ -244,16 +244,16 @@ describe("#workflow", function () {
   });
   it("method connector check", function () {
     browser.dragAndDrop(`#${renameTaskComponentName}_lower`, '#PS0_upper')
-      .waitForVisible(`#${renameTaskComponentName}_lower_PS0_upper_cable`, 10000);
+      .waitForVisible(`#${renameTaskComponentName}_lower_PS0_upper_cable`, 100000);
     browser.dragAndDrop(`#${renameTaskComponentName}_${testOutputFiles}_connector`, `#workflow0_${testInputFiles}_receptor`)
-      .waitForVisible(`#${renameTaskComponentName}_${testOutputFiles}_connector_workflow0_${testInputFiles}_receptor_cable`, 10000);
+      .waitForVisible(`#${renameTaskComponentName}_${testOutputFiles}_connector_workflow0_${testInputFiles}_receptor_cable`, 100000);
     browser.dragAndDrop('#if0_else', '#for0_upper')
-      .waitForVisible('#if0_else_for0_upper_cable', 10000);
+      .waitForVisible('#if0_else_for0_upper_cable', 100000);
   });
   it("component delete check", function () {
     // component delete
     browser.rightClick('.foreach0_box')
       .click(deleteMenu)
-      .waitForExist('.foreach0_box', 10000, true);
+      .waitForExist('.foreach0_box', 100000, true);
   });
 });

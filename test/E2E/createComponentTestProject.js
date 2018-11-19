@@ -72,6 +72,6 @@ describe("#home", function () {
   });
   it("Back to the Home screen", function () {
     browser.click('#title')
-      .waitForExist(`#prj_${testProjectName}`, 10000, false);
+      .waitForExist(`#prj_${testProjectName}`, 100000, false);
   });
 });

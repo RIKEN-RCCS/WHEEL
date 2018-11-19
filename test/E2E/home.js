@@ -39,26 +39,26 @@ describe("#home", function () {
       .click(openMenu)
       .waitForVisible('#project_name');
     browser.click('#title')
-      .waitForExist(`#prj_${testProjectName}`, 10000, false);
+      .waitForExist(`#prj_${testProjectName}`, 100000, false);
   });
   it("project open test(doubleclick)", function () {
     browser.doubleClick(`#prj_${testProjectName}`)
       .waitForVisible('#project_name');
     browser.click('#title')
-      .waitForExist(`#prj_${testProjectName}`, 10000, false);
+      .waitForExist(`#prj_${testProjectName}`, 100000, false);
   });
   it("project rename test", function () {
     browser.rightClick(`#prj_${testProjectName}`)
       .click(renameMenu)
       .setValue('#renamedProjectName', renamedTestProjectName)
       .click(okBtn)
-      .waitForExist(`#prj_${renamedTestProjectName}`, 10000, false);
+      .waitForExist(`#prj_${renamedTestProjectName}`, 100000, false);
   });
   it("project delete test", function () {
     browser.rightClick(`#prj_${renamedTestProjectName}`)
       .click(deleteMenu)
       .click(okBtn)
-      .waitForExist(`#prj_${renamedTestProjectName}`, 10000, true);
+      .waitForExist(`#prj_${renamedTestProjectName}`, 100000, true);
   });
   it("abnormality test : create decouple project name", function () {
     browser.click('#newButton')
@@ -77,12 +77,12 @@ describe("#home", function () {
       .click('.okButton')
       .waitForVisible('#dialog');
     browser.click(errorOkBtn)
-      .waitForVisible('#dialog', 10000, true);
+      .waitForVisible('#dialog', 100000, true);
   });
   it("delete testproject for next test", function () {
     browser.rightClick(`#prj_${testProjectName}`)
       .click(deleteMenu)
       .click('.okButton')
-      .waitForExist(`#prj_${testProjectName}`, 10000, true);
+      .waitForExist(`#prj_${testProjectName}`, 100000, true);
   });
 });

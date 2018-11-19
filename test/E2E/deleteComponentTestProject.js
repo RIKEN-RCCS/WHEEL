@@ -22,6 +22,6 @@ describe("#home", function () {
     browser.rightClick(`#prj_${testProjectName}`)
       .click(deleteMenu)
       .click(okBtn)
-      .waitForExist(`#prj_${testProjectName}`, 10000, true);
+      .waitForExist(`#prj_${testProjectName}`, 100000, true);
   });
 });
