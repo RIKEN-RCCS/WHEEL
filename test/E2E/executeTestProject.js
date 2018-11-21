@@ -32,8 +32,7 @@ describe("execute test : ", function () {
       .waitForVisible(`#prj_${testProjectName}`);
   });
   it("open test project", function () {
-    browser.doubleClick(`#prj_${testProjectName}`)
-      .waitForVisible('#project_name');
+    browser.doubleClick(`#prj_${testProjectName}`);
     expect(browser.getTitle()).to.equal("WHEEL workflow");
   });
   it("create task component", function () {
