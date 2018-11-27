@@ -6,7 +6,6 @@ chai.use(chaiWebdriver(browser));
 
 describe("execute test : ", function () {
   const url = '/';
-  //Xpath for ok button in dialog
   const okBtn = "/html/body/div[5]/div[3]/div/button[2]";
   const testProjectName = "testProject";
   const testProjectDescription = "This is E2E test project.";
@@ -47,10 +46,10 @@ describe("execute test : ", function () {
       const sio = io('/workflow');
       sio.emit('createNode', { "type": 'task', "pos": pos });
     });
-    browser.windowHandleSize({ width: 1200, height: 1200 })
+    browser.windowHandleSize({ width: 1200, height: 1000 })
       .waitForVisible('.task0_box');
   });
-  it("set task component parameter", function () {
+  it("set task name, description", function () {
     // rename
     browser.click('.task0_box')
       .setValue('#nameInputField', renameTaskComponentName)
@@ -69,9 +68,10 @@ describe("execute test : ", function () {
       .waitForVisible('#property');
     expect(browser.getText('#cbMessageArea')).to.equal(taskDescription);
     expect(browser.getValue('#descriptionInputField')).to.equal(taskDescription);
-
-    // create script file
-    browser.click(`.${renameTaskComponentName}_box`)
+  });
+  it("set task script", function () {
+    // scroll #property
+    browser.scroll('#property', 0, 200)
       .click('#createFileButton')
       .waitForVisible('#dialog');
     browser.setValue('#newFileName', scriptFileName)
@@ -79,26 +79,17 @@ describe("execute test : ", function () {
       .waitForVisible('.file');
 
     // script test
-    browser.click(`.${renameTaskComponentName}_box`)
+    browser.scroll('#property', 0, 200)
       .setValue('#scriptInputField', taskScript)
       .click('#node_svg');
     browser.click(`.${renameTaskComponentName}_box`)
       .waitForVisible('#property');
     expect(browser.getText('#cbMessageArea')).to.equal(taskScript);
     expect(browser.getValue('#scriptInputField')).to.equal(taskScript);
-
-    // set script file by RAPiD
-    browser.scroll('#property', 0, 100)
-      .click('.file')
-      .click('#editFileButton')
-      .waitForVisible('.ace_content');
   });
   it("open script file", function () {
-    browser.click(`.${renameTaskComponentName}_box`)
-      .waitForVisible('#property');
-
     // set script file by RAPiD
-    browser.scroll('#property', 0, 100)
+    browser.scroll('#property', 0, 200)
       .click('.file')
       .click('#editFileButton');
 
