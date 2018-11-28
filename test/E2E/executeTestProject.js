@@ -6,20 +6,19 @@ chai.use(chaiWebdriver(browser));
 
 describe("execute test : ", function () {
   const url = '/';
-  //Xpath for ok button in dialog
   const okBtn = "/html/body/div[5]/div[3]/div/button[2]";
   const testProjectName = "testProject";
   const testProjectDescription = "This is E2E test project.";
   const renameTaskComponentName = "echoTask";
   const taskDescription = "This component execute echo.";
-  const taskScript = "echo.bat";
-  const scriptFileName = "echo.bat";
+  const taskScript = "echo.sh";
+  const scriptFileName = "echo.sh";
   const createFileDialogOkButton = '/html/body/div[8]/div[3]/div/button[2]';
-  const script = "echo Hello World!";
+  const script = "#!/bin/sh \n echo Hello World!";
+  const deleteMenu = '/html/body/ul/li[3]';
 
   it("Home screen is drawn", function () {
     browser.url(url);
-    browser.windowHandleSize({ width: 1200, height: 1200 });
     expect(browser.getTitle()).to.equal("WHEEL home");
     expect('#pageNameLabel').to.have.text("Home");
   });
@@ -37,14 +36,20 @@ describe("execute test : ", function () {
     expect(browser.getTitle()).to.equal("WHEEL workflow");
   });
   it("create task component", function () {
+    //open component library
+    browser.click('#taskLibraryButton')
+      .waitForVisible('#workflow');
+
+    //create component
     browser.selectorExecute('#node_svg', function () {
       const pos = { x: 300, y: 200 };
       const sio = io('/workflow');
       sio.emit('createNode', { "type": 'task', "pos": pos });
     });
-    browser.waitForVisible('.task0_box');
+    browser.windowHandleSize({ width: 1200, height: 1000 })
+      .waitForVisible('.task0_box');
   });
-  it("set task component parameter", function () {
+  it("set task name, description", function () {
     // rename
     browser.click('.task0_box')
       .setValue('#nameInputField', renameTaskComponentName)
@@ -63,9 +68,10 @@ describe("execute test : ", function () {
       .waitForVisible('#property');
     expect(browser.getText('#cbMessageArea')).to.equal(taskDescription);
     expect(browser.getValue('#descriptionInputField')).to.equal(taskDescription);
-
-    // create script file
-    browser.click(`.${renameTaskComponentName}_box`)
+  });
+  it("set task script", function () {
+    // scroll #property
+    browser.scroll('#property', 0, 200)
       .click('#createFileButton')
       .waitForVisible('#dialog');
     browser.setValue('#newFileName', scriptFileName)
@@ -73,26 +79,17 @@ describe("execute test : ", function () {
       .waitForVisible('.file');
 
     // script test
-    browser.click(`.${renameTaskComponentName}_box`)
+    browser.scroll('#property', 0, 200)
       .setValue('#scriptInputField', taskScript)
       .click('#node_svg');
     browser.click(`.${renameTaskComponentName}_box`)
       .waitForVisible('#property');
     expect(browser.getText('#cbMessageArea')).to.equal(taskScript);
     expect(browser.getValue('#scriptInputField')).to.equal(taskScript);
-
-    // set script file by RAPiD
-    browser.scroll('#property', 0, 100)
-      .click('.file')
-      .click('#editFileButton')
-      .waitForVisible('.ace_content');
   });
   it("open script file", function () {
-    browser.click(`.${renameTaskComponentName}_box`)
-      .waitForVisible('#property');
-
     // set script file by RAPiD
-    browser.scroll('#property', 0, 100)
+    browser.scroll('#property', 0, 200)
       .click('.file')
       .click('#editFileButton');
 
@@ -118,5 +115,15 @@ describe("execute test : ", function () {
     browser.waitUntil(function () {
       return browser.getText('#project_state') === 'finished'
     }, 5000, 'expected text to be different after 5s');
+  });
+  it("Back to the Home screen", function () {
+    browser.click('#title')
+      .waitForExist(`#prj_${testProjectName}`, 100000, false);
+  });
+  it("delete testproject for next test", function () {
+    browser.rightClick(`#prj_${testProjectName}`)
+      .click(deleteMenu)
+      .click(okBtn)
+      .waitForExist(`#prj_${testProjectName}`, 100000, true);
   });
 });
