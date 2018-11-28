@@ -35,13 +35,11 @@ const { openProject, setCwd } = require("../../../app/routes/projectResource");
 const emit = sinon.stub();
 const cb = sinon.stub();
 const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show error message
-projectController.__set__("getLogger", ()=>{return dummyLogger});
+projectController.__set__("getLogger", ()=>{
+  return dummyLogger;
+});
 
-const sio = {
-  // of() {
-  //   return this;
-  // }
-};
+const sio = {};
 sio.emit = sinon.stub();
 //
 //TODO pass stub to askPassword for remote task test
@@ -823,6 +821,107 @@ describe("project Controller UT", function() {
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+      });
+    });
+    describe.skip("task in PS ver.2", ()=>{
+      beforeEach(async()=>{
+        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
+        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+
+        await fs.outputFile(path.join(projectRootDir, "PS0", "input1.txt"), "{{ KEYWORD1 }}");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "input2.txt"), "{{ KEYWORD1 }}");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "testData"), "hoge");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "data_1"), "data_1");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "data_2"), "data_2");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "data_3"), "data_3");
+        const parameterSetting = {
+          versoin: 2,
+          targetFiles: ["input1.txt", "input2.txt"],
+          target_param: [
+            {
+              target: "hoge",
+              keyword: "KEYWORD1",
+              min: 1,
+              max: 3,
+              step: 1
+            }
+          ],
+          scatter: [
+            { srcName: "testData", dstNode: task0.ID, dstName: "hoge{{ KEYWORD1 }}" }
+          ],
+          gather: [
+            { srcName: "hoge{{ KEYWORD1 }}", srcNode: task0.ID, dstDir: "results", keepOriginalName: true },
+            { srcName: "hoge{{ KEYWORD1 }}", srcNode: task0.ID, dstDir: "results", keepOriginalName: false }
+          ]
+        };
+        await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd |tee output.log\n");
+      });
+      it("should run project and successfully finish", async()=>{
+        await onRunProject(sio, projectRootDir, cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(dummyLogger.stdout).to.have.been.calledThrice;
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", "input1.txt")).to.be.a.file().with.content("1");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", "input1.txt")).to.be.a.file().with.content("2");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "input1.txt")).to.be.a.file().with.content("3");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", "input2.txt")).to.be.a.file().with.content("1");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", "input2.txt")).to.be.a.file().with.content("2");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "input2.txt")).to.be.a.file().with.content("3");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", "hoge1")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", "hoge2")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "hoge3")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0", "results", "hoge1")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0", "results", "hoge2")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0", "results", "hoge3")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0", "results", "hoge1_KEYWORD1_1")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0", "results", "hoge2_KEYWORD1_2")).to.be.a.file().with.content("hoge");
+        expect(path.resolve(projectRootDir, "PS0", "results", "hoge3_KEYWORD1_3")).to.be.a.file().with.content("hoge");
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
