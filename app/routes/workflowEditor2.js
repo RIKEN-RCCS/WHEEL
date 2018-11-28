@@ -5,7 +5,7 @@ const pathIsInside = require("path-is-inside");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
 const { setCwd, getCwd, getLogger } = require("./projectResource");
-const { gitRm, gitAdd } = require("./gitOperator");
+const { gitRm, gitAdd, gitResetHEAD } = require("./gitOperator");
 const { replacePathsep, isValidName, readJsonGreedy } = require("./utility");
 const componentFactory = require("./workflowComponent");
 
@@ -268,10 +268,7 @@ async function onRemoveNode(emit, projectRootDir, targetID, cb) {
 
     //gitOperator.rm() only remove existing files from git repo if directory is passed
     //so, gitRm and fs.remove must be called in this order
-    //git rm
     await gitRm(projectRootDir, nodeDir);
-
-    //remove files
     await fs.remove(nodeDir);
 
     await sendWorkflow(emit, projectRootDir);
@@ -760,6 +757,44 @@ async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode,
   cb(true);
 }
 
+async function onCleanComponent(emit, projectRootDir, targetID, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("cleanComponent event recieved:", targetID);
+
+  try {
+    const targetDir = await getComponentDir(projectRootDir, targetID);
+    const descendantsID = await getDescendantsID(projectRootDir, targetID);
+
+    console.log("remove target =", targetDir);
+    await fs.remove(targetDir);
+    const pathSpec = `${path.relative(projectRootDir, targetDir)}/*`;
+    await gitResetHEAD(projectRootDir, pathSpec);
+
+    //remove all non-existing components from component Path
+    await updateComponentPath(projectRootDir, (root, componentPath)=>{
+      for (const descendantID of descendantsID) {
+        getComponentDir(projectRootDir, descendantID)
+          .then((descendantDir)=>{
+            return fs.pathExists(descendantDir);
+          })
+          .then((isExists)=>{
+            if (!isExists) {
+              delete componentPath[descendantID];
+            }
+          });
+      }
+    });
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("reset component failed:", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
   socket.on("getWorkflow", onWorkflowRequest.bind(null, emit, projectRootDir));
@@ -776,6 +811,7 @@ function registerListeners(socket, projectRootDir) {
   socket.on("removeLink", onRemoveLink.bind(null, emit, projectRootDir));
   socket.on("addFileLink", onAddFileLink.bind(null, emit, projectRootDir));
   socket.on("removeFileLink", onRemoveFileLink.bind(null, emit, projectRootDir));
+  socket.on("cleanComponent", onCleanComponent.bind(null, emit, projectRootDir));
 }
 
 module.exports = registerListeners;

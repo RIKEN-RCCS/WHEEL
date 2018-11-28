@@ -145,9 +145,18 @@ class Git extends EventEmitter {
   /**
    * perform git reset HEAD --hard
    */
-  async resetHEAD() {
+  async resetHEAD(filePatterns) {
+    const pathSpec = typeof filePatterns === "string" ? [filePatterns] : filePatterns;
+    const checkoutOpt = Array.isArray(pathSpec) ? { paths: pathSpec } : null;
     const headCommit = await this.repo.getHeadCommit();
-    return nodegit.Reset.reset(this.repo, headCommit, nodegit.Reset.TYPE.HARD, null, "master");
+    return nodegit.Reset.reset(this.repo, headCommit, nodegit.Reset.TYPE.HARD, checkoutOpt, "master");
+  }
+
+  /**
+   * perform git clean -df
+   */
+  async clean() {
+    console.log("not implemented");
   }
 }
 
@@ -206,9 +215,9 @@ async function gitRm(rootDir, filename) {
  * performe git reset HEAD
  * @param {string} rootDir  - directory path which has ".git" directory
  */
-async function gitResetHEAD(rootDir) {
+async function gitResetHEAD(rootDir, filePatterns) {
   const git = await getGitOperator(rootDir);
-  return git.resetHEAD();
+  return git.resetHEAD(filePatterns);
 }
 
 

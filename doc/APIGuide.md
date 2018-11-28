@@ -470,7 +470,7 @@ linkデータの形式はaddLink APIと同じ
 実行中のプロジェクトを停止し、実行開始前の状態に戻します。
 
 #### cleanComponent(id, cb) [新規作成、未実装]
-@param {staring} id - コンポーネントのID
+@param {string} id - コンポーネントのID
 
 指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
 statusをnot-startedにします。

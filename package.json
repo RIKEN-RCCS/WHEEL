@@ -24,7 +24,7 @@
     "memoryMonitor": "cross-env NODE_ENV=development MEMORY_MONITOR=TRUE node app/index",
     "profiler": "node --prof app/index",
     "mocha": "mocha",
-    "lint": "eslint --fix app/*.js app/routes/*.js app/db/*.js",
+    "lint": "eslint --fix app/*.js app/routes/*.js app/db/*.js test/UT/*/*.js",
     "esw": "esw --no-color --watch --clear --fix app/*.js app/routes/*.js app/db/*.js",
     "coverage": "nyc --reporter=html --reporter=text npm run fullTest",
     "coverage:server": "nyc --reporter=html --reporter=text npm run UT:server",
