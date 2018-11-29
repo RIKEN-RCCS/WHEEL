@@ -31,16 +31,17 @@ async function makeDir(basename, argSuffix) {
 
 //this function is used as modifier of updateComponentPath
 function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
-  const relativeOldPath = componentPath[ID];
-  const relativeNewPath = path.relative(projectRootDir, newPath);
-  if (typeof relativeOldPath !== "undefined") {
+  const oldRelativePath = componentPath[ID];
+  let newRelativePath = path.relative(projectRootDir, newPath);
+  if(! newRelativePath.startsWith(".")) newRelativePath = "./"+newRelativePath;
+  if (typeof oldRelativePath !== "undefined") {
     for (const [k, v] of Object.entries(componentPath)) {
-      if (pathIsInside(v, relativeOldPath)) {
-        componentPath[k] = v.replace(relativeOldPath, relativeNewPath);
+      if (pathIsInside(v, oldRelativePath)) {
+        componentPath[k] = v.replace(oldRelativePath, newRelativePath);
       }
     }
   }
-  componentPath[ID] = replacePathsep(relativeNewPath);
+  componentPath[ID] = replacePathsep(newRelativePath);
 }
 
 async function updateComponentPath(projectRootDir, modifier) {

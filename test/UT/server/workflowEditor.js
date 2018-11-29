@@ -221,7 +221,7 @@ describe("workflow editor UT", ()=>{
     await openProject(projectRootDir);
   });
   after(async()=>{
-    // await fs.remove(testDirRoot);
+    await fs.remove(testDirRoot);
   });
 
   describe("#onWorkflowRequest", ()=>{
@@ -295,7 +295,7 @@ describe("workflow editor UT", ()=>{
     });
   });
   describe("#onUpdateNode", ()=>{
-    it.only("should rename component which has child", async()=>{
+    it("should rename component which has child", async()=>{
       await onUpdateNode(emit, projectRootDir, components.wf1.ID, "name", "wf4", cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
@@ -307,13 +307,13 @@ describe("workflow editor UT", ()=>{
       expect(path.join(projectRootDir, "wf4")).to.be.directory().with.contents(["wf2", "task1", componentJsonFilename]);
       expect(path.join(projectRootDir, "wf4", componentJsonFilename)).to.be.file().with.json.using.schema(wf1Schema);
       expect(await getComponentDir(projectRootDir, components.wf1.ID)).to.equal(path.resolve(projectRootDir, "wf4"));
-      projectJsonSchema.properties.componentPath.properties[components.wf1.ID     ]={enum: ["wf4"]};
-      projectJsonSchema.properties.componentPath.properties[components.task1.ID   ]={enum: ["wf4/task1"]};
-      projectJsonSchema.properties.componentPath.properties[components.wf2.ID     ]={enum: ["wf4/wf2"]};
-      projectJsonSchema.properties.componentPath.properties[components.task2.ID   ]={enum: ["wf4/wf2/task2"]};
+      projectJsonSchema.properties.componentPath.properties[components.wf1.ID     ]={enum: ["./wf4"]};
+      projectJsonSchema.properties.componentPath.properties[components.task1.ID   ]={enum: ["./wf4/task1"]};
+      projectJsonSchema.properties.componentPath.properties[components.wf2.ID     ]={enum: ["./wf4/wf2"]};
+      projectJsonSchema.properties.componentPath.properties[components.task2.ID   ]={enum: ["./wf4/wf2/task2"]};
       expect(path.join(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema(projectJsonSchema);
     });
-    it.only("should rename component after its component is renamed", async()=>{
+    it("should rename component after its component is renamed", async()=>{
       await onUpdateNode(emit, projectRootDir, components.task1.ID, "name", "hoge", cb);
       emit.reset();
       cb.reset();
@@ -328,10 +328,10 @@ describe("workflow editor UT", ()=>{
       expect(path.join(projectRootDir, "wf4")).to.be.directory().with.contents(["wf2", "hoge", componentJsonFilename]);
       expect(path.join(projectRootDir, "wf4", componentJsonFilename)).to.be.file().with.json.using.schema(wf1Schema);
       expect(await getComponentDir(projectRootDir, components.wf1.ID)).to.equal(path.resolve(projectRootDir, "wf4"));
-      projectJsonSchema.properties.componentPath.properties[components.wf1.ID     ]={enum: ["wf4"]};
-      projectJsonSchema.properties.componentPath.properties[components.task1.ID   ]={enum: ["wf4/hoge"]};
-      projectJsonSchema.properties.componentPath.properties[components.wf2.ID     ]={enum: ["wf4/wf2"]};
-      projectJsonSchema.properties.componentPath.properties[components.task2.ID   ]={enum: ["wf4/wf2/task2"]};
+      projectJsonSchema.properties.componentPath.properties[components.wf1.ID     ]={enum: ["./wf4"]};
+      projectJsonSchema.properties.componentPath.properties[components.task1.ID   ]={enum: ["./wf4/hoge"]};
+      projectJsonSchema.properties.componentPath.properties[components.wf2.ID     ]={enum: ["./wf4/wf2"]};
+      projectJsonSchema.properties.componentPath.properties[components.task2.ID   ]={enum: ["./wf4/wf2/task2"]};
       expect(path.join(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema(projectJsonSchema);
     });
     it("should update task0's script property", async()=>{
