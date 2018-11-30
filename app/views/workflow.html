@@ -165,7 +165,7 @@
             <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
             <p id="propertyTypeName"></p>
             <div v-if="node.state ==='finished' || node.state ==='failed'" id="stateButton">
-              <button v-on:click="cleanComponentState()" class="cleanStateButton">
+              <button v-on:click="cleanComponentState" class="cleanStateButton">
                 <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
               </button>
             </div>

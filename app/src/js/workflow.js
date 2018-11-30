@@ -144,12 +144,14 @@ $(() => {
         });
       },
       cleanComponentState: function () {
+        var nodeId = this.node.ID;
         const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure to clean this state?</div>'
         dialogWrapper('#dialog', html)
           .done(function () {
-            //TODO add cleanComponet API
-            // sio.emit('cleanComponet', this.node.ID, (result) => {
-            // });
+            sio.emit('cleanComponent', nodeId, (result) => {
+              if (result !== true) return;
+              $('#cbMessageArea').text('component cleaned');
+            });
           });
       },
       openJupyterNotebook: function () {
@@ -500,15 +502,12 @@ $(() => {
     var target = $(this).attr("id");
     var objectDrag = document.getElementById(target);
     var objectDrop = document.getElementById("node_svg");
-
     objectDrag.ondragstart = function (event) {
       event.dataTransfer.setData("text", target);
     };
-
     objectDrop.ondragover = function (event) {
       event.preventDefault();
     };
-
     objectDrop.ondrop = function (event) {
       event.preventDefault();
       var objectName = event.dataTransfer.getData("text");
@@ -987,12 +986,4 @@ $(() => {
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
-
-  //for debug
-  // document.body.addEventListener("click", function (event) {
-  //   var x = event.pageX;
-  //   var y = event.pageY;
-  //   console.log(x);
-  //   console.log(y);
-  // });
 });

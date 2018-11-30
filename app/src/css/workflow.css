@@ -376,6 +376,10 @@ img.btn_menu_n{
     margin: 16px 0 0 16px;
 }
 
+#workflow li, #task li, #PS li, #if li, #for li, #while li, #foreach li{
+    display: inline-block;
+}
+
 #img_workflow{
     border-radius: 2px;    
     background-color: #803DB3;
@@ -482,10 +486,6 @@ img.btn_menu_n{
     cursor: pointer;
     padding-left: 0px;
     height: 32px;
-}
-
-#workflowComponents .type li{
-    display: inline-flex;
 }
 
 #workflowComponents .type:hover{

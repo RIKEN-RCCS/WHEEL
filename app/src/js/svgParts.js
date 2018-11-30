@@ -567,7 +567,10 @@ class SvgBox {
         }
         const nodeIconPath = config.node_icon[nodetype];
         const nodePosX = node.pos.x / 5;
-        const nodePosY = node.pos.y / 5;
+        let nodePosY = node.pos.y / 5;
+        if (node.pos.y < 0) {
+          nodePosY = 0;
+        }
         const correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
         const img = this.draw
           .image(correctNodeIconPath)
@@ -604,7 +607,10 @@ class SvgBox {
         const iconTitlewidth = 24;
         const nodeColor = config.node_color[node.type];
         const nodePosX = node.pos.x / 5;
-        const nodePosY = node.pos.y / 5;
+        let nodePosY = node.pos.y / 5;
+        if (node.pos.y < 0) {
+          nodePosY = 0;
+        }
         const iconField = this.draw
           .polygon([
             [0, 0],

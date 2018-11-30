@@ -124,7 +124,7 @@ export default class {
         callback: function () {
           var filename = $(this).data('name');
           var target = $(this).data('path') + '/' + filename;
-          var html = '<p class="dialogTitle">Delete file</p><div id="deleteMessage">Are you sure you want to delete this file?</div>';
+          var html = '<p class="dialogTitle">Delete file</p><div id="deleteMessage">Are you sure to delete this file?</div>';
           dialogWrapper('#dialog', html).done(function () {
             $(fileList).remove(`:contains(${filename})`);
             socket.emit('removeFile', target);
