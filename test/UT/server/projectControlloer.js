@@ -31,6 +31,9 @@ const onAddLink = workflowEditor.__get__("onAddLink");
 const onAddFileLink = workflowEditor.__get__("onAddFileLink");
 const { openProject, setCwd } = require("../../../app/routes/projectResource");
 
+const {scriptName, pwdCmd, scriptHeader} = require("./testScript");
+const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
+
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
@@ -65,8 +68,8 @@ describe("project Controller UT", function() {
     describe("one local task", ()=>{
       beforeEach(async()=>{
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -103,12 +106,12 @@ describe("project Controller UT", function() {
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task2 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await onUpdateNode(emit, projectRootDir, task1.ID, "script", "run.sh");
-        await onUpdateNode(emit, projectRootDir, task2.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "task1", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "task2", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await onUpdateNode(emit, projectRootDir, task1.ID, "script", scriptName);
+        await onUpdateNode(emit, projectRootDir, task2.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "task2", scriptName), scriptPwd);
         await onAddLink(emit, projectRootDir, { src: task0.ID, dst: task1.ID, isElse: false });
         await onAddLink(emit, projectRootDir, { src: task1.ID, dst: task2.ID, isElse: false });
       });
@@ -163,13 +166,13 @@ describe("project Controller UT", function() {
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task2 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await onUpdateNode(emit, projectRootDir, task1.ID, "script", "run.sh");
-        await onUpdateNode(emit, projectRootDir, task2.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await onUpdateNode(emit, projectRootDir, task1.ID, "script", scriptName);
+        await onUpdateNode(emit, projectRootDir, task2.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "task0", "a"), "a");
-        await fs.outputFile(path.join(projectRootDir, "task1", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "task2", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "task2", scriptName), scriptPwd);
         await onAddOutputFile(emit, projectRootDir, task0.ID, "a");
         await onAddOutputFile(emit, projectRootDir, task1.ID, "b");
         await onAddInputFile(emit, projectRootDir, task1.ID, "b");
@@ -231,8 +234,8 @@ describe("project Controller UT", function() {
         const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
         setCwd(projectRootDir, path.join(projectRootDir, "workflow0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "workflow0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "workflow0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -271,17 +274,17 @@ describe("project Controller UT", function() {
         const parentTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const parentTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, parentTask0.ID, "name", "parentTask0");
-        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", scriptName);
         await onUpdateNode(emit, projectRootDir, parentTask1.ID, "name", "parentTask1");
-        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", scriptName);
 
         setCwd(projectRootDir, path.join(projectRootDir, "wf0"));
         const childTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const childTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, childTask0.ID, "name", "childTask0");
-        await onUpdateNode(emit, projectRootDir, childTask0.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, childTask0.ID, "script", scriptName);
         await onUpdateNode(emit, projectRootDir, childTask1.ID, "name", "childTask1");
-        await onUpdateNode(emit, projectRootDir, childTask1.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, childTask1.ID, "script", scriptName);
 
         //add file dependency
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
@@ -301,10 +304,10 @@ describe("project Controller UT", function() {
         await onAddFileLink(emit, projectRootDir, wf0.ID, "e", parentTask1.ID, "f");
 
         //create script
-        await fs.outputFile(path.join(projectRootDir, "parentTask0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "parentTask1", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "wf0", "childTask0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "wf0", "childTask1", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "parentTask0", scriptName),       scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "parentTask1", scriptName),       scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "wf0", "childTask0", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "wf0", "childTask1", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -382,12 +385,12 @@ describe("project Controller UT", function() {
         const if3 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, if0.ID, "condition", "run.sh");
-        await onUpdateNode(emit, projectRootDir, if1.ID, "condition", "run.sh");
+        await onUpdateNode(emit, projectRootDir, if0.ID, "condition", scriptName);
+        await onUpdateNode(emit, projectRootDir, if1.ID, "condition", scriptName);
         await onUpdateNode(emit, projectRootDir, if2.ID, "condition", "true");
         await onUpdateNode(emit, projectRootDir, if3.ID, "condition", "(()=>{return false})()");
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await onUpdateNode(emit, projectRootDir, task1.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await onUpdateNode(emit, projectRootDir, task1.ID, "script", scriptName);
         await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task0.ID, isElse: false });
         await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task1.ID, isElse: true });
         await onAddLink(emit, projectRootDir, { src: if1.ID, dst: task1.ID, isElse: false });
@@ -396,10 +399,10 @@ describe("project Controller UT", function() {
         await onAddLink(emit, projectRootDir, { src: if2.ID, dst: task1.ID, isElse: true });
         await onAddLink(emit, projectRootDir, { src: if3.ID, dst: task1.ID, isElse: false });
         await onAddLink(emit, projectRootDir, { src: if3.ID, dst: task0.ID, isElse: true });
-        await fs.outputFile(path.join(projectRootDir, "if0", "run.sh"), "#!/bin/bash\nexit 0\n");
-        await fs.outputFile(path.join(projectRootDir, "if1", "run.sh"), "#!/bin/bash\nexit 1\n");
-        await fs.outputFile(path.join(projectRootDir, "task0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "task1", "run.sh"), "#!/bin/bash\npwd\n");
+        await fs.outputFile(path.join(projectRootDir, "if0", scriptName), "#!/bin/bash\nexit 0\n");
+        await fs.outputFile(path.join(projectRootDir, "if1", scriptName), "#!/bin/bash\nexit 1\n");
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -474,8 +477,8 @@ describe("project Controller UT", function() {
         await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
         setCwd(projectRootDir, path.join(projectRootDir, "for0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "for0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "for0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -541,8 +544,8 @@ describe("project Controller UT", function() {
         await onUpdateNode(emit, projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
         setCwd(projectRootDir, path.join(projectRootDir, "while0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "while0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "while0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -600,8 +603,8 @@ describe("project Controller UT", function() {
         await onUpdateNode(emit, projectRootDir, foreach0.ID, "indexList", ["foo", "bar", "baz", "fizz"]);
         setCwd(projectRootDir, path.join(projectRootDir, "foreach0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "foreach0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "foreach0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -679,8 +682,8 @@ describe("project Controller UT", function() {
         await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
         await onUpdateNode(emit, projectRootDir, parentTask0.ID, "name", "parentTask0");
         await onUpdateNode(emit, projectRootDir, parentTask1.ID, "name", "parentTask1");
-        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", "run.sh");
-        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", scriptName);
+        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", scriptName);
 
         await onAddOutputFile(emit, projectRootDir, parentTask0.ID, "a");
         await onAddInputFile(emit, projectRootDir, for0.ID, "b");
@@ -691,16 +694,17 @@ describe("project Controller UT", function() {
 
         setCwd(projectRootDir, path.join(projectRootDir, "for0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
         await onAddInputFile(emit, projectRootDir, task0.ID, "c");
         await onAddOutputFile(emit, projectRootDir, task0.ID, "d");
         await onAddFileLink(emit, projectRootDir, for0.ID, "b", task0.ID, "c");
         await onAddFileLink(emit, projectRootDir, task0.ID, "d", for0.ID, "e");
 
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
-        await fs.outputFile(path.join(projectRootDir, "parentTask0", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "parentTask1", "run.sh"), "#!/bin/bash\npwd\n");
-        await fs.outputFile(path.join(projectRootDir, "for0", "task0", "run.sh"), "#!/bin/bash\npwd\necho -n $WHEEL_CURRENT_INDEX > d\n");
+        await fs.outputFile(path.join(projectRootDir, "parentTask0", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "parentTask1", scriptName), scriptPwd);
+        //TODO to be checked!!!
+        await fs.outputFile(path.join(projectRootDir, "for0", "task0", scriptName), "#!/bin/bash\npwd\necho -n $WHEEL_CURRENT_INDEX > d\n");
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -807,8 +811,8 @@ describe("project Controller UT", function() {
 
         setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -865,7 +869,7 @@ describe("project Controller UT", function() {
         await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
         setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
 
         await fs.outputFile(path.join(projectRootDir, "PS0", "input1.txt"), "{{ KEYWORD1 }}");
         await fs.outputFile(path.join(projectRootDir, "PS0", "input2.txt"), "{{ KEYWORD1 }}");
@@ -894,7 +898,7 @@ describe("project Controller UT", function() {
           ]
         };
         await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
-        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd |tee output.log\n");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), scriptPwd+"|tee output.log\n");
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -972,8 +976,8 @@ describe("project Controller UT", function() {
 
         setCwd(projectRootDir, path.join(projectRootDir, "PS0", "PS1"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "PS0", "PS1", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "PS0", "PS1", "task0", scriptName), scriptPwd);
 
         await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
         await fs.outputFile(path.join(projectRootDir, "PS0", "PS1", "input.txt"), "%%KEYWORD1%%");
@@ -1107,8 +1111,8 @@ describe("project Controller UT", function() {
 
         setCwd(projectRootDir, path.join(projectRootDir, "for0", "for1"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "for0", "for1", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "for0", "for1", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -1215,8 +1219,8 @@ describe("project Controller UT", function() {
 
         setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0", "task0", "run.sh"), "#!/bin/bash\npwd\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0", "task0", scriptName), scriptPwd);
       });
       it("should have acestors name and type in task object", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -1264,13 +1268,13 @@ describe("project Controller UT", function() {
 
         setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", "run.sh");
-        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd\nexit 1\n");
+        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), scriptPwd+"exit 1\n");
 
         //1st run
         await onRunProject(sio, projectRootDir);
         //modify run.sh
-        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "run.sh"), "#!/bin/bash\npwd |tee result.log\n");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), scriptPwd+"|tee result.log\n");
         setCwd(projectRootDir, path.join(projectRootDir));
         //reset logger's call count
         dummyLogger.stdout.reset();
