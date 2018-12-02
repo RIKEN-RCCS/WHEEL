@@ -878,7 +878,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "PS0", "data_2"), "data_2");
         await fs.outputFile(path.join(projectRootDir, "PS0", "data_3"), "data_3");
         const parameterSetting = {
-          versoin: 2,
+          version: 2,
           targetFiles: ["input1.txt", "input2.txt"],
           target_param: [
             {
@@ -887,7 +887,13 @@ describe("project Controller UT", function() {
               min: 1,
               max: 3,
               step: 1
+            },
+            {
+              target: "hogehoge",
+              keyword: "KEYWORD3",
+              list: [ "foo", "bar" ]
             }
+
           ],
           scatter: [
             { srcName: "testData", dstNode: task0.ID, dstName: "hoge{{ KEYWORD1 }}" }
