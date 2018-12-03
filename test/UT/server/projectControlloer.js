@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs-extra");
+const os = require("os");
 
 //setup test framework
 const chai = require("chai");
@@ -31,15 +32,20 @@ const onAddLink = workflowEditor.__get__("onAddLink");
 const onAddFileLink = workflowEditor.__get__("onAddFileLink");
 const { openProject, setCwd } = require("../../../app/routes/projectResource");
 
-const {scriptName, pwdCmd, scriptHeader} = require("./testScript");
+const {scriptName, pwdCmd, scriptHeader, referenceEnv} = require("./testScript");
 const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
 const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
-//const dummyLogger = { error: console.log, warn: console.log, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show error message
-//const dummyLogger = { error: console.log, warn: console.log, info: console.log, debug: console.log, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show all message
+dummyLogger.error=console.log;
+dummyLogger.warn=console.log;
+// dummyLogger.info=console.log;
+// dummyLogger.debug=console.log;
+// dummyLogger.stdout=console.log;
+// sinon.spy(dummyLogger, "stdout");
+
 projectController.__set__("getLogger", ()=>{
   return dummyLogger;
 });
@@ -49,7 +55,7 @@ sio.emit = sinon.stub();
 //
 //TODO pass stub to askPassword for remote task test
 //
-describe("project Controller UT", function() {
+describe.only("project Controller UT", function() {
   this.timeout(0);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
@@ -706,7 +712,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "parentTask0", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "parentTask1", scriptName), scriptPwd);
         //TODO to be checked!!!
-        await fs.outputFile(path.join(projectRootDir, "for0", "task0", scriptName), "#!/bin/bash\npwd\necho -n $WHEEL_CURRENT_INDEX > d\n");
+        await fs.outputFile(path.join(projectRootDir, "for0", "task0", scriptName), `${scriptPwd}\necho ${referenceEnv("WHEEL_CURRENT_INDEX")} > d\n`);
       });
       it("should run project and successfully finish", async()=>{
         await onRunProject(sio, projectRootDir, cb);
@@ -724,15 +730,15 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, "parentTask0", "a")).to.be.a.file().with.content("a");
         expect(path.resolve(projectRootDir, "for0", "b")).not.to.be.a.path();
         expect(path.resolve(projectRootDir, "for0", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0", "task0", "d")).to.be.a.file().with.content("2");
+        expect(path.resolve(projectRootDir, "for0", "task0", "d")).to.be.a.file().with.content("2 "+os.EOL);
         expect(path.resolve(projectRootDir, "for0_0", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0_0", "task0", "d")).to.be.a.file().with.content("0");
+        expect(path.resolve(projectRootDir, "for0_0", "task0", "d")).to.be.a.file().with.content("0 "+os.EOL);
         expect(path.resolve(projectRootDir, "for0_1", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0_1", "task0", "d")).to.be.a.file().with.content("1");
+        expect(path.resolve(projectRootDir, "for0_1", "task0", "d")).to.be.a.file().with.content("1 "+os.EOL);
         expect(path.resolve(projectRootDir, "for0_2", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0_2", "task0", "d")).to.be.a.file().with.content("2");
+        expect(path.resolve(projectRootDir, "for0_2", "task0", "d")).to.be.a.file().with.content("2 "+os.EOL);
         expect(path.resolve(projectRootDir, "for0", "e")).not.to.be.a.path();
-        expect(path.resolve(projectRootDir, "parentTask1", "f")).to.be.a.file().with.content("2");
+        expect(path.resolve(projectRootDir, "parentTask1", "f")).to.be.a.file().with.content("2 "+os.EOL);
 
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
@@ -1390,9 +1396,9 @@ describe("project Controller UT", function() {
             state: { enum: ["finished"] }
           }
         });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0")}\n`);
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0")}\n`);
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0")}\n`);
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0")}${os.EOL}`);
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0")}${os.EOL}`);
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0")}${os.EOL}`);
       });
     });
   });

@@ -1,10 +1,18 @@
-const scriptName = process.platform === "win32"?"run.bat":"run.sh";
-const scriptHeader = process.platform === "win32"?"@echo off":"#!/bin/bash";
-const pwdCmd = process.platform === "win32"?"cd":"pwd";
-
-module.exports={
-  scriptName,
-  scriptHeader,
-  pwdCmd
+winHelper={
+  scriptName: "run.bat",
+  scriptHeader: "@echo off",
+  pwdCmd: "cd",
+  referenceEnv: (env)=>{
+    return `%${env}%`;
+  }
+}
+posicHelper={
+  scriptName: "run.sh",
+  scriptHeader: "#!/bin/bash",
+  pwdCmd: "pwd",
+  referenceEnv: (env)=>{
+    return "${"+env+"}";
+  }
 }
 
+module.exports=process.platform === "win32"?winHelper:posixHelper;
