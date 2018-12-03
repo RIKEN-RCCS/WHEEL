@@ -5,7 +5,7 @@ const consoleLog = console.log.bind(console);
 
 function consoleAppender(layout, timezoneOffset) {
   return (loggingEvent)=>{
-    if (process.env.hasOwnProperty("WHEEL_DISABLE_CONSOLELOG")) {
+    if (process.env.hasOwnProperty("WHEEL_DISABLE_CONSOLE_LOG")) {
       return;
     }
     consoleLog(layout(loggingEvent, timezoneOffset));
