@@ -832,7 +832,7 @@ $(() => {
         $(`#${id}`).css("background-color", nodeColor);
         $(`#${id}`).css("margin-right", maxancestorsLength * 32 + "px");
       } else {
-        ancestorsNameList = taskStateList[i].ancestorsName.split('\\');
+        ancestorsNameList = taskStateList[i].ancestorsName.split('/');
         ancestorsTypeList = taskStateList[i].ancestorsType.split('/');
         if (maxancestorsLength < ancestorsNameList.length) {
           maxancestorsLength = ancestorsNameList.length;

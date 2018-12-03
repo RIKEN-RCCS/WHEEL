@@ -203,6 +203,13 @@ function getCurrentSettings() {
 
 function getLogger(cat, verbose) {
   if (firstCall) {
+    if (process.env.hasOwnProperty("WHEEL_CONSOLE_LOG_ONLY")) {
+      for(const category of (Object.keys(logSettings.categories))){
+        logSettings.categories[category].appenders=logSettings.categories[category].appenders.filter((e)=>{
+          return e === "console" || e === "flexConsole"
+        });
+      }
+    }
     if (verbose) {
       //eslint-disable-next-line no-console
       console.log("getLogger called. current setting is as follows\n", logSettings);

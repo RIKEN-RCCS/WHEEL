@@ -6,7 +6,7 @@ const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
 const { setCwd, getCwd, getLogger } = require("./projectResource");
 const { gitRm, gitAdd, gitResetHEAD } = require("./gitOperator");
-const { replacePathsep, isValidName, readJsonGreedy } = require("./utility");
+const { replacePathsep, isValidName, readJsonGreedy, convertPathSep } = require("./utility");
 const componentFactory = require("./workflowComponent");
 
 /**
@@ -36,7 +36,7 @@ function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
   if(! newRelativePath.startsWith(".")) newRelativePath = "./"+newRelativePath;
   if (typeof oldRelativePath !== "undefined") {
     for (const [k, v] of Object.entries(componentPath)) {
-      if (pathIsInside(v, oldRelativePath)) {
+      if (pathIsInside(convertPathSep(v), convertPathSep(oldRelativePath))) {
         componentPath[k] = v.replace(oldRelativePath, newRelativePath);
       }
     }
