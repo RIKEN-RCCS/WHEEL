@@ -1322,7 +1322,7 @@ img.btn_menu_n{
     color: #FFFFFF;
     background-color: #2F2F33;
     box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
-    height: calc(100% - 113px);
+    height: calc(100% - 108px);
     width: 100%;
     border: none;
     overflow: auto;
@@ -1332,7 +1332,7 @@ img.btn_menu_n{
 }
 
 #project_table_body{
-    height: 100%;
+    height: calc(100% - 163px);
     width: calc(100% - 16px);
     position: fixed;
     overflow: auto;
