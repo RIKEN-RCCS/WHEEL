@@ -37,7 +37,9 @@ const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show error message
+const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
+//const dummyLogger = { error: console.log, warn: console.log, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show error message
+//const dummyLogger = { error: console.log, warn: console.log, info: console.log, debug: console.log, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //show all message
 projectController.__set__("getLogger", ()=>{
   return dummyLogger;
 });
