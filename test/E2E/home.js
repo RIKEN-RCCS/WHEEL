@@ -4,7 +4,7 @@ const expect = chai.expect;
 const chaiWebdriver = require('chai-webdriverio').default;
 chai.use(chaiWebdriver(browser));
 
-describe("#home", function () {
+describe("#home screen", function () {
   const url = '/';
   const testProjectName = "homeScreenTest";
   const testProjectDescription = "This is homeScreenTest.";

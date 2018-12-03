@@ -49,7 +49,7 @@ describe("execute test : ", function () {
     browser.windowHandleSize({ width: 1200, height: 1000 })
       .waitForVisible('.task0_box');
   });
-  it("set task name, description", function () {
+  it("set task property 'name'", function () {
     // rename
     browser.click('.task0_box')
       .setValue('#nameInputField', renameTaskComponentName)
@@ -59,7 +59,8 @@ describe("execute test : ", function () {
       .waitForVisible('#property');
     expect(browser.getText('#cbMessageArea')).to.equal(renameTaskComponentName);
     expect(browser.getValue('#nameInputField')).to.equal(renameTaskComponentName);
-
+  });
+  it("set task property 'description'", function () {
     // change description
     browser.click(`.${renameTaskComponentName}_box`)
       .setValue('#descriptionInputField', taskDescription)
@@ -69,7 +70,7 @@ describe("execute test : ", function () {
     expect(browser.getText('#cbMessageArea')).to.equal(taskDescription);
     expect(browser.getValue('#descriptionInputField')).to.equal(taskDescription);
   });
-  it("set task script", function () {
+  it("set task property 'create script file'", function () {
     // scroll #property
     browser.scroll('#property', 0, 200)
       .click('#createFileButton')
@@ -77,7 +78,8 @@ describe("execute test : ", function () {
     browser.setValue('#newFileName', scriptFileName)
       .click(createFileDialogOkButton)
       .waitForVisible('.file');
-
+  });
+  it("set task property 'script'", function () {
     // script test
     browser.scroll('#property', 0, 200)
       .setValue('#scriptInputField', taskScript)
@@ -89,8 +91,7 @@ describe("execute test : ", function () {
   });
   it("open script file", function () {
     // set script file by RAPiD
-    browser.scroll('#property', 0, 200)
-      .click('.file')
+    browser.click('.file')
       .click('#editFileButton');
 
     browser.click('.ace_content')
