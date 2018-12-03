@@ -6,7 +6,7 @@ winHelper={
     return `%${env}%`;
   }
 }
-posicHelper={
+posixHelper={
   scriptName: "run.sh",
   scriptHeader: "#!/bin/bash",
   pwdCmd: "pwd",
