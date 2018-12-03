@@ -171,8 +171,8 @@ async function readJsonGreedy(filename) {
  */
 function sanitizePath(target, replacer="_"){
   //replace path.sep by '_'
-  const re = path.sep === path.win32.sep? '\\':'/';
-  let sanitized = target.toString().replace(new RegExp(re, "g"), replacer);
+  const re = path.sep === path.win32.sep?  new RegExp(`\\${path.win32.sep}`, "g"):new RegExp(path.posix.sep, "g");
+  let sanitized = target.toString().replace(re, replacer);
 
   //remove trailing replacer
   sanitized = sanitized.endsWith(replacer)?sanitized.slice(0,-1):sanitized;

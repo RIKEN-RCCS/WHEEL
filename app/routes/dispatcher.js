@@ -7,7 +7,7 @@ const { EventEmitter } = require("events");
 const glob = require("glob");
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
-const { addX, isFinishedState, readJsonGreedy, sanitizePath } = require("./utility");
+const { addX, isFinishedState, readJsonGreedy, sanitizePath, convertPathSep } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, removeInvalid, workAroundForVersion1 } = require("./parameterParser");
 const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
@@ -632,8 +632,8 @@ class Dispatcher extends EventEmitter {
   }
 
   _getComponentDir(id) {
-    const originalCwfDir = this.componentPath[this.cwfID];
-    const originalDir = this.componentPath[id];
+    const originalCwfDir = convertPathSep(this.componentPath[this.cwfID]);
+    const originalDir = convertPathSep(this.componentPath[id]);
     const relativePath = path.relative(originalCwfDir, originalDir);
 
     return path.resolve(this.cwfDir, relativePath);
