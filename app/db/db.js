@@ -8,18 +8,18 @@ const remotehostFilename = path.resolve(__dirname, config.remotehostJsonFile);
 const projectListFilename = path.resolve(__dirname, config.projectListJsonFile);
 
 let jupyterToken;
-let jupyterURL;
+let actualJupyterPortNumber;
 function setJupyterToken(token) {
   jupyterToken = token;
 }
 function getJupyterToken() {
   return jupyterToken;
 }
-function setJupyterURL(url) {
-  jupyterURL = url;
+function setJupyterPort(port) {
+  actualJupyterPortNumber = port;
 }
-function getJupyterURL() {
-  return jupyterURL;
+function getJupyterPort() {
+  return actualJupyterPortNumber;
 }
 //export constants
 module.exports.suffix = ".wheel";
@@ -29,8 +29,8 @@ module.exports.componentJsonFilename = "cmp.wheel.json";
 //export accessor to jupyter parameter
 module.exports.setJupyterToken = setJupyterToken;
 module.exports.getJupyterToken = getJupyterToken;
-module.exports.setJupyterURL = setJupyterURL;
-module.exports.getJupyterURL = getJupyterURL;
+module.exports.setJupyterPort = setJupyterPort;
+module.exports.getJupyterPort = getJupyterPort;
 
 //re-export server settings
 module.exports.interval = config.interval;

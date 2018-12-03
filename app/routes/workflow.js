@@ -4,7 +4,7 @@ const express = require("express");
 const fileManager = require("./fileManager");
 const workflowEditor = require("./workflowEditor2");
 const projectController = require("./projectController");
-const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterURL } = require("../db/db");
+const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort } = require("../db/db");
 const { getComponent } = require("./workflowUtil");
 const { openProject, setSio } = require("./projectResource");
 
@@ -40,7 +40,8 @@ module.exports = function(io) {
     res.cookie("root", ID);
     res.cookie("rootDir", projectRootDir);
     res.cookie("project", path.resolve(projectRootDir, projectJsonFilename));
-    res.cookie("jupyterURL", getJupyterURL());
+    const hostname = req.headers.host.slice(0,req.headers.host.indexOf(':'));
+    res.cookie("jupyterURL", `http://${hostname}:${getJupyterPort()}/`); //TODO http must be replaced https if SSL enabled
     res.cookie("jupyterToken", getJupyterToken());
     res.sendFile(path.resolve(__dirname, "../views/workflow.html"));
   });

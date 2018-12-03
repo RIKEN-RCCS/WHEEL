@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
-const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterURL, getJupyterURL}  = require("./db/db");
+const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort}  = require("./db/db");
 const { getLogger, setup } = require("./logSettings");
 
 /*
@@ -99,8 +99,9 @@ if (jupyter) {
     "--ip=*",
     "--notebook-dir=/"
   ];
+  setJupyterPort(jupyterPortNumber);
 
-  logger.info(`booting jupyter listenning on localhost:${jupyterPortNumber}`);
+  logger.info("booting jupyter");
   const cp = spawn(cmd, opts, { shell: true });
   cp.stdout.on("data", (data)=>{
     logger.debug(data.toString());
@@ -108,17 +109,10 @@ if (jupyter) {
   cp.stderr.on("data", (data)=>{
     const output = data.toString();
     const currentToken = getJupyterToken();
-    const currentURL = getJupyterURL();
     if (typeof currentToken === "undefined") {
       const rt = /http.*\?token=(.*)/.exec(output);
       if (rt !== null && typeof rt[1] === "string") {
         setJupyterToken(rt[1]);
-      }
-    }
-    if (typeof currentURL === "undefined") {
-      const rt = /(http.*)\?token=.*/.exec(output);
-      if (rt !== null && typeof rt[1] === "string") {
-        setJupyterURL(rt[1]);
       }
     }
     logger.debug(output);
