@@ -367,6 +367,7 @@ async function onRunProject(sio, projectRootDir, cb) {
   } catch (e) {
     getLogger(projectRootDir).warn("project execution is successfully finished but error occurred in cleanup process", e);
     cb(false);
+    console.log(e);
     return;
   }
 

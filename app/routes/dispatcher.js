@@ -5,10 +5,12 @@ const { promisify } = require("util");
 const childProcess = require("child_process");
 const { EventEmitter } = require("events");
 const glob = require("glob");
+const nunjucks = require("nunjucks");
+nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
 const { addX, isFinishedState, readJsonGreedy, sanitizePath, convertPathSep, replacePathsep } = require("./utility");
-const { paramVecGenerator, getParamSize, getFilenames, removeInvalid, workAroundForVersion1 } = require("./parameterParser");
+const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
 const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
 
@@ -37,36 +39,77 @@ async function deliverFile(src, dst) {
 
 
 //private functions
-function getTargetFile(paramSettings){
-  return [paramSettings.target_file]
-}
-function getTargetFiles(paramSettings){
-  return paramSettings.targetFiles
-}
-function removeInvalidv1(target_param){
-  return removeInvalid(workAroundForVersion1(target_param));
-}
-
-function getScatterFiles(srcDir, paramSettings){
-}
-
-async function scatterFiles(){
-}
-
-async function gatherFiles(){
-}
-async function doNothing(){
-}
-
-function makeCmd(version){
-  if(version === 2){
-    return [getTargetFiles, removeInvalid, getScatterFiles, scatterFiles, gatherFiles]
-  }else{
-    // version 1 (=unversioned)
-    return [getTargetFile, removeInvalidv1, ()=>{return []}, doNothing, doNothing];
+async function getScatterFiles(templateRoot, paramSettings) {
+  if (!(paramSettings.hasOwnProperty("scatter") && Array.isArray(paramSettings.scatter))) {
+    return [];
   }
+  const srcNames = await Promise.all(
+    paramSettings.scatter
+      .map((e)=>{
+        return promisify(glob)(e.srcName, { cwd: templateRoot });
+      })
+  );
+  return Array.prototype.concat.apply([], srcNames);
 }
 
+async function replaceByNunjucks(templateRoot, instanceRoot, targetFiles, params) {
+  return Promise.all(
+    targetFiles.map(async(targetFile)=>{
+      const template = (await fs.readFile(path.resolve(templateRoot, targetFile))).toString();
+      const result = nunjucks.renderString(template, params);
+      return fs.outputFile(path.resolve(instanceRoot, targetFile), result);
+    })
+  );
+}
+
+async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
+  return Promise.all(
+    scatterRecipe.map(async(e)=>{
+      const dstDir = path.join(instanceRoot, e.dstNode);
+      const dst = path.join(dstDir, nunjucks.renderString(e.dstName, params));
+      for (const recipe of scatterRecipe) {
+        const srcName = nunjucks.renderString(recipe.srcName, params);
+        const srces = await promisify(glob)(srcName, { cwd: templateRoot });
+        return srces.map((src)=>{
+          return fs.copy(path.join(templateRoot, src), dst);
+        });
+      }
+    })
+  );
+}
+
+async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
+  const p = [];
+  for (const recipe of gatherRecipe) {
+    const srcName = nunjucks.renderString(recipe.srcName, params);
+    const srcDir = recipe.hasOwnProperty("srcNode") ? path.join(instanceRoot, recipe.srcNode) : instanceRoot;
+    const srces = await promisify(glob)(srcName, { cwd: srcDir });
+    for (const src of srces) {
+      const dstName = recipe.dstName.endsWith("/") ? path.join(templateRoot, recipe.dstName, src) : path.join(templateRoot, recipe.dstName);
+      const dst = nunjucks.renderString(dstName, params);
+      p.push(fs.copy(path.join(srcDir, src), dst));
+    }
+  }
+  return Promise.all(p).catch((e)=>{
+    if (e.code !== "ENOENT") {
+      return Promise.reject(e);
+    }
+  });
+}
+
+async function doNothing() {
+}
+
+function makeCmd(paramSettings) {
+  const params = paramSettings.hasOwnProperty("params") ? paramSettings.params : paramSettings.target_param;
+  if (paramSettings.version === 2) {
+    return [getParamSpacev2.bind(null, params), getScatterFiles, scatterFiles, gatherFiles, replaceByNunjucks];
+  }
+  //version 1 (=unversioned)
+  return [removeInvalidv1.bind(null, params), ()=>{
+    return [];
+  }, doNothing, doNothing, replaceTargetFile];
+}
 
 
 function forGetNextIndex(component) {
@@ -161,14 +204,14 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
   });
 }
 
-async function replaceTargetFile(srcDir, dstDir, targetFiles, paramVec) {
-  const promises=[];
-  for(const targetFile of targetFiles){
+async function replaceTargetFile(srcDir, dstDir, targetFiles, params) {
+  const promises = [];
+  for (const targetFile of targetFiles) {
     const tmp = await fs.readFile(path.resolve(srcDir, targetFile));
     let data = tmp.toString();
-    paramVec.forEach((e)=>{
-      data = data.replace(new RegExp(`%%${e.key}%%`, "g"), e.value.toString());
-    });
+    for (const key in params) {
+      data = data.replace(new RegExp(`%%${key}%%`, "g"), params[key].toString());
+    }
     //fs.writeFile will overwrites existing file.
     //so, targetFile is always overwrited!!
     promises.push(fs.writeFile(path.resolve(dstDir, targetFile), data));
@@ -524,23 +567,56 @@ class Dispatcher extends EventEmitter {
 
   async _PSHandler(component) {
     this.logger.debug("_PSHandler called", component.name);
-    const srcDir = path.resolve(this.cwfDir, component.name);
-    const paramSettingsFilename = path.resolve(srcDir, component.parameterFile);
-    const paramSettings = await readJsonGreedy(path.resolve(srcDir, component.parameterFile));
+    const templateRoot = path.resolve(this.cwfDir, component.name);
+    const paramSettingsFilename = path.resolve(templateRoot, component.parameterFile);
+    const paramSettings = await readJsonGreedy(paramSettingsFilename);
+    this.logger.debug(`read prameter setting done. version = ${paramSettings.version}`);
 
-    const [getTargetFiles, getParamSpace, getScatterFiles, scatterFiles, gatherFiles] = makeCmd(paramSettings.version);
+    //replace single value to array
+    if (paramSettings.hasOwnProperty("targetFiles") && typeof paramSettings.targetFiles === "string") {
+      paramSettings.targetFiles = [paramSettings.targetFiles];
+    }
+    if (paramSettings.hasOwnProperty("target_file") && typeof paramSettings.target_file === "string") {
+      paramSettings.target_file = [paramSettings.target_file];
+    }
+    if (!paramSettings.hasOwnProperty("targetFiles") && paramSettings.hasOwnProperty("target_file")) {
+      paramSettings.targetFiles = paramSettings.target_file;
+    }
 
-    const targetFiles = getTargetFiles(paramSettings);
-    const paramSpace =  getParamSpace(paramSettings.target_param);
+    //replace node id by relative path from PS component
+    const targetFiles = paramSettings.hasOwnProperty("targetFiles") ? paramSettings.targetFiles.map((e)=>{
+      if (e.hasOwnProperty("targetNode") && e.hasOwnProperty("targetName")) {
+        const targetDir = path.relative(templateRoot, this._getComponentDir(e.targetNode));
+        return path.join(targetDir, e.targetName);
+      }
+      return e;
+    }) : [];
+    const scatterRecipe = paramSettings.hasOwnProperty("scatter") ? paramSettings.scatter.map((e)=>{
+      return {
+        srcName: e.srcName,
+        dstNode: path.relative(templateRoot, this._getComponentDir(e.dstNode)),
+        dstName: e.dstName
+      };
+    }) : [];
+    const gatherRecipe = paramSettings.hasOwnProperty("gather") ? paramSettings.gather.map((e)=>{
+      return {
+        srcName: e.srcName,
+        srcNode: path.relative(templateRoot, this._getComponentDir(e.srcNode)),
+        dstName: e.dstName
+      };
+    }) : [];
+
+    const [getParamSpace, getScatterFiles, scatterFiles, gatherFiles, rewriteTargetFile] = makeCmd(paramSettings);
+    const paramSpace = await getParamSpace(templateRoot);
 
     //ignore all filenames in file type parameter space and parameter study setting file
     const ignoreFiles = [paramSettingsFilename]
       .concat(
         getFilenames(paramSpace),
         targetFiles,
-        getScatterFiles()
+        await getScatterFiles(templateRoot, paramSettings)
       ).map((e)=>{
-        return path.resolve(srcDir, e);
+        return path.resolve(templateRoot, e);
       });
 
     const promises = [];
@@ -549,37 +625,45 @@ class Dispatcher extends EventEmitter {
     component.numFailed = 0;
     component.numFinished = 0;
 
+    this.logger.debug("start paramSpace loop");
+
     for (const paramVec of paramVecGenerator(paramSpace)) {
+      const params = paramVec.reduce((p, c)=>{
+        p[c.key] = c.value;
+        return p;
+      }, {});
       const newName = paramVec.reduce((p, e)=>{
         return `${p}_${e.key}_${sanitizePath(e.value)}`;
       }, component.name);
-      const dstDir = path.resolve(this.cwfDir, newName);
-
-      //pick up files which is specified as parameter
-      const includeFiles = paramVec
-        .filter((e)=>{
-          return e.type === "file";
-        })
-        .map((e)=>{
-          return path.resolve(srcDir, e.value);
-        });
+      const instanceRoot = path.resolve(this.cwfDir, newName);
 
       const options = { overwrite: component.forceOverwrite };
       options.filter = function(filename) {
-        return !ignoreFiles.filter((e)=>{
-          return !includeFiles.includes(e);
-        }).includes(filename);
+        return !ignoreFiles.includes(filename);
       };
-      this.logger.debug("copy from", srcDir, "to ", dstDir);
-      await fs.copy(srcDir, dstDir, options);
+      this.logger.debug("copy from", templateRoot, "to ", instanceRoot);
+      await fs.copy(templateRoot, instanceRoot, options);
 
-      await replaceTargetFile(srcDir, dstDir, targetFiles, paramVec);
-      await scatterFiles();//TODO
+      this.logger.debug("copy files which is used as parameter");
+      await Promise.all(paramVec.filter((e)=>{
+        return e.type === "file";
+      }).map((e)=>{
+        return e.value;
+      })
+        .map((e)=>{
+        //TODO files should be deliverd under specific component
+          return fs.copy(path.resolve(templateRoot, e), path.resolve(instanceRoot, e), options);
+        }));
+
+      this.logger.debug("rewrite target files");
+      await rewriteTargetFile(templateRoot, instanceRoot, targetFiles, params);
+      this.logger.debug("scatter files");
+      await scatterFiles(templateRoot, instanceRoot, scatterRecipe, params);
 
       const newComponent = Object.assign({}, component);
       newComponent.name = newName;
       newComponent.subComponent = true;
-      await fs.writeJson(path.join(dstDir, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
+      await fs.writeJson(path.join(instanceRoot, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
       const p = this._delegate(newComponent)
         .then(()=>{
           if (newComponent.state === "finished") {
@@ -589,15 +673,18 @@ class Dispatcher extends EventEmitter {
           } else {
             this.logger.warn("child state is illegal", newComponent.state);
           }
-          fs.writeJson(path.join(srcDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer })
+          fs.writeJson(path.join(templateRoot, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer })
             .then(()=>{
               emitEvent(this.projectRootDir, "componentStateChanged");
             });
+        })
+        .then(()=>{
+          this.logger.debug("gather files");
+          return gatherFiles(templateRoot, instanceRoot, gatherRecipe, params);
         });
       promises.push(p);
     }
     await Promise.all(promises);
-    await gatherFiles(); //TODO
     await this._addNextComponent(component);
     const state = component.numFailed > 0 ? "failed" : "finished";
     await this._setComponentState(component, state);

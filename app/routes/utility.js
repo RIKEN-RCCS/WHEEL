@@ -1,8 +1,10 @@
 "use strict";
 const path = require("path");
+const { promisify } = require("util");
 const fs = require("fs-extra");
 const Mode = require("stat-mode");
 const promiseRetry = require("promise-retry");
+const glob = require("glob");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
 
@@ -167,17 +169,32 @@ async function readJsonGreedy(filename) {
 /**
  * replace illegal chars as path string
  * @param {string} target - string which should be sanitized
- * @return {string} - sanitized path
+ * @returns {string} - sanitized path
  */
-function sanitizePath(target, replacer="_"){
+function sanitizePath(target, replacer = "_") {
   //replace path.sep by '_'
-  const re = path.sep === path.win32.sep?  new RegExp(`\\${path.win32.sep}`, "g"):new RegExp(path.posix.sep, "g");
+  const re = path.sep === path.win32.sep ? new RegExp(`\\${path.win32.sep}`, "g") : new RegExp(path.posix.sep, "g");
   let sanitized = target.toString().replace(re, replacer);
 
   //remove trailing replacer
-  sanitized = sanitized.endsWith(replacer)?sanitized.slice(0,-1):sanitized;
+  sanitized = sanitized.endsWith(replacer) ? sanitized.slice(0, -1) : sanitized;
 
   return sanitized;
+}
+
+/**
+ * expand array of glob and return flat array of path
+ * @param {string[]} globs - array contains glob
+ * @param {string} cwd - working directory for globbing
+ * @returns {string[]} - array of path
+ */
+async function expandArrayOfGlob(globs, cwd) {
+  const names = await Promise.all(
+    globs.map((e)=>{
+      return promisify(glob)(e, { cwd });
+    })
+  );
+  return Array.prototype.concat.apply([], names);
 }
 
 module.exports = {
@@ -194,5 +211,6 @@ module.exports = {
   isValidName,
   isValidInputFilename,
   isValidOutputFilename,
-  sanitizePath
+  sanitizePath,
+  expandArrayOfGlob
 };

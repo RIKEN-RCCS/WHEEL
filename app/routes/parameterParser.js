@@ -1,13 +1,14 @@
 "use strict";
+const glob = require("glob");
+const { expandArrayOfGlob } = require("./utility");
 
 function isValidParamAxis(min, max, step) {
-  if (max <= min) {
-    return false;
+  if (max > min) {
+    return step > 0;
+  } if (max < min) {
+    return step < 0;
   }
-
-  if (step === 0) {
-    return false;
-  }
+  //max == min
   return true;
 }
 
@@ -36,20 +37,29 @@ function calcParamAxisSize(min, max, step) {
 
 function getParamAxisSize(axis) {
   let size = 0;
-
-  switch (axis.type) {
-    case "string":
+  if (typeof axis.type === "undefined") {
+    //for version 2
+    if (axis.hasOwnProperty("list")) {
       size = axis.list.length;
-      break;
-    case "file":
-      size = axis.list.length;
-      break;
-    case "integer":
+    } else {
       size = calcParamAxisSize(axis.min, axis.max, axis.step);
-      break;
-    case "float":
-      size = calcParamAxisSize(axis.min, axis.max, axis.step);
-      break;
+    }
+  } else {
+    //for version 1
+    switch (axis.type) {
+      case "string":
+        size = axis.list.length;
+        break;
+      case "file":
+        size = axis.list.length;
+        break;
+      case "integer":
+        size = calcParamAxisSize(axis.min, axis.max, axis.step);
+        break;
+      case "float":
+        size = calcParamAxisSize(axis.min, axis.max, axis.step);
+        break;
+    }
   }
   return size;
 }
@@ -115,7 +125,7 @@ function getFilenames(ParamSpace) {
   }, []);
 }
 
-function workAroundForVersion1(paramSpace){
+function workAroundForVersion1(paramSpace) {
   paramSpace.forEach((e)=>{
     if (e.type === "integer") {
       e.min = parseInt(e.min, 10);
@@ -131,7 +141,7 @@ function workAroundForVersion1(paramSpace){
       });
     }
   });
-  return paramSpace
+  return paramSpace;
 }
 
 function removeInvalid(paramSpace) {
@@ -143,10 +153,40 @@ function removeInvalid(paramSpace) {
   });
 }
 
-module.exports={
+function removeInvalidv1(paramSpace) {
+  return removeInvalid(workAroundForVersion1(paramSpace));
+}
+
+function removeInvalidv2(paramSpace) {
+  return paramSpace.filter((e)=>{
+    if (e.hasOwnProperty("min") && e.hasOwnProperty("max") && e.hasOwnProperty("step")) {
+      return isValidParamAxis(e.min, e.max, e.step);
+    } if (e.hasOwnProperty("list")) {
+      return Array.isArray(e.list) && e.list.length > 0;
+    } if (e.hasOwnProperty("files")) {
+      return Array.isArray(e.files) && e.files.length > 0;
+    }
+  });
+}
+
+async function getParamSpacev2(paramSpace, cwd) {
+  const cleanParamSpace = removeInvalidv2(paramSpace);
+  for (const param of cleanParamSpace) {
+    if (param.hasOwnProperty("files")) {
+      param.type = "file";
+      param.list = await expandArrayOfGlob(param.files, cwd);
+    }
+  }
+  return cleanParamSpace;
+}
+
+
+//workAroundForVersion1 is used in UT
+module.exports = {
   paramVecGenerator,
   getParamSize,
   getFilenames,
-  removeInvalid,
+  removeInvalidv1,
+  getParamSpacev2,
   workAroundForVersion1
-}
+};
