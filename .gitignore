@@ -5,3 +5,8 @@ public
 TestLogFile.txt
 remotehost.json
 projectList.json
+.nyc_output
+coverage
+*.log*
+errorShots
+logs

@@ -1,121 +1,107 @@
-const {promisify} = require('util');
-const path = require('path');
-
-const fs = require('fs-extra');
-const Mode = require('stat-mode');
-const glob = require('glob');
-
-const {extProject, extWF, extPS, extFor, extWhile, extForeach} = require('../db/db');
-
+"use strict";
+const path = require("path");
+const fs = require("fs-extra");
+const Mode = require("stat-mode");
+const promiseRetry = require("promise-retry");
+const { projectJsonFilename, componentJsonFilename } = require("../db/db");
+const { escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
 
 /**
  * replace path separator by native path separator
  */
-function convertPathSep(pathString){
-  if(path.sep === path.posix.sep){
-    return pathString.replace(new RegExp("\\"+path.win32.sep,"g"), path.sep);
-  }else{
-    return pathString.replace(new RegExp(path.posix.sep,"g"), path.sep);
+function convertPathSep(pathString) {
+  if (path.sep === path.posix.sep) {
+    return pathString.replace(new RegExp(`\\${path.win32.sep}`, "g"), path.sep);
   }
+  return pathString.replace(new RegExp(path.posix.sep, "g"), path.sep);
 }
 
 /**
  * replace path.win32.sep by path.posix.sep
  */
-function replacePathsep(pathString){
-  return pathString.replace(new RegExp("\\"+path.win32.sep,"g"), path.posix.sep);
+function replacePathsep(pathString) {
+  return pathString.replace(new RegExp(`\\${path.win32.sep}`, "g"), path.posix.sep);
 }
-
-/**
- * convert to posix-style path string and remove head and tail path separator
- */
-function normalizePath(pathString){
-  let rt=pathString;
-  // path.posix.sep('/') is disallowed as filename letter on windows OS
-  // but posix allow path.win32.sep('\').
-  if(pathString.includes(path.posix.sep)){
-    const pathObj=path.posix.parse(pathString);
-    rt = path.posix.join(pathObj.dir, pathObj.base);
-  }else if(pathString.includes(path.win32.sep)){
-    const pathObj=path.win32.parse(pathString);
-    rt = path.posix.join(pathObj.dir.split(path.win32.sep), pathObj.base);
-  }
-  return rt;
-}
-
-
 
 /**
  * check if ssh connection can be established
  * @param {hostinfo} hotsInfo - remote host setting
  * @param {string} password - password or passphrase for private key
  */
-async function createSshConfig(hostInfo, password){
-  const config={
+async function createSshConfig(hostInfo, password) {
+  const config = {
     host: hostInfo.host,
     port: hostInfo.port,
     username: hostInfo.username
-  }
-  if(hostInfo.keyFile){
+  };
+
+  if (hostInfo.keyFile) {
     config.privateKey = await fs.readFile(hostInfo.keyFile);
     config.privateKey = config.privateKey.toString();
-    if(password){
+
+    if (password) {
       config.passphrase = password;
-      config.password = undefined;
+      config.password = null;
     }
-  }else{
-    config.privateKey = undefined;
-    if(password){
-      config.passphrase = undefined;
+  } else {
+    config.privateKey = null;
+
+    if (password) {
+      config.passphrase = null;
       config.password = password;
     }
   }
   return config;
 }
 
-
-/**
- * escape meta character of regex (from MDN)
- * please note that this function can not treat '-' in the '[]'
- * @param {string} string - target string which will be escaped
- * @return {string} escaped regex string
- */
-function escapeRegExp(string) {
-  //eslint-disable-next-line no-useless-escape
-  return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
-}
-
 /**
  * add execute permission to file
  * @param {string} file - filename in absolute path
  */
-function addXSync(file){
-  let stat = fs.statSync(file);
-  let mode = new Mode(stat);
-  let u=4;
-  let g=4;
-  let o=4;
-  if(mode.owner.read) u+=1;
-  if(mode.owner.write) u+=2;
-  if(mode.group.read) g+=1;
-  if(mode.group.write) g+=2;
-  if(mode.others.read) o+=1;
-  if(mode.others.write) o+=2;
-  let modeString = u.toString()+g.toString()+o.toString();
-  fs.chmodSync(file, modeString);
+async function addX(file) {
+  const stat = await fs.stat(file);
+  const mode = new Mode(stat);
+  let u = 4;
+  let g = 4;
+  let o = 4;
+
+  if (mode.owner.read) {
+    u += 1;
+  }
+
+  if (mode.owner.write) {
+    u += 2;
+  }
+
+  if (mode.group.read) {
+    g += 1;
+  }
+
+  if (mode.group.write) {
+    g += 2;
+  }
+
+  if (mode.others.read) {
+    o += 1;
+  }
+
+  if (mode.others.write) {
+    o += 2;
+  }
+  const modeString = u.toString() + g.toString() + o.toString();
+  return fs.chmod(file, modeString);
 }
 
-function getDateString (humanReadable = false){
-  let now = new Date;
-  let yyyy = `0000${now.getFullYear()}`.slice(-4);
-  let month = now.getMonth()+1;
-  let mm = `00${month}`.slice(-2);
-  let dd = `00${now.getDate()}`.slice(-2);
-  let HH = `00${now.getHours()}`.slice(-2);
-  let MM = `00${now.getMinutes()}`.slice(-2);
-  let ss = `00${now.getSeconds()}`.slice(-2);
-
-  return humanReadable? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}`:`${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
+function getDateString(humanReadable = false) {
+  const now = new Date();
+  const yyyy = `0000${now.getFullYear()}`.slice(-4);
+  const month = now.getMonth() + 1;
+  const mm = `00${month}`.slice(-2);
+  const dd = `00${now.getDate()}`.slice(-2);
+  const HH = `00${now.getHours()}`.slice(-2);
+  const MM = `00${now.getMinutes()}`.slice(-2);
+  const ss = `00${now.getSeconds()}`.slice(-2);
+  return humanReadable ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
 }
 
 /**
@@ -123,111 +109,90 @@ function getDateString (humanReadable = false){
  * @param {number || string} flag - cleanup flag
  * @param {number || string} parentflag - parent component's cleanup flag
  */
-function doCleanup(flag, parentFlag){
+function doCleanup(flag, parentFlag) {
   const numFlag = parseInt(flag, 10);
-  if(numFlag === 2){
+
+  if (numFlag === 2) {
     const numParentFlag = parseInt(parentFlag, 10);
     return numParentFlag === 0;
   }
   return numFlag === 0;
 }
 
-//blacklist
-const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
-
-//whitelist
-const alphanumeric = 'a-zA-Z0-9';
-// due to escapeRegExp's spec, bars must be added separately any other regexp strings
-  //eslint-disable-next-line no-useless-escape
-const bars = '_\-';
-const pathseps = '/\\';
-const metaCharactors = '*?[]{}()!?+@.';
-/**
- * determin specified name is valid file/directory name or not
- */
-function isValidName(name){
-  if(win32reservedName.test(name)) return false;
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric)+bars}]`);
-  if(forbidonChars.test(name)) return false;
-  return true;
-}
-
-function isValidInputFilename(name){
-  if(win32reservedName.test(name)) return false;
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps+'.')+bars}]`);
-  if(forbidonChars.test(name)) return false;
-  return true;
-}
-function isValidOutputFilename(name){
-  if(win32reservedName.test(name)) return false;
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric+pathseps+metaCharactors)+bars}]`);
-  if(forbidonChars.test(name)) return false;
-  return true;
-}
 
 /**
  * return regexp of systemfiles
  */
-function getSystemFiles(){
-  return new RegExp(`^(?!^.*(${escapeRegExp(extProject)}|${escapeRegExp(extWF)}|${escapeRegExp(extPS)}|${escapeRegExp(extFor)}|${escapeRegExp(extWhile)}|${escapeRegExp(extForeach)}|.gitkeep)$).*$`);
+function getSystemFiles() {
+  //eslint-disable-next-line no-useless-escape
+  return new RegExp(`^(?!^.*(${escapeRegExp(projectJsonFilename)}|${escapeRegExp(componentJsonFilename)}|\.git.*)$).*$`);
 }
 
-/**
- * deliver src to dst
- * @param {string} src - absolute path of src file
- * @param {string} dst - absolute path of dst file
- * @param {string} type - type of srcfile only "file", "dir" or junction" is allowed and it will be passed to fs.symlink
- */
-async function deliverFile(src, dst, type){
-  try{
-    await fs.remove(dst);
-    await fs.ensureSymlink(src, dst, type)
-    return `make symlink from ${src} to ${dst} (${type})`;
-  }catch(e){
-    if (e.code==='EPERM'){
-      await fs.copy(src, dst);
-      return `make copy from ${src} to ${dst}`;
-    }else{
-      return Promise.reject(e);
-    }
-  }
+function isFinishedState(state) {
+  return state === "finished" || state === "failed";
 }
 
-/**
- * process outputFiles
- * @param {outputFile[]} outputFiles - array of outputFile entry
- * @param {string} srcRoot - root directory of src component
- */
-async function deliverOutputFiles(outputFiles, srcRoot){
-  const promises=[];
-  for(const outputFile of outputFiles){
-    const srces = await promisify(glob)(outputFile.name, {cwd: srcRoot});
-    for(const srcFile of srces){
-      const oldPath = path.resolve(srcRoot, srcFile);
-      const stats = await fs.lstat(oldPath);
-      const type = stats.isDirectory() ? "dir" : "file";
-      for(const dst of outputFile.dst){
-        const dstName = dst.dstName ? convertPathSep(dst.dstName) : "";
-        let newPath = path.resolve(dst.dstRoot, dstName);
-        // dst is regard as directory if src match multi files or dst ends with path separator
-        if(srces.length>1 || dstName.endsWith(path.sep)){
-          newPath = path.resolve(dst.dstRoot, dstName, srcFile);
+async function readJsonGreedy(filename) {
+  return promiseRetry(async(retry)=>{
+    const buf = await fs.readFile(filename)
+      .catch((e)=>{
+        if (e.code === "ENOENT") {
+          retry();
         }
-        promises.push(deliverFile(oldPath, newPath, type));
-      }
+        throw (e);
+      });
+    const strData = buf.toString("utf8").replace(/^\uFEFF/, "");
+    if (strData.length === 0) {
+      retry();
     }
-  }
-  return Promise.all(promises);
+    let jsonData;
+    try {
+      jsonData = JSON.parse(strData);
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        retry();
+      }
+      throw (e);
+    }
+    //need check by jsonSchema but it may cause performance problem
+    return jsonData;
+  },
+  {
+    retries: 10,
+    minTimeout: 1000,
+    factor: 1
+  });
 }
 
-module.exports.escapeRegExp          = escapeRegExp;
-module.exports.addXSync              = addXSync;
-module.exports.getDateString         = getDateString;
-module.exports.replacePathsep        = replacePathsep;
-module.exports.doCleanup             = doCleanup;
-module.exports.isValidName           = isValidName;
-module.exports.isValidInputFilename  = isValidInputFilename;
-module.exports.isValidOutputFilename = isValidOutputFilename;
-module.exports.getSystemFiles        = getSystemFiles;
-module.exports.createSshConfig       = createSshConfig;
-module.exports.deliverOutputFiles    = deliverOutputFiles;
+/**
+ * replace illegal chars as path string
+ * @param {string} target - string which should be sanitized
+ * @return {string} - sanitized path
+ */
+function sanitizePath(target, replacer="_"){
+  //replace path.sep by '_'
+  const re = path.sep === path.win32.sep?  new RegExp(`\\${path.win32.sep}`, "g"):new RegExp(path.posix.sep, "g");
+  let sanitized = target.toString().replace(re, replacer);
+
+  //remove trailing replacer
+  sanitized = sanitized.endsWith(replacer)?sanitized.slice(0,-1):sanitized;
+
+  return sanitized;
+}
+
+module.exports = {
+  convertPathSep,
+  addX,
+  getDateString,
+  replacePathsep,
+  doCleanup,
+  getSystemFiles,
+  createSshConfig,
+  isFinishedState,
+  readJsonGreedy,
+  escapeRegExp,
+  isValidName,
+  isValidInputFilename,
+  isValidOutputFilename,
+  sanitizePath
+};

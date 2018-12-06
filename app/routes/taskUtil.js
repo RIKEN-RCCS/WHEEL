@@ -1,40 +1,43 @@
-const {remoteHost, jobScheduler} = require('../db/db');
-const {getLogger} = require('../logSettings');
-const {getSsh} = require('./project');
+"use strict";
+const { remoteHost, jobScheduler } = require("../db/db");
+const { getSsh, getLogger } = require("./projectResource");
 
-const logger = getLogger('workflow');
-
-async function cancelRemoteJob(task, ssh){
+async function cancelRemoteJob(projectRootDir, task, ssh) {
   const hostinfo = remoteHost.get(task.remotehostID);
   const JS = jobScheduler[hostinfo.jobScheduler];
   const cancelCmd = `${JS.del} ${task.jobID}`;
-  logger.debug(`cancel job: ${cancelCmd}`);
-  const output=[];
+  getLogger(projectRootDir).debug(`cancel job: ${cancelCmd}`);
+  const output = [];
   await ssh.exec(cancelCmd, {}, output, output);
-  logger.debug('cacnel done', output.join());
+  getLogger(projectRootDir).debug("cacnel done", output.join());
 }
-async function cancelLocalJob(task){
+
+async function cancelLocalJob() {
+  //eslint-disable-next-line no-console
   console.log("not implimented yet!!");
 }
-async function killLocalProcess(task){
+
+async function killLocalProcess(task) {
   if(task.handler && task.handler.killed === false){
     task.handler.kill();
   }
 }
 
-async function killTask(task){
-  if(task.remotehostID !== 'localhost'){
+async function killTask(projectRootDir, task) {
+  if (task.remotehostID !== "localhost") {
     const hostinfo = remoteHost.get(task.remotehostID);
-    if(task.useJobScheduler){
+
+    if (task.useJobScheduler) {
       const arssh = getSsh(task.label, hostinfo.host);
-      await cancelRemoteJob(task, arssh);
-    }else{
-      // do nothing for remoteExec at this time
+      await cancelRemoteJob(projectRootDir, task, arssh);
+    } else {
+
+      //do nothing for remoteExec at this time
     }
-  }else{
-    if(task.useJobScheduler){
+  } else {
+    if (task.useJobScheduler) {
       await cancelLocalJob(task);
-    }else{
+    } else {
       await killLocalProcess(task);
     }
   }

@@ -28,8 +28,10 @@
 
   <!-- コントローラバー -->
   <span class="controler_bar_area">
-    <img src="/image/img_file.png" id="img_project" class="icon" />
-    <div id="project_name" class="controler_item"></div>
+    <div id="projectInfo">
+      <img src="/image/img_folder.png" id="img_project" class="icon" />
+      <div id="project_name" class="controler_item"></div>
+    </div>
     <div id="project_state" class="controler_item"></div>
     <figure id="run_menu" class="controler_button">
       <img src="/image/btn_play_n.png" class="img_btn_contoroler" id="run_button" title="Run" />
@@ -68,9 +70,7 @@
       <img src="/image/btn_list_n.png" alt="List" title="List View">
     </button>
     <span id="breadcrumb"></span>
-    <div id="parentDirBtn">
-      <button>../</button>
-    </div>
+    <span id="cbMessageArea"></span>
     <div class="view_controler_right_area"></div>
   </div>
 
@@ -79,14 +79,14 @@
   <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
     <div id="project_tree_svg">
       <div id="project_table_container">
-        <table id="project_table">
+        <table id="projectTable">
           <thead id="project_table_head">
             <tr id="project_table_tr">
-              <th class="componentName">Name</th>
-              <th class="componentState">State</th>
-              <th class="componentStartTime">Execution Date</th>
-              <th class="componentEndTime">Finish Date</th>
-              <th class="componentDescription">Description</th>
+              <th class="componentNameLabel">Name</th>
+              <th class="componentStateLabel">State</th>
+              <th class="componentStartTimeLabel">Execution Date</th>
+              <th class="componentEndTimeLabel">Finish Date</th>
+              <th class="componentDescriptionLabel">Description</th>
             </tr>
           </thead>
           <div id="tableBody">
@@ -145,7 +145,7 @@
           </li>
           <li id="img_foreach_name">Foreach</li>
         </ul>
-        <!-- <li a href="foreach" id="foreach" class="type" draggable="true">foreach</li>         -->
+        <!-- <li a href="foreach" id="foreach" class="type" draggable="true">foreach</li> -->
       </div>
     </div>
     <!-- ライブラリーボタン -->
@@ -154,12 +154,8 @@
         <img src="/image/btn_openCloseR_n.png" alt="libraryButton" id="libraryButton">
       </button>
     </div>
-    <!-- プロパティボタンボタン -->
-    <!--     <div id="propertyButtonArea" class="propertyButtonArea">
-        <button type="button"  id="propertyButton" class="propertyButton"><img src="/image/btn_openCloseL_n.png" alt="propertyButton" id="propertyOCButton"></button>
-    </div> -->
     <!-- SVG描画領域 -->
-    <div id="node_svg" class="node_svg"></div>
+    <div id="node_svg"></div>
     <!-- プロパティ -->
     <div id="property" class="property">
       <div id="propertyArea">
@@ -168,6 +164,11 @@
           <span id="propertyType">
             <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
             <p id="propertyTypeName"></p>
+            <div v-if="node.state ==='finished' || node.state ==='failed'" id="stateButton">
+              <button v-on:click="cleanComponentState" class="cleanStateButton">
+                <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
+              </button>
+            </div>
           </span>
           <div>
             <label for="nameInputField" id="propertyName">Name</label>
@@ -192,7 +193,7 @@
           </div>
           <template v-for="(inputFile, index) in node.inputFiles">
             <div>
-              <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="updateProperty('inputFiles')" class="newInputFileNameInputField">
+              <input type="text" v-model.lazy.trim="inputFile.name" v-on:blur="renameInputFile(inputFile.name, index)" class="newInputFileNameInputField">
               <button v-on:click="delInputFile(index)" class="inputAddDelButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>
@@ -209,7 +210,7 @@
           </div>
           <template v-for="(outputFile, index) in node.outputFiles">
             <div>
-              <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="updateProperty('outputFiles')" class="newOutputFileNameInputField">
+              <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="renameOutputFile(outputFile.name, index)" class="newOutputFileNameInputField">
               <button v-on:click="delOutputFile(index)" class="outputAddDelButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>
@@ -225,7 +226,7 @@
           <div v-if="node.hasOwnProperty('host')">
             <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
           </div>
-          <select name="remotehost"  v-if="node.hasOwnProperty('host')" v-model="node.host" id="remotehostSelectField" v-on:change="updateQueueList(); updateProperty('host');">
+          <select name="remotehost" v-if="node.hasOwnProperty('host')" v-model="node.host" id="remotehostSelectField" v-on:change="updateQueueList(); updateProperty('host');">
             <option value="localhost">localhost</option>
             <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
           </select>
@@ -233,13 +234,14 @@
             <label for="parameterRemotehost" id="propertyuseJobScheduler">UseJobScheduler</label>
           </div>
           <div id="checkboxArea">
-            <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:change="updateQueueList();updateProperty('useJobScheduler')"
+            <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:change="updateQueueList();updateProperty('useJobScheduler');"
               name="check" id="useJobSchedulerFlagField" value="true">
           </div>
           <div v-show="node.hasOwnProperty('queue')">
             <label for="parameterRemotehost" id="propertyQueue">Queue</label>
           </div>
-          <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField" v-on:change="updateProperty('queue')" v-bind:disabled="node.useJobScheduler !== true">
+          <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField" v-on:change="updateProperty('queue')"
+            v-bind:disabled="node.useJobScheduler !== true" v-bind:class="{queueSelectFieldColor: node.useJobScheduler}">
             <option v-for="v in queueList" v-bind:value="v" v-bind:key="v">{{ v}}</option>
           </select>
           <div v-if="node.hasOwnProperty('parameterFile')">
@@ -259,7 +261,7 @@
           </div>
           <template v-for="(v, i) in node.indexList">
             <div>
-              <input type="text" v-model.lazy.trim="v.label" v-on:blur="updateProperty('indexList')" class="newIndexListField">
+              <input type="text" v-model.lazy.trim="node.indexList[i]" v-on:blur="updateProperty('indexList')" class="newIndexListField">
               <button v-on:click="delIndexOfForeach(i)" class="indexListButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>
@@ -291,11 +293,14 @@
           </div>
           <div id="flags">
             <div>
-              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="0">clean up</div>
+              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="0"
+                id="cleanUpFlag0">clean up</div>
             <div>
-              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="1">keep files</div>
-            <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="2"
-              checked=>Follow parent setting
+              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="1"
+                id="cleanUpFlag1">keep files</div>
+            <div>
+              <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="2"
+                id="cleanUpFlag2" checked>Follow parent setting</div>
           </div>
         </div>
         <div v-if="node.hasOwnProperty('include')">
@@ -314,6 +319,11 @@
             <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField" v-on:blur="updateProperty('exclude')">
           </div>
         </div>
+        <div v-if="node.hasOwnProperty('forceOverwrite')">
+          <div>
+            <input type="checkbox" v-model="node.forceOverwrite" id="forceOverwriteCheckbox" v-on:change="updateProperty('forceOverwrite')"> force overwrite
+          </div>
+        </div>
       </div>
       <!--ファイル編集 -->
       <div id="filesEdit">
@@ -321,6 +331,9 @@
         <p id="componentPath"></p>
         <input type="file" id="fileSelector" name="uploadFiles" multiple />
         <div id="fileEditButton">
+          <button type="button" id="jupyterBootButton" v-on:click.stop="openJupyterNotebook">
+            <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" id="jupyterImg" alt="graph">
+          </button>
           <button type="button" id="createFolderButton" class="createFileDirButton">
             <img src="/image/btn_addFolder_n.png" alt="graph">
           </button>
@@ -334,25 +347,44 @@
         <div id="dialog"></div>
         <div id="fileBrowser" class="fileBrowser">
           <p id="fileDropArea">File List</p>
+          <div id="dirBackButtonArea"></div>
           <ul id="fileList"></ul>
+          <div id="editButtonsArea">
+            <button type="button" id="editFileButton" class="editButtons">
+              <img src="/image/img_edit.png" alt="graph">
+            </button>
+            <button type="button" id="editPSFileButton" class="editButtons">
+              <img src="/image/img_edit_PS.png" alt="graph">
+            </button>
+          </div>
         </div>
       </div>
-
-      <!-- </div> -->
     </div>
   </div>
-
+  <!-- 下ドロアーメニュー -->
+  <div id="projectInfoDrawer" data-position="top">
+    <div id="drawerMargin"></div>
+    <div id="drawerInfo">
+      <div id="projectDirectoryPathField">
+        <label>Project Directory Path</label>
+        <div id="projectDirectoryPath"></div>
+      </div>
+      <div id="projectDescriptionField">
+        <label>Description</label>
+        <input type="text" id="projectDescription">
+      </div>
+    </div>
+  </div>
   <!-- 右ドロアーメニュー -->
-  <div id="drawer_menu" class="drawer_menu" data-position="right">
-    <!-- Put your off canvas content here -->
+  <div id="drawerMenu" data-position="right">
     <div id="drawerMenuContents">
       <p id="menuTitle">Menu</p>
       <ul id="drawerMenuList">
         <li>
-          <a class="drawer_menu_item" href="/remotehost">remotehost</a>
+          <a id="remotehostButton" class="drawerMenuItem" href="/remotehost" target="_blank">remotehost</a>
         </li>
         <li>
-          <a class="drawer_menu_item" href="/login">log out</a>
+          <a id="loginButton" class="drawerMenuItem" href="/login">log out</a>
         </li>
       </ul>
     </div>
@@ -361,46 +393,29 @@
   <!-- ログボタン -->
   <div>
     <button type="button" id="displayLogButton" class="displayLogButton" value="Log">
-      <img src="/image/btn_openCloseU_n.png" alt="config" id="img_displayLogButton">
+      <img src="/image/btn_openCloseU_n.png" alt="config" id="displayLogButtonImg">
     </button>
   </div>
-  <div id="logArea" class="logArea">
-    <div id="logFilter">
-      <div id="logButtonArea">
-        <!-- <input type="checkbox" id="enableDBG"    checked="checked" value="node">Debug -->
-        <button type="button" id="enableDBG" class="logButton" value="node">Debug</button>
-        <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
-        <button type="button" id="enableWARN" class="logButton" value="node">Warn</button>
-        <button type="button" id="enableERR" class="logButton" value="node">Error</button>
-        <button type="button" id="enableStdout" class="logButton" value="node">Stdout</button>
-        <button type="button" id="enableStderr" class="logButton" value="node">Stderr</button>
-        <button type="button" id="enableSSHout" class="logButton" value="node">Stdout(SSH)</button>
-        <button type="button" id="enableSSHerr" class="logButton" value="node">Stderr(SSH)</button>
-      </div>
-      <div id="buttonPartition">
-        <button id="clear_log">All log clear</button>
-      </div>
-      <!-- <pre id="logText" class="logText"></pre> -->
-      <pre id="logDebugLog" class="logText"></pre>
-      <pre id="logInfoLog" class="logText"></pre>
-      <pre id="logWarnLog" class="logText"></pre>
-      <pre id="logStdoutLog" class="logText"></pre>
-      <pre id="logStderrLog" class="logText"></pre>
-      <pre id="logSSHoutLog" class="logText"></pre>
-      <pre id="logSSHerrLog" class="logText"></pre>
+  <div id="logArea">
+    <div id="logButtonArea">
+      <button type="button" id="enableDBG" class="logButton" value="node">Debug</button>
+      <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
+      <button type="button" id="enableStdout" class="logButton" value="node">Stdout</button>
+      <button type="button" id="enableStderr" class="logButton" value="node">Stderr</button>
+      <button type="button" id="enableSSHout" class="logButton" value="node">Stdout(SSH)</button>
+      <button type="button" id="enableSSHerr" class="logButton" value="node">Stderr(SSH)</button>
     </div>
+    <div id="buttonPartition">
+      <button id="logClearButton">All log clear</button>
+    </div>
+    <pre id="logDebugLog" class="logText"></pre>
+    <pre id="logInfoLog" class="logText"></pre>
+    <pre id="logStdoutLog" class="logText"></pre>
+    <pre id="logStderrLog" class="logText"></pre>
+    <pre id="logSSHoutLog" class="logText"></pre>
+    <pre id="logSSHerrLog" class="logText"></pre>
   </div>
 
-
-  <!-- File Browser Dialog -->
-  <!--   <div id="fileBrowser" class="fileBrowser">
-    <p id="path"></p>
-    <ul id="fileList"></ul>
-    <input type="file" id="fileSelector" name="uploadFiles" multiple />
-    <input type="button" id="fileBrowserCancelButton" value="Cancel" />
-  </div> -->
-
-  <!-- dialog for File Browser Rename and Remove command -->
 </body>
 
 </html>

@@ -37,7 +37,9 @@ $(() => {
         if (this.selectedAccount === i) {
           this.selectedAccount = -1;
           resetNewAccount();
+          notFormColor();
         } else {
+          formColor();
           this.selectedAccount = i;
           Object.assign(this.newAccount, this.accountList[this.selectedAccount]);
         }
@@ -65,6 +67,7 @@ $(() => {
         if (this.selectedAccount === -1) {
           this.mode = 'addAccount';
         } else {
+
           this.mode = 'updateAccount';
         }
         socket.emit(this.mode, this.newAccount);
@@ -134,13 +137,24 @@ $(() => {
 
   //管理者設定画面へのドロワー
   $('#drawer_button').click(function () {
-    $('#drawer_menu').toggleClass('action', true);
+    $('#drawerMenu').toggleClass('action', true);
   });
 
-  $('#drawer_menu').mouseleave(function () {
-    $('#drawer_menu').toggleClass('action', false);
+  $('#drawerMenu').mouseleave(function () {
+    $('#drawerMenu').toggleClass('action', false);
   });
 
   var pos = $("#titleUserName").offset();
-  $("#img_user").css('right', window.innerWidth - pos.left + "px");
+  $("#iconImg").css('right', window.innerWidth - pos.left + "px");
+
+  function formColor() {
+    $('#accountRegFormArea input').css('border', '1px solid #ccff00');
+  }
+  function notFormColor() {
+    $('#accountRegFormArea input').css('border', '1px solid #000000');
+  }
+  $("#newButton").click(formColor);
+  $("#deleteButton").click(notFormColor);
+  $("#cancelButton").click(notFormColor);
+  $("#confirmButton").click(notFormColor);
 });
