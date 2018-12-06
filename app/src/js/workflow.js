@@ -155,8 +155,10 @@ $(() => {
           });
       },
       openJupyterNotebook: function () {
-        const dirPath = currentWorkDir + '/' + this.node.name;
-        const url = `${jupyterURL}tree${dirPath}?token=${jupyterToken}`;
+        const parentDirPath = `${currentWorkDir[1] === ":" ? currentWorkDir.slice(2) : currentWorkDir}`;
+        // jupyterURL ends with "/"
+        const url = `${jupyterURL}tree${parentDirPath}/${this.node.name}?token=${jupyterToken}`;
+        console.log(url);
         window.open(url);
       },
       updateQueueList: function () {
