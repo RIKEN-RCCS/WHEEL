@@ -9,8 +9,8 @@ __W__orkflow in __H__ierarchical distribut __E__d parall __EL__.
 ```
 > git clone https://gitlab.com/aicshud/WHEEL.git
 > cd WHEEL
-> git checkout -b dev2017
-> git pull origin dev2017
+> git checkout -b dev2018
+> git pull origin dev2018 -Xtheirs
 > npm install
 ```
 
