@@ -149,7 +149,12 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
     const nodeDir = await getComponentDir(projectRootDir, ID);
 
     if (prop === "name") {
-      if (nodeDir === projectRootDir || !isValidName(value)) {
+      if (!isValidName(value)) {
+        getLogger(projectRootDir).debug(`${value} is not valid component name`);
+        cb(false);
+        return;
+      }
+      if (nodeDir === projectRootDir) {
         getLogger(projectRootDir).debug("updateNode can not rename root workflow");
         cb(false);
         return;
