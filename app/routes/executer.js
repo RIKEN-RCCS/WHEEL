@@ -109,9 +109,6 @@ async function gatherFiles(ssh, task, rt) {
 
   //get outputFiles from remote server
   const outputFilesArray = task.outputFiles
-    .filter((e)=>{
-      return e.dst.length > 0;
-    })
     .map((e)=>{
       if (e.name.endsWith("/") || e.name.endsWith("\\")) {
         const dirname = replacePathsep(e.name);
