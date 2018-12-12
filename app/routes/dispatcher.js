@@ -572,7 +572,7 @@ class Dispatcher extends EventEmitter {
     const paramSettings = await readJsonGreedy(paramSettingsFilename);
     this.logger.debug(`read prameter setting done. version = ${paramSettings.version}`);
 
-    //replace single value to array
+    //treat single value as array contains single element
     if (paramSettings.hasOwnProperty("targetFiles") && typeof paramSettings.targetFiles === "string") {
       paramSettings.targetFiles = [paramSettings.targetFiles];
     }
@@ -583,7 +583,7 @@ class Dispatcher extends EventEmitter {
       paramSettings.targetFiles = paramSettings.target_file;
     }
 
-    //replace node id by relative path from PS component
+    //convert id to relative path from PS component
     const targetFiles = paramSettings.hasOwnProperty("targetFiles") ? paramSettings.targetFiles.map((e)=>{
       if (e.hasOwnProperty("targetNode") && e.hasOwnProperty("targetName")) {
         const targetDir = path.relative(templateRoot, this._getComponentDir(e.targetNode));
@@ -608,6 +608,7 @@ class Dispatcher extends EventEmitter {
 
     const [getParamSpace, getScatterFiles, scatterFiles, gatherFiles, rewriteTargetFile] = makeCmd(paramSettings);
     const paramSpace = await getParamSpace(templateRoot);
+    //TODO check paramSpace 
 
     //ignore all filenames in file type parameter space and parameter study setting file
     const ignoreFiles = [paramSettingsFilename]
