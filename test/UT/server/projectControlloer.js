@@ -712,7 +712,6 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
         await fs.outputFile(path.join(projectRootDir, "parentTask0", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "parentTask1", scriptName), scriptPwd);
-        //TODO to be checked!!!
         await fs.outputFile(path.join(projectRootDir, "for0", "task0", scriptName), `${scriptPwd}\necho ${referenceEnv("WHEEL_CURRENT_INDEX")} > d\n`);
       });
       it("should run project and successfully finish", async()=>{
@@ -731,15 +730,15 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, "parentTask0", "a")).to.be.a.file().with.content("a");
         expect(path.resolve(projectRootDir, "for0", "b")).not.to.be.a.path();
         expect(path.resolve(projectRootDir, "for0", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0", "task0", "d")).to.be.a.file().with.content(`2 ${os.EOL}`);
+        expect(path.resolve(projectRootDir, "for0", "task0", "d")).to.be.a.file().with.content(`2${os.EOL}`);
         expect(path.resolve(projectRootDir, "for0_0", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0_0", "task0", "d")).to.be.a.file().with.content(`0 ${os.EOL}`);
+        expect(path.resolve(projectRootDir, "for0_0", "task0", "d")).to.be.a.file().with.content(`0${os.EOL}`);
         expect(path.resolve(projectRootDir, "for0_1", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0_1", "task0", "d")).to.be.a.file().with.content(`1 ${os.EOL}`);
+        expect(path.resolve(projectRootDir, "for0_1", "task0", "d")).to.be.a.file().with.content(`1${os.EOL}`);
         expect(path.resolve(projectRootDir, "for0_2", "task0", "c")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0_2", "task0", "d")).to.be.a.file().with.content(`2 ${os.EOL}`);
+        expect(path.resolve(projectRootDir, "for0_2", "task0", "d")).to.be.a.file().with.content(`2${os.EOL}`);
         expect(path.resolve(projectRootDir, "for0", "e")).not.to.be.a.path();
-        expect(path.resolve(projectRootDir, "parentTask1", "f")).to.be.a.file().with.content(`2 ${os.EOL}`);
+        expect(path.resolve(projectRootDir, "parentTask1", "f")).to.be.a.file().with.content(`2${os.EOL}`);
 
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
