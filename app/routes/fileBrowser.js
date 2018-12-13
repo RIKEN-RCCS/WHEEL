@@ -45,18 +45,14 @@ function bundleSNDFiles(fileList, isDir) {
     return [];
   }
   const globs = getSNDs(fileList, isDir);
-  //remove bundled files
-  const files = fileList.filter((e)=>{
-    for (const pattern of globs.map((g)=>{
-      return g.name;
-    })) {
-      if (minimatch(e.name, pattern)) {
-        return false;
-      } //match one of globs
-    }
-    return true;
-  });
-  return files.concat(globs);
+  let files=globs;
+  for (const globEntry of globs) {
+    const mm = minimatch.Minimatch(globEntry.name);
+    files = files.concat(fileList.filter((e)=>{
+      return ! mm.match(e.name);
+    }));
+  }
+  return files;
 }
 
 function compare(a, b) {
