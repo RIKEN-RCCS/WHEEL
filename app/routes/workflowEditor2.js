@@ -6,7 +6,7 @@ const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
 const { setCwd, getCwd, getLogger } = require("./projectResource");
 const { gitRm, gitAdd, gitResetHEAD } = require("./gitOperator");
-const { replacePathsep, isValidName, readJsonGreedy, convertPathSep } = require("./utility");
+const { replacePathsep, isValidName, readJsonGreedy, convertPathSep, getDateString } = require("./utility");
 const componentFactory = require("./workflowComponent");
 
 /**
@@ -50,6 +50,7 @@ async function updateComponentPath(projectRootDir, modifier) {
 
   if (typeof modifier === "function") {
     await modifier(projectRootDir, projectJson.componentPath);
+    projectJson.mtime = getDateString(true);
   }
 
   await fs.writeJson(filename, projectJson, { spaces: 4 });

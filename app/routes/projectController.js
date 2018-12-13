@@ -446,6 +446,7 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
   try {
     const projectJson = await readJsonGreedy(filename);
     projectJson[prop] = value;
+    projectJson.mtime = getDateString(true);
     await fs.writeJson(filename, projectJson, { spaces: 4 });
     await gitAdd(projectRootDir, filename);
   } catch (e) {

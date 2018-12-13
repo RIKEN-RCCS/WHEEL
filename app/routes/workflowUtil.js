@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs-extra");
 const { promisify } = require("util");
 const glob = require("glob");
-const { readJsonGreedy } = require("./utility");
+const { getDateString, readJsonGreedy } = require("./utility");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getCwd } = require("./projectResource");
 const { gitAdd } = require("./gitOperator");
@@ -121,8 +121,9 @@ async function updateAndSendProjectJson(emit, projectRootDir, state) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
 
-  if (typeof state === "string") {
+  if (typeof state === "string" && projectJson.state !== state) {
     projectJson.state = state;
+    projectJson.mtime = getDateString(true);
   }
   await fs.writeJson(filename, projectJson, { spaces: 4 });
   emit("projectJson", projectJson);

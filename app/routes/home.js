@@ -463,6 +463,7 @@ async function onRenameProject(emit, msg, cb) {
     const projectJson = await readJsonGreedy(path.resolve(newDir, projectJsonFilename));
     projectJson.name = newName;
     projectJson.root = newDir;
+    projectJson.mtime = getDateString(true);
     await fs.writeJson(path.resolve(newDir, projectJsonFilename), projectJson);
     const rootWorkflow = await readJsonGreedy(path.resolve(newDir, componentJsonFilename));
     rootWorkflow.name = newName;
