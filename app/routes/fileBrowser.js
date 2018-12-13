@@ -149,13 +149,12 @@ async function getContents(targetDir, options = {}) {
     dirList.push({ path: request, name: "../", type: "dir", islink: false });
   }
 
-  let rt;
   if (bundleSerialNumberData) {
     const dirs = bundleSNDFiles(dirList, true);
     const files = bundleSNDFiles(fileList);
-    rt = dirs.sort(compare).concat(files.sort(compare));
+    return dirs.sort(compare).concat(files.sort(compare));
+
   }
-  rt = dirList.sort(compare).concat(fileList.sort(compare));
-  return rt;
+  return dirList.sort(compare).concat(fileList.sort(compare));
 }
 module.exports = getContents;
