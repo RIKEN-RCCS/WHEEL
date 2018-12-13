@@ -6,6 +6,7 @@ const minimatch = require("minimatch");
 function getSNDs(fileList, isDir) {
   const reNumber = /\d+/g;
   const snds = [];
+  const candidates = new Set();
   const globs = new Set();
 
   for (const e of fileList) {
@@ -14,9 +15,7 @@ function getSNDs(fileList, isDir) {
 
     while ((result = reNumber.exec(filename)) !== null) {
       const glob = `${filename.slice(0, result.index)}*${filename.slice(reNumber.lastIndex)}`;
-
-      if (!globs.has(glob)) {
-        globs.add(glob);
+      if(candidates.has(glob) && !globs.has(glob)){
         const type = isDir ? "sndd" : "snd";
         snds.push({
           path: e.path,
@@ -24,14 +23,13 @@ function getSNDs(fileList, isDir) {
           type,
           islink: false
         });
+        globs.add(glob);
+      }else{
+        candidates.add(glob);
       }
     }
   }
-  return snds.filter((snd)=>{
-    return fileList.map((e)=>{
-      return e.name;
-    }).filter(minimatch.filter(snd.name)).length > 1;
-  });
+  return snds
 }
 
 /**
@@ -155,11 +153,13 @@ async function getContents(targetDir, options = {}) {
     dirList.push({ path: request, name: "../", type: "dir", islink: false });
   }
 
+  let rt;
   if (bundleSerialNumberData) {
     const dirs = bundleSNDFiles(dirList, true);
     const files = bundleSNDFiles(fileList);
-    return dirs.sort(compare).concat(files.sort(compare));
+    rt = dirs.sort(compare).concat(files.sort(compare));
   }
-  return dirList.sort(compare).concat(fileList.sort(compare));
+  rt = dirList.sort(compare).concat(fileList.sort(compare));
+  return rt;
 }
 module.exports = getContents;
