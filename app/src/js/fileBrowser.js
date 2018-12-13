@@ -240,7 +240,9 @@ export default class {
           dirStack.pop();
           var target = dirStack[dirStack.length - 1];
         } else {
-          var target = $(event.target).data('path').trim() + '\\' + $(event.target).data('name').trim();
+          const originalPath = $(event.target).data('path').trim();
+          const pathSep = originalPath[0] === '/' ? '/': '\\';
+          var target = originalPath + pathSep + $(event.target).data('name').trim();
           dirStack.push(target);
         }
         this.request(this.sendEventName, target, null);

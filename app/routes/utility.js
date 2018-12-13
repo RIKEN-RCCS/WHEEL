@@ -38,8 +38,8 @@ async function createSshConfig(hostInfo, password) {
   };
 
   if (hostInfo.keyFile) {
-    config.privateKey = await fs.readFile(hostInfo.keyFile);
-    config.privateKey = config.privateKey.toString();
+    const tmp = await fs.readFile(path.normalize(convertPathSep(hostInfo.keyFile)));
+    config.privateKey = tmp.toString();
 
     if (password) {
       config.passphrase = password;

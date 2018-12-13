@@ -178,7 +178,9 @@ $(() => {
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {
-        let target = fb.getRequestedPath() + '\\' + fb.getLastClicked();
+        const requested = fb.getRequestedPath();
+        const pathSep = requested[0] === '/' ? '/': '\\';
+        let target = requested + pathSep + fb.getLastClicked();
         console.log(target);
         socket.emit('add', target);
         vm.newHostInfo.keyFile = target;
