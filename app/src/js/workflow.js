@@ -331,11 +331,12 @@ $(() => {
       drawParentLinks(parentnode, nodes);
     });
 
-    sio.on('taskStateList', (taskStateList) => {
+    sio.on('taskStateList', (taskStateList, cb) => {
       Array.prototype.push.apply(updateList, taskStateList);
       let updatedList = updateTaskStateList(updateList);
       let arrangedTaskStateList = arrangeTaskStateTable(updatedList);
       updateTaskStateTable(arrangedTaskStateList);
+      cb();
     })
 
     //get project state infomation.

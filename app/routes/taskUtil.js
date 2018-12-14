@@ -18,7 +18,7 @@ async function cancelLocalJob() {
 }
 
 async function killLocalProcess(task) {
-  if(task.handler && task.handler.killed === false){
+  if (task.handler && task.handler.killed === false) {
     task.handler.kill();
   }
 }
@@ -43,4 +43,21 @@ async function killTask(projectRootDir, task) {
   }
 }
 
+function taskStateFilter(task) {
+  return {
+    name: task.name,
+    ID: task.ID,
+    subID: task.subID,
+    description: task.description ? task.description : "",
+    state: task.state,
+    parent: task.parent,
+    parentType: task.parentType,
+    ancestorsName: task.ancestorsName,
+    ancestorsType: task.ancestorsType,
+    startTime: task.startTime,
+    endTime: task.endTime
+  };
+}
+
 module.exports.killTask = killTask;
+module.exports.taskStateFilter = taskStateFilter;

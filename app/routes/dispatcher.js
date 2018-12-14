@@ -452,9 +452,10 @@ class Dispatcher extends EventEmitter {
 
     exec(task, this.logger); //exec is async function but dispatcher never wait end of task execution
 
-    //runnintTasks in this class and dispatchedTask in Project class is for different purpose, please keep duplicate!
+    //runningTasks in this class and dispatchedTask in Project class is for different purpose, please keep duplicate!
     this.runningTasks.push(task);
     addDispatchedTask(this.projectRootDir, task);
+    await fs.writeJson(path.resolve(task.workingDir, componentJsonFilename), task, { spaces: 4, replacer: componentJsonReplacer });
     await this._addNextComponent(task);
   }
 
@@ -608,7 +609,7 @@ class Dispatcher extends EventEmitter {
 
     const [getParamSpace, getScatterFiles, scatterFiles, gatherFiles, rewriteTargetFile] = makeCmd(paramSettings);
     const paramSpace = await getParamSpace(templateRoot);
-    //TODO check paramSpace 
+    //TODO check paramSpace
 
     //ignore all filenames in file type parameter space and parameter study setting file
     const ignoreFiles = [paramSettingsFilename]

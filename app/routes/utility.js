@@ -2,6 +2,7 @@
 const path = require("path");
 const { promisify } = require("util");
 const fs = require("fs-extra");
+const { EventEmitter } = require("events");
 const Mode = require("stat-mode");
 const promiseRetry = require("promise-retry");
 const glob = require("glob");
@@ -197,6 +198,74 @@ async function expandArrayOfGlob(globs, cwd) {
   return Array.prototype.concat.apply([], names);
 }
 
+class EmitArbitrator extends EventEmitter {
+  constructor(send, event, array, chunksize) {
+    super();
+    this.start = 0;
+    this.end = chunksize;
+    this.on("send", ()=>{
+      send(event, array.slice(this.start, this.end), (err)=>{
+        if (err) {
+          this.emit("error");
+        }
+        this.start = this.end;
+        this.end = this.end + chunksize;
+
+        if (this.end < array.length) {
+          this.emit("send");
+        } else {
+          this.emit("done");
+        }
+      });
+    });
+  }
+
+  stop() {
+    this.emit("stop");
+  }
+
+  async go() {
+    setImmediate(()=>{
+      this.emit("send");
+    });
+    return new Promise((resolve, reject)=>{
+      const onStop = ()=>{
+        /*eslint-disable no-use-before-define */
+        this.removeListener("error", onError);
+        this.removeListener("done", onDone);
+        /*eslint-enable no-use-before-define */
+        this.removeListener("stop", onStop);
+      };
+
+      const onDone = ()=>{
+        onStop();
+        resolve();
+      };
+
+      const onError = (err)=>{
+        onStop();
+        reject(err);
+      };
+      this.once("done", onDone);
+      this.once("error", onError);
+      this.once("stop", onStop);
+    });
+  }
+}
+
+
+/**
+ * divide array to chunk and send each chunk seqentialy
+ * @param {function} emit - emitting function (should be socket.IO's socket.emit);
+ * @param {string} enevt - envet name
+ * @param {*[]} array - data to be send
+ * @param {Number} chunksize - number of array length to be send at one time
+ */
+async function emitLongArray(emit, event, array, chunksize) {
+  const arbitrator = new EmitArbitrator(emit, event, array, chunksize);
+  return arbitrator.go();
+}
+
 module.exports = {
   convertPathSep,
   addX,
@@ -212,5 +281,6 @@ module.exports = {
   isValidInputFilename,
   isValidOutputFilename,
   sanitizePath,
-  expandArrayOfGlob
+  expandArrayOfGlob,
+  emitLongArray
 };
