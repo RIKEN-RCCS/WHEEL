@@ -6,6 +6,13 @@ let receiveStdoutLog = false;
 let receiveStderrLog = false;
 let receiveSSHoutLog = false;
 let receiveSSHerrLog = false;
+let debugLogReceiveCount = 0;
+let infoLogReceiveCount = 0;
+let stdoutLogReceiveCount = 0;
+let stderrLogReceiveCount = 0;
+let sshoutLogReceiveCount = 0;
+let ssherrLogReceiveCount = 0;
+
 export default function (socket) {
     // initial enable log
     socket.on('logDBG', addDebugLog);
@@ -77,9 +84,15 @@ export default function (socket) {
         $(".logText").empty();
     });
 }
-
 function addDebugLog(msg) {
-    $('#logDebugLog').append(msg.toString() + '\n');
+    var logText = document.getElementById("logDebugLog");
+    logText.textContent += msg.toString() + '\n';
+    var deleteTargetIndex = logText.textContent.indexOf('\n')
+    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
+    if (debugLogReceiveCount > 1000) {
+        logText.textContent = logText.textContent.replace(str, '');
+    }
+    debugLogReceiveCount++;
     var target = $('#logDebugLog').attr("id");
     var area = document.getElementById(target);
     area.scrollTop = area.scrollHeight;
@@ -89,6 +102,14 @@ function addInfoLog(msg) {
     if (receiveINFOLog === false && firstRecieveFlag === false) {
         $('#enableINFO').css('color', "red");
     }
+    var logText = document.getElementById("logInfoLog");
+    logText.textContent += msg.toString() + '\n';
+    var deleteTargetIndex = logText.textContent.indexOf('\n')
+    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
+    if (infoLogReceiveCount > 1000) {
+        logText.textContent = logText.textContent.replace(str, '');
+    }
+    infoLogReceiveCount++;
     $('#logInfoLog').append(msg.toString() + '\n');
     var target = $('#logInfoLog').attr("id");
     var area = document.getElementById(target);
@@ -99,6 +120,14 @@ function addStdoutLog(msg) {
     if (receiveStdoutLog === false) {
         $('#enableStdout').css('color', "red");
     }
+    var logText = document.getElementById("logStdoutLog");
+    logText.textContent += msg.toString() + '\n';
+    var deleteTargetIndex = logText.textContent.indexOf('\n')
+    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
+    if (stdoutLogReceiveCount > 1000) {
+        logText.textContent = logText.textContent.replace(str, '');
+    }
+    stdoutLogReceiveCount++;
     $('#logStdoutLog').append(msg.toString() + '\n');
     var target = $('#logStdoutLog').attr("id");
     var area = document.getElementById(target);
@@ -109,6 +138,14 @@ function addStderrLog(msg) {
     if (receiveStderrLog === false) {
         $('#enableStderr').css('color', "red");
     }
+    var logText = document.getElementById("logStderrLog");
+    logText.textContent += msg.toString() + '\n';
+    var deleteTargetIndex = logText.textContent.indexOf('\n')
+    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
+    if (stderrLogReceiveCount > 1000) {
+        logText.textContent = logText.textContent.replace(str, '');
+    }
+    stderrLogReceiveCount++;
     $('#logStderrLog').append(msg.toString() + '\n');
     var target = $('#logStderrLog').attr("id");
     var area = document.getElementById(target);
@@ -119,6 +156,14 @@ function addSSHoutLog(msg) {
     if (receiveSSHoutLog === false) {
         $('#enableSSHout').css('color', "red");
     }
+    var logText = document.getElementById("logSSHoutLog");
+    logText.textContent += msg.toString() + '\n';
+    var deleteTargetIndex = logText.textContent.indexOf('\n')
+    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
+    if (sshoutLogReceiveCount > 1000) {
+        logText.textContent = logText.textContent.replace(str, '');
+    }
+    sshoutLogReceiveCount++;
     $('#logSSHoutLog').append(msg.toString() + '\n');
     var target = $('#logSSHoutLog').attr("id");
     var area = document.getElementById(target);
@@ -129,6 +174,14 @@ function addSSHerrLog(msg) {
     if (receiveSSHerrLog === false) {
         $('#enableSSHerr').css('color', "red");
     }
+    var logText = document.getElementById("logSSHerrLog");
+    logText.textContent += msg.toString() + '\n';
+    var deleteTargetIndex = logText.textContent.indexOf('\n')
+    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
+    if (ssherrLogReceiveCount > 1000) {
+        logText.textContent = logText.textContent.replace(str, '');
+    }
+    ssherrLogReceiveCount++;
     $('#logSSHerrLog').append(msg.toString() + '\n');
     var target = $('#logSSHerrLog').attr("id");
     var area = document.getElementById(target);
