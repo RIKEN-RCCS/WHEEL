@@ -5,6 +5,7 @@ const EventEmitter = require("events");
 const fs = require("fs-extra");
 const glob = require("glob");
 const { gitResetHEAD } = require("./gitOperator");
+const { taskStateFilter } = require("./taskUtil");
 const orgGetLogger = require("../logSettings").getLogger;
 
 
@@ -109,29 +110,10 @@ function getTasks(projectRootDir) {
   return getProject(projectRootDir).tasks;
 }
 
-function taskStateFilter(task) {
-  return {
-    name: task.name,
-    ID: task.ID,
-    subID: task.subID,
-    description: task.description ? task.description : "",
-    state: task.state,
-    parent: task.parent,
-    parentType: task.parentType,
-    ancestorsName: task.ancestorsName,
-    ancestorsType: task.ancestorsType,
-    startTime: task.startTime,
-    endTime: task.endTime
-  };
-}
-
-function getTaskStateList(projectRootDir, updateOnly = false) {
-  if (updateOnly) {
-    const updatedTaskStateList = [...getProject(projectRootDir).updatedTasks].map(taskStateFilter);
-    getProject(projectRootDir).updatedTasks.clear();
-    return updatedTaskStateList;
-  }
-  return [...getProject(projectRootDir).tasks].map(taskStateFilter);
+function getUpdatedTaskStateList(projectRootDir) {
+  const updatedTaskStateList = [...getProject(projectRootDir).updatedTasks].map(taskStateFilter);
+  getProject(projectRootDir).updatedTasks.clear();
+  return updatedTaskStateList;
 }
 
 function clearDispatchedTasks(projectRootDir) {
@@ -165,7 +147,7 @@ module.exports = {
   addUpdatedTask,
   clearDispatchedTasks,
   getTasks,
-  getTaskStateList,
+  getUpdatedTaskStateList,
   addSsh,
   getSsh,
   removeSsh,

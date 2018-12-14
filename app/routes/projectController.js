@@ -3,21 +3,44 @@ const { promisify } = require("util");
 const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR;
 const fs = require("fs-extra");
 const path = require("path");
+const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
 const Dispatcher = require("./dispatcher");
-const { getDateString, createSshConfig, readJsonGreedy } = require("./utility");
+const { getDateString, createSshConfig, readJsonGreedy, emitLongArray } = require("./utility");
 const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger } = require("./projectResource");
+const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger } = require("./projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
-const { killTask } = require("./taskUtil");
+const { killTask, taskStateFilter } = require("./taskUtil");
+
+async function sendTaskStateList(emit, projectRootDir) {
+  const blockSize = 100;
+  const p = [];
+  klaw(projectRootDir)
+    .on("data", (item)=>{
+      if (!item.path.endsWith(componentJsonFilename)) {
+        return;
+      }
+      p.push(readJsonGreedy(item.path));
+    })
+    .on("end", async()=>{
+      const jsonFiles = await Promise.all(p);
+      const data = jsonFiles
+        .filter((e)=>{
+          return e.type === "task" && e.hasOwnProperty("ancestorsName");
+        })
+        .map(taskStateFilter);
+      await emitLongArray(emit, "taskStateList", data, blockSize);
+    });
+}
 
 async function getProjectState(projectRootDir) {
   const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
   return projectJson.state;
 }
+
 async function getState(projectRootDir) {
   const componentJsonFiles = await promisify(glob)(path.join("**", componentJsonFilename), { cwd: projectRootDir });
   const states = await Promise.all(componentJsonFiles.map(async(jsonFile)=>{
@@ -301,7 +324,7 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //event listener for task state changed
   function onTaskStateChanged() {
-    emit("taskStateList", getTaskStateList(projectRootDir, true));
+    emit("taskStateList", getUpdatedTaskStateList(projectRootDir));
     setTimeout(()=>{
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
     }, interval);
@@ -355,7 +378,7 @@ async function onRunProject(sio, projectRootDir, cb) {
   try {
     //directly send last status just in case
     await updateAndSendProjectJson(emit, projectRootDir);
-    emit("taskStateList", getTaskStateList(projectRootDir));
+    emit("taskStateList", getUpdatedTaskStateList(projectRootDir));
     await sendWorkflow(emit, projectRootDir);
     rootDispatcher.remove();
     deleteRootDispatcher(projectRootDir);
@@ -367,7 +390,6 @@ async function onRunProject(sio, projectRootDir, cb) {
   } catch (e) {
     getLogger(projectRootDir).warn("project execution is successfully finished but error occurred in cleanup process", e);
     cb(false);
-    console.log(e);
     return;
   }
 
@@ -493,7 +515,15 @@ async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("getTaskStateList event recieved:", msg);
-  emit("taskStateList", getTaskStateList(projectRootDir));
+
+  try {
+    await sendTaskStateList(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("send task state list failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
 }
 
 function registerListeners(socket, projectRootDir) {
