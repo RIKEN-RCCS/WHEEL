@@ -400,6 +400,14 @@ class Executer {
   setMaxStatusCheckError(v) {
     this.maxStatusCheckError = v;
   }
+
+  setJS(v) {
+    this.JS = v;
+  }
+
+  setQueues(v) {
+    this.queues = v;
+  }
 }
 
 function createExecuter(task) {
@@ -410,7 +418,7 @@ function createExecuter(task) {
 
   //TODO remove onRemote after local submit is supported
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
-  if (onRemote && task.useJobScheduler  && JS === null) {
+  if (onRemote && task.useJobScheduler && JS === null) {
     logger.error();
     const err = new Error("illegal job Scheduler specifies");
     err.task = task.name;
@@ -453,6 +461,11 @@ function exec(task, loggerInstance) {
     executer.setExecInterval(execInterval);
     executer.setStatusCheckInterval(statusCheckInterval);
     executer.setMaxStatusCheckError(maxStatusCheckError);
+    //TODO remove onRemote after local submit is supported
+    const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
+    executer.setJS(JS);
+    const queues = hostinfo != null ? hostinfo.queue : null;
+    executer.setQueues(queues);
   }
 
   if (task.remotehostID !== "localhost") {
