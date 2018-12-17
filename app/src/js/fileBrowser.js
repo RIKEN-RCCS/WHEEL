@@ -140,7 +140,19 @@ export default class {
     $.contextMenu({
       selector: fileList,
       position: function (opt, x, y) {
-        opt.$menu.css({ top: y, left: x + 1 })
+        opt.$menu.css({ top: y, left: x + 1 });
+        //contextmenu item size
+        var menuWidth = 134;
+        var menuHeight = 38;
+        if (x + menuWidth > window.innerWidth) {
+          opt.$menu.css({ top: y, left: x - menuWidth - 1 });
+        }
+        if (y + menuHeight * 2 > window.innerHeight) {
+          opt.$menu.css({ top: y - menuHeight * 2, left: x + 1 });
+        }
+        if (x + menuWidth > window.innerWidth && y + menuHeight * 2 > window.innerHeight) {
+          opt.$menu.css({ top: y - menuHeight * 2, left: x - menuWidth - 1 });
+        }
       },
       build: this.createContextMenu.bind(this, additionalMenu)
     });
@@ -241,7 +253,7 @@ export default class {
           var target = dirStack[dirStack.length - 1];
         } else {
           const originalPath = $(event.target).data('path').trim();
-          const pathSep = originalPath[0] === '/' ? '/': '\\';
+          const pathSep = originalPath[0] === '/' ? '/' : '\\';
           var target = originalPath + pathSep + $(event.target).data('name').trim();
           dirStack.push(target);
         }
