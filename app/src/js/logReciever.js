@@ -110,7 +110,6 @@ function addInfoLog(msg) {
         logText.textContent = logText.textContent.replace(str, '');
     }
     infoLogReceiveCount++;
-    $('#logInfoLog').append(msg.toString() + '\n');
     var target = $('#logInfoLog').attr("id");
     var area = document.getElementById(target);
     area.scrollTop = area.scrollHeight;
@@ -128,7 +127,6 @@ function addStdoutLog(msg) {
         logText.textContent = logText.textContent.replace(str, '');
     }
     stdoutLogReceiveCount++;
-    $('#logStdoutLog').append(msg.toString() + '\n');
     var target = $('#logStdoutLog').attr("id");
     var area = document.getElementById(target);
     area.scrollTop = area.scrollHeight;
@@ -146,7 +144,6 @@ function addStderrLog(msg) {
         logText.textContent = logText.textContent.replace(str, '');
     }
     stderrLogReceiveCount++;
-    $('#logStderrLog').append(msg.toString() + '\n');
     var target = $('#logStderrLog').attr("id");
     var area = document.getElementById(target);
     area.scrollTop = area.scrollHeight;
@@ -164,7 +161,6 @@ function addSSHoutLog(msg) {
         logText.textContent = logText.textContent.replace(str, '');
     }
     sshoutLogReceiveCount++;
-    $('#logSSHoutLog').append(msg.toString() + '\n');
     var target = $('#logSSHoutLog').attr("id");
     var area = document.getElementById(target);
     area.scrollTop = area.scrollHeight;
@@ -182,7 +178,6 @@ function addSSHerrLog(msg) {
         logText.textContent = logText.textContent.replace(str, '');
     }
     ssherrLogReceiveCount++;
-    $('#logSSHerrLog').append(msg.toString() + '\n');
     var target = $('#logSSHerrLog').attr("id");
     var area = document.getElementById(target);
     area.scrollTop = area.scrollHeight;

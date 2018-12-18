@@ -1507,6 +1507,7 @@ tspan{
     padding: 8px 16px 8px 16px;
     margin-right: 0;
     width: 100px;
+    height: 20px;
 }
 
 .context-menu-item:hover{
