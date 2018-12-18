@@ -84,13 +84,14 @@ export default function (socket) {
         $(".logText").empty();
     });
 }
+
 function addDebugLog(msg) {
     var logText = document.getElementById("logDebugLog");
     logText.textContent += msg.toString() + '\n';
     var deleteTargetIndex = logText.textContent.indexOf('\n')
     var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (debugLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.replace(str, '');
+        logText.textContent = logText.textContent.split(str).join('');
     }
     debugLogReceiveCount++;
     var target = $('#logDebugLog').attr("id");
@@ -107,7 +108,7 @@ function addInfoLog(msg) {
     var deleteTargetIndex = logText.textContent.indexOf('\n')
     var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (infoLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.replace(str, '');
+        logText.textContent = logText.textContent.split(str).join('');
     }
     infoLogReceiveCount++;
     var target = $('#logInfoLog').attr("id");
@@ -124,7 +125,7 @@ function addStdoutLog(msg) {
     var deleteTargetIndex = logText.textContent.indexOf('\n')
     var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (stdoutLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.replace(str, '');
+        logText.textContent = logText.textContent.split(str).join('');
     }
     stdoutLogReceiveCount++;
     var target = $('#logStdoutLog').attr("id");
@@ -141,7 +142,7 @@ function addStderrLog(msg) {
     var deleteTargetIndex = logText.textContent.indexOf('\n')
     var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (stderrLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.replace(str, '');
+        logText.textContent = logText.textContent.split(str).join('');
     }
     stderrLogReceiveCount++;
     var target = $('#logStderrLog').attr("id");
@@ -158,7 +159,7 @@ function addSSHoutLog(msg) {
     var deleteTargetIndex = logText.textContent.indexOf('\n')
     var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (sshoutLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.replace(str, '');
+        logText.textContent = logText.textContent.split(str).join('');
     }
     sshoutLogReceiveCount++;
     var target = $('#logSSHoutLog').attr("id");
@@ -175,7 +176,7 @@ function addSSHerrLog(msg) {
     var deleteTargetIndex = logText.textContent.indexOf('\n')
     var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (ssherrLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.replace(str, '');
+        logText.textContent = logText.textContent.split(str).join('');
     }
     ssherrLogReceiveCount++;
     var target = $('#logSSHerrLog').attr("id");
