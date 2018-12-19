@@ -12,6 +12,9 @@ const eventNameTable = {
 
 function socketIOAppender(layout, timezoneOffset) {
   return (loggingEvent)=>{
+    if (loggingEvent.level.level < 20000) {
+      return;
+    }
     const eventName = eventNameTable[loggingEvent.level.levelStr];
     const socket = loggingEvent.context.sio;
 
