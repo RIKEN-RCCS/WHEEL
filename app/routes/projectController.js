@@ -14,9 +14,9 @@ const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, setRootDispatch
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
 const { killTask, taskStateFilter } = require("./taskUtil");
+const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
 async function sendTaskStateList(emit, projectRootDir) {
-  const blockSize = 100;
   const p = [];
   klaw(projectRootDir)
     .on("data", (item)=>{
@@ -323,8 +323,8 @@ async function onRunProject(sio, projectRootDir, cb) {
   setRootDispatcher(projectRootDir, rootDispatcher);
 
   //event listener for task state changed
-  function onTaskStateChanged() {
-    emit("taskStateList", getUpdatedTaskStateList(projectRootDir));
+  async function onTaskStateChanged() {
+      await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
     setTimeout(()=>{
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
     }, interval);
@@ -378,7 +378,7 @@ async function onRunProject(sio, projectRootDir, cb) {
   try {
     //directly send last status just in case
     await updateAndSendProjectJson(emit, projectRootDir);
-    emit("taskStateList", getUpdatedTaskStateList(projectRootDir));
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
     await sendWorkflow(emit, projectRootDir);
     rootDispatcher.remove();
     deleteRootDispatcher(projectRootDir);
@@ -426,7 +426,7 @@ async function onCleanProject(emit, projectRootDir, cb) {
   }
   await cancelDispatchedTasks(projectRootDir);
   clearDispatchedTasks(projectRootDir);
-  emit("taskStateList", []);
+  await emitLongArray(emit, "taskStateList", [], blockSize);
   await cleanProject(projectRootDir);
   await openProject(projectRootDir);
   await sendWorkflow(emit, projectRootDir);
