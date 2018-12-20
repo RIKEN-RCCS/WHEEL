@@ -124,9 +124,22 @@ if (jupyter) {
     logger.debug(`get error from jupyter process: ${err}`);
   });
   process.on("exit", ()=>{
-    //eslint-disable-next-line no-console
-    console.log(`kill jupyter process(${cp.pid}) before exit`);
+    if(logger){
+      logger.debug(`kill jupyter process(${cp.pid}) before exit`);
+    }else{
+      //eslint-disable-next-line no-console
+      console.log(`kill jupyter process(${cp.pid}) before exit`);
+    }
     cp.kill();
+  });
+  process.on("SIGINT", ()=>{
+    if(logger){
+      logger.info("WHEEL will shut down because Control-C pressed");
+    }else{
+      //eslint-disable-next-line no-console
+      console.log("WHEEL will shut down because Control-C pressed");
+    }
+    process.exit();
   });
 }
 
