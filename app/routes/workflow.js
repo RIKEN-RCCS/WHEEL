@@ -6,7 +6,7 @@ const workflowEditor = require("./workflowEditor2");
 const projectController = require("./projectController");
 const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort } = require("../db/db");
 const { getComponent } = require("./workflowUtil");
-const { openProject, setSio } = require("./projectResource");
+const { openProject, setSio, getLogger } = require("./projectResource");
 
 module.exports = function(io) {
   let projectRootDir = null;
@@ -29,6 +29,11 @@ module.exports = function(io) {
 
     //event listeners for file operation
     fileManager(socket, projectRootDir);
+
+    //redirect error to logger
+    socket.on("error", (err)=>{
+      getLogger(projectRootDir).debug("socketIO errror occurred:\n",err);
+    });
   });
 
   //eslint-disable-next-line new-cap
