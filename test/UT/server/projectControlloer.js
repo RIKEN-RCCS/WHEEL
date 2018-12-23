@@ -39,7 +39,7 @@ const { escapeRegExp } = require("../../../app/lib/utility");
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
+const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, trace:()=>{},stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
 dummyLogger.error = console.log;
 dummyLogger.warn = console.log;
 //dummyLogger.info=console.log;
