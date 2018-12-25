@@ -15,7 +15,7 @@ let logger; //logger is injected when exec() is called;
  */
 async function setTaskState(task, state) {
   task.state = state;
-  logger.trace(`change task state to ${state} (${task.ID})`);
+  logger.trace(`TaskStateList: ${task.ID}'s state is changed to ${state}`);
   addUpdatedTask(task.projectRootDir, task);
   //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
   await fs.writeJson(path.resolve(task.workingDir, componentJsonFilename), task, { spaces: 4, replacer: componentJsonReplacer });
@@ -84,7 +84,7 @@ async function isFinished(JS, ssh, jobID) {
     const reFailedState = new RegExp(JS.reFailedState, "m");
     finished = reFailedState.test(outputText);
   }
-  logger.trace("is", jobID, "finished", finished, "\n", outputText);
+  logger.trace(`JobStatusCheck: ${jobID} is ${finished?"finished":"not yet completed"}\n${outputText}`);
 
   if (finished) {
     const strRt = getReturnCode(outputText, JS.reReturnCode);

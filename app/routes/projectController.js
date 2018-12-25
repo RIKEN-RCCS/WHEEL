@@ -324,11 +324,11 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //event listener for task state changed
   async function onTaskStateChanged() {
-      getLogger(projectRootDir).trace("tasStateChanged event fired");
+      getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired");
       await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
-      getLogger(projectRootDir).trace("emit taskStateList done");
+      getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
     setTimeout(()=>{
-      getLogger(projectRootDir).trace("taskStateChanged event lister registerd");
+      getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
     }, interval);
   }
