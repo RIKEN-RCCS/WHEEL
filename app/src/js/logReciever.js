@@ -88,15 +88,13 @@ export default function (socket) {
 function addDebugLog(msg) {
     var logText = document.getElementById("logDebugLog");
     logText.textContent += msg.toString() + '\n';
-    var deleteTargetIndex = logText.textContent.indexOf('\n')
-    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (debugLogReceiveCount > 1000) {
+        var deleteTargetIndex = logText.textContent.indexOf('\n')
+        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
         logText.textContent = logText.textContent.split(str).join('');
     }
     debugLogReceiveCount++;
-    var target = $('#logDebugLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
+    logText.scrollTop = logText.scrollHeight;
 }
 
 function addInfoLog(msg) {
@@ -105,15 +103,13 @@ function addInfoLog(msg) {
     }
     var logText = document.getElementById("logInfoLog");
     logText.textContent += msg.toString() + '\n';
-    var deleteTargetIndex = logText.textContent.indexOf('\n')
-    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (infoLogReceiveCount > 1000) {
+        var deleteTargetIndex = logText.textContent.indexOf('\n')
+        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
         logText.textContent = logText.textContent.split(str).join('');
     }
     infoLogReceiveCount++;
-    var target = $('#logInfoLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
+    logText.scrollTop = logText.scrollHeight;
 }
 
 function addStdoutLog(msg) {
@@ -122,15 +118,13 @@ function addStdoutLog(msg) {
     }
     var logText = document.getElementById("logStdoutLog");
     logText.textContent += msg.toString() + '\n';
-    var deleteTargetIndex = logText.textContent.indexOf('\n')
-    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (stdoutLogReceiveCount > 1000) {
+        var deleteTargetIndex = logText.textContent.indexOf('\n')
+        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
         logText.textContent = logText.textContent.split(str).join('');
     }
     stdoutLogReceiveCount++;
-    var target = $('#logStdoutLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
+    logText.scrollTop = logText.scrollHeight;
 }
 
 function addStderrLog(msg) {
@@ -139,15 +133,13 @@ function addStderrLog(msg) {
     }
     var logText = document.getElementById("logStderrLog");
     logText.textContent += msg.toString() + '\n';
-    var deleteTargetIndex = logText.textContent.indexOf('\n')
-    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (stderrLogReceiveCount > 1000) {
+        var deleteTargetIndex = logText.textContent.indexOf('\n')
+        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
         logText.textContent = logText.textContent.split(str).join('');
     }
     stderrLogReceiveCount++;
-    var target = $('#logStderrLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
+    logText.scrollTop = logText.scrollHeight;
 }
 
 function addSSHoutLog(msg) {
@@ -156,15 +148,13 @@ function addSSHoutLog(msg) {
     }
     var logText = document.getElementById("logSSHoutLog");
     logText.textContent += msg.toString() + '\n';
-    var deleteTargetIndex = logText.textContent.indexOf('\n')
-    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (sshoutLogReceiveCount > 1000) {
+        var deleteTargetIndex = logText.textContent.indexOf('\n')
+        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
         logText.textContent = logText.textContent.split(str).join('');
     }
     sshoutLogReceiveCount++;
-    var target = $('#logSSHoutLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
+    logText.scrollTop = logText.scrollHeight;
 }
 
 function addSSHerrLog(msg) {
@@ -173,13 +163,11 @@ function addSSHerrLog(msg) {
     }
     var logText = document.getElementById("logSSHerrLog");
     logText.textContent += msg.toString() + '\n';
-    var deleteTargetIndex = logText.textContent.indexOf('\n')
-    var str = logText.textContent.slice(0, deleteTargetIndex + 1);
     if (ssherrLogReceiveCount > 1000) {
+        var deleteTargetIndex = logText.textContent.indexOf('\n')
+        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
         logText.textContent = logText.textContent.split(str).join('');
     }
     ssherrLogReceiveCount++;
-    var target = $('#logSSHerrLog').attr("id");
-    var area = document.getElementById(target);
-    area.scrollTop = area.scrollHeight;
+    logText.scrollTop = logText.scrollHeight;
 } 

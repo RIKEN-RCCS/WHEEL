@@ -328,7 +328,6 @@ if %result% gtr 20 echo true
 ![img](./img/if_workflow_result.png "if_workflow_result")   
 
 ## Loop系コンポーネント
-***  
 WHEELには、For, Foreach, Whileの3種類のループ系コンポーネントが用意されています。    
 Loop系コンポーネントは、プロジェクトディレクトリ内にループの回数分コンポーネントが複製されます。  
 複製されるコンポーネントは、**1つ前のループにより生成されたディレクトリをコピーしたもの** *1 となります。  
@@ -441,7 +440,7 @@ echo value=%x% > value.txt
 ![img](./img/For_finished.png "For_finished")
 
 ## Foreach コンポーネント  
-Foreachコンポーネントのサンプルを示します。 
+Foreachコンポーネントのサンプルを示します。  
 サンプルでは、ForコンポーネントサンプルのループインデックスをForeachコンポーネントのプロパティindex listに変更したものを実行します。  
 ワークフローに設定されているファイルは以下です。  
 
