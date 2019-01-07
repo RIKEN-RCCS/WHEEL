@@ -188,6 +188,7 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
         }
       });
       cp.on("close", (code)=>{
+        logger.debug("return value of conditional expression = ", code);
         resolve(code === 0);
       });
     } else {
