@@ -41,6 +41,7 @@ $(() => {
   let nodeTypeStack = [''];
   let dirStack = [rootDir];
   let wfStack = [rootWorkflow];
+  let currentWf = {};
   //for 'save' button control
   let presentState = '';
   //taskStateList
@@ -293,42 +294,9 @@ $(() => {
     sio.on('workflow', function (wf) {
       nodeStack[nodeStack.length - 1] = wf.name;
       nodeTypeStack[nodeStack.length - 1] = wf.type;
+      currentWf = wf;
       updateBreadrumb();
-
-      // remove all node from workflow editor
-      nodes.forEach(function (v) {
-        if (v !== null) v.remove();
-      });
-      nodes = [];
-      if (wf.descendants.length > 0) {
-        let names = wf.descendants.map((e) => {
-          return e.name;
-        });
-        vm.names = names;
-        vm.node = wf.descendants.find((e) => {
-          return e.ID === selectedNode;
-        });
-        //for initial load
-        if (!vm.node) {
-          vm.node = wf.descendants[0];
-        }
-      }
-      //remove parent node
-      parentnode.forEach(function (vv) {
-        if (vv !== null) vv.remove();
-      });
-      parentnode = [];
-      if (wf.length > 0) {
-        let names = wf.map((e) => {
-          return e != null ? e.name : null;
-        });
-        vm.names = names;
-        vm.node = wf[selectedParent];
-      }
-      drawNodes(wf.descendants);
-      drawParentFileRelation(wf);
-      drawLinks(nodes);
-      drawParentLinks(parentnode, nodes);
+      drawComponents();
     });
 
     sio.on('taskStateList', (taskStateList, cb) => {
@@ -464,7 +432,7 @@ $(() => {
   $('#graphView').click(function () {
     $('#project_manage_area').hide();
     $('#workflow_manage_area').show();
-    sio.emit('getWorkflow', currentWorkFlow);
+    drawComponents();
   });
 
   // setup context menu
@@ -588,6 +556,47 @@ $(() => {
   }
 
   /**
+   * draw components 
+   */
+  function drawComponents() {
+    // remove all node from workflow editor
+    nodes.forEach(function (v) {
+      if (v !== null) v.remove();
+    });
+    nodes = [];
+    if (currentWf.descendants.length > 0) {
+      let names = currentWf.descendants.map((e) => {
+        return e.name;
+      });
+      vm.names = names;
+      vm.node = currentWf.descendants.find((e) => {
+        return e.ID === selectedNode;
+      });
+      //for initial load
+      if (!vm.node) {
+        vm.node = currentWf.descendants[0];
+      }
+    }
+    //remove parent node
+    parentnode.forEach(function (vv) {
+      if (vv !== null) vv.remove();
+    });
+    parentnode = [];
+    if (currentWf.length > 0) {
+      let names = currentWf.map((e) => {
+        return e != null ? e.name : null;
+      });
+      vm.names = names;
+      vm.node = currentWf[selectedParent];
+    }
+
+    drawNodes(currentWf.descendants);
+    drawParentFileRelation(currentWf);
+    drawLinks(nodes);
+    drawParentLinks(parentnode, nodes);
+  }
+
+  /**
    * draw nodes
    * @param nodeInWF node list in workflow Json
    */
@@ -701,14 +710,12 @@ $(() => {
   * @param  files list in workflow Json
   */
   function drawParentFileRelation(parentwf) {
-    //selectedParent = nodeIndex;
     let node = new svgParentNode.SvgParentNodeUI(svg, sio, parentwf);
     parentnode.push(node);
   }
 
   /**
   * draw cables between Lower and Upper plug Connector and Receptor plug respectively
-  * @param nodeInWF node list in workflow Json
   */
   function drawParentLinks(parentnode, nodes) {
     parentnode.forEach(function (node) {
@@ -734,7 +741,7 @@ $(() => {
     }
     timer = setTimeout(function () {
       //画面リサイズ終了200ミリ秒後に画面再描画する
-      sio.emit('getWorkflow', currentWorkFlow);
+      drawComponents();
     }, 200);
   };
 

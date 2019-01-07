@@ -299,19 +299,21 @@ export class SvgParentNodeUI {
     let boxBbox = this.group.data('boxBbox');
     let receptorPlugs = this.svg.select('.receptorPlug');
     this.connectors.forEach((srcPlug) => {
-      srcPlug.data('forwardTo').forEach((dst) => {
-        let dstPlug = receptorPlugs.members.find((plug) => {
-          return plug.data('ID') === dst.dstNode && plug.data('name') === dst.dstName;
-        });
-        const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
-        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
-        cable.cable.data('dst', dst.dstNode).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
-        this.inputFileLinks.push(cable);
+      if (srcPlug.data('forwardTo') !== undefined) {
+        srcPlug.data('forwardTo').forEach((dst) => {
+          let dstPlug = receptorPlugs.members.find((plug) => {
+            return plug.data('ID') === dst.dstNode && plug.data('name') === dst.dstName;
+          });
+          const cable = new parts.SvgCable(this.svg, config.plug_color.file, 'RL', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+          cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
+          cable.cable.data('dst', dst.dstNode).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
+          this.inputFileLinks.push(cable);
 
-        dstPlug.on('click', (e) => {
-          this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
+          dstPlug.on('click', (e) => {
+            this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
+          });
         });
-      });
+      }
     });
   }
 
