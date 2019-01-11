@@ -12,6 +12,12 @@ let stdoutLogReceiveCount = 0;
 let stderrLogReceiveCount = 0;
 let sshoutLogReceiveCount = 0;
 let ssherrLogReceiveCount = 0;
+let debugMsgLengthArray = [];
+let infoMsgLengthArray = [];
+let stdoutMsgLengthArray = [];
+let stderrMsgLengthArray = [];
+let sshoutMsgLengthArray = [];
+let ssherrMsgLengthArray = [];
 
 export default function (socket) {
     // initial enable log
@@ -87,11 +93,12 @@ export default function (socket) {
 
 function addDebugLog(msg) {
     var logText = document.getElementById("logDebugLog");
-    logText.textContent += msg.toString() + '\n';
+    var addMessage = msg.toString() + '\n';
+    logText.textContent += addMessage;
+    debugMsgLengthArray.push(addMessage.length);
     if (debugLogReceiveCount > 1000) {
-        var deleteTargetIndex = logText.textContent.indexOf('\n')
-        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
-        logText.textContent = logText.textContent.split(str).join('');
+        logText.textContent = logText.textContent.substr(debugMsgLengthArray[0]);
+        debugMsgLengthArray.shift();
     }
     debugLogReceiveCount++;
     logText.scrollTop = logText.scrollHeight;
@@ -102,11 +109,13 @@ function addInfoLog(msg) {
         $('#enableINFO').css('color', "red");
     }
     var logText = document.getElementById("logInfoLog");
-    logText.textContent += msg.toString() + '\n';
+    var addMessage = msg.toString() + '\n';
+    console.log(addMessage);
+    logText.textContent += addMessage;
+    infoMsgLengthArray.push(addMessage.length);
     if (infoLogReceiveCount > 1000) {
-        var deleteTargetIndex = logText.textContent.indexOf('\n')
-        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
-        logText.textContent = logText.textContent.split(str).join('');
+        logText.textContent = logText.textContent.substr(infoMsgLengthArray[0]);
+        infoMsgLengthArray.shift();
     }
     infoLogReceiveCount++;
     logText.scrollTop = logText.scrollHeight;
@@ -117,11 +126,12 @@ function addStdoutLog(msg) {
         $('#enableStdout').css('color', "red");
     }
     var logText = document.getElementById("logStdoutLog");
-    logText.textContent += msg.toString() + '\n';
+    var addMessage = msg.toString() + '\n';
+    logText.textContent += addMessage;
+    stdoutMsgLengthArray.push(addMessage.length);
     if (stdoutLogReceiveCount > 1000) {
-        var deleteTargetIndex = logText.textContent.indexOf('\n')
-        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
-        logText.textContent = logText.textContent.split(str).join('');
+        logText.textContent = logText.textContent.substr(stdoutMsgLengthArray[0]);
+        stdoutMsgLengthArray.shift();
     }
     stdoutLogReceiveCount++;
     logText.scrollTop = logText.scrollHeight;
@@ -132,11 +142,12 @@ function addStderrLog(msg) {
         $('#enableStderr').css('color', "red");
     }
     var logText = document.getElementById("logStderrLog");
-    logText.textContent += msg.toString() + '\n';
+    var addMessage = msg.toString() + '\n';
+    logText.textContent += addMessage;
+    stderrMsgLengthArray.push(addMessage.length);
     if (stderrLogReceiveCount > 1000) {
-        var deleteTargetIndex = logText.textContent.indexOf('\n')
-        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
-        logText.textContent = logText.textContent.split(str).join('');
+        logText.textContent = logText.textContent.substr(stderrMsgLengthArray[0]);
+        stderrMsgLengthArray.shift();
     }
     stderrLogReceiveCount++;
     logText.scrollTop = logText.scrollHeight;
@@ -147,11 +158,12 @@ function addSSHoutLog(msg) {
         $('#enableSSHout').css('color', "red");
     }
     var logText = document.getElementById("logSSHoutLog");
-    logText.textContent += msg.toString() + '\n';
+    var addMessage = msg.toString() + '\n';
+    logText.textContent += addMessage;
+    sshoutMsgLengthArray.push(addMessage.length);
     if (sshoutLogReceiveCount > 1000) {
-        var deleteTargetIndex = logText.textContent.indexOf('\n')
-        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
-        logText.textContent = logText.textContent.split(str).join('');
+        logText.textContent = logText.textContent.substr(sshoutMsgLengthArray[0]);
+        sshoutMsgLengthArray.shift();
     }
     sshoutLogReceiveCount++;
     logText.scrollTop = logText.scrollHeight;
@@ -162,11 +174,12 @@ function addSSHerrLog(msg) {
         $('#enableSSHerr').css('color', "red");
     }
     var logText = document.getElementById("logSSHerrLog");
-    logText.textContent += msg.toString() + '\n';
+    var addMessage = msg.toString() + '\n';
+    logText.textContent += addMessage;
+    ssherrMsgLengthArray.push(addMessage.length);
     if (ssherrLogReceiveCount > 1000) {
-        var deleteTargetIndex = logText.textContent.indexOf('\n')
-        var str = logText.textContent.slice(0, deleteTargetIndex + 1);
-        logText.textContent = logText.textContent.split(str).join('');
+        logText.textContent = logText.textContent.substr(ssherrMsgLengthArray[0]);
+        ssherrMsgLengthArray.shift();
     }
     ssherrLogReceiveCount++;
     logText.scrollTop = logText.scrollHeight;

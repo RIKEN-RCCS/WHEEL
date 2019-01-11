@@ -46,7 +46,6 @@ $(() => {
   let presentState = '';
   //taskStateList
   let updateList = [];
-
   let projectRootDir = currentWorkDir;
 
   // create vue.js instance for property subscreen
@@ -273,12 +272,13 @@ $(() => {
 
   const svg = SVG('node_svg');
   sio.on('connect', function () {
-    fb.request('getFileList', currentWorkDir, null);
+    console.log('connect');
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
-    sio.emit('getTaskStateList', rootWorkflow);
     sio.emit('getHostList', true);
+    sio.emit('getTaskStateList', rootWorkflow);
+    fb.request('getFileList', currentWorkDir, null);
 
     sio.on('showMessage', showMessage);
     sio.on('askPassword', (hostname) => {
@@ -344,7 +344,6 @@ $(() => {
 
     /*create host, queue selectbox*/
     sio.on('hostList', function (hostlist) {
-      console.log("get hostList");
       vm.hostList = hostlist;
     });
 
@@ -362,7 +361,7 @@ $(() => {
   });
   $('#clean_menu').on('click', function () {
     updateList.splice(0, updateList.length);
-    // パンくずリストをrootに更新
+    // update pankuzu
     let rootNodeStack = nodeStack[0];
     let rootDirStack = dirStack[0];
     let rootWfStack = wfStack[0];
@@ -424,7 +423,7 @@ $(() => {
   uploader.listenOnDrop(document.getElementById('fileBrowser'));
   uploader.listenOnInput(document.getElementById('fileSelector'));
 
-  //ボタンでのviewの切り替え
+  // change view mode
   $('#listView').click(function () {
     $('#workflow_manage_area').hide();
     $('#project_manage_area').show();
@@ -468,7 +467,7 @@ $(() => {
     return position;
   }
 
-  //タスクのドラッグアンドドロップ操作
+  // create component by drag and drop
   $('#workflowComponents ul').mouseover(function () {
     var target = $(this).attr("id");
     var objectDrag = document.getElementById(target);
@@ -489,8 +488,7 @@ $(() => {
     };
   });
 
-  //タスクライブラリーの表示非表示
-  // function definition
+  // library open/close
   function showTaskLibrary() {
     $('#taskLibraryButton').show().animate({ left: '256px' }, 50);
     $('#taskLibraryMenu').show().animate({ width: '256px', 'min-width': '256px' }, 50);
@@ -614,22 +612,17 @@ $(() => {
         let name = target.name;
         let nodePath = currentWorkDir + "\\" + name;
         fb.request('getFileList', nodePath, null);
-        //プロパティ表示用相対パス
         let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + name;
         let nodeType = target.type;
-        //iconの変更
         let nodeIconPath = config.node_icon[nodeType];
         $('#img_node_type').attr("src", nodeIconPath);
 
-        // taskコンポーネント時の描画処理
         if (nodeType === 'task') {
-          //remotehostリストの設定
           sio.emit('getHostList', true);
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
         $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
-        //コンポーネント選択時のカラー着色
         drawStrokeColor(e);
       })
         .onDblclick(function (e) {
@@ -690,6 +683,9 @@ $(() => {
     });
   }
 
+  /**
+  * draw component selected color
+  */
   function drawStrokeColor(node) {
     $(`.titleFrame`).css('stroke', 'none');
     var targetId = $(node.target).attr("id");
@@ -740,7 +736,6 @@ $(() => {
       clearTimeout(timer);
     }
     timer = setTimeout(function () {
-      //画面リサイズ終了200ミリ秒後に画面再描画する
       drawComponents();
     }, 200);
   };
@@ -753,7 +748,6 @@ $(() => {
         breadcrumb.append(`<span class="img_pankuzuArrow_icon"><img src="/image/img_pankuzuArrow.png"  /></span>`)
       }
       let id = `breadcrumbButton_${index}`;
-      //iconの設定
       let nodeIconPath = config.node_icon[nodeTypeStack[index]];
       let correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
       let nodeColor = config.node_color[nodeTypeStack[index]];
@@ -818,6 +812,10 @@ $(() => {
     return arrangedList;
   }
 
+  function escapeCharacter(string) {
+    return string.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
+  }
+
   function updateTaskStateTable(taskStateList) {
     $('#project_table_body').empty();
     for (let i = 0; i < taskStateList.length; i++) {
@@ -850,11 +848,13 @@ $(() => {
         let previousAncestorsNameList;
         let taskId;
         let ancestorsId;
+        let ancestorsIdTemp;
         let j;
         if (i === 0) {
           for (j = 0; j < ancestorsNameList.length; j++) {
             let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
-            ancestorsId = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
+            ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
+            ancestorsId = escapeCharacter(ancestorsIdTemp);
             taskStateTable.append(`<tr class="project_table_component" ><td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
             $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
             let loopMarginArea = 32 * j;
@@ -876,7 +876,8 @@ $(() => {
           for (j = 0; j < ancestorsNameList.length; j++) {
             if (viewFlag[j]) {
               let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
-              ancestorsId = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
+              ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
+              ancestorsId = escapeCharacter(ancestorsIdTemp);
               taskStateTable.append(`<tr class="project_table_component" ><td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
               $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
               let loopMarginArea = 32 * j;
@@ -899,7 +900,7 @@ $(() => {
     }
   }
 
-  //プロパティエリアのファイル、フォルダー新規作成
+  //create File/Folder in property 'Files'
   $('#createFileButton').click(function () {
     const html = '<p class="dialogTitle">New file name (ex. aaa.txt)</p><input type=text id="newFileName" class="dialogTextbox">'
     dialogWrapper('#dialog', html)
@@ -947,15 +948,6 @@ $(() => {
     var prjDesc = document.getElementById('projectDescription').value;
     sio.emit('updateProjectJson', 'description', prjDesc);
   });
-
-  function getSelectLabel(index) {
-    var obj = document.getElementById(index);
-    var idx = obj.selectedIndex;       //インデックス番号を取得
-    var val = obj.options[idx].value;  //value値を取得
-    var txt = obj.options[idx].text;  //ラベルを取得
-  }
-
-  // GUI表示関係処理
 
   //header buttons
   $('#run_button').mouseover(function () {
