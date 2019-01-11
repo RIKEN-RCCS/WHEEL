@@ -110,7 +110,6 @@ function addInfoLog(msg) {
     }
     var logText = document.getElementById("logInfoLog");
     var addMessage = msg.toString() + '\n';
-    console.log(addMessage);
     logText.textContent += addMessage;
     infoMsgLengthArray.push(addMessage.length);
     if (infoLogReceiveCount > 1000) {
