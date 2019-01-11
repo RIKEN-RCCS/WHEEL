@@ -24,7 +24,7 @@ const defaultSettings = {
       type: path.resolve(__dirname, "flexibleConsoleLog")
     },
     console: {
-      type: "loglevelFilter",
+      type: "logLevelFilter",
       appender: "flexConsole",
       level: "debug"
     },

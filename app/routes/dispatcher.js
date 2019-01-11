@@ -191,6 +191,12 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
         logger.debug("return value of conditional expression = ", code);
         resolve(code === 0);
       });
+      cp.stdout.on("data", (data)=>{
+        logger.trace(data.toString());
+      });
+      cp.stderr.on("data", (data)=>{
+        logger.trace(data.toString());
+      });
     } else {
       logger.debug("evalute ", condition);
       let conditionExpression = "";
