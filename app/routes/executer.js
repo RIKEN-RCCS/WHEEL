@@ -118,10 +118,12 @@ async function gatherFiles(ssh, task, rt) {
       return e.name;
     });
 
+  const promises=[];
   if (outputFilesArray.length > 0) {
-    const outputFiles = `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
-    logger.debug("try to get outputFiles", outputFiles, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir);
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null);
+    logger.debug("try to get outputFiles", outputFilesArray, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir);
+    promises = outputFilesArray.map((outputFile)=>{
+      return ssh.recv(path.join(task.remoteWorkingDir,outputFile), path.join(task.workingDir, outputFile), null, null);
+    });
   }
 
   //get files which match include filter
@@ -129,7 +131,7 @@ async function gatherFiles(ssh, task, rt) {
     const include = `${task.remoteWorkingDir}/${parseFilter(task.include)}`;
     const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
     logger.debug("try to get ", include, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir, "\n  exclude filter:", exclude);
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude);
+    await ssh.recv(include, task.workingDir, null, exclude);
   }
 
   //clean up remote working directory
