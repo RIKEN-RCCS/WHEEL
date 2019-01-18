@@ -21,8 +21,7 @@ const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 
 //helper functions
 const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
-const home = rewire("../../../app/routes/home");
-const createNewProject = home.__get__("createNewProject");
+const {createNewProject} = require("../../../app/core/projectFilesOperator");
 const workflowEditor = rewire("../../../app/routes/workflowEditor2");
 const onCreateNode = workflowEditor.__get__("onCreateNode");
 const onUpdateNode = workflowEditor.__get__("onUpdateNode");
@@ -42,8 +41,8 @@ const cb = sinon.stub();
 const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, trace:()=>{},stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
 dummyLogger.error = console.log;
 dummyLogger.warn = console.log;
-//dummyLogger.info=console.log;
-//dummyLogger.debug=console.log;
+dummyLogger.info=console.log;
+dummyLogger.debug=console.log;
 //dummyLogger.stdout=console.log;
 //sinon.spy(dummyLogger, "stdout");
 
@@ -56,7 +55,7 @@ sio.emit = sinon.stub();
 //
 //TODO pass stub to askPassword for remote task test
 //
-describe("project Controller UT", function() {
+describe.only("project Controller UT", function() {
   this.timeout(0);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
@@ -67,14 +66,14 @@ describe("project Controller UT", function() {
     dummyLogger.stderr.reset();
     dummyLogger.sshout.reset();
     dummyLogger.ssherr.reset();
-    await createNewProject(projectRootDir, "testProject");
+    await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
     await openProject(projectRootDir);
   });
   after(async()=>{
     await fs.remove(testDirRoot);
   });
   describe("#onRunProject", ()=>{
-    describe("one local task", ()=>{
+    describe.only("one local task", ()=>{
       beforeEach(async()=>{
         const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
         await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);

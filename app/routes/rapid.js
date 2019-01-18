@@ -6,7 +6,7 @@ const klaw = require("klaw");
 const express = require("express");
 //eslint-disable-next-line new-cap
 const router = express.Router();
-const { gitAdd } = require("./gitOperator");
+const { gitAdd } = require("../core/gitOperator");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("rapid");
 

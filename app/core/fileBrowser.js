@@ -91,7 +91,7 @@ function compare(a, b) {
  * both filter is used.
  * so the only {directory | file} which is valid filter.all and filter.{dir|file} will be sent.
  */
-async function getContents(targetDir, options = {}) {
+async function ls(targetDir, options = {}) {
   const request = path.resolve(options.request != null ? options.request : targetDir);
   const sendDirname = options.sendDirname != null ? options.sendDirname : true;
   const sendFilename = options.sendFilename != null ? options.sendFilename : true;
@@ -161,4 +161,4 @@ async function getContents(targetDir, options = {}) {
   }
   return dirList.sort(compare).concat(fileList.sort(compare));
 }
-module.exports = getContents;
+module.exports = ls;

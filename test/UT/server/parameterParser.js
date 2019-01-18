@@ -4,7 +4,7 @@ const chaiIterator = require("chai-iterator");
 chai.use(chaiIterator);
 
 //testee
-const { workAroundForVersion1, paramVecGenerator } = require("../../../app/routes/parameterParser");
+const { workAroundForVersion1, paramVecGenerator } = require("../../../app/core/parameterParser");
 
 //test data
 const floatCalc = [{

@@ -12,15 +12,18 @@ const bars = "_\-";
 const pathseps = "/\\";
 const metaCharactors = "*?[]{}()!?+@.";
 
+
+//TODO define re object outside of functions
+//
 /**
  * escape meta character of regex (from MDN)
  * please note that this function can not treat '-' in the '[]'
- * @param {string} string - target string which will be escaped
+ * @param {string} target - target string which will be escaped
  * @returns {string} escaped regex string
  */
-function escapeRegExp(string) {
+function escapeRegExp(target) {
   //eslint-disable-next-line no-useless-escape
-  return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
+  return target.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
 function isSane(name){
@@ -37,7 +40,9 @@ function isSane(name){
 }
 
 /**
- * determin specified name is valid file/directory name or not
+ * determin specified name is valid file or directory name or not
+ * @param {strint} name - name to be checked
+ * @return {boolean} - return true if it is ok
  */
 function isValidName(name) {
   if(! isSane(name)){
@@ -50,6 +55,12 @@ function isValidName(name) {
   }
   return true;
 }
+
+/**
+ * determin specified name is valid for inputFilename
+ * @param {strint} name - name to be checked
+ * @return {boolean} - return true if it is ok
+ */
 function isValidInputFilename(name) {
   if(! isSane(name)){
     return false;
@@ -62,6 +73,11 @@ function isValidInputFilename(name) {
   return true;
 }
 
+/**
+ * determin specified name is valid for outputputFilename
+ * @param {string} name - name to be checked
+ * @return {boolean} - return true if it is ok
+ */
 function isValidOutputFilename(name) {
   if(! isSane(name)){
     return false;
@@ -74,12 +90,32 @@ function isValidOutputFilename(name) {
   return true;
 }
 
+/*
+ * get date as string
+ * @param {boolean} humanReadable - option flag for using delimiters(/and:) or not
+ * return {string}
+ */
+function getDateString(humanReadable = false) {
+  const now = new Date();
+  const yyyy = `0000${now.getFullYear()}`.slice(-4);
+  const month = now.getMonth() + 1;
+  const mm = `00${month}`.slice(-2);
+  const dd = `00${now.getDate()}`.slice(-2);
+  const HH = `00${now.getHours()}`.slice(-2);
+  const MM = `00${now.getMinutes()}`.slice(-2);
+  const ss = `00${now.getSeconds()}`.slice(-2);
+  return humanReadable ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
+}
+
+
 module.exports={
+  escapeRegExp,
   isValidName,
   isValidInputFilename,
   isValidOutputFilename,
   reWin32ReservedNames,
   pathseps,
   metaCharactors,
+  getDateString,
   escapeRegExp
 }
