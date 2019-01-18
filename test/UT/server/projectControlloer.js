@@ -55,7 +55,7 @@ sio.emit = sinon.stub();
 //
 //TODO pass stub to askPassword for remote task test
 //
-describe("project Controller UT", function() {
+describe.only("project Controller UT", function() {
   this.timeout(0);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
