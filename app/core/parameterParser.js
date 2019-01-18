@@ -1,6 +1,20 @@
 "use strict";
 const glob = require("glob");
-const { expandArrayOfGlob } = require("./utility");
+
+/**
+ * expand array of glob and return flat array of path
+ * @param {string[]} globs - array contains glob
+ * @param {string} cwd - working directory for globbing
+ * @returns {string[]} - array of path
+ */
+async function expandArrayOfGlob(globs, cwd) {
+  const names = await Promise.all(
+    globs.map((e)=>{
+      return promisify(glob)(e, { cwd });
+    })
+  );
+  return Array.prototype.concat.apply([], names);
+}
 
 function isValidParamAxis(min, max, step) {
   if (max > min) {

@@ -3,35 +3,13 @@ const path = require("path");
 const fs = require("fs-extra");
 const { promisify } = require("util");
 const glob = require("glob");
-const { getDateString, readJsonGreedy } = require("./utility");
+const {readJsonGreedy} = require("../core/fileUtils");
+const {getDateString } = require("../lib/utility");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getCwd } = require("./projectResource");
-const { gitAdd } = require("./gitOperator");
-
-function hasChild(node) {
-  return node.type === "workflow" || node.type === "parameterStudy" || node.type === "for" || node.type === "while" || node.type === "foreach";
-}
-
-function isInitialNode(node) {
-  if (node.previous.length > 0) {
-    return false;
-  }
-
-  if (node.inputFiles.length > 0) {
-    for (const inputFile of node.inputFiles) {
-      const isConnected = inputFile.src.some((e)=>{
-        if (e.srcNode === node.parent) {
-          return false;
-        }
-        return e.srcNode !== null;
-      });
-      if (isConnected) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
+const { gitAdd } = require("../core/gitOperator");
+const {componentJsonReplacer} = require("../core/componentFilesOperator");
+const {hasChild} = require("../core/workflowComponent");
 
 async function getComponentDir(projectRootDir, targetID) {
   const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
@@ -129,14 +107,6 @@ async function updateAndSendProjectJson(emit, projectRootDir, state) {
   emit("projectJson", projectJson);
 }
 
-function componentJsonReplacer(key, value) {
-  if (["handler", "doCleanup", "sbsID"].includes(key)) {
-    //eslint-disable-next-line no-undefined
-    return undefined;
-  }
-  return value;
-}
-
 //component can be one of "path of component Json file", "component json object", or "component's ID"
 async function updateComponentJson(projectRootDir, component, modifier) {
   const componentJson = await getComponent(projectRootDir, component);
@@ -154,14 +124,11 @@ async function updateComponentJson(projectRootDir, component, modifier) {
 }
 
 module.exports = {
-  hasChild,
-  isInitialNode,
   getComponentDir,
   getComponent,
   sendWorkflow,
   getChildren,
   updateAndSendProjectJson,
   updateComponentJson,
-  getComponentRelativePath,
-  componentJsonReplacer
+  getComponentRelativePath
 };
