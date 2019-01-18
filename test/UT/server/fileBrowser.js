@@ -11,10 +11,10 @@ chai.use(require("chai-fs"));
 const rewire = require("rewire");
 
 //testee
-const tmp = rewire("../../../app/routes/fileBrowser");
+const tmp = rewire("../../../app/core/fileBrowser");
 const getSNDs = tmp.__get__("getSNDs");
 const bundleSNDFiles = tmp.__get__("bundleSNDFiles");
-const getContents = require("../../../app/routes/fileBrowser");
+const getContents = require("../../../app/core/fileBrowser");
 
 const testDirRoot = "WHEEL_TEST_TMP";
 describe("file Browser UT", ()=>{

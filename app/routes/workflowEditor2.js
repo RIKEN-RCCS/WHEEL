@@ -5,29 +5,13 @@ const pathIsInside = require("path-is-inside");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
 const { setCwd, getCwd, getLogger } = require("./projectResource");
-const { gitRm, gitAdd, gitResetHEAD } = require("./gitOperator");
-const { replacePathsep, isValidName, readJsonGreedy, convertPathSep, getDateString } = require("./utility");
-const componentFactory = require("./workflowComponent");
+const { gitRm, gitAdd, gitResetHEAD } = require("../core/gitOperator");
+const { replacePathsep, convertPathSep } = require("../core/pathUtils");
+const {readJsonGreedy} = require("../core/fileUtils");
+const {getDateString, isValidName} = require("../lib/utility");
+const componentFactory = require("../core/workflowComponent");
+const {createNewComponent } = require("../core/componentFilesOperator");
 
-/**
- * add suffix to dirname and make directory
- * @param basename dirname
- * @param suffix   number
- * @returns actual directory name
- *
- * makeDir create "basenme+suffix" direcotry. suffix is increased until the dirname is no longer duplicated.
- */
-async function makeDir(basename, argSuffix) {
-  let suffix = argSuffix;
-
-  while (await fs.pathExists(basename + suffix)) {
-    ++suffix;
-  }
-
-  const dirname = basename + suffix;
-  await fs.mkdir(dirname);
-  return dirname;
-}
 
 //this function is used as modifier of updateComponentPath
 function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
@@ -100,18 +84,7 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
 
   try {
     const parentDir = getCwd(projectRootDir);
-    const parentJson = await getComponent(projectRootDir, path.join(parentDir, componentJsonFilename));
-    const parentID = parentJson.ID;
-
-    //create component directory and Json file
-    const absDirName = await makeDir(path.resolve(parentDir, request.type), 0);
-    const newComponent = componentFactory(request.type, request.pos, parentID);
-    newComponent.name = path.basename(absDirName);
-    rt = newComponent;
-    await updateComponentJson(projectRootDir, newComponent);
-
-    //update path map
-    await updateComponentPath(projectRootDir, changeComponentPath.bind(null, newComponent.ID, absDirName));
+    rt = await createNewComponent(projectRootDir, parentDir, request.type, request.pos);
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
     e.projectRootDir = projectRootDir;
@@ -794,6 +767,7 @@ async function onCleanComponent(emit, projectRootDir, targetID, cb) {
     });
     await sendWorkflow(emit, projectRootDir);
   } catch (e) {
+    console.log(e);
     getLogger(projectRootDir).error("reset component failed:", e);
     cb(false);
     return;

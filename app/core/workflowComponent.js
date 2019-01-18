@@ -16,14 +16,14 @@ class BaseWorkflowComponent {
     this.name = null;
     this.description = null;
 
-    /**pointers to previous node */
+    /**pointers to previous component */
     this.previous = [];
 
-    /**pointers to next node */
+    /**pointers to next component */
     this.next = [];
 
     /**
-     * input files from other node
+     * input files from other component
      * each element of inputFiles should be following
      * {
      *   name: "filename or dirname",
@@ -36,7 +36,7 @@ class BaseWorkflowComponent {
     this.inputFiles = [];
 
     /**
-     * output files which will be passed to other node
+     * output files which will be passed to other component
      * each element of outputFiles should be following
      * if name is null or white space, original file name will be used
      * {
@@ -50,7 +50,7 @@ class BaseWorkflowComponent {
     this.outputFiles = [];
 
     /**
-     * node state
+     * component state
      * possible value is one of
      *  - 'not-started'
      *  - 'stage-in'   (task only) transfering files to remote host
@@ -177,35 +177,66 @@ class Foreach extends BaseWorkflowComponent {
 /*
  * factory method for workflow component class
  */
-function factory(type, ...args) {
-  let node;
+function componentFactory(type, ...args) {
+  let component;
 
   switch (type) {
     case "task":
-      node = new Task(...args);
+      component = new Task(...args);
       break;
     case "workflow":
-      node = new Workflow(...args);
+      component = new Workflow(...args);
       break;
     case "PS":
-      node = new ParameterStudy(...args);
+      component = new ParameterStudy(...args);
       break;
     case "if":
-      node = new If(...args);
+      component = new If(...args);
       break;
     case "for":
-      node = new For(...args);
+      component = new For(...args);
       break;
     case "while":
-      node = new While(...args);
+      component = new While(...args);
       break;
     case "foreach":
-      node = new Foreach(...args);
+      component = new Foreach(...args);
       break;
     default:
-      node = null;
+      component = null;
   }
-  return node;
+  return component;
 }
 
-module.exports = factory;
+function hasChild(component) {
+  return component.type === "workflow" || component.type === "parameterStudy" || component.type === "for" || component.type === "while" || component.type === "foreach";
+}
+
+function isInitialComponent(component) {
+  if (component.previous.length > 0) {
+    return false;
+  }
+
+  if (component.inputFiles.length > 0) {
+    for (const inputFile of component.inputFiles) {
+      const isConnected = inputFile.src.some((e)=>{
+        if (e.srcNode === component.parent) {
+          return false;
+        }
+        return e.srcNode !== null;
+      });
+      if (isConnected) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+
+
+module.exports = {
+  componentFactory,
+  hasChild,
+  isInitialComponent
+}

@@ -6,14 +6,20 @@ const path = require("path");
 const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
-const Dispatcher = require("./dispatcher");
-const { getDateString, createSshConfig, readJsonGreedy, emitLongArray } = require("./utility");
+const Dispatcher = require("../core/dispatcher");
+const { createSshConfig, emitLongArray } = require("./utility");
+const { readJsonGreedy } = require("../core/fileUtils");
+const { getDateString } = require("../lib/utility");
 const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, getNumberOfUpdatedTasks, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger, emitEvent } = require("./projectResource");
-const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
-const { cancel } = require("./executer");
+const { getChildren, isInitialNode } = require("./workflowUtil");
+const { getNumberOfUpdatedTasks, emitEvent } = require("./projectResource");
+const { updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, getComponent } = require("./workflowUtil");
+const { hasChild } = require("../core/workflowComponent");
+const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger } = require("./projectResource");
+const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
+const { cancel } = require("../core/executer");
 const { killTask, taskStateFilter } = require("./taskUtil");
+const { validateComponents } = require("../core/componentFilesOperator");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
 async function sendTaskStateList(emit, projectRootDir) {
@@ -82,116 +88,12 @@ function askPassword(sio, hostname) {
   });
 }
 
-async function validateTask(projectRootDir, component, hosts) {
-  if (component.name === null) {
-    return Promise.reject(new Error(`illegal path ${component.name}`));
-  }
-
-  if (component.host !== "localhost") {
-    hosts.push(component.host);
-  }
-
-  if (component.useJobScheduler) {
-    const hostinfo = remoteHost.query("name", component.host);
-    if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
-      return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
-    }
-  }
-
-  if (!(component.hasOwnProperty("script") && typeof component.script === "string")) {
-    return Promise.reject(new Error(`script is not specified ${component.name}`));
-  }
-  const componentDir = await getComponentDir(projectRootDir, component.ID);
-  return fs.access(path.resolve(componentDir, component.script));
-}
-
-async function validateConditionalCheck(component) {
-  if (!(component.hasOwnProperty("condition") && typeof component.condition === "string")) {
-    return Promise.reject(new Error(`condition is not specified ${component.name}`));
-  }
-  return Promise.resolve();
-}
-
-async function validateForLoop(component) {
-  if (!(component.hasOwnProperty("start") && typeof component.start === "number")) {
-    return Promise.reject(new Error(`start is not specified ${component.name}`));
-  }
-
-  if (!(component.hasOwnProperty("step") && typeof component.step === "number")) {
-    return Promise.reject(new Error(`step is not specified ${component.name}`));
-  }
-
-  if (!(component.hasOwnProperty("end") && typeof component.end === "number")) {
-    return Promise.reject(new Error(`end is not specified ${component.name}`));
-  }
-
-  if (component.step === 0 || (component.end - component.start) * component.step < 0) {
-    return Promise.reject(new Error(`inifinite loop ${component.name}`));
-  }
-  return Promise.resolve();
-}
-
-async function validateParameterStudy(projectRootDir, component) {
-  if (!(component.hasOwnProperty("parameterFile") && typeof component.parameterFile === "string")) {
-    return Promise.reject(new Error(`parameter setting file is not specified ${component.name}`));
-  }
-  const componentDir = await getComponentDir(projectRootDir, component.ID);
-  return fs.access(path.resolve(componentDir, component.parameterFile));
-}
-
-async function validateForeach(component) {
-  if (!Array.isArray(component.indexList)) {
-    return Promise.reject(new Error(`index list is broken ${component.name}`));
-  }
-
-  if (component.indexList.length <= 0) {
-    return Promise.reject(new Error(`index list is empty ${component.name}`));
-  }
-  return Promise.resolve();
-}
-
-/**
- * validate all components in workflow and gather remote hosts which is used in tasks
- */
-async function validateComponents(projectRootDir, parentID, hosts) {
-  const promises = [];
-  const children = await getChildren(projectRootDir, parentID);
-
-
-  for (const component of children) {
-    if (component.type === "task") {
-      promises.push(validateTask(projectRootDir, component, hosts));
-    } else if (component.type === "if" || component.type === "while") {
-      promises.push(validateConditionalCheck(component));
-    } else if (component.type === "for") {
-      promises.push(validateForLoop(component));
-    } else if (component.type === "parameterStudy") {
-      promises.push(validateParameterStudy(projectRootDir, component));
-    } else if (component.type === "foreach") {
-      promises.push(validateForeach(component));
-    }
-
-    if (hasChild(component)) {
-      promises.push(validateComponents(projectRootDir, component.ID, hosts));
-    }
-  }
-
-  const hasInitialNode = children.some((component)=>{
-    return isInitialNode(component);
-  });
-
-  if (!hasInitialNode) {
-    promises.push(Promise.reject(new Error("no component can be run")));
-  }
-
-  return Promise.all(promises);
-}
-
 /**
  * check if all scripts and remote host setting are available or not
  */
 async function validationCheck(projectRootDir, rootWfID, sio) {
   let hosts = [];
+  //TODO return hosts
   await validateComponents(projectRootDir, rootWfID, hosts);
   hosts = Array.from(new Set(hosts)); //remove duplicate
 
@@ -219,7 +121,6 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
     //hostInfo.host is hostname or IP address of remote host
     addSsh(projectRootDir, hostInfo.host, arssh);
 
-    //TODO loopで書き直す
     try {
       //1st try
       await arssh.canConnect();
@@ -271,7 +172,6 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
   return Promise.resolve();
 }
 
-
 async function onRunProject(sio, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -283,23 +183,8 @@ async function onRunProject(sio, projectRootDir, cb) {
     getLogger(projectRootDir).debug("used heap size at start point =", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
   }
 
-  let projectJson;
-  try {
-    projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
-  } catch (err) {
-    getLogger(projectRootDir).error("get project state failed:", err);
-    cb(false);
-    return;
-  }
+  await runProject(projectRootDir);
 
-  let rootWF;
-  try {
-    rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
-  } catch (err) {
-    getLogger(projectRootDir).error("read root workflow component failed:", err);
-    cb(false);
-    return;
-  }
 
   const projectState = projectJson.state;
   if (projectState === "not-started") {

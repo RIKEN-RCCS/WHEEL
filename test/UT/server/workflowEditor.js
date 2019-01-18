@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs-extra");
 const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
-const componentFactory = require("../../../app/routes/workflowComponent");
+const componentFactory = require("../../../app/core/workflowComponent");
 const { getComponentDir } = require("../../../app/routes/workflowUtil");
 const getSchema = require("../../../app/db/jsonSchemas");
 const { openProject, setCwd } = require("../../../app/routes/projectResource");
@@ -37,8 +37,7 @@ const testDirRoot = "WHEEL_TEST_TMP";
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const home = rewire("../../../app/routes/home");
-const createNewProject = home.__get__("createNewProject");
+const {createNewProject} = require("../../../app/core/projectFilesOperator");
 
 const grandsonSchema = {
   type: "array",
@@ -84,7 +83,7 @@ describe("workflow editor UT", ()=>{
      *  - wf1(hoge) -> foreach0(hoge)
      */
 
-    await createNewProject(projectRootDir, "dummy project");
+    await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
     const rootWf = await fs.readJson(path.join(projectRootDir, componentJsonFilename));
 
     const task0 = componentFactory("task", { x: 0, y: 0 }, rootWf.ID);
@@ -165,7 +164,7 @@ describe("workflow editor UT", ()=>{
     foreach0Schema.addValue("previous", components.wf1.ID);
     foreach0Schema.addInputFile("hoge", components.wf1.ID, "hoge");
 
-    rootSchema = getSchema("workflow", "dummy project");
+    rootSchema = getSchema("workflow", "test project");
     rootSchema.properties.ID = { enum: [components.root.ID] };
     rootSchema.required.push("descendants");
     rootSchema.properties.descendants = {

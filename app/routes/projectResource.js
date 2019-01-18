@@ -4,7 +4,7 @@ const { promisify } = require("util");
 const EventEmitter = require("events");
 const fs = require("fs-extra");
 const glob = require("glob");
-const { gitResetHEAD } = require("./gitOperator");
+const { gitResetHEAD } = require("../core/gitOperator");
 const { taskStateFilter } = require("./taskUtil");
 const orgGetLogger = require("../logSettings").getLogger;
 

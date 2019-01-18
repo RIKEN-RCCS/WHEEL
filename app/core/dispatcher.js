@@ -9,11 +9,35 @@ const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
-const { addX, isFinishedState, readJsonGreedy, sanitizePath, convertPathSep, replacePathsep } = require("./utility");
+const { isFinishedState} = require("./utility");
 const { getDateString } = require("./utility");
+const  {sanitizePath, convertPathSep, replacePathsep }= require("./pathUtils");
+const {readJsonGreedy, addX } = require("./fileUtils");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
-const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
-const { emitEvent, addDispatchedTask } = require("./projectResource");
+const { componentJsonReplacer } = require("./componentFilesOperator");
+const { emitEvent, addDispatchedTask } = require("../routes/projectResource");
+const { isInitialComponent } = require("./workflowComponent");
+
+
+const silentLogger = {
+  error: ()=>{},
+  warn: ()=>{},
+  info: ()=>{},
+  debug: ()=>{},
+  trace:()=>{},
+  stdout: ()=>{},
+  stderr: ()=>{},
+  sshout: ()=>{},
+  ssherr: ()=>{}
+};
+
+/**
+ * check state is finished or not
+ * @param {string} state - state string
+ */
+function isFinishedState(state) {
+  return state === "finished" || state === "failed";
+}
 
 /**
  * deliver src to dst
@@ -247,7 +271,7 @@ class Dispatcher extends EventEmitter {
     this.cwfID = cwfID;
     this.cwfDir = cwfDir;
     this.projectStartTime = startTime;
-    this.logger = logger;
+    this.logger = logger ? logger : silentLogger;
     this.componentPath = componentPath;
     this.ancestorsType = ancestorsType;
 
@@ -266,9 +290,18 @@ class Dispatcher extends EventEmitter {
     if (this.cwfJson.cleanupFlag !== "2") {
       this.doCleanup = this.cwfJson.cleanupFlag === "0";
     }
-    const childComponents = await getChildren(this.projectRootDir, this.cwfID);
+
+    const children = await promisify(glob)(path.join(this.cwfDir, "*", componentJsonFilename));
+    const tmp = await Promise.all(children.map((e)=>{
+      return readJsonGreedy(e);
+    }));
+
+    const childComponents = await tmp.filter((e)=>{
+      return !e.subComponent;
+    });
+
     this.currentSearchList = childComponents.filter((component)=>{
-      return isInitialNode(component);
+      return isInitialComponent(component);
     });
     this.logger.debug("initial tasks : ", this.currentSearchList.map((e)=>{
       return e.name;

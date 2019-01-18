@@ -6,7 +6,7 @@ const fs = require("fs-extra");
 const klaw = require("klaw");
 const nodegit = require("nodegit");
 const glob = require("glob");
-const { replacePathsep } = require("./utility");
+const { replacePathsep } = require("./pathUtils");
 
 /**
  * git operation class
@@ -220,10 +220,10 @@ async function gitResetHEAD(rootDir, filePatterns) {
   return git.resetHEAD(filePatterns);
 }
 
-
-module.exports.gitInit = gitInit;
-module.exports.gitCommit = gitCommit;
-module.exports.gitAdd = gitAdd;
-module.exports.gitRm = gitRm;
-module.exports.gitResetHEAD = gitResetHEAD;
-module.exports.getGitOperator = getGitOperator;
+module.exports={
+  gitInit,
+  gitCommit,
+  gitAdd,
+  gitRm,
+  gitResetHEAD
+}
