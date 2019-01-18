@@ -532,7 +532,7 @@ class Dispatcher extends EventEmitter {
     }
 
     //determine old loop block directory
-    let srcDir = component.hasOwnProperty("currentIndex") ? `${component.originalName}_${component.currentIndex}` : component.name;
+    let srcDir = component.hasOwnProperty("currentIndex") ? `${component.originalName}_${sanitizePath(component.currentIndex)}` : component.name;
     srcDir = path.resolve(this.cwfDir, srcDir);
 
     //update index variable(component.currentIndex)

@@ -1,10 +1,10 @@
 'use strict';
 
 
-//blacklist
-const win32reservedName = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
-const onlyWhilteSpace = /^\s*$/;
-//whitelist
+//NG
+const reWin32ReservedNames = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
+const reOnlyWhilteSpace = /^\s*$/;
+//OK
 const alphanumeric = "a-zA-Z0-9";
 //due to escapeRegExp's spec, bars must be added separately any other regexp strings
 //eslint-disable-next-line no-useless-escape
@@ -27,10 +27,10 @@ function isSane(name){
   if (typeof name !== "string") {
     return false;
   }
-  if(onlyWhilteSpace.test(name)){
+  if(reOnlyWhilteSpace.test(name)){
     return false
   }
-  if (win32reservedName.test(name)) {
+  if (reWin32ReservedNames.test(name)) {
     return false;
   }
   return true;
@@ -78,5 +78,8 @@ module.exports={
   isValidName,
   isValidInputFilename,
   isValidOutputFilename,
+  reWin32ReservedNames,
+  pathseps,
+  metaCharactors,
   escapeRegExp
 }

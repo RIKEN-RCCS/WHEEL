@@ -7,7 +7,7 @@ const Mode = require("stat-mode");
 const promiseRetry = require("promise-retry");
 const glob = require("glob");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
+const {pathseps, metaCharactors, reWin32ReservedNames, escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
 
 /**
  * replace path separator by native path separator
@@ -173,9 +173,11 @@ async function readJsonGreedy(filename) {
  * @returns {string} - sanitized path
  */
 function sanitizePath(target, replacer = "_") {
-  //replace path.sep by '_'
-  const re = path.sep === path.win32.sep ? new RegExp(`\\${path.win32.sep}`, "g") : new RegExp(path.posix.sep, "g");
-  let sanitized = target.toString().replace(re, replacer);
+  //replace danger chars
+  let sanitized = target.toString().replace(new RegExp(`[${escapeRegExp(pathseps+metaCharactors+"~.=")}]`, "g"), replacer);
+
+  //replace win32 reserved names
+  sanitized = sanitized.replace(new RegExp(reWin32ReservedNames,"gi"), replacer);
 
   //remove trailing replacer
   sanitized = sanitized.endsWith(replacer) ? sanitized.slice(0, -1) : sanitized;
