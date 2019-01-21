@@ -62,6 +62,10 @@ async function replaceByNunjucks(templateRoot, instanceRoot, targetFiles, params
   );
 }
 
+//TODO パラメータ展開後の特定のインスタンスのみにファイルをコピーする時は、recipe.dstNameに
+//固定値を書くので、このままだとfs.copyでscatterのエントリ数分上書きを繰り返すことになる。
+//実際にコピーする前にsrc/dstペアから重複を取り除く必要あり
+//gather Fileも同様にする?
 async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
   return Promise.all(
     scatterRecipe.map(async(e)=>{
