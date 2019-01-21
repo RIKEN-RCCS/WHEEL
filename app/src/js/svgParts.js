@@ -42,8 +42,11 @@ function collisionDetection(svg, counterpart, x, y) {
     const connectorHeight = 32;
     let connectorCenterXpos = x + connectorWidth * 0.5;
     let connectorCenterYpos = y + connectorHeight * 0.5;
-    let targetX = (points[0].x + points[1].x) * 0.5;
-    let targetY = (points[0].y + points[3].y) * 0.5;
+    // replace points[0] -> .getItem() method for Edge browse 
+    // let targetX = (points[0].x + points[1].x) * 0.5;
+    // let targetY = (points[0].y + points[3].y) * 0.5;
+    let targetX = (points.getItem(0).x + points.getItem(1).x) * 0.5;
+    let targetY = (points.getItem(0).y + points.getItem(3).y) * 0.5;
     let distance2 = (targetX - connectorCenterXpos) * (targetX - connectorCenterXpos) + (targetY - connectorCenterYpos) * (targetY - connectorCenterYpos);
 
     if (minDistance2 > distance2) {
@@ -58,11 +61,16 @@ function collisionDetection(svg, counterpart, x, y) {
       nearestPlug = v[i];
     }
   });
-  // 最近傍plugの頂点座標から当たり領域を作成
-  let xPoints = Array.from(nearestPlugPoints).map((p) => {
+  // object SVGPointList(nearestPlugPoints)-> object array(arrangeSVGPointList) for Edge browse.
+  let arrangeSVGPointList = [];
+  for (var svgPointListIndex = 0; svgPointListIndex < 4; svgPointListIndex++) {
+    arrangeSVGPointList.push(nearestPlugPoints.getItem(svgPointListIndex));
+  }
+
+  let xPoints = Array.from(arrangeSVGPointList).map((p) => {
     return p.x;
   });
-  let yPoints = Array.from(nearestPlugPoints).map((p) => {
+  let yPoints = Array.from(arrangeSVGPointList).map((p) => {
     return p.y;
   });
   let minX = Math.min(...xPoints);
