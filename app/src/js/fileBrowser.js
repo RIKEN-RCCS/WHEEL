@@ -154,6 +154,17 @@ export default class {
           opt.$menu.css({ top: y - menuHeight * 2, left: x - menuWidth - 1 });
         }
       },
+      events: {
+        show: function () {
+          var dataType = $(this).data('type');
+          if (dataType === 'file' || dataType === 'dir') {
+            return true;
+          }
+          else {
+            return false;
+          }
+        }
+      },
       build: this.createContextMenu.bind(this, additionalMenu)
     });
   }
