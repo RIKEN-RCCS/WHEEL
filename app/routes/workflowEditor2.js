@@ -774,9 +774,8 @@ async function onCleanComponent(emit, projectRootDir, targetID, cb) {
     const targetDir = await getComponentDir(projectRootDir, targetID);
     const descendantsID = await getDescendantsID(projectRootDir, targetID);
 
-    console.log("remove target =", targetDir);
     await fs.remove(targetDir);
-    const pathSpec = `${path.relative(projectRootDir, targetDir)}/*`;
+    const pathSpec = `${replacePathsep(path.relative(projectRootDir, targetDir))}/*`;
     await gitResetHEAD(projectRootDir, pathSpec);
 
     //remove all non-existing components from component Path
