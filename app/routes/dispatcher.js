@@ -641,9 +641,9 @@ class Dispatcher extends EventEmitter {
         p[c.key] = c.value;
         return p;
       }, {});
-      const newName = paramVec.reduce((p, e)=>{
-        return `${p}_${e.key}_${sanitizePath(e.value)}`;
-      }, component.name);
+      const newName = sanitizePath(paramVec.reduce((p, e)=>{
+        return `${p}_${e.key}_${e.value}`;
+      }, component.name));
       const instanceRoot = path.resolve(this.cwfDir, newName);
 
       const options = { overwrite: component.forceOverwrite };
