@@ -72,14 +72,14 @@ export default function (socket) {
 
             case "enableSSHout":
                 receiveSSHoutLog = true;
-                $('#enableINFO').css('color', "#FFFFFF");
+                $('#enableSSHout').css('color', "#FFFFFF");
                 $('#logSSHoutLog').show();
                 $('#enableSSHout').css('border-bottom-color', "#88BB00");
                 break;
 
             case "enableSSHerr":
                 receiveSSHerrLog = true;
-                $('#enableINFO').css('color', "#FFFFFF");
+                $('#enableSSHerr').css('color', "#FFFFFF");
                 $('#logSSHerrLog').show();
                 $('#enableSSHerr').css('border-bottom-color', "#88BB00");
                 break;
