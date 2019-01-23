@@ -45,7 +45,7 @@
   "node_icon": {
     "task": "/image/img_task.png",
     "taskAndUsejobscheluler": "/image/img_task_job.png",
-    "remotetask": "/image/img_remotetask.png",
+    "remotetask": "/image/img_remoteTask.png",
     "remotetaskAndUsejobscheluler": "/image/img_remotetask_job.png",
     "workflow": "/image/img_workflow.png",
     "for": "/image/img_for.png",
