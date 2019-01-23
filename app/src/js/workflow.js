@@ -441,7 +441,7 @@ $(() => {
     // reposition: false,
     itemClickEvent: "click",
     position: function (opt, x, y) {
-      opt.$menu.css({ top: y, left: x + 1 })
+      opt.$menu.css({ top: y, left: x + 2 })
     },
     items: {
       'delete': {

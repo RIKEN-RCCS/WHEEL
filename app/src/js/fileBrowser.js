@@ -140,7 +140,7 @@ export default class {
     $.contextMenu({
       selector: fileList,
       position: function (opt, x, y) {
-        opt.$menu.css({ top: y, left: x + 1 });
+        opt.$menu.css({ top: y, left: x + 2 });
         //contextmenu item size
         var menuWidth = 134;
         var menuHeight = 38;
