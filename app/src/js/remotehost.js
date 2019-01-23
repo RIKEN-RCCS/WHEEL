@@ -179,9 +179,8 @@ $(() => {
     dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {
         const requested = fb.getRequestedPath();
-        const pathSep = requested[0] === '/' ? '/': '\\';
+        const pathSep = requested[0] === '/' ? '/' : '\\';
         let target = requested + pathSep + fb.getLastClicked();
-        console.log(target);
         socket.emit('add', target);
         vm.newHostInfo.keyFile = target;
       });

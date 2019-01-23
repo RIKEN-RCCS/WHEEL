@@ -205,10 +205,11 @@ $(() => {
     filePath = $(this).attr("data-path");
     filename = $(this).attr("data-name");
     const datatype = $(this).attr("data-type");
-    let replacePath = projectRootDir + "\\";
-    let currentDirPath = filePath.replace(replacePath, "") + "/" + filename;
+    const pathSep = filePath[0] === '/' ? '/' : '\\';
+    let replacePath = projectRootDir + pathSep;
+    let currentDirPath = filePath.replace(replacePath, "") + pathSep + filename;
     filePathStack.push(filePath);
-    $('#componentPath').html("./" + currentDirPath);
+    $('#componentPath').html("." + pathSep + currentDirPath);
     let backDirHtml;
     if (datatype === "snd") {
       backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}"><img src="/image/img_filesToSND.png" alt="config" class="backButton"></button>`;
@@ -223,8 +224,9 @@ $(() => {
   $(document).on('click', '#dirBackButton', function () {
     if (filePathStack.length !== 0) {
       filePath = filePathStack[filePathStack.length - 1];
-      let replacePath = projectRootDir + "\\";
-      let fileListDirPath = "./" + filePath.replace(replacePath, "");
+      const pathSep = filePath[0] === '/' ? '/' : '\\';
+      let replacePath = projectRootDir + pathSep;
+      let fileListDirPath = "." + pathSep + filePath.replace(replacePath, "");
       fb.request('getFileList', filePath, null);
       $('#componentPath').html(fileListDirPath);
       filePathStack.pop();
@@ -610,9 +612,10 @@ $(() => {
           return e.ID === nodeIndex;
         });
         let name = target.name;
-        let nodePath = currentWorkDir + "\\" + name;
+        const pathSep = currentWorkDir[0] === '/' ? '/' : '\\';
+        let nodePath = currentWorkDir + pathSep + name;
         fb.request('getFileList', nodePath, null);
-        let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + "/" + name;
+        let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + pathSep + name;
         let nodeType = target.type;
         let nodeIconPath = config.node_icon[nodeType];
         $('#img_node_type').attr("src", nodeIconPath);
