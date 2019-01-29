@@ -12,12 +12,6 @@ let stdoutLogReceiveCount = 0;
 let stderrLogReceiveCount = 0;
 let sshoutLogReceiveCount = 0;
 let ssherrLogReceiveCount = 0;
-let debugMsgLengthArray = [];
-let infoMsgLengthArray = [];
-let stdoutMsgLengthArray = [];
-let stderrMsgLengthArray = [];
-let sshoutMsgLengthArray = [];
-let ssherrMsgLengthArray = [];
 
 export default function (socket) {
     // initial enable log
@@ -92,94 +86,112 @@ export default function (socket) {
 }
 
 function addDebugLog(msg) {
-    var logText = document.getElementById("logDebugLog");
-    var addMessage = msg.toString() + '\n';
-    logText.textContent += addMessage;
-    debugMsgLengthArray.push(addMessage.length);
-    if (debugLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.substr(debugMsgLengthArray[0]);
-        debugMsgLengthArray.shift();
+    var debugLogID = `debug_${debugLogReceiveCount}`
+    var logContent = document.getElementById("logDebugLog");
+    var addMessage = msg.toString();
+    var maxViewLog = 1000;
+    logContent.insertAdjacentHTML("beforeend", `<pre id=${debugLogID} class="logContent">${addMessage}</pre>`);
+    if (debugLogReceiveCount > maxViewLog) {
+        let targetIndex = debugLogReceiveCount - maxViewLog - 1;
+        let targetElementID = `debug_${targetIndex}`
+        let deleteElement = document.getElementById(targetElementID);
+        logContent.removeChild(deleteElement);
     }
     debugLogReceiveCount++;
-    logText.scrollTop = logText.scrollHeight;
+    logContent.scrollTop = logContent.scrollHeight;
 }
 
 function addInfoLog(msg) {
     if (receiveINFOLog === false && firstRecieveFlag === false) {
         $('#enableINFO').css('color', "red");
     }
-    var logText = document.getElementById("logInfoLog");
-    var addMessage = msg.toString() + '\n';
-    logText.textContent += addMessage;
-    infoMsgLengthArray.push(addMessage.length);
-    if (infoLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.substr(infoMsgLengthArray[0]);
-        infoMsgLengthArray.shift();
+    var infoLogID = `info_${infoLogReceiveCount}`
+    var logContent = document.getElementById("logInfoLog");
+    var addMessage = msg.toString();
+    var maxViewLog = 1000;
+    logContent.insertAdjacentHTML("beforeend", `<pre id=${infoLogID} class="logContent">${addMessage}</pre>`);
+    if (infoLogReceiveCount > maxViewLog) {
+        let targetIndex = infoLogReceiveCount - maxViewLog - 1;
+        let targetElementID = `info_${targetIndex}`
+        let deleteElement = document.getElementById(targetElementID);
+        logContent.removeChild(deleteElement);
     }
     infoLogReceiveCount++;
-    logText.scrollTop = logText.scrollHeight;
+    logContent.scrollTop = logContent.scrollHeight;
 }
 
 function addStdoutLog(msg) {
     if (receiveStdoutLog === false) {
         $('#enableStdout').css('color', "red");
     }
-    var logText = document.getElementById("logStdoutLog");
-    var addMessage = msg.toString() + '\n';
-    logText.textContent += addMessage;
-    stdoutMsgLengthArray.push(addMessage.length);
-    if (stdoutLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.substr(stdoutMsgLengthArray[0]);
-        stdoutMsgLengthArray.shift();
+    var stdoutLogID = `stdout_${stdoutLogReceiveCount}`
+    var logContent = document.getElementById("logStdoutLog");
+    var addMessage = msg.toString();
+    var maxViewLog = 1000;
+    logContent.insertAdjacentHTML("beforeend", `<pre id=${stdoutLogID} class="logContent">${addMessage}</pre>`);
+    if (stdoutLogReceiveCount > maxViewLog) {
+        let targetIndex = stdoutLogReceiveCount - maxViewLog - 1;
+        let targetElementID = `stdout_${targetIndex}`
+        let deleteElement = document.getElementById(targetElementID);
+        logContent.removeChild(deleteElement);
     }
     stdoutLogReceiveCount++;
-    logText.scrollTop = logText.scrollHeight;
+    logContent.scrollTop = logContent.scrollHeight;
 }
 
 function addStderrLog(msg) {
     if (receiveStderrLog === false) {
         $('#enableStderr').css('color', "red");
     }
-    var logText = document.getElementById("logStderrLog");
-    var addMessage = msg.toString() + '\n';
-    logText.textContent += addMessage;
-    stderrMsgLengthArray.push(addMessage.length);
-    if (stderrLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.substr(stderrMsgLengthArray[0]);
-        stderrMsgLengthArray.shift();
+    var stderrLogID = `stderr_${stderrLogReceiveCount}`
+    var logContent = document.getElementById("logStderrLog");
+    var addMessage = msg.toString();
+    var maxViewLog = 1000;
+    logContent.insertAdjacentHTML("beforeend", `<pre id=${stderrLogID} class="logContent">${addMessage}</pre>`);
+    if (stderrLogReceiveCount > maxViewLog) {
+        let targetIndex = stderrLogReceiveCount - maxViewLog - 1;
+        let targetElementID = `stderr_${targetIndex}`
+        let deleteElement = document.getElementById(targetElementID);
+        logContent.removeChild(deleteElement);
     }
     stderrLogReceiveCount++;
-    logText.scrollTop = logText.scrollHeight;
+    logContent.scrollTop = logContent.scrollHeight;
 }
 
 function addSSHoutLog(msg) {
     if (receiveSSHoutLog === false) {
         $('#enableSSHout').css('color', "red");
     }
-    var logText = document.getElementById("logSSHoutLog");
-    var addMessage = msg.toString() + '\n';
-    logText.textContent += addMessage;
-    sshoutMsgLengthArray.push(addMessage.length);
-    if (sshoutLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.substr(sshoutMsgLengthArray[0]);
-        sshoutMsgLengthArray.shift();
+    var sshoutLogID = `sshout_${sshoutLogReceiveCount}`
+    var logContent = document.getElementById("logSSHoutLog");
+    var addMessage = msg.toString();
+    var maxViewLog = 1000;
+    logContent.insertAdjacentHTML("beforeend", `<pre id=${sshoutLogID} class="logContent">${addMessage}</pre>`);
+    if (sshoutLogReceiveCount > maxViewLog) {
+        let targetIndex = sshoutLogReceiveCount - maxViewLog - 1;
+        let targetElementID = `sshout_${targetIndex}`
+        let deleteElement = document.getElementById(targetElementID);
+        logContent.removeChild(deleteElement);
     }
     sshoutLogReceiveCount++;
-    logText.scrollTop = logText.scrollHeight;
+    logContent.scrollTop = logContent.scrollHeight;
 }
 
 function addSSHerrLog(msg) {
     if (receiveSSHerrLog === false) {
         $('#enableSSHerr').css('color', "red");
     }
-    var logText = document.getElementById("logSSHerrLog");
-    var addMessage = msg.toString() + '\n';
-    logText.textContent += addMessage;
-    ssherrMsgLengthArray.push(addMessage.length);
-    if (ssherrLogReceiveCount > 1000) {
-        logText.textContent = logText.textContent.substr(ssherrMsgLengthArray[0]);
-        ssherrMsgLengthArray.shift();
+    var ssherrLogID = `ssherr_${ssherrLogReceiveCount}`
+    var logContent = document.getElementById("logSSHerrLog");
+    var addMessage = msg.toString();
+    var maxViewLog = 1000;
+    logContent.insertAdjacentHTML("beforeend", `<pre id=${ssherrLogID} class="logContent">${addMessage}</pre>`);
+    if (ssherrLogReceiveCount > maxViewLog) {
+        let targetIndex = ssherrLogReceiveCount - maxViewLog - 1;
+        let targetElementID = `ssherr_${targetIndex}`
+        let deleteElement = document.getElementById(targetElementID);
+        logContent.removeChild(deleteElement);
     }
     ssherrLogReceiveCount++;
-    logText.scrollTop = logText.scrollHeight;
-} 
+    logContent.scrollTop = logContent.scrollHeight;
+}
