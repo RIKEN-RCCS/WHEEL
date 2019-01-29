@@ -205,15 +205,16 @@ class EmitArbitrator extends EventEmitter {
     super();
     this.start = 0;
     this.end = chunksize;
+    this.array = Array.from(array);
     this.on("send", ()=>{
-      send(event, array.slice(this.start, this.end), (err)=>{
+      send(event, this.array.slice(this.start, this.end), (err)=>{
         if (err) {
           this.emit("error");
         }
         this.start = this.end;
         this.end = this.end + chunksize;
 
-        if (this.end < array.length) {
+        if (this.start < this.array.length) {
           this.emit("send");
         } else {
           this.emit("done");

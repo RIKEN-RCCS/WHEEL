@@ -10,7 +10,7 @@ const Dispatcher = require("./dispatcher");
 const { getDateString, createSshConfig, readJsonGreedy, emitLongArray } = require("./utility");
 const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger } = require("./projectResource");
+const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, getNumberOfUpdatedTasks, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger, emitEvent } = require("./projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
 const { cancel } = require("./executer");
 const { killTask, taskStateFilter } = require("./taskUtil");
@@ -324,12 +324,19 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //event listener for task state changed
   async function onTaskStateChanged() {
-      getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired");
+      const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
+      getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
       await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
       getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
     setTimeout(()=>{
       getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
+      const remaining = getNumberOfUpdatedTasks(projectRootDir);
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
+      if(remaining.length>0){
+        setImmediate(()=>{
+          emitEvent(projectRootDir, "taskStateChanged");
+        });
+      }
     }, interval);
   }
 
@@ -414,6 +421,8 @@ async function onPauseProject(emit, projectRootDir, cb) {
   await cancelDispatchedTasks(projectRootDir);
   removeSsh(projectRootDir);
   await updateAndSendProjectJson(emit, projectRootDir, "paused");
+  getLogger(projectRootDir).debug("pause project done");
+  cb();
 }
 
 async function onCleanProject(emit, projectRootDir, cb) {
@@ -429,11 +438,13 @@ async function onCleanProject(emit, projectRootDir, cb) {
   }
   await cancelDispatchedTasks(projectRootDir);
   clearDispatchedTasks(projectRootDir);
-  await emitLongArray(emit, "taskStateList", [], blockSize);
+  await emit("taskStateList", []);
   await cleanProject(projectRootDir);
   await openProject(projectRootDir);
   await sendWorkflow(emit, projectRootDir);
   await updateAndSendProjectJson(emit, projectRootDir, "not-started");
+  getLogger(projectRootDir).debug("clean project done");
+  cb();
 }
 
 async function onSaveProject(emit, projectRootDir, cb) {
@@ -449,6 +460,8 @@ async function onSaveProject(emit, projectRootDir, cb) {
   } else {
     getLogger(projectRootDir).error(projectState, "project can not be saved");
   }
+  getLogger(projectRootDir).debug("save project done");
+  cb();
 }
 
 async function onRevertProject(emit, projectRootDir, cb) {
@@ -459,6 +472,8 @@ async function onRevertProject(emit, projectRootDir, cb) {
   await gitResetHEAD(projectRootDir);
   await updateAndSendProjectJson(emit, projectRootDir, "not-started");
   await sendWorkflow(emit, projectRootDir);
+  getLogger(projectRootDir).debug("revert project done");
+  cb();
 }
 
 async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
@@ -479,6 +494,7 @@ async function onUpdateProjectJson(emit, projectRootDir, prop, value, cb) {
     cb(false);
     return;
   }
+  getLogger(projectRootDir).debug("updateProjectJson done");
   cb(true);
 }
 
@@ -495,6 +511,7 @@ async function onGetProjectState(emit, projectRootDir, cb) {
     cb(false);
     return;
   }
+    getLogger(projectRootDir).debug("send project state done");
   cb(true);
 }
 
@@ -510,6 +527,7 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
     cb(false);
     return;
   }
+  getLogger(projectRootDir).debug("send task state list done");
   cb(true);
 }
 
@@ -526,6 +544,7 @@ async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
     cb(false);
     return;
   }
+  getLogger(projectRootDir).debug("send task state list done");
   cb(true);
 }
 

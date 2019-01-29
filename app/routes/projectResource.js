@@ -110,6 +110,9 @@ function getTasks(projectRootDir) {
   return getProject(projectRootDir).tasks;
 }
 
+function getNumberOfUpdatedTasks(projectRootDir){
+  return getProject(projectRootDir).updatedTasks.size;
+}
 function getUpdatedTaskStateList(projectRootDir) {
   const updatedTaskStateList = [...getProject(projectRootDir).updatedTasks].map(taskStateFilter);
   getProject(projectRootDir).updatedTasks.clear();
@@ -147,6 +150,7 @@ module.exports = {
   addUpdatedTask,
   clearDispatchedTasks,
   getTasks,
+  getNumberOfUpdatedTasks,
   getUpdatedTaskStateList,
   addSsh,
   getSsh,
