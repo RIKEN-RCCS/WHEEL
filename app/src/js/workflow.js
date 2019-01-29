@@ -302,25 +302,9 @@ $(() => {
     });
 
     sio.on('taskStateList', (taskStateList, cb) => {
-      // var preUpdateListLength = updateList.length;
-      // var taskStateListOrg = taskStateList.concat();
-      // updateTaskStateList(updateList, taskStateList);
-      // var updateListLength = updateList.length;
-      // if (!(preUpdateListLength === 0 && updateListLength === 0)) {
-      //   if (preUpdateListLength !== updateListLength) {
-      //     updateWorkflowStateTable(updateList);
-      //   } else {
-      //     updateTaskStateTable(taskStateListOrg);
-      //   }
-      // }
-      // }
-      console.time('timer');
-      console.log(taskStateList);
       if (taskStateList.length !== 0) {
         drawTaskStateList(taskStateList);
       }
-      console.timeEnd('timer');
-
       cb();
     })
 
@@ -794,7 +778,6 @@ $(() => {
     return string.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
   }
 
-  let taskStateTable = $('#project_table_body');
   let maxancestorsLength = 0;
   function drawTaskStateList(taskStateList) {
     let targetElement = document.getElementById("project_table_body");
@@ -875,126 +858,6 @@ $(() => {
           $(`.componentNameLabel`).css("margin-right", maxancestorsLength * 32 + "px");
         }
       }
-    }
-  }
-
-  function updateTaskStateList(updateList, receiveTaskList) {
-    var deleteTargetArray = [];
-    for (let i = 0; i < updateList.length; i++) {
-      let ancestorsNameAndParent = updateList[i].ancestorsName + updateList[i].parent + updateList[i].ID;
-      for (let j = receiveTaskList.length - 1; j >= 0; j--) {
-        let targetAncestorsNameAndParent = receiveTaskList[j].ancestorsName + receiveTaskList[j].parent + receiveTaskList[j].ID;
-        if (ancestorsNameAndParent === targetAncestorsNameAndParent) {
-          updateList.splice(i, 1, receiveTaskList[j]);
-          receiveTaskList.splice(j, 1);
-          break;
-        }
-      }
-    }
-    Array.prototype.push.apply(updateList, receiveTaskList);
-  }
-
-  function updateWorkflowStateTable(taskStateList) {
-    $('#project_table_body').empty();
-    for (let i = 0; i < taskStateList.length; i++) {
-      let ancestorsNameList = [];
-      let ancestorsTypeList = [];
-      let nodeType = "task";
-      let nodeState = taskStateList[i].state;
-      if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
-        nodeState = 'running'
-      }
-      let nodeIconPath = config.node_icon[nodeType];
-      let nodeColor = config.node_color[nodeType];
-      let nodeComponentState = config.state_icon[nodeState];
-      let id = `taskLabel_${i}`;
-
-      if (taskStateList[i].ancestorsName === "") {
-        taskStateTable.append(`<tr class="project_table_component" ><td id=${id} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
-        <td class="componentState"><img src=${nodeComponentState} class="stateIcon"><label class="stateLabel">${taskStateList[i].state}</label></td>
-        <td class="componentStartTime">${taskStateList[i].startTime}</td>
-        <td class="componentEndTime">${taskStateList[i].endTime}</td>
-        <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
-        $(`#${id}`).css("background-color", nodeColor);
-        $(`#${id}`).css("margin-right", maxancestorsLength * 32 + "px");
-      } else {
-        ancestorsNameList = taskStateList[i].ancestorsName.split('/');
-        ancestorsTypeList = taskStateList[i].ancestorsType.split('/');
-        if (maxancestorsLength < ancestorsNameList.length) {
-          maxancestorsLength = ancestorsNameList.length;
-        }
-        let previousAncestorsNameList;
-        var taskIdTemp = `${taskStateList[i].name}_${taskStateList[i].ancestorsName}`;;
-        let taskId = escapeCharacter(taskIdTemp);
-        let ancestorsId;
-        let ancestorsIdTemp;
-        let j;
-        if (i === 0) {
-          for (j = 0; j < ancestorsNameList.length; j++) {
-            let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
-            ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
-            ancestorsId = escapeCharacter(ancestorsIdTemp);
-            taskStateTable.append(`<tr class="project_table_component">
-            <td id="${ancestorsId}" class="componentName">
-            <img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
-            $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
-            let loopMarginArea = 32 * j;
-            let parentMarginRight = (maxancestorsLength - j) * 32;
-            $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
-            $(`#${ancestorsId}`).css("margin-right", parentMarginRight + "px");
-          }
-        } else {
-          previousAncestorsNameList = taskStateList[i - 1].ancestorsName.split('\\');
-          let viewFlag = [];
-          for (let k = 0; k < ancestorsNameList.length; k++) {
-            if (previousAncestorsNameList[k] === ancestorsNameList[k]) {
-              viewFlag.push(false);
-            } else {
-              viewFlag.push(true);
-            }
-          }
-          for (j = 0; j < ancestorsNameList.length; j++) {
-            if (viewFlag[j]) {
-              let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
-              ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${i}_${j}`;
-              ancestorsId = escapeCharacter(ancestorsIdTemp);
-              taskStateTable.append(`<tr class="project_table_component" ><td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
-              $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
-              let loopMarginArea = 32 * j;
-              $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
-            }
-          }
-        }
-        taskStateTable.append(`<tr class="project_table_component" >
-        <td id="${taskId}" class="componentName">
-        <img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
-        <td class="componentState"><img src=${nodeComponentState} class="stateIcon" id="${taskId}_stateIcon"><label class="stateLabel" id="${taskId}_state">${taskStateList[i].state}</label></td>
-        <td class="componentStartTime" id="${taskId}_startTime">${taskStateList[i].startTime}</td>
-        <td class="componentEndTime" id="${taskId}_endTime">${taskStateList[i].endTime}</td>
-        <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
-        let marginArea = 32 * ancestorsNameList.length;
-        let marginRight = (maxancestorsLength - ancestorsNameList.length) * 32;
-        $(`#${taskId}`).css("margin-left", marginArea + "px");
-        $(`#${taskId}`).css("margin-right", marginRight + "px");
-        $(`.componentNameLabel`).css("margin-right", maxancestorsLength * 32 + "px");
-        $(`#${taskId}`).css("background-color", nodeColor);
-      }
-    }
-  }
-
-  function updateTaskStateTable(taskStateList) {
-    for (let i = 0; i < taskStateList.length; i++) {
-      var taskIdTemp = `${taskStateList[i].name}_${taskStateList[i].ancestorsName}`;
-      var taskId = escapeCharacter(taskIdTemp);
-      var nodeState = taskStateList[i].state;
-      if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
-        nodeState = 'running'
-      }
-      var nodeComponentState = config.state_icon[nodeState];
-      $(`#${taskId}_stateIcon`).attr("src", nodeComponentState);
-      $(`#${taskId}_state`).html(taskStateList[i].state);
-      $(`#${taskId}_startTime`).html(taskStateList[i].startTime);
-      $(`#${taskId}_endTime`).html(taskStateList[i].endTime);
     }
   }
 
