@@ -60,18 +60,18 @@ $(() => {
     // setup project list UI
     $('#projectList').sortable({
         update: (e, ui) => {
-            socket.emit('reorderProject', $('#projectList').sortable('toArray', { attribute: 'data-id' }));
+            socket.emit('reorderProject', $('#projectList').sortable('toArray', { attribute: 'data-index' }));
         }
     });
     $('#projectList').disableSelection();
     socket.on('projectList', (data) => {
         $('#projectList').empty();
-        data.forEach(function (pj) {
+        data.forEach(function (pj, i) {
             let pjPath = pj.path;
             let deleteWord = "\\" + pj.name + ".wheel\\swf.prj.json";
             let displayPjPath = pjPath.replace(deleteWord, "");
 
-            $('#projectList').append(`<ul class="project" data-path="${pj.path}" data-id="${pj.id}" data-name="${pj.name}">
+            $('#projectList').append(`<ul class="project" data-path="${pj.path}" data-id="${pj.id}" data-name="${pj.name}" data-index="${i}">
             <li class="projectName" id="prj_${pj.name}">${pj.name}</li>
             <li class="projectDescription">${pj.description}</li>
             <li class="projectPath">${displayPjPath}</li>
