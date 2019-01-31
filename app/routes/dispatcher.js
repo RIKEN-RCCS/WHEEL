@@ -10,6 +10,7 @@ nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
 const { addX, isFinishedState, readJsonGreedy, sanitizePath, convertPathSep, replacePathsep } = require("./utility");
+const { getDateString } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
 const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
@@ -441,6 +442,7 @@ class Dispatcher extends EventEmitter {
 
   async _dispatchTask(task) {
     this.logger.debug("_dispatchTask called", task.name);
+    task.dispatchedTime = getDateString(true);
     task.startTime = "not started"; //to be assigned in executer
     task.endTime = "not finished"; //to be assigned in executer
     task.projectStartTime = this.projectStartTime;
