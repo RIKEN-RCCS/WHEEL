@@ -95,7 +95,7 @@ async function addX(file) {
   return fs.chmod(file, modeString);
 }
 
-function getDateString(humanReadable = false) {
+function getDateString(humanReadable = false, withMilliseconds=false) {
   const now = new Date();
   const yyyy = `0000${now.getFullYear()}`.slice(-4);
   const month = now.getMonth() + 1;
@@ -104,7 +104,11 @@ function getDateString(humanReadable = false) {
   const HH = `00${now.getHours()}`.slice(-2);
   const MM = `00${now.getMinutes()}`.slice(-2);
   const ss = `00${now.getSeconds()}`.slice(-2);
-  return humanReadable ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
+  const ms = `000${now.getMilliseconds()}`.slice(-3);
+  if(humanReadable){
+    return withMilliseconds ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}.${ms}` : `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}`;
+  }
+  return withMilliseconds ? `${yyyy}${mm}${dd}-${HH}${MM}${ss}${ms}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
 }
 
 /**

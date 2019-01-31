@@ -239,7 +239,7 @@ class Executer {
 
     this.batch = new SBS({
       exec: async(task)=>{
-        task.startTime = getDateString(true);
+        task.startTime = getDateString(true, true);
         let rt;
         try {
           rt = await this.exec(task);
@@ -254,7 +254,7 @@ class Executer {
         }
 
         //record job finished time
-        task.endTime = getDateString(true);
+        task.endTime = getDateString(true, true);
 
         //update task status
         const state = rt === 0 ? "finished" : "failed";
