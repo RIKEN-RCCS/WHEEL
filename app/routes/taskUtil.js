@@ -54,6 +54,7 @@ function taskStateFilter(task) {
     parentType: task.parentType,
     ancestorsName: task.ancestorsName,
     ancestorsType: task.ancestorsType,
+    dispatchedTime: task.dispatchedTime,
     startTime: task.startTime,
     endTime: task.endTime
   };
