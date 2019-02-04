@@ -47,6 +47,7 @@ $(() => {
   //taskStateList
   let updateList = [];
   let projectRootDir = currentWorkDir;
+  let firstConnection = true;
 
   // create vue.js instance for property subscreen
   let vm = new Vue({
@@ -302,11 +303,18 @@ $(() => {
     });
 
     sio.on('taskStateList', (taskStateList, cb) => {
+      if (firstConnection === true && taskStateList.length !== 0) {
+        for (let i = 0; i < taskStateList.length - 1; i++) {
+          taskStateList.sort(sortTaskStateList);
+        }
+        firstConnection = false;
+      }
+
       if (taskStateList.length !== 0) {
         drawTaskStateList(taskStateList);
       }
       cb();
-    })
+    });
 
     //get project state infomation.
     sio.on('projectJson', (projectJson) => {
@@ -779,10 +787,15 @@ $(() => {
     return string.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
   }
 
+  function sortTaskStateList(a, b) {
+    let first = a.startTime;
+    let second = b.startTime;
+    return (first < second ? -1 : 1);
+  }
+
   let maxancestorsLength = 0;
   function drawTaskStateList(taskStateList) {
     let targetElement = document.getElementById("project_table_body");
-
     for (let i = 0; i < taskStateList.length; i++) {
       let taskIdTemp = "";
       if (taskStateList[i].ancestorsName === "") {
@@ -791,6 +804,12 @@ $(() => {
         taskIdTemp = `${taskStateList[i].name}_${taskStateList[i].ancestorsName}`;
       }
       let taskId = escapeCharacter(taskIdTemp);
+      if (taskStateList[i].startTime !== 'not started') {
+        taskStateList[i].startTime = taskStateList[i].startTime.slice(0, -4)
+      }
+      if (taskStateList[i].endTime !== 'not finished') {
+        taskStateList[i].endTime = taskStateList[i].endTime.slice(0, -4)
+      }
 
       if (document.getElementById(`${taskId}`) != null) {
         var nodeState = taskStateList[i].state;
