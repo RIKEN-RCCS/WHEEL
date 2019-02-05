@@ -324,15 +324,16 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //event listener for task state changed
   async function onTaskStateChanged() {
-      const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
-      getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
-      await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
-      getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
+    const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
+    getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
+    getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
     setTimeout(()=>{
       getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
       const remaining = getNumberOfUpdatedTasks(projectRootDir);
       once(projectRootDir, "taskStateChanged", onTaskStateChanged);
-      if(remaining.length>0){
+
+      if (remaining.length > 0) {
         setImmediate(()=>{
           emitEvent(projectRootDir, "taskStateChanged");
         });
@@ -438,7 +439,7 @@ async function onCleanProject(emit, projectRootDir, cb) {
   }
   await cancelDispatchedTasks(projectRootDir);
   clearDispatchedTasks(projectRootDir);
-  await emit("taskStateList", []);
+  await emitLongArray(emit, "taskStateList", [], blockSize);
   await cleanProject(projectRootDir);
   await openProject(projectRootDir);
   await sendWorkflow(emit, projectRootDir);
@@ -511,7 +512,7 @@ async function onGetProjectState(emit, projectRootDir, cb) {
     cb(false);
     return;
   }
-    getLogger(projectRootDir).debug("send project state done");
+  getLogger(projectRootDir).debug("send project state done");
   cb(true);
 }
 
