@@ -84,7 +84,7 @@ async function isFinished(JS, ssh, jobID) {
     const reFailedState = new RegExp(JS.reFailedState, "m");
     finished = reFailedState.test(outputText);
   }
-  logger.trace(`JobStatusCheck: ${jobID} is ${finished?"finished":"not yet completed"}\n${outputText}`);
+  logger.trace(`JobStatusCheck: ${jobID} is ${finished ? "finished" : "not yet completed"}\n${outputText}`);
 
   if (finished) {
     const strRt = getReturnCode(outputText, JS.reReturnCode);
@@ -452,6 +452,7 @@ function exec(task, loggerInstance) {
     executer = createExecuter(task);
     executers.push(executer);
   } else {
+    logger.debug("reuse existing executer for", task.host, " with job scheduler", task.useJobScheduler);
     const onRemote = executer.remotehostID !== "localhost";
     const hostinfo = remoteHost.get(executer.remotehostID);
     const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
@@ -480,7 +481,7 @@ function exec(task, loggerInstance) {
 }
 
 function cancel(task) {
-  if (task.hasOwnProperty("sbsID")) {
+  if (!task.hasOwnProperty("sbsID")) {
     return false;
   }
   task.remotehostID = remoteHost.getID("name", task.host) || "localhost";
