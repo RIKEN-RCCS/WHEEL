@@ -3,12 +3,12 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-const { getSsh, emitEvent, addUpdatedTask } = require("../routes/projectResource");
+const { getSsh, emitEvent, addUpdatedTask } = require("./projectResource");
 const { remoteHost, jobScheduler, componentJsonFilename } = require("../db/db");
 const { addX } = require("./fileUtils");
-const { replacePathsep} = require("./pathUtils");
-const {getDateString} = require("../lib/utility");
-const {componentJsonReplacer} = require("./componentFilesOperator");
+const { replacePathsep } = require("./pathUtils");
+const { getDateString } = require("../lib/utility");
+const { componentJsonReplacer } = require("./componentFilesOperator");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 

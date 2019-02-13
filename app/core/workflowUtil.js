@@ -3,13 +3,13 @@ const path = require("path");
 const fs = require("fs-extra");
 const { promisify } = require("util");
 const glob = require("glob");
-const {readJsonGreedy} = require("../core/fileUtils");
-const {getDateString } = require("../lib/utility");
+const { readJsonGreedy } = require("./fileUtils");
+const { getDateString } = require("../lib/utility");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getCwd } = require("./projectResource");
-const { gitAdd } = require("../core/gitOperator");
-const {componentJsonReplacer} = require("../core/componentFilesOperator");
-const {hasChild} = require("../core/workflowComponent");
+const { gitAdd } = require("./gitOperator");
+const { componentJsonReplacer } = require("./componentFilesOperator");
+const { hasChild } = require("./workflowComponent");
 
 async function getComponentDir(projectRootDir, targetID) {
   const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));

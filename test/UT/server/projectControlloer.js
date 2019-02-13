@@ -21,7 +21,7 @@ const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 
 //helper functions
 const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
-const {createNewProject} = require("../../../app/core/projectFilesOperator");
+const { createNewProject } = require("../../../app/core/projectFilesOperator");
 const workflowEditor = rewire("../../../app/routes/workflowEditor2");
 const onCreateNode = workflowEditor.__get__("onCreateNode");
 const onUpdateNode = workflowEditor.__get__("onUpdateNode");
@@ -38,11 +38,11 @@ const { escapeRegExp } = require("../../../app/lib/utility");
 //stubs
 const emit = sinon.stub();
 const cb = sinon.stub();
-const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, trace:()=>{},stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
+const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, trace: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
 dummyLogger.error = console.log;
 dummyLogger.warn = console.log;
-dummyLogger.info=console.log;
-dummyLogger.debug=console.log;
+dummyLogger.info = console.log;
+dummyLogger.debug = console.log;
 //dummyLogger.stdout=console.log;
 //sinon.spy(dummyLogger, "stdout");
 
@@ -55,7 +55,7 @@ sio.emit = sinon.stub();
 //
 //TODO pass stub to askPassword for remote task test
 //
-describe.only("project Controller UT", function() {
+describe("project Controller UT", function() {
   this.timeout(0);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
@@ -80,7 +80,9 @@ describe.only("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
+        console.log("DEBUG: test start");
         await onRunProject(sio, projectRootDir, cb);
+        console.log("DEUBG: onRunProject done");
         expect(cb).to.have.been.calledOnce;
         expect(cb).to.have.been.calledWith(true);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
