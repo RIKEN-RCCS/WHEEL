@@ -7,8 +7,8 @@ const minimatch = require("minimatch");
 const fileBrowser = require("../core/fileBrowser");
 const { gitAdd, gitRm } = require("../core/gitOperator");
 const { getSystemFiles } = require("./utility");
-const {convertPathSep } = require("../core/pathUtils");
-const { getLogger } = require("./projectResource");
+const { convertPathSep } = require("../core/pathUtils");
+const { getLogger } = require("../core/projectResource");
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
   request = request || target;

@@ -96,7 +96,7 @@ async function validateForeach(component) {
   return Promise.resolve();
 }
 
-async function getHosts(projectRootDir, parentID, hosts) {
+async function recursiveGetHosts(projectRootDir, parentID, hosts) {
   const promises = [];
   const children = await getChildren(projectRootDir, parentID);
   for (const component of children) {
@@ -104,10 +104,16 @@ async function getHosts(projectRootDir, parentID, hosts) {
       hosts.push(component.host);
     }
     if (hasChild(component)) {
-      promises.push(validateComponents(projectRootDir, component.ID, hosts));
+      promises.push(recursiveGetHosts(projectRootDir, component.ID, hosts));
     }
   }
   return Promise.all(promises);
+}
+
+async function getHosts(projectRootDir, rootID) {
+  const hosts = [];
+  await recursiveGetHosts(projectRootDir, rootID, hosts);
+  return Array.from(new Set(hosts)); //remove duplicate
 }
 
 /**

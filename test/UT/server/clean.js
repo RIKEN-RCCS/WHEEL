@@ -101,7 +101,7 @@ describe("test about cleaning functionality", function (){
   after(async()=>{
     // await fs.remove(testDirRoot);
   });
-  it("should clean only under wf1", async()=>{
+  it("should clean file and dirs under wf1", async()=>{
     await onCleanComponent(emit, projectRootDir, components.wf1.ID, cb);
     expect(cb).to.have.been.calledOnce;
     expect(cb).to.have.been.calledWith(true);

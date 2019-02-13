@@ -9,13 +9,12 @@ const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
-const { isFinishedState} = require("./utility");
-const { getDateString } = require("./utility");
-const  {sanitizePath, convertPathSep, replacePathsep }= require("./pathUtils");
-const {readJsonGreedy, addX } = require("./fileUtils");
+const { getDateString } = require("../lib/utility");
+const { sanitizePath, convertPathSep, replacePathsep } = require("./pathUtils");
+const { readJsonGreedy, addX } = require("./fileUtils");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
 const { componentJsonReplacer } = require("./componentFilesOperator");
-const { emitEvent, addDispatchedTask } = require("../routes/projectResource");
+const { emitEvent, addDispatchedTask } = require("./projectResource");
 const { isInitialComponent } = require("./workflowComponent");
 
 
@@ -24,7 +23,7 @@ const silentLogger = {
   warn: ()=>{},
   info: ()=>{},
   debug: ()=>{},
-  trace:()=>{},
+  trace: ()=>{},
   stdout: ()=>{},
   stderr: ()=>{},
   sshout: ()=>{},

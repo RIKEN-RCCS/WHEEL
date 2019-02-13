@@ -3,21 +3,23 @@ const path = require("path");
 const fs = require("fs-extra");
 const pathIsInside = require("path-is-inside");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("./workflowUtil");
-const { setCwd, getCwd, getLogger } = require("./projectResource");
+const { sendWorkflow, getComponentDir, getComponent, updateComponentJson } = require("../core/workflowUtil");
+const { setCwd, getCwd, getLogger } = require("../core/projectResource");
 const { gitRm, gitAdd, gitResetHEAD } = require("../core/gitOperator");
 const { replacePathsep, convertPathSep } = require("../core/pathUtils");
-const {readJsonGreedy} = require("../core/fileUtils");
-const {getDateString, isValidName} = require("../lib/utility");
+const { readJsonGreedy } = require("../core/fileUtils");
+const { getDateString, isValidName } = require("../lib/utility");
 const componentFactory = require("../core/workflowComponent");
-const {createNewComponent } = require("../core/componentFilesOperator");
+const { createNewComponent } = require("../core/componentFilesOperator");
 
 
 //this function is used as modifier of updateComponentPath
 function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
   const oldRelativePath = componentPath[ID];
   let newRelativePath = path.relative(projectRootDir, newPath);
-  if(! newRelativePath.startsWith(".")) newRelativePath = "./"+newRelativePath;
+  if (!newRelativePath.startsWith(".")) {
+    newRelativePath = `./${newRelativePath}`;
+  }
   if (typeof oldRelativePath !== "undefined") {
     for (const [k, v] of Object.entries(componentPath)) {
       if (pathIsInside(convertPathSep(v), convertPathSep(oldRelativePath))) {
