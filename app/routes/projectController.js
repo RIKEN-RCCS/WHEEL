@@ -12,7 +12,7 @@ const { getDateString } = require("../lib/utility");
 const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, isInitialNode, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { getNumberOfUpdatedTasks, emitEvent, openProject, addSsh, removeSsh, runProject, pauseProject, clearProject, getUpdatedTaskStateList, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, off, getLogger } = require("../core/projectResource");
+const { getNumberOfUpdatedTasks, emitEvent, on, openProject, addSsh, removeSsh, runProject, pauseProject, clearProject, getUpdatedTaskStateList, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, off, getLogger } = require("../core/projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
 const { cancel } = require("../core/executer");
 const { killTask, taskStateFilter } = require("../core/taskUtil");
@@ -60,20 +60,6 @@ async function getState(projectRootDir) {
     }
   }
   return projectState;
-}
-
-function cancelDispatchedTasks(projectRootDir) {
-  for (const task of getTasks(projectRootDir)) {
-    if (task.state === "finished" || task.state === "failed") {
-      continue;
-    }
-    const canceled = cancel(task);
-
-    if (!canceled) {
-      killTask(projectRootDir, task);
-    }
-    task.state = "not-started";
-  }
 }
 
 function askPassword(sio, hostname) {
@@ -211,7 +197,6 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
-  once(projectRootDir, "projectStateChanged", onProjectStateChanged);
 
 
   //actual project start here
@@ -227,7 +212,6 @@ async function onRunProject(sio, projectRootDir, cb) {
   }
   off(projectRootDir, "taskStateChanged", onTaskStateChanged);
   off(projectRootDir, "componentStateChanged", onComponentStateChanged);
-  off(projectRootDir, "projectStateChanged", onProjectStateChanged);
 
   try {
     //directly send last status just in case
@@ -248,9 +232,6 @@ async function onPauseProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("pause event recieved");
-  once(projectRootDir, "projectStateChanged", (projectJson)=>{
-    emit("projectJson", projectJson);
-  });
 
   try {
     await pauseProject(projectRootDir);
@@ -267,9 +248,6 @@ async function onCleanProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("clean event recieved");
-  once(projectRootDir, "projectStateChanged", (projectJson)=>{
-    emit("projectJson", projectJson);
-  });
 
   try {
     await cleanProject(projectRootDir);
@@ -385,6 +363,9 @@ async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
 
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
+  on(projectRootDir, "projectStateChanged", (projectJson)=>{
+    emit("projectJson", projectJson);
+  });
   socket.on("runProject", onRunProject.bind(null, socket, projectRootDir));
   socket.on("pauseProject", onPauseProject.bind(null, emit, projectRootDir));
   socket.on("cleanProject", onCleanProject.bind(null, emit, projectRootDir));

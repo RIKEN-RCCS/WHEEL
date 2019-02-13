@@ -1,6 +1,6 @@
 "use strict";
 const path = require("path");
-const { escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename} = require("../lib/utility");
+const { pathseps, reWin32ReservedNames, metaCharactors, escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
 
 
 //TODO use escapeRegExp
@@ -28,10 +28,10 @@ function replacePathsep(pathString) {
  */
 function sanitizePath(target, replacer = "_") {
   //replace danger chars
-  let sanitized = target.toString().replace(new RegExp(`[${escapeRegExp(pathseps+metaCharactors+"~.=")}]`, "g"), replacer);
+  let sanitized = target.toString().replace(new RegExp(`[${escapeRegExp(`${pathseps + metaCharactors}~.=`)}]`, "g"), replacer);
 
   //replace win32 reserved names
-  sanitized = sanitized.replace(new RegExp(reWin32ReservedNames,"gi"), replacer);
+  sanitized = sanitized.replace(new RegExp(reWin32ReservedNames, "gi"), replacer);
 
   //remove trailing replacer
   sanitized = sanitized.endsWith(replacer) ? sanitized.slice(0, -1) : sanitized;
@@ -39,8 +39,8 @@ function sanitizePath(target, replacer = "_") {
   return sanitized;
 }
 
-module.exports={
+module.exports = {
   convertPathSep,
   replacePathsep,
   sanitizePath
-}
+};

@@ -14,7 +14,6 @@ const { sanitizePath, convertPathSep, replacePathsep } = require("./pathUtils");
 const { readJsonGreedy, addX } = require("./fileUtils");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
 const { componentJsonReplacer } = require("./componentFilesOperator");
-const { emitEvent, addDispatchedTask } = require("./projectResource");
 const { isInitialComponent } = require("./workflowComponent");
 
 
@@ -281,7 +280,7 @@ async function replaceTargetFile(srcDir, dstDir, targetFiles, params) {
  * @param {Object} componentPath  - componentPath in project Json
  */
 class Dispatcher extends EventEmitter {
-  constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath, ancestorsType) {
+  constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath, emit, ancestorsType) {
     super();
     this.projectRootDir = projectRootDir;
     this.cwfID = cwfID;
@@ -289,6 +288,7 @@ class Dispatcher extends EventEmitter {
     this.projectStartTime = startTime;
     this.logger = logger ? logger : silentLogger;
     this.componentPath = componentPath;
+    this.emitEvent = emit;
     this.ancestorsType = ancestorsType;
 
     this.nextSearchList = [];
@@ -502,6 +502,7 @@ class Dispatcher extends EventEmitter {
     task.projectStartTime = this.projectStartTime;
     task.projectRootDir = this.projectRootDir;
     task.workingDir = path.resolve(this.cwfDir, task.name);
+    task.emitEvent = this.emitEvent;
 
     task.ancestorsName = replacePathsep(path.relative(task.projectRootDir, path.dirname(task.workingDir)));
     task.ancestorsType = this.ancestorsType;
@@ -521,7 +522,7 @@ class Dispatcher extends EventEmitter {
 
     //runningTasks in this class and dispatchedTask in Project class is for different purpose, please keep duplicate!
     this.runningTasks.push(task);
-    addDispatchedTask(this.projectRootDir, task);
+    this.emitEvent("taskDispatched", task);
     await fs.writeJson(path.resolve(task.workingDir, componentJsonFilename), task, { spaces: 4, replacer: componentJsonReplacer });
     await this._addNextComponent(task);
   }
@@ -539,7 +540,7 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("_delegate called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
     const ancestorsType = typeof this.ancestorsType === "string" ? `${this.ancestorsType}/${component.type}` : component.type;
-    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath, ancestorsType);
+    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath, this.emitEvent, ancestorsType);
     this.children.add(child);
 
     //exception should be catched in caller
@@ -550,7 +551,7 @@ class Dispatcher extends EventEmitter {
       //if component type is not workflow, it must be copied component of PS, for, while or foreach
       //so, it is no need to emit "componentStateChanged" here.
       if (component.type === "workflow") {
-        emitEvent(this.projectRootDir, "componentStateChanged");
+        this.emitEvent("componentStateChanged");
       }
     } finally {
       await this._addNextComponent(component);
@@ -748,7 +749,7 @@ class Dispatcher extends EventEmitter {
           }
           fs.writeJson(path.join(templateRoot, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer })
             .then(()=>{
-              emitEvent(this.projectRootDir, "componentStateChanged");
+              this.emitEvent("componentStateChanged");
             });
         })
         .then(()=>{
@@ -811,7 +812,7 @@ class Dispatcher extends EventEmitter {
     //write to file
     //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
     await fs.writeJson(path.join(componentDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
-    emitEvent(this.projectRootDir, "componentStateChanged");
+    this.emitEvent("componentStateChanged");
   }
 
 
