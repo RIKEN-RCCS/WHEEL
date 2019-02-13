@@ -1,17 +1,16 @@
 "use strict";
 const path = require("path");
 const fs = require("fs-extra");
-const {promisify} = require("util");
+const { promisify } = require("util");
 const glob = require("glob");
 const pathIsInside = require("path-is-inside");
-const { componentFactory }= require("./workflowComponent");
-const {updateComponentPath, getComponentDir} = require("./projectFilesOperator");
-const { componentJsonFilename} = require("../db/db");
-const { replacePathsep, convertPathSep } = require("./pathUtils");
+const { componentFactory } = require("./workflowComponent");
+const { updateComponentPath, getComponentDir } = require("./projectFilesOperator");
+const { componentJsonFilename, remoteHost, jobScheduler } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
-const {gitAdd, gitRm } = require("./gitOperator");
+const { gitAdd, gitRm } = require("./gitOperator");
 const { isValidName } = require("../lib/utility");
-const { hasChild,isInitialComponent } = require("./workflowComponent");
+const { hasChild, isInitialComponent } = require("./workflowComponent");
 
 async function getChildren(projectRootDir, parentID) {
   const dir = await getComponentDir(projectRootDir, parentID, true);
@@ -33,13 +32,9 @@ async function getChildren(projectRootDir, parentID) {
   });
 }
 
-async function validateTask(projectRootDir, component, hosts) {
+async function validateTask(projectRootDir, component) {
   if (component.name === null) {
     return Promise.reject(new Error(`illegal path ${component.name}`));
-  }
-
-  if (component.host !== "localhost") {
-    hosts.push(component.host);
   }
 
   if (component.useJobScheduler) {
@@ -101,16 +96,30 @@ async function validateForeach(component) {
   return Promise.resolve();
 }
 
+async function getHosts(projectRootDir, parentID, hosts) {
+  const promises = [];
+  const children = await getChildren(projectRootDir, parentID);
+  for (const component of children) {
+    if (component.type === "task" && component.host !== "localhost") {
+      hosts.push(component.host);
+    }
+    if (hasChild(component)) {
+      promises.push(validateComponents(projectRootDir, component.ID, hosts));
+    }
+  }
+  return Promise.all(promises);
+}
+
 /**
- * validate all components in workflow and gather remote hosts which is used in tasks
+ * validate all components in workflow
  */
-async function validateComponents(projectRootDir, parentID, hosts) {
+async function validateComponents(projectRootDir, parentID) {
   const promises = [];
   const children = await getChildren(projectRootDir, parentID);
 
   for (const component of children) {
     if (component.type === "task") {
-      promises.push(validateTask(projectRootDir, component, hosts));
+      promises.push(validateTask(projectRootDir, component));
     } else if (component.type === "if" || component.type === "while") {
       promises.push(validateConditionalCheck(component));
     } else if (component.type === "for") {
@@ -122,7 +131,7 @@ async function validateComponents(projectRootDir, parentID, hosts) {
     }
 
     if (hasChild(component)) {
-      promises.push(validateComponents(projectRootDir, component.ID, hosts));
+      promises.push(validateComponents(projectRootDir, component.ID));
     }
   }
 
@@ -166,8 +175,8 @@ function componentJsonReplacer(key, value) {
   return value;
 }
 
-async function renameComponentDir(projectRootDir, ID, newName){
-  if(!isValidName(newName)){
+async function renameComponentDir(projectRootDir, ID, newName) {
+  if (!isValidName(newName)) {
     return new Error(`${value} is not valid component name`);
   }
   const oldDir = await getComponentDir(projectRootDir, ID, true);
@@ -177,21 +186,21 @@ async function renameComponentDir(projectRootDir, ID, newName){
   return updateComponentPath(projectRootDir, ID, newDir);
 }
 
-async function updateComponent(projectRootDir, ID, prop, value){
-  if(prop === "name"){
+async function updateComponent(projectRootDir, ID, prop, value) {
+  if (prop === "name") {
     await renameComponentDir(projectRootDir, ID, value);
   }
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const filename = path.join(componentDir, componentJsonFilename);
   const componentJson = await readJsonGreedy(filename);
 
-  componentJson[prop]=value;
+  componentJson[prop] = value;
   await fs.writeJson(filename, componentJson, { spaces: 4, replacer: componentJsonReplacer });
   return gitAdd(projectRootDir, filename);
 }
 
 
-async function createNewComponent(projectRootDir, parentDir, type, pos){
+async function createNewComponent(projectRootDir, parentDir, type, pos) {
   const parentJson = await readJsonGreedy(path.resolve(parentDir, componentJsonFilename));
   const parentID = parentJson.ID;
 
@@ -201,7 +210,7 @@ async function createNewComponent(projectRootDir, parentDir, type, pos){
   newComponent.name = path.basename(absDirName);
 
   const filename = path.join(absDirName, componentJsonFilename);
-  await fs.writeJson(filename, newComponent , { spaces: 4, replacer: componentJsonReplacer });
+  await fs.writeJson(filename, newComponent, { spaces: 4, replacer: componentJsonReplacer });
   await gitAdd(projectRootDir, filename);
 
 
@@ -212,10 +221,10 @@ async function createNewComponent(projectRootDir, parentDir, type, pos){
 }
 
 
-
 module.exports = {
   componentJsonReplacer,
   updateComponent,
   createNewComponent,
-  validateComponents
-}
+  validateComponents,
+  getHosts
+};
