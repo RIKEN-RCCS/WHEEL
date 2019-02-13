@@ -1,6 +1,5 @@
 "use strict";
 const { promisify } = require("util");
-const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR;
 const fs = require("fs-extra");
 const path = require("path");
 const klaw = require("klaw");
@@ -11,15 +10,13 @@ const { createSshConfig, emitLongArray } = require("./utility");
 const { readJsonGreedy } = require("../core/fileUtils");
 const { getDateString } = require("../lib/utility");
 const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { getChildren, isInitialNode } = require("./workflowUtil");
-const { getNumberOfUpdatedTasks, emitEvent } = require("./projectResource");
-const { updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, getComponent } = require("./workflowUtil");
+const { getChildren, isInitialNode, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger } = require("./projectResource");
+const { getNumberOfUpdatedTasks, emitEvent, openProject, addSsh, removeSsh, runProject, pauseProject, clearProject, getUpdatedTaskStateList, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, off, getLogger } = require("../core/projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
 const { cancel } = require("../core/executer");
-const { killTask, taskStateFilter } = require("./taskUtil");
-const { validateComponents } = require("../core/componentFilesOperator");
+const { killTask, taskStateFilter } = require("../core/taskUtil");
+const { getHosts } = require("../core/componentFilesOperator");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
 async function sendTaskStateList(emit, projectRootDir) {
@@ -89,14 +86,9 @@ function askPassword(sio, hostname) {
 }
 
 /**
- * check if all scripts and remote host setting are available or not
+ * create necessary ssh instance
  */
-async function validationCheck(projectRootDir, rootWfID, sio) {
-  let hosts = [];
-  //TODO return hosts
-  await validateComponents(projectRootDir, rootWfID, hosts);
-  hosts = Array.from(new Set(hosts)); //remove duplicate
-
+async function createSsh(projectRootDir, hosts, sio) {
   //ask password to user and make session to each remote hosts
   for (const remoteHostName of hosts) {
     const id = remoteHost.getID("name", remoteHostName);
@@ -173,39 +165,15 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
 }
 
 async function onRunProject(sio, projectRootDir, cb) {
+  getLogger(projectRootDir).debug("run event recieved");
+
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  getLogger(projectRootDir).debug("run event recieved");
+
   const emit = sio.emit.bind(sio);
-
-  if (memMeasurement) {
-    getLogger(projectRootDir).debug("used heap size at start point =", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-  }
-
-  await runProject(projectRootDir);
-
-
-  const projectState = projectJson.state;
-  if (projectState === "not-started") {
-    try {
-      await validationCheck(projectRootDir, rootWF.ID, sio);
-      await gitCommit(projectRootDir, "wheel", "wheel@example.com"); //TODO replace name and mail
-      clearDispatchedTasks(projectRootDir);
-    } catch (err) {
-      getLogger(projectRootDir).error("invalid root workflow:", err);
-      removeSsh(projectRootDir);
-      cb(false);
-      return;
-    }
-  }
-  await updateAndSendProjectJson(emit, projectRootDir, "running");
-
-  const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), getLogger(projectRootDir), projectJson.componentPath);
-  if (rootWF.cleanupFlag === "2") {
-    rootDispatcher.doCleanup = defaultCleanupRemoteRoot;
-  }
-  setRootDispatcher(projectRootDir, rootDispatcher);
+  const rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
+  const hosts = await getHosts(projectRootDir, rootWF.ID);
 
   //event listener for task state changed
   async function onTaskStateChanged() {
@@ -236,53 +204,36 @@ async function onRunProject(sio, projectRootDir, cb) {
       });
   }
 
+  //event listner for project state changed
+  function onProjectStateChanged(projectJson) {
+    emit("projectJson", projectJson);
+  }
+
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
+  once(projectRootDir, "projectStateChanged", onProjectStateChanged);
 
-  //project start here
+
+  //actual project start here
   try {
-    let timeout;
-
-    if (memMeasurement) {
-      getLogger(projectRootDir).debug("used heap size just before execution", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-      timeout = setInterval(()=>{
-        getLogger(projectRootDir).debug("used heap size ", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-      }, 30000);
-    }
-
-    rootWF.state = await rootDispatcher.start();
-    const filename = path.resolve(projectRootDir, componentJsonFilename);
-    await fs.writeJson(filename, rootWF, { spaces: 4, replacer: componentJsonReplacer });
-
-    const projectLastState = await getState(projectRootDir);
-    await updateAndSendProjectJson(emit, projectRootDir, projectLastState);
-
-    if (memMeasurement) {
-      getLogger(projectRootDir).debug("used heap size immediately after execution=", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-      clearInterval(timeout);
-    }
+    await createSsh(projectRootDir, hosts, sio);
+    await runProject(projectRootDir);
   } catch (err) {
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
     await updateAndSendProjectJson(emit, projectRootDir, "failed");
+    removeSsh(projectRootDir);
     cb(false);
     return;
   }
-
-  removeListener(projectRootDir, "taskStateChanged", onTaskStateChanged);
-  removeListener(projectRootDir, "componentStateChanged", onComponentStateChanged);
+  off(projectRootDir, "taskStateChanged", onTaskStateChanged);
+  off(projectRootDir, "componentStateChanged", onComponentStateChanged);
+  off(projectRootDir, "projectStateChanged", onProjectStateChanged);
 
   try {
     //directly send last status just in case
     await updateAndSendProjectJson(emit, projectRootDir);
-    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
     await sendWorkflow(emit, projectRootDir);
-    rootDispatcher.remove();
-    deleteRootDispatcher(projectRootDir);
-    removeSsh(projectRootDir);
-
-    if (memMeasurement) {
-      getLogger(projectRootDir).debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-    }
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
   } catch (e) {
     getLogger(projectRootDir).warn("project execution is successfully finished but error occurred in cleanup process", e);
     cb(false);
@@ -297,18 +248,18 @@ async function onPauseProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("pause event recieved");
-  const rootDispatcher = getRootDispatcher(projectRootDir);
+  once(projectRootDir, "projectStateChanged", (projectJson)=>{
+    emit("projectJson", projectJson);
+  });
 
-  if (rootDispatcher) {
-    rootDispatcher.pause();
+  try {
+    await pauseProject(projectRootDir);
+  } catch (e) {
+    cb(false);
+    return;
   }
-
-  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
-  await cancelDispatchedTasks(projectRootDir);
-  removeSsh(projectRootDir);
-  await updateAndSendProjectJson(emit, projectRootDir, "paused");
   getLogger(projectRootDir).debug("pause project done");
-  cb();
+  cb(true);
 }
 
 async function onCleanProject(emit, projectRootDir, cb) {
@@ -316,21 +267,19 @@ async function onCleanProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("clean event recieved");
-  const rootDispatcher = getRootDispatcher(projectRootDir);
+  once(projectRootDir, "projectStateChanged", (projectJson)=>{
+    emit("projectJson", projectJson);
+  });
 
-  if (rootDispatcher) {
-    rootDispatcher.remove();
-    deleteRootDispatcher(projectRootDir);
+  try {
+    await cleanProject(projectRootDir);
+  } catch (e) {
+    cb(false);
+    return;
   }
-  await cancelDispatchedTasks(projectRootDir);
-  clearDispatchedTasks(projectRootDir);
   await emitLongArray(emit, "taskStateList", [], blockSize);
-  await cleanProject(projectRootDir);
-  await openProject(projectRootDir);
-  await sendWorkflow(emit, projectRootDir);
-  await updateAndSendProjectJson(emit, projectRootDir, "not-started");
   getLogger(projectRootDir).debug("clean project done");
-  cb();
+  cb(true);
 }
 
 async function onSaveProject(emit, projectRootDir, cb) {

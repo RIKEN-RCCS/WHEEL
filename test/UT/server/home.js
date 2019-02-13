@@ -190,7 +190,7 @@ describe("home screen API test", ()=>{
       expect(rootWF.outputFiles).to.be.an("array").that.is.empty;
       expect(projectList.getByPosition(0).path).to.be.equal(path.resolve(testDirRoot, "foo.wheel"));
     });
-    it("should not create new project which has the same name as any other existing project", async()=>{
+    it.skip("should not create new project which has the same name as any other existing project", async()=>{
       await onAddProject(emit, `${testDirRoot}/foo`, null);
       expect(emit).to.have.been.calledOnce;
       emit.reset();
