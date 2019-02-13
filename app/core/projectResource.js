@@ -5,13 +5,12 @@ const EventEmitter = require("events");
 const fs = require("fs-extra");
 const glob = require("glob");
 const { gitResetHEAD } = require("./gitOperator");
-const { taskStateFilter, cancelDispatchedTasks } = require("./taskUtil");
+const { taskStateFilter } = require("./taskUtil");
 const Dispatcher = require("./dispatcher");
 const orgGetLogger = require("../logSettings").getLogger;
 const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
 const { getDateString } = require("../lib/utility");
-const { componentJsonReplacer } = require("./componentFilesOperator");
 
 
 async function rmfr(rootDir) {
@@ -40,13 +39,6 @@ class Project extends EventEmitter {
     this.logger.addContext("logFilename", path.join(projectRootDir, "wheel.log"));
     this.projectJsonFilename = path.resolve(this.projectRootDir, projectJsonFilename);
     this.rootWFFilename = path.resolve(this.projectRootDir, componentJsonFilename);
-
-    this.on("taskDispatched", (task)=>{
-      this.tasks.add(task);
-    });
-    this.on("taskUpdated", (task)=>{
-      this.updatedTasks.add(task);
-    });
   }
 
   _removeSsh() {
@@ -54,13 +46,6 @@ class Project extends EventEmitter {
       ssh.disconnect();
     }
     this.ssh.clear();
-  }
-
-  async _updateProjectState(projectJson, state) {
-    projectJson.state = state;
-    projectJson.mtime = getDateString(true);
-    this.emit("projectStateChanged", projectJson);
-    return fs.writeJson(this.projectJsonFilename, projectJson, { spaces: 4 });
   }
 
   async run() {
@@ -75,16 +60,16 @@ class Project extends EventEmitter {
       this.projectRootDir,
       getDateString(),
       getLogger(this.projectRootDir),
-      projectJson.componentPath,
-      this.emit.bind(this));
+      projectJson.componentPath);
 
     if (rootWF.cleanupFlag === "2") {
       this.rootDispatcher.doCleanup = defaultCleanupRemoteRoot;
     }
+    //TODO update projectJsonFile
+    this.emit("projectStateChanged", "running");
 
-    await this._updateProjectState(projectJson, "running");
     rootWF.state = await this.rootDispatcher.start();
-    await this._updateProjectState(projectJson, rootWF.state);
+    this.emit("projectStateChanged", rootWF.state);
 
     await fs.writeJson(this.rootWFFilename, rootWF, { spaces: 4, replacer: componentJsonReplacer });
 
@@ -93,27 +78,21 @@ class Project extends EventEmitter {
   }
 
   async pause() {
-    if (this.rootDispatcher !== null) {
-      this.rootDispatcher.pause();
-    }
+  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
+    this.rootDispatcher.pause();
     this._removeSsh();
-    await cancelDispatchedTasks(this.tasks, this.logger);
-    const projectJson = await readJsonGreedy(this.projectJsonFilename);
-    await this._updateProjectState(projectJson, "paused");
+    await cancelDispatchedTasks(this.projectRootDir);
+    this.emit("projectStateChanged", "paused");
   }
 
   async clean() {
-    if (this.rootDispatcher !== null) {
-      this.rootDispatcher.remove();
-    }
+    this.rootDispatcher.remove();
     this._removeSsh();
-    await cancelDispatchedTasks(this.tasks, this.logger);
-    this.tasks.clear();
+    await cancelDispatchedTasks(this.projectRootDir);
+    clearDispatchedTasks(projectRootDir);
     await rmfr(this.projectRootDir);
     await gitResetHEAD(this.projectRootDir);
-    const projectJson = await readJsonGreedy(this.projectJsonFilename);
-    console.log(projectJson.state);
-    this.emit("projectStateChanged", projectJson);
+    this.emit("projectStateChanged", "not-started");
   }
 }
 
@@ -132,8 +111,8 @@ function runProject(projectRootDir) {
 function pauseProject(projectRootDir) {
   return getProject(projectRootDir).pause();
 }
-function cleanProject(projectRootDir) {
-  return getProject(projectRootDir).clean();
+function claenProject(projectRootDir) {
+  return getProject(projectRootDir).claen();
 }
 
 function openProject(projectRootDir) {
@@ -149,6 +128,20 @@ function getCwd(projectRootDir) {
   return getProject(projectRootDir).cwd;
 }
 
+async function cleanProject(projectRootDir) {
+  const rootDir = projectRootDir;
+  const srces = await promisify(glob)("*", { cwd: rootDir, ignore: "wheel.log" });
+
+  //TODO should be optimized stride value(100);
+  for (let i = 0; i < srces.length; i += 100) {
+    const end = i + 100 < srces.length ? i + 100 : srces.length;
+    const p = srces.slice(i, end).map((e)=>{
+      return fs.remove(path.resolve(rootDir, e));
+    });
+    await Promise.all(p);
+  }
+  return gitResetHEAD(projectRootDir);
+}
 
 /**
  * disconnect and remove all ssh instance
@@ -174,12 +167,6 @@ function once(projectRootDir, eventName, cb) {
   const pj = getProject(projectRootDir);
   if (pj.listenerCount(eventName) === 0) {
     pj.once(eventName, cb);
-  }
-}
-function on(projectRootDir, eventName, cb) {
-  const pj = getProject(projectRootDir);
-  if (pj.listenerCount(eventName) === 0) {
-    pj.on(eventName, cb);
   }
 }
 
@@ -237,13 +224,10 @@ module.exports = {
   addSsh,
   getSsh,
   removeSsh,
+  cleanProject,
   emitEvent,
   once,
-  on,
   off,
   getLogger,
-  setSio,
-  runProject,
-  cleanProject,
-  pauseProject
+  setSio
 };

@@ -190,11 +190,6 @@ async function onRunProject(sio, projectRootDir, cb) {
       });
   }
 
-  //event listner for project state changed
-  function onProjectStateChanged(projectJson) {
-    emit("projectJson", projectJson);
-  }
-
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
 
