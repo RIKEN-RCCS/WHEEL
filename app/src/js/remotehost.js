@@ -228,6 +228,16 @@ $(() => {
       });
   }
 
+  $("#cloudContentsButton").click(function () {
+    $("#hostRegFormAreaForCloud").css('display', 'inline-flex');
+    $("#hostRegFormAreaForHPC").css('display', 'none');
+  });
+
+  $("#hpcContentsButton").click(function () {
+    $("#hostRegFormAreaForHPC").css('display', 'inline-flex');
+    $("#hostRegFormAreaForCloud").css('display', 'none');
+  });
+
   function resetNewHost() {
     Object.assign(vm.newHostInfo, defaultHost);
   }
@@ -236,12 +246,12 @@ $(() => {
     return string === '';
   }
 
-  // 追加部分　編集時に黄色い枠にする
+  // change color in case of "edit" mode.
   function formColor() {
-    $('#hostRegFormArea input:not([type="radio"])').css('border', '1px solid #ccff00');
+    $('#hostRegFormAreaForHPC input:not([type="radio"])').css('border', '1px solid #ccff00');
   }
   function notFormColor() {
-    $('#hostRegFormArea input:not([type="radio"])').css('border', '1px solid #000000');
+    $('#hostRegFormAreaForHPC input:not([type="radio"])').css('border', '1px solid #000000');
   }
   $("#newButton").click(formColor);
   $("#copyButton").click(notFormColor);
