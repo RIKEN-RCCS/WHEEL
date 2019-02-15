@@ -108,6 +108,12 @@
       <label id="hostRegTitleLabel">Host Registration</label>
     </div>
 
+    <!-- Cange registration contents button "HPC" "Cloud" -->
+    <div id="cangeRegistrationContentsButtonArea">
+      <button id="hpcContentsButton">HPC</button>
+      <button id="cloudContentsButton">Cloud</button>
+    </div>
+
     <!-- Confirm Cancel Button Area -->
     <div id="confirmCancelButtonArea">
       <button v-on:click="onEditAreaOKButton" v-bind:disabled="hasError" id="confirmButton">Confirm</button>
@@ -115,7 +121,7 @@
     </div>
 
     <!-- New Remote Host Registration -->
-    <div id="hostRegFormArea">
+    <div id="hostRegFormAreaForHPC">
       <div id="leftFormArea">
         <div>
           <span>
@@ -220,6 +226,16 @@
           </span>
           <input type="text" v-model.number="newHostInfo.maxStatusCheckError">
         </div>
+      </div>
+    </div>
+
+    <div id="hostRegFormAreaForCloud">
+      <div>
+        <span>
+          <label>Label</label>
+        </span>
+        <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
+        <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
       </div>
     </div>
 

@@ -297,13 +297,24 @@ input::-webkit-input-placeholder {
 }
 
 /* New Remote Host Registration  */
-#hostRegFormArea{
+#hostRegFormAreaForHPC{
   display: inline-flex;
   padding: 12px 0 0 16px;
 
 }
 
-#hostRegFormArea label{
+#hostRegFormAreaForCloud{
+  display: inline-flex;
+  padding: 12px 0 0 16px;
+  display: none;
+}
+
+#hostRegFormAreaForHPC label{
+  display: inline-block;
+  width: 140px;
+}
+
+#hostRegFormAreaForCloud label{
   display: inline-block;
   width: 140px;
 }
@@ -312,7 +323,7 @@ input::-webkit-input-placeholder {
   width: 100px;
 }
 
-#hostRegFormArea input:not([type="radio"]){
+#hostRegFormAreaForHPC input:not([type="radio"]){
   width: 300px;
   height: 24px;
   padding: 0 0 0 8px;
