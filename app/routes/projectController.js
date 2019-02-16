@@ -301,18 +301,19 @@ async function onRunProject(sio, projectRootDir, cb) {
     return;
   }
 
+
   const projectState = projectJson.state;
   if (projectState === "not-started") {
-    try {
-      await validationCheck(projectRootDir, rootWF.ID, sio);
-      await gitCommit(projectRootDir, "wheel", "wheel@example.com"); //TODO replace name and mail
-      clearDispatchedTasks(projectRootDir);
-    } catch (err) {
-      getLogger(projectRootDir).error("invalid root workflow:", err);
-      removeSsh(projectRootDir);
-      cb(false);
-      return;
-    }
+    clearDispatchedTasks(projectRootDir);
+  }
+  try {
+    await validationCheck(projectRootDir, rootWF.ID, sio);
+    await gitCommit(projectRootDir, "wheel", "wheel@example.com"); //TODO replace name and mail
+  } catch (err) {
+    getLogger(projectRootDir).error("invalid root workflow:", err);
+    removeSsh(projectRootDir);
+    cb(false);
+    return;
   }
   await updateAndSendProjectJson(emit, projectRootDir, "running");
 
