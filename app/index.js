@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
-const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort}  = require("./db/db");
+const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort } = require("./db/db");
 const { getLogger, setup } = require("./logSettings");
 
 /*
@@ -124,18 +124,18 @@ if (jupyter) {
     logger.debug(`get error from jupyter process: ${err}`);
   });
   process.on("exit", ()=>{
-    if(logger){
+    if (logger) {
       logger.debug(`kill jupyter process(${cp.pid}) before exit`);
-    }else{
+    } else {
       //eslint-disable-next-line no-console
       console.log(`kill jupyter process(${cp.pid}) before exit`);
     }
     cp.kill();
   });
   process.on("SIGINT", ()=>{
-    if(logger){
+    if (logger) {
       logger.info("WHEEL will shut down because Control-C pressed");
-    }else{
+    } else {
       //eslint-disable-next-line no-console
       console.log("WHEEL will shut down because Control-C pressed");
     }

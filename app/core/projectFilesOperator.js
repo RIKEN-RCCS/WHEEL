@@ -3,8 +3,8 @@ const fs = require("fs-extra");
 const path = require("path");
 const pathIsInside = require("path-is-inside");
 
-const { componentFactory} = require("./workflowComponent");
-const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename} = require("../db/db");
+const { componentFactory } = require("./workflowComponent");
+const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getDateString } = require("../lib/utility");
 const { replacePathsep, convertPathSep } = require("./pathUtils");
 const { readJsonGreedy } = require("./fileUtils");
@@ -28,7 +28,10 @@ async function createNewProject(projectRootDir, name, description, user, mail, l
   const rootWorkflow = componentFactory("workflow");
   rootWorkflow.name = name;
   rootWorkflow.cleanupFlag = defaultCleanupRemoteRoot === 0 ? 0 : 1;
-  if(logger) logger.debug(rootWorkflow);
+
+  if (logger) {
+    logger.debug(rootWorkflow);
+  }
   await fs.writeJson(rootWorkflowFileFullpath, rootWorkflow, { spaces: 4 });
 
   //write project JSON
@@ -45,18 +48,22 @@ async function createNewProject(projectRootDir, name, description, user, mail, l
   };
   projectJson.componentPath[rootWorkflow.ID] = "./";
   const projectJsonFileFullpath = path.resolve(projectRootDir, projectJsonFilename);
-  if(logger) logger.debug(projectJson);
+  if (logger) {
+    logger.debug(projectJson);
+  }
   await fs.writeJson(projectJsonFileFullpath, projectJson, { spaces: 4 });
   return gitInit(projectRootDir, user, mail);
 }
 
-async function updateComponentPath(projectRootDir, ID, absPath){
+async function updateComponentPath(projectRootDir, ID, absPath) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
 
   //normalize path
   let newRelativePath = replacePathsep(path.relative(projectRootDir, absPath));
-  if(! newRelativePath.startsWith(".")) newRelativePath = "./"+newRelativePath;
+  if (!newRelativePath.startsWith(".")) {
+    newRelativePath = `./${newRelativePath}`;
+  }
 
   //if ID is already in componentPath, rewrite all desecndants' path
   const oldRelativePath = projectJson.componentPath[ID];
@@ -76,18 +83,32 @@ async function updateComponentPath(projectRootDir, ID, absPath){
   return gitAdd(projectRootDir, filename);
 }
 
-async function getComponentDir(projectRootDir, ID, isAbsolute){
-  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
-  const relativePath = projectJson.componentPath[ID];
-  if(relativePath ){
-    return isAbsolute? path.resolve(projectRootDir, relativePath):relativePath;
-  }else{
-    return null;
+async function setProjectState(projectRootDir, state) {
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await readJsonGreedy(filename);
+  if (projectJson === state) {
+    return Promise.resolve();
   }
+  projectJson.state = state;
+  const timestamp = getDateString(true);
+  projectJson.ctime = timestamp;
+  projectJson.mtime = timestamp;
+  await fs.writeJson(filename, projectJson, { spaces: 4 });
+  return gitAdd(projectRootDir, filename);
 }
 
-module.exports={
+async function getComponentDir(projectRootDir, ID, isAbsolute) {
+  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
+  const relativePath = projectJson.componentPath[ID];
+  if (relativePath) {
+    return isAbsolute ? path.resolve(projectRootDir, relativePath) : relativePath;
+  }
+  return null;
+}
+
+module.exports = {
   createNewProject,
   updateComponentPath,
-  getComponentDir
-}
+  getComponentDir,
+  setProjectState
+};

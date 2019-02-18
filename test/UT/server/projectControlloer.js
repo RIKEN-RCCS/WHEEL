@@ -12,8 +12,9 @@ chai.use(require("chai-json-schema"));
 const rewire = require("rewire");
 
 //testee
-const projectController = rewire("../../../app/routes/projectController");
-const onRunProject = projectController.__get__("onRunProject");
+//const runProject =
+const projectResource = rewire("../../../app/core/projectResource");
+const runProject = projectResource.__get__("runProject");
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";
@@ -22,22 +23,20 @@ const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 //helper functions
 const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
 const { createNewProject } = require("../../../app/core/projectFilesOperator");
+const { updateComponent, createNewComponent } = require("../../../app/core/componentFilesOperator");
 const workflowEditor = rewire("../../../app/routes/workflowEditor2");
-const onCreateNode = workflowEditor.__get__("onCreateNode");
-const onUpdateNode = workflowEditor.__get__("onUpdateNode");
+//TODO replace on.. by function in componentFilesOperator
+
 const onAddInputFile = workflowEditor.__get__("onAddInputFile");
 const onAddOutputFile = workflowEditor.__get__("onAddOutputFile");
 const onAddLink = workflowEditor.__get__("onAddLink");
 const onAddFileLink = workflowEditor.__get__("onAddFileLink");
-const { openProject, setCwd } = require("../../../app/core/projectResource");
 
 const { scriptName, pwdCmd, scriptHeader, referenceEnv } = require("./testScript");
 const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 const { escapeRegExp } = require("../../../app/lib/utility");
 
 //stubs
-const emit = sinon.stub();
-const cb = sinon.stub();
 const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, trace: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
 dummyLogger.error = console.log;
 dummyLogger.warn = console.log;
@@ -46,45 +45,32 @@ dummyLogger.debug = console.log;
 //dummyLogger.stdout=console.log;
 //sinon.spy(dummyLogger, "stdout");
 
-projectController.__set__("getLogger", ()=>{
+projectResource.__set__("getLogger", ()=>{
   return dummyLogger;
 });
 
-const sio = {};
-sio.emit = sinon.stub();
-//
-//TODO pass stub to askPassword for remote task test
-//
-describe("project Controller UT", function() {
+describe.only("project Controller UT", function() {
   this.timeout(0);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
-    emit.reset();
-    cb.reset();
-    sio.emit.reset();
     dummyLogger.stdout.reset();
     dummyLogger.stderr.reset();
     dummyLogger.sshout.reset();
     dummyLogger.ssherr.reset();
     await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
-    await openProject(projectRootDir);
   });
   after(async()=>{
     await fs.remove(testDirRoot);
   });
-  describe("#onRunProject", ()=>{
-    describe.only("one local task", ()=>{
+  describe("#runProject", ()=>{
+    describe("one local task", ()=>{
       beforeEach(async()=>{
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        console.log("DEBUG: test start");
-        await onRunProject(sio, projectRootDir, cb);
-        console.log("DEUBG: onRunProject done");
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
         expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
@@ -113,12 +99,12 @@ describe("project Controller UT", function() {
     });
     describe("3 local tasks with execution order dependency", ()=>{
       beforeEach(async()=>{
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const task2 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, task1.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, task2.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const task2 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
+        await updateComponent(projectRootDir, task1.ID, "script", scriptName);
+        await updateComponent(projectRootDir, task2.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "task2", scriptName), scriptPwd);
@@ -126,9 +112,7 @@ describe("project Controller UT", function() {
         await onAddLink(emit, projectRootDir, { src: task1.ID, dst: task2.ID, isElse: false });
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
@@ -173,12 +157,12 @@ describe("project Controller UT", function() {
     });
     describe("3 local tasks with file dependency", ()=>{
       beforeEach(async()=>{
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const task2 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, task1.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, task2.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const task2 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
+        await updateComponent(projectRootDir, task1.ID, "script", scriptName);
+        await updateComponent(projectRootDir, task2.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "task0", "a"), "a");
         await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
@@ -191,9 +175,7 @@ describe("project Controller UT", function() {
         await onAddFileLink(emit, projectRootDir, task1.ID, "b", task2.ID, "c");
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
@@ -241,16 +223,13 @@ describe("project Controller UT", function() {
     });
     describe("task in the sub workflow", ()=>{
       beforeEach(async()=>{
-        const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
-        setCwd(projectRootDir, path.join(projectRootDir, "workflow0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const wf0 = await createNewComponent(projectRootDir, projectRootDir, "workflow", { x: 10, y: 10 });
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "workflow0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "workflow0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "workflow0", "task0"));
@@ -279,22 +258,21 @@ describe("project Controller UT", function() {
     });
     describe("file dependency between parent and child", ()=>{
       beforeEach(async()=>{
-        const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, wf0.ID, "name", "wf0");
-        const parentTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const parentTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "name", "parentTask0");
-        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "name", "parentTask1");
-        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", scriptName);
+        const wf0 = await createNewComponent(projectRootDir, projectRootDir, "workflow", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, wf0.ID, "name", "wf0");
+        const parentTask0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const parentTask1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, parentTask0.ID, "name", "parentTask0");
+        await updateComponent(projectRootDir, parentTask0.ID, "script", scriptName);
+        await updateComponent(projectRootDir, parentTask1.ID, "name", "parentTask1");
+        await updateComponent(projectRootDir, parentTask1.ID, "script", scriptName);
 
-        setCwd(projectRootDir, path.join(projectRootDir, "wf0"));
-        const childTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const childTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, childTask0.ID, "name", "childTask0");
-        await onUpdateNode(emit, projectRootDir, childTask0.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, childTask1.ID, "name", "childTask1");
-        await onUpdateNode(emit, projectRootDir, childTask1.ID, "script", scriptName);
+        const childTask0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf0"), "task", { x: 10, y: 10 });
+        const childTask1 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, childTask0.ID, "name", "childTask0");
+        await updateComponent(projectRootDir, childTask0.ID, "script", scriptName);
+        await updateComponent(projectRootDir, childTask1.ID, "name", "childTask1");
+        await updateComponent(projectRootDir, childTask1.ID, "script", scriptName);
 
         //add file dependency
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
@@ -320,9 +298,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "wf0", "childTask1", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout.callCount).to.equal(4);
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask0"));
@@ -389,18 +365,18 @@ describe("project Controller UT", function() {
     });
     describe("If component", ()=>{
       beforeEach(async()=>{
-        const if0 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
-        const if1 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
-        const if2 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
-        const if3 = await onCreateNode(emit, projectRootDir, { type: "if", pos: { x: 10, y: 10 } });
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const task1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, if0.ID, "condition", scriptName);
-        await onUpdateNode(emit, projectRootDir, if1.ID, "condition", scriptName);
-        await onUpdateNode(emit, projectRootDir, if2.ID, "condition", "true");
-        await onUpdateNode(emit, projectRootDir, if3.ID, "condition", "(()=>{return false})()");
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, task1.ID, "script", scriptName);
+        const if0 = await createNewComponent(projectRootDir, projectRootDir, "if", { x: 10, y: 10 });
+        const if1 = await createNewComponent(projectRootDir, projectRootDir, "if", { x: 10, y: 10 });
+        const if2 = await createNewComponent(projectRootDir, projectRootDir, "if", { x: 10, y: 10 });
+        const if3 = await createNewComponent(projectRootDir, projectRootDir, "if", { x: 10, y: 10 });
+        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, if0.ID, "condition", scriptName);
+        await updateComponent(projectRootDir, if1.ID, "condition", scriptName);
+        await updateComponent(projectRootDir, if2.ID, "condition", "true");
+        await updateComponent(projectRootDir, if3.ID, "condition", "(()=>{return false})()");
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
+        await updateComponent(projectRootDir, task1.ID, "script", scriptName);
         await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task0.ID, isElse: false });
         await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task1.ID, isElse: true });
         await onAddLink(emit, projectRootDir, { src: if1.ID, dst: task1.ID, isElse: false });
@@ -415,9 +391,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
         expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;
@@ -481,19 +455,16 @@ describe("project Controller UT", function() {
     });
     describe("task in a For component", ()=>{
       beforeEach(async()=>{
-        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "end", 2);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
-        setCwd(projectRootDir, path.join(projectRootDir, "for0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, for0.ID, "start", 0);
+        await updateComponent(projectRootDir, for0.ID, "end", 2);
+        await updateComponent(projectRootDir, for0.ID, "step", 1);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "for0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "task0"));
@@ -550,17 +521,14 @@ describe("project Controller UT", function() {
     });
     describe("task in a While component", ()=>{
       beforeEach(async()=>{
-        const while0 = await onCreateNode(emit, projectRootDir, { type: "while", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
-        setCwd(projectRootDir, path.join(projectRootDir, "while0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const while0 = await createNewComponent(projectRootDir, projectRootDir, "while", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "while0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "while0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledTwice;
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "while0_0", "task0"));
@@ -609,17 +577,14 @@ describe("project Controller UT", function() {
     });
     describe("task in a Foreach component", ()=>{
       beforeEach(async()=>{
-        const foreach0 = await onCreateNode(emit, projectRootDir, { type: "foreach", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, foreach0.ID, "indexList", ["foo", "bar", "baz", "fizz"]);
-        setCwd(projectRootDir, path.join(projectRootDir, "foreach0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const foreach0 = await createNewComponent(projectRootDir, projectRootDir, "foreach", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, foreach0.ID, "indexList", ["foo", "bar", "baz", "fizz"]);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "foreach0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "foreach0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout.callCount).to.equal(4);
         const firstCall = dummyLogger.stdout.getCall(0);
         expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "foreach0_foo", "task0"));
@@ -684,16 +649,16 @@ describe("project Controller UT", function() {
     });
     describe("file dependency between task in the For component", ()=>{
       beforeEach(async()=>{
-        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
-        const parentTask0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        const parentTask1 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "end", 2);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
-        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "name", "parentTask0");
-        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "name", "parentTask1");
-        await onUpdateNode(emit, projectRootDir, parentTask0.ID, "script", scriptName);
-        await onUpdateNode(emit, projectRootDir, parentTask1.ID, "script", scriptName);
+        const for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
+        const parentTask0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const parentTask1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, for0.ID, "start", 0);
+        await updateComponent(projectRootDir, for0.ID, "end", 2);
+        await updateComponent(projectRootDir, for0.ID, "step", 1);
+        await updateComponent(projectRootDir, parentTask0.ID, "name", "parentTask0");
+        await updateComponent(projectRootDir, parentTask1.ID, "name", "parentTask1");
+        await updateComponent(projectRootDir, parentTask0.ID, "script", scriptName);
+        await updateComponent(projectRootDir, parentTask1.ID, "script", scriptName);
 
         await onAddOutputFile(emit, projectRootDir, parentTask0.ID, "a");
         await onAddInputFile(emit, projectRootDir, for0.ID, "b");
@@ -702,9 +667,8 @@ describe("project Controller UT", function() {
         await onAddFileLink(emit, projectRootDir, parentTask0.ID, "a", for0.ID, "b");
         await onAddFileLink(emit, projectRootDir, for0.ID, "e", parentTask1.ID, "f");
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await onAddInputFile(emit, projectRootDir, task0.ID, "c");
         await onAddOutputFile(emit, projectRootDir, task0.ID, "d");
         await onAddFileLink(emit, projectRootDir, for0.ID, "b", task0.ID, "c");
@@ -716,9 +680,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "for0", "task0", scriptName), `${scriptPwd}\necho ${referenceEnv("WHEEL_CURRENT_INDEX")} > d\n`);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout.callCount).to.equal(5);
         expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "parentTask0"));
         expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "task0"));
@@ -799,8 +761,8 @@ describe("project Controller UT", function() {
     });
     describe("task in PS", ()=>{
       beforeEach(async()=>{
-        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        const ps0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
         await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
         const parameterSetting = {
           target_file: "input.txt",
@@ -818,15 +780,12 @@ describe("project Controller UT", function() {
         };
         await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
 
-        setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "PS0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
         expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
@@ -874,11 +833,10 @@ describe("project Controller UT", function() {
     });
     describe("task in PS ver.2", ()=>{
       beforeEach(async()=>{
-        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
-        setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const ps0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "PS0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
 
         await fs.outputFile(path.join(projectRootDir, "PS0", "input1.txt"), "{{ KEYWORD1 }} {{ KEYWORD3 }}");
         await fs.outputFile(path.join(projectRootDir, "PS0", "filename.txt"), "{{ filename }} {{ KEYWORD2 }}");
@@ -918,9 +876,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), `${scriptPwd}|tee output.log\n`);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.callCount(18);
         //expect(dummyLogger.stdout).to.have.been.calledWithMatch(new RegExp(escapeRegExp(`${projectRootDir}/PS0_KEYWORD1_[123]_KEYWORD3_(foo|bar)_filename_data_[123]`)), "task0");
         expect(dummyLogger.stderr).not.to.have.been.called;
@@ -1044,17 +1000,15 @@ describe("project Controller UT", function() {
     });
     describe.skip("task in nested PS(does not work for now)", ()=>{
       beforeEach(async()=>{
-        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        const ps0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
 
-        setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
-        const ps1 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, ps1.ID, "name", "PS1");
-        await onUpdateNode(emit, projectRootDir, ps1.ID, "parameterFile", "input.txt.json");
+        const ps1 = await createNewComponent(projectRootDir, path.join(projectRootDir, "PS0"), "PS", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, ps1.ID, "name", "PS1");
+        await updateComponent(projectRootDir, ps1.ID, "parameterFile", "input.txt.json");
 
-        setCwd(projectRootDir, path.join(projectRootDir, "PS0", "PS1"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "PS0", "PS1"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "PS0", "PS1", "task0", scriptName), scriptPwd);
 
         await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
@@ -1077,9 +1031,7 @@ describe("project Controller UT", function() {
         await fs.writeJson(path.join(projectRootDir, "PS0", "PS1", "input.txt.json"), parameterSetting, { spaces: 4 });
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout.callCount).to.equal(9);
         //expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_1", "task0"));
         //expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1","PS1_KEYWORD1_2", "task0"));
@@ -1175,27 +1127,23 @@ describe("project Controller UT", function() {
     });
     describe("task in nested loop", ()=>{
       beforeEach(async()=>{
-        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "end", 1);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
+        const for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, for0.ID, "start", 0);
+        await updateComponent(projectRootDir, for0.ID, "end", 1);
+        await updateComponent(projectRootDir, for0.ID, "step", 1);
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0"));
-        const for1 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, for1.ID, "name", "for1");
-        await onUpdateNode(emit, projectRootDir, for1.ID, "start", 0);
-        await onUpdateNode(emit, projectRootDir, for1.ID, "end", 1);
-        await onUpdateNode(emit, projectRootDir, for1.ID, "step", 1);
+        const for1 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0"), "for", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, for1.ID, "name", "for1");
+        await updateComponent(projectRootDir, for1.ID, "start", 0);
+        await updateComponent(projectRootDir, for1.ID, "end", 1);
+        await updateComponent(projectRootDir, for1.ID, "step", 1);
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0", "for1"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "for1"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "for0", "for1", "task0", scriptName), scriptPwd);
       });
       it("should run project and successfully finish", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout.callCount).to.equal(4);
         expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "for1_0", "task0"));
         expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "for0_0", "for1_1", "task0"));
@@ -1259,21 +1207,18 @@ describe("project Controller UT", function() {
     });
     describe("check ancestors prop in task component", ()=>{
       beforeEach(async()=>{
-        const for0 = await onCreateNode(emit, projectRootDir, { type: "for", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, for0.ID, "start", 0);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "end", 1);
-        await onUpdateNode(emit, projectRootDir, for0.ID, "step", 1);
+        const for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, for0.ID, "start", 0);
+        await updateComponent(projectRootDir, for0.ID, "end", 1);
+        await updateComponent(projectRootDir, for0.ID, "step", 1);
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0"));
-        const while0 = await onCreateNode(emit, projectRootDir, { type: "while", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
+        const while0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0"), "while", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0"));
-        const wf0 = await onCreateNode(emit, projectRootDir, { type: "workflow", pos: { x: 10, y: 10 } });
+        const wf0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "while0"), "workflow", { x: 10, y: 10 });
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0"));
-        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        const ps0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0"), "PS", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
         await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "input.txt"), "%%KEYWORD1%%");
         const parameterSetting = {
           target_file: "input.txt",
@@ -1291,19 +1236,15 @@ describe("project Controller UT", function() {
         };
         await fs.writeJson(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0"));
-        const foreach0 = await onCreateNode(emit, projectRootDir, { type: "foreach", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, foreach0.ID, "indexList", ["foo", "bar"]);
+        const foreach0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0"), "foreach", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, foreach0.ID, "indexList", ["foo", "bar"]);
 
-        setCwd(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "foreach0", "task0", scriptName), scriptPwd);
       });
       it("should have acestors name and type in task object", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
 
         for (const i1 of ["for0_0", "for0_1"]) {
           for (const i2 of ["while0_0", "while0_1"]) {
@@ -1325,8 +1266,8 @@ describe("project Controller UT", function() {
     });
     describe("force overwrite flag in PS", ()=>{
       beforeEach(async()=>{
-        const ps0 = await onCreateNode(emit, projectRootDir, { type: "PS", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
+        const ps0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
         await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
         const parameterSetting = {
           target_file: "input.txt",
@@ -1344,16 +1285,14 @@ describe("project Controller UT", function() {
         };
         await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
 
-        setCwd(projectRootDir, path.join(projectRootDir, "PS0"));
-        const task0 = await onCreateNode(emit, projectRootDir, { type: "task", pos: { x: 10, y: 10 } });
-        await onUpdateNode(emit, projectRootDir, task0.ID, "script", scriptName);
+        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "PS0"), "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), `${scriptPwd}exit 1\n`);
 
         //1st run
-        await onRunProject(sio, projectRootDir);
+        await runProject(projectRootDir);
         //modify run.sh
         await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), `${scriptPwd}|tee result.log\n`);
-        setCwd(projectRootDir, path.join(projectRootDir));
         //reset logger's call count
         dummyLogger.stdout.reset();
         dummyLogger.stderr.reset();
@@ -1361,9 +1300,7 @@ describe("project Controller UT", function() {
         dummyLogger.ssherr.reset();
       });
       it("should not overwrite files and run project ", async()=>{
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
         expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
@@ -1413,10 +1350,8 @@ describe("project Controller UT", function() {
       });
       it("should overwrite files and run project ", async()=>{
         const ps0 = await fs.readJson(path.join(projectRootDir, "PS0", componentJsonFilename));
-        await onUpdateNode(emit, projectRootDir, ps0.ID, "forceOverwrite", true);
-        await onRunProject(sio, projectRootDir, cb);
-        expect(cb).to.have.been.calledOnce;
-        expect(cb).to.have.been.calledWith(true);
+        await updateComponent(projectRootDir, ps0.ID, "forceOverwrite", true);
+        await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
         expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));

@@ -48,7 +48,10 @@ async function validateTask(projectRootDir, component) {
     return Promise.reject(new Error(`script is not specified ${component.name}`));
   }
   const componentDir = await getComponentDir(projectRootDir, component.ID, true);
-  return fs.access(path.resolve(componentDir, component.script));
+  const filename = path.resolve(componentDir, component.script);
+  if (!(await fs.stat(filename)).isFile()) {
+    return Promise.reject(new Error(`script is not existing file ${filename}`));
+  }
 }
 
 async function validateConditionalCheck(component) {
@@ -186,6 +189,9 @@ async function renameComponentDir(projectRootDir, ID, newName) {
     return new Error(`${value} is not valid component name`);
   }
   const oldDir = await getComponentDir(projectRootDir, ID, true);
+  if (oldDir === projectRootDir) {
+    return new Error("updateNode can not rename root workflow");
+  }
   const newDir = path.resolve(path.dirname(oldDir), newName);
   await gitRm(projectRootDir, oldDir);
   await fs.move(oldDir, newDir);
@@ -193,6 +199,12 @@ async function renameComponentDir(projectRootDir, ID, newName) {
 }
 
 async function updateComponent(projectRootDir, ID, prop, value) {
+  if (prop === "path") {
+    return new Error("path property is deprecated. please use 'name' instead.");
+  }
+  if (prop === "inputFiles" || prop === "outputFiles") {
+    return new Error(`updateNode does not support ${prop}. please use renameInputFile or renameOutputFile`);
+  }
   if (prop === "name") {
     await renameComponentDir(projectRootDir, ID, value);
   }
@@ -225,6 +237,14 @@ async function createNewComponent(projectRootDir, parentDir, type, pos) {
 
   return newComponent;
 }
+async function addInputFile() {
+}
+async function addOutputFile() {
+}
+async function addLink() {
+}
+async function addFileLink() {
+}
 
 
 module.exports = {
@@ -232,5 +252,9 @@ module.exports = {
   updateComponent,
   createNewComponent,
   validateComponents,
-  getHosts
+  getHosts,
+  addInputFile,
+  addOutputFile,
+  addLink,
+  addFileLink
 };
