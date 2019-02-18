@@ -29,7 +29,7 @@ const onAddInputFile = workflowEditor.__get__("onAddInputFile");
 const onAddOutputFile = workflowEditor.__get__("onAddOutputFile");
 const onAddLink = workflowEditor.__get__("onAddLink");
 const onAddFileLink = workflowEditor.__get__("onAddFileLink");
-const { openProject, setCwd } = require("../../../app/routes/projectResource");
+const { openProject, setCwd } = require("../../../app/core/projectResource");
 
 const { scriptName, pwdCmd, scriptHeader, referenceEnv } = require("./testScript");
 const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
