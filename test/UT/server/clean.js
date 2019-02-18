@@ -27,19 +27,16 @@ sio.emit = sinon.stub();
 
 //helper functions
 const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
-const {createNewProject} = require("../../../app/core/projectFilesOperator");
-const {createNewComponent, updateComponent} = require("../../../app/core/componentFilesOperator");
-const { openProject, setCwd } = require("../../../app/routes/projectResource");
-const projectController = rewire("../../../app/routes/projectController");
-const onRunProject = projectController.__get__("onRunProject");
-const { getComponentDir } = require("../../../app/routes/workflowUtil");
-const {scriptName, pwdCmd} = require("./testScript");
+const { createNewProject } = require("../../../app/core/projectFilesOperator");
+const { createNewComponent, updateComponent } = require("../../../app/core/componentFilesOperator");
+const { openProject } = require("../../../app/core/projectResource");
+const { scriptName, pwdCmd } = require("./testScript");
 const Dispatcher = require("../../../app/core/dispatcher");
-const {getDateString} = require("../../../app/lib/utility");
-const {gitAdd, gitCommit} = require("../../../app/core/gitOperator");
+const { getDateString } = require("../../../app/lib/utility");
+const { gitAdd, gitCommit } = require("../../../app/core/gitOperator");
 
 
-describe("test about cleaning functionality", function (){
+describe("test about cleaning functionality", function() {
   this.timeout(10000);
   let components;
   const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
@@ -58,27 +55,27 @@ describe("test about cleaning functionality", function (){
      */
 
 
-    const task0 = await createNewComponent(projectRootDir, projectRootDir,"task", { x: 10, y: 10 } );
+    const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
     await updateComponent(projectRootDir, task0.ID, "script", scriptName);
-    const wf1 = await createNewComponent(projectRootDir, projectRootDir, "workflow", {x: 10, y: 10 });
+    const wf1 = await createNewComponent(projectRootDir, projectRootDir, "workflow", { x: 10, y: 10 });
     await updateComponent(projectRootDir, wf1.ID, "name", "wf1");
 
-    const task1 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1"),"task", { x: 10, y: 10 } );
+    const task1 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1"), "task", { x: 10, y: 10 });
     await updateComponent(projectRootDir, task1.ID, "name", "task1");
     await updateComponent(projectRootDir, task1.ID, "script", scriptName);
-    const wf2 = await createNewComponent(projectRootDir,path.join(projectRootDir, "wf1"),  "workflow", { x: 10, y: 10 } );
+    const wf2 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1"), "workflow", { x: 10, y: 10 });
     await updateComponent(projectRootDir, wf2.ID, "name", "wf2");
 
-    const task2 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1", "wf2"),  "task", { x: 10, y: 10 } );
+    const task2 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1", "wf2"), "task", { x: 10, y: 10 });
     await updateComponent(projectRootDir, task2.ID, "name", "task2");
     await updateComponent(projectRootDir, task2.ID, "script", scriptName);
 
-    await fs.outputFile(path.join(projectRootDir, "task0", scriptName),               `#!/bin/bash\n${pwdCmd} |tee result\n`);
-    await fs.outputFile(path.join(projectRootDir, "wf1", "task1", scriptName),        `#!/bin/bash\n${pwdCmd} |tee result\n`);
+    await fs.outputFile(path.join(projectRootDir, "task0", scriptName), `#!/bin/bash\n${pwdCmd} |tee result\n`);
+    await fs.outputFile(path.join(projectRootDir, "wf1", "task1", scriptName), `#!/bin/bash\n${pwdCmd} |tee result\n`);
     await fs.outputFile(path.join(projectRootDir, "wf1", "wf2", "task2", scriptName), `#!/bin/bash\n${pwdCmd} |tee result\n`);
 
-    await gitAdd(projectRootDir, path.join(projectRootDir, "task0", scriptName),             );
-    await gitAdd(projectRootDir, path.join(projectRootDir, "wf1", "task1", scriptName),      );
+    await gitAdd(projectRootDir, path.join(projectRootDir, "task0", scriptName),);
+    await gitAdd(projectRootDir, path.join(projectRootDir, "wf1", "task1", scriptName),);
     await gitAdd(projectRootDir, path.join(projectRootDir, "wf1", "wf2", "task2", scriptName));
 
     await gitCommit(projectRootDir, "hoge", "huga@example.com");
@@ -99,7 +96,7 @@ describe("test about cleaning functionality", function (){
     emit.reset();
   });
   after(async()=>{
-    // await fs.remove(testDirRoot);
+    //await fs.remove(testDirRoot);
   });
   it("should clean file and dirs under wf1", async()=>{
     await onCleanComponent(emit, projectRootDir, components.wf1.ID, cb);
@@ -107,14 +104,14 @@ describe("test about cleaning functionality", function (){
     expect(cb).to.have.been.calledWith(true);
     expect(emit).to.have.been.calledOnce;
     expect(emit).to.have.been.calledWith("workflow");
-    expect(path.join(projectRootDir, "task0", "result")).to.be.a.file().with.content(path.join(projectRootDir, "task0")+os.EOL);
+    expect(path.join(projectRootDir, "task0", "result")).to.be.a.file().with.content(path.join(projectRootDir, "task0") + os.EOL);
     expect(path.join(projectRootDir, "wf1", "task1", "result")).not.to.be.path();
     expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
-          required: ["state", "script"],
-          properties: {
-            state: { enum: ["not-started"] },
-            script: { enum: [scriptName]}
-          }
+      required: ["state", "script"],
+      properties: {
+        state: { enum: ["not-started"] },
+        script: { enum: [scriptName] }
+      }
     });
     expect(path.join(projectRootDir, "wf1", "wf2", "task2", "result")).not.to.be.path();
   });
