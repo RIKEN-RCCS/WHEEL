@@ -186,7 +186,7 @@ function componentJsonReplacer(key, value) {
 
 async function renameComponentDir(projectRootDir, ID, newName) {
   if (!isValidName(newName)) {
-    return new Error(`${value} is not valid component name`);
+    return new Error(`${newName} is not valid component name`);
   }
   const oldDir = await getComponentDir(projectRootDir, ID, true);
   if (oldDir === projectRootDir) {
