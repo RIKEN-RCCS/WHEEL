@@ -12,7 +12,7 @@ const { exec } = require("./executer");
 const { addX, isFinishedState, readJsonGreedy, sanitizePath, convertPathSep, replacePathsep } = require("./utility");
 const { getDateString } = require("./utility");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
-const { isInitialNode, getChildren, componentJsonReplacer } = require("./workflowUtil");
+const { isInitialNode, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
 
 /**
@@ -266,7 +266,18 @@ class Dispatcher extends EventEmitter {
     if (this.cwfJson.cleanupFlag !== "2") {
       this.doCleanup = this.cwfJson.cleanupFlag === "0";
     }
-    const childComponents = await getChildren(this.projectRootDir, this.cwfID);
+
+    const children = await promisify(glob)(path.join(this.cwfDir, "*", componentJsonFilename));
+
+    const promises = await Promise.all(children.map((e)=>{
+      return readJsonGreedy(e);
+    }));
+
+    const childComponents = promises.filter((e)=>{
+      return !e.subComponent;
+    });
+
+
     this.currentSearchList = childComponents.filter((component)=>{
       return isInitialNode(component);
     });
@@ -292,6 +303,11 @@ class Dispatcher extends EventEmitter {
       }));
 
       const target = this.currentSearchList.shift();
+
+      if (target.state === "finished") {
+        await this._addNextComponent(target);
+        continue;
+      }
       if (!await this._isReady(target)) {
         this.nextSearchList.push(target);
         continue;
@@ -508,7 +524,7 @@ class Dispatcher extends EventEmitter {
 
     if (lastDir !== dstDir) {
       this.logger.debug("copy ", lastDir, "to", dstDir);
-      await fs.copy(lastDir, dstDir);
+      await fs.copy(lastDir, dstDir); //dst will be overwrite always
     }
 
     this.logger.debug("loop finished", component.name);
@@ -560,7 +576,7 @@ class Dispatcher extends EventEmitter {
 
     try {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
-      await fs.copy(srcDir, dstDir); //fs-extra's copy overwrites dst by default
+      await fs.copy(srcDir, dstDir);
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4 });
       await this._delegate(newComponent);
 
@@ -678,7 +694,10 @@ class Dispatcher extends EventEmitter {
       const newComponent = Object.assign({}, component);
       newComponent.name = newName;
       newComponent.subComponent = true;
-      await fs.writeJson(path.join(instanceRoot, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
+      const newComponentFilename = path.join(instanceRoot, componentJsonFilename);
+      if (!await fs.pathExists(newComponentFilename)) {
+        await fs.writeJson(newComponentFilename, newComponent, { spaces: 4, replacer: componentJsonReplacer });
+      }
       const p = this._delegate(newComponent)
         .then(()=>{
           if (newComponent.state === "finished") {
