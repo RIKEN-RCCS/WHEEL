@@ -71,42 +71,6 @@ async function getChildren(projectRootDir, parentID) {
   });
 }
 
-async function sendWorkflow(emit, projectRootDir) {
-  const wf = await getComponent(projectRootDir, path.resolve(getCwd(projectRootDir), componentJsonFilename));
-  const rt = Object.assign({}, wf);
-  rt.descendants = await getChildren(projectRootDir, wf.ID);
-
-  for (const child of rt.descendants) {
-    if (child.handler) {
-      delete child.handler;
-    }
-
-    if (hasChild(child)) {
-      const grandson = await getChildren(projectRootDir, child.ID);
-      child.descendants = grandson.map((e)=>{
-        if (e.type === "task") {
-          return { type: e.type, pos: e.pos, host: e.host, useJobScheduler: e.useJobScheduler };
-        }
-        return { type: e.type, pos: e.pos };
-      });
-    }
-  }
-  emit("workflow", rt);
-}
-
-//read and send projectJson
-async function updateAndSendProjectJson(emit, projectRootDir, state) {
-  const filename = path.resolve(projectRootDir, projectJsonFilename);
-  const projectJson = await readJsonGreedy(filename);
-
-  if (typeof state === "string" && projectJson.state !== state) {
-    projectJson.state = state;
-    projectJson.mtime = getDateString(true);
-  }
-  await fs.writeJson(filename, projectJson, { spaces: 4 });
-  emit("projectJson", projectJson);
-}
-
 //component can be one of "path of component Json file", "component json object", or "component's ID"
 async function updateComponentJson(projectRootDir, component, modifier) {
   const componentJson = await getComponent(projectRootDir, component);
@@ -126,9 +90,7 @@ async function updateComponentJson(projectRootDir, component, modifier) {
 module.exports = {
   getComponentDir,
   getComponent,
-  sendWorkflow,
   getChildren,
-  updateAndSendProjectJson,
   updateComponentJson,
   getComponentRelativePath
 };

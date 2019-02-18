@@ -9,13 +9,13 @@ const glob = require("glob");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("home");
 const fileBrowser = require("../core/fileBrowser");
-const {createNewProject} = require("../core/projectFilesOperator");
+const { createNewProject } = require("../core/projectFilesOperator");
 const { gitAdd, gitRm, gitCommit, gitInit, gitResetHEAD } = require("../core/gitOperator");
 const { hasChild } = require("../core/workflowComponent");
 const { projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
 const { convertPathSep } = require("../core/pathUtils");
-const {readJsonGreedy} = require("../core/fileUtils");
-const {escapeRegExp, isValidName, getDateString} = require("../lib/utility");
+const { readJsonGreedy } = require("../core/fileUtils");
+const { escapeRegExp, isValidName, getDateString } = require("../lib/utility");
 //eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
 

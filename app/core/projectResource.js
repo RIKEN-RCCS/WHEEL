@@ -4,14 +4,14 @@ const { promisify } = require("util");
 const EventEmitter = require("events");
 const fs = require("fs-extra");
 const glob = require("glob");
-const { gitResetHEAD } = require("./gitOperator");
+const { gitCommit, gitResetHEAD } = require("./gitOperator");
 const { taskStateFilter, cancelDispatchedTasks } = require("./taskUtil");
 const Dispatcher = require("./dispatcher");
 const orgGetLogger = require("../logSettings").getLogger;
 const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
 const { getDateString } = require("../lib/utility");
-const { componentJsonReplacer } = require("./componentFilesOperator");
+const { validateComponents, componentJsonReplacer } = require("./componentFilesOperator");
 
 
 async function rmfr(rootDir) {
@@ -65,10 +65,12 @@ class Project extends EventEmitter {
 
   async run() {
     if (this.rootDispatcher !== null) {
-      //this project is already running
+      return new Error("this project is already running");
     }
     const projectJson = await readJsonGreedy(this.projectJsonFilename);
     const rootWF = await readJsonGreedy(this.rootWFFilename);
+    await validateComponents(this.projectRootDir, rootWF.ID);
+    await gitCommit(this.projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
 
     this.rootDispatcher = new Dispatcher(this.projectRootDir,
       rootWF.ID,
@@ -112,7 +114,6 @@ class Project extends EventEmitter {
     await rmfr(this.projectRootDir);
     await gitResetHEAD(this.projectRootDir);
     const projectJson = await readJsonGreedy(this.projectJsonFilename);
-    console.log(projectJson.state);
     this.emit("projectStateChanged", projectJson);
   }
 }
