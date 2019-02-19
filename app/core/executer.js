@@ -3,7 +3,6 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-const { getSsh, addUpdatedTask } = require("./projectResource");
 const { remoteHost, jobScheduler, componentJsonFilename } = require("../db/db");
 const { addX } = require("./fileUtils");
 const { replacePathsep } = require("./pathUtils");
@@ -417,6 +416,7 @@ function createExecuter(task) {
   logger.debug("createExecuter called");
   const onRemote = task.remotehostID !== "localhost";
   const hostinfo = onRemote ? remoteHost.get(task.remotehostID) : null;
+  const { getSsh } = require("./projectResource");
   const ssh = onRemote ? getSsh(task.projectRootDir, hostinfo.host) : null;
 
   //TODO remove onRemote after local submit is supported

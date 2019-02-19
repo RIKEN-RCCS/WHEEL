@@ -5,7 +5,7 @@ const fs = require("fs-extra");
 const { EventEmitter } = require("events");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
-const convertPathSep = require("../core/pathUtils");
+const { convertPathSep } = require("../core/pathUtils");
 
 /**
  * check if ssh connection can be established
