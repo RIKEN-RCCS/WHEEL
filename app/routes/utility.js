@@ -7,7 +7,7 @@ const Mode = require("stat-mode");
 const promiseRetry = require("promise-retry");
 const glob = require("glob");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
-const {pathseps, metaCharactors, reWin32ReservedNames, escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
+const { pathseps, metaCharactors, reWin32ReservedNames, escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
 
 /**
  * replace path separator by native path separator
@@ -95,7 +95,7 @@ async function addX(file) {
   return fs.chmod(file, modeString);
 }
 
-function getDateString(humanReadable = false, withMilliseconds=false) {
+function getDateString(humanReadable = false, withMilliseconds = false) {
   const now = new Date();
   const yyyy = `0000${now.getFullYear()}`.slice(-4);
   const month = now.getMonth() + 1;
@@ -105,7 +105,7 @@ function getDateString(humanReadable = false, withMilliseconds=false) {
   const MM = `00${now.getMinutes()}`.slice(-2);
   const ss = `00${now.getSeconds()}`.slice(-2);
   const ms = `000${now.getMilliseconds()}`.slice(-3);
-  if(humanReadable){
+  if (humanReadable) {
     return withMilliseconds ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}.${ms}` : `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}`;
   }
   return withMilliseconds ? `${yyyy}${mm}${dd}-${HH}${MM}${ss}${ms}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
@@ -149,6 +149,7 @@ async function readJsonGreedy(filename) {
         throw (e);
       });
     const strData = buf.toString("utf8").replace(/^\uFEFF/, "");
+
     if (strData.length === 0) {
       retry();
     }
@@ -178,10 +179,10 @@ async function readJsonGreedy(filename) {
  */
 function sanitizePath(target, replacer = "_") {
   //replace danger chars
-  let sanitized = target.toString().replace(new RegExp(`[${escapeRegExp(pathseps+metaCharactors+"~.=")}]`, "g"), replacer);
+  let sanitized = target.toString().replace(new RegExp(`[${escapeRegExp(`${pathseps + metaCharactors}~.=`)}]`, "g"), replacer);
 
   //replace win32 reserved names
-  sanitized = sanitized.replace(new RegExp(reWin32ReservedNames,"gi"), replacer);
+  sanitized = sanitized.replace(new RegExp(reWin32ReservedNames, "gi"), replacer);
 
   //remove trailing replacer
   sanitized = sanitized.endsWith(replacer) ? sanitized.slice(0, -1) : sanitized;
@@ -263,10 +264,10 @@ class EmitArbitrator extends EventEmitter {
 
 /**
  * divide array to chunk and send each chunk seqentialy
- * @param {function} emit - emitting function (should be socket.IO's socket.emit);
+ * @param {Function} emit - emitting function (should be socket.IO's socket.emit);
  * @param {string} enevt - envet name
  * @param {*[]} array - data to be send
- * @param {Number} chunksize - number of array length to be send at one time
+ * @param {number} chunksize - number of array length to be send at one time
  */
 async function emitLongArray(emit, event, array, chunksize) {
   const arbitrator = new EmitArbitrator(emit, event, array, chunksize);

@@ -33,7 +33,9 @@ async function makeDir(basename, argSuffix) {
 function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
   const oldRelativePath = componentPath[ID];
   let newRelativePath = path.relative(projectRootDir, newPath);
-  if(! newRelativePath.startsWith(".")) newRelativePath = "./"+newRelativePath;
+  if (!newRelativePath.startsWith(".")) {
+    newRelativePath = `./${newRelativePath}`;
+  }
   if (typeof oldRelativePath !== "undefined") {
     for (const [k, v] of Object.entries(componentPath)) {
       if (pathIsInside(convertPathSep(v), convertPathSep(oldRelativePath))) {
