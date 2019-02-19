@@ -76,7 +76,7 @@ class Project extends EventEmitter {
       rootWF.ID,
       this.projectRootDir,
       getDateString(),
-      getLogger(this.projectRootDir),
+      this.logger,
       projectJson.componentPath,
       this.emit.bind(this));
 
@@ -220,6 +220,9 @@ function addUpdatedTask(projectRootDir, task) {
 function getLogger(projectRootDir) {
   return getProject(projectRootDir).logger;
 }
+function setLogger(projectRootDir, logger) {
+  getProject(projectRootDir).logger = logger;
+}
 
 function setSio(projectRootDir, sio) {
   getProject(projectRootDir).logger.addContext("sio", sio);
@@ -243,6 +246,7 @@ module.exports = {
   on,
   off,
   getLogger,
+  setLogger,
   setSio,
   runProject,
   cleanProject,

@@ -9,11 +9,9 @@ const sinon = require("sinon");
 chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
-const rewire = require("rewire");
 
 //testee
-const workflowEditor = rewire("../../../app/routes/workflowEditor2");
-const onCleanComponent = workflowEditor.__get__("onCleanComponent");
+const { cleanComponent } = require("../../../app/core/componentFilesOperator");
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";
@@ -39,7 +37,6 @@ const { gitAdd, gitCommit } = require("../../../app/core/gitOperator");
 describe("test about cleaning functionality", function() {
   this.timeout(10000);
   let components;
-  const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
     await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
@@ -99,7 +96,7 @@ describe("test about cleaning functionality", function() {
     //await fs.remove(testDirRoot);
   });
   it("should clean file and dirs under wf1", async()=>{
-    await onCleanComponent(emit, projectRootDir, components.wf1.ID, cb);
+    await cleanComponent(projectRootDir, components.wf1.ID);
     expect(cb).to.have.been.calledOnce;
     expect(cb).to.have.been.calledWith(true);
     expect(emit).to.have.been.calledOnce;
