@@ -15,6 +15,23 @@ const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeIn
 const { isInitialNode, componentJsonReplacer } = require("./workflowUtil");
 const { emitEvent, addDispatchedTask } = require("./projectResource");
 
+
+/**
+ * set component and its descendant's state
+ */
+async function setStateR(dir, state) {
+  const filenames = await promisify(glob)(path.join(dir, "**", componentJsonFilename));
+  filenames.push(path.join(dir, componentJsonFilename));
+  const p = filenames.map((filename)=>{
+    return readJsonGreedy(filename)
+      .then((component)=>{
+        component.state = state;
+        return fs.writeJson(filename, component, { spaces: 4, replacer: componentJsonReplacer });
+      });
+  });
+  return Promise.all(p);
+}
+
 /**
  * deliver src to dst
  * @param {string} src - absolute path of src path
@@ -577,6 +594,7 @@ class Dispatcher extends EventEmitter {
     try {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir);
+      await setStateR(dstDir, "not-started");
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4 });
       await this._delegate(newComponent);
 
