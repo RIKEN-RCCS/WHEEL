@@ -317,7 +317,7 @@ async function validateComponents(projectRootDir, parentID) {
 
 
 function componentJsonReplacer(key, value) {
-  if (["handler", "doCleanup", "sbsID"].includes(key)) {
+  if (["handler", "doCleanup", "sbsID", "childLoopRunning"].includes(key)) {
     //eslint-disable-next-line no-undefined
     return undefined;
   }

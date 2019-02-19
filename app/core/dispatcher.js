@@ -617,7 +617,7 @@ class Dispatcher extends EventEmitter {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir);
       await setStateR(dstDir, "not-started");
-      await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4 });
+      await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
       await this._delegate(newComponent);
 
       if (newComponent.state === "failed") {
