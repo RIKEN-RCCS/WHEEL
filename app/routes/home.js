@@ -218,7 +218,7 @@ async function convertComponentJson(projectRootDir, componentPath, parentCompone
     node.ID = uuidv1();
     componentPath[node.ID] = path.relative(projectRootDir, path.join(path.dirname(parentComponentJson), node.name));
   }
-  //fix next, else, previous, inputFiles, outputFiles then write json file and recursive call if component has child
+  //fix next, else, previous, inputFiles, outputFiles and indexList then write json file and recursive call if component has child
   for (const node of componentJson.nodes) {
     if (node === null) {
       continue;
@@ -239,6 +239,11 @@ async function convertComponentJson(projectRootDir, componentPath, parentCompone
     if (node.type === "if") {
       node.else = node.else.map((index)=>{
         return componentJson.nodes[index].ID;
+      });
+    }
+    if (node.type === "foreach") {
+      node.indexList = node.indexList.map((index)=>{
+        return index.label;
       });
     }
 
@@ -285,6 +290,7 @@ async function convertProjectFormat(projectJsonFilepath) {
     rootWF.paret = "this is root";
     projectJson.componentPath[rootWF.ID] = "./";
     await fs.writeJson(path.resolve(projectRootDir, componentJsonFilename), rootWF, { spaces: 4 });
+    await gitAdd(projectRootDir, path.resolve(projectRootDir, componentJsonFilename));
   } catch (e) {
     //revert by clean project
     const files = await promisify(glob)(`./**/${componentJsonFilename}`, { cwd: projectRootDir });
