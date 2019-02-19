@@ -599,6 +599,7 @@ class Dispatcher extends EventEmitter {
     try {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
       await fs.copy(srcDir, dstDir);
+      //TODO rewrite state recursively!
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4 });
       await this._delegate(newComponent);
 

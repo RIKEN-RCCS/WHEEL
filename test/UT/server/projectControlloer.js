@@ -9,12 +9,9 @@ const sinon = require("sinon");
 chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
-const rewire = require("rewire");
 
 //testee
-//const runProject =
-const projectResource = rewire("../../../app/core/projectResource");
-const runProject = projectResource.__get__("runProject");
+const { runProject, setLogger } = require("../../../app/core/projectResource");
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";
@@ -23,31 +20,29 @@ const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 //helper functions
 const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
 const { createNewProject } = require("../../../app/core/projectFilesOperator");
-const { updateComponent, createNewComponent } = require("../../../app/core/componentFilesOperator");
-const workflowEditor = rewire("../../../app/routes/workflowEditor2");
-//TODO replace on.. by function in componentFilesOperator
-
-const onAddInputFile = workflowEditor.__get__("onAddInputFile");
-const onAddOutputFile = workflowEditor.__get__("onAddOutputFile");
-const onAddLink = workflowEditor.__get__("onAddLink");
-const onAddFileLink = workflowEditor.__get__("onAddFileLink");
+const { updateComponent, createNewComponent, addInputFile, addOutputFile, addLink, addFileLink } = require("../../../app/core/componentFilesOperator");
 
 const { scriptName, pwdCmd, scriptHeader, referenceEnv } = require("./testScript");
 const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 const { escapeRegExp } = require("../../../app/lib/utility");
 
 //stubs
-const dummyLogger = { error: ()=>{}, warn: ()=>{}, info: ()=>{}, debug: ()=>{}, trace: ()=>{}, stdout: sinon.stub(), stderr: sinon.stub(), sshout: sinon.stub(), ssherr: sinon.stub() }; //ignore error message
-dummyLogger.error = console.log;
-dummyLogger.warn = console.log;
-dummyLogger.info = console.log;
-dummyLogger.debug = console.log;
-//dummyLogger.stdout=console.log;
-//sinon.spy(dummyLogger, "stdout");
+const dummyLogger = {
+  error: ()=>{},
+  warn: ()=>{},
+  info: ()=>{},
+  debug: ()=>{},
+  trace: ()=>{},
+  stdout: sinon.stub(),
+  stderr: sinon.stub(),
+  sshout: sinon.stub(),
+  ssherr: sinon.stub()
+};
+//dummyLogger.error = console.log;
+//dummyLogger.warn = console.log;
+//dummyLogger.info = console.log;
+//dummyLogger.debug = console.log;
 
-projectResource.__set__("getLogger", ()=>{
-  return dummyLogger;
-});
 
 describe.only("project Controller UT", function() {
   this.timeout(0);
@@ -58,9 +53,10 @@ describe.only("project Controller UT", function() {
     dummyLogger.sshout.reset();
     dummyLogger.ssherr.reset();
     await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
+    setLogger(projectRootDir, dummyLogger);
   });
   after(async()=>{
-    await fs.remove(testDirRoot);
+    //await fs.remove(testDirRoot);
   });
   describe("#runProject", ()=>{
     describe("one local task", ()=>{
@@ -108,8 +104,8 @@ describe.only("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "task2", scriptName), scriptPwd);
-        await onAddLink(emit, projectRootDir, { src: task0.ID, dst: task1.ID, isElse: false });
-        await onAddLink(emit, projectRootDir, { src: task1.ID, dst: task2.ID, isElse: false });
+        await addLink(projectRootDir, task0.ID, task1.ID);
+        await addLink(projectRootDir, task1.ID, task2.ID);
       });
       it("should run project and successfully finish", async()=>{
         await runProject(projectRootDir);
@@ -167,12 +163,12 @@ describe.only("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "task0", "a"), "a");
         await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
         await fs.outputFile(path.join(projectRootDir, "task2", scriptName), scriptPwd);
-        await onAddOutputFile(emit, projectRootDir, task0.ID, "a");
-        await onAddOutputFile(emit, projectRootDir, task1.ID, "b");
-        await onAddInputFile(emit, projectRootDir, task1.ID, "b");
-        await onAddInputFile(emit, projectRootDir, task2.ID, "c");
-        await onAddFileLink(emit, projectRootDir, task0.ID, "a", task1.ID, "b");
-        await onAddFileLink(emit, projectRootDir, task1.ID, "b", task2.ID, "c");
+        await addOutputFile(projectRootDir, task0.ID, "a");
+        await addOutputFile(projectRootDir, task1.ID, "b");
+        await addInputFile(projectRootDir, task1.ID, "b");
+        await addInputFile(projectRootDir, task2.ID, "c");
+        await addFileLink(projectRootDir, task0.ID, "a", task1.ID, "b");
+        await addFileLink(projectRootDir, task1.ID, "b", task2.ID, "c");
       });
       it("should run project and successfully finish", async()=>{
         await runProject(projectRootDir);
@@ -223,7 +219,7 @@ describe.only("project Controller UT", function() {
     });
     describe("task in the sub workflow", ()=>{
       beforeEach(async()=>{
-        const wf0 = await createNewComponent(projectRootDir, projectRootDir, "workflow", { x: 10, y: 10 });
+        await createNewComponent(projectRootDir, projectRootDir, "workflow", { x: 10, y: 10 });
         const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "workflow0"), "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "workflow0", "task0", scriptName), scriptPwd);
@@ -276,20 +272,20 @@ describe.only("project Controller UT", function() {
 
         //add file dependency
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
-        await onAddOutputFile(emit, projectRootDir, parentTask0.ID, "a");
-        await onAddInputFile(emit, projectRootDir, wf0.ID, "b");
-        await onAddInputFile(emit, projectRootDir, childTask0.ID, "c");
-        await onAddOutputFile(emit, projectRootDir, childTask0.ID, "c");
-        await onAddInputFile(emit, projectRootDir, childTask1.ID, "d");
-        await onAddOutputFile(emit, projectRootDir, childTask1.ID, "d");
-        await onAddOutputFile(emit, projectRootDir, wf0.ID, "e");
-        await onAddInputFile(emit, projectRootDir, parentTask1.ID, "f");
+        await addOutputFile(projectRootDir, parentTask0.ID, "a");
+        await addInputFile(projectRootDir, wf0.ID, "b");
+        await addInputFile(projectRootDir, childTask0.ID, "c");
+        await addOutputFile(projectRootDir, childTask0.ID, "c");
+        await addInputFile(projectRootDir, childTask1.ID, "d");
+        await addOutputFile(projectRootDir, childTask1.ID, "d");
+        await addOutputFile(projectRootDir, wf0.ID, "e");
+        await addInputFile(projectRootDir, parentTask1.ID, "f");
 
-        await onAddFileLink(emit, projectRootDir, parentTask0.ID, "a", wf0.ID, "b");
-        await onAddFileLink(emit, projectRootDir, "parent", "b", childTask0.ID, "c");
-        await onAddFileLink(emit, projectRootDir, childTask0.ID, "c", childTask1.ID, "d");
-        await onAddFileLink(emit, projectRootDir, childTask1.ID, "d", "parent", "e");
-        await onAddFileLink(emit, projectRootDir, wf0.ID, "e", parentTask1.ID, "f");
+        await addFileLink(projectRootDir, parentTask0.ID, "a", wf0.ID, "b");
+        await addFileLink(projectRootDir, "parent", "b", childTask0.ID, "c");
+        await addFileLink(projectRootDir, childTask0.ID, "c", childTask1.ID, "d");
+        await addFileLink(projectRootDir, childTask1.ID, "d", "parent", "e");
+        await addFileLink(projectRootDir, wf0.ID, "e", parentTask1.ID, "f");
 
         //create script
         await fs.outputFile(path.join(projectRootDir, "parentTask0", scriptName), scriptPwd);
@@ -377,14 +373,14 @@ describe.only("project Controller UT", function() {
         await updateComponent(projectRootDir, if3.ID, "condition", "(()=>{return false})()");
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await updateComponent(projectRootDir, task1.ID, "script", scriptName);
-        await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task0.ID, isElse: false });
-        await onAddLink(emit, projectRootDir, { src: if0.ID, dst: task1.ID, isElse: true });
-        await onAddLink(emit, projectRootDir, { src: if1.ID, dst: task1.ID, isElse: false });
-        await onAddLink(emit, projectRootDir, { src: if1.ID, dst: task0.ID, isElse: true });
-        await onAddLink(emit, projectRootDir, { src: if2.ID, dst: task0.ID, isElse: false });
-        await onAddLink(emit, projectRootDir, { src: if2.ID, dst: task1.ID, isElse: true });
-        await onAddLink(emit, projectRootDir, { src: if3.ID, dst: task1.ID, isElse: false });
-        await onAddLink(emit, projectRootDir, { src: if3.ID, dst: task0.ID, isElse: true });
+        await addLink(projectRootDir, if0.ID, task0.ID, );
+        await addLink(projectRootDir, if0.ID, task1.ID, true);
+        await addLink(projectRootDir, if1.ID, task1.ID, );
+        await addLink(projectRootDir, if1.ID, task0.ID, true);
+        await addLink(projectRootDir, if2.ID, task0.ID, );
+        await addLink(projectRootDir, if2.ID, task1.ID, true);
+        await addLink(projectRootDir, if3.ID, task1.ID, );
+        await addLink(projectRootDir, if3.ID, task0.ID, true);
         await fs.outputFile(path.join(projectRootDir, "if0", scriptName), "#!/bin/bash\nexit 0\n");
         await fs.outputFile(path.join(projectRootDir, "if1", scriptName), "#!/bin/bash\nexit 1\n");
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
@@ -453,7 +449,7 @@ describe.only("project Controller UT", function() {
         });
       });
     });
-    describe("task in a For component", ()=>{
+    describe.only("task in a For component", ()=>{
       beforeEach(async()=>{
         const for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
         await updateComponent(projectRootDir, for0.ID, "start", 0);
@@ -660,19 +656,19 @@ describe.only("project Controller UT", function() {
         await updateComponent(projectRootDir, parentTask0.ID, "script", scriptName);
         await updateComponent(projectRootDir, parentTask1.ID, "script", scriptName);
 
-        await onAddOutputFile(emit, projectRootDir, parentTask0.ID, "a");
-        await onAddInputFile(emit, projectRootDir, for0.ID, "b");
-        await onAddOutputFile(emit, projectRootDir, for0.ID, "e");
-        await onAddInputFile(emit, projectRootDir, parentTask1.ID, "f");
-        await onAddFileLink(emit, projectRootDir, parentTask0.ID, "a", for0.ID, "b");
-        await onAddFileLink(emit, projectRootDir, for0.ID, "e", parentTask1.ID, "f");
+        await addOutputFile(projectRootDir, parentTask0.ID, "a");
+        await addInputFile(projectRootDir, for0.ID, "b");
+        await addOutputFile(projectRootDir, for0.ID, "e");
+        await addInputFile(projectRootDir, parentTask1.ID, "f");
+        await addFileLink(projectRootDir, parentTask0.ID, "a", for0.ID, "b");
+        await addFileLink(projectRootDir, for0.ID, "e", parentTask1.ID, "f");
 
         const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0"), "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
-        await onAddInputFile(emit, projectRootDir, task0.ID, "c");
-        await onAddOutputFile(emit, projectRootDir, task0.ID, "d");
-        await onAddFileLink(emit, projectRootDir, for0.ID, "b", task0.ID, "c");
-        await onAddFileLink(emit, projectRootDir, task0.ID, "d", for0.ID, "e");
+        await addInputFile(projectRootDir, task0.ID, "c");
+        await addOutputFile(projectRootDir, task0.ID, "d");
+        await addFileLink(projectRootDir, for0.ID, "b", task0.ID, "c");
+        await addFileLink(projectRootDir, task0.ID, "d", for0.ID, "e");
 
         await fs.outputFile(path.join(projectRootDir, "parentTask0", "a"), "a");
         await fs.outputFile(path.join(projectRootDir, "parentTask0", scriptName), scriptPwd);

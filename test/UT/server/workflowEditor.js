@@ -16,21 +16,7 @@ chai.use(require("chai-json-schema"));
 const rewire = require("rewire");
 
 //testee
-const workflowEditor = rewire("../../../app/routes/workflowEditor2");
-const onWorkflowRequest = workflowEditor.__get__("onWorkflowRequest");
-const onCreateNode = workflowEditor.__get__("onCreateNode");
-const onUpdateNode = workflowEditor.__get__("onUpdateNode");
-const onRemoveNode = workflowEditor.__get__("onRemoveNode");
-const onAddInputFile = workflowEditor.__get__("onAddInputFile");
-const onAddOutputFile = workflowEditor.__get__("onAddOutputFile");
-const onRemoveInputFile = workflowEditor.__get__("onRemoveInputFile");
-const onRemoveOutputFile = workflowEditor.__get__("onRemoveOutputFile");
-const onRenameInputFile = workflowEditor.__get__("onRenameInputFile");
-const onRenameOutputFile = workflowEditor.__get__("onRenameOutputFile");
-const onAddLink = workflowEditor.__get__("onAddLink");
-const onRemoveLink = workflowEditor.__get__("onRemoveLink");
-const onAddFileLink = workflowEditor.__get__("onAddFileLink");
-const onRemoveFileLink = workflowEditor.__get__("onRemoveFileLink");
+const { createNode, updateNode, removeNode, addInputFile, addOutputFile, removeInputFile, removeOutputFile, renameInputFile, renameOutputFile, addLink, removeLink, addFileLink, removeFileLink } = require("../../../app/core/componentFilesOperator");
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";
@@ -223,6 +209,8 @@ describe("workflow editor UT", ()=>{
     await fs.remove(testDirRoot);
   });
 
+  /*
+   * TODO move to socketIO handler's test
   describe("#onWorkflowRequest", ()=>{
     it("should send root, child, and grandson json data", async()=>{
       await onWorkflowRequest(emit, projectRootDir, components.root.ID, cb);
@@ -264,6 +252,7 @@ describe("workflow editor UT", ()=>{
       });
     });
   });
+  */
   describe("#onCreateNode", ()=>{
     it("should create new node under wf1", async()=>{
       setCwd(projectRootDir, path.join(projectRootDir, "wf1"));
