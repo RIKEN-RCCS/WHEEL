@@ -6,12 +6,12 @@ const fs = require("fs-extra");
 const glob = require("glob");
 const { gitCommit, gitResetHEAD } = require("./gitOperator");
 const { taskStateFilter, cancelDispatchedTasks } = require("./taskUtil");
-const Dispatcher = require("./dispatcher");
 const orgGetLogger = require("../logSettings").getLogger;
 const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
 const { getDateString } = require("../lib/utility");
 const { validateComponents, componentJsonReplacer } = require("./componentFilesOperator");
+const Dispatcher = require("./dispatcher");
 
 
 async function rmfr(rootDir) {
