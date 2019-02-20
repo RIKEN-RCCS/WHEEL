@@ -2,23 +2,34 @@
 const { promisify } = require("util");
 const fs = require("fs-extra");
 const path = require("path");
-const pathIsInside = require("path-is-inside");
 const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
-const { replacePathsep, convertPathSep } = require("../core/pathUtils");
 const { createNewComponent, updateComponent } = require("../core/componentFilesOperator");
 const { createSshConfig, emitLongArray } = require("./utility");
 const { readJsonGreedy } = require("../core/fileUtils");
 const { getDateString } = require("../lib/utility");
-const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { updateComponentJson, getChildren, isInitialNode, getComponentDir, componentJsonReplacer, getComponent } = require("../core/workflowUtil");
+const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
+const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, openProject, addSsh, removeSsh, runProject, pauseProject, clearProject, getUpdatedTaskStateList, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, off, getLogger } = require("../core/projectResource");
-const { gitRm, gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
-const { cancel } = require("../core/executer");
-const { killTask, taskStateFilter } = require("../core/taskUtil");
-const { getHosts } = require("../core/componentFilesOperator");
+const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSsh, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger } = require("../core/projectResource");
+const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
+const {
+  getHosts,
+  addInputFile,
+  addOutputFile,
+  removeInputFile,
+  removeOutputFile,
+  renameInputFile,
+  renameOutputFile,
+  addLink,
+  addFileLink,
+  removeLink,
+  removeFileLink,
+  cleanComponent,
+  removeComponent
+} = require("../core/componentFilesOperator");
+const { taskStateFilter } = require("../core/taskUtil");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
 //read and send current workflow and its child and grandson
@@ -223,11 +234,6 @@ async function onRunProject(sio, projectRootDir, cb) {
       });
   }
 
-  //event listner for project state changed
-  function onProjectStateChanged(projectJson) {
-    emit("projectJson", projectJson);
-  }
-
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
 
@@ -396,35 +402,6 @@ async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
   cb(true);
 }
 
-//this function is used as modifier of updateComponentPath
-function changeComponentPath(ID, newPath, projectRootDir, componentPath) {
-  const oldRelativePath = componentPath[ID];
-  let newRelativePath = path.relative(projectRootDir, newPath);
-  if (!newRelativePath.startsWith(".")) {
-    newRelativePath = `./${newRelativePath}`;
-  }
-  if (typeof oldRelativePath !== "undefined") {
-    for (const [k, v] of Object.entries(componentPath)) {
-      if (pathIsInside(convertPathSep(v), convertPathSep(oldRelativePath))) {
-        componentPath[k] = v.replace(oldRelativePath, newRelativePath);
-      }
-    }
-  }
-  componentPath[ID] = replacePathsep(newRelativePath);
-}
-
-async function updateComponentPath(projectRootDir, modifier) {
-  const filename = path.resolve(projectRootDir, projectJsonFilename);
-  const projectJson = await readJsonGreedy(filename);
-
-  if (typeof modifier === "function") {
-    await modifier(projectRootDir, projectJson.componentPath);
-    projectJson.mtime = getDateString(true);
-  }
-
-  await fs.writeJson(filename, projectJson, { spaces: 4 });
-  await gitAdd(projectRootDir, filename);
-}
 
 async function onWorkflowRequest(emit, projectRootDir, ID, cb) {
   if (typeof cb !== "function") {

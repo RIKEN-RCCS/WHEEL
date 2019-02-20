@@ -1,6 +1,5 @@
 "use strict";
 const path = require("path");
-const { promisify } = require("util");
 const fs = require("fs-extra");
 const { EventEmitter } = require("events");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");

@@ -5,7 +5,6 @@
  */
 function socketIOAppender(layout, timezoneOffset, eventName) {
   return (loggingEvent)=>{
-    const namespace = loggingEvent.categoryName;
     const socket = loggingEvent.context.sio;
 
     if (loggingEvent.level.level >= 40000) {

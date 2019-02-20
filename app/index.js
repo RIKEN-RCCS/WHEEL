@@ -8,7 +8,7 @@ const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
 const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort } = require("./db/db");
-const { getLogger, setup } = require("./logSettings");
+const { getLogger } = require("./logSettings");
 
 /*
  * set up express, http and socket.io
@@ -139,7 +139,7 @@ if (jupyter) {
       //eslint-disable-next-line no-console
       console.log("WHEEL will shut down because Control-C pressed");
     }
-    process.exit();
+    process.exit(); //eslint-disable-line no-process-exit
   });
 }
 
