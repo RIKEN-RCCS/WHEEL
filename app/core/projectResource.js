@@ -92,6 +92,7 @@ class Project extends EventEmitter {
 
     this.rootDispatcher = null;
     this._removeSsh();
+    return rootWF.state;
   }
 
   async pause() {

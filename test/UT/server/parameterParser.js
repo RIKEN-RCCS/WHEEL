@@ -3,6 +3,9 @@ const { expect } = require("chai");
 const chaiIterator = require("chai-iterator");
 chai.use(chaiIterator);
 
+//display detailed information of unhandled rejection
+process.on("unhandledRejection", console.dir);
+
 //testee
 const { workAroundForVersion1, paramVecGenerator } = require("../../../app/core/parameterParser");
 

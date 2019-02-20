@@ -3,9 +3,8 @@ const path = require("path");
 const fs = require("fs-extra");
 const { promisify } = require("util");
 const glob = require("glob");
-const pathIsInside = require("path-is-inside");
 const { componentFactory } = require("./workflowComponent");
-const { updateComponentPath, getComponentDir } = require("./projectFilesOperator");
+const { updateComponentPath, removeComponentPath, getComponentDir, getDescendantsIDs } = require("./projectFilesOperator");
 const { componentJsonFilename, remoteHost, jobScheduler } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
 const { gitAdd, gitRm, gitResetHEAD } = require("./gitOperator");
@@ -43,23 +42,6 @@ async function getComponent(projectRootDir, ID) {
   return readComponentJson(componentDir);
 }
 
-
-/**
- * read component JSON file and return itself and children's ID
- */
-async function getDescendantsID(projectRootDir, ID) {
-  const filename = path.resolve(projectRootDir, projectJsonFilename);
-  const projectJson = await readJsonGreedy(filename);
-  const poi = await getComponentDir(projectRootDir, ID);
-  const rt = [];
-
-  for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
-    if (pathIsInside(path.resolve(projectRootDir, componentPath), poi)) {
-      rt.push(id);
-    }
-  }
-  return rt;
-}
 
 async function isParent(projectRootDir, parentID, childID) {
   const childJson = await getComponent(projectRootDir, childID);
@@ -144,6 +126,166 @@ async function removeAllLink(projectRootDir, ID) {
 }
 
 
+async function addFileLinkToParent(projectRootDir, srcNode, srcName, dstName) {
+  const p = [];
+  const srcDir = await getComponentDir(projectRootDir, srcNode, true);
+  const srcJson = await readComponentJson(srcDir);
+  const parentDir = path.dirname(srcDir);
+  const parentJson = await readComponentJson(parentDir);
+  const parentID = parentJson.ID;
+
+  const srcOutputFile = srcJson.outputFiles.find((e)=>{
+    return e.name === srcName;
+  });
+  if (!srcOutputFile.dst.includes({ dstNode: parentID, dstName })) {
+    srcOutputFile.dst.push({ dstNode: parentID, dstName });
+  }
+  p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
+
+  const parentOutputFile = parentJson.outputFiles.find((e)=>{
+    return e.name === dstName;
+  });
+  if (!parentOutputFile.hasOwnProperty("origin")) {
+    parentOutputFile.origin = [];
+  }
+  if (!parentOutputFile.origin.includes({ srcNode, srcName })) {
+    parentOutputFile.origin.push({ srcNode, srcName });
+  }
+  p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
+  return Promise.all(p);
+}
+async function addFileLinkFromParent(projectRootDir, srcName, dstNode, dstName) {
+  const p = [];
+  const dstDir = await getComponentDir(projectRootDir, dstNode, true);
+  const dstJson = await readComponentJson(dstDir);
+  const parentDir = path.dirname(dstDir);
+  const parentJson = await readComponentJson(parentDir);
+  const parentID = parentJson.ID;
+
+  const parentInputFile = parentJson.inputFiles.find((e)=>{
+    return e.name === srcName;
+  });
+  if (!parentInputFile.hasOwnProperty("forwardTo")) {
+    parentInputFile.forwardTo = [];
+  }
+  if (!parentInputFile.forwardTo.includes({ dstNode, dstName })) {
+    parentInputFile.forwardTo.push({ dstNode, dstName });
+  }
+  p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
+
+  const dstInputFile = dstJson.inputFiles.find((e)=>{
+    return e.name === dstName;
+  });
+  if (!dstInputFile.src.includes({ srcNode: parentID, srcName })) {
+    dstInputFile.src.push({ srcNode: parentID, srcName });
+  }
+  p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
+  return Promise.all(p);
+}
+async function addFileLinkBetweenSiblings(projectRootDir, srcNode, srcName, dstNode, dstName) {
+  const p = [];
+  const srcDir = await getComponentDir(projectRootDir, srcNode, true);
+  const srcJson = await readComponentJson(srcDir);
+  const srcOutputFile = srcJson.outputFiles.find((e)=>{
+    return e.name === srcName;
+  });
+  if (!srcOutputFile.dst.includes({ dstNode, dstName })) {
+    srcOutputFile.dst.push({ dstNode, dstName });
+  }
+  p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
+
+  const dstDir = await getComponentDir(projectRootDir, dstNode, true);
+  const dstJson = await readComponentJson(dstDir);
+  const dstInputFile = dstJson.inputFiles.find((e)=>{
+    return e.name === dstName;
+  });
+  if (!dstInputFile.src.includes({ srcNode, srcName })) {
+    dstInputFile.src.push({ srcNode, srcName });
+  }
+  p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
+  return Promise.all(p);
+}
+
+async function removeFileLinkToParent(projectRootDir, srcNode, srcName, dstNode, dstName) {
+  const p = [];
+  const srcDir = await getComponentDir(projectRootDir, srcNode, true);
+  const srcJson = await readComponentJson(srcDir);
+  const parentDir = path.dirname(srcDir);
+  const parentJson = await readComponentJson(parentDir);
+
+  const srcOutputFile = srcJson.outputFiles.find((e)=>{
+    return e.name === srcName;
+  });
+  srcOutputFile.dst = srcOutputFile.dst.filter((e)=>{
+    return e.dstNode !== parentJson.ID || e.dstName !== dstName;
+  });
+  p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
+
+  const parentOutputFile = parentJson.outputFiles.find((e)=>{
+    return e.name === dstName;
+  });
+  if (parentOutputFile.hasOwnProperty("origin")) {
+    parentOutputFile.origin = parentOutputFile.origin.filter((e)=>{
+      return e.srcNode !== srcNode || e.srcName !== srcName;
+    });
+  }
+  p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
+  return Promise.all(p);
+}
+
+async function removeFileLinkFromParent(projectRootDir, srcNode, srcName, dstNode, dstName) {
+  const p = [];
+  const dstDir = await getComponentDir(projectRootDir, dstNode, true);
+  const dstJson = await readComponentJson(dstDir);
+  const parentDir = path.dirname(dstDir);
+  const parentJson = await readComponentJson(parentDir);
+  const parentID = parentJson.ID;
+
+  const parentInputFile = parentJson.inputFiles.find((e)=>{
+    return e.name === srcName;
+  });
+  if (parentInputFile.hasOwnProperty("forwardTo")) {
+    parentInputFile.forwardTo = parentInputFile.forwardTo.filter((e)=>{
+      return e.dstNode !== dstNode || e.dstName !== dstName;
+    });
+  }
+  p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
+
+  const dstInputFile = dstJson.inputFiles.find((e)=>{
+    return e.name === dstName;
+  });
+  dstInputFile.src = dstInputFile.src.filter((e)=>{
+    return e.srcNode !== parentID || e.srcName !== srcName;
+  });
+  p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
+  return Promise.all(p);
+}
+
+async function removeFileLinkBetweenSiblings(projectRootDir, srcNode, srcName, dstNode, dstName) {
+  const p = [];
+  const srcDir = await getComponentDir(projectRootDir, srcNode, true);
+  const srcJson = await readComponentJson(srcDir);
+  const srcOutputFile = srcJson.outputFiles.find((e)=>{
+    return e.name === srcName;
+  });
+  srcOutputFile.dst = srcOutputFile.dst.filter((e)=>{
+    return !(e.dstNode === dstNode && e.dstName === dstName);
+  });
+  p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
+
+  const dstDir = await getComponentDir(projectRootDir, dstNode, true);
+  const dstJson = await readComponentJson(dstDir);
+  const dstInputFile = dstJson.inputFiles.find((e)=>{
+    return e.name === dstName;
+  });
+  dstInputFile.src = dstInputFile.src.filter((e)=>{
+    return !(e.srcNode === srcNode && e.srcName === srcName);
+  });
+  p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
+  return Promise.all(p);
+}
+
+
 /**
  * add suffix to dirname and make directory
  * @param basename dirname
@@ -204,6 +346,7 @@ async function validateTask(projectRootDir, component) {
   if (!(await fs.stat(filename)).isFile()) {
     return Promise.reject(new Error(`script is not existing file ${filename}`));
   }
+  return true;
 }
 
 async function validateConditionalCheck(component) {
@@ -340,13 +483,16 @@ async function createNewComponent(projectRootDir, parentDir, type, pos) {
   return newComponent;
 }
 
+/**
+ * perform git mv and update component path in projectJson file
+ */
 async function renameComponentDir(projectRootDir, ID, newName) {
   if (!isValidName(newName)) {
-    return new Error(`${newName} is not valid component name`);
+    return Promise.reject(new Error(`${newName} is not valid component name`));
   }
   const oldDir = await getComponentDir(projectRootDir, ID, true);
   if (oldDir === projectRootDir) {
-    return new Error("updateNode can not rename root workflow");
+    return Promise.reject(new Error("updateNode can not rename root workflow"));
   }
   const newDir = path.resolve(path.dirname(oldDir), newName);
   await gitRm(projectRootDir, oldDir);
@@ -357,10 +503,10 @@ async function renameComponentDir(projectRootDir, ID, newName) {
 
 async function updateComponent(projectRootDir, ID, prop, value) {
   if (prop === "path") {
-    return new Error("path property is deprecated. please use 'name' instead.");
+    return Promise.reject(new Error("path property is deprecated. please use 'name' instead."));
   }
   if (prop === "inputFiles" || prop === "outputFiles") {
-    return new Error(`updateNode does not support ${prop}. please use renameInputFile or renameOutputFile`);
+    return Promise.reject(new Error(`updateNode does not support ${prop}. please use renameInputFile or renameOutputFile`));
   }
   if (prop === "name") {
     await renameComponentDir(projectRootDir, ID, value);
@@ -536,91 +682,11 @@ async function removeLink(projectRootDir, src, dst, isElse) {
   }
   const p = [writeComponentJson(projectRootDir, srcDir, srcJson)];
 
-  const dstDir = await getComponentDir(projectRootDir, src, true);
+  const dstDir = await getComponentDir(projectRootDir, dst, true);
   const dstJson = await readComponentJson(dstDir);
   dstJson.previous = dstJson.previous.filter((e)=>{
     return e !== src;
   });
-  p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
-  return Promise.all(p);
-}
-
-async function addFileLinkToParent(projectRootDir, srcNode, srcName, dstName) {
-  const p = [];
-  const srcDir = await getComponentDir(projectRootDir, srcNode, true);
-  const srcJson = await readComponentJson(srcDir);
-  const parentDir = path.dirname(srcDir);
-  const parentJson = await readComponentJson(parentDir);
-  const parentID = parentJson.ID;
-
-  const srcOutputFile = srcJson.outputFiles.find((e)=>{
-    return e.name === srcName;
-  });
-  if (!srcOutputFile.dst.includes({ dstNode: parentID, dstName })) {
-    srcOutputFile.dst.push({ dstNode: parentID, dstName });
-  }
-  p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
-
-  const parentOutputFile = parentJson.outputFiles.find((e)=>{
-    return e.name === dstName;
-  });
-  if (!parentOutputFile.hasOwnProperty("origin")) {
-    parentOutputFile.origin = [];
-  }
-  if (!parentOutputFile.origin.includes({ srcNode, srcName })) {
-    parentOutputFile.origin.push({ srcNode, srcName });
-  }
-  p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
-  return Promise.all(p);
-}
-async function addFileLinkFromParent(projectRootDir, srcName, dstNode, dstName) {
-  const p = [];
-  const dstDir = await getComponentDir(projectRootDir, dstNode, true);
-  const dstJson = await readComponentJson(dstDir);
-  const parentDir = path.dirname(dstDir);
-  const parentJson = await readComponentJson(parentDir);
-  const parentID = parentJson.ID;
-
-  const parentInputFile = parentJson.inputFiles.find((e)=>{
-    return e.name === srcName;
-  });
-  if (!parentInputFile.hasOwnProperty("forwardTo")) {
-    parentInputFile.forwardTo = [];
-  }
-  if (!parentInputFile.forwardTo.includes({ dstNode, dstName })) {
-    parentInputFile.forwardTo.push({ dstNode, dstName });
-  }
-  p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
-
-  const dstInputFile = dstJson.inputFiles.find((e)=>{
-    return e.name === dstName;
-  });
-  if (!dstInputFile.src.includes({ srcNode: parentID, srcName })) {
-    dstInputFile.src.push({ srcNode: parentID, srcName });
-  }
-  p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
-  return Promise.all(p);
-}
-async function addFileLinkToSibling(projectRootDir, srcNode, srcName, dstNode, dstName) {
-  const p = [];
-  const srcDir = await getComponentDir(projectRootDir, srcNode, true);
-  const srcJson = await readComponentJson(srcDir);
-  const srcOutputFile = srcJson.outputFiles.find((e)=>{
-    return e.name === srcName;
-  });
-  if (!srcOutputFile.dst.includes({ dstNode, dstName })) {
-    srcOutputFile.dst.push({ dstNode, dstName });
-  }
-  p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
-
-  const dstDir = await getComponentDir(projectRootDir, dstNode, true);
-  const dstJson = await readComponentJson(dstDir);
-  const dstInputFile = dstJson.inputFiles.find((e)=>{
-    return e.name === dstName;
-  });
-  if (!dstInputFile.src.includes({ srcNode, srcName })) {
-    dstInputFile.src.push({ srcNode, srcName });
-  }
   p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
   return Promise.all(p);
 }
@@ -635,137 +701,61 @@ async function addFileLink(projectRootDir, srcNode, srcName, dstNode, dstName) {
   if (srcNode === "parent") {
     return addFileLinkFromParent(projectRootDir, srcName, dstNode, dstName);
   }
-  //isParent() does not accept "parent" as parent or child ID!!
+  //isParent() does not accept "parent" as parent or child ID.
+  //so make sure both srcNode and dstNode is not "parent" before call it
   if (await isParent(projectRootDir, dstNode, srcNode)) {
     return addFileLinkToParent(projectRootDir, srcNode, srcName, dstName);
   }
   if (await isParent(projectRootDir, srcNode, dstNode)) {
     return addFileLinkFromParent(projectRootDir, srcName, dstNode, dstName);
   }
-  return addFileLinkToSibling(projectRootDir, srcNode, srcName, dstNode, dstName);
+  return addFileLinkBetweenSiblings(projectRootDir, srcNode, srcName, dstNode, dstName);
 }
 
 async function removeFileLink(projectRootDir, srcNode, srcName, dstNode, dstName) {
-  const p = [];
-  if (dstNode === "parent" || await isParent(projectRootDir, dstNode, srcNode)) {
-    //remove link to parent
-    const srcDir = await getComponentDir(projectRootDir, srcNode, true);
-    const srcJson = await readComponentJson(srcDir);
-    const parentDir = path.dirname(srcDir);
-    const parentJson = await readComponentJson(parentDir);
-
-    const srcOutputFile = srcJson.outputFiles.find((e)=>{
-      return e.name === srcName;
-    });
-    srcOutputFile.dst = srcOutputFile.dst.filter((e)=>{
-      return e.dstNode !== parentJson.ID || e.dstName !== dstName;
-    });
-    p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
-
-    const parentOutputFile = parentJson.outputFiles.find((e)=>{
-      return e.name === dstName;
-    });
-    if (parentOutputFile.hasOwnProperty("origin")) {
-      parentOutputFile.origin = parentOutputFile.origin.filter((e)=>{
-        return e.srcNode !== srcNode || e.srcName !== srcName;
-      });
-    }
-    p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
-  } else if (srcNode === "parent" || await isParent(projectRootDir, srcNode, dstNode)) {
-    //link to child
-    const dstDir = await getComponentDir(projectRootDir, dstNode, true);
-    const dstJson = await readComponentJson(dstDir);
-    const parentDir = path.dirname(dstDir);
-    const parentJson = await readComponentJson(parentDir);
-    const parentID = parentJson.ID;
-
-    const parentInputFile = parentJson.inputFiles.find((e)=>{
-      return e.name === srcName;
-    });
-    if (parentInputFile.hasOwnProperty("forwardTo")) {
-      parentInputFile.forwardTo = parentInputFile.forwardTo.filter((e)=>{
-        return e.dstNode !== dstNode || e.dstName !== dstName;
-      });
-    }
-    p.push(writeComponentJson(projectRootDir, parentDir, parentJson));
-
-    const dstInputFile = dstJson.inputFiles.find((e)=>{
-      return e.name === dstName;
-    });
-    dstInputFile.src = dstInputFile.src.filter((e)=>{
-      return e.srcNode !== parentID || e.srcName !== srcName;
-    });
-    p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
-  } else {
-    //normal case
-    const srcDir = await getComponentDir(projectRootDir, srcNode, true);
-    const srcJson = await readComponentJson(srcDir);
-    const srcOutputFile = srcJson.outputFiles.find((e)=>{
-      return e.name === srcName;
-    });
-    srcOutputFile.dst = srcOutputFile.dst.filter((e)=>{
-      return !(e.dstNode === dstNode && e.dstName === dstName);
-    });
-    p.push(writeComponentJson(projectRootDir, srcDir, srcJson));
-
-    const dstDir = await getComponentDir(projectRootDir, dstNode, true);
-    const dstJson = await readComponentJson(dstDir);
-    const dstInputFile = dstJson.inputFiles.find((e)=>{
-      return e.name === dstName;
-    });
-    dstInputFile.src = dstInputFile.src.filter((e)=>{
-      return !(e.srcNode === srcNode && e.srcName === srcName);
-    });
-    p.push(writeComponentJson(projectRootDir, dstDir, dstJson));
+  if (dstNode === "parent") {
+    return removeFileLinkToParent(projectRootDir, srcNode, srcName, dstNode, dstName);
   }
-  return Promise.all(p);
+  if (srcNode === "parent") {
+    return removeFileLinkFromParent(projectRootDir, srcNode, srcName, dstNode, dstName);
+  }
+  //isParent() does not accept "parent" as parent or child ID.
+  //so make sure both srcNode and dstNode is not "parent" before call it
+  if (await isParent(projectRootDir, dstNode, srcNode)) {
+    return removeFileLinkToParent(projectRootDir, srcNode, srcName, dstNode, dstName);
+  }
+  if (await isParent(projectRootDir, srcNode, dstNode)) {
+    return removeFileLinkFromParent(projectRootDir, srcNode, srcName, dstNode, dstName);
+  }
+  return removeFileLinkBetweenSiblings(projectRootDir, srcNode, srcName, dstNode, dstName);
 }
 
 
 async function cleanComponent(projectRootDir, ID) {
-  const targetDir = await getComponentDir(projectRootDir, ID);
-  const descendantsID = await getDescendantsID(projectRootDir, ID);
+  const targetDir = await getComponentDir(projectRootDir, ID, true);
 
   await fs.remove(targetDir);
   const pathSpec = `${replacePathsep(path.relative(projectRootDir, targetDir))}/*`;
   await gitResetHEAD(projectRootDir, pathSpec);
 
-  //remove all non-existing components from component Path
-  await updateComponentPath(projectRootDir, (root, componentPath)=>{
-    for (const descendantID of descendantsID) {
-      getComponentDir(projectRootDir, descendantID)
-        .then((descendantDir)=>{
-          return fs.pathExists(descendantDir);
-        })
-        .then((isExists)=>{
-          if (!isExists) {
-            delete componentPath[descendantID];
-          }
-        });
-    }
-  });
+  const descendantsDirs = await getDescendantsIDs(projectRootDir, ID);
+  return removeComponentPath(projectRootDir, descendantsDirs);
 }
 
 async function removeComponent(projectRootDir, ID) {
-  const nodeDir = await getComponentDir(projectRootDir, ID);
-  const descendantsID = await getDescendantsID(projectRootDir, ID);
+  const targetDir = await getComponentDir(projectRootDir, ID, true);
+  const descendantsIDs = await getDescendantsIDs(projectRootDir, ID);
 
   //remove all link/filelink to or from components to be removed
-  for (const descendantID of descendantsID) {
+  for (const descendantID of descendantsIDs) {
     await removeAllLink(projectRootDir, descendantID);
   }
-
-  //remove all descendants and target component itself from componentPath
-  await updateComponentPath(projectRootDir, (root, componentPath)=>{
-    for (const descendantID of descendantsID) {
-      delete componentPath[descendantID];
-    }
-  });
-
   //gitOperator.rm() only remove existing files from git repo if directory is passed
   //so, gitRm and fs.remove must be called in this order
-  await gitRm(projectRootDir, nodeDir);
-  await fs.remove(nodeDir);
+  await gitRm(projectRootDir, targetDir);
+  await fs.remove(targetDir);
+
+  return removeComponentPath(projectRootDir, descendantsIDs);
 }
 
 

@@ -1,6 +1,6 @@
 "use strict";
 const { remoteHost, jobScheduler } = require("../db/db");
-const { getSsh, getLogger } = require("./projectResource");
+const { getSsh } = require("./projectResource");
 const { cancel } = require("./executer");
 
 async function cancelRemoteJob(task, ssh, logger) {

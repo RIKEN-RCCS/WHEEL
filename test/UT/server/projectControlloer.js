@@ -10,6 +10,9 @@ chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
 
+//display detailed information of unhandled rejection
+process.on("unhandledRejection", console.dir);
+
 //testee
 const { runProject, setLogger } = require("../../../app/core/projectResource");
 
@@ -44,7 +47,7 @@ const dummyLogger = {
 //dummyLogger.debug = console.log;
 
 
-describe.only("project Controller UT", function() {
+describe("project Controller UT", function() {
   this.timeout(0);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
@@ -56,7 +59,7 @@ describe.only("project Controller UT", function() {
     setLogger(projectRootDir, dummyLogger);
   });
   after(async()=>{
-    //await fs.remove(testDirRoot);
+    await fs.remove(testDirRoot);
   });
   describe("#runProject", ()=>{
     describe("one local task", ()=>{
@@ -449,7 +452,7 @@ describe.only("project Controller UT", function() {
         });
       });
     });
-    describe.only("task in a For component", ()=>{
+    describe("task in a For component", ()=>{
       beforeEach(async()=>{
         const for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
         await updateComponent(projectRootDir, for0.ID, "start", 0);
@@ -1283,7 +1286,7 @@ describe.only("project Controller UT", function() {
 
         const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "PS0"), "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
-        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), `${scriptPwd}exit 1\n`);
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", scriptName), `${scriptPwd}\nexit 1\n`);
 
         //1st run
         await runProject(projectRootDir);

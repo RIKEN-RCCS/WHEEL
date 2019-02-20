@@ -15,7 +15,7 @@ function getSNDs(fileList, isDir) {
 
     while ((result = reNumber.exec(filename)) !== null) {
       const glob = `${filename.slice(0, result.index)}*${filename.slice(reNumber.lastIndex)}`;
-      if(candidates.has(glob) && !globs.has(glob)){
+      if (candidates.has(glob) && !globs.has(glob)) {
         const type = isDir ? "sndd" : "snd";
         snds.push({
           path: e.path,
@@ -24,12 +24,12 @@ function getSNDs(fileList, isDir) {
           islink: false
         });
         globs.add(glob);
-      }else{
+      } else {
         candidates.add(glob);
       }
     }
   }
-  return snds
+  return snds;
 }
 
 /**
@@ -48,15 +48,15 @@ function bundleSNDFiles(fileList, isDir) {
 
   const files = fileList.filter((e)=>{
     for (const g of globs) {
-      if(minimatch(e.name, g.name)){
-        return false
+      if (minimatch(e.name, g.name)) {
+        return false;
       }
     }
-    // filter filename which does NOT match all globs
-    return true
+    //filter filename which does NOT match all globs
+    return true;
   });
 
-  return files.concat(globs);;
+  return files.concat(globs);
 }
 
 function compare(a, b) {
@@ -157,7 +157,6 @@ async function ls(targetDir, options = {}) {
     const dirs = bundleSNDFiles(dirList, true);
     const files = bundleSNDFiles(fileList);
     return dirs.sort(compare).concat(files.sort(compare));
-
   }
   return dirList.sort(compare).concat(fileList.sort(compare));
 }

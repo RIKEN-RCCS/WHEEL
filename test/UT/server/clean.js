@@ -10,6 +10,9 @@ chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
 
+//display detailed information of unhandled rejection
+process.on("unhandledRejection", console.dir);
+
 //testee
 const { cleanComponent } = require("../../../app/core/componentFilesOperator");
 
@@ -18,19 +21,13 @@ const testDirRoot = "WHEEL_TEST_TMP";
 const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 
 //stubs
-const emit = sinon.stub();
-const cb = sinon.stub();
-const sio = {};
-sio.emit = sinon.stub();
 
 //helper functions
 const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
 const { createNewProject } = require("../../../app/core/projectFilesOperator");
 const { createNewComponent, updateComponent } = require("../../../app/core/componentFilesOperator");
-const { openProject } = require("../../../app/core/projectResource");
+const { openProject, runProject } = require("../../../app/core/projectResource");
 const { scriptName, pwdCmd } = require("./testScript");
-const Dispatcher = require("../../../app/core/dispatcher");
-const { getDateString } = require("../../../app/lib/utility");
 const { gitAdd, gitCommit } = require("../../../app/core/gitOperator");
 
 
@@ -71,8 +68,8 @@ describe("test about cleaning functionality", function() {
     await fs.outputFile(path.join(projectRootDir, "wf1", "task1", scriptName), `#!/bin/bash\n${pwdCmd} |tee result\n`);
     await fs.outputFile(path.join(projectRootDir, "wf1", "wf2", "task2", scriptName), `#!/bin/bash\n${pwdCmd} |tee result\n`);
 
-    await gitAdd(projectRootDir, path.join(projectRootDir, "task0", scriptName),);
-    await gitAdd(projectRootDir, path.join(projectRootDir, "wf1", "task1", scriptName),);
+    await gitAdd(projectRootDir, path.join(projectRootDir, "task0", scriptName));
+    await gitAdd(projectRootDir, path.join(projectRootDir, "wf1", "task1", scriptName));
     await gitAdd(projectRootDir, path.join(projectRootDir, "wf1", "wf2", "task2", scriptName));
 
     await gitCommit(projectRootDir, "hoge", "huga@example.com");
@@ -84,23 +81,13 @@ describe("test about cleaning functionality", function() {
       task1,
       task2
     };
-    const rootWF = await fs.readJson(path.join(projectRootDir, componentJsonFilename));
-    const projectJson = await fs.readJson(path.join(projectRootDir, projectJsonFilename));
-    const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), null, projectJson.componentPath);
-    await rootDispatcher.start();
-
-    cb.reset();
-    emit.reset();
+    await runProject(projectRootDir);
   });
   after(async()=>{
-    //await fs.remove(testDirRoot);
+    await fs.remove(testDirRoot);
   });
   it("should clean file and dirs under wf1", async()=>{
     await cleanComponent(projectRootDir, components.wf1.ID);
-    expect(cb).to.have.been.calledOnce;
-    expect(cb).to.have.been.calledWith(true);
-    expect(emit).to.have.been.calledOnce;
-    expect(emit).to.have.been.calledWith("workflow");
     expect(path.join(projectRootDir, "task0", "result")).to.be.a.file().with.content(path.join(projectRootDir, "task0") + os.EOL);
     expect(path.join(projectRootDir, "wf1", "task1", "result")).not.to.be.path();
     expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({

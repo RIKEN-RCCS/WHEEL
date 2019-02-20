@@ -11,6 +11,27 @@ const { readJsonGreedy } = require("./fileUtils");
 const { gitInit, gitAdd } = require("./gitOperator");
 
 /**
+ * read component JSON file and return children's ID
+ * @param {string} projectRootDir - project projectRootDir's absolute path
+ * @param {string} ID - ID string of search root component
+ * @returns {string[]} - array of id string
+ */
+async function getDescendantsIDs(projectRootDir, ID) {
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await readJsonGreedy(filename);
+  const poi = await getComponentDir(projectRootDir, ID, true);
+  const rt = [];
+
+  for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
+    if (pathIsInside(path.resolve(projectRootDir, componentPath), poi)) {
+      rt.push(id);
+    }
+  }
+  return rt;
+}
+
+
+/**
  * create new project dir, initial files and new git repository
  * @param {string} projectRootDir - project projectRootDir's absolute path
  * @param {string} projectName - project name without suffix
@@ -53,6 +74,23 @@ async function createNewProject(projectRootDir, name, description, user, mail, l
   }
   await fs.writeJson(projectJsonFileFullpath, projectJson, { spaces: 4 });
   return gitInit(projectRootDir, user, mail);
+}
+
+async function removeComponentPath(projectRootDir, IDs, force = false) {
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await readJsonGreedy(filename);
+
+  for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
+    if (IDs.includes(id)) {
+      if (force || !await fs.pathExists(path.join(projectRootDir, componentPath))) {
+        delete projectJson.componentPath[id];
+      }
+    }
+  }
+
+  //write project Json file
+  await fs.writeJson(filename, projectJson, { spaces: 4 });
+  return gitAdd(projectRootDir, filename);
 }
 
 async function updateComponentPath(projectRootDir, ID, absPath) {
@@ -109,6 +147,8 @@ async function getComponentDir(projectRootDir, ID, isAbsolute) {
 module.exports = {
   createNewProject,
   updateComponentPath,
+  removeComponentPath,
   getComponentDir,
+  getDescendantsIDs,
   setProjectState
 };

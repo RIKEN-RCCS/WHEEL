@@ -1,6 +1,6 @@
 "use strict";
 const path = require("path");
-const { pathseps, reWin32ReservedNames, metaCharactors, escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
+const { pathseps, reWin32ReservedNames, metaCharactors, escapeRegExp } = require("../lib/utility");
 
 
 //TODO use escapeRegExp

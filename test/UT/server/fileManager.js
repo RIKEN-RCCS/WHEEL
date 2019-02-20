@@ -9,6 +9,9 @@ chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 const rewire = require("rewire");
 
+//display detailed information of unhandled rejection
+process.on("unhandledRejection", console.dir);
+
 //testee
 const fileManager = rewire("../../../app/routes/fileManager");
 const onGetFileList = fileManager.__get__("onGetFileList");

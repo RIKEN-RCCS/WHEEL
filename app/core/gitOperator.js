@@ -3,7 +3,6 @@ const path = require("path");
 const EventEmitter = require("events");
 const { promisify } = require("util");
 const fs = require("fs-extra");
-const klaw = require("klaw");
 const nodegit = require("nodegit");
 const glob = require("glob");
 const { replacePathsep } = require("./pathUtils");
@@ -25,7 +24,7 @@ class Git extends EventEmitter {
   }
 
   //never call this function directly!!
-  //please use emit("wirteIndex") instead
+  //please use this.emit("wirteIndex") instead
   async _write() {
     setImmediate(async()=>{
       await this.index.write();
@@ -41,7 +40,6 @@ class Git extends EventEmitter {
     this.repo = await nodegit.Repository.open(repoPath);
     this.index = await this.repo.refreshIndex();
   }
-
 
   /**
    * create new repository
@@ -61,38 +59,34 @@ class Git extends EventEmitter {
    * perform git add
    * @param {string} absFilePath - target filepath
    */
-  async add(absFilename) {
-    return new Promise(async(resolve, reject)=>{
-      const stats = await fs.stat(absFilename);
-
+  async add(absFilename, isRemoving = false) {
+    const stats = await fs.stat(absFilename);
+    try {
       if (stats.isDirectory()) {
-        const filenames = [];
-        klaw(absFilename)
-          .on("data", (item)=>{
-            if (item.stats.isFile()) {
-              const filename = replacePathsep(path.relative(this.rootDir, item.path));
-              filenames.push(filename);
-            }
-          })
-          .on("error", (err)=>{
-            reject(new Error("fatal error occurred during recursive git add", err));
-          })
-          .on("end", async()=>{
-            await Promise.all(
-              filenames.map((filename)=>{
-                return this.index.addByPath(filename);
-              })
-            );
-            this.emit("writeIndex");
-            resolve();
-          });
+        let files = await promisify(glob)("**", { cwd: absFilename });
+        files = files.map((e)=>{
+          return replacePathsep(path.relative(this.rootDir, e));
+        });
+
+        if (isRemoving) {
+          await this.index.removeAll(files, null);
+        } else {
+          await this.index.addAll(files, 0, null);
+        }
       } else {
         const filename = replacePathsep(path.relative(this.rootDir, absFilename));
-        await this.index.addByPath(filename);
-        this.emit("writeIndex");
-        resolve();
+        if (isRemoving) {
+          await this.index.removeByPath(filename);
+        } else {
+          await this.index.addByPath(filename);
+        }
       }
-    });
+      this.emit("wirteIndex");
+    } catch (e) {
+      e.isRemoving = isRemoving;
+      e.argFilename = absFilename;
+      throw e;
+    }
   }
 
   /**
@@ -100,33 +94,7 @@ class Git extends EventEmitter {
    * @param {string} absFilePath - target filepath
    */
   async rm(absFilename) {
-    return new Promise(async(resolve, reject)=>{
-      const stats = await fs.stat(absFilename);
-
-      if (stats.isDirectory()) {
-        const p = [];
-        klaw(absFilename)
-          .on("data", (item)=>{
-            if (item.stats.isFile()) {
-              const filename = replacePathsep(path.relative(this.rootDir, item.path));
-              p.push(this.index.removeByPath(filename));
-            }
-          })
-          .on("error", (err)=>{
-            reject(new Error("fatal error occurred during recursive git add", err));
-          })
-          .on("end", async()=>{
-            await Promise.all(p);
-            this.emit("writeIndex");
-            resolve();
-          });
-      } else {
-        const filename = replacePathsep(path.relative(this.rootDir, absFilename));
-        await this.index.removeByPath(filename);
-        this.emit("writeIndex");
-        resolve();
-      }
-    });
+    return this.add(absFilename, true);
   }
 
   /**
@@ -220,10 +188,10 @@ async function gitResetHEAD(rootDir, filePatterns) {
   return git.resetHEAD(filePatterns);
 }
 
-module.exports={
+module.exports = {
   gitInit,
   gitCommit,
   gitAdd,
   gitRm,
   gitResetHEAD
-}
+};

@@ -261,7 +261,9 @@ async function replaceTargetFile(srcDir, dstDir, targetFiles, params) {
     const tmp = await fs.readFile(path.resolve(srcDir, targetFile));
     let data = tmp.toString();
     for (const key in params) {
-      data = data.replace(new RegExp(`%%${key}%%`, "g"), params[key].toString());
+      if (typeof key === "string") {
+        data = data.replace(new RegExp(`%%${key}%%`, "g"), params[key].toString());
+      }
     }
     //fs.writeFile will overwrites existing file.
     //so, targetFile is always overwrited!!

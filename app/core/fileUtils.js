@@ -77,7 +77,7 @@ async function addX(file) {
   return fs.chmod(file, modeString);
 }
 
-module.exports={
+module.exports = {
   readJsonGreedy,
   addX
-}
+};

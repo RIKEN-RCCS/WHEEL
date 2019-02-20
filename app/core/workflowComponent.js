@@ -234,9 +234,8 @@ function isInitialComponent(component) {
 }
 
 
-
 module.exports = {
   componentFactory,
   hasChild,
   isInitialComponent
-}
+};
