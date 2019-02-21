@@ -57,15 +57,15 @@ class Git extends EventEmitter {
 
   /**
    * perform git add
-   * @param {string} absFilePath - target filepath
+   * @param {string} absTargetPath - target's absolute path
    */
-  async add(absFilename, isRemoving = false) {
-    const stats = await fs.stat(absFilename);
+  async add(absTargetPath, isRemoving = false) {
+    const stats = await fs.stat(absTargetPath);
     try {
       if (stats.isDirectory()) {
-        let files = await promisify(glob)("**", { cwd: absFilename });
+        let files = await promisify(glob)("**", { cwd: absTargetPath });
         files = files.map((e)=>{
-          return replacePathsep(path.relative(this.rootDir, e));
+          return replacePathsep(path.relative(this.rootDir, path.join(absTargetPath, e)));
         });
 
         if (isRemoving) {
@@ -74,7 +74,7 @@ class Git extends EventEmitter {
           await this.index.addAll(files, 0, null);
         }
       } else {
-        const filename = replacePathsep(path.relative(this.rootDir, absFilename));
+        const filename = replacePathsep(path.relative(this.rootDir, absTargetPath));
         if (isRemoving) {
           await this.index.removeByPath(filename);
         } else {
@@ -84,17 +84,17 @@ class Git extends EventEmitter {
       this.emit("wirteIndex");
     } catch (e) {
       e.isRemoving = isRemoving;
-      e.argFilename = absFilename;
+      e.argFilename = absTargetPath;
       throw e;
     }
   }
 
   /**
    * perform git rm
-   * @param {string} absFilePath - target filepath
+   * @param {string} absTargetPath - target's absolute path
    */
-  async rm(absFilename) {
-    return this.add(absFilename, true);
+  async rm(absTargetPath) {
+    return this.add(absTargetPath, true);
   }
 
   /**
