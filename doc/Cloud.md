@@ -1,31 +1,80 @@
 # クラウドインスタンス 利用機能
 ## はじめに
-本ドキュメントでは、2019年2月にWHEELへ実装されるクラウドインスタンス利用機能の仕様と、利用方法について解説します。
+本ドキュメントでは、2019年2月にWHEELへ実装されたクラウドインスタンス利用機能の仕様と、利用方法について解説します。
+本ドキュメントの内容はα版のものですので、随時変更される可能性があります。
 
 ## クラウドインスタンス利用機能の概要
 本機能を使用すると、WHEELがプロジェクト実行時にクラウド(現時点ではAWSのみ)上に、Linuxのクラスタ環境を作成し、リモートホストとしてその環境を利用してtaskおよびジョブを実行します。
 作成されたインスタンスはプロジェクトの実行終了時にWHEELが自動的に削除します。
 
 ## クラウドインスタンス利用機能の使用方法
-クラウドインスタンス利用機能を使用するには、remotehost画面で新規にホスト設定を作成する際に、使用するクラウドプロバイダを指定します。
-AWSを使用する場合は、以下のパラメータを本画面で設定することができます。
+クラウドインスタンスを利用した計算を行うためには、以下の3点の設定を行う必要があります。
 
-- OS
-- ノード数
-- インスタンスタイプ
-- インスタンスを起動するリージョン
-- バッチサーバ(OpenPBS)を使用するかどうかのフラグ
-- MPIライブラリ(OpenMPI)を使用するかどうかのフラグ
-- コンパイラ(gcc)を使用するかどうかのフラグ
-- ヘッドノードのストレージをNFSを用いてシェアするかどうかのフラグ
+1. remotehost設定
+2. taskの設定
 
-また、上記項目以外にEC2の起動オプションを追加で指定する場合は、クラスタ全体に共通の設定およびヘッドノードのみに固有の設定をそれぞれ追加することができます。指定可能な項目はAWSのドキュメントをご参照ください。
+### remotehost設定は、以下の内容をapp/db/remotehost.jsonに追記することで行ないます。
 
-インスタンス起動後にカスタマイズを行なう場合は、remotehost画面からansibleのplaybookをアップロードしておけば全ノードの起動後にヘッドノードから実行されます。
+```
+{
+  "name": "aws-test",
+  "type": "aws",
+  "os": "ubuntu16",
+  "region": "ap-northeast-1",
+  "numNodes": 2,
+  "InstanceType": "t2.micro",
+  "rootVolume": 30,
+  "shareStorage": true,
+  "playbook": "not used for now",
+  "mpi": "not used for now",
+  "compoiler": "not used for now",
+  "additionalParams": {
+    "id": "XXXX",
+    "pw": "XXXX"
+  },
+  "additionalParamsForHead": {},
+  "id": "set unique id string. do not write id for aws",
+  "numJob": 1,
+  "queue": "",
+  "port": 22,
+  "jobScheduler": "PBSPro",
+  "renewInterval": 0,
+  "renewDelay": 0,
+  "statusCheckInterval": 10,
+  "maxStatusCheckError": 10
+}
+```
 
-AWSの起動時に使用するaccess keyおよびsecret access keyはaws-sdkの取り扱いと同様です。したがって、Shared Credential fileに保存するか、WHEELの起動時に必要な環境変数を設定することで指定してください。
+wheelの実行中にremotehost.jsonを編集した後は必ずwheelを再起動してください。
+再起動するまで内容が読み込まれないだけでなく、元の設定内容で上書きされる可能性があります。
+
+remotehost.jsonの各プロパティに記載する内容は以下のとおりです。
+
+name: 識別するための任意の文字列。taskコンポーネントのプロパティ画面での表示に使われます。
+type: "aws" 固定値
+os: "ubuntu16" 固定値
+region: インスタンスを起動するリージョンを指定します。
+numNodes {Number} : 起動するノード数を指定します。
+InstanceType: 起動するインスタンスタイプを指定します。
+rootVolume {Number} : 起動するインスタンスにアタッチするrootのEBSボリュームの値を指定します。
+shareStorage {bool} : headNodeのローカルストレージをNFSで共有する(true)か共有しない(false)かの指定を行ないます。
+additionalParams {Object}: aws-sdkのEC2.runInstancesに渡すことのできる設定をこのプロパティに追加することができます。
+なお、このプロパティでregionやInstanceTypeを指定しても、前述のregionおよびInstanceTypeの値で上書きされます。
+additionalParamsForHead: additionalParamsと同様ですがヘッドノードのみに適用する値を指定します。
+
+playbook, mpi, compilerの各プロパティには将来的には設定を記述することができるようになる予定ですが、現時点では使用できません。
+
+
+### taskの設定
+ワークフローエディタでtaskコンポーネントのプロパティ画面を表示し、remotehost設定から前項で追加した設定を選んでください。
+
+
+## 認証情報について
+AWS起動時の認証に使う、access keyおよび secret access keyは前項の例のようにadditionalParamsプロパティに含めて指定することもできますが、node.jsを起動するユーザの環境変数や、shared credential fileを用いて設定することもできます。
+また、additionalParamsのid, pwが設定されていない時はプロジェクトの実行開始時にaccess keyおよびsecret access keyの入力を
+うながすダイアログが表示されます。
+したがって、shared credentialや環境変数を使う場合は、idおよびpwを定義して""の値を入力し、実行時に毎回access key, secret access keyを入力する場合はid, pwを定義しないでおいてください。
+
 Shared Credentials Fileの記述方法などは、以下のURLに記載があります。
 
 https://docs.aws.amazon.com/ja_jp/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html
-
-

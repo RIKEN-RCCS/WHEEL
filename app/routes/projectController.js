@@ -5,6 +5,7 @@ const path = require("path");
 const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
+const { create } = require("abc4");
 const { createNewComponent, updateComponent } = require("../core/componentFilesOperator");
 const { createSshConfig, emitLongArray } = require("./utility");
 const { readJsonGreedy } = require("../core/fileUtils");
@@ -12,7 +13,7 @@ const { getDateString } = require("../lib/utility");
 const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSsh, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger } = require("../core/projectResource");
+const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSsh, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger } = require("../core/projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
 const {
   getHosts,
@@ -118,39 +119,52 @@ function askPassword(sio, hostname) {
 /**
  * create necessary ssh instance
  */
-async function createSsh(projectRootDir, hosts, sio) {
-  //ask password to user and make session to each remote hosts
-  for (const remoteHostName of hosts) {
-    const id = remoteHost.getID("name", remoteHostName);
-    const hostInfo = remoteHost.get(id);
+async function createSsh(projectRootDir, remoteHostName, sio) {
+  if (!hostInfo) {
+    return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
+  }
+  const password = await askPassword(sio, remoteHostName);
+  const config = await createSshConfig(hostInfo, password);
+  const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
 
-    if (!hostInfo) {
-      return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
+  if (hostInfo.renewInterval) {
+    arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
+  }
+
+  if (hostInfo.renewDelay) {
+    arssh.renewDelay = hostInfo.renewDelay * 1000;
+  }
+
+  //remoteHostName is name property of remote host entry
+  //hostInfo.host is hostname or IP address of remote host
+  addSsh(projectRootDir, hostInfo.host, arssh);
+
+  try {
+    //1st try
+    await arssh.canConnect();
+  } catch (e) {
+    if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
+      return Promise.reject(e);
     }
-    const password = await askPassword(sio, remoteHostName);
-    const config = await createSshConfig(hostInfo, password);
-    const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
+    let newPassword = await askPassword(sio, remoteHostName);
 
-    if (hostInfo.renewInterval) {
-      arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
+    if (config.passphrase) {
+      config.passphrase = newPassword;
     }
 
-    if (hostInfo.renewDelay) {
-      arssh.renewDelay = hostInfo.renewDelay * 1000;
+    if (config.password) {
+      config.password = newPassword;
     }
-
-    //remoteHostName is name property of remote host entry
-    //hostInfo.host is hostname or IP address of remote host
-    addSsh(projectRootDir, hostInfo.host, arssh);
+    arssh.overwriteConfig(config);
 
     try {
-      //1st try
+      //2nd try
       await arssh.canConnect();
-    } catch (e) {
-      if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
-        return Promise.reject(e);
+    } catch (e2) {
+      if (e2.reason !== "invalid passphrase" && e2.reason !== "authentication failure") {
+        return Promise.reject(e2);
       }
-      let newPassword = await askPassword(sio, remoteHostName);
+      newPassword = await askPassword(sio, remoteHostName);
 
       if (config.passphrase) {
         config.passphrase = newPassword;
@@ -162,36 +176,63 @@ async function createSsh(projectRootDir, hosts, sio) {
       arssh.overwriteConfig(config);
 
       try {
-        //2nd try
+        //3rd try
         await arssh.canConnect();
-      } catch (e2) {
-        if (e2.reason !== "invalid passphrase" && e2.reason !== "authentication failure") {
-          return Promise.reject(e2);
+      } catch (e3) {
+        if (e3.reason !== "invalid passphrase" && e3.reason !== "authentication failure") {
+          return Promise.reject(e3);
         }
-        newPassword = await askPassword(sio, remoteHostName);
-
-        if (config.passphrase) {
-          config.passphrase = newPassword;
-        }
-
-        if (config.password) {
-          config.password = newPassword;
-        }
-        arssh.overwriteConfig(config);
-
-        try {
-          //3rd try
-          await arssh.canConnect();
-        } catch (e3) {
-          if (e3.reason !== "invalid passphrase" && e3.reason !== "authentication failure") {
-            return Promise.reject(e3);
-          }
-          return Promise.reject(new Error("wrong password for 3 times"));
-        }
+        return Promise.reject(new Error("wrong password for 3 times"));
       }
     }
   }
-  return Promise.resolve();
+}
+
+async function createCloudInstance(projectRootDir, hostInfo, sio) {
+  const order = hostInfo.additionalParams;
+  order.headOnlyParam = hostInfo.additionalParamsForHead;
+  order.provider = hostInfo.type;
+  order.os = hostInfo.os;
+  order.region = hostInfo.region;
+  order.numNodes = hostInfo.numNodes;
+  order.InstanceType = hostInfo.InstanceType;
+  order.rootVolume = hostInfo.rootVolume;
+  order.shareStorage = hostInfo.shareStorage;
+  //order.playbook = hostInfo.playbook;
+  //order.mpi = hostInfo.mpi;
+  //order.compiler = hostInfo.compiler;
+  order.batch = hostInfo.jobScheduler;
+  order.id = order.hasOwnProperty("id") ? order.id : await askPassword(sio, "input access key for AWS");
+  order.pw = order.hasOwnProperty("pw") ? order.pw : await askPassword(sio, "input secret access key for AWS");
+  const logger = getLogger(projectRootDir);
+  order.info = logger.debug.bind(logger);
+  order.debug = logger.trace.bind(logger);
+
+  const cluster = await create(order);
+  addCluster(projectRootDir, cluster);
+  const config = {
+    host: cluster.headNodes[0].publicNetwork.hostname,
+    port: hostInfo.port,
+    username: cluster.user,
+    privateKey: cluster.privateKey,
+    passphrase: "",
+    password: null
+  };
+
+  const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
+  if (hostInfo.type === "aws") {
+    await arssh.exec("cloud-init status -w");
+  }
+  if (hostInfo.renewInterval) {
+    arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
+  }
+
+  if (hostInfo.renewDelay) {
+    arssh.renewDelay = hostInfo.renewDelay * 1000;
+  }
+
+  hostInfo.host = config.host;
+  addSsh(projectRootDir, config.host, arssh);
 }
 
 async function onRunProject(sio, projectRootDir, cb) {
@@ -240,15 +281,26 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //actual project start here
   try {
-    await createSsh(projectRootDir, hosts, sio);
+    for (const remoteHostName of hosts) {
+      const id = remoteHost.getID("name", remoteHostName);
+      const hostInfo = remoteHost.get(id);
+      if (hostInfo.type === "aws") {
+        await createCloudInstance(projectRootDir, hostInfo, sio);
+      } else {
+        await createSsh(projectRootDir, hostInfo, sio);
+      }
+    }
     await runProject(projectRootDir);
   } catch (err) {
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
     await sendProjectJson(emit, projectRootDir, "failed");
-    removeSsh(projectRootDir);
     cb(false);
     return;
+  } finally {
+    removeSsh(projectRootDir);
+    removeCluster(projectRootDir);
   }
+
   off(projectRootDir, "taskStateChanged", onTaskStateChanged);
   off(projectRootDir, "componentStateChanged", onComponentStateChanged);
 

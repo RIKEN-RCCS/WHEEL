@@ -4,6 +4,7 @@ const { promisify } = require("util");
 const EventEmitter = require("events");
 const fs = require("fs-extra");
 const glob = require("glob");
+const { destroy } = require("abc4");
 const { gitCommit, gitResetHEAD } = require("./gitOperator");
 const { taskStateFilter, cancelDispatchedTasks } = require("./taskUtil");
 const orgGetLogger = require("../logSettings").getLogger;
@@ -34,6 +35,7 @@ class Project extends EventEmitter {
     this.cwd = null; //current working directory on client side!! TODO should be moved to cookie
     this.rootDispatcher = null; //dispatcher for root workflow
     this.ssh = new Map(); //ssh instances using in this project
+    this.clusters = new Set(); //clusters using in this project
     this.tasks = new Set(); //dispatched tasks
     this.updatedTasks = new Set(); //temporaly container which have only updated Tasks
     this.logger = orgGetLogger("workflow");
@@ -164,12 +166,23 @@ function removeSsh(projectRootDir) {
   pj.ssh.clear();
 }
 
+function removeCluster(projectRootDir) {
+  const pj = getProject(projectRootDir);
+  for (const cluster of pj.clusters) {
+    destroy(cluster);
+  }
+  pj.clusters.clear();
+}
+
 function getSsh(projectRootDir, hostname) {
   return getProject(projectRootDir).ssh.get(hostname);
 }
 
 function addSsh(projectRootDir, hostname, ssh) {
   getProject(projectRootDir).ssh.set(hostname, ssh);
+}
+function addCluster(projectRootDir, cluster) {
+  getProject(projectRootDir).clusters.add(cluster);
 }
 
 function once(projectRootDir, eventName, cb) {
@@ -242,6 +255,8 @@ module.exports = {
   addSsh,
   getSsh,
   removeSsh,
+  addCluster,
+  removeCluster,
   emitEvent,
   once,
   on,
