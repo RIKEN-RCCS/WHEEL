@@ -230,13 +230,134 @@
     </div>
 
     <div id="hostRegFormAreaForCloud">
-      <div>
-        <span>
-          <label>Label</label>
-        </span>
-        <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
-        <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
+      <div id="leftFormArea">
+        <div>
+          <span>
+            <label>Label</label>
+          </span>
+          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
+          <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
+        </div>
+        <div>
+          <span>
+            <label>Cloud service provider</label>
+          </span>
+          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.type">
+        </div>
+        <div>
+          <span>
+            <label>OS</label>
+          </span>
+          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.os">
+        </div>
+        <div>
+          <span>
+            <label>region</label>
+          </span>
+          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.region">
+        </div>
+        <div>
+          <span>
+            <label>numNodes</label>
+          </span>
+          <input type="number" placeholder="empty is not allowed." v-model.lazy.number.trim="newHostInfo.numNodes">
+        </div>
+        <div>
+          <span>
+            <label>InstanceType</label>
+          </span>
+          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.instanceType">
+        </div>
+        <div>
+          <span>
+            <label>rootVolume</label>
+          </span>
+          <input type="number" placeholder="empty is not allowed." v-model.lazy.number.trim="newHostInfo.rootVolume">
+        </div>
+        <div>
+          <span>
+            <label>shareStorage</label>
+          </span>
+          <input type="checkbox" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.shareStorage">
+        </div>
+        <div>
+          <span>
+            <label>playbook</label>
+          </span>
+          <textarea v-model.lazy.trim="newHostInfo.playbook"></textarea>
+        </div>
+        <div>
+          <span>
+            <label>mpi</label>
+          </span>
+          <input type="text"  v-model.lazy.trim="newHostInfo.mpi">
+        </div>
+        <div>
+          <span>
+            <label>compiler</label>
+          </span>
+          <input type="text"  v-model.lazy.trim="newHostInfo.compiler">
+        </div>
+        <div>
+          <span>
+            <label>additionalParams</label>
+          </span>
+          <textarea  v-model.lazy.trim="newHostInfo.additionalParams"></textarea>
+        </div>
+        <div>
+          <span>
+            <label>additionalParamsForHead</label>
+          </span>
+          <textarea v-model.lazy.trim="newHostInfo.additionalParamsForHead"></textarea>
+        </div>
       </div>
+      <div id="centerFormArea">
+        <div>
+          <span>
+            <label>Job Scheduler</label>
+          </span>
+          <input type="text" v-model.lazy.trim="newHostInfo.jobScheduler">
+        </div>
+        <div>
+          <span>
+            <label>Max Job</label>
+          </span>
+          <input type="number" v-model.number="newHostInfo.numJob">
+        </div>
+        <div>
+          <span>
+            <label>Queue</label>
+          </span>
+          <input type="text" v-model.lazy="newHostInfo.queue">
+        </div>
+      </div>
+      <div id="rightFormArea">
+        <div>
+          <span>
+            <label>connection renewal interval(min.)</label>
+          </span>
+          <input type="text" v-model.number="newHostInfo.renewInterval">
+        </div>
+        <div>
+          <span>
+            <label>connection renewal delay(sec.)</label>
+          </span>
+          <input type="text" v-model.number="newHostInfo.renewDelay">
+        </div>
+        <div>
+          <span>
+            <label>status check interval(sec.)</label>
+          </span>
+          <input type="text" v-model.number="newHostInfo.statusCheckInterval">
+        </div>
+        <div>
+          <span>
+            <label>max status check error</label>
+          </span>
+          <input type="text" v-model.number="newHostInfo.maxStatusCheckError">
+        </div>
+      </div>
+    </div>
     </div>
 
     <!-- keyFile Browse Dialog -->

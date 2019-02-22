@@ -28,6 +28,18 @@ $(() => {
     renewDelay: 0,
     statusCheckInterval: 10,
     maxStatusCheckError: 10,
+    type: "aws",
+    os: "ubuntu16",
+    region: "",
+    numNodes: "",
+    InstanceType: "",
+    rootVolume: 0,
+    shareStorage: true,
+    playbook: "",
+    mpi: "",
+    compiler: "",
+    additionalParams: "",
+    additionalParamsForHead: "",
   }
 
   // create vue.js instance and render

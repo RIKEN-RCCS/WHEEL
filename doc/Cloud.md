@@ -27,7 +27,7 @@
   "shareStorage": true,
   "playbook": "not used for now",
   "mpi": "not used for now",
-  "compoiler": "not used for now",
+  "compiler": "not used for now",
   "additionalParams": {
     "id": "XXXX",
     "pw": "XXXX"
