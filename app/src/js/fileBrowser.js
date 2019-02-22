@@ -217,7 +217,9 @@ export default class {
           iconImg = `<img src="/image/img_deadlink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
         }
         let icon = iconImg;
-        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class=${data.type}>${icon}${data.name}</li>`);
+        var dataName = data.name;
+        var idName = dataName.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class=${data.type} id=${idName}>${icon}${data.name}</li>`);
         var compare = this.compare;
         var lengthBefore = $(`${this.idFileList} li`).length;
         var counter = 0;
