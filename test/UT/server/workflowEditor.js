@@ -192,7 +192,7 @@ describe("workflow editor UT", function() {
     projectJsonSchema.properties.componentPath.properties[task2.ID] = { enum: ["./wf1/wf2/task2"] };
   });
   after(async()=>{
-    //await fs.remove(testDirRoot);
+    await fs.remove(testDirRoot);
   });
 
   /*
