@@ -22,7 +22,7 @@ const { replacePathsep } = require("../core/pathUtils");
 async function writeComponentJson(projectRootDir, componentDir, component) {
   const filename = path.join(componentDir, componentJsonFilename);
   await fs.writeJson(filename, component, { spaces: 4, replacer: componentJsonReplacer });
-  await gitAdd(projectRootDir, filename);
+  return gitAdd(projectRootDir, filename);
 }
 
 /**

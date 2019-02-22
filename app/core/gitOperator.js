@@ -24,7 +24,7 @@ class Git extends EventEmitter {
   }
 
   //never call this function directly!!
-  //please use this.emit("wirteIndex") instead
+  //please use this.emit("writeIndex") instead
   async _write() {
     setImmediate(async()=>{
       await this.index.write();
@@ -39,6 +39,7 @@ class Git extends EventEmitter {
     const repoPath = path.resolve(this.rootDir, ".git");
     this.repo = await nodegit.Repository.open(repoPath);
     this.index = await this.repo.refreshIndex();
+    this.registerWriteIndex();
   }
 
   /**
@@ -81,7 +82,7 @@ class Git extends EventEmitter {
           await this.index.addByPath(filename);
         }
       }
-      this.emit("wirteIndex");
+      this.emit("writeIndex");
     } catch (e) {
       e.isRemoving = isRemoving;
       e.argFilename = absTargetPath;
