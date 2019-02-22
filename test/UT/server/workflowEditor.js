@@ -17,7 +17,6 @@ chai.use(require("chai-as-promised"));
 //display detailed information of unhandled rejection
 process.on("unhandledRejection", console.dir);
 
-
 //testee
 const {
   createNewComponent,
@@ -64,6 +63,8 @@ describe("workflow editor UT", function() {
   let foreach0Schema;
   let rootSchema;
   let projectJsonSchema;
+  let viewer0Schema;
+  let source0Schema;
   const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
@@ -75,6 +76,8 @@ describe("workflow editor UT", function() {
      *       +--wf1----+---task1
      *       |         +---wf2------task2
      *       +--foreach0 <-- no children !!
+     *       +---source0
+     *       +---viewer0
      *
      * dependency:
      *  - task0 -> wf1
@@ -94,6 +97,8 @@ describe("workflow editor UT", function() {
     const task1 = await createNewComponent(projectRootDir, path.resolve(projectRootDir, "workflow0"), "task", { x: 2, y: 2 });
     const wf2 = await createNewComponent(projectRootDir, path.join(projectRootDir, "workflow0"), "workflow", { x: 3, y: 3 });
     const task2 = await createNewComponent(projectRootDir, path.join(projectRootDir, "workflow0", "workflow0"), "task", { x: 4, y: 4 });
+    const viewer0 = await createNewComponent(projectRootDir, path.join(projectRootDir), "viewer", { x: 5, y: 5 });
+    const source0 = await createNewComponent(projectRootDir, path.join(projectRootDir), "source", { x: 6, y: 6 });
 
     await updateComponent(projectRootDir, task0.ID, "name", "task0");
     await updateComponent(projectRootDir, wf1.ID, "name", "wf1");
@@ -110,12 +115,14 @@ describe("workflow editor UT", function() {
     await addOutputFile(projectRootDir, task1.ID, "a");
     await addOutputFile(projectRootDir, wf2.ID, "e");
     await addOutputFile(projectRootDir, task2.ID, "d");
+    await renameOutputFile(projectRootDir, source0.ID, 0, "source");
 
     await addInputFile(projectRootDir, wf1.ID, "bar");
     await addInputFile(projectRootDir, foreach0.ID, "hoge");
     await addInputFile(projectRootDir, task1.ID, "f");
     await addInputFile(projectRootDir, wf2.ID, "b");
     await addInputFile(projectRootDir, task2.ID, "c");
+    await addInputFile(projectRootDir, viewer0.ID, "viewer");
 
     await addFileLink(projectRootDir, task0.ID, "foo", wf1.ID, "bar");
     await addFileLink(projectRootDir, wf1.ID, "hoge", foreach0.ID, "hoge");
@@ -127,58 +134,53 @@ describe("workflow editor UT", function() {
       foreach0,
       task0,
       task1,
-      task2
+      task2,
+      viewer0,
+      source0
     };
 
-    wf1Schema = getSchema("workflow", "wf1");
-    wf1Schema.properties.ID = { enum: [components.wf1.ID] };
-    wf1Schema.properties.parent = { enum: [components.root.ID] };
+    wf1Schema = getSchema("workflow", "wf1", wf1.ID, rootWf.ID);
     wf1Schema.addValue("next", components.foreach0.ID);
     wf1Schema.addValue("previous", components.task0.ID);
     wf1Schema.addInputFile("bar", components.task0.ID, "foo");
     wf1Schema.addOutputFile("hoge", components.foreach0.ID, "hoge");
 
-    wf2Schema = getSchema("workflow", "wf2");
-    wf2Schema.properties.ID = { enum: [components.wf2.ID] };
-    wf2Schema.properties.parent = { enum: [components.wf1.ID] };
+    wf2Schema = getSchema("workflow", "wf2", wf2.ID, wf1.ID);
     wf2Schema.addInputFile("b");
     wf2Schema.addOutputFile("e");
 
-    task0Schema = getSchema("task", "task0");
-    task0Schema.properties.ID = { enum: [components.task0.ID] };
-    task0Schema.properties.parent = { enum: [components.root.ID] };
+    task0Schema = getSchema("task", "task0", task0.ID, rootWf.ID);
     task0Schema.addValue("next", components.wf1.ID);
     task0Schema.addOutputFile("foo", components.wf1.ID, "bar");
 
-    task1Schema = getSchema("task", "task1");
-    task1Schema.properties.ID = { enum: [components.task1.ID] };
-    task1Schema.properties.parent = { enum: [components.wf1.ID] };
+    task1Schema = getSchema("task", "task1", task1.ID, wf1.ID);
     task1Schema.addOutputFile("a");
     task1Schema.addInputFile("f");
 
-    task2Schema = getSchema("task", "task2");
-    task2Schema.properties.ID = { enum: [components.task2.ID] };
-    task2Schema.properties.parent = { enum: [components.wf2.ID] };
+    task2Schema = getSchema("task", "task2", task2.ID, wf2.ID);
     task2Schema.addOutputFile("d");
     task2Schema.addInputFile("c");
 
-    foreach0Schema = getSchema("foreach", "foreach0");
-    foreach0Schema.properties.ID = { enum: [components.foreach0.ID] };
-    foreach0Schema.properties.parent = { enum: [components.root.ID] };
+    foreach0Schema = getSchema("foreach", "foreach0", foreach0.ID, rootWf.ID);
     foreach0Schema.addValue("previous", components.wf1.ID);
     foreach0Schema.addInputFile("hoge", components.wf1.ID, "hoge");
 
-    rootSchema = getSchema("workflow", "test project");
-    rootSchema.properties.ID = { enum: [components.root.ID] };
+    rootSchema = getSchema("workflow", "test project", rootWf.ID);
+
+    viewer0Schema = getSchema("viewer", "viewer0", viewer0.ID, rootWf.ID);
+    viewer0Schema.addInputFile("viewer");
+
+    source0Schema = getSchema("source", "source0", source0.ID, rootWf.ID);
+    source0Schema.renameOutputFile("source")
 
     projectJsonSchema = {
       properties: {
         required: ["componentPath"],
         componentPath: {
-          required: [rootWf.ID, wf1.ID, wf2.ID, task0.ID, task1.ID, task2.ID, foreach0.ID],
+          required: [rootWf.ID, wf1.ID, wf2.ID, task0.ID, task1.ID, task2.ID, foreach0.ID, viewer0.ID, source0.ID],
           properties: {},
-          minProperties: 7,
-          maxProperties: 7
+          minProperties: 9,
+          maxProperties: 9
         },
         additionalProperties: false
       }
@@ -240,12 +242,17 @@ describe("workflow editor UT", function() {
   });
   */
   describe("#createNewComponent", ()=>{
-    it("should create new node under wf1", async()=>{
+    it("should create new task wf1", async()=>{
       const newTask0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1"), "task", { x: 10, y: 10 });
-      const newTask0Schema = getSchema("task", "task0");
-      newTask0Schema.properties.parent = { enum: [components.wf1.ID] };
-      newTask0Schema.properties.ID = { enum: [newTask0.ID] };
-      expect(path.join(projectRootDir, "wf1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(newTask0Schema);
+      expect(path.join(projectRootDir, "wf1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(getSchema("task", "task0", newTask0.ID, components.wf1.ID));
+    });
+    it("should create new source under wf1", async()=>{
+      const newSource = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1"), "source", { x: 10, y: 10 });
+      expect(path.join(projectRootDir, "wf1", "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(getSchema("source", "source0", newSource.ID, components.wf1.ID));
+    });
+    it("should create new viewer under wf1", async()=>{
+      const newViewer = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1"), "viewer", { x: 10, y: 10 });
+      expect(path.join(projectRootDir, "wf1", "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(getSchema("viewer", "viewer0", newViewer.ID, components.wf1.ID));
     });
   });
   describe("#updateComponent", ()=>{
@@ -294,29 +301,26 @@ describe("workflow editor UT", function() {
 
       expect(path.join(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema(foreach0Schema);
     });
-    it("should not rename root workflow", async()=>{
-      try {
-        await updateComponent(projectRootDir, components.root.ID, "name", "hoge");
-        fail();
-      } catch (e) {
-        expect(path.join(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema(rootSchema);
-      }
+    it("should be rejected while attempting to rename root workflow", ()=>{
+      return expect(updateComponent(projectRootDir, components.root.ID, "name", "hoge")).to.be.eventually.rejected;
     });
-    it("should not update inputFiles", async()=>{
-      try {
-        await updateComponent(projectRootDir, components.task0.ID, "inputFiles", "hoge");
-        fail();
-      } catch (e) {
-        expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
-      }
+    it("should not rename root workflow", async  ()=>{
+      await updateComponent(projectRootDir, components.root.ID, "name", "hoge").catch(()=>{});
+      expect(path.join(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema(rootSchema);
     });
-    it("should not update outputFiles", async()=>{
-      try {
-        await updateComponent(projectRootDir, components.task0.ID, "outputFiles", "hoge");
-        fail();
-      } catch (e) {
-        expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
-      }
+    it("should be rejected while attempting to update inputFiles property", ()=>{
+      return expect(updateComponent(projectRootDir, components.task0.ID, "inputFiles", "hoge")).to.be.eventually.rejected;
+    });
+    it("should not update inputFiles", async ()=>{
+      await updateComponent(projectRootDir, components.task0.ID, "inputFiles", "hoge").catch(()=>{});
+      expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
+    });
+    it("should be rejected while attempting to update outputFiles property", ()=>{
+      return expect(updateComponent(projectRootDir, components.task0.ID, "outputFiles", "hoge")).to.be.eventually.rejected;
+    });
+    it("should not update outputFiles", async ()=>{
+      await updateComponent(projectRootDir, components.task0.ID, "outputFiles", "hoge").catch(()=>{});
+      expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
     });
   });
   describe("#removeComponent", ()=>{
@@ -324,11 +328,11 @@ describe("workflow editor UT", function() {
       await removeComponent(projectRootDir, components.wf1.ID);
 
       //wf1's entry in task0 and foreac0 should be removed
-      task0Schema.properties.outputFiles.items[0].dst = getSchema("emptyArray");
+      task0Schema.properties.outputFiles.items[0].properties.dst = getSchema("emptyArray");
       task0Schema.properties.next = getSchema("emptyArray");
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
 
-      foreach0Schema.properties.inputFiles.items[0].src = getSchema("emptyArray");
+      foreach0Schema.properties.inputFiles.items[0].properties.src = getSchema("emptyArray");
       foreach0Schema.properties.previous = getSchema("emptyArray");
       expect(path.join(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema(foreach0Schema);
       expect(path.join(projectRootDir, "wf1")).not.to.be.path();
@@ -340,8 +344,8 @@ describe("workflow editor UT", function() {
             patternProperties: {
               "^.*$": { type: "string", pattern: "^(?!.*wf1).*$" }
             },
-            minProperties: 3,
-            maxProperties: 3
+            minProperties: 5,
+            maxProperties: 5
           }
         },
         required: ["componentPath"]
@@ -354,12 +358,36 @@ describe("workflow editor UT", function() {
       wf1Schema.addInputFile("piyo");
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
     });
+    it("should be rejected while attempting to add inputFile to source", ()=>{
+      return expect(addInputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
+    });
+    it("should not add inputFile entry to source component", async ()=>{
+      const filename = path.join(projectRootDir, "source0", componentJsonFilename);
+      await addInputFile(projectRootDir, components.source0.ID, "piyo").catch(()=>{});
+      expect(filename).to.be.a.file().with.json.using.schema(source0Schema);
+    });
   });
   describe("#addOutputFile", ()=>{
-    it("should  add not connected outputFile entry to wf1", async()=>{
+    it("should add not connected outputFile entry to wf1", async()=>{
       await addOutputFile(projectRootDir, components.wf1.ID, "piyo");
       wf1Schema.addOutputFile("piyo");
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
+    });
+    it("should be rejected while attempting to add outputFile entry to viewer component", ()=>{
+      return expect(addOutputFile(projectRootDir, components.viewer0.ID, "piyo")).to.be.eventually.rejected;
+    });
+    it("should not affect viewer component", async ()=>{
+      const filename = path.join(projectRootDir, "viewer0", componentJsonFilename);
+      await addOutputFile(projectRootDir, components.viewer0.ID, "piyo").catch(()=>{});
+      expect(filename).to.be.a.file().with.json.using.schema(viewer0Schema);
+    });
+    it("should be rejected while attempting to add outputFile entry to source component", ()=>{
+      return expect(addOutputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
+    });
+    it("should not affect source component", async ()=>{
+      const filename = path.join(projectRootDir, "source0", componentJsonFilename);
+      await addOutputFile(projectRootDir, components.source0.ID, "piyo").catch(()=>{});
+      expect(filename).to.be.a.file().with.json.using.schema(source0Schema);
     });
   });
   describe("#removeInputFile", ()=>{
@@ -367,8 +395,16 @@ describe("workflow editor UT", function() {
       await removeInputFile(projectRootDir, components.wf1.ID, "bar");
       wf1Schema.properties.inputFiles = getSchema("emptyArray");
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
-      task0Schema.properties.outputFiles.items[0].dst = getSchema("emptyArray");
+      task0Schema.properties.outputFiles.items[0].properties.dst = getSchema("emptyArray");
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
+    });
+    it("should be rejected while attempting to remove inputFile from source component", ()=>{
+      return expect(removeInputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
+    });
+    it("should not affect source component", async ()=>{
+      const filename = path.join(projectRootDir, "source0", componentJsonFilename);
+      await removeInputFile(projectRootDir, components.source0.ID, "piyo").catch(()=>{});
+      expect(filename).to.be.a.file().with.json.using.schema(source0Schema);
     });
   });
   describe("#removeOutputFile", ()=>{
@@ -376,8 +412,16 @@ describe("workflow editor UT", function() {
       await removeOutputFile(projectRootDir, components.wf1.ID, "hoge");
       wf1Schema.properties.outputFiles = getSchema("emptyArray");
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
-      foreach0Schema.properties.inputFiles.items[0].src = getSchema("emptyArray");
+      foreach0Schema.properties.inputFiles.items[0].properties.src = getSchema("emptyArray");
       expect(path.join(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema(foreach0Schema);
+    });
+    it("should be rejected while attempting to remove outputFile from viewer component", ()=>{
+      return expect(removeOutputFile(projectRootDir, components.viewer0.ID, "piyo")).to.be.eventually.rejected;
+    });
+    it("should not affect viewer component", async ()=>{
+      const filename = path.join(projectRootDir, "viewer0", componentJsonFilename);
+      await removeOutputFile(projectRootDir, components.viewer0.ID, "piyo").catch(()=>{});
+      expect(filename).to.be.a.file().with.json.using.schema(viewer0Schema);
     });
   });
   describe("#renameInputFile", ()=>{
@@ -406,6 +450,18 @@ describe("workflow editor UT", function() {
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
       expect(path.join(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema(foreach0Schema);
     });
+    it("should be rejected when attemting to make link from source", ()=>{
+      return expect(addLink(projectRootDir, components.source0.ID, components.wf1.ID, false)).to.be.eventually.rejectedWith(Error, "can not have link");
+    });
+    it("should be rejected when attemting to make link to source", ()=>{
+      return expect(addLink(projectRootDir, components.wf1.ID,components.source0.ID,  false)).to.be.eventually.rejectedWith(Error, "can not have link");
+    });
+    it("should be rejected when attemting to make link from viewer", ()=>{
+      return expect(addLink(projectRootDir,components.viewer0.ID, components.wf1.ID,false)).to.be.eventually.rejectedWith(Error, "can not have link");
+    });
+    it("should be rejected when attemting to make link to viewer", ()=>{
+      return expect(addLink(projectRootDir, components.wf1.ID,components.viewer0.ID,  false)).to.be.eventually.rejectedWith(Error, "can not have link");
+    });
   });
   describe("#removeLink", ()=>{
     it("should remove link from task0 to wf1", async()=>{
@@ -417,6 +473,34 @@ describe("workflow editor UT", function() {
     });
   });
   describe("#addFileLink", ()=>{
+    it("should add new file link from source0 to wf1", async()=>{
+      await addFileLink(projectRootDir, components.source0.ID, "source", components.wf1.ID, "bar");
+      source0Schema.addOutputFileLink(components.wf1.ID, "bar");
+      wf1Schema.addInputFileLink(0,components.source0.ID, "source");
+      expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
+      expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
+    });
+    it("should add new file link from source0 to task1", async()=>{
+      await addFileLink(projectRootDir, components.source0.ID, "source", components.task1.ID, "f");
+      source0Schema.addOutputFileLink(components.task1.ID, "f");
+      task1Schema.addInputFileLink(0,components.source0.ID, "source");
+      expect(path.join(projectRootDir, "wf1","task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
+      expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
+    });
+    it("should add new file link from wf1 to viewer0", async()=>{
+      await addFileLink(projectRootDir, components.wf1.ID, "hoge", components.viewer0.ID, "viewer");
+      viewer0Schema.addInputFileLink(0,components.wf1.ID, "hoge");
+      wf1Schema.addOutputFileLink(0,components.viewer0.ID, "viewer");
+      expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
+      expect(path.join(projectRootDir, "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(viewer0Schema);
+    });
+    it("should add new file link from task1 to viewer0", async()=>{
+      await addFileLink(projectRootDir, components.task1.ID, "a", components.viewer0.ID, "viewer");
+      viewer0Schema.addInputFileLink(0,components.task1.ID, "a");
+      task1Schema.addOutputFileLink(0,components.viewer0.ID, "viewer");
+      expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
+      expect(path.join(projectRootDir, "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(viewer0Schema);
+    });
     it("should add new file link from task0 to foreach0", async()=>{
       await addFileLink(projectRootDir, components.task0.ID, "foo", components.foreach0.ID, "hoge");
       task0Schema.addOutputFileLink(0, components.foreach0.ID, "hoge");
@@ -454,6 +538,24 @@ describe("workflow editor UT", function() {
     });
   });
   describe("#removeFileLink", ()=>{
+    it("should remove file link from source0 to viewer0", async ()=>{
+      await addFileLink(projectRootDir, components.source0.ID, "source", components.viewer0.ID, "viewer");
+      await removeFileLink(projectRootDir, components.source0.ID, "source", components.viewer0.ID, "viewer");
+      expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
+      expect(path.join(projectRootDir, "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(viewer0Schema);
+    });
+    it("should remove file link from source0 to task1", async ()=>{
+      await addFileLink(projectRootDir, components.source0.ID, "source", components.task1.ID, "f");
+      await removeFileLink(projectRootDir, components.source0.ID, "source", components.task1.ID, "f");
+      expect(path.join(projectRootDir, "wf1","task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
+      expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
+    });
+    it("should remove file link from task1 to viewer0", async ()=>{
+      await addFileLink(projectRootDir, components.task1.ID, "a", components.viewer0.ID, "viewer");
+      await removeFileLink(projectRootDir, components.task1.ID, "a", components.viewer0.ID, "viewer");
+      expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
+      expect(path.join(projectRootDir, "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(viewer0Schema);
+    });
     it("should remove file link from task0 to wf1", async()=>{
       await removeFileLink(projectRootDir, components.task0.ID, "foo", components.wf1.ID, "bar");
       task0Schema.properties.outputFiles.items[0].properties.dst = getSchema("emptyArray");
@@ -461,12 +563,8 @@ describe("workflow editor UT", function() {
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
     });
-    it("should add new file link from upper level to task2 via wf2 and remove with 'parent' keyword", async()=>{
+    it("should remove file link from upper level to task2 via wf2 by 'parent' keyword", async()=>{
       await addFileLink(projectRootDir, "parent", "b", components.task2.ID, "c");
-      wf2Schema.addOutputFileLink(0, components.task2.ID, "d", true);
-      task2Schema.addOutputFileLink(0, components.wf2.ID, "e");
-      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
-      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
 
       //actual test start here
       await removeFileLink(projectRootDir, "parent", "b", components.task2.ID, "c");
@@ -475,11 +573,8 @@ describe("workflow editor UT", function() {
       expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
       expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
     });
-    it("should add new file link from upper level to task2 via wf2 and remove with wf2's ID", async()=>{
-      wf2Schema.addOutputFileLink(0, components.task2.ID, "d", true);
-      task2Schema.addOutputFileLink(0, components.wf2.ID, "e");
-      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
-      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+    it("should remove file link from upper level to task2 via wf2 by ID", async()=>{
+      await addFileLink(projectRootDir, components.wf2.ID, "b", components.task2.ID, "c");
 
       //actual test start here
       await removeFileLink(projectRootDir, "parent", "b", components.task2.ID, "c");
@@ -488,12 +583,8 @@ describe("workflow editor UT", function() {
       expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
       expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
     });
-    it("should add new file link from task2 to upper level via wf2 and remove with 'parent' keyword", async()=>{
+    it("should remove file link from task2 to upper level via wf2 by 'parent' keyword", async()=>{
       await addFileLink(projectRootDir, components.task2.ID, "d", "parent", "e");
-      wf2Schema.addOutputFileLink(0, components.task2.ID, "d", true);
-      task2Schema.addOutputFileLink(0, components.wf2.ID, "e");
-      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
-      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
 
       //actual test start here
       await removeFileLink(projectRootDir, components.task2.ID, "d", "parent", "e");
@@ -502,12 +593,8 @@ describe("workflow editor UT", function() {
       expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
       expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
     });
-    it("should add new file link from task2 to upper level via wf2 and remove with wf2's ID", async()=>{
+    it("should remove file link from task2 to upper level via wf2 by ID", async()=>{
       await addFileLink(projectRootDir, components.task2.ID, "d", "parent", "e");
-      wf2Schema.addOutputFileLink(0, components.task2.ID, "d", true);
-      task2Schema.addOutputFileLink(0, components.wf2.ID, "e");
-      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
-      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
 
       //actual test start here
       await removeFileLink(projectRootDir, components.task2.ID, "d", components.wf2.ID, "e");

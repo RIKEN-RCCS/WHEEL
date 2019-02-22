@@ -16,6 +16,44 @@ class BaseWorkflowComponent {
     this.name = null;
     this.description = null;
 
+    /**
+     * component state
+     * possible value is one of
+     *  - 'not-started'
+     *  - 'stage-in'   (task only) transfering files to remote host
+     *  - 'waiting'    (task only) waiting to run due to job submit number limitation
+     *  - 'running'    running
+     *  - 'queued'     (task only) submit to batch system
+     *  - 'stage-out'  (task only) transfering files from  remote host
+     *  - 'finished'   finished
+     *  - 'failed'     error occurred before task finish
+     *  - 'unknown'    failed to check status (e.g. qstat command failed)
+     */
+    this.state = "not-started";
+  }
+}
+
+class Source extends BaseWorkflowComponent {
+  constructor(pos, parent) {
+    super(pos, parent);
+    this.type = "source";
+    this.uploadOnDemand = false;
+    this.outputFiles = [{ name: "", dst: [] }];
+  }
+}
+
+class Viewer extends BaseWorkflowComponent {
+  constructor(pos, parent) {
+    super(pos, parent);
+    this.type = "viewer";
+    this.inputFiles = [];
+  }
+}
+
+class GeneralComponent extends BaseWorkflowComponent {
+  constructor(pos, parent) {
+    super(pos, parent);
+
     /**pointers to previous component */
     this.previous = [];
 
@@ -50,21 +88,6 @@ class BaseWorkflowComponent {
     this.outputFiles = [];
 
     /**
-     * component state
-     * possible value is one of
-     *  - 'not-started'
-     *  - 'stage-in'   (task only) transfering files to remote host
-     *  - 'waiting'    (task only) waiting to run due to job submit number limitation
-     *  - 'running'    running
-     *  - 'queued'     (task only) submit to batch system
-     *  - 'stage-out'  (task only) transfering files from  remote host
-     *  - 'finished'   finished
-     *  - 'failed'     error occurred before task finish
-     *  - 'unknown'    failed to check status (e.g. qstat command failed)
-     */
-    this.state = "not-started";
-
-    /**
      * flag for clean up temporary working directory on remote host
      * 0: do cleanup
      * 1: do not cleanup
@@ -77,7 +100,7 @@ class BaseWorkflowComponent {
 /**
  * javascript representation of wheel's task
  */
-class Task extends BaseWorkflowComponent {
+class Task extends GeneralComponent {
   constructor(...args) {
     super(...args);
     this.type = "task";
@@ -107,7 +130,7 @@ class Task extends BaseWorkflowComponent {
 /**
  * representation of conditional branch
  */
-class If extends BaseWorkflowComponent {
+class If extends GeneralComponent {
   constructor(...args) {
     super(...args);
     this.type = "if";
@@ -124,7 +147,7 @@ class If extends BaseWorkflowComponent {
   }
 }
 
-class Workflow extends BaseWorkflowComponent {
+class Workflow extends GeneralComponent {
   constructor(pos, ...args) {
     //define pseudo position for root workflow
     const pos2 = pos || { x: 0, y: 0 };
@@ -133,7 +156,7 @@ class Workflow extends BaseWorkflowComponent {
   }
 }
 
-class ParameterStudy extends BaseWorkflowComponent {
+class ParameterStudy extends GeneralComponent {
   constructor(...args) {
     super(...args);
     this.type = "parameterStudy";
@@ -145,7 +168,7 @@ class ParameterStudy extends BaseWorkflowComponent {
   }
 }
 
-class For extends BaseWorkflowComponent {
+class For extends GeneralComponent {
   constructor(...args) {
     super(...args);
     this.type = "for";
@@ -155,7 +178,7 @@ class For extends BaseWorkflowComponent {
   }
 }
 
-class While extends BaseWorkflowComponent {
+class While extends GeneralComponent {
   constructor(...args) {
     super(...args);
     this.type = "while";
@@ -166,7 +189,7 @@ class While extends BaseWorkflowComponent {
 /*
  * loop over kind of array
  */
-class Foreach extends BaseWorkflowComponent {
+class Foreach extends GeneralComponent {
   constructor(...args) {
     super(...args);
     this.type = "foreach";
@@ -201,6 +224,12 @@ function componentFactory(type, ...args) {
       break;
     case "foreach":
       component = new Foreach(...args);
+      break;
+    case "source":
+      component = new Source(...args);
+      break;
+    case "viewer":
+      component = new Viewer(...args);
       break;
     default:
       component = null;

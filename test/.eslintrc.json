@@ -3,6 +3,7 @@
     "mocha": true
   },
   "plugins": [
-    "chai-expect"
+    "chai-expect",
+    "chai-friendly"
   ]
 }

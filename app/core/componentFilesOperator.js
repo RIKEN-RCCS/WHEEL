@@ -521,12 +521,27 @@ async function updateComponent(projectRootDir, ID, prop, value) {
 async function addInputFile(projectRootDir, ID, name) {
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
+  if (!componentJson.hasOwnProperty("inputFiles")) {
+    const err = new Error(`${componentJson.name} does not have inputFiles`);
+    err.component = componentJson;
+    return Promise.reject(err);
+  }
   componentJson.inputFiles.push({ name, src: [] });
   return writeComponentJson(projectRootDir, componentDir, componentJson);
 }
 async function addOutputFile(projectRootDir, ID, name) {
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
+  if (!componentJson.hasOwnProperty("outputFiles")) {
+    const err = new Error(`${componentJson.name} does not have outputFiles`);
+    err.component = componentJson;
+    return Promise.reject(err);
+  }
+  if (componentJson.type === "source") {
+    const err = new Error("source component can not have more than 2 outputFiles");
+    err.component = componentJson;
+    return Promise.reject(err);
+  }
   componentJson.outputFiles.push({ name, dst: [] });
   return writeComponentJson(projectRootDir, componentDir, componentJson);
 }
@@ -650,6 +665,22 @@ async function addLink(projectRootDir, src, dst, isElse = false) {
   }
   const srcDir = await getComponentDir(projectRootDir, src, true);
   const srcJson = await readComponentJson(srcDir);
+  const dstDir = await getComponentDir(projectRootDir, dst, true);
+  const dstJson = await readComponentJson(dstDir);
+
+  for (const type of ["viewer", "source"]) {
+    if (srcJson.type !== type && dstJson.type !== type) {
+      continue;
+    }
+    const err = new Error(`${type} can not have link`);
+    err.src = src;
+    err.srcName = srcJson.name;
+    err.dst = dst;
+    err.dstName = dstJson.name;
+    err.isElse = isElse;
+    err.code = "ELINK";
+    return Promise.reject(err);
+  }
 
   if (isElse && !srcJson.else.includes(dst)) {
     srcJson.else.push(dst);
@@ -657,9 +688,6 @@ async function addLink(projectRootDir, src, dst, isElse = false) {
     srcJson.next.push(dst);
   }
   const p = [writeComponentJson(projectRootDir, srcDir, srcJson)];
-
-  const dstDir = await getComponentDir(projectRootDir, dst, true);
-  const dstJson = await readComponentJson(dstDir);
 
   if (!dstJson.previous.includes(src)) {
     dstJson.previous.push(src);
