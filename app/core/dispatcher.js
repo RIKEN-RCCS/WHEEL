@@ -343,6 +343,9 @@ class Dispatcher extends EventEmitter {
       }));
 
       const target = this.currentSearchList.shift();
+      if (target.type === "source") {
+        await this._setComponentState(target, "finished");
+      }
 
       if (target.state === "finished") {
         await this._addNextComponent(target);
@@ -474,7 +477,10 @@ class Dispatcher extends EventEmitter {
   }
 
   async _addNextComponent(component, useElse = false) {
-    const nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
+    let nextComponentIDs = [];
+    if (component.type !== "source") {
+      nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
+    }
     component.outputFiles.forEach((outputFile)=>{
       const tmp = outputFile.dst.map((e)=>{
         if (e.hasOwnProperty("origin")) {
@@ -767,12 +773,17 @@ class Dispatcher extends EventEmitter {
   }
 
   async _isReady(component) {
-    for (const ID of component.previous) {
-      const previous = await this._getComponent(ID);
+    if (component.type === "source") {
+      return true;
+    }
+    if (component.previous) {
+      for (const ID of component.previous) {
+        const previous = await this._getComponent(ID);
 
-      if (!isFinishedState(previous.state)) {
-        this.logger.debug(component.ID, "is not ready because", previous.ID, "is not finished");
-        return false;
+        if (!isFinishedState(previous.state)) {
+          this.logger.debug(component.ID, "is not ready because", previous.ID, "is not finished");
+          return false;
+        }
       }
     }
 
@@ -790,7 +801,7 @@ class Dispatcher extends EventEmitter {
       }
     }
 
-    await this._getOutputFiles(component);
+    this.logger.trace(await this._getOutputFiles(component));
     return true;
   }
 
@@ -929,6 +940,8 @@ class Dispatcher extends EventEmitter {
       case "parameterstudy":
         cmd = this._PSHandler;
         break;
+      case "viewer":
+        cmd = this._viewerHandler;
       default:
         this.logger("illegal type specified", type);
     }

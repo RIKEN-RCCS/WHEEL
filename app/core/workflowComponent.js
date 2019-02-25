@@ -242,6 +242,12 @@ function hasChild(component) {
 }
 
 function isInitialComponent(component) {
+  if (component.type === "source" && component.outputFiles[0].dst.length > 0) {
+    return true;
+  }
+  if (component.type === "viewer") {
+    return true;
+  }
   if (component.previous.length > 0) {
     return false;
   }

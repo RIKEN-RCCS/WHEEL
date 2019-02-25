@@ -281,6 +281,11 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //actual project start here
   try {
+    //TODO source componentのリストを作成(ここじゃなくても良い)
+    //- sourceコンポーネントのuploadOnDemandフラグがtrueの時はアップロードダイアログをクライアント側ヘ投げる
+    //- sourceコンポーネント内にcmp.whee.json以外のファイルが存在した時はファイル指定ダイアログをクライアント側へ投げる
+    //- クライアントから返事が返ってきたら、outputFilesに指定されているファイル名で当該ファイルを保存
+    //もし既にファイルが存在した時は一旦削除する
     for (const remoteHostName of hosts) {
       const id = remoteHost.getID("name", remoteHostName);
       const hostInfo = remoteHost.get(id);
