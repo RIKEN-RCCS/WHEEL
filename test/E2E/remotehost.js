@@ -24,7 +24,7 @@ describe("#remotehost screen", function () {
 
     it("Home screen is drawn", function () {
         browser.url(url);
-        browser.windowHandleSize({ width: 1200, height: 1200 });
+        browser.windowHandleSize({ width: 1920, height: 1080 });
         expect(browser.getTitle()).to.equal("WHEEL home");
         expect('#pageNameLabel').to.have.text("Home");
     });
