@@ -46,7 +46,7 @@ describe("execute test : ", function () {
       const sio = io('/workflow');
       sio.emit('createNode', { "type": 'task', "pos": pos });
     });
-    browser.windowHandleSize({ width: 1200, height: 1000 })
+    browser.windowHandleSize({ width: 1920, height: 1080 })
       .waitForVisible('.task0_box');
   });
   it("set task property 'name'", function () {
@@ -88,19 +88,6 @@ describe("execute test : ", function () {
       .waitForVisible('#property');
     expect(browser.getText('#cbMessageArea')).to.equal(taskScript);
     expect(browser.getValue('#scriptInputField')).to.equal(taskScript);
-  });
-  it("open script file", function () {
-    // set script file by RAPiD
-    browser.click('.file')
-      .click('#editFileButton');
-
-    browser.click('.ace_content')
-      .setValue('.ace_content', script)
-      .click('#button_save');
-
-    //transit workflow screen
-    browser.newWindow('WHEEL workflow')
-      .waitForVisible('#project_name');
   });
   it("execute workflow", function () {
     browser.click('#displayLogButton')

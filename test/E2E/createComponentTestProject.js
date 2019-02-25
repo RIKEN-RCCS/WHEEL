@@ -6,20 +6,24 @@ chai.use(chaiWebdriver(browser));
 
 describe("#home", function () {
   const url = '/';
+  const E2ETestDir = "E2ETestDir";
   //Xpath for ok button in dialog
   const okBtn = "/html/body/div[5]/div[3]/div/button[2]";
   const testProjectName = "E2E_ComponentTest"
 
   it("Home screen is drawn", function () {
     browser.url(url);
-    browser.windowHandleSize({ width: 1200, height: 1200 });
+    browser.windowHandleSize({ width: 1920, height: 1080 });
     expect(browser.getTitle()).to.equal("WHEEL home");
     expect('#pageNameLabel').to.have.text("Home");
   });
   it("Create ComponentTestProject and Open", function () {
     browser.url(url)
       .click('#newButton')
-      .setValue('#newProjectName', testProjectName)
+      .waitForVisible('.dir');
+    browser.doubleClick(`#${E2ETestDir}`)
+      .waitForVisible('.dir');
+    browser.setValue('#newProjectName', testProjectName)
       .click(okBtn)
       .waitForVisible(`#prj_${testProjectName}`);
     browser.doubleClick(`#prj_${testProjectName}`)
