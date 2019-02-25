@@ -302,16 +302,25 @@ $(() => {
       drawComponents();
     });
 
+    let firstReadTaskStateList = [];
     sio.on('taskStateList', (taskStateList, cb) => {
-      if (firstConnection === true && taskStateList.length !== 0) {
-        for (let i = 0; i < taskStateList.length - 1; i++) {
-          taskStateList.sort(sortTaskStateList);
+      if (taskStateList.length !== 0) {
+        if (firstConnection === true) {
+          Array.prototype.push.apply(firstReadTaskStateList, taskStateList);
+          firstReadTaskStateList.sort(sortTaskStateList);
         }
+      }
+      if (taskStateList.length < 100) {
         firstConnection = false;
       }
 
-      if (taskStateList.length !== 0) {
-        drawTaskStateList(taskStateList);
+      if (firstConnection === false) {
+        if (firstReadTaskStateList.length !== 0) {
+          drawTaskStateList(firstReadTaskStateList);
+          firstReadTaskStateList = [];
+        } else {
+          drawTaskStateList(taskStateList);
+        }
       }
       cb();
     });
