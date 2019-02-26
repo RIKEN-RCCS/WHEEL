@@ -60,5 +60,14 @@
     "finished": "/image/img_stateDone.png",
     "failed": "/image/img_error.png"
   },
+  "fileType_icon": {
+    "file": "/image/img_file.png",
+    "dir": "/image/img_folder.png",
+    "snd": "/image/img_SND.png",
+    "sndd": "/image/img_SNDD.png",
+    "filelink": "/image/img_filelink.png",
+    "folderlink": "/image/img_folderlink.png",
+    "deadlink": "/image/img_deadlink.png"
+  },
   "reload_project_ms": 2000
 }

@@ -3,6 +3,8 @@ import dialogWrapper from './dialogWrapper';
 
 import 'font-awesome/css/font-awesome.css';
 import '../css/fileBrowser.css';
+import config from './config';
+
 
 export default class {
   // public methods
@@ -192,32 +194,10 @@ export default class {
     this.socket.on(this.recvEventName, (fileList) => {
       fileList.forEach((data) => {
         if (!this.isValidData(data)) return;
-        let iconImg;
-        if (data.type === 'dir') {
-          if (data.islink === false) {
-            iconImg = `<img src="/image/img_folder.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
-          } else {
-            iconImg = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
-          }
-        }
-        if (data.type === 'file') {
-          if (data.islink === false) {
-            iconImg = `<img src="/image/img_file.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-          } else {
-            iconImg = `<img src="/image/img_filelink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-          }
-        }
-        if (data.type === 'snd') {
-          iconImg = `<img src="/image/img_SND.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-        }
-        if (data.type === 'sndd') {
-          iconImg = `<img src="/image/img_SNDD.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-        }
-        if (data.type === 'deadlink') {
-          iconImg = `<img src="/image/img_deadlink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-        }
-        let icon = iconImg;
-        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class=${data.type}>${icon}${data.name}</li>`);
+        var icon = this.drawIconImage(data.type, data.path, data.name, data.isdir, data.islink);
+        var dataName = data.name;
+        var idName = dataName.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class=${data.type} id=${idName}>${icon}${data.name}</li>`);
         var compare = this.compare;
         var lengthBefore = $(`${this.idFileList} li`).length;
         var counter = 0;
@@ -236,13 +216,18 @@ export default class {
         }
         this.defaultColor = $(`${this.idFileList} li`).css('background-color');
         this.requestedPath = data.path;
+        //default hidden
+        this.changeFileEditButtonWhenSelected('dir');
       })
     });
   }
   onClickDefault() {
     $(this.idFileList).on("click", 'li,i', (event) => {
+      var dataType = $(event.target).data('type');
       this.changeColorsWhenSelected(event);
+      console.log($(event.target).data('type'));
       this.lastClicked = $(event.target).data('name').trim();
+      this.changeFileEditButtonWhenSelected(dataType);
     });
   }
   onDirDblClickDefault() {
@@ -277,8 +262,31 @@ export default class {
       }
     });
   }
+  drawIconImage(dataTypeTemp, dataPath, dataName, isDir, isLink) {
+    var dataType;
+    if (dataTypeTemp === "file") {
+      dataType = isLink === true ? 'filelink' : 'file';
+    }
+    if (dataTypeTemp === "dir") {
+      dataType = isLink === true ? 'folderlink' : 'dir';
+    } else {
+      dataType = dataTypeTemp;
+    }
+    var iconImg = `<img src="${config.fileType_icon[dataType]}" class="filebrowseList" aria-hidden="true" data-type="${dataType}" data-path="${dataPath}" data-name="${dataName}" data-isdir="${isDir}" data-islink="${isLink}" alt="graph">`;
+    return iconImg
+  }
+  changeFileEditButtonWhenSelected(dataType) {
+    if (dataType === 'file') {
+      $('#editFileButton').css('visibility', 'visible');
+      $('#editPSFileButton').css('visibility', 'visible');
+    } else {
+      $('#editFileButton').css('visibility', 'hidden');
+      $('#editPSFileButton').css('visibility', 'hidden');
+    }
+  }
   changeColorsWhenSelected(e) {
     $(`${this.idFileList} li`).css('background-color', this.defaultColor);
+    $(`${this.idFileList} li img`).css('background-color', this.defaultColor);
     $(e.target).css('background-color', this.selectedItemColor);
   }
   isValidPath(path1, path2) {
