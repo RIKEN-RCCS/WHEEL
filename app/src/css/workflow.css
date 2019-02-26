@@ -255,11 +255,6 @@ img.btn_menu_n{
     cursor: pointer;
 }
 
-/* 'save' css -> js */
-#revert_button:hover{
-    color: #CCFF00;
-}
-
 .figure_caption {
     margin-left: 8px;
 }
@@ -376,7 +371,7 @@ img.btn_menu_n{
     margin: 16px 0 0 16px;
 }
 
-#workflow li, #task li, #PS li, #if li, #for li, #while li, #foreach li{
+#workflow li, #task li, #PS li, #if li, #for li, #while li, #foreach li, #source li, #viewer li{
     display: inline-block;
 }
 
@@ -425,6 +420,20 @@ img.btn_menu_n{
 #img_foreach{
     border-radius: 2px;    
     background-color: #247780;
+    height: 32px;
+    width: 32px;
+}
+
+#img_source{
+    border-radius: 2px;    
+    background-color: #5D99FF;
+    height: 32px;
+    width: 32px;
+}
+
+#img_viewer{
+    border-radius: 2px;    
+    background-color: #5BFF7F;
     height: 32px;
     width: 32px;
 }
@@ -478,6 +487,20 @@ img.btn_menu_n{
     width: 24px;
 }
 
+.img_source_p{
+    border-radius: 2px;    
+    background-color: #5D99FF;
+    height: 24px;
+    width: 24px;
+}
+
+.img_viewer_p{
+    border-radius: 2px;    
+    background-color: #5BFF7F;
+    height: 24px;
+    width: 24px;
+}
+
 #workflowComponents{
     margin: 16px 16px 0 16px;
 }
@@ -494,7 +517,7 @@ img.btn_menu_n{
 
 #img_workflow_name, #img_task_name, #img_parameterStudy_name,
 #img_if_name, #img_for_name, #img_while_name,
-#img_foreach_name{
+#img_foreach_name, #img_source_name, #img_viewer_name{
     font-size: 14px;
     position: absolute;
     margin: 6px 0 0 8px;
@@ -558,7 +581,6 @@ img.btn_menu_n{
 
 .cleanStateButton{
     right: 32px;
-    top: 67px;
 }
 
 #propertyDescription{
@@ -573,7 +595,7 @@ img.btn_menu_n{
 
 #propertyOutputFiles, #propertyParameterSettingFile, #propertyCondition,
 #propertyIndexList, #propertyStart, #propertyStep,
-#propertyRemotehost, #propertyQueue, #propertyuseJobScheduler{
+#propertyRemotehost, #propertyQueue, #propertyuseJobScheduler, #propertyuploadOnDemand{
     margin: 8px 0 0 0;
     display: inline-block;    
 }
@@ -667,6 +689,23 @@ img.btn_menu_n{
 }
 
 #useJobSchedulerFlagField{
+    margin: 0 0 0 8px;
+}
+
+/* #propertyDisable:checked+label{
+    margin: 0 0 0 0px;
+    color: #FF0000;
+}
+
+#propertyDisable{
+    margin: 0 0 0 0px;
+}
+
+#propertyDisableArea{
+    text-align: right;
+} */
+
+#updateOnDamandFlagField{
     margin: 0 0 0 8px;
 }
 
@@ -1645,4 +1684,11 @@ tspan{
   height: 20px;
   padding-left: 5px;
 }
+
+/* .ui-tooltip {
+	font-size: 12px;
+}
+body .ui-tooltip {
+	border-width: 2px;
+} */
 

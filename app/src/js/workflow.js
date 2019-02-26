@@ -59,7 +59,9 @@ $(() => {
       newIndexOfForeach: "",
       hostList: [],
       queueList: [],
+      // fileList: [],
       names: [],
+      // conditionInputType: '1'
     },
     methods: {
       addInputFile: function () {
@@ -365,6 +367,11 @@ $(() => {
     sio.on('hostList', function (hostlist) {
       vm.hostList = hostlist;
     });
+
+    // sio.on('fileList', function (filelist) {
+    //   console.log(filelist);
+    //   vm.fileList = filelist;
+    // });
 
     //setup log reciever
     logReciever(sio);
