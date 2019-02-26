@@ -12,55 +12,58 @@
 </head>
 
 <body>
-  <!-- header始まり -->
+  <!-- header -->
   <header>
     <a href="home" id="title">WHEEL</a>
     <span id="titleUser">
-      <img src="/image/img_user.png" class="icon" id="img_user" align="middle">
-      <span id="titleUserName" class="titleUserName">user01</span>
-      <button type="button" id="drawer_button">
-        <img src="/image/btn_menu_n.png" alt="config" class="btn_menu_n">
+      <img src="/image/img_user.png" align="middle" class="iconImg" id="userImg">
+      <span id="titleUserName">user01</span>
+      <button type="button" id="drawerButton">
+        <img src="/image/btn_menu_n.png" alt="config" class="drawerButtonImg">
       </button>
     </span>
   </header>
   <div id="pageNameArea">
-    <label id="pageName">Home</label>
+    <label id="pageNameLabel">Home</label>
   </div>
 
-  <!-- dialogボタンエリア -->
+  <!-- dialog -->
   <div id="fileControllArea">
-    <button id="newButton" class="buttonAreaButton">New</button>
-    <button id="importButton" class="buttonAreaButton">Import</button>
+    <button type="button" class="buttonAreaButton" id="newButton">New</button>
+    <button type="button" class="buttonAreaButton" id="importButton">Import</button>
   </div>
   <div id="dialog"></div>
   <div id="dialogContext"></div>
 
+  <!-- project list -->
   <main>
     <section id="projectField">
       <div id="projectPropertyField">
         <span id="projectName">Project Name</span>
         <span id="projectDescription">Description</span>
+        <span id="projectPath">Project Path</span>
+        <span id="projectCreateDay">Create</span>
+        <span id="projectUpdateDay">Update</span>
+        <span id="projectState">Project State</span>
       </div>
-      <!-- Project List -->
       <div id="projectList"></div>
     </section>
   </main>
-  <!-- 右ドロアーメニュー -->
-  <div id="drawer_menu" class="drawer_menu" data-position="right">
-    <!-- Put your off canvas content here -->
+
+  <!-- drawer -->
+  <div data-position="right" id="drawerMenu">
     <div id="drawerMenuContents">
       <p id="menuTitle">Menu</p>
       <ul id="drawerMenuList">
         <li>
-          <a class="drawer_menu_item" href="/remotehost">remotehost</a>
+          <a id="remotehostButton" class="drawerMenuItem" href="/remotehost" target="_blank">remotehost</a>
         </li>
         <li>
-          <a class="drawer_menu_item" href="/login">log out</a>
+          <a id="loginButton" class="drawerMenuItem" href="/login">log out</a>
         </li>
       </ul>
     </div>
   </div>
-
 
 </body>
 

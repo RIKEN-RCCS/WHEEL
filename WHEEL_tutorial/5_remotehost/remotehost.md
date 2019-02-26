@@ -45,6 +45,11 @@ WHEELでは、ワークフロー画面（Taskコンポーネント）にて設�
 | JobScheduler | WHEELに登録されているJob Scheduler名 | app/db/jobSceduler.jsonに定義されているJobScheduler名 *1| 
 | Max Job | ジョブ投入制限数 | デフォルト値 5、本プロパティに設定した値を投入本数の上限として、WHEELからのジョブ投入を抑制| 
 | Queue | Queue名 | カンマ区切りで複数入力可（ex. A, B, C）| 
+| Auth Path | Auth Type -> Key 選択時のKeyFile保存先パス | ー | 
+| connection renewal interval(min.) | ssh接続を再接続する間隔(単位は分) | ー | 
+| connection renewal delay(sec.) | 再接続時に、切断後に挟む待ち時間(単位は秒) | ー | 
+| status check interval(sec.) | ジョブ投入後のステータス確認を行う間隔(単位は秒) | ー | 
+| max status check error | ステータス確認のエラー制限数 | ー | 
 
 ### *1 JobSchedulerへの設定方法
 WHEELを用いて計算機へジョブをする場合、Taskコンポーネントを使用します。（Taskコンポーネントに関する詳細は後述）  
@@ -103,13 +108,13 @@ reFinishedStateとreFailedStateは、前者が先に評価され前者がマッ�
 
 #### 1. Host List エリア「New」ボタンをクリックする
 
-Host Registrationがクリアされます。ただし、Port, Max Jobにはデフォルト値が入ります。
+Host Registrationがクリアされます。ただし、Port, Max Job, connection renewal interval(min.), connection renewal delay(sec.), status check interval(sec.), max status check errorにはデフォルト値が入ります。
 
 ![img](./img/remotehost_new.png "remotehost_new")  
 
 #### 2. Host Registration エリアの必要項目を入力する  
 
-必要項目を入力します。Label（重複不可）, Host Name, User Nameは、入力必須項目です。 
+必要項目を入力します。Label（重複不可）, Host Name, User Name, User ID, Host Work Dirは、入力必須項目です。 
 
 ![img](./img/remotehost_info.png "remotehost_info")  
 

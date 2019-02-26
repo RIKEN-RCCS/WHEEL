@@ -26,8 +26,7 @@ $(() => {
     jobScheduler: '',
     renewInterval: 0,
     renewDelay: 0,
-    execInterval: 1,
-    statusCheckInterval: 5,
+    statusCheckInterval: 10,
     maxStatusCheckError: 10,
   }
 
@@ -50,7 +49,9 @@ $(() => {
         if (this.selectedHost === i) {
           this.selectedHost = -1;
           resetNewHost();
+          notFormColor();
         } else {
+          formColor();
           this.selectedHost = i;
           Object.assign(this.newHostInfo, this.hostList[this.selectedHost]);
           vm.authType = (!this.newHostInfo.keyFile || this.newHostInfo.keyFile.length === 0) ? '1' : '2';
@@ -67,7 +68,6 @@ $(() => {
       onAddButton: function () {
         this.selectedHost = -1
         resetNewHost();
-        this.errorMessage = '';
         $("#errorMessage").css("visibility", "hidden");
       },
       onCopyButton: function () {
@@ -151,7 +151,7 @@ $(() => {
           name: !isEmpty(this.newHostInfo.name),
           host: !isEmpty(this.newHostInfo.host),
           username: !isEmpty(this.newHostInfo.username),
-          //path: !isEmpty(this.newHostInfo.path)
+          path: !isEmpty(this.newHostInfo.path)
         }
       },
       hasError: function () {
@@ -172,15 +172,17 @@ $(() => {
   function browseServerFiles() {
     const html = '<p id="path"></p><ul id=fileList></ul>';
     const dialogOptions = {
-      height: $(window).height() * 0.50,
-      width: $(window).width() * 0.50
+      height: $(window).height() * 0.90,
+      width: $(window).width() * 0.60
     };
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
     dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {
-        let target = fb.getRequestedPath() + '/' + fb.getLastClicked()
+        const requested = fb.getRequestedPath();
+        const pathSep = requested[0] === '/' ? '/' : '\\';
+        let target = requested + pathSep + fb.getLastClicked();
         socket.emit('add', target);
-        vm.hostinfo.keyFile = target;
+        vm.newHostInfo.keyFile = target;
       });
     $('#fileList').empty();
     fb.resetOnClickEvents();
@@ -234,6 +236,28 @@ $(() => {
     return string === '';
   }
 
+  // 追加部分　編集時に黄色い枠にする
+  function formColor() {
+    $('#hostRegFormArea input:not([type="radio"])').css('border', '1px solid #ccff00');
+  }
+  function notFormColor() {
+    $('#hostRegFormArea input:not([type="radio"])').css('border', '1px solid #000000');
+  }
+  $("#newButton").click(formColor);
+  $("#copyButton").click(notFormColor);
+  $("#deleteButton").click(notFormColor);
+  $("#cancelButton").click(notFormColor);
+  $("#confirmButton").click(notFormColor);
+
   var pos = $("#titleUserName").offset();
-  $("#img_user").css('right', window.innerWidth - pos.left + "px");
+  $("#iconImg").css('right', window.innerWidth - pos.left + "px");
+
+  // スクロールについて
+  function $E(name) {
+    return document.getElementById(name);
+  }
+  function scroll() {
+    $E("hostTitleArea").scrollLeft = $E("hostPropertyArea").scrollLeft;// 左右連動させる
+  }
+  $E("hostPropertyArea").onscroll = scroll;
 });

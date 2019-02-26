@@ -30,9 +30,6 @@ WHEELのインストールを行います。
 1. WHEELをダウンロードしたディレクトリへ遷移する。
 1. ダウンロードした WHEEL-{version}.tar.gz を解凍する。
 1. 解凍した WHEEL-{version} ディレクトリへ遷移する。
-1. [ > npm install -g ] を実行する。
-1. 2 実行時にターミナル（またはコマンドプロンプト）に表示される [.....\node_modules\WHEEL]ディレクトリに遷移する。
-1. [ > npm install webpack ] を実行する。
-1. [ > npm run prepare ] を実行する。  
+1. [ > npm install ] を実行する。
 
 以上でインストールは終了です。
