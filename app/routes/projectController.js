@@ -8,8 +8,8 @@ const glob = require("glob");
 const { create } = require("abc4");
 const { createNewComponent, updateComponent } = require("../core/componentFilesOperator");
 const { createSshConfig, emitLongArray } = require("./utility");
-const { readJsonGreedy } = require("../core/fileUtils");
-const { getDateString } = require("../lib/utility");
+const { readJsonGreedy, deliverFile } = require("../core/fileUtils");
+const { getDateString, isValidOutputFilename } = require("../lib/utility");
 const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
@@ -17,6 +17,7 @@ const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSs
 const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
 const {
   getHosts,
+  getSourceComponents,
   addInputFile,
   addOutputFile,
   removeInputFile,
@@ -107,6 +108,35 @@ async function getState(projectRootDir) {
   return projectState;
 }
 
+async function getSourceCandidates(projectRootDir, ID) {
+  const componentDir = await getComponentDir(projectRootDir, ID);
+  return promisify(glob)("*", { cwd: componentDir });
+}
+
+/**
+ * ask user what file to be used
+ */
+async function getSourceFilename(projectRootDir, component, sio) {
+  const filelist = component.uploadOnDemand ? null : await getSourceCandidates(projectRootDir, component.ID);
+
+  return new Promise((resolve)=>{
+    sio.on("sourceFile", (id, filename)=>{
+      resolve(filename);
+    });
+
+    if (component.uploadOnDemand) {
+      sio.emit("requestSourceFile", component.ID, component.name, component.description);
+    } else {
+      sio.emit("askSourceFilename", component.ID, component.name, component.description, filelist);
+    }
+  });
+}
+
+/**
+ * ask password to client
+ * @param {Object} sio - instance of SocketIO.socket
+ * @param {string} hostname - name or kind of label for the host
+ */
 function askPassword(sio, hostname) {
   return new Promise((resolve)=>{
     sio.on("password", (data)=>{
@@ -116,13 +146,12 @@ function askPassword(sio, hostname) {
   });
 }
 
+
 /**
  * create necessary ssh instance
+ * @param {Object} sio - instance of SocketIO.socket
  */
-async function createSsh(projectRootDir, remoteHostName, sio) {
-  if (!hostInfo) {
-    return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
-  }
+async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
   const password = await askPassword(sio, remoteHostName);
   const config = await createSshConfig(hostInfo, password);
   const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
@@ -243,9 +272,6 @@ async function onRunProject(sio, projectRootDir, cb) {
   }
 
   const emit = sio.emit.bind(sio);
-  const rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
-  const hosts = await getHosts(projectRootDir, rootWF.ID);
-
   //event listener for task state changed
   async function onTaskStateChanged() {
     const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
@@ -279,8 +305,21 @@ async function onRunProject(sio, projectRootDir, cb) {
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
 
 
-  //actual project start here
+  //actual project run start from here
   try {
+    const hosts = await getHosts(projectRootDir, null);
+    const sourceComponents = getSourceComponents(projectRootDir);
+
+    for (const component of sourceComponents) {
+      const filename = await getSourceFilename(component);
+      const componentDir = await getComponentDir(projectRootDir, component.ID);
+      const outputFile = component.outputFiles[0].name;
+      if (!isValidOutputFilename(outputFile)) {
+        continue;
+      }
+      await deliverFile(path.resolve(componentDir, filename), path.resolve(componentDir, outputFile));
+    }
+
     //TODO source componentのリストを作成(ここじゃなくても良い)
     //- sourceコンポーネントのuploadOnDemandフラグがtrueの時はアップロードダイアログをクライアント側ヘ投げる
     //- sourceコンポーネント内にcmp.whee.json以外のファイルが存在した時はファイル指定ダイアログをクライアント側へ投げる
@@ -289,10 +328,13 @@ async function onRunProject(sio, projectRootDir, cb) {
     for (const remoteHostName of hosts) {
       const id = remoteHost.getID("name", remoteHostName);
       const hostInfo = remoteHost.get(id);
+      if (!hostInfo) {
+        return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
+      }
       if (hostInfo.type === "aws") {
         await createCloudInstance(projectRootDir, hostInfo, sio);
       } else {
-        await createSsh(projectRootDir, hostInfo, sio);
+        await createSsh(projectRootDir, remoteHostName, hostInfo, sio);
       }
     }
     await runProject(projectRootDir);
@@ -300,7 +342,7 @@ async function onRunProject(sio, projectRootDir, cb) {
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
     await sendProjectJson(emit, projectRootDir, "failed");
     cb(false);
-    return;
+    return false;
   } finally {
     removeSsh(projectRootDir);
     removeCluster(projectRootDir);
@@ -317,7 +359,7 @@ async function onRunProject(sio, projectRootDir, cb) {
   } catch (e) {
     getLogger(projectRootDir).warn("project execution is successfully finished but error occurred in cleanup process", e);
     cb(false);
-    return;
+    return false;
   }
 
   cb(true);

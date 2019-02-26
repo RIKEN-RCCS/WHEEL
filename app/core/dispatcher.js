@@ -11,7 +11,7 @@ const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
 const { getDateString } = require("../lib/utility");
 const { sanitizePath, convertPathSep, replacePathsep } = require("./pathUtils");
-const { readJsonGreedy, addX } = require("./fileUtils");
+const { readJsonGreedy, addX, deliverFile } = require("./fileUtils");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
 const { componentJsonReplacer } = require("./componentFilesOperator");
 const { isInitialComponent } = require("./workflowComponent");
@@ -53,30 +53,6 @@ async function setStateR(dir, state) {
   });
   return Promise.all(p);
 }
-
-/**
- * deliver src to dst
- * @param {string} src - absolute path of src path
- * @param {string} dst - absolute path of dst path
- *
- */
-async function deliverFile(src, dst) {
-  const stats = await fs.lstat(src);
-  const type = stats.isDirectory() ? "dir" : "file";
-
-  try {
-    await fs.remove(dst);
-    await fs.ensureSymlink(src, dst, type);
-    return `make symlink from ${src} to ${dst} (${type})`;
-  } catch (e) {
-    if (e.code === "EPERM") {
-      await fs.copy(src, dst, { overwrite: false });
-      return `make copy from ${src} to ${dst}`;
-    }
-    return Promise.reject(e);
-  }
-}
-
 
 //private functions
 async function getScatterFiles(templateRoot, paramSettings) {

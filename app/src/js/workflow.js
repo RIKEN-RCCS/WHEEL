@@ -293,6 +293,26 @@ $(() => {
         });
       //TODO ユーザがキャンセルした時の対応を検討
     });
+    sio.on('askSourceFilename', (id, name, description, filelist)=>{
+      const html = `<p class="dialogTitle"> select file for ${name} component</p>
+      <select id="sourceFilename">
+        ${fileList.map((e)=>{return `<<option value="${e}">${e}</option>`}).join(" ") }
+      </select>
+        `;
+      dialogWrapper('#dialog', html)
+        .done(() => {
+          const filename = $('#sourceFilename option:selected').val() 
+          console.log(filename);
+          sio.emit("sourceFile", id, filename);
+        });
+    });
+    sio.on('requestSourceFile', (id, name, description)=>{
+      const html = `<p>upload file for ${name} component</p>`;
+      dialogWrapper('#dialog, html')
+      .done(()=>{
+        $('#fileSelector').click();
+      });
+    });
 
     sio.on('workflow', function (wf) {
       nodeStack[nodeStack.length - 1] = wf.name;

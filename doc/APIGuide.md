@@ -25,8 +25,8 @@
     * [taskStateList(taskState[])](#taskstatelisttaskstate)
     * [logXXXX(message)](#logxxxxmessage)
     * [askPassword(remoteHost)](#askpasswordremotehost)
-    * [askSourceFilename(id, name, description, filelist, cb)](#asksourcefilenameid-name-description-filelist-cb)
-    * [requestSourceFile(id, name, description, cb)](#requestsourcefileid-name-description-cb)
+    * [askSourceFilename(id, name, description, filelist)](#asksourcefilenameid-name-description-filelist)
+    * [requestSourceFile(id, name, description)](#requestsourcefileid-name-description)
     * [hostList(hostInfo[])](#hostlisthostinfo)
 * [workflow画面で発生する通信一覧(client -> server)](#workflow画面発生通信一覧client-server)
 * [File操作関連API](#file操作関連api)
@@ -288,7 +288,7 @@ taskStateのデータ形式は以下のとおり。
 リモートホストへアクセスする時に使うパスワード(またはパスフレーズ)の入力を要求します。
 
 
-#### askSourceFilename(id, name, description, filelist, cb)
+#### askSourceFilename(id, name, description, filelist)
 - @param {string} id - ファイルの選択を要求しているsourceコンポーネントのid文字列
 - @param {string} name - ファイルの選択を要求しているsourceコンポーネントの名前
 - @param {string} description - ファイルの選択を要求しているsourceコンポーネントのdescription
@@ -297,7 +297,7 @@ taskStateのデータ形式は以下のとおり。
 複数ファイルが用意されているソースコンポーネントで実際に使うファイルの選択を要求します。
 
 
-#### requestSourceFile(id, name, description, cb)
+#### requestSourceFile(id, name, description)
 - @param {string} name - ファイルのアップロードを要求しているsourceコンポーネントの名前
 - @param {string} description - ファイルのアップロードを要求しているsourceコンポーネントのdescription
 

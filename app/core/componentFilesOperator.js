@@ -307,7 +307,8 @@ async function makeDir(basename, argSuffix) {
 }
 
 async function getChildren(projectRootDir, parentID) {
-  const dir = await getComponentDir(projectRootDir, parentID, true);
+  const dir = parentID === null ? projectRootDir : await getComponentDir(projectRootDir, parentID, true);
+
   if (!dir) {
     return [];
   }
@@ -333,7 +334,10 @@ async function validateTask(projectRootDir, component) {
 
   if (component.useJobScheduler) {
     const hostinfo = remoteHost.query("name", component.host);
-    if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
+    if (typeof hostinfo === "undefined") {
+      //assume local job
+      //TODO add jobScheduler setting to server.json and read it
+    } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
       return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
     }
   }
@@ -397,6 +401,7 @@ async function validateForeach(component) {
 async function recursiveGetHosts(projectRootDir, parentID, hosts) {
   const promises = [];
   const children = await getChildren(projectRootDir, parentID);
+
   for (const component of children) {
     if (component.type === "task" && component.host !== "localhost") {
       hosts.push(component.host);
@@ -786,9 +791,21 @@ async function removeComponent(projectRootDir, ID) {
   return removeComponentPath(projectRootDir, descendantsIDs);
 }
 
+async function getSourceComponents(projectRootDir) {
+  const componentJsonFiles = await promisify(glob)(path.join(projectRootDir, "**", componentJsonFilename));
+  return (await Promise.all(componentJsonFiles
+    .map((componentJsonFile)=>{
+      return readJsonGreedy(componentJsonFile);
+    })))
+    .filter((componentJson)=>{
+      return componentJson.type === "source" && !componentJson.subComponent;
+    });
+}
+
 
 module.exports = {
   getHosts,
+  getSourceComponents,
   validateComponents,
   componentJsonReplacer,
   createNewComponent,

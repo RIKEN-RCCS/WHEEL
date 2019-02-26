@@ -47,7 +47,7 @@ const dummyLogger = {
 // dummyLogger.trace = console.log;
 
 
-describe.only("UT for source component", function() {
+describe("UT for source component", function() {
   this.timeout(0);
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
