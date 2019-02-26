@@ -14,7 +14,9 @@
     "condition": "violet",
     "if": "#5B5B5F",
     "foreach": "#247780",
-    "parameterStudy": "#666622"
+    "parameterStudy": "#666622",
+    "source": "#5D99FF",
+    "viewer": "#5BFF7F"
   },
   "box_appearance": {
     "titleHeight": 32,
@@ -52,13 +54,24 @@
     "while": "/image/img_while.png",
     "if": "/image/img_if.png",
     "foreach": "/image/img_foreach.png",
-    "parameterStudy": "/image/img_parameterStudy.png"
+    "parameterStudy": "/image/img_parameterStudy.png",
+    "source": "/image/img_source.png",
+    "viewer": "/image/img_viewer.png"
   },
   "state_icon": {
     "not-started": "/image/img_stateQue.png",
     "running": "/image/img_statePlay.png",
     "finished": "/image/img_stateDone.png",
     "failed": "/image/img_error.png"
+  },
+  "fileType_icon": {
+    "file": "/image/img_file.png",
+    "dir": "/image/img_folder.png",
+    "snd": "/image/img_SND.png",
+    "sndd": "/image/img_SNDD.png",
+    "filelink": "/image/img_filelink.png",
+    "folderlink": "/image/img_folderlink.png",
+    "deadlink": "/image/img_deadlink.png"
   },
   "reload_project_ms": 2000
 }

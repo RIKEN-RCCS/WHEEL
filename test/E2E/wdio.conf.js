@@ -9,12 +9,13 @@ exports.config = {
     // directory is where your package.json resides, so `wdio` will be called from there.
     //
     specs: [
-        'test/E2E/home.js',
-        'test/E2E/remotehost.js',
         'test/E2E/createComponentTestProject.js',
+        'test/E2E/remotehostSecretKeyCheck.js',
+        'test/E2E/remotehost.js',
         'test/E2E/workflow.js',
-        'test/E2E/deleteComponentTestProject.js',
-        'test/E2E/executeTestProject.js'
+        'test/E2E/componentPropertyCheck.js',
+        'test/E2E/execProject.js',
+        'test/E2E/deleteTestProject.js'
     ],
     // Patterns to exclude.
     exclude: [
@@ -84,7 +85,7 @@ exports.config = {
     baseUrl: 'http://localhost:8089/',
     //
     // Default timeout for all waitFor* commands.
-    waitforTimeout: 100000,
+    waitforTimeout: 10000,
     //
     // Default timeout in milliseconds for request
     // if Selenium Grid doesn't send response
@@ -134,7 +135,8 @@ exports.config = {
     // Options to be passed to Mocha.
     // See the full list at http://mochajs.org/
     mochaOpts: {
-        ui: 'bdd'
+        ui: 'bdd',
+        timeout: 60000
     },
     //
     // =====
@@ -150,7 +152,22 @@ exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      */
     onPrepare: function (config, capabilities) {
+        const fs = require("fs");
         const { spawn } = require("child_process");
+        const dbPath = './app/db/';
+        const remotehostJsonPath = dbPath + 'remotehost.json';
+        const projectListJsonPath = dbPath + 'projectList.json';
+        var fileExistFlag = true;
+        try {
+            fs.statSync(remotehostJsonPath);
+            fs.statSync(projectListJsonPath);
+        } catch (error) {
+            fileExistFlag = false;
+        }
+        if (fileExistFlag === true) {
+            fs.renameSync(remotehostJsonPath, dbPath + 'remotehost_temp.json');
+            fs.renameSync(projectListJsonPath, dbPath + 'projectList_temp.json');
+        }
         config.wheelProcess = spawn("npm", ["start"], { shell: true });
     },
     /**
@@ -239,8 +256,24 @@ exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      * @param {Array.<String>} specs List of spec file paths that ran
      */
-    // afterSession: function (config, capabilities, specs) {
-    // },
+    afterSession: function (config, capabilities, specs) {
+        const fs = require("fs");
+        const homeDirPath = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+        const dbPath = './app/db/';
+        const remotehostJsonPath = dbPath + 'remotehost.json';
+        const projectListJsonPath = dbPath + 'projectList.json';
+        var fileExistFlag = true;
+        try {
+            fs.statSync(dbPath + 'remotehost_temp.json');
+            fs.statSync(dbPath + 'projectList_temp.json');
+        } catch (error) {
+            fileExistFlag = false;
+        }
+        if (fileExistFlag === true) {
+            fs.renameSync(dbPath + 'remotehost_temp.json', remotehostJsonPath);
+            fs.renameSync(dbPath + 'projectList_temp.json', projectListJsonPath);
+        }
+    },
     /**
      * Gets executed after all workers got shut down and the process is about to exit.
      * @param {Object} exitCode 0 - success, 1 - fail

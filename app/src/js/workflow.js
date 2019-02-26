@@ -59,7 +59,9 @@ $(() => {
       newIndexOfForeach: "",
       hostList: [],
       queueList: [],
-      names: []
+      // fileList: [],
+      names: [],
+      // conditionInputType: '1'
     },
     methods: {
       addInputFile: function () {
@@ -322,16 +324,25 @@ $(() => {
       drawComponents();
     });
 
+    let firstReadTaskStateList = [];
     sio.on('taskStateList', (taskStateList, cb) => {
-      if (firstConnection === true && taskStateList.length !== 0) {
-        for (let i = 0; i < taskStateList.length - 1; i++) {
-          taskStateList.sort(sortTaskStateList);
+      if (taskStateList.length !== 0) {
+        if (firstConnection === true) {
+          Array.prototype.push.apply(firstReadTaskStateList, taskStateList);
+          firstReadTaskStateList.sort(sortTaskStateList);
         }
+      }
+      if (taskStateList.length < 100) {
         firstConnection = false;
       }
 
-      if (taskStateList.length !== 0) {
-        drawTaskStateList(taskStateList);
+      if (firstConnection === false) {
+        if (firstReadTaskStateList.length !== 0) {
+          drawTaskStateList(firstReadTaskStateList);
+          firstReadTaskStateList = [];
+        } else {
+          drawTaskStateList(taskStateList);
+        }
       }
       cb();
     });
@@ -341,6 +352,7 @@ $(() => {
       rootId = Object.keys(projectJson.componentPath).filter((key) => {
         return projectJson.componentPath[key] === './'
       });
+      $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
       presentState = projectJson.state;
@@ -375,6 +387,11 @@ $(() => {
     sio.on('hostList', function (hostlist) {
       vm.hostList = hostlist;
     });
+
+    // sio.on('fileList', function (filelist) {
+    //   console.log(filelist);
+    //   vm.fileList = filelist;
+    // });
 
     //setup log reciever
     logReciever(sio);
@@ -445,6 +462,8 @@ $(() => {
     $('#property').hide();
     // property Files Area initialize
     filePathStack = [];
+    $('#editFileButton').css('visibility', 'hidden');
+    $('#editPSFileButton').css('visibility', 'hidden');
     $('#dirBackButton').css("display", "none");
   });
 
