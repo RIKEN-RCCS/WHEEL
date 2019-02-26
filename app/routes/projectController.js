@@ -442,11 +442,11 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
   cb(true);
 }
 
-async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
+async function onTaskStateListRequest(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  getLogger(projectRootDir).debug("getTaskStateList event recieved:", msg);
+  getLogger(projectRootDir).debug("getTaskStateList event recieved:");
 
   try {
     await sendTaskStateList(emit, projectRootDir);
