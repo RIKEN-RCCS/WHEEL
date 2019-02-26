@@ -793,13 +793,14 @@ async function removeComponent(projectRootDir, ID) {
 
 async function getSourceComponents(projectRootDir) {
   const componentJsonFiles = await promisify(glob)(path.join(projectRootDir, "**", componentJsonFilename));
-  return (await Promise.all(componentJsonFiles
+  const components = await Promise.all(componentJsonFiles
     .map((componentJsonFile)=>{
       return readJsonGreedy(componentJsonFile);
-    })))
-    .filter((componentJson)=>{
-      return componentJson.type === "source" && !componentJson.subComponent;
-    });
+    }));
+
+  return components.filter((componentJson)=>{
+    return componentJson.type === "source" && !componentJson.subComponent;
+  });
 }
 
 

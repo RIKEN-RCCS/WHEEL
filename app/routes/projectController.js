@@ -110,16 +110,14 @@ async function getState(projectRootDir) {
 
 async function getSourceCandidates(projectRootDir, ID) {
   const componentDir = await getComponentDir(projectRootDir, ID);
-  return promisify(glob)("*", { cwd: componentDir });
+  return promisify(glob)("*", { cwd: componentDir, ignore: componentJsonFilename });
 }
 
 /**
  * ask user what file to be used
  */
 async function getSourceFilename(projectRootDir, component, sio) {
-  const filelist = component.uploadOnDemand ? null : await getSourceCandidates(projectRootDir, component.ID);
-
-  return new Promise((resolve)=>{
+  return new Promise(async(resolve)=>{
     sio.on("sourceFile", (id, filename)=>{
       resolve(filename);
     });
@@ -127,6 +125,11 @@ async function getSourceFilename(projectRootDir, component, sio) {
     if (component.uploadOnDemand) {
       sio.emit("requestSourceFile", component.ID, component.name, component.description);
     } else {
+      const filelist = await getSourceCandidates(projectRootDir, component.ID);
+      if (filelist.length === 1) {
+        resolve(filelist[0]);
+      }
+
       sio.emit("askSourceFilename", component.ID, component.name, component.description, filelist);
     }
   });
@@ -307,24 +310,23 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //actual project run start from here
   try {
-    const hosts = await getHosts(projectRootDir, null);
-    const sourceComponents = getSourceComponents(projectRootDir);
+    const sourceComponents = await getSourceComponents(projectRootDir);
 
     for (const component of sourceComponents) {
-      const filename = await getSourceFilename(component);
+      const filename = await getSourceFilename(projectRootDir, component, sio);
+      console.log(`source filename for ${component.name} = ${filename}`);
       const componentDir = await getComponentDir(projectRootDir, component.ID);
       const outputFile = component.outputFiles[0].name;
       if (!isValidOutputFilename(outputFile)) {
         continue;
       }
-      await deliverFile(path.resolve(componentDir, filename), path.resolve(componentDir, outputFile));
+      if (filename !== outputFile) {
+        await deliverFile(path.resolve(componentDir, filename), path.resolve(componentDir, outputFile));
+      }
     }
 
-    //TODO source componentのリストを作成(ここじゃなくても良い)
-    //- sourceコンポーネントのuploadOnDemandフラグがtrueの時はアップロードダイアログをクライアント側ヘ投げる
-    //- sourceコンポーネント内にcmp.whee.json以外のファイルが存在した時はファイル指定ダイアログをクライアント側へ投げる
-    //- クライアントから返事が返ってきたら、outputFilesに指定されているファイル名で当該ファイルを保存
-    //もし既にファイルが存在した時は一旦削除する
+    //TODO askPasswordの部分以外はcoreへ移動
+    const hosts = await getHosts(projectRootDir, null);
     for (const remoteHostName of hosts) {
       const id = remoteHost.getID("name", remoteHostName);
       const hostInfo = remoteHost.get(id);
