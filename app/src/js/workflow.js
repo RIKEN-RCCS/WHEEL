@@ -313,9 +313,17 @@ $(() => {
       dialogWrapper('#dialog', html)
         .done(()=>{
           const componentDir = `${projectRootDir}/${componentPath[id]}`;
-          uploader.addEventListener("start", function(event){
+          function setComponentDir(event){
             event.file.meta.componentDir = componentDir;
-          });
+          }
+          function onComplete(event){
+            uploader.removeEventListener(setComponentDir);
+            uploader.removeEventListener(onComplete);
+            sio.emit("sourceFile", id, event.file.name);
+          }
+
+          uploader.addEventListener("start", setComponentDir);
+          uploader.addEventListener("complete", onComplete);
           $('#fileSelector').click();
         });
     });
