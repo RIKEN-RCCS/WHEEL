@@ -213,7 +213,10 @@ function registerListeners(socket, projectRootDir) {
     getLogger(projectRootDir).debug("upload request recieved", event.file);
   });
   uploader.on("saved", async(event)=>{
-    const absFilename = event.file.pathName;
+    const absFilename = event.file.meta.componentDir ? path.resolve(convertPathSep(event.file.meta.componentDir), path.basename(event.file.pathName)) : event.file.pathName;
+    if (event.file.pathName !== absFilename) {
+      await fs.move(event.file.pathName, absFilename);
+    }
     getLogger(projectRootDir).info(`upload completed ${absFilename} [${event.file.size} Byte]`);
     await gitAdd(projectRootDir, absFilename);
     await sendDirectoryContents(socket.emit.bind(socket), path.dirname(absFilename));
@@ -221,6 +224,7 @@ function registerListeners(socket, projectRootDir) {
   uploader.on("error", (event)=>{
     getLogger(projectRootDir).error("file upload failed", event.file, event.error);
   });
+
   socket.on("getFileList", onGetFileList.bind(null, uploader, socket.emit.bind(socket), projectRootDir));
   socket.on("getSNDContents", onGetSNDContents.bind(null, socket.emit.bind(socket), projectRootDir));
   socket.on("removeFile", onRemoveFile.bind(null, socket.emit.bind(socket), projectRootDir));

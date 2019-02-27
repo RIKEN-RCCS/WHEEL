@@ -48,6 +48,7 @@ $(() => {
   let updateList = [];
   let projectRootDir = currentWorkDir;
   let firstConnection = true;
+  let componentPath;
 
   // create vue.js instance for property subscreen
   let vm = new Vue({
@@ -297,23 +298,26 @@ $(() => {
     });
     sio.on('askSourceFilename', (id, name, description, filelist)=>{
       const html = `<p class="dialogTitle"> select file for ${name} component</p>
-      <select id="sourceFilename">
-        ${fileList.map((e)=>{return `<<option value="${e}">${e}</option>`}).join(" ") }
+      <select class="dialogTextbox" id="sourceFilename">
+        ${filelist.map((e)=>{return `<option value="${e}">${e}</option>`}).join(" ") }
       </select>
-        `;
+      `;
       dialogWrapper('#dialog', html)
         .done(() => {
-          const filename = $('#sourceFilename option:selected').val() 
-          console.log(filename);
+          const filename = $('#sourceFilename option:selected').val();
           sio.emit("sourceFile", id, filename);
         });
     });
     sio.on('requestSourceFile', (id, name, description)=>{
-      const html = `<p>upload file for ${name} component</p>`;
-      dialogWrapper('#dialog, html')
-      .done(()=>{
-        $('#fileSelector').click();
-      });
+      const html = `<p class="dialogTitle">upload file for ${name} component</p>`;
+      dialogWrapper('#dialog', html)
+        .done(()=>{
+          const componentDir = `${projectRootDir}/${componentPath[id]}`;
+          uploader.addEventListener("start", function(event){
+            event.file.meta.componentDir = componentDir;
+          });
+          $('#fileSelector').click();
+        });
     });
 
     sio.on('workflow', function (wf) {
@@ -352,6 +356,7 @@ $(() => {
       rootId = Object.keys(projectJson.componentPath).filter((key) => {
         return projectJson.componentPath[key] === './'
       });
+      componentPath = projectJson.componentPath;
       $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
