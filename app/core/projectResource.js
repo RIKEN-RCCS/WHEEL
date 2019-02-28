@@ -198,8 +198,8 @@ function on(projectRootDir, eventName, cb) {
   }
 }
 
-function emitEvent(projectRootDir, eventName) {
-  getProject(projectRootDir).emit(eventName);
+function emitEvent(projectRootDir, eventName, ...args) {
+  getProject(projectRootDir).emit(eventName, ...args);
 }
 
 function off(projectRootDir, eventName, fn) {

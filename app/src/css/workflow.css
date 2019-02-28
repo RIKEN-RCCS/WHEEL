@@ -25,7 +25,7 @@ header {
 }
 
 #title {
-    color: #FFFFFF;    
+    color: #FFFFFF;
     text-decoration: none;
     position: relative;
     top: -4px;
@@ -64,7 +64,7 @@ header {
 
 #img_btn_menu_n{
     right:16px;
-    
+
 }
 
 img.btn_menu_n{
@@ -80,7 +80,7 @@ img.btn_menu_n{
 #drawerMenu {
     width:192px;
     height:100%;
-    -webkit-transform:translateX(192px);    
+    -webkit-transform:translateX(192px);
     transform:translateX(192px);
     transition:ease .5s;
     position:fixed;
@@ -218,7 +218,7 @@ img.btn_menu_n{
 }
 
 #project_state{
-    margin: 0 0 0 0;    
+    margin: 0 0 0 0;
     width: 100px;
     border-radius: 12px;
     border: 1px solid #FFFFFF
@@ -254,7 +254,7 @@ img.btn_menu_n{
 }
 
 #revert_button{
-    display: inline-flex;    
+    display: inline-flex;
     margin: 0 4px 0 8px;
     cursor: pointer;
 }
@@ -301,7 +301,7 @@ img.btn_menu_n{
     background-color: white;
     border: none;
     border-radius: 3px;
-    cursor: pointer;        
+    cursor: pointer;
 }
 
 .img_breadcrumbButton_icon{
@@ -319,7 +319,7 @@ img.btn_menu_n{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     color: #FFFFFF;
     font-size: 14px;
-    position: relative;    
+    position: relative;
     top: -8px;
 }
 
@@ -356,13 +356,13 @@ img.btn_menu_n{
     color: white;
     border: 0;
 	cursor: pointer;
-    border-collapse: collapse; 
+    border-collapse: collapse;
 }
 
 #taskLibraryButton img{
     width: 10px;
 }
-    
+
 #taskLibraryMenu{
     position: absolute;
     margin-top: 6px;
@@ -370,7 +370,7 @@ img.btn_menu_n{
     background-color: #222226;
     opacity: 0.9;
     display: none;
-    z-index: 40;    
+    z-index: 40;
     border-collapse: collapse;
 }
 
@@ -384,126 +384,126 @@ img.btn_menu_n{
 }
 
 #img_workflow{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #803DB3;
     height: 32px;
     width: 32px;
 }
 
 #img_task{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #3B55B3;
     height: 32px;
     width: 32px;
 }
 
 #img_parameterStudy{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #666622;
     height: 32px;
     width: 32px;
 }
 
 #img_if{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5B5B5F;
     height: 32px;
     width: 32px;
 }
 
 #img_for{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
 #img_while{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
 #img_foreach{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
 #img_source{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5D99FF;
     height: 32px;
     width: 32px;
 }
 
 #img_viewer{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5BFF7F;
     height: 32px;
     width: 32px;
 }
 
 .img_workflow_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #803DB3;
     height: 24px;
     width: 24px;
 }
 
 .img_task_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #3B55B3 !important;
     height: 24px;
     width: 24px;
 }
 
 .img_parameterStudy_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #666622;
     height: 24px;
     width: 24px;
 }
 
 .img_if_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5B5B5F;
     height: 24px;
     width: 24px;
 }
 
 .img_for_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 24px;
     width: 24px;
 }
 
 .img_while_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 24px;
     width: 24px;
 }
 
 .img_foreach_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 24px;
     width: 24px;
 }
 
 .img_source_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5D99FF;
     height: 24px;
     width: 24px;
 }
 
 .img_viewer_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5BFF7F;
     height: 24px;
     width: 24px;
@@ -563,7 +563,7 @@ img.btn_menu_n{
     color: white;
     border: 0;
 	cursor: pointer;
-    border-collapse: collapse; 
+    border-collapse: collapse;
 }
 
 #propertyTitle{
@@ -599,22 +599,22 @@ img.btn_menu_n{
 
 #propertyInputFiles, #propertyScript, #propertyState{
     margin: 2px 0 0 0;
-    display: inline-block;    
+    display: inline-block;
 }
 
 #propertyOutputFiles, #propertyParameterSettingFile, #propertyCondition,
 #propertyIndexList, #propertyStart, #propertyStep,
 #propertyRemotehost, #propertyQueue, #propertyuseJobScheduler, #propertyuploadOnDemand{
     margin: 8px 0 0 0;
-    display: inline-block;    
+    display: inline-block;
 }
 
 #propertyEnd{
-    display: inline-block;    
+    display: inline-block;
 }
 
 #nameInputField, .newInputFileNameInputField, .newOutputFileNameInputField,
-.newOutputFileNameInputField, #parameterFileInputField, #conditionInputField, 
+.newOutputFileNameInputField, #parameterFileInputField, #conditionInputField,
 .newIndexListField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
@@ -623,7 +623,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #stateField{
@@ -634,7 +634,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color:#6F6F77;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;  
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #scriptInputField{
@@ -645,7 +645,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #includeInputField, #excludeInputField{
@@ -656,7 +656,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #scriptSelectField, #remotehostSelectField, #conditionSelectField, 
@@ -668,7 +668,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 .fileForCondition2{
@@ -686,7 +686,7 @@ img.btn_menu_n{
     background-color: #333333;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 .queueSelectFieldColor{
@@ -701,8 +701,8 @@ img.btn_menu_n{
 }
 
 #checkboxArea{
-    margin: 0;    
-    padding: 0px;    
+    margin: 0;
+    padding: 0px;
 }
 
 #useJobSchedulerFlagField{
@@ -721,7 +721,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #startInputField, #endInputField{
@@ -784,7 +784,7 @@ img.btn_menu_n{
 
 #propertyCleanUpFlag, #propertyInclude, #propertyExclude{
     margin: 8px 0 0 8px;
-    display: inline-block;    
+    display: inline-block;
 }
 
 #flags{
@@ -898,7 +898,7 @@ img.btn_menu_n{
     overflow:hidden;
     white-space:nowrap;
     word-wrap: break-word;
-    font-size: 12px; 
+    font-size: 12px;
 }
 
 #componentPath{
@@ -908,7 +908,7 @@ img.btn_menu_n{
     overflow:hidden;
     white-space:nowrap;
     word-wrap: break-word;
-    font-size: 12px; 
+    font-size: 12px;
     background-color: #000000;
 }
 
@@ -1079,7 +1079,7 @@ img.btn_menu_n{
     color: #FFFFFF;
     background-color: #2F2F33;
     box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
-    height: calc(100% - 108px);    
+    height: calc(100% - 108px);
     overflow: auto;
     font-size: 14px;
     user-select: none;
@@ -1299,7 +1299,7 @@ img.btn_menu_n{
     width: 100%;
     height: 320px;
     z-index: 80;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #logButtonArea{
@@ -1309,7 +1309,7 @@ img.btn_menu_n{
 }
 
 .logButton{
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     background-color: rgba(28,28,32,0.0);
     font-size: 14px;
     padding: 0 20px 0 20px;
@@ -1320,7 +1320,7 @@ img.btn_menu_n{
 }
 
 .logButton:hover{
-    border-bottom-color:#CCFF00 !important;    
+    border-bottom-color:#CCFF00 !important;
 }
 
 .logText{
@@ -1330,7 +1330,7 @@ img.btn_menu_n{
     overflow: auto;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     margin: 12px 0 0 12px;
-    display: none;        
+    display: none;
 }
 
 .logContent{
@@ -1341,7 +1341,7 @@ img.btn_menu_n{
 }
 
 #logClearButton{
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     background-color: #5B5B5F;
     font-size: 14px;
     padding: 0 20px 0 20px;
@@ -1357,6 +1357,11 @@ img.btn_menu_n{
 }
 
 /* リストビュー画面 */
+#projectTable{
+    margin :0;
+    position: absolute;
+}
+
 #project_manage_area{
     display: flex;
     flex-direction: row;
@@ -1450,18 +1455,18 @@ img.btn_menu_n{
 }
 
 th.componentStateLabel{
-    display: inline-block;    
+    display: inline-block;
     width: 90px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
     border-collapse: separate;
 }
 
 .componentStartTimeLabel{
-    display: inline-block;        
+    display: inline-block;
     width: 150px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
     border-collapse: separate;
 }
 
@@ -1497,15 +1502,15 @@ th.componentStateLabel{
 }
 
 .componentEndTimeLabel{
-    display: inline-block;        
+    display: inline-block;
     width: 150px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
     border-collapse: separate;
 }
 
 .componentDescriptionLabel{
-    display: inline-block;            
+    display: inline-block;
     width: 256px;
     font-size: 14px;
 }
@@ -1520,7 +1525,7 @@ th.componentStateLabel{
 }
 
 .componentState{
-    display: inline-block;    
+    display: inline-block;
     padding-right: 44px;
     font-size: 14px;
     width: 90px;
@@ -1538,14 +1543,14 @@ th.componentStateLabel{
 }
 
 .componentEndTime{
-    display: inline-block;        
+    display: inline-block;
     padding-right: 44px;
     width: 150px;
     font-size: 14px;
 }
 
 .componentDescription{
-    display: inline-block;            
+    display: inline-block;
     padding-right: 44px;
     width: 256px;
     font-size: 14px;
@@ -1586,7 +1591,7 @@ svg g{
 } */
 
 tspan{
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;            
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;
 }
 
@@ -1650,19 +1655,19 @@ tspan{
     padding-left: 5px;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #fileDeleteLabel{
     margin: 10px 0 10px 10px;
-    color: #FFFFFF;    
+    color: #FFFFFF;
     padding: 0;
     font-size: 16px;
 }
 
 #deleteMessage, #cleanMessage{
     margin-top: 6px;
-    color: #FFFFFF;    
+    color: #FFFFFF;
     padding: 0 16px 0 16px;
     font-size: 16px;
 }
@@ -1691,7 +1696,7 @@ tspan{
     background-color: #222226;
     border: none;
     margin: 0px !important;
-    padding: 0px !important; 
+    padding: 0px !important;
 }
 
 .ui-dialog-buttonset{
@@ -1716,7 +1721,7 @@ tspan{
 .ui-button:hover{
     text-decoration: none;
     background-color: #6F6F77;
-    color: #FFFFFF;    
+    color: #FFFFFF;
     border: 0;
   }
 
@@ -1726,7 +1731,7 @@ tspan{
 
 #sshConnectionLabel{
   margin: 8px;
-  color: #FFFFFF;  
+  color: #FFFFFF;
 }
 
 #password{
@@ -1739,10 +1744,14 @@ tspan{
   padding-left: 5px;
 }
 
+#sourceFilename {
+  color: black;
+  font-size: 14px;
+}
+
 /* .ui-tooltip {
 	font-size: 12px;
 }
 body .ui-tooltip {
 	border-width: 2px;
 } */
-

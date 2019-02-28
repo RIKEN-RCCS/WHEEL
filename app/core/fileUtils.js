@@ -77,7 +77,32 @@ async function addX(file) {
   return fs.chmod(file, modeString);
 }
 
+/**
+ * deliver src to dst
+ * @param {string} src - absolute path of src path
+ * @param {string} dst - absolute path of dst path
+ *
+ */
+async function deliverFile(src, dst) {
+  const stats = await fs.lstat(src);
+  const type = stats.isDirectory() ? "dir" : "file";
+
+  try {
+    await fs.remove(dst);
+    await fs.ensureSymlink(src, dst, type);
+    return { type: `link-${type}`, src, dst };
+  } catch (e) {
+    if (e.code === "EPERM") {
+      await fs.copy(src, dst, { overwrite: false });
+      return { type: "copy", src, dst };
+    }
+    return Promise.reject(e);
+  }
+}
+
+
 module.exports = {
   readJsonGreedy,
-  addX
+  addX,
+  deliverFile
 };

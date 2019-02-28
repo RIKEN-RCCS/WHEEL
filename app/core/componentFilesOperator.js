@@ -56,29 +56,33 @@ async function removeAllLink(projectRootDir, ID) {
   const counterparts = new Map();
   const component = await getComponent(projectRootDir, ID);
 
-  for (const previousComponent of component.previous) {
-    const counterpart = counterparts.get(previousComponent) || await getComponent(projectRootDir, previousComponent);
-    counterpart.next = counterpart.next.filter((e)=>{
-      return e !== component.ID;
-    });
-
-    if (counterpart.else) {
-      counterpart.else = counterpart.else.filter((e)=>{
+  if (component.hasOwnProperty("previous")) {
+    for (const previousComponent of component.previous) {
+      const counterpart = counterparts.get(previousComponent) || await getComponent(projectRootDir, previousComponent);
+      counterpart.next = counterpart.next.filter((e)=>{
         return e !== component.ID;
       });
+
+      if (counterpart.else) {
+        counterpart.else = counterpart.else.filter((e)=>{
+          return e !== component.ID;
+        });
+      }
+      counterparts.set(counterpart.ID, counterpart);
     }
-    counterparts.set(counterpart.ID, counterpart);
   }
 
-  for (const nextComponent of component.next) {
-    const counterpart = counterparts.get(nextComponent) || await getComponent(projectRootDir, nextComponent);
-    counterpart.previous = counterpart.previous.filter((e)=>{
-      return e !== component.ID;
-    });
-    counterparts.set(counterpart.ID, counterpart);
+  if (component.hasOwnProperty("next")) {
+    for (const nextComponent of component.next) {
+      const counterpart = counterparts.get(nextComponent) || await getComponent(projectRootDir, nextComponent);
+      counterpart.previous = counterpart.previous.filter((e)=>{
+        return e !== component.ID;
+      });
+      counterparts.set(counterpart.ID, counterpart);
+    }
   }
 
-  if (component.else) {
+  if (component.hasOwnProperty("else")) {
     for (const elseComponent of component.else) {
       const counterpart = counterparts.get(elseComponent) || await getComponent(projectRootDir, elseComponent);
       counterpart.previous = counterpart.previous.filter((e)=>{
@@ -88,31 +92,35 @@ async function removeAllLink(projectRootDir, ID) {
     }
   }
 
-  for (const inputFile of component.inputFiles) {
-    for (const src of inputFile.src) {
-      const srcComponent = src.srcNode;
-      const counterpart = counterparts.get(srcComponent) || await getComponent(projectRootDir, srcComponent);
+  if (component.hasOwnProperty("inputFiles")) {
+    for (const inputFile of component.inputFiles) {
+      for (const src of inputFile.src) {
+        const srcComponent = src.srcNode;
+        const counterpart = counterparts.get(srcComponent) || await getComponent(projectRootDir, srcComponent);
 
-      for (const outputFile of counterpart.outputFiles) {
-        outputFile.dst = outputFile.dst.filter((e)=>{
-          return e.dstNode !== component.ID;
-        });
+        for (const outputFile of counterpart.outputFiles) {
+          outputFile.dst = outputFile.dst.filter((e)=>{
+            return e.dstNode !== component.ID;
+          });
+        }
+        counterparts.set(counterpart.ID, counterpart);
       }
-      counterparts.set(counterpart.ID, counterpart);
     }
   }
 
-  for (const outputFile of component.outputFiles) {
-    for (const dst of outputFile.dst) {
-      const dstComponent = dst.dstNode;
-      const counterpart = counterparts.get(dstComponent) || await getComponent(projectRootDir, dstComponent);
+  if (component.hasOwnProperty("outputFiles")) {
+    for (const outputFile of component.outputFiles) {
+      for (const dst of outputFile.dst) {
+        const dstComponent = dst.dstNode;
+        const counterpart = counterparts.get(dstComponent) || await getComponent(projectRootDir, dstComponent);
 
-      for (const inputFile of counterpart.inputFiles) {
-        inputFile.src = inputFile.src.filter((e)=>{
-          return e.srcNode !== component.ID;
-        });
+        for (const inputFile of counterpart.inputFiles) {
+          inputFile.src = inputFile.src.filter((e)=>{
+            return e.srcNode !== component.ID;
+          });
+        }
+        counterparts.set(counterpart.ID, counterpart);
       }
-      counterparts.set(counterpart.ID, counterpart);
     }
   }
 
@@ -307,7 +315,8 @@ async function makeDir(basename, argSuffix) {
 }
 
 async function getChildren(projectRootDir, parentID) {
-  const dir = await getComponentDir(projectRootDir, parentID, true);
+  const dir = parentID === null ? projectRootDir : await getComponentDir(projectRootDir, parentID, true);
+
   if (!dir) {
     return [];
   }
@@ -333,7 +342,10 @@ async function validateTask(projectRootDir, component) {
 
   if (component.useJobScheduler) {
     const hostinfo = remoteHost.query("name", component.host);
-    if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
+    if (typeof hostinfo === "undefined") {
+      //assume local job
+      //TODO add jobScheduler setting to server.json and read it
+    } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
       return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
     }
   }
@@ -397,6 +409,7 @@ async function validateForeach(component) {
 async function recursiveGetHosts(projectRootDir, parentID, hosts) {
   const promises = [];
   const children = await getChildren(projectRootDir, parentID);
+
   for (const component of children) {
     if (component.type === "task" && component.host !== "localhost") {
       hosts.push(component.host);
@@ -786,9 +799,22 @@ async function removeComponent(projectRootDir, ID) {
   return removeComponentPath(projectRootDir, descendantsIDs);
 }
 
+async function getSourceComponents(projectRootDir) {
+  const componentJsonFiles = await promisify(glob)(path.join(projectRootDir, "**", componentJsonFilename));
+  const components = await Promise.all(componentJsonFiles
+    .map((componentJsonFile)=>{
+      return readJsonGreedy(componentJsonFile);
+    }));
+
+  return components.filter((componentJson)=>{
+    return componentJson.type === "source" && !componentJson.subComponent;
+  });
+}
+
 
 module.exports = {
   getHosts,
+  getSourceComponents,
   validateComponents,
   componentJsonReplacer,
   createNewComponent,

@@ -48,6 +48,7 @@ $(() => {
   let updateList = [];
   let projectRootDir = currentWorkDir;
   let firstConnection = true;
+  let componentPath;
 
   // create vue.js instance for property subscreen
   let vm = new Vue({
@@ -295,6 +296,37 @@ $(() => {
         });
       //TODO ユーザがキャンセルした時の対応を検討
     });
+    sio.on('askSourceFilename', (id, name, description, filelist)=>{
+      const html = `<p class="dialogTitle"> select file for ${name} component</p>
+      <select class="dialogTextbox" id="sourceFilename">
+        ${filelist.map((e)=>{return `<option value="${e}">${e}</option>`}).join(" ") }
+      </select>
+      `;
+      dialogWrapper('#dialog', html)
+        .done(() => {
+          const filename = $('#sourceFilename option:selected').val();
+          sio.emit("sourceFile", id, filename);
+        });
+    });
+    sio.on('requestSourceFile', (id, name, description)=>{
+      const html = `<p class="dialogTitle">upload file for ${name} component</p>`;
+      dialogWrapper('#dialog', html)
+        .done(()=>{
+          const componentDir = `${projectRootDir}/${componentPath[id]}`;
+          function setComponentDir(event){
+            event.file.meta.componentDir = componentDir;
+          }
+          function onComplete(event){
+            uploader.removeEventListener(setComponentDir);
+            uploader.removeEventListener(onComplete);
+            sio.emit("sourceFile", id, event.file.name);
+          }
+
+          uploader.addEventListener("start", setComponentDir);
+          uploader.addEventListener("complete", onComplete);
+          $('#fileSelector').click();
+        });
+    });
 
     sio.on('workflow', function (wf) {
       nodeStack[nodeStack.length - 1] = wf.name;
@@ -332,6 +364,7 @@ $(() => {
       rootId = Object.keys(projectJson.componentPath).filter((key) => {
         return projectJson.componentPath[key] === './'
       });
+      componentPath = projectJson.componentPath;
       $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
