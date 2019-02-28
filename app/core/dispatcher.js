@@ -752,8 +752,8 @@ class Dispatcher extends EventEmitter {
 
   async _viewerHandler(component) {
     this.logger.debug("_viewerHandler called", component.name);
-    const programRoot = path.dirname(__dirname);
-    const viewerURLRoot = path.resolve(programRoot, "viewer");
+    const viewerURLRoot = path.resolve(path.dirname(__dirname), "viewer");
+    await fs.ensureDir(viewerURLRoot);
     const dir = await fs.mkdtemp(viewerURLRoot + path.sep);
 
     const componentRoot = path.resolve(this.cwfDir, component.name);
