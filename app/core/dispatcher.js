@@ -753,7 +753,8 @@ class Dispatcher extends EventEmitter {
   async _viewerHandler(component) {
     this.logger.debug("_viewerHandler called", component.name);
     const programRoot = path.dirname(__dirname);
-    const dir = await fs.mkdtemp(path.resolve(programRoot, "viewer") + path.sep);
+    const viewerURLRoot = path.resolve(programRoot, "viewer");
+    const dir = await fs.mkdtemp(viewerURLRoot + path.sep);
 
     const componentRoot = path.resolve(this.cwfDir, component.name);
     const files = component.files;
@@ -764,7 +765,7 @@ class Dispatcher extends EventEmitter {
       })
     );
     const results = rt.map((e)=>{
-      return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: e.dst };
+      return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: path.relative(viewerURLRoot, e.dst) };
     });
     this.emitEvent("resultFilesReady", results);
 
