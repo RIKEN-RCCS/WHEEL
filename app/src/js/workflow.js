@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/sortable';
+import 'jquery-ui/ui/widgets/tooltip';
 import 'jquery-contextmenu';
 
 import 'jquery-ui/themes/base/theme.css';
@@ -22,6 +23,7 @@ import SvgNodeUI from './svgNodeUI';
 import * as svgNode from './svgNodeUI';
 import SvgParentNodeUI from './svgNodeUI';
 import * as svgParentNode from './svgNodeUI';
+import configToolTip from './configToolTip';
 
 $(() => {
   // chek project Json file path
@@ -394,6 +396,9 @@ $(() => {
       $('#project_update_date').text(projectJson.mtime);
       $('#projectDirectoryPath').text(projectJson.root);
       $('#projectDescription').attr("value", projectJson.description);
+
+      changeViewState();
+
     });
 
     /*create host, queue selectbox*/
@@ -682,8 +687,12 @@ $(() => {
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
-        $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
-        drawStrokeColor(e);
+        $.when(
+          $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100),
+          drawStrokeColor(e)
+        ).done(function () {
+          changeViewState();
+        });
       })
         .onDblclick(function (e) {
           $('#property').hide();
@@ -1057,4 +1066,84 @@ $(() => {
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
+
+  function updateToolTip() {
+    configToolTip.toolTipTexts.forEach((v) => {
+      if (config.tooltip_lang.lang === "jpn") {
+        try {
+          $("[id=" + v.key + "]").attr('title', v.jpn);
+        } catch (e) {
+          console.log(v.key + " is not find");
+          // none
+        }
+      }
+    });
+    return;
+  }
+
+  function changeViewState() {
+    // if (isEditDisable()) {
+    //   hideTaskLibrary();
+    // }
+
+    // var editDisable = isEditDisable();
+    // var disable = editDisable || (vm.node !== null && vm.node.disable);
+
+    // var ids = [
+    //   // 入力域は readonlyのみ。チェックボックスなどは disableも
+    //   { id: "nameInputField", readonly: true, disable: false },
+    //   { id: "descriptionInputField", readonly: true, disable: false },
+    //   { id: "scriptInputField", readonly: true, disable: false },
+    //   { id: "newInputFileNameInputField", readonly: true, disable: false },
+    //   { id: "newOutputFileNameInputField", readonly: true, disable: false },
+    //   { id: "parameterFileInputField", readonly: true, disable: false },
+    //   { id: "conditionInputField", readonly: true, disable: false },
+    //   { id: "newIndexListField", readonly: true, disable: false },
+    //   { id: "startInputField", readonly: true, disable: false },
+    //   { id: "endInputField", readonly: true, disable: false },
+    //   { id: "stepInputField", readonly: true, disable: false },
+    //   { id: "cleanUpFlag0", readonly: true, disable: true },
+    //   { id: "cleanUpFlag1", readonly: true, disable: true },
+    //   { id: "cleanUpFlag2", readonly: true, disable: true },
+    //   { id: "includeInputField", readonly: true, disable: false },
+    //   { id: "excludeInputField", readonly: true, disable: false },
+    //   { id: "forceOverwriteCheckbox", readonly: true, disable: true },
+    //   { id: "useJobSchedulerFlagField", readonly: true, disable: true },
+    //   { id: "remotehostSelectField", readonly: true, disable: true },
+    //   { id: "queueSelectField", readonly: true, disable: true },
+    //   { id: "jupyterBootButton", readonly: true, disable: true },
+    //   { id: "createFolderButton", readonly: true, disable: true },
+    //   { id: "createFileButton", readonly: true, disable: true },
+    //   { id: "fileUploadButton", readonly: true, disable: true },
+    //   { id: "fileSelector", readonly: true, disable: true },
+    //   { id: "editFileButton", readonly: true, disable: true },
+    //   { id: "editPSFileButton", readonly: true, disable: true },
+    //   { id: "updateOnDemandFlagField", readonly: true, disable: true }
+    // ];
+
+    // ids.forEach((v) => {
+    //   try {
+    //     if (v.readonly === true) {
+    //       $("[id=" + v.id + "]").attr('readonly', disable);
+    //     }
+    //   } catch (e) { }
+    //   try {
+    //     if (v.disable === true) {
+    //       $("[id=" + v.id + "]").prop('disabled', disable);
+    //     }
+    //   } catch (e) { }
+    // });
+
+
+    // $("[id=propertyDisable]").attr('readonly', editDisable);
+    // $("[id=propertyDisable]").prop('disabled', editDisable);
+
+    // svgNode.setEditDisable(svg, nodes, editDisable);
+    // fb.setDisable(disable);
+
+    updateToolTip();
+
+    return;
+  }
+
 });

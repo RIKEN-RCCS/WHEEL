@@ -1751,9 +1751,9 @@ tspan{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-/* .ui-tooltip {
+.ui-tooltip {
 	font-size: 12px;
 }
 body .ui-tooltip {
 	border-width: 2px;
-} */
+}
