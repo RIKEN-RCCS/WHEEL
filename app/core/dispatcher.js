@@ -454,23 +454,25 @@ class Dispatcher extends EventEmitter {
 
   async _addNextComponent(component, useElse = false) {
     let nextComponentIDs = [];
-    if (component.type !== "source") {
+    if (component.type !== "source" && component.type !== "viewer") {
       nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
     }
-    component.outputFiles.forEach((outputFile)=>{
-      const tmp = outputFile.dst.map((e)=>{
-        if (e.hasOwnProperty("origin")) {
+    if (component.hasOwnProperty("outputFiles")) {
+      component.outputFiles.forEach((outputFile)=>{
+        const tmp = outputFile.dst.map((e)=>{
+          if (e.hasOwnProperty("origin")) {
+            return null;
+          }
+          if (e.dstNode !== component.parent) {
+            return e.dstNode;
+          }
           return null;
-        }
-        if (e.dstNode !== component.parent) {
-          return e.dstNode;
-        }
-        return null;
-      }).filter((e)=>{
-        return e !== null;
+        }).filter((e)=>{
+          return e !== null;
+        });
+        Array.prototype.push.apply(nextComponentIDs, tmp);
       });
-      Array.prototype.push.apply(nextComponentIDs, tmp);
-    });
+    }
     const nextComponents = await Promise.all(nextComponentIDs.map((id)=>{
       return this._getComponent(id);
     }));
@@ -748,6 +750,27 @@ class Dispatcher extends EventEmitter {
     await this._setComponentState(component, state);
   }
 
+  async _viewerHandler(component) {
+    this.logger.debug("_viewerHandler called", component.name);
+    const programRoot = path.dirname(__dirname);
+    const dir = await fs.mkdtemp(path.resolve(programRoot, "viewer") + path.sep);
+
+    const componentRoot = path.resolve(this.cwfDir, component.name);
+    const files = component.files;
+    delete component.files;
+    const rt = await Promise.all(
+      files.map((e)=>{
+        return deliverFile(e.dst, path.resolve(dir, path.relative(componentRoot, e.dst)));
+      })
+    );
+    const results = rt.map((e)=>{
+      return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: e.dst };
+    });
+    this.emitEvent("resultFilesReady", results);
+
+    await this._setComponentState(component, "finished");
+  }
+
   async _isReady(component) {
     if (component.type === "source") {
       return true;
@@ -776,8 +799,11 @@ class Dispatcher extends EventEmitter {
         }
       }
     }
+    const result = await this._getOutputFiles(component);
+    if (component.type === "viewer") {
+      component.files = result;
+    }
 
-    this.logger.trace(await this._getOutputFiles(component));
     return true;
   }
 
@@ -804,10 +830,8 @@ class Dispatcher extends EventEmitter {
     this.emitEvent("componentStateChanged");
   }
 
-
   async _getOutputFiles(component) {
     this.logger.debug(`getOutputFiles for ${component.name}`);
-
     const promises = [];
     const deliverRecipes = new Set();
     for (const inputFile of component.inputFiles) {
@@ -870,7 +894,7 @@ class Dispatcher extends EventEmitter {
     }
     await Promise.all(promises);
 
-    //actual delive file process
+    //actual deliver file process
     const dstRoot = this._getComponentDir(component.ID);
     const p2 = [];
     for (const recipe of deliverRecipes) {
@@ -888,7 +912,11 @@ class Dispatcher extends EventEmitter {
         p2.push(deliverFile(oldPath, newPath));
       }
     }
-    return Promise.all(p2);
+    const results = await Promise.all(p2);
+    for (const result of results) {
+      this.logger.trace(`make ${result.type} from  ${result.src} to ${result.dst}`);
+    }
+    return results;
   }
 
   _cmdFactory(type) {
@@ -918,8 +946,9 @@ class Dispatcher extends EventEmitter {
         break;
       case "viewer":
         cmd = this._viewerHandler;
+        break;
       default:
-        this.logger("illegal type specified", type);
+        this.logger.error("illegal type specified", type);
     }
     return cmd;
   }

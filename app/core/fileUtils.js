@@ -90,16 +90,15 @@ async function deliverFile(src, dst) {
   try {
     await fs.remove(dst);
     await fs.ensureSymlink(src, dst, type);
-    return `make symlink from ${src} to ${dst} (${type})`;
+    return { type: `link-${type}`, src, dst };
   } catch (e) {
     if (e.code === "EPERM") {
       await fs.copy(src, dst, { overwrite: false });
-      return `make copy from ${src} to ${dst}`;
+      return { type: "copy", src, dst };
     }
     return Promise.reject(e);
   }
 }
-
 
 
 module.exports = {

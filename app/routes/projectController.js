@@ -304,8 +304,20 @@ async function onRunProject(sio, projectRootDir, cb) {
       });
   }
 
+  //event listener for result files ready
+  function onResultFilesReady(results) {
+    console.log("emit results", results);
+    emitLongArray(emit, "results", results)
+      .then(()=>{
+        setTimeout(()=>{
+          once(projectRootDir, "resultFilesReady", onResultFilesReady);
+        }, interval);
+      });
+  }
+
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
+  once(projectRootDir, "resultFilesReady", onResultFilesReady);
 
 
   //actual project run start from here

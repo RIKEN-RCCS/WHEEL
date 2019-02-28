@@ -39,6 +39,7 @@ app.use(session({
     secure: "auto"
   }
 }));
+app.use(express.static(path.resolve(__dirname, "viewer"), { index: false }));
 app.use(express.static(path.resolve(__dirname, "public"), { index: false }));
 app.use(siofu.router);
 app.use(passport.initialize());

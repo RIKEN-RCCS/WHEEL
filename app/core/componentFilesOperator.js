@@ -56,29 +56,33 @@ async function removeAllLink(projectRootDir, ID) {
   const counterparts = new Map();
   const component = await getComponent(projectRootDir, ID);
 
-  for (const previousComponent of component.previous) {
-    const counterpart = counterparts.get(previousComponent) || await getComponent(projectRootDir, previousComponent);
-    counterpart.next = counterpart.next.filter((e)=>{
-      return e !== component.ID;
-    });
-
-    if (counterpart.else) {
-      counterpart.else = counterpart.else.filter((e)=>{
+  if (component.hasOwnProperty("previous")) {
+    for (const previousComponent of component.previous) {
+      const counterpart = counterparts.get(previousComponent) || await getComponent(projectRootDir, previousComponent);
+      counterpart.next = counterpart.next.filter((e)=>{
         return e !== component.ID;
       });
+
+      if (counterpart.else) {
+        counterpart.else = counterpart.else.filter((e)=>{
+          return e !== component.ID;
+        });
+      }
+      counterparts.set(counterpart.ID, counterpart);
     }
-    counterparts.set(counterpart.ID, counterpart);
   }
 
-  for (const nextComponent of component.next) {
-    const counterpart = counterparts.get(nextComponent) || await getComponent(projectRootDir, nextComponent);
-    counterpart.previous = counterpart.previous.filter((e)=>{
-      return e !== component.ID;
-    });
-    counterparts.set(counterpart.ID, counterpart);
+  if (component.hasOwnProperty("next")) {
+    for (const nextComponent of component.next) {
+      const counterpart = counterparts.get(nextComponent) || await getComponent(projectRootDir, nextComponent);
+      counterpart.previous = counterpart.previous.filter((e)=>{
+        return e !== component.ID;
+      });
+      counterparts.set(counterpart.ID, counterpart);
+    }
   }
 
-  if (component.else) {
+  if (component.hasOwnProperty("else")) {
     for (const elseComponent of component.else) {
       const counterpart = counterparts.get(elseComponent) || await getComponent(projectRootDir, elseComponent);
       counterpart.previous = counterpart.previous.filter((e)=>{
@@ -88,31 +92,35 @@ async function removeAllLink(projectRootDir, ID) {
     }
   }
 
-  for (const inputFile of component.inputFiles) {
-    for (const src of inputFile.src) {
-      const srcComponent = src.srcNode;
-      const counterpart = counterparts.get(srcComponent) || await getComponent(projectRootDir, srcComponent);
+  if (component.hasOwnProperty("inputFiles")) {
+    for (const inputFile of component.inputFiles) {
+      for (const src of inputFile.src) {
+        const srcComponent = src.srcNode;
+        const counterpart = counterparts.get(srcComponent) || await getComponent(projectRootDir, srcComponent);
 
-      for (const outputFile of counterpart.outputFiles) {
-        outputFile.dst = outputFile.dst.filter((e)=>{
-          return e.dstNode !== component.ID;
-        });
+        for (const outputFile of counterpart.outputFiles) {
+          outputFile.dst = outputFile.dst.filter((e)=>{
+            return e.dstNode !== component.ID;
+          });
+        }
+        counterparts.set(counterpart.ID, counterpart);
       }
-      counterparts.set(counterpart.ID, counterpart);
     }
   }
 
-  for (const outputFile of component.outputFiles) {
-    for (const dst of outputFile.dst) {
-      const dstComponent = dst.dstNode;
-      const counterpart = counterparts.get(dstComponent) || await getComponent(projectRootDir, dstComponent);
+  if (component.hasOwnProperty("outputFiles")) {
+    for (const outputFile of component.outputFiles) {
+      for (const dst of outputFile.dst) {
+        const dstComponent = dst.dstNode;
+        const counterpart = counterparts.get(dstComponent) || await getComponent(projectRootDir, dstComponent);
 
-      for (const inputFile of counterpart.inputFiles) {
-        inputFile.src = inputFile.src.filter((e)=>{
-          return e.srcNode !== component.ID;
-        });
+        for (const inputFile of counterpart.inputFiles) {
+          inputFile.src = inputFile.src.filter((e)=>{
+            return e.srcNode !== component.ID;
+          });
+        }
+        counterparts.set(counterpart.ID, counterpart);
       }
-      counterparts.set(counterpart.ID, counterpart);
     }
   }
 
