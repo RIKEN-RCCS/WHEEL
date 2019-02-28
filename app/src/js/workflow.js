@@ -59,7 +59,7 @@ $(() => {
       newIndexOfForeach: "",
       hostList: [],
       queueList: [],
-      // fileList: [],
+      fileList: [],
       names: [],
       // conditionInputType: '1'
     },
@@ -368,10 +368,9 @@ $(() => {
       vm.hostList = hostlist;
     });
 
-    // sio.on('fileList', function (filelist) {
-    //   console.log(filelist);
-    //   vm.fileList = filelist;
-    // });
+    sio.on('fileList', function (filelist) {
+      vm.fileList = filelist;
+    });
 
     //setup log reciever
     logReciever(sio);
@@ -417,12 +416,10 @@ $(() => {
   $('#save_button').mouseover(function () {
     if (presentState === 'not-started') {
       $('#save_button_img').attr("src", "/image/btn_save_h.png");
-      $('#save_button').css("color", "#CCFF00");
     }
   });
   $('#save_button').mouseleave(function () {
     $('#save_button_img').attr("src", "/image/btn_save_n.png");
-    $('#save_button').css("color", "#FFFFFF");
   });
 
   //revert
@@ -802,6 +799,49 @@ $(() => {
     }
   }
 
+  // draw taskStateList
+  function insertSubComponetStateListHTML(target, id, iconPath, name) {
+    target.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
+    <td id="${id}" class="componentName"><img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td></tr>`);
+  }
+
+  function insertTaskStateListHTML(target, id, iconPath, name, componentState, state, started, prepared, jobSubmited, jobRan, jobFinished, finished, desc) {
+    target.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
+    <td id="${id}" class="componentName">
+    <img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td>
+    <td class="componentState"><img src=${componentState} class="stateIcon" id="${id}_stateIcon"><label class="stateLabel" id="${id}_state">${state}</label></td>
+    <td class="componentStartTime" id="${id}_startTime">${started}</td>
+    <td class="componentLabel" id="${id}_prepared">${prepared}</td>
+    <td class="componentLabel" id="${id}_jobSubmited">${jobSubmited}</td>
+    <td class="componentLabel" id="${id}_jobRan">${jobRan}</td>
+    <td class="componentLabel" id="${id}_jobFinished">${jobFinished}</td>
+    <td class="componentEndTime" id="${id}_endTime">${finished}</td>
+    <td class="componentDescription">${desc}</td></tr>`);
+  }
+
+  let jobInfoViewFlag = false;
+  $('#showMoreButton').click(function () {
+    if (jobInfoViewFlag) {
+      $('.componentLabel').css('display', 'none');
+      $('#showMoreButton').attr("src", "/image/btn_openCloseR_n.png");
+      jobInfoViewFlag = false;
+    } else {
+      $('.componentLabel').css('display', 'inline-block');
+      $('#showMoreButton').attr("src", "/image/btn_openCloseL_n.png");
+      jobInfoViewFlag = true;
+    }
+  });
+
+  function changeComponentDisplayMode(flag) {
+    if (flag) {
+      $('.componentLabel').css('display', 'inline-block');
+    }
+  }
+
+  function sliceInfo(info) {
+    return info.slice(0, -4)
+  }
+
   function escapeCharacter(string) {
     return string.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
   }
@@ -824,21 +864,26 @@ $(() => {
       }
       let taskId = escapeCharacter(taskIdTemp);
       if (taskStateList[i].startTime !== 'not started') {
-        taskStateList[i].startTime = taskStateList[i].startTime.slice(0, -4)
+        taskStateList[i].startTime = sliceInfo(taskStateList[i].startTime);
       }
       if (taskStateList[i].endTime !== 'not finished') {
-        taskStateList[i].endTime = taskStateList[i].endTime.slice(0, -4)
+        taskStateList[i].endTime = sliceInfo(taskStateList[i].endTime);
       }
 
       if (document.getElementById(`${taskId}`) != null) {
-        var nodeState = taskStateList[i].state;
+        let nodeState = taskStateList[i].state;
         if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
           nodeState = 'running'
         }
-        var nodeComponentState = config.state_icon[nodeState];
+
+        let nodeComponentState = config.state_icon[nodeState];
         $(`#${taskId}_stateIcon`).attr("src", nodeComponentState);
         $(`#${taskId}_state`).html(taskStateList[i].state);
         $(`#${taskId}_startTime`).html(taskStateList[i].startTime);
+        $(`#${taskId}_prepared`).html(taskStateList[i].startTime);
+        $(`#${taskId}_jobSubmited`).html(taskStateList[i].startTime);
+        $(`#${taskId}_jobRan`).html(taskStateList[i].startTime);
+        $(`#${taskId}_jobFinished`).html(taskStateList[i].startTime);
         $(`#${taskId}_endTime`).html(taskStateList[i].endTime);
       } else {
         let ancestorsNameList = [];
@@ -853,12 +898,9 @@ $(() => {
         let nodeComponentState = config.state_icon[nodeState];
 
         if (taskStateList[i].ancestorsName === "") {
-          targetElement.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
-        <td id=${taskId} class="componentName"><img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
-        <td class="componentState"><img src=${nodeComponentState} class="stateIcon" id="${taskId}_stateIcon"><label class="stateLabel" id="${taskId}_state">${taskStateList[i].state}</label></td>
-        <td class="componentStartTime" id="${taskId}_startTime">${taskStateList[i].startTime}</td>
-        <td class="componentEndTime" id="${taskId}_endTime">${taskStateList[i].endTime}</td>
-        <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
+          insertTaskStateListHTML(targetElement, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
+            taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].endTime, taskStateList[i].description)
+          changeComponentDisplayMode(jobInfoViewFlag);
           $(`#${taskId}`).css("background-color", nodeColor);
           $(`#${taskId}`).css("margin-right", maxancestorsLength * 32 + "px");
         } else {
@@ -875,20 +917,14 @@ $(() => {
             let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
             ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${i}_${j}_${taskId}`;
             ancestorsId = escapeCharacter(ancestorsIdTemp);
-            targetElement.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
-                <td id="${ancestorsId}" class="componentName"><img src=${ancestorsIconPath} class="workflow_component_icon"><label class="nameLabel">${ancestorsNameList[j]}</label></td></tr>`);
+            insertSubComponetStateListHTML(targetElement, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
             $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
             let loopMarginArea = 32 * j;
             $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
           }
-
-          targetElement.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
-        <td id="${taskId}" class="componentName">
-        <img src=${nodeIconPath} class="workflow_component_icon"><label class="nameLabel">${taskStateList[i].name}</label></td>
-        <td class="componentState"><img src=${nodeComponentState} class="stateIcon" id="${taskId}_stateIcon"><label class="stateLabel" id="${taskId}_state">${taskStateList[i].state}</label></td>
-        <td class="componentStartTime" id="${taskId}_startTime">${taskStateList[i].startTime}</td>
-        <td class="componentEndTime" id="${taskId}_endTime">${taskStateList[i].endTime}</td>
-        <td class="componentDescription">${taskStateList[i].description}</td></tr>`);
+          insertTaskStateListHTML(targetElement, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
+            taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].endTime, taskStateList[i].description)
+          changeComponentDisplayMode(jobInfoViewFlag);
           let marginArea = 32 * ancestorsNameList.length;
           let marginRight = (maxancestorsLength - ancestorsNameList.length) * 32;
           $(`#${taskId}`).css("margin-left", marginArea + "px");
