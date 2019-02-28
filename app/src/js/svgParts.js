@@ -251,14 +251,6 @@ function addInputFile(svg, plug, hitIndex, hitPlug, sio) {
     return [-1, -1];
   }
 
-  // 追加先viewerだったら、数が0かチェック
-  if (taskBoxNode.data('type') === "viewer") {
-    if (taskBoxNode.data('inputFiles') === undefined ||
-      taskBoxNode.data('inputFiles').length === 1) {
-      return [-1, -1];
-    }
-  }
-
   sio.emit('addInputFile', taskNodeID, filename, (result) => {
     if (result !== true) return;
   });
