@@ -175,7 +175,9 @@ $(() => {
           this.queueList = [];
           return;
         }
-        this.queueList = hostInfo.queue.split(',');
+        if (typeof hostInfo.queue !== "undefined") {
+          this.queueList = hostInfo.queue.split(',');
+        }
       }
     }
 
