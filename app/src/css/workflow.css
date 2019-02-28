@@ -659,11 +659,11 @@ img.btn_menu_n{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#scriptSelectField, #remotehostSelectField, #conditionSelectField, 
+#scriptSelectField, #remotehostSelectField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
 #fileForCondition{
     margin: 2px 0 0 8px;
     padding-left: 5px;
-    height: 20px;
+    height: 22px;
     width: 198px;
     background-color: #000000;
     border: 0;
@@ -671,11 +671,8 @@ img.btn_menu_n{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-.fileForCondition2{
-    background-color: #000000;
-    border: 0;
-    color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+#conditionTypeFlags{
+    margin: 2px 0 2px 4px;
 }
 
 #queueSelectField{
@@ -1676,6 +1673,7 @@ tspan{
     margin: 12px 10px 8px 10px;
     color: #FFFFFF;
     font-size: 16px;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 .dialogTextbox{
@@ -1745,8 +1743,12 @@ tspan{
 }
 
 #sourceFilename {
-  color: black;
-  font-size: 14px;
+    font-size: 14px;
+    height: 24px;
+    background-color: #000000;
+    border: 0;
+    color: #ffffff;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 /* .ui-tooltip {

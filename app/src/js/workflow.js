@@ -62,7 +62,7 @@ $(() => {
       queueList: [],
       fileList: [],
       names: [],
-      // conditionInputType: '1'
+      conditionInputType: '1'
     },
     methods: {
       addInputFile: function () {
@@ -296,10 +296,10 @@ $(() => {
         });
       //TODO ユーザがキャンセルした時の対応を検討
     });
-    sio.on('askSourceFilename', (id, name, description, filelist)=>{
+    sio.on('askSourceFilename', (id, name, description, filelist) => {
       const html = `<p class="dialogTitle"> select file for ${name} component</p>
       <select class="dialogTextbox" id="sourceFilename">
-        ${filelist.map((e)=>{return `<option value="${e}">${e}</option>`}).join(" ") }
+        ${filelist.map((e) => { return `<option value="${e}">${e}</option>` }).join(" ")}
       </select>
       `;
       dialogWrapper('#dialog', html)
@@ -308,15 +308,15 @@ $(() => {
           sio.emit("sourceFile", id, filename);
         });
     });
-    sio.on('requestSourceFile', (id, name, description)=>{
+    sio.on('requestSourceFile', (id, name, description) => {
       const html = `<p class="dialogTitle">upload file for ${name} component</p>`;
       dialogWrapper('#dialog', html)
-        .done(()=>{
+        .done(() => {
           const componentDir = `${projectRootDir}/${componentPath[id]}`;
-          function setComponentDir(event){
+          function setComponentDir(event) {
             event.file.meta.componentDir = componentDir;
           }
-          function onComplete(event){
+          function onComplete(event) {
             uploader.removeEventListener(setComponentDir);
             uploader.removeEventListener(onComplete);
             sio.emit("sourceFile", id, event.file.name);
