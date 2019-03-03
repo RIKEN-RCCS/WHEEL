@@ -112,8 +112,11 @@ export default class {
         callback: function () {
           var path = $(this).data('path');
           var oldName = $(this).data('name');
-          var html = '<p class="dialogTitle">Rename file</p><input type="text" id="newName" class="dialogTextbox">';
-          dialogWrapper('#dialog', html).done(function () {
+          const dialogOptions = {
+            title: "Rename file"
+          };
+          const html = '<p class="dialogMessage">Input new file name.</p><input type="text" id="newName" class="dialogTextbox">';
+          dialogWrapper('#dialog', html, dialogOptions).done(function () {
             var newName = $('#newName').val();
             var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
             $(fileList).remove(`:contains(${oldName})`);
@@ -126,8 +129,11 @@ export default class {
         callback: function () {
           var filename = $(this).data('name');
           var target = $(this).data('path') + '/' + filename;
-          var html = '<p class="dialogTitle">Delete file</p><div id="deleteMessage">Are you sure to delete this file?</div>';
-          dialogWrapper('#dialog', html).done(function () {
+          const dialogOptions = {
+            title: "Delete file"
+          };
+          const html = '<p class="dialogMessage">Are you sure to delete this file?</p>';
+          dialogWrapper('#dialog', html, dialogOptions).done(function () {
             $(fileList).remove(`:contains(${filename})`);
             socket.emit('removeFile', target);
           });
@@ -308,5 +314,10 @@ export default class {
     if (!this.isValidPath(this.requestedPath, data.path))
       return false;
     return true;
+  }
+  setDisable(disable) {
+    this.disable = disable;
+    $(this.idFileList).data({ "disable": disable });
+    return;
   }
 }

@@ -311,17 +311,16 @@ li:hover{
   background-color: #222226;
 }
 
-/* dialog */
-#dialog{
+#renameLabel, #deleteLabel{
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+  font-weight: initial;
   color: #FFFFFF;
-}
-
-#renameLabel{
-  margin: 8px 0 8px 0;
-  color: #FFFFFF;
+  font-size: 14px;
+  margin: 0px 4px 4px 0px;  
 }
 
 #renamedProjectName{
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
   background-color: #000000;
   color: #FFFFFF;
   border: none;
@@ -331,56 +330,37 @@ li:hover{
   padding-left: 5px;
 }
 
-#deleteLabel, #deleteMessage{
-  margin: 8px 0 8px 0;
-  color: #FFFFFF;    
-  padding: 0;
-}
-
-#deleteMessage{
-  margin-top: 6px;
-  color: #FFFFFF;    
-  padding: 0;
-}
-
-.dialogTitle{
-  margin: 8px 0 8px 0;
+/*all dialog setting*/
+#dialog{
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
   color: #FFFFFF;
-}
-
-.dialogTextbox{
-  color: #FFFFFF;
-  border: none;
-  margin-top: 4px;
-  padding-left: 5px;
-}
-
-.ui-dialog-buttonpane{
-  background-color: #222226;
-  border: 0;  
-}
-
-.ui-button{
-  background-color: #5B5B5F;
-  font-size: 14px;
-  width: 71px;
-  height: 24px;
-  color: #FFFFFF;
-  line-height: 0px;
-  border: none; 
-  border-radius: 0;   
-}
-
-.ui-button:hover{
-  text-decoration: none;
-  background-color: #6F6F77;
-  color: #FFFFFF;  
-  border: 0;
 }
 
 .ui-dialog {
   z-index: 200;
   background-color: #222226;
+  border: none !important;
+}
+
+.ui-dialog-titlebar{
+  background-color: #222226;    
   color: #FFFFFF;
-  border: 0 !important;
+  font-size: 16px; 
+  font-weight: initial;
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+  border: 0;
+}
+
+.ui-button{
+  background-color: #5B5B5F;
+  border-color: #5B5B5F;
+  color: #ffffff;
+  border-radius: 0;
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+  width: 72px;
+}
+ 
+.ui-dialog-buttonpane{
+  background-color: #222226;
+  border: none;
 }

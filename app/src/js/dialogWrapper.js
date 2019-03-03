@@ -39,9 +39,7 @@ export default function (dialogID, html, options) {
             $(this).dialog('close');
         }
     });
-    if (options != null)
-        $(dialogID).dialog('option', options);
-    $('.ui-dialog-titlebar').css({ display: 'none' });
+    if (options != null) $(dialogID).dialog('option', options);
     $(dialogID).dialog('open');
     return def.promise();
 }

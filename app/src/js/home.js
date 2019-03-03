@@ -37,8 +37,11 @@ $(() => {
                 callback: function () {
                     var id = $(this).data('id');
                     var path = $(this).data('path');
-                    var html = '<p id="renameLabel">input new project name</p><input type="text" id="renamedProjectName">';
-                    dialogWrapper('#dialogContext', html).done(function () {
+                    const html = '<p id="renameLabel">Input new project name.</p><input type="text" id="renamedProjectName">';
+                    const dialogOptions = {
+                        title: "Rename project"
+                    }
+                    dialogWrapper('#dialog', html, dialogOptions).done(function () {
                         var newName = $('#renamedProjectName').val();
                         socket.emit('renameProject', { 'id': id, 'path': path, 'newName': newName });
                     });
@@ -48,8 +51,11 @@ $(() => {
                 name: 'Delete',
                 callback: function () {
                     var targetID = $(this).data('id');
-                    var html = '<p id="deleteLabel">Delete project</p><div id="deleteMessage">Are you sure to delete project?</div>';
-                    dialogWrapper('#dialogContext', html).done(function () {
+                    const html = '<p id="deleteLabel">Are you sure to delete project?</p>';
+                    const dialogOptions = {
+                        title: "Delete project"
+                    }
+                    dialogWrapper('#dialog', html, dialogOptions).done(function () {
                         socket.emit('removeProject', targetID);
                     });
                 }
@@ -85,16 +91,17 @@ $(() => {
     });
     const fb = new FileBrowser(socket, '#fileList', 'fileList');
 
-    let dialogOptions;
+    // let dialogOptions;
     // register btn click event listeners
     $('#newButton').on("click", (event) => {
-        dialogOptions = {
+        const html = '<p id="path"></p><ul id="fileList"></ul>'
+            + '<div id="nameTextbox"><label id="projectNameLabel">New project name</label><input type="text" id="newProjectName"></div >'
+            + '<div id="descriptionTextbox"><label id="projectDescriptionLabel">Description</label><input type="text" id="description" placeholder="This is new project." ></div>';
+        const dialogOptions = {
+            title: "Create new project",
             height: $(window).height() * 0.9,
             width: $(window).width() * 0.6
         };
-        var html = '<p id="path"></p><ul id="fileList"></ul>'
-            + '<div id="nameTextbox"><label id="projectNameLabel">New project name</label><input type="text" id="newProjectName"></div >'
-            + '<div id="descriptionTextbox"><label id="projectDescriptionLabel">Description</label><input type="text" id="description" placeholder="This is new project." ></div>';
         dialogWrapper('#dialog', html, dialogOptions).done(function () {
             var label = $('#newProjectName').val();
             var description = $('#description').val();
@@ -114,11 +121,12 @@ $(() => {
     });
 
     $('#importButton').on("click", (event) => {
-        dialogOptions = {
+        const html = '<p id="path"></p><ul id="fileList"></ul>';
+        const dialogOptions = {
+            title: "Select import project (prj.wheel.json)",
             height: $(window).height() * 0.9,
             width: $(window).width() * 0.6
         };
-        var html = '<p id="path"></p><ul id="fileList"></ul>';
         dialogWrapper('#dialog', html, dialogOptions).done(function () {
             socket.emit('importProject', fb.getRequestedPath() + '/' + fb.getLastClicked());
         });
