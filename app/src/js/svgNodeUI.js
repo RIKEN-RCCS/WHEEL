@@ -20,6 +20,7 @@ export class SvgNodeUI {
     /** svg.js's instance*/
     this.svg = svg;
     this.sio = sio;
+    this.editDisable = false;
 
     /** cable instance container */
     this.nextLinks = [];
@@ -30,10 +31,10 @@ export class SvgNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    this.group.data({ "ID": node.ID, "type": node.type, "name": node.name }).draggable().addClass('node');
+    this.group.data({ "ID": node.ID, "type": node.type, "name": node.name, "disable": node.disable }).draggable().addClass('node');
 
     // draw node
-    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host, node.useJobScheduler, node.updateOnDemand);
+    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host, node.useJobScheduler, node.updateOnDemand, node.disable);
     const boxBbox = box.bbox();
     const boxX = box.x();
     const boxY = box.y();
@@ -100,21 +101,33 @@ export class SvgNodeUI {
     // register drag and drop behavior
     this.group
       .on('dragstart', (e) => {
-        diffX = e.detail.p.x - e.target.instance.select(`.${node.name}_box`).first().x();
-        diffY = e.detail.p.y - e.target.instance.select(`.${node.name}_box`).first().y()
-        startX = e.detail.p.x;
-        startY = e.detail.p.y;
+        if (!this.editDisable) {
+          diffX = e.detail.p.x - e.target.instance.select(`.${node.name}_box`).first().x();
+          diffY = e.detail.p.y - e.target.instance.select(`.${node.name}_box`).first().y()
+          startX = e.detail.p.x;
+          startY = e.detail.p.y;
+        } else {
+          e.preventDefault();
+        }
       })
       .on('dragmove', (e) => {
-        let dx = e.detail.p.x - startX;
-        let dy = e.detail.p.y - startY;
-        this.reDrawLinks(dx, dy);
+        if (!this.editDisable) {
+          let dx = e.detail.p.x - startX;
+          let dy = e.detail.p.y - startY;
+          this.reDrawLinks(dx, dy);
+        } else {
+          e.preventDefault();
+        }
       })
       .on('dragend', (e) => {
-        let x = e.detail.p.x;
-        let y = e.detail.p.y;
-        if (x !== startX || y !== startY) {
-          sio.emit('updateNode', node.ID, 'pos', { 'x': x - diffX, 'y': y - diffY });
+        if (!this.editDisable) {
+          let x = e.detail.p.x;
+          let y = e.detail.p.y;
+          if (x !== startX || y !== startY) {
+            sio.emit('updateNode', node.ID, 'pos', { 'x': x - diffX, 'y': y - diffY });
+          }
+        } else {
+          e.preventDefault();
         }
       });
   }
@@ -136,7 +149,11 @@ export class SvgNodeUI {
         cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
         this.nextLinks.push(cable);
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: false });
+          if (!this.editDisable) {
+            this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: false });
+          } else {
+            e.preventDefault();
+          }
         });
       });
     }
@@ -151,7 +168,11 @@ export class SvgNodeUI {
         cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
         this.elseLinks.push(cable);
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: true });
+          if (!this.editDisable) {
+            this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: true });
+          } else {
+            e.preventDefault();
+          }
         });
       });
     }
@@ -169,7 +190,11 @@ export class SvgNodeUI {
         this.outputFileLinks.push(cable);
 
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
+          if (!this.editDisable) {
+            this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
+          } else {
+            e.preventDefault();
+          }
         });
       });
     });
@@ -240,8 +265,30 @@ export class SvgNodeUI {
     this.group.on('click', callback);
     return this;
   }
+
+  setEditDisable(editDisable) {
+    this.editDisable = editDisable;
+    return;
+  }
 }
 
+export function setEditDisable(svg, nodes, editDisable) {
+  let plugNames = ['.upperPlug', '.receptorPlug', '.lowerPlug', '.lower2Plug', '.connectorPlug'];
+  plugNames.forEach(function (plugName) {
+    let plugs = svg.select(plugName);
+    if (plugs !== undefined) {
+      plugs.each(function (i, p) {
+        p[i].data({ "edit_disable": editDisable });
+      });
+    }
+  });
+  nodes.forEach(function (node) {
+    if (node != null) {
+      node.setEditDisable(editDisable);
+    }
+  });
+  return;
+}
 /**
  * svg parent node
  */

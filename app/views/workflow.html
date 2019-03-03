@@ -201,6 +201,11 @@
       <div id="propertyArea">
         <p id="propertyTitle">Property</p>
         <div id="propertyComponents">
+          <div id="propertyDisableArea">
+            <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');" name="check" id="propertyDisableCheckBox"
+              value="true">
+            <label id="propertyDisable" for="propertyDisable">disable</label>
+          </div>
           <span id="propertyType">
             <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
             <p id="propertyTypeName"></p>
@@ -315,9 +320,9 @@
             <label for="conditionInputField" id="propertyCondition">Condition</label>
             <div id="conditionTypeFlags">
               <div>
-                <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conflag1" value="1">file</div>
+                <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag1" value="1">file</div>
               <div>
-                <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conflag2" value="2">JavaScript</div>
+                <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag2" value="2">JavaScript</div>
             </div>
             <div v-if="conditionInputType === '1'">
               <select name="condition" class="conditionFormat" id="conditionSelectField" v-model="node.condition" v-on:change="updateProperty('condition')">
@@ -333,14 +338,15 @@
           </div>
           <template v-for="(v, i) in node.indexList">
             <div>
-              <input type="text" v-model.lazy.trim="node.indexList[i]" v-on:blur="updateProperty('indexList')" class="newIndexListField">
+              <input type="text" v-model.lazy.trim="node.indexList[i]" v-on:blur="updateProperty('indexList')" class="newIndexListField"
+                id="newIndexListField">
               <button v-on:click="delIndexOfForeach(i)" class="indexListButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>
             </div>
           </template>
           <div v-if="node.hasOwnProperty('indexList')">
-            <input type="text" v-model.lazy.trim="newIndexOfForeach" class="newIndexListField">
+            <input type="text" v-model.lazy.trim="newIndexOfForeach" class="newIndexListField" id="indexListFieldAddButton">
             <button v-on:click="addIndexOfForeach" class="indexListButton">
               <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
             </button>

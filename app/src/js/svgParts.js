@@ -381,7 +381,7 @@ export class SvgCable {
 }
 
 class SvgBox {
-  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand) {
+  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand, disable) {
     this.draw = svg;
     this.box = this.draw.group();
     this.type = type.toLowerCase();
@@ -402,7 +402,7 @@ class SvgBox {
 
     const inputBBox = input.bbox();
     const outputBBox = output.bbox();
-    const title = this.createTitle(name);
+    const title = this.createTitle(name, disable);
     const iconImage = this.createIconImage(type, host, useJobScheduler);
     if (type === 'source') {
       inputBBox.height = 22;
@@ -494,10 +494,11 @@ class SvgBox {
    * create title
    * @return title element
    */
-  createTitle(name) {
+  createTitle(name, disable) {
     const titlePosY = 6;
     const titlePosX = 48;
     let fillColor = '#FFFFFF';
+    if (disable === true) fillColor = '#FF0000';
     return this.draw
       .text(name)
       .fill(fillColor)
@@ -971,45 +972,60 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
   let dragStartPointY = null;
   plug
     .on('dragstart', (e) => {
-      if (firstTime) {
-        clone = plug.clone();
-        firstTime = false;
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        if (firstTime) {
+          clone = plug.clone();
+          firstTime = false;
+        }
+        dragStartPointX = e.detail.p.x;
+        dragStartPointY = e.detail.p.y;
+      } else {
+        e.preventDefault();
       }
-      dragStartPointX = e.detail.p.x;
-      dragStartPointY = e.detail.p.y;
     })
     .on('dragmove', (e) => {
-      let dx = e.detail.p.x - dragStartPointX;
-      let dy = e.detail.p.y - dragStartPointY;
-      cable.dragEndPoint(dx, dy);
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        let dx = e.detail.p.x - dragStartPointX;
+        let dy = e.detail.p.y - dragStartPointY;
+        cable.dragEndPoint(dx, dy);
+      } else {
+        e.preventDefault();
+      }
     })
     .on('dragend', (e) => {
-      cable.endX = e.target.instance.x();
-      cable.endY = e.target.instance.y();
-      let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY, config.box_appearance.plug_drop_area_scale);
-      if (hitIndex === -1 && counterpart === ".receptorPlug") {
-        [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', cable.endX, cable.endY, 1.0);
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        cable.endX = e.target.instance.x();
+        cable.endY = e.target.instance.y();
+        let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY, config.box_appearance.plug_drop_area_scale);
+        if (hitIndex === -1 && counterpart === ".receptorPlug") {
+          [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', cable.endX, cable.endY, 1.0);
 
-        if (hitIndex !== -1) {
-          // inputfileへの追加とコネクション
-          [hitIndex, hitPlug] = addInputFile(svg, plug, hitIndex, hitPlug, sio);
+          if (hitIndex !== -1) {
+            // inputfileへの追加とコネクション
+            [hitIndex, hitPlug] = addInputFile(svg, plug, hitIndex, hitPlug, sio);
+          }
         }
-      }
 
-      if (hitIndex === -1) {
+        if (hitIndex === -1) {
+          cable.remove();
+          plug.remove();
+          plug = clone
+          console.log("not connect");
+          return;
+        }
+        const myIndex = plug.parent().node.instance.data('ID');
+        if (hitIndex !== myIndex) {
+          callback(myIndex, hitIndex, plug, hitPlug);
+        }
         cable.remove();
         plug.remove();
-        plug = clone
-        console.log("not connect");
-        return;
+        plug = clone;
+      } else {
+        e.preventDefault();
       }
-      const myIndex = plug.parent().node.instance.data('ID');
-      if (hitIndex !== myIndex) {
-        callback(myIndex, hitIndex, plug, hitPlug);
-      }
-      cable.remove();
-      plug.remove();
-      plug = clone
     });
   return [plug, cable.cable];
 }
@@ -1027,36 +1043,51 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
   let dragStartPointY = null;
   plug
     .on('dragstart', (e) => {
-      if (firstTime) {
-        clone = plug.clone();
-        firstTime = false;
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        if (firstTime) {
+          clone = plug.clone();
+          firstTime = false;
+        }
+        dragStartPointX = e.detail.p.x;
+        dragStartPointY = e.detail.p.y;
+      } else {
+        e.preventDefault();
       }
-      dragStartPointX = e.detail.p.x;
-      dragStartPointY = e.detail.p.y;
     })
     .on('dragmove', (e) => {
-      let dx = e.detail.p.x - dragStartPointX;
-      let dy = e.detail.p.y - dragStartPointY;
-      cable.dragEndPoint(dx, dy);
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        let dx = e.detail.p.x - dragStartPointX;
+        let dy = e.detail.p.y - dragStartPointY;
+        cable.dragEndPoint(dx, dy);
+      } else {
+        e.preventDefault();
+      }
     })
     .on('dragend', (e) => {
-      cable.endX = e.target.instance.x();
-      cable.endY = e.target.instance.y();
-      const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY, config.box_appearance.plug_drop_area_scale);
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        cable.endX = e.target.instance.x();
+        cable.endY = e.target.instance.y();
+        const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY, config.box_appearance.plug_drop_area_scale);
 
-      if (hitIndex === -1) {
+        if (hitIndex === -1) {
+          cable.remove();
+          plug.remove();
+          plug = clone
+          return;
+        }
+        const myIndex = "parent";
+        if (hitIndex !== myIndex) {
+          callback(myIndex, hitIndex, plug, hitPlug);
+        }
         cable.remove();
         plug.remove();
-        plug = clone
-        return;
+        plug = clone;
+      } else {
+        e.preventDefault();
       }
-      const myIndex = "parent";
-      if (hitIndex !== myIndex) {
-        callback(myIndex, hitIndex, plug, hitPlug);
-      }
-      cable.remove();
-      plug.remove();
-      plug = clone
     });
   return [plug, cable.cable];
 }
@@ -1091,9 +1122,9 @@ export function createUpper(svg, originX, originY, offsetX, offsetY, name) {
   return plug;
 }
 
-export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand) {
+export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand, disable) {
   // class titleFrame
-  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand);
+  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand, disable);
   return [box.box, box.textHeight];
 }
 
