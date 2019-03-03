@@ -12,7 +12,6 @@
 </head>
 
 <body>
-
   <!-- Header -->
   <header>
     <a href="home" id="title">WHEEL</a>
@@ -21,18 +20,21 @@
       <span id="titleUserName">user01</span>
     </span>
   </header>
-
   <!-- Page Name Area -->
   <div id="pageNameArea">
     <label id="pageName">Host List</label>
   </div>
-
+  <!-- Change registration contents button "HPC" "Cloud" -->
+  <div id="changeRegistrationContentsButtonArea">
+    <button id="hpcContentsButton" class="hostType">HPC</button>
+    <button id="cloudContentsButton" class="hostType">Cloud</button>
+  </div>
   <div id="view">
-
     <!-- Remote Host List Area -->
-    <div id="hostListArea">
-      <div id="hostTitleArea">
-        <table id="titleTable" 　name="A">
+    <!-- HPC List Area -->
+    <div class="hostListAreaForHpc" id="hostListAreaForHpc">
+      <div id="hostTitleAreaForHPC">
+        <table id="titleTable">
           <tr>
             <th class="label">Label</th>
             <th class="connectionCheck">Connection Check</th>
@@ -48,11 +50,11 @@
           </tr>
         </table>
       </div>
-      <div id="hostPropertyArea">
-        <table id="propertyTable" name="A">
+      <div id="hostPropertyAreaForHPC">
+        <table id="propertyTable">
           <template v-for="(host, index) in hostList">
-            <tr v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" v-bind:id="host.name"
-              class="hostListInfo">
+            <tr v-if="!host.hasOwnProperty('type') || host.type === ''" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }"
+              v-on:click="toggleSelected(index)" v-bind:id="host.name" class="hostListInfo">
               <td class="label">
                 {{ host.name }}</td>
               <td class="connectionCheck">
@@ -83,10 +85,53 @@
         </table>
       </div>
     </div>
-
+    <!-- Cloud List Area -->
+    <div class="hostListAreaForCloud" id="hostListAreaForCloud">
+      <div id="hostTitleAreaForCloud">
+        <table id="titleTable">
+          <tr>
+            <th class="label">Label</th>
+            <th class="cloudServiceProvider">Cloud service provider</th>
+            <th class="cloudOS">OS</th>
+            <th class="region">region</th>
+            <th class="numNodes">numNodes</th>
+            <th class="instanceType">InstanceType</th>
+            <!-- <th class="jobScheduler">Job Scheduler</th>
+            <th class="jobSubmissionLimit">Max Job</th>
+            <th class="queue">Queue</th> -->
+          </tr>
+        </table>
+      </div>
+      <div id="hostPropertyAreaForCloud">
+        <table id="propertyTable">
+          <template v-if="host.hasOwnProperty('type') && host.type !== ''" v-for="(host, index) in hostList">
+            <tr v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" v-bind:id="host.name"
+              class="hostListInfo">
+              <td class="label">
+                {{ host.name }}</td>
+              <td class="cloudServiceProvider">
+                {{ host.type }}</td>
+              <td class="cloudOS">
+                {{ host.os }}</td>
+              <td class="region">
+                {{ host.region }}</td>
+              <td class="numNodes">
+                {{ host.numNodes }}</td>
+              <td class="instanceType">
+                {{ host.InstanceType }}</td>
+              <!-- <td class="jobScheduler">
+                {{ host.jobScheduler }}</td>
+              <td class="jobSubmissionLimit">
+                {{ host.numJob }}</td>
+              <td class="queue">
+                {{ host.queue }}</td> -->
+            </tr>
+          </template>
+        </table>
+      </div>
+    </div>
     <!-- Error Message Area -->
     <div v-show="errorMessage != ''" id="errorMessage">{{errorMessage}}</div>
-
     <!-- Button Area -->
     <div id="buttonArea">
       <button v-on:click="onAddButton" id="newButton">
@@ -102,26 +147,18 @@
         <label>Delete</label>
       </button>
     </div>
-
     <!-- Host Registration Title -->
     <div id="hostRegTitleArea">
       <label id="hostRegTitleLabel">Host Registration</label>
     </div>
-
-    <!-- Cange registration contents button "HPC" "Cloud" -->
-    <div id="cangeRegistrationContentsButtonArea">
-      <button id="hpcContentsButton">HPC</button>
-      <button id="cloudContentsButton">Cloud</button>
-    </div>
-
     <!-- Confirm Cancel Button Area -->
     <div id="confirmCancelButtonArea">
       <button v-on:click="onEditAreaOKButton" v-bind:disabled="hasError" id="confirmButton">Confirm</button>
       <button v-on:click="onEditAreaCancelButton" id="cancelButton">Cancel</button>
     </div>
-
     <!-- New Remote Host Registration -->
-    <div id="hostRegFormAreaForHPC">
+    <!-- HPC Registration Area -->
+    <div class="hostRegFormAreaForHPC">
       <div id="leftFormArea">
         <div>
           <span>
@@ -228,8 +265,8 @@
         </div>
       </div>
     </div>
-
-    <div id="hostRegFormAreaForCloud">
+    <!-- Cloud Registration Area -->
+    <div class="hostRegFormAreaForCloud">
       <div id="leftFormArea">
         <div>
           <span>
@@ -266,7 +303,7 @@
           <span>
             <label>InstanceType</label>
           </span>
-          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.instanceType">
+          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.InstanceType">
         </div>
         <div>
           <span>
@@ -280,38 +317,40 @@
           </span>
           <input type="checkbox" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.shareStorage">
         </div>
+      </div>
+      <div id="centerFormArea">
         <div>
           <span>
-            <label>playbook</label>
+            <label id="cloudMpi">mpi</label>
+          </span>
+          <input type="text" v-model.lazy.trim="newHostInfo.mpi">
+        </div>
+        <div>
+          <span>
+            <label id="cloudCompiler">compiler</label>
+          </span>
+          <input type="text" v-model.lazy.trim="newHostInfo.compiler">
+        </div>
+        <div>
+          <span>
+            <label id="cloudPlaybook">playbook</label>
           </span>
           <textarea v-model.lazy.trim="newHostInfo.playbook"></textarea>
         </div>
         <div>
           <span>
-            <label>mpi</label>
+            <label id="cloudAdditionalParams">additionalParams</label>
           </span>
-          <input type="text"  v-model.lazy.trim="newHostInfo.mpi">
+          <textarea v-model.lazy.trim="newHostInfo.additionalParams"></textarea>
         </div>
         <div>
           <span>
-            <label>compiler</label>
-          </span>
-          <input type="text"  v-model.lazy.trim="newHostInfo.compiler">
-        </div>
-        <div>
-          <span>
-            <label>additionalParams</label>
-          </span>
-          <textarea  v-model.lazy.trim="newHostInfo.additionalParams"></textarea>
-        </div>
-        <div>
-          <span>
-            <label>additionalParamsForHead</label>
+            <label id="cloudAdditionalParamsForHead">additionalParamsForHead</label>
           </span>
           <textarea v-model.lazy.trim="newHostInfo.additionalParamsForHead"></textarea>
         </div>
       </div>
-      <div id="centerFormArea">
+      <div id="rightFormArea">
         <div>
           <span>
             <label>Job Scheduler</label>
@@ -330,8 +369,6 @@
           </span>
           <input type="text" v-model.lazy="newHostInfo.queue">
         </div>
-      </div>
-      <div id="rightFormArea">
         <div>
           <span>
             <label>connection renewal interval(min.)</label>
@@ -358,23 +395,8 @@
         </div>
       </div>
     </div>
-    </div>
-
-    <!-- keyFile Browse Dialog -->
+    <!-- delete host, SSH connection, fileBrowse dialog -->
     <div id="dialog"></div>
-
-    <!-- Confirm Cancel Button Area
-    <div id="confirmCancelButtonArea">
-      <button v-on:click="onEditAreaOKButton" v-bind:disabled="hasError" id="confirmButton">Confirm</button>
-      <button v-on:click="onEditAreaCancelButton" id="cancelButton">Cancel</button>
-    </div> -->
-
-    <!-- Delete Check Dialog -->
-    <div id="deleteCheckDialog">
-      Are you sure to completely delete this host?
-      <button v-on:click="onDialogOKButton" id="dialogOkButton">OK</button>
-      <button v-on:click="onDialogCancelButton" id="dialogCancelButton">Cancel</button>
-    </div>
   </div>
 </body>
 
