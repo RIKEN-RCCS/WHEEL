@@ -538,3 +538,6 @@ li:hover{
   border: none;
 }
 
+.ui-button.notUseButton{
+  display: none;  
+}

@@ -123,20 +123,13 @@
       </div>
     </div>
 
-    <!-- keyFile Browse Dialog -->
+    <!-- delete Dialog -->
     <div id="dialog"></div>
 
     <!-- Confirm Cancel Button Area -->
     <div id="confirmCancelButtonArea">
       <button v-on:click="onEditAreaOKButton" v-bind:disabled="hasError" id="confirmButton">Confirm</button>
       <button v-on:click="onEditAreaCancelButton" id="cancelButton">Cancel</button>
-    </div>
-
-    <!-- Delete Check Dialog -->
-    <div id="deleteCheckDialog">
-      Are you sure to completely delete this account?
-      <button v-on:click="onDialogOKButton" id="dialogOkButton">OK</button>
-      <button v-on:click="onDialogCancelButton" id="dialogCancelButton">Cancel</button>
     </div>
 
     <!-- 右ドロアーメニュー -->

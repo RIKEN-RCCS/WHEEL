@@ -47,20 +47,27 @@ $(() => {
       onAddButton: function () {
         this.selectedAccount = -1
         resetNewAccount();
-        $("#errorMessage").css("visibility", "hidden");
+        showErrorMessage("hidden");
       },
       onRemoveButton: function () {
         this.mode = 'removeAccount';
-        $("#errorMessage").css("visibility", "hidden");
-        console.log(this.selectedAccount);
-        console.log(vm.selectedAccount);
+        showErrorMessage("hidden");
         if (this.selectedAccount === -1) {
           this.errorMessage = 'Please select Account';
-          $("#errorMessage").css("visibility", "visible");
+          showErrorMessage("visible");
           return;
         }
+        let deleteAccount = this.accountList[this.selectedAccount].id;
 
-        $("#deleteCheckDialog").dialog({ width: 356, title: 'Delete Account', modal: true });
+        const html = '<p id="deleteAccountLabel">Are you sure to completely delete this account?</p>';
+        const dialogOptions = {
+          title: "Delete Account"
+        };
+        dialogWrapper('#dialog', html, dialogOptions)
+          .done(function () {
+            socket.emit('removeAccount', deleteAccount);
+            resetNewHost();
+          });
       },
       onEditAreaOKButton: function () {
         console.log(this.selectedAccount);
@@ -77,14 +84,6 @@ $(() => {
       onEditAreaCancelButton: function () {
         resetNewAccount();
         this.selectedAccount = -1;
-      },
-      onDialogOKButton: function () {
-        socket.emit('removeAccount', this.accountList[this.selectedAccount].id);
-        resetNewAccount();
-        $("#deleteCheckDialog").dialog('close');
-      },
-      onDialogCancelButton: function () {
-        $("#deleteCheckDialog").dialog('close');
       },
       isSelected: function (index) {
         let flag;
@@ -135,7 +134,10 @@ $(() => {
     return string === '';
   }
 
-  //管理者設定画面へのドロワー
+  function showErrorMessage(view) {
+    $("#errorMessage").css("visibility", view);
+  }
+
   $('#drawer_button').click(function () {
     $('#drawerMenu').toggleClass('action', true);
   });
