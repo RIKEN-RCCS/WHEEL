@@ -162,45 +162,45 @@
       <div id="leftFormArea">
         <div>
           <span>
-            <label>Label</label>
+            <label id="hostLabel">Label</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
           <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
         </div>
         <div>
           <span>
-            <label>Connection Check</label>
+            <label id="hostConectionCheckButton">Connection Check</label>
           </span>
           <button v-on:click="test(-1)" class="connectionCheckButton">{{ buttonState(-1) }}</button>
         </div>
         <div>
           <span>
-            <label>Host Name</label>
+            <label id="hostName">Host Name</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.host" v-bind:class="{'ui-state-error': !validation.host}">
         </div>
         <div>
           <span>
-            <label>Port</label>
+            <label id="hostPort">Port</label>
           </span>
           <input type="number" v-model.number="newHostInfo.port">
         </div>
         <div>
           <span>
-            <label>User ID</label>
+            <label id="hostUserID">User ID</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.username" v-bind:class="{'ui-state-error': !validation.username}">
         </div>
         <div>
           <span>
-            <label>Host Work Dir</label>
+            <label id="hostWorkDir">Host Work Dir</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.path">
         </div>
       </div>
       <div id="centerFormArea">
         <div>
-          <label>Auth Type</label>
+          <label id="hostAuthType">Auth Type</label>
           <span id="radioButtonArea">
             <input type="radio" name="authType" v-model="authType" value="1">
             <span>
@@ -214,26 +214,26 @@
         </div>
         <div v-show="authType === '2'">
           <span>
-            <label>KeyFile</label>
+            <label id="hostKeyFile">KeyFile</label>
           </span>
           <input type="text" v-model="newHostInfo.keyFile" disabled id="keyfilePath">
           <button v-on:click="browse" id="browseButton">Browse</button>
         </div>
         <div>
           <span>
-            <label>Job Scheduler</label>
+            <label id="hostJobScheduler">Job Scheduler</label>
           </span>
           <input type="text" v-model.lazy.trim="newHostInfo.jobScheduler">
         </div>
         <div>
           <span>
-            <label>Max Job</label>
+            <label id="hostMaxJob">Max Job</label>
           </span>
           <input type="number" v-model.number="newHostInfo.numJob">
         </div>
         <div>
           <span>
-            <label>Queue</label>
+            <label id="hostQueue">Queue</label>
           </span>
           <input type="text" v-model.lazy="newHostInfo.queue">
         </div>
@@ -241,25 +241,25 @@
       <div id="rightFormArea">
         <div>
           <span>
-            <label>connection renewal interval(min.)</label>
+            <label id="hostConnectionRenewalInterval">connection renewal interval(min.)</label>
           </span>
           <input type="text" v-model.number="newHostInfo.renewInterval">
         </div>
         <div>
           <span>
-            <label>connection renewal delay(sec.)</label>
+            <label id="hostConnectionRenewalDelay">connection renewal delay(sec.)</label>
           </span>
           <input type="text" v-model.number="newHostInfo.renewDelay">
         </div>
         <div>
           <span>
-            <label>status check interval(sec.)</label>
+            <label id="hostStatusCheckInterval">status check interval(sec.)</label>
           </span>
           <input type="text" v-model.number="newHostInfo.statusCheckInterval">
         </div>
         <div>
           <span>
-            <label>max status check error</label>
+            <label id="hostMaxStatusCheckError">max status check error</label>
           </span>
           <input type="text" v-model.number="newHostInfo.maxStatusCheckError">
         </div>
@@ -270,50 +270,50 @@
       <div id="leftFormArea">
         <div>
           <span>
-            <label>Label</label>
+            <label id="cloudLabel">Label</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
           <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
         </div>
         <div>
           <span>
-            <label>Cloud service provider</label>
+            <label id="cloudServiceProvider">Cloud service provider</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.type">
         </div>
         <div>
           <span>
-            <label>OS</label>
+            <label id="cloudOS">OS</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.os">
         </div>
         <div>
           <span>
-            <label>region</label>
+            <label id="cloudRegion">region</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.region">
         </div>
         <div>
           <span>
-            <label>numNodes</label>
+            <label id="cloudNumNodes">numNodes</label>
           </span>
           <input type="number" placeholder="empty is not allowed." v-model.lazy.number.trim="newHostInfo.numNodes">
         </div>
         <div>
           <span>
-            <label>InstanceType</label>
+            <label id="cloudInstanceType">InstanceType</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.InstanceType">
         </div>
         <div>
           <span>
-            <label>rootVolume</label>
+            <label id="cloudRootVolume">rootVolume</label>
           </span>
           <input type="number" placeholder="empty is not allowed." v-model.lazy.number.trim="newHostInfo.rootVolume">
         </div>
         <div>
           <span>
-            <label>shareStorage</label>
+            <label id="cloudShareStorage">shareStorage</label>
           </span>
           <input type="checkbox" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.shareStorage">
         </div>
@@ -353,43 +353,43 @@
       <div id="rightFormArea">
         <div>
           <span>
-            <label>Job Scheduler</label>
+            <label id="cloudJobScheduler">Job Scheduler</label>
           </span>
           <input type="text" v-model.lazy.trim="newHostInfo.jobScheduler">
         </div>
         <div>
           <span>
-            <label>Max Job</label>
+            <label id="cloudMaxjob">Max Job</label>
           </span>
           <input type="number" v-model.number="newHostInfo.numJob">
         </div>
         <div>
           <span>
-            <label>Queue</label>
+            <label id="cloudQueue">Queue</label>
           </span>
           <input type="text" v-model.lazy="newHostInfo.queue">
         </div>
         <div>
           <span>
-            <label>connection renewal interval(min.)</label>
+            <label id="cloudConnectionRenewalInterval">connection renewal interval(min.)</label>
           </span>
           <input type="text" v-model.number="newHostInfo.renewInterval">
         </div>
         <div>
           <span>
-            <label>connection renewal delay(sec.)</label>
+            <label id="cloudConnectionRenewalDelay">connection renewal delay(sec.)</label>
           </span>
           <input type="text" v-model.number="newHostInfo.renewDelay">
         </div>
         <div>
           <span>
-            <label>status check interval(sec.)</label>
+            <label id="cloudStatusCheckInterval">status check interval(sec.)</label>
           </span>
           <input type="text" v-model.number="newHostInfo.statusCheckInterval">
         </div>
         <div>
           <span>
-            <label>max status check error</label>
+            <label id="cloudMaxStatusCheckError">max status check error</label>
           </span>
           <input type="text" v-model.number="newHostInfo.maxStatusCheckError">
         </div>

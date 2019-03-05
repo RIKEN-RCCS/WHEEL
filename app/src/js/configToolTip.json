@@ -77,6 +77,14 @@
             "jpn": "条件判定用スクリプトファイルを選択、または、JavaScriptの判定式を記述します"
         },
         {
+            "key": "conditionFlag1",
+            "jpn": "スクリプトファイルの選択フォームにします"
+        },
+        {
+            "key": "conditionFlag2",
+            "jpn": "JavaScriptの判定式の入力フォームにします"
+        },
+        {
             "key": "propertyStart",
             "jpn": "ループの開始値を設定します"
         },
@@ -222,6 +230,94 @@
         },
         {
             "key": "hostMaxStatusCheckError",
+            "jpn": "ステータス確認のエラー制限数を設定します"
+        },
+        {
+            "key": "hpcContentsButton",
+            "jpn": "HPC登録フォーム画面に切り替えます"
+        },
+        {
+            "key": "cloudContentsButton",
+            "jpn": "Cloud登録フォーム画面に切り替えます"
+        },
+        {
+            "key": "cloudLabel",
+            "jpn": "ホスト情報のラベルを設定します"
+        },
+        {
+            "key": "cloudServiceProvider",
+            "jpn": "クラウドを指定します（現状はawsで固定）"
+        },
+        {
+            "key": "cloudOS",
+            "jpn": "OSを指定します"
+        },
+        {
+            "key": "cloudRegion",
+            "jpn": "インスタンスを起動するリージョンを指定します"
+        },
+        {
+            "key": "cloudNumNodes",
+            "jpn": "起動するノード数を指定します"
+        },
+        {
+            "key": "cloudInstanceType",
+            "jpn": "起動するインスタンスタイプを指定します"
+        },
+        {
+            "key": "cloudRootVolume",
+            "jpn": "起動するインスタンスにアタッチするrootのEBSボリュームの値を指定します"
+        },
+        {
+            "key": "cloudShareStorage",
+            "jpn": "headNodeのローカルストレージをNFSで共有するかの指定を行ないます"
+        },
+        {
+            "key": "cloudMpi",
+            "jpn": "使用不可"
+        },
+        {
+            "key": "cloudCompiler",
+            "jpn": "使用不可"
+        },
+        {
+            "key": "cloudPlaybook",
+            "jpn": "使用不可"
+        },
+        {
+            "key": "cloudAdditionalParams",
+            "jpn": "aws-sdkのEC2.runInstancesに渡す設定をこのプロパティに追加します"
+        },
+        {
+            "key": "cloudAdditionalParamsForHead",
+            "jpn": "ヘッドノードのみに適用するaws-sdkのEC2.runInstancesに渡す設定を追加します"
+        },
+        {
+            "key": "cloudJobScheduler",
+            "jpn": "ジョブスケジューラ名を設定します"
+        },
+        {
+            "key": "cloudMaxjob",
+            "jpn": "ジョブの投入制限数を設定します"
+        },
+        {
+            "key": "cloudQueue",
+            "jpn": "キュー名を設定します"
+        },
+        {
+            "key": "cloudConnectionRenewalInterval",
+            "jpn": "ssh接続の再接続間隔(単位は分)を設定します"
+        },
+        {
+            "key": "cloudConnectionRenewalDelay",
+            "jpn": "再接続時、切断後に挟む待ち時間(単位は秒)を設定します"
+        },
+        {
+            "key": "cloudStatusCheckInterval",
+            "jpn": "ジョブ投入後のステータス確認を行う間隔(単位は秒)を設定します"
+        },
+        {
+            "key": "cloudMaxStatusCheckError",
             "jpn": "ステータス確認のエラー制限数を設定します"
         }
     ]

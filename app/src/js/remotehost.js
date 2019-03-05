@@ -8,6 +8,8 @@ import showMessage from './showMessage';
 import 'jquery-ui/themes/base/all.css';
 import '../css/remotehost.css';
 import { log } from 'util';
+import config from './config';
+import configToolTip from './configToolTip';
 
 $(() => {
   // create socket.io instance
@@ -195,6 +197,9 @@ $(() => {
     vm.selecteds = [];
   });
 
+  //draw help message
+  updateToolTip();
+
   function browseServerFiles() {
     const html = '<p id="path"></p><ul id=fileList></ul>';
     const dialogOptions = {
@@ -340,4 +345,18 @@ $(() => {
 
   var pos = $("#titleUserName").offset();
   $("#iconImg").css('right', window.innerWidth - pos.left + "px");
+
+  function updateToolTip() {
+    configToolTip.toolTipTexts.forEach((v) => {
+      if (config.tooltip_lang.lang === "jpn") {
+        try {
+          $("[id=" + v.key + "]").attr('title', v.jpn);
+        } catch (e) {
+          console.log(v.key + " is not find");
+          // none
+        }
+      }
+    });
+    return;
+  }
 });
