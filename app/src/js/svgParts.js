@@ -394,14 +394,14 @@ class SvgBox {
 
     // create inner parts
     this.width = 256; //画面デザイン上256pxとする
-    const innerFrame = this.createInnerFrame();
     const outerFrame = this.createOuterFrame(type);
+    const innerFrame = this.createInnerFrame();
 
-    const input = this.createInputText(inputFiles);
     const output = this.createOutputText(outputFiles);
+    const input = this.createInputText(inputFiles);
 
-    const inputBBox = input.bbox();
     const outputBBox = output.bbox();
+    const inputBBox = input.bbox();
     const title = this.createTitle(name, disable);
     const iconImage = this.createIconImage(type, host, useJobScheduler);
     if (type === 'source') {
@@ -411,12 +411,14 @@ class SvgBox {
     this.height = bodyHeight + titleHeight;
 
     let taskState;
-    let psState, psState2;
-    if (type !== "parameterStudy") {
-      taskState = this.createState(state);
+    let repeatState;
+    let whileState;
+    if (type === "parameterStudy" || type === "for" || type === "foreach") {
+      repeatState = this.createStateForRepeat(state, numTotal, numFinished, numFailed);
+    } else if (type === "while") {
+      whileState = this.createStateForWhile(state, numFinished, numFailed);
     } else {
-      psState = this.createStateForPS(state, numTotal, numFinished);
-      psState2 = this.createStateForPS2(state, numTotal, numFinished, numFailed);
+      taskState = this.createState(state);
     }
 
     //子コンポーネントの表示
@@ -441,14 +443,19 @@ class SvgBox {
       .opacity(opacity)
       .addClass(`${name}_box`);
 
-    if (type !== "parameterStudy") {
-      this.box
-        .add(taskState)
+    // add state info
+    if (type === "parameterStudy" || type === "for" || type === "foreach") {
+      for (var i = 0; i < repeatState.length; i++) {
+        this.box.add(repeatState[i]);
+      }
+    } else if (type === "while") {
+      for (var i = 0; i < whileState.length; i++) {
+        this.box.add(whileState[i]);
+      }
     } else {
-      this.box
-        .add(psState)
-        .add(psState2);
+      this.box.add(taskState);
     }
+
     // adjust size
     output.x(titleWidth);
 
@@ -585,39 +592,8 @@ class SvgBox {
       .y(statePosY);
   }
 
-  createStateForPS(state, numTotal, numFinished) {
-    const statePosX = 220;
-    const statePosY = 0;
-    if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
-      state = 'running'
-    }
-    const nodeStatePath = config.state_icon[state];
-    //const paraStuState = "Fin:" + numFinished + "Fail:" + numFailed + "(" + numTotal + ")";
-    if (state === 'running' && numTotal !== null) {
-      const calcProgress = numFinished / numTotal * 100;
-      const radius = 7;
-      const diameter = radius * 2;
-      const circumference = 2.0 * radius * Math.PI;
-      const startPosition = circumference * 0.25;
-      const convertedPercentage = circumference * 0.01;
-      let progress = convertedPercentage * calcProgress;
-      return this.draw
-        .circle(`${diameter}`)
-        .fill('rgba(0,0,0,0)')
-        .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
-        .x(statePosX + 11)
-        .y(statePosY + 9)
-        .addClass('psProgress');
-    } else {
-      return this.draw
-        .image(nodeStatePath)
-        .fill('#FFFFFF')
-        .x(statePosX)
-        .y(statePosY);
-    }
-  }
-
-  createStateForPS2(state, numTotal, numFinished, numFailed) {
+  // 'PS, for, foreach' component
+  createStateForRepeat(state, numTotal, numFinished, numFailed) {
     const statePosX = 220;
     const statePosY = 0;
     if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
@@ -634,19 +610,106 @@ class SvgBox {
       const convertedPercentage = circumference * 0.01;
       let progress = convertedPercentage * calcProgress;
       let progress2 = convertedPercentage * calcProgress2;
-      return this.draw
-        .circle(`${diameter}`)
-        .fill('rgba(0,0,0,0)')
-        .stroke({ color: '#E60000', width: `${diameter}`, dashoffset: `${startPosition + 1 - progress}`, dasharray: `${progress2},${circumference - progress2}` })
-        .x(statePosX + 11)
-        .y(statePosY + 9)
-        .addClass('psProgress2');
+      let progressTotal = progress + progress2;
+      if (numFailed !== null) {
+        return [
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9),
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#E60000', width: `${diameter}`, dashoffset: `${startPosition + 1 - progress}`, dasharray: `${progress2},${circumference - progress2}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9),
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#2F2F33', width: `${diameter}`, dashoffset: `${startPosition - progressTotal}`, dasharray: `${circumference - progressTotal},${progressTotal}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9)
+        ]
+      } else if (numFailed === null) {
+        return [
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9),
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#2F2F33', width: `${diameter}`, dashoffset: `${startPosition - progress}`, dasharray: `${circumference - progress},${progress}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9)
+        ]
+      }
     } else {
-      return this.draw
-        .image(nodeStatePath)
+      return [
+        this.draw
+          .image(nodeStatePath)
+          .fill('#FFFFFF')
+          .x(statePosX)
+          .y(statePosY)
+      ]
+    }
+  }
+
+  // 'while' component
+  createStateForWhile(state, numFinished, numFailed) {
+    const statePosX = 220;
+    const statePosY = 0;
+    if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
+      state = 'running'
+    }
+    const nodeStatePath = config.state_icon[state];
+    if (state === 'running' && numFinished !== null) {
+      if (numFailed === null) {
+        numFailed = 0;
+      }
+      let strFinishedNum = numFinished + "";
+      let strFailedNum = numFailed + "";
+      this.whileGroup = this.draw.group();
+
+      const finishedText = this.draw
+        .text(strFinishedNum)
         .fill('#FFFFFF')
-        .x(statePosX)
-        .y(statePosY);
+        .addClass('whileProgress');
+      let finishedTextWidth = finishedText.bbox().width;
+      let finishedDx = 18 - finishedTextWidth / 2;
+      finishedText.move(statePosX + finishedDx, statePosY - 1.8);
+      this.whileGroup.add(finishedText);
+
+      const failedText = this.draw
+        .text(strFailedNum)
+        .fill('red')
+        .addClass('whileFailedProgress');
+      let failedTextWidth = failedText.bbox().width;
+      let failedDx = 18 - failedTextWidth / 2;
+      failedText.move(statePosX + failedDx, statePosY + 14.3);
+      this.whileGroup.add(failedText);
+
+      return [
+        this.draw
+          .circle(14)
+          .fill('rgba(0,0,0,0)')
+          .stroke({ color: '#2F2F33', width: 14 })
+          .x(statePosX + 11)
+          .y(statePosY + 9),
+        this.whileGroup
+      ]
+    } else {
+      return [
+        this.draw
+          .image(nodeStatePath)
+          .fill('#FFFFFF')
+          .x(statePosX)
+          .y(statePosY)
+      ]
     }
   }
 

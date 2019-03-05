@@ -35,7 +35,8 @@
     "rerunning": "orange",
     "waiting": "yellow",
     "completed": "#00ff00",
-    "failed": "red"
+    "failed": "red",
+    "unknown": "red"
   },
   "plug_color": {
     "file": "#5673BF",
@@ -62,7 +63,8 @@
     "not-started": "/image/img_stateQue.png",
     "running": "/image/img_statePlay.png",
     "finished": "/image/img_stateDone.png",
-    "failed": "/image/img_error.png"
+    "failed": "/image/img_error.png",
+    "unknown": "/image/img_error.png"
   },
   "fileType_icon": {
     "file": "/image/img_file.png",

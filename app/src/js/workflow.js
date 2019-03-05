@@ -427,6 +427,10 @@ $(() => {
         $('#project_state').css('background-color', '#E60000');
         $('#pause_button').attr("src", "/image/btn_pause_n.png");
         $('#run_button').attr("src", "/image/btn_play_n.png");
+      } else if (projectJson.state === 'unknown') {
+        $('#project_state').css('background-color', '#E60000');
+        $('#pause_button').attr("src", "/image/btn_pause_n.png");
+        $('#run_button').attr("src", "/image/btn_play_n.png");
       } else if (projectJson.state === 'paused') {
         $('#project_state').css('background-color', '#444480');
         $('#pause_button').attr("src", "/image/btn_pause_d.png");
