@@ -64,7 +64,8 @@ $(() => {
       queueList: [],
       fileList: [],
       names: [],
-      conditionInputType: '1'
+      conditionInputType: '1',
+      retryConditionInputType: '1'
     },
     methods: {
       addInputFile: function () {

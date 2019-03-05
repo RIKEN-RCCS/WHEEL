@@ -316,6 +316,33 @@
             v-on:change="updateProperty('parameterFile')">
             <option v-for="v in fileList" v-if="v.type == 'file'" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
           </select>
+          <div v-if="node.hasOwnProperty('retryTimes')">
+            <label for="retry" id="propertyRetry">Retry</label>
+            <div id="propertyRetryArea">
+              <div>
+                <label for="retryTimesInputField" id="propertyRetryTimes">times</label>
+              </div>
+              <div>
+                <input type="number" v-model.number.lazy.trim="node.retryTimes" id="retryTimesInputField" v-on:blur="updateProperty('retryTimes')">
+              </div>
+              <label for="retryConditionInputField" id="propertyRetryCondition">Condition</label>
+              <div id="retryConditionTypeFlags">
+                <div>
+                  <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType" id="retryConditionFlag1" value="1">file</div>
+                <div>
+                  <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType" id="retryConditionFlag2" value="2">JavaScript</div>
+              </div>
+              <div v-if="retryConditionInputType === '1'">
+                <select name="retryConditionInputField" class="conditionFormat" id="retryConditionInputField" v-model="node.retryCondition"
+                  v-on:change="updateProperty('retryCondition')">
+                  <option v-for="conditionFile in fileList" v-if="conditionFile.type == 'file'" v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}</option>
+                </select>
+              </div>
+              <div v-if="retryConditionInputType === '2'">
+                <input type="text" v-model.lazy.trim="node.retryCondition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('retryCondition')">
+              </div>
+            </div>
+          </div>
           <div v-if="node.hasOwnProperty('condition')">
             <label for="conditionInputField" id="propertyCondition">Condition</label>
             <div id="conditionTypeFlags">
