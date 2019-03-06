@@ -9,6 +9,8 @@ import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 import '../css/workflow.css';
 
 import Vue from 'vue/dist/vue.esm.js';
+import './rapid2.js'
+
 import Cookies from 'js-cookie';
 import SVG from 'svgjs/dist/svg.js';
 import 'svg.draggable.js/dist/svg.draggable.js';
@@ -52,8 +54,9 @@ $(() => {
 
   // create vue.js instance for property subscreen
   let vm = new Vue({
-    el: '#property',
+    el: '#app',
     data: {
+      normal: true,
       node: {},
       newInputFilename: "",
       newOutputFilename: "",
@@ -254,18 +257,9 @@ $(() => {
     filePath = '';
   });
 
-  $('#editPSFileButton').click(function () {
-    if (filePath !== '') {
-      const path = filePath
-      const name = filename
-      const params = $.param({
-        "path": path,
-        "filename": name,
-        "pm": true
-      });
-      window.open(`/editor?${params}`);
-    }
-    filePath = '';
+  //rapid以外の要素をhideしてrapidだけ表示
+  $('#editPSFileButton').click(function(){
+    vm.normal=false;
   });
 
   // container of svg elements
@@ -613,7 +607,7 @@ $(() => {
   }
 
   /**
-   * draw components 
+   * draw components
    */
   function drawComponents() {
     // remove all node from workflow editor

@@ -659,7 +659,7 @@ img.btn_menu_n{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#scriptSelectField, #remotehostSelectField, #conditionSelectField, 
+#scriptSelectField, #remotehostSelectField, #conditionSelectField,
 #fileForCondition{
     margin: 2px 0 0 8px;
     padding-left: 5px;
@@ -675,7 +675,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #queueSelectField{
@@ -1394,7 +1394,7 @@ img.btn_menu_n{
     margin :0;
     width: calc(100% - 16px);
     word-wrap: break-word;
-    border-collapse: collapse; 
+    border-collapse: collapse;
     border: solid 1px #2F2F33;
     border-bottom-color: #222226;
 }
@@ -1471,10 +1471,10 @@ th.componentStateLabel{
 }
 
 #showMoreButtonArea{
-    display: inline-block; 
+    display: inline-block;
     position: relative;
     box-sizing: border-box;
-    background-color: #4C4C55;       
+    background-color: #4C4C55;
     width: 20px;
     height: 25px;
     cursor: pointer;
@@ -1494,10 +1494,10 @@ th.componentStateLabel{
 }
 
 .componentLabel{
-    display:none;        
+    display:none;
     width: 150px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
     border-collapse: separate;
 }
 
@@ -1747,6 +1747,22 @@ tspan{
 #sourceFilename {
   color: black;
   font-size: 14px;
+}
+
+.gutter {
+    background-color: gray;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+#app {
+  height: 100%;
+}
+#normalArea {
+  height: 100%;
+}
+#rapid {
+  height: 100%;
 }
 
 /* .ui-tooltip {
