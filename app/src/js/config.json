@@ -15,8 +15,8 @@
     "if": "#5B5B5F",
     "foreach": "#247780",
     "parameterStudy": "#666622",
-    "source": "#5D99FF",
-    "viewer": "#5BFF7F"
+    "source": "#00bff0",
+    "viewer": "#00b050"
   },
   "box_appearance": {
     "titleHeight": 32,
@@ -35,7 +35,8 @@
     "rerunning": "orange",
     "waiting": "yellow",
     "completed": "#00ff00",
-    "failed": "red"
+    "failed": "red",
+    "unknown": "red"
   },
   "plug_color": {
     "file": "#5673BF",
@@ -62,7 +63,8 @@
     "not-started": "/image/img_stateQue.png",
     "running": "/image/img_statePlay.png",
     "finished": "/image/img_stateDone.png",
-    "failed": "/image/img_error.png"
+    "failed": "/image/img_error.png",
+    "unknown": "/image/img_error.png"
   },
   "fileType_icon": {
     "file": "/image/img_file.png",
@@ -72,6 +74,9 @@
     "filelink": "/image/img_filelink.png",
     "folderlink": "/image/img_folderlink.png",
     "deadlink": "/image/img_deadlink.png"
+  },
+  "tooltip_lang": {
+    "lang": "jpn"
   },
   "reload_project_ms": 2000
 }

@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/sortable';
+import 'jquery-ui/ui/widgets/tooltip';
 import 'jquery-contextmenu';
 
 import 'jquery-ui/themes/base/theme.css';
@@ -24,6 +25,7 @@ import SvgNodeUI from './svgNodeUI';
 import * as svgNode from './svgNodeUI';
 import SvgParentNodeUI from './svgNodeUI';
 import * as svgParentNode from './svgNodeUI';
+import configToolTip from './configToolTip';
 
 $(() => {
   // chek project Json file path
@@ -65,118 +67,153 @@ $(() => {
       queueList: [],
       fileList: [],
       names: [],
-      // conditionInputType: '1'
+      conditionInputType: '1',
+      retryConditionInputType: '1'
     },
     methods: {
       addInputFile: function () {
-        let filename = this.newInputFilename;
-        if (filename === "") return
-        let duplicate = this.node.inputFiles.some((e) => {
-          return e.name === filename;
-        });
-        if (duplicate) return
-        this.newInputFilename = "";
-        sio.emit('addInputFile', this.node.ID, filename, (result) => {
-          if (result !== true) return;
-          $('#cbMessageArea').text(filename);
-        });
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          let filename = this.newInputFilename;
+          if (filename === "") return
+          let duplicate = this.node.inputFiles.some((e) => {
+            return e.name === filename;
+          });
+          if (duplicate) return
+          this.newInputFilename = "";
+          sio.emit('addInputFile', this.node.ID, filename, (result) => {
+            if (result !== true) return;
+            $('#cbMessageArea').text(filename);
+          });
+        }
       },
       addOutputFile: function () {
-        let filename = this.newOutputFilename;
-        if (filename === "") return
-        let duplicate = this.node.outputFiles.some((e) => {
-          return e.name === filename;
-        });
-        if (duplicate) return
-        this.newOutputFilename = "";
-        sio.emit('addOutputFile', this.node.ID, filename, (result) => {
-          if (result !== true) return;
-          $('#cbMessageArea').text(filename);
-        });
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          let filename = this.newOutputFilename;
+          if (filename === "") return
+          let duplicate = this.node.outputFiles.some((e) => {
+            return e.name === filename;
+          });
+          if (duplicate) return
+          this.newOutputFilename = "";
+          sio.emit('addOutputFile', this.node.ID, filename, (result) => {
+            if (result !== true) return;
+            $('#cbMessageArea').text(filename);
+          });
+        }
       },
       addIndexOfForeach: function () {
-        if (this.newIndexOfForeach === "") return
-        const duplicate = this.node.indexList.some((e) => {
-          return e.label === this.newIndexOfForeach;
-        });
-        if (duplicate) return
-        this.node.indexList.push(this.newIndexOfForeach);
-        this.newIndexOfForeach = "";
-        sio.emit('updateNode', this.node.ID, 'indexList', this.node.indexList, (result) => {
-          if (result !== true) return;
-          $('#cbMessageArea').text(this.node.indexList);
-        });
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          if (this.newIndexOfForeach === "") return
+          const duplicate = this.node.indexList.some((e) => {
+            return e.label === this.newIndexOfForeach;
+          });
+          if (duplicate) return
+          this.node.indexList.push(this.newIndexOfForeach);
+          this.newIndexOfForeach = "";
+          sio.emit('updateNode', this.node.ID, 'indexList', this.node.indexList, (result) => {
+            if (result !== true) return;
+            $('#cbMessageArea').text(this.node.indexList);
+          });
+        }
       },
       delInputFile: function (i) {
-        sio.emit('removeInputFile', this.node.ID, this.node.inputFiles[i].name);
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          sio.emit('removeInputFile', this.node.ID, this.node.inputFiles[i].name);
+        }
       },
       delOutputFile: function (i) {
-        sio.emit('removeOutputFile', this.node.ID, this.node.outputFiles[i].name);
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          sio.emit('removeOutputFile', this.node.ID, this.node.outputFiles[i].name);
+        }
       },
       delIndexOfForeach: function (i) {
-        const newIndexList = this.node.indexList.filter((e, index) => {
-          return index !== i;
-        });
-        sio.emit('updateNode', this.node.ID, 'indexList', newIndexList);
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          const newIndexList = this.node.indexList.filter((e, index) => {
+            return index !== i;
+          });
+          sio.emit('updateNode', this.node.ID, 'indexList', newIndexList);
+        }
       },
       updateNodeName: function () {
-        let val = this.node.name;
-        let dup = this.names.some((name) => {
-          return name === val;
-        })
-        if (!dup) {
-          sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result) => {
-            if (result !== true) return;
-            const currentComponentDir = currentWorkDir + "\\" + val;
-            fb.request('getFileList', currentComponentDir, null);
-            const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
-            $('#componentPath').html(displayDirPath);
-            $('#cbMessageArea').text(val);
-          });
-        } else {
-          console.log('duplicated name is not allowed!');
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          let val = this.node.name;
+          let dup = this.names.some((name) => {
+            return name === val;
+          })
+          if (!dup) {
+            sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result) => {
+              if (result !== true) return;
+              const currentComponentDir = currentWorkDir + "\\" + val;
+              fb.request('getFileList', currentComponentDir, null);
+              const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
+              $('#componentPath').html(displayDirPath);
+              $('#cbMessageArea').text(val);
+            });
+          } else {
+            console.log('duplicated name is not allowed!');
+          }
         }
       },
       renameInputFile: function (newName, index) {
-        sio.emit("renameInputFile", this.node.ID, index, newName);
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          sio.emit("renameInputFile", this.node.ID, index, newName);
+        }
       },
       renameOutputFile: function (newName, index) {
-        sio.emit("renameOutputFile", this.node.ID, index, newName);
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          sio.emit("renameOutputFile", this.node.ID, index, newName);
+        }
       },
       updateProperty: function (property) {
-        let val = this.node[property];
-        sio.emit('updateNode', this.node.ID, property, val, (result) => {
-          if (result !== true) return;
-          $('#cbMessageArea').text(val);
-        });
+        if (!isEditDisable()) {
+          if (property === "disable" || vm.node === null || !vm.node.disable) {
+            let val = this.node[property];
+            sio.emit('updateNode', this.node.ID, property, val, (result) => {
+              if (result !== true) return;
+              $('#cbMessageArea').text(val);
+            });
+            if (property === "disable") changeViewState();
+          }
+        }
       },
       cleanComponentState: function () {
-        var nodeId = this.node.ID;
-        const html = '<p class="dialogTitle">Clean component state</p> <div id="cleanMessage">Are you sure to clean this state?</div>'
-        dialogWrapper('#dialog', html)
-          .done(function () {
-            sio.emit('cleanComponent', nodeId, (result) => {
-              if (result !== true) return;
-              $('#cbMessageArea').text('component cleaned');
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          var nodeId = this.node.ID;
+          const html = '<p class="dialogMessage">Are you sure to clean this state?</p>'
+          const dialogOptions = {
+            title: "Clean component state"
+          };
+          dialogWrapper('#dialog', html, dialogOptions)
+            .done(function () {
+              sio.emit('cleanComponent', nodeId, (result) => {
+                if (result !== true) return;
+                $('#cbMessageArea').text('component cleaned');
+              });
             });
-          });
+        }
       },
       openJupyterNotebook: function () {
-        const parentDirPath = `${currentWorkDir[1] === ":" ? currentWorkDir.slice(2) : currentWorkDir}`;
-        // jupyterURL ends with "/"
-        const url = `${jupyterURL}tree${parentDirPath}/${this.node.name}?token=${jupyterToken}`;
-        console.log(url);
-        window.open(url);
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          const parentDirPath = `${currentWorkDir[1] === ":" ? currentWorkDir.slice(2) : currentWorkDir}`;
+          // jupyterURL ends with "/"
+          const url = `${jupyterURL}tree${parentDirPath}/${this.node.name}?token=${jupyterToken}`;
+          console.log(url);
+          window.open(url);
+        }
       },
       updateQueueList: function () {
-        const hostInfo = this.hostList.find((e) => {
-          return e.name === this.node.host;
-        });
-        if (typeof hostInfo === "undefined") {
-          this.queueList = [];
-          return;
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          const hostInfo = this.hostList.find((e) => {
+            return e.name === this.node.host;
+          });
+          if (typeof hostInfo === "undefined") {
+            this.queueList = [];
+            return;
+          }
+          if (typeof hostInfo.queue !== "undefined") {
+            this.queueList = hostInfo.queue.split(',');
+          }
         }
-        this.queueList = hostInfo.queue.split(',');
       }
     }
 
@@ -244,17 +281,19 @@ $(() => {
   });
 
   $('#editFileButton').click(function () {
-    if (filePath !== '') {
-      const path = filePath
-      const name = filename
-      const params = $.param({
-        "path": path,
-        "filename": name,
-        "pm": false
-      });
-      window.open(`/editor?${params}`);
+    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+      if (filePath !== '') {
+        const path = filePath
+        const name = filename
+        const params = $.param({
+          "path": path,
+          "filename": name,
+          "pm": false
+        });
+        window.open(`/editor?${params}`);
+      }
+      filePath = '';
     }
-    filePath = '';
   });
 
   //rapid以外の要素をhideしてrapidだけ表示
@@ -282,35 +321,43 @@ $(() => {
 
     sio.on('showMessage', showMessage);
     sio.on('askPassword', (hostname) => {
-      const html = `<p class="dialogTitle">Input SSH connection password for ${hostname}</p><input type=password id="password" class="dialogTextbox">`;
-      dialogWrapper('#dialog', html)
+      const html = `<p class="dialogMessage">Input SSH connection password for ${hostname}</p><input type=password id="password" class="dialogTextbox">`;
+      const dialogOptions = {
+        title: "SSH connecton check"
+      };
+      dialogWrapper('#dialog', html, dialogOptions)
         .done(() => {
           const password = $('#password').val();
           sio.emit('password', password);
         });
       //TODO ユーザがキャンセルした時の対応を検討
     });
-    sio.on('askSourceFilename', (id, name, description, filelist)=>{
-      const html = `<p class="dialogTitle"> select file for ${name} component</p>
-      <select class="dialogTextbox" id="sourceFilename">
-        ${filelist.map((e)=>{return `<option value="${e}">${e}</option>`}).join(" ") }
-      </select>
-      `;
-      dialogWrapper('#dialog', html)
+    sio.on('askSourceFilename', (id, name, description, filelist) => {
+      const html = `<p class="dialogMessage"> Select file for ${name} component</p>
+      <select id="sourceFilename" class="dialogTextbox">
+        ${filelist.map((e) => { return `<option value="${e}">${e}</option>` }).join(" ")}
+      </select>`;
+      const dialogOptions = {
+        title: "Set source component file"
+      };
+      dialogWrapper('#dialog', html, dialogOptions)
         .done(() => {
           const filename = $('#sourceFilename option:selected').val();
           sio.emit("sourceFile", id, filename);
         });
     });
-    sio.on('requestSourceFile', (id, name, description)=>{
-      const html = `<p class="dialogTitle">upload file for ${name} component</p>`;
-      dialogWrapper('#dialog', html)
-        .done(()=>{
+    sio.on('requestSourceFile', (id, name, description) => {
+      const html = `<p class="dialogMessage">Upload file for ${name} component</p>`;
+      const dialogOptions = {
+        title: "Set source component file"
+      };
+      dialogWrapper('#dialog', html, dialogOptions)
+        .done(() => {
           const componentDir = `${projectRootDir}/${componentPath[id]}`;
-          function setComponentDir(event){
+          function setComponentDir(event) {
             event.file.meta.componentDir = componentDir;
           }
-          function onComplete(event){
+          function onComplete(event) {
             uploader.removeEventListener(setComponentDir);
             uploader.removeEventListener(onComplete);
             sio.emit("sourceFile", id, event.file.name);
@@ -372,6 +419,10 @@ $(() => {
         $('#project_state').css('background-color', '#E60000');
         $('#pause_button').attr("src", "/image/btn_pause_n.png");
         $('#run_button').attr("src", "/image/btn_play_n.png");
+      } else if (projectJson.state === 'unknown') {
+        $('#project_state').css('background-color', '#E60000');
+        $('#pause_button').attr("src", "/image/btn_pause_n.png");
+        $('#run_button').attr("src", "/image/btn_play_n.png");
       } else if (projectJson.state === 'paused') {
         $('#project_state').css('background-color', '#444480');
         $('#pause_button').attr("src", "/image/btn_pause_d.png");
@@ -388,6 +439,9 @@ $(() => {
       $('#project_update_date').text(projectJson.mtime);
       $('#projectDirectoryPath').text(projectJson.root);
       $('#projectDescription').attr("value", projectJson.description);
+
+      changeViewState();
+
     });
 
     /*create host, queue selectbox*/
@@ -412,21 +466,23 @@ $(() => {
     sio.emit('pauseProject', true);
   });
   $('#clean_menu').on('click', function () {
-    updateList = [];
-    $('#project_table_body').empty();
-    // update pankuzu
-    let rootNodeStack = nodeStack[0];
-    let rootDirStack = dirStack[0];
-    let rootWfStack = wfStack[0];
-    nodeStack = [];
-    dirStack = [];
-    wfStack = [];
-    nodeStack.push(rootNodeStack);
-    dirStack.push(rootDirStack);
-    wfStack.push(rootWfStack);
-    currentWorkDir = dirStack[nodeStack.length - 1];
-    fb.request('getFileList', currentWorkDir, null);
-    sio.emit('cleanProject', true);
+    if (presentState !== 'running') {
+      updateList = [];
+      $('#project_table_body').empty();
+      // update pankuzu
+      let rootNodeStack = nodeStack[0];
+      let rootDirStack = dirStack[0];
+      let rootWfStack = wfStack[0];
+      nodeStack = [];
+      dirStack = [];
+      wfStack = [];
+      nodeStack.push(rootNodeStack);
+      dirStack.push(rootDirStack);
+      wfStack.push(rootWfStack);
+      currentWorkDir = dirStack[nodeStack.length - 1];
+      fb.request('getFileList', currentWorkDir, null);
+      sio.emit('cleanProject', true);
+    }
   });
 
   $('#stop_menu').on('click', function () {
@@ -435,30 +491,42 @@ $(() => {
 
   //save
   $('#save_button').on('click', function () {
-    if (presentState === 'not-started') {
+    if (!isEditDisable()) {
       sio.emit('saveProject', null, (result) => {
       });
     }
   });
   $('#save_button').mouseover(function () {
-    if (presentState === 'not-started') {
+    if (!isEditDisable()) {
       $('#save_button_img').attr("src", "/image/btn_save_h.png");
+      $('#save_button').css("color", "#CCFF00");
     }
   });
   $('#save_button').mouseleave(function () {
-    $('#save_button_img').attr("src", "/image/btn_save_n.png");
+    if (!isEditDisable()) {
+      $('#save_button_img').attr("src", "/image/btn_save_n.png");
+      $('#save_button').css("color", "#FFFFFF");
+    }
   });
 
   //revert
   $('#revert_button').on('click', function () {
-    sio.emit('revertProject', null, (result) => {
-    });
+    if (!isEditDisable()) {
+      sio.emit('revertProject', null, (result) => {
+      });
+    }
   });
   $('#revert_button').mouseover(function () {
-    $('#revert_button_img').attr("src", "/image/btn_reset_h.png");
+    if (!isEditDisable()) {
+      $('#revert_button_img').attr("src", "/image/btn_reset_h.png");
+      $('#revert_button').css("color", "#CCFF00");
+    }
   });
   $('#revert_button').mouseleave(function () {
-    $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
+    if (!isEditDisable()) {
+      $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
+      $('#revert_button').css("color", "#FFFFFF");
+    }
   });
 
   // hide property and select parent WF if background is clicked
@@ -503,6 +571,15 @@ $(() => {
           sio.emit('removeNode', selectedNode);
         }
       }
+    },
+    events: {
+      show: function (options) {
+        if (!isEditDisable() || presentState === '') {
+          return true;
+        } else {
+          return false;
+        }
+      }
     }
   });
 
@@ -541,6 +618,9 @@ $(() => {
     };
   });
 
+  // show or hide task(Component) Library area
+  var isTaskLibrary = false;
+
   // library open/close
   function showTaskLibrary() {
     $('#taskLibraryButton').show().animate({ left: '256px' }, 50);
@@ -554,9 +634,11 @@ $(() => {
     $('#libraryButton').attr("src", "/image/btn_openCloseR_n.png");
   }
 
-  // show or hide task(Component) Library area
-  var isTaskLibrary = false;
   $('#taskLibraryButton').click(function () {
+    if (isEditDisable()) {
+      return;
+    }
+
     isTaskLibrary = !isTaskLibrary;
     if (isTaskLibrary) {
       showTaskLibrary();
@@ -604,6 +686,10 @@ $(() => {
     return -1 !== files.findIndex(function (v) {
       return v.name === filename;
     });
+  }
+
+  function isEditDisable() {
+    return presentState === 'running';
   }
 
   /**
@@ -676,8 +762,12 @@ $(() => {
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
-        $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100);
-        drawStrokeColor(e);
+        $.when(
+          $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100),
+          drawStrokeColor(e)
+        ).done(function () {
+          changeViewState();
+        });
       })
         .onDblclick(function (e) {
           $('#property').hide();
@@ -699,7 +789,9 @@ $(() => {
           }
         });
       nodes.push(node);
+      node.setEditDisable(isEditDisable());
     });
+    svgNode.setEditDisable(svg, nodes, isEditDisable());
   }
 
   /**
@@ -965,41 +1057,59 @@ $(() => {
 
   //create File/Folder in property 'Files'
   $('#createFileButton').click(function () {
-    const html = '<p class="dialogTitle">New file name (ex. aaa.txt)</p><input type=text id="newFileName" class="dialogTextbox">'
-    dialogWrapper('#dialog', html)
-      .done(function () {
-        let newFileName = $('#newFileName').val().trim();
-        let newFilePath = fb.getRequestedPath() + "/" + newFileName;
-        sio.emit('createNewFile', newFilePath, (result) => {
+    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+      const html = '<p class="dialogMessage">Input new file name (ex. aaa.txt)</p><input type=text id="newFileName" class="dialogTextbox">'
+      const dialogOptions = {
+        title: "Create new file"
+      };
+      dialogWrapper('#dialog', html, dialogOptions)
+        .done(function () {
+          let newFileName = $('#newFileName').val().trim();
+          let newFilePath = fb.getRequestedPath() + "/" + newFileName;
+          sio.emit('createNewFile', newFilePath, (result) => {
+          });
         });
-      });
+    }
   });
 
   $('#createFolderButton').click(function () {
-    const html = '<p class="dialogTitle">New folder name</p><input id="newFolderName" type=text class="dialogTextbox">'
-    dialogWrapper('#dialog', html)
-      .done(function () {
-        let newFolderName = $('#newFolderName').val().trim();
-        let newFolderPath = fb.getRequestedPath() + "/" + newFolderName;
-        sio.emit('createNewDir', newFolderPath, (result) => {
+    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+      const html = '<p class="dialogMessage">Input new folder name</p><input id="newFolderName" type=text class="dialogTextbox">'
+      const dialogOptions = {
+        title: "Create new folder"
+      };
+      dialogWrapper('#dialog', html, dialogOptions)
+        .done(function () {
+          let newFolderName = $('#newFolderName').val().trim();
+          let newFolderPath = fb.getRequestedPath() + "/" + newFolderName;
+          sio.emit('createNewDir', newFolderPath, (result) => {
+          });
         });
-      });
+    }
   });
 
   $('#fileUploadButton').click(function () {
-    $('#fileSelector').click();
+    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+      $('#fileSelector').click();
+    }
   });
 
   $('#drawer_button').click(function () {
-    $('#drawerMenu').toggleClass('action', true);
+    if (!isEditDisable()) {
+      $('#drawerMenu').toggleClass('action', true);
+    }
   });
 
   $('#drawerMenu').mouseleave(function () {
-    $('#drawerMenu').toggleClass('action', false);
+    if (!isEditDisable()) {
+      $('#drawerMenu').toggleClass('action', false);
+    }
   });
 
   $('#projectInfo').click(function () {
-    $('#projectInfoDrawer').toggleClass('action', true);
+    if (!isEditDisable()) {
+      $('#projectInfoDrawer').toggleClass('action', true);
+    }
   });
 
   $('#projectInfoDrawer').mouseleave(function () {
@@ -1008,8 +1118,10 @@ $(() => {
 
   //change project description
   $('#projectDescription').blur(function () {
-    var prjDesc = document.getElementById('projectDescription').value;
-    sio.emit('updateProjectJson', 'description', prjDesc);
+    if (!isEditDisable()) {
+      var prjDesc = document.getElementById('projectDescription').value;
+      sio.emit('updateProjectJson', 'description', prjDesc);
+    }
   });
 
   //header buttons
@@ -1043,12 +1155,99 @@ $(() => {
   });
 
   $('#clean_button').mouseover(function () {
-    $('#clean_button').attr("src", "/image/btn_replay_h.png");
+    if (presentState !== 'running') {
+      $('#clean_button').attr("src", "/image/btn_replay_h.png");
+    }
   });
   $('#clean_button').mouseleave(function () {
-    $('#clean_button').attr("src", "/image/btn_replay_n.png");
+    if (presentState !== 'running') {
+      $('#clean_button').attr("src", "/image/btn_replay_n.png");
+    }
   });
 
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
+
+  function updateToolTip() {
+    configToolTip.toolTipTexts.forEach((v) => {
+      if (config.tooltip_lang.lang === "jpn") {
+        try {
+          $("[id=" + v.key + "]").attr('title', v.jpn);
+        } catch (e) {
+          console.log(v.key + " is not find");
+          // none
+        }
+      }
+    });
+    return;
+  }
+
+  function changeViewState() {
+    if (isEditDisable()) {
+      hideTaskLibrary();
+    }
+
+    var editDisable = isEditDisable();
+    var disable = editDisable || (vm.node !== null && vm.node.disable);
+
+    var ids = [
+      // 入力域は readonlyのみ。チェックボックスなどは disableも
+      { id: "nameInputField", readonly: true, disable: false },
+      { id: "descriptionInputField", readonly: true, disable: false },
+      { id: "scriptSelectField", readonly: true, disable: true },
+      { id: "newInputFileNameInputField", readonly: true, disable: false },
+      { id: "newOutputFileNameInputField", readonly: true, disable: false },
+      { id: "parameterFileSelectField", readonly: true, disable: true },
+      { id: "conditionFlag1", readonly: true, disable: true },
+      { id: "conditionFlag2", readonly: true, disable: true },
+      { id: "conditionSelectField", readonly: true, disable: true },
+      { id: "conditionInputField", readonly: true, disable: false },
+      { id: "newIndexListField", readonly: true, disable: false },
+      { id: "indexListFieldAddButton", readonly: true, disable: false },
+      { id: "startInputField", readonly: true, disable: false },
+      { id: "endInputField", readonly: true, disable: false },
+      { id: "stepInputField", readonly: true, disable: false },
+      { id: "cleanUpFlag0", readonly: true, disable: true },
+      { id: "cleanUpFlag1", readonly: true, disable: true },
+      { id: "cleanUpFlag2", readonly: true, disable: true },
+      { id: "includeInputField", readonly: true, disable: false },
+      { id: "excludeInputField", readonly: true, disable: false },
+      { id: "forceOverwriteCheckbox", readonly: true, disable: true },
+      { id: "useJobSchedulerFlagField", readonly: true, disable: true },
+      { id: "remotehostSelectField", readonly: true, disable: true },
+      { id: "queueSelectField", readonly: true, disable: true },
+      { id: "jupyterBootButton", readonly: true, disable: true },
+      { id: "createFolderButton", readonly: true, disable: true },
+      { id: "createFileButton", readonly: true, disable: true },
+      { id: "fileUploadButton", readonly: true, disable: true },
+      { id: "fileSelector", readonly: true, disable: true },
+      { id: "editFileButton", readonly: true, disable: true },
+      { id: "editPSFileButton", readonly: true, disable: true },
+      { id: "uploadOnDemandFlagField", readonly: true, disable: true }
+    ];
+
+    ids.forEach((v) => {
+      try {
+        if (v.readonly === true) {
+          $("[id=" + v.id + "]").attr('readonly', disable);
+        }
+      } catch (e) { }
+      try {
+        if (v.disable === true) {
+          $("[id=" + v.id + "]").prop('disabled', disable);
+        }
+      } catch (e) { }
+    });
+
+    $("[id=propertyDisable]").attr('readonly', editDisable);
+    $("[id=propertyDisable]").prop('disabled', editDisable);
+
+    svgNode.setEditDisable(svg, nodes, editDisable);
+    fb.setDisable(disable);
+
+    updateToolTip();
+
+    return;
+  }
+
 });

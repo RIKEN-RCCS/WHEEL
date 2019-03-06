@@ -79,8 +79,7 @@
   </div>
 
   <!-- リストビュー -->
-  <!-- <div id="project_manage_area" class="sub_content_area" id="project_tree" onMouseDown="return false;"> -->
-  <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
+  <!-- <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
     <div id="project_tree_svg">
       <div id="project_table_container">
         <table id="projectTable">
@@ -96,6 +95,36 @@
           <div id="tableBody">
             <tbody id="project_table_body"></tbody>
           </div>
+        </table>
+      </div>
+    </div>
+  </div> -->
+
+  <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
+    <div id="project_tree_svg">
+      <div id="tableHeadArea">
+        <table id="projectHeadTable" name="ListviewTable">
+          <thead id="project_table_head">
+            <tr id="project_table_tr">
+              <th class="componentNameLabel">Name</th>
+              <th class="componentStateLabel">State</th>
+              <th class="componentStartTimeLabel">Started</th>
+              <th id="showMoreButtonArea">
+                <input type="image" src="/image/btn_openCloseR_n.png" alt="showMoreButton" id="showMoreButton" class="showMoreButton">
+              </th>
+              <th class="componentLabel">Prepared</th>
+              <th class="componentLabel">Job Submitted</th>
+              <th class="componentLabel">Job Ran</th>
+              <th class="componentLabel">Job Finished</th>
+              <th class="componentEndTimeLabel">Finished</th>
+              <th class="componentDescriptionLabel">Description</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div id="tableDataArea">
+        <table id="projectBodyTable" name="ListviewTable">
+          <tbody id="project_table_body"></tbody>
         </table>
       </div>
     </div>
@@ -161,7 +190,6 @@
           </li>
           <li id="img_viewer_name">Viewer</li>
         </ul>
-        <!-- <li a href="viewer" id="viewer" class="type" draggable="true">viewer</li> -->
       </div>
     </div>
     <!-- ライブラリーボタン -->
@@ -177,6 +205,11 @@
       <div id="propertyArea">
         <p id="propertyTitle">Property</p>
         <div id="propertyComponents">
+          <div id="propertyDisableArea">
+            <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');" name="check" id="propertyDisableCheckBox"
+              value="true">
+            <label id="propertyDisable" for="propertyDisable">disable</label>
+          </div>
           <span id="propertyType">
             <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
             <p id="propertyTypeName"></p>
@@ -201,14 +234,11 @@
           <div v-if="node.hasOwnProperty('script')">
             <label for="scriptInputField" id="propertyScript">Script</label>
           </div>
-          <div v-if="node.hasOwnProperty('script')">
-            <input type="text" v-model.lazy.trim="node.script" spellcheck="false" id="scriptInputField" v-on:blur="updateProperty('script')">
-          </div>
-          <div v-if="node.type !=='source' && node.type !=='viewer' && node.hasOwnProperty('inputFiles')">
+          <select name="script" v-if="node.hasOwnProperty('script')" v-model="node.script" id="scriptSelectField" v-on:change="updateProperty('script')">
+            <option v-for="v in fileList" v-if="v.type == 'file'" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
+          </select>
+          <div v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
             <label id="propertyInputFiles">InputFiles</label>
-          </div>
-          <div v-if="node.type ==='viewer' && node.hasOwnProperty('inputFiles')">
-            <label id="propertyInputFiles">InputFile</label>
           </div>
           <template v-for="(inputFile, index) in node.inputFiles" v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
             <div>
@@ -219,13 +249,7 @@
               </button>
             </div>
           </template>
-          <div v-if="node.type !=='source' && node.type !=='viewer' && node.hasOwnProperty('inputFiles')">
-            <input type="text" v-model.lazy.trim="newInputFilename" class="newInputFileNameInputField" id="newInputFileNameInputField">
-            <button v-on:click="addInputFile" class="inputAddDelButton" id="inputAddDelButton">
-              <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
-            </button>
-          </div>
-          <div v-if="node.type ==='viewer' && node.hasOwnProperty('inputFiles') && node.inputFiles.length === 0 ">
+          <div v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
             <input type="text" v-model.lazy.trim="newInputFilename" class="newInputFileNameInputField" id="newInputFileNameInputField">
             <button v-on:click="addInputFile" class="inputAddDelButton" id="inputAddDelButton">
               <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
@@ -241,11 +265,11 @@
             <div>
               <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="renameOutputFile(outputFile.name, index)" class="newOutputFileNameInputField"
                 id="newOutputFileNameInputField">
-              <div v-if="node.type !=='source'">
+              <span v-if="node.type !=='source'">
                 <button v-on:click="delOutputFile(index)" class="outputAddDelButton" id="outputAddDelButton">
                   <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
                 </button>
-              </div>
+              </span>
             </div>
           </template>
           <div v-if="node.type !=='viewer' && node.type !=='source' && node.hasOwnProperty('outputFiles')">
@@ -292,14 +316,53 @@
           <div v-if="node.hasOwnProperty('parameterFile')">
             <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>
           </div>
-          <div v-if="node.hasOwnProperty('parameterFile')">
-            <input type="text" v-model.lazy.trim="node.parameterFile" spellcheck="false" id="parameterFileInputField" v-on:blur="updateProperty('parameterFile')">
+          <select name="parameterFile" v-if="node.hasOwnProperty('parameterFile')" v-model="node.parameterFile" id="parameterFileSelectField"
+            v-on:change="updateProperty('parameterFile')">
+            <option v-for="v in fileList" v-if="v.type == 'file'" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
+          </select>
+          <div v-if="node.hasOwnProperty('retryTimes')">
+            <label for="retry" id="propertyRetry">Retry</label>
+            <div id="propertyRetryArea">
+              <div>
+                <label for="retryTimesInputField" id="propertyRetryTimes">times</label>
+              </div>
+              <div>
+                <input type="number" v-model.number.lazy.trim="node.retryTimes" id="retryTimesInputField" v-on:blur="updateProperty('retryTimes')">
+              </div>
+              <label for="retryConditionInputField" id="propertyRetryCondition">Condition</label>
+              <div id="retryConditionTypeFlags">
+                <div>
+                  <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType" id="retryConditionFlag1" value="1">file</div>
+                <div>
+                  <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType" id="retryConditionFlag2" value="2">JavaScript</div>
+              </div>
+              <div v-if="retryConditionInputType === '1'">
+                <select name="retryConditionInputField" class="conditionFormat" id="retryConditionInputField" v-model="node.retryCondition"
+                  v-on:change="updateProperty('retryCondition')">
+                  <option v-for="conditionFile in fileList" v-if="conditionFile.type == 'file'" v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}</option>
+                </select>
+              </div>
+              <div v-if="retryConditionInputType === '2'">
+                <input type="text" v-model.lazy.trim="node.retryCondition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('retryCondition')">
+              </div>
+            </div>
           </div>
           <div v-if="node.hasOwnProperty('condition')">
             <label for="conditionInputField" id="propertyCondition">Condition</label>
-          </div>
-          <div v-if="node.hasOwnProperty('condition')">
-            <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
+            <div id="conditionTypeFlags">
+              <div>
+                <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag1" value="1">file</div>
+              <div>
+                <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag2" value="2">JavaScript</div>
+            </div>
+            <div v-if="conditionInputType === '1'">
+              <select name="condition" class="conditionFormat" id="conditionSelectField" v-model="node.condition" v-on:change="updateProperty('condition')">
+                <option v-for="conditionFile in fileList" v-if="conditionFile.type == 'file'" v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}</option>
+              </select>
+            </div>
+            <div v-if="conditionInputType === '2'">
+              <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField" v-on:blur="updateProperty('condition')">
+            </div>
           </div>
           <div v-if="node.hasOwnProperty('indexList')">
             <label id="propertyIndexList">index list</label>
@@ -308,14 +371,14 @@
             <div>
               <input type="text" v-model.lazy.trim="node.indexList[i]" v-on:blur="updateProperty('indexList')" class="newIndexListField"
                 id="newIndexListField">
-              <button v-on:click="delIndexOfForeach(i)" class="indexListButton" id="indexListButton">
+              <button v-on:click="delIndexOfForeach(i)" class="indexListButton">
                 <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
               </button>
             </div>
           </template>
           <div v-if="node.hasOwnProperty('indexList')">
-            <input type="text" v-model.lazy.trim="newIndexOfForeach" class="newIndexListField" id="newIndexListField">
-            <button v-on:click="addIndexOfForeach" class="indexListButton" id="indexListButton">
+            <input type="text" v-model.lazy.trim="newIndexOfForeach" class="newIndexListField" id="indexListFieldAddButton">
+            <button v-on:click="addIndexOfForeach" class="indexListButton">
               <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
             </button>
           </div>
@@ -340,18 +403,15 @@
           <div id="flags">
             <div>
               <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="0"
-                id="cleanUpFlag0">
-              <label for="cleanUpFlag0" id="cleanUpFlag0">clean up</label>
+                id="cleanUpFlag0">clean up
             </div>
             <div>
               <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="1"
-                id="cleanUpFlag1">
-              <label for="cleanUpFlag1" id="cleanUpFlag1">keep files</label>
+                id="cleanUpFlag1">keep files
             </div>
             <div>
               <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')" name="cleanupFlag" value="2"
-                id="cleanUpFlag2" checked>
-              <label for="cleanUpFlag2" id="cleanUpFlag2">Follow parent setting</label>
+                id="cleanUpFlag2" checked>Follow parent setting
             </div>
           </div>
         </div>
@@ -373,8 +433,7 @@
         </div>
         <div v-if="node.hasOwnProperty('forceOverwrite')">
           <div>
-            <input type="checkbox" v-model="node.forceOverwrite" id="forceOverwriteCheckbox" v-on:change="updateProperty('forceOverwrite')">
-            <label for="forceOverwriteCheckbox" id="forceOverwriteCheckbox">force overwrite</label>
+            <input type="checkbox" v-model="node.forceOverwrite" id="forceOverwriteCheckbox" v-on:change="updateProperty('forceOverwrite')">force overwrite
           </div>
         </div>
       </div>

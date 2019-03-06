@@ -8,6 +8,8 @@ import showMessage from './showMessage';
 import 'jquery-ui/themes/base/all.css';
 import '../css/remotehost.css';
 import { log } from 'util';
+import config from './config';
+import configToolTip from './configToolTip';
 
 $(() => {
   // create socket.io instance
@@ -28,12 +30,12 @@ $(() => {
     renewDelay: 0,
     statusCheckInterval: 10,
     maxStatusCheckError: 10,
-    type: "aws",
+    type: "",
     os: "ubuntu16",
     region: "",
     numNodes: "",
     InstanceType: "",
-    rootVolume: 0,
+    rootVolume: 8,
     shareStorage: true,
     playbook: "",
     mpi: "",
@@ -80,28 +82,37 @@ $(() => {
       onAddButton: function () {
         this.selectedHost = -1
         resetNewHost();
-        $("#errorMessage").css("visibility", "hidden");
+        showErrorMessage("hidden");
       },
       onCopyButton: function () {
         this.mode = 'copyHost';
-        $("#errorMessage").css("visibility", "hidden");
+        showErrorMessage("hidden");
         if (this.selectedHost === -1) {
           this.errorMessage = 'Please select Host';
-          $("#errorMessage").css("visibility", "visible");
+          showErrorMessage("visible");
           return;
         }
         socket.emit('copyHost', this.hostList[this.selectedHost].id);
       },
       onRemoveButton: function () {
         this.mode = 'removeHost';
-        $("#errorMessage").css("visibility", "hidden");
+        showErrorMessage("hidden");
         if (this.selectedHost === -1) {
           this.errorMessage = 'Please select Host';
-          $("#errorMessage").css("visibility", "visible");
+          showErrorMessage("visible");
           return;
         }
+        let deleteHost = this.hostList[this.selectedHost].id;
 
-        $("#deleteCheckDialog").dialog({ width: 334, title: 'Delete Host', modal: true });
+        const html = '<p id="deleteHostLabel">Are you sure to completely delete this host?</p>';
+        const dialogOptions = {
+          title: "Delete Host"
+        };
+        dialogWrapper('#dialog', html, dialogOptions)
+          .done(function () {
+            socket.emit('removeHost', deleteHost);
+            resetNewHost();
+          });
       },
       onEditAreaOKButton: function () {
         if (this.authType === '1') {
@@ -119,14 +130,6 @@ $(() => {
       onEditAreaCancelButton: function () {
         resetNewHost();
         this.selectedHost = -1;
-      },
-      onDialogOKButton: function () {
-        socket.emit('removeHost', this.hostList[this.selectedHost].id);
-        resetNewHost();
-        $("#deleteCheckDialog").dialog('close');
-      },
-      onDialogCancelButton: function () {
-        $("#deleteCheckDialog").dialog('close');
       },
       isSelected: function (index) {
         let flag;
@@ -159,11 +162,24 @@ $(() => {
         });
       },
       validation: function () {
-        return {
-          name: !isEmpty(this.newHostInfo.name),
-          host: !isEmpty(this.newHostInfo.host),
-          username: !isEmpty(this.newHostInfo.username),
-          path: !isEmpty(this.newHostInfo.path)
+        if (contentsHpcOrCloud) {
+          return {
+            name: !isEmpty(this.newHostInfo.name),
+            host: !isEmpty(this.newHostInfo.host),
+            username: !isEmpty(this.newHostInfo.username),
+            path: !isEmpty(this.newHostInfo.path)
+          }
+        } else if (!contentsHpcOrCloud) {
+          return {
+            name: !isEmpty(this.newHostInfo.name),
+            type: !isEmpty(this.newHostInfo.type),
+            os: !isEmpty(this.newHostInfo.os),
+            region: !isEmpty(this.newHostInfo.region),
+            number: !isEmpty(this.newHostInfo.number),
+            InstanceType: !isEmpty(this.newHostInfo.InstanceType),
+            rootVolume: !isEmpty(this.newHostInfo.rootVolume),
+            shareStorage: !isEmpty(this.newHostInfo.shareStorage)
+          }
         }
       },
       hasError: function () {
@@ -181,9 +197,13 @@ $(() => {
     vm.selecteds = [];
   });
 
+  //draw help message
+  updateToolTip();
+
   function browseServerFiles() {
     const html = '<p id="path"></p><ul id=fileList></ul>';
     const dialogOptions = {
+      title: "Select keyfile",
       height: $(window).height() * 0.90,
       width: $(window).width() * 0.60
     };
@@ -213,7 +233,10 @@ $(() => {
     vm.OK = [];
     vm.NG = [];
     const html = '<p id="sshConnectionLabel">Input SSH connection password.</p><input type=password id="password">'
-    dialogWrapper('#dialog', html)
+    const dialogOptions = {
+      title: "SSH connection check"
+    };
+    dialogWrapper('#dialog', html, dialogOptions)
       .done(function () {
         vm.testing = index;
         let password = $('#password').val();
@@ -240,16 +263,6 @@ $(() => {
       });
   }
 
-  $("#cloudContentsButton").click(function () {
-    $("#hostRegFormAreaForCloud").css('display', 'inline-flex');
-    $("#hostRegFormAreaForHPC").css('display', 'none');
-  });
-
-  $("#hpcContentsButton").click(function () {
-    $("#hostRegFormAreaForHPC").css('display', 'inline-flex');
-    $("#hostRegFormAreaForCloud").css('display', 'none');
-  });
-
   function resetNewHost() {
     Object.assign(vm.newHostInfo, defaultHost);
   }
@@ -258,28 +271,92 @@ $(() => {
     return string === '';
   }
 
+  function showErrorMessage(view) {
+    $("#errorMessage").css("visibility", view);
+  }
+
   // change color in case of "edit" mode.
   function formColor() {
-    $('#hostRegFormAreaForHPC input:not([type="radio"])').css('border', '1px solid #ccff00');
+    $('.hostRegFormAreaForHPC input:not([type="radio"])').css('border', '1px solid #ccff00');
+    $('.hostRegFormAreaForCloud input:not([type="checkbox"])').css('border', '1px solid #ccff00');
+    $('.hostRegFormAreaForCloud textarea').css('border', '1px solid #ccff00');
   }
+
   function notFormColor() {
-    $('#hostRegFormAreaForHPC input:not([type="radio"])').css('border', '1px solid #000000');
+    $('.hostRegFormAreaForHPC input:not([type="radio"])').css('border', '1px solid #000000');
+    $('.hostRegFormAreaForCloud input:not([type="checkbox"])').css('border', '1px solid #000000');
+    $('.hostRegFormAreaForCloud textarea').css('border', '1px solid #000000');
   }
+
   $("#newButton").click(formColor);
   $("#copyButton").click(notFormColor);
   $("#deleteButton").click(notFormColor);
   $("#cancelButton").click(notFormColor);
   $("#confirmButton").click(notFormColor);
 
+  // Change registration contents button "HPC" "Cloud"
+  var contentsHpcOrCloud = true;
+  $(".hostType").click(function () {
+    var target = $(this).attr("id");
+    if (target === 'cloudContentsButton') {
+      $(".hostRegFormAreaForHPC").css('display', 'none');
+      $(".hostRegFormAreaForCloud").css('display', 'inline-flex');
+      $(".hostListAreaForHpc").css('display', 'none');
+      $(".hostListAreaForCloud").css('display', 'block');
+      $("#hpcContentsButton").css('border', '1px solid #5B5B5F');
+      $("#cloudContentsButton").css('border', '1px solid #88BB00');
+      defaultHost.type = "aws";
+      contentsHpcOrCloud = false;
+    } else {
+      $(".hostRegFormAreaForHPC").css('display', 'inline-flex');
+      $(".hostRegFormAreaForCloud").css('display', 'none');
+      $(".hostListAreaForHpc").css('display', 'block');
+      $(".hostListAreaForCloud").css('display', 'none');
+      $("#hpcContentsButton").css('border', '1px solid #88BB00');
+      $("#cloudContentsButton").css('border', '1px solid #5B5B5F');
+      defaultHost.type = "";
+      contentsHpcOrCloud = true;
+    }
+    resetNewHost();
+    notFormColor();
+    vm.selectedHost = -1;
+  });
+
+  // for scroll action
+  var hostPropertyArea;
+  var hostTitleArea;
+  function scrollTogether() {
+    if (contentsHpcOrCloud) {
+      hostPropertyArea = "hostPropertyAreaForHPC";
+      hostTitleArea = "hostTitleAreaForHPC";
+    } else {
+      hostPropertyArea = "hostPropertyAreaForCloud";
+      hostTitleArea = "hostTitleAreaForCloud";
+    }
+    getElement(hostTitleArea).scrollLeft = getElement(hostPropertyArea).scrollLeft;
+  }
+
+  function getElement(elementID) {
+    return document.getElementById(elementID);
+  }
+
+  getElement("hostPropertyAreaForHPC").onscroll = scrollTogether;
+  getElement("hostPropertyAreaForCloud").onscroll = scrollTogether;
+
   var pos = $("#titleUserName").offset();
   $("#iconImg").css('right', window.innerWidth - pos.left + "px");
 
-  // スクロールについて
-  function $E(name) {
-    return document.getElementById(name);
+  function updateToolTip() {
+    configToolTip.toolTipTexts.forEach((v) => {
+      if (config.tooltip_lang.lang === "jpn") {
+        try {
+          $("[id=" + v.key + "]").attr('title', v.jpn);
+        } catch (e) {
+          console.log(v.key + " is not find");
+          // none
+        }
+      }
+    });
+    return;
   }
-  function scroll() {
-    $E("hostTitleArea").scrollLeft = $E("hostPropertyArea").scrollLeft;// 左右連動させる
-  }
-  $E("hostPropertyArea").onscroll = scroll;
 });
