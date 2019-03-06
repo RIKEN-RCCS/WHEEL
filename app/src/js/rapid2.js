@@ -1,9 +1,4 @@
-import Vue from 'vue/dist/vue.esm.js';
-import Vuetify from 'vuetify';
 import Split from "split.js";
-import 'vuetify/dist/vuetify.min.css'
-
-Vue.use(Vuetify);
 
 Vue.component("new-rapid", {
   template: `\

@@ -9,7 +9,6 @@ import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/workflow.css';
 
-import Vue from 'vue/dist/vue.esm.js';
 import './rapid2.js'
 
 import Cookies from 'js-cookie';
