@@ -19,7 +19,7 @@
     * [reorderProject(newOrder, cb)](#reorderprojectneworder-cb)
 * [workflow画面で発生する通信一覧(server -> client)](#workflow画面発生通信一覧server-client)
     * [fileList](#filelist)
-    * [result(result[])](#resultresult)
+    * [results(result[])](#resultsresult)
     * [workflow(Component)](#workflowcomponent)
     * [projectState(status)](#projectstatestatus)
     * [projectJson(projectJson)](#projectjsonprojectjson)
@@ -212,7 +212,7 @@ descriptionにnullが指定された場合は、デフォルト値が使われ�
 #### fileList
 home画面の同名のAPIと同じ
 
-#### result(result[])
+#### results(result[])
 viewer コンポーネントに送られてきたファイルの情報を送ります。
 
 resultのデータ形式は以下のとおり
