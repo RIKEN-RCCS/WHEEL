@@ -50,6 +50,7 @@ wheelの実行中にremotehost.jsonを編集した後は必ずwheelを再起動�
 
 remotehost.jsonの各プロパティに記載する内容は以下のとおりです。
 
+```
 name: 識別するための任意の文字列。taskコンポーネントのプロパティ画面での表示に使われます。
 type: "aws" 固定値
 os: "ubuntu16" 固定値
@@ -61,6 +62,7 @@ shareStorage {bool} : headNodeのローカルストレージをNFSで共有す�
 additionalParams {Object}: aws-sdkのEC2.runInstancesに渡すことのできる設定をこのプロパティに追加することができます。
 なお、このプロパティでregionやInstanceTypeを指定しても、前述のregionおよびInstanceTypeの値で上書きされます。
 additionalParamsForHead: additionalParamsと同様ですがヘッドノードのみに適用する値を指定します。
+```
 
 playbook, mpi, compilerの各プロパティには将来的には設定を記述することができるようになる予定ですが、現時点では使用できません。
 
