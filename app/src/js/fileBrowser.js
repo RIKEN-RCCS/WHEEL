@@ -14,6 +14,7 @@ export default class {
     this.selectedItemColor = 'lightblue';
     this.idFileList = null;
     this.lastClicked = null;
+    this.lastDblClickedInfo = { dataType: '', dataPath: '', dataName: '' };
     this.sendEventName = null;
     this.recvEventName = null;
     this.socket = null;
@@ -50,6 +51,9 @@ export default class {
   }
   getSelectedFile() {
     return this.getLastClicked();
+  }
+  getDirsInfo() {
+    return this.lastDblClickedInfo;
   }
   getLastClicked() {
     return this.lastClicked;
@@ -231,41 +235,48 @@ export default class {
     $(this.idFileList).on("click", 'li,i', (event) => {
       var dataType = $(event.target).data('type');
       this.changeColorsWhenSelected(event);
-      console.log($(event.target).data('type'));
       this.lastClicked = $(event.target).data('name').trim();
       this.changeFileEditButtonWhenSelected(dataType);
     });
   }
   onDirDblClickDefault() {
-    let dirStack = [];
+    let dirPathStack = [];
     let rootDirPath = "";
+    let target = "";
     $(this.idFileList).on("dblclick", 'li,i', (event) => {
-      if ($(event.target).data('type') === 'dir') {
-        if (dirStack.length === 0) {
-          dirStack.push($(event.target).data('path'));
-          rootDirPath = $(event.target).data('path');
+      const dataType = $(event.target).data('type').trim();
+      const dataPath = $(event.target).data('path').trim();
+      const dataName = $(event.target).data('name').trim();
+      if (dataType === 'dir') {
+        if (dirPathStack.length === 0) {
+          dirPathStack.push(this.requestedPath);
+          rootDirPath = this.requestedPath;
         }
         //dblclicked at rootDir -> display rootDir
-        if (dirStack.length === 1 && $(event.target).data('name') === "../") {
-          dirStack.push($(event.target).data('path'));
-          var target = rootDirPath;
+        if (dirPathStack.length === 1 && dataName === "../") {
+          dirPathStack.push(dataPath);
+          target = rootDirPath;
         }
-        if ($(event.target).data('name') === "../") {
-          dirStack.pop();
-          var target = dirStack[dirStack.length - 1];
+
+        if (dataName === "../") {
+          dirPathStack.pop();
+          target = dirPathStack[dirPathStack.length - 1];
         } else {
-          const originalPath = $(event.target).data('path').trim();
-          const pathSep = originalPath[0] === '/' ? '/' : '\\';
-          var target = originalPath + pathSep + $(event.target).data('name').trim();
-          dirStack.push(target);
+          const pathSep = dataPath[0] === '/' ? '/' : '\\';
+          target = dataPath + pathSep + dataName;
+          dirPathStack.push(target);
         }
+
         this.request(this.sendEventName, target, null);
         $(this.idFileList).empty();
       }
-      if ($(event.target).data('type') === 'snd' || $(event.target).data('type') === 'sndd') {
-        var target = $(event.target).data('path').trim();
-        this.request('getSNDContents', target, $(event.target).data('name'), $(event.target).data('type'));
+      if (dataType === 'snd' || dataType === 'sndd') {
+        target = dataPath;
+        this.request('getSNDContents', target, dataName, dataType);
       }
+      this.lastDblClickedInfo.dataType = dataType;
+      this.lastDblClickedInfo.dataPath = dataPath;
+      this.lastDblClickedInfo.dataName = dataName;
     });
   }
   drawIconImage(dataTypeTemp, dataPath, dataName, isDir, isLink) {

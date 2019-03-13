@@ -588,12 +588,12 @@ img.btn_menu_n{
 }
 
 #propertyDisable:checked+label{
-    margin: 0 0 0 0px;
+    margin: 0;
     color: #FF0000;
 }
 
 #propertyDisable{
-    margin: 0 0 0 0px;
+    margin: 0;
 }
 
 #propertyDisableArea{
@@ -1580,7 +1580,7 @@ tspan{
       display: none;  
   }
 
-#newFileName.dialogTextbox, #newFolderName.dialogTextbox, #newName.dialogTextbox,
+#newfileName.dialogTextbox, #newfolderName.dialogTextbox, #newName.dialogTextbox,
 #password.dialogTextbox, #sourceFilename.dialogTextbox{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;

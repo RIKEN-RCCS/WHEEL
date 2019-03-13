@@ -60,7 +60,6 @@
       </figure>
     </div>
   </span>
-
   <!-- ビューコントローラ -->
   <div id="view_controler_area">
     <button type="button" name="view" value="graph" id="graphView" class="btn_view_change">
@@ -73,29 +72,6 @@
     <span id="cbMessageArea"></span>
     <div class="view_controler_right_area"></div>
   </div>
-
-  <!-- リストビュー -->
-  <!-- <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
-    <div id="project_tree_svg">
-      <div id="project_table_container">
-        <table id="projectTable">
-          <thead id="project_table_head">
-            <tr id="project_table_tr">
-              <th class="componentNameLabel">Name</th>
-              <th class="componentStateLabel">State</th>
-              <th class="componentStartTimeLabel">Execution Date</th>
-              <th class="componentEndTimeLabel">Finish Date</th>
-              <th class="componentDescriptionLabel">Description</th>
-            </tr>
-          </thead>
-          <div id="tableBody">
-            <tbody id="project_table_body"></tbody>
-          </div>
-        </table>
-      </div>
-    </div>
-  </div> -->
-
   <div id="project_manage_area" class="sub_content_area" onmousedown="return false;">
     <div id="project_tree_svg">
       <div id="tableHeadArea">
@@ -125,7 +101,6 @@
       </div>
     </div>
   </div>
-
   <!-- グラフビュー -->
   <div id="workflow_manage_area" class="workflow_manage_area">
     <!-- タスクライブラリメニュー -->
@@ -202,7 +177,7 @@
         <p id="propertyTitle">Property</p>
         <div id="propertyComponents">
           <div id="propertyDisableArea">
-            <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');" name="check" id="propertyDisableCheckBox"
+            <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');" name="check" id="propertyDisable"
               value="true">
             <label id="propertyDisable" for="propertyDisable">disable</label>
           </div>
@@ -231,7 +206,7 @@
             <label for="scriptInputField" id="propertyScript">Script</label>
           </div>
           <select name="script" v-if="node.hasOwnProperty('script')" v-model="node.script" id="scriptSelectField" v-on:change="updateProperty('script')">
-            <option v-for="v in fileList" v-if="v.type == 'file'" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
+            <option v-for="v in fileList" v-if="v.type === 'file'" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
           </select>
           <div v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
             <label id="propertyInputFiles">InputFiles</label>
@@ -314,7 +289,7 @@
           </div>
           <select name="parameterFile" v-if="node.hasOwnProperty('parameterFile')" v-model="node.parameterFile" id="parameterFileSelectField"
             v-on:change="updateProperty('parameterFile')">
-            <option v-for="v in fileList" v-if="v.type == 'file'" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
+            <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'" v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
           </select>
           <div v-if="node.hasOwnProperty('retryTimes')">
             <label for="retry" id="propertyRetry">Retry</label>
@@ -335,7 +310,7 @@
               <div v-if="retryConditionInputType === '1'">
                 <select name="retryConditionInputField" class="conditionFormat" id="retryConditionInputField" v-model="node.retryCondition"
                   v-on:change="updateProperty('retryCondition')">
-                  <option v-for="conditionFile in fileList" v-if="conditionFile.type == 'file'" v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}</option>
+                  <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'" v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}</option>
                 </select>
               </div>
               <div v-if="retryConditionInputType === '2'">
@@ -353,7 +328,7 @@
             </div>
             <div v-if="conditionInputType === '1'">
               <select name="condition" class="conditionFormat" id="conditionSelectField" v-model="node.condition" v-on:change="updateProperty('condition')">
-                <option v-for="conditionFile in fileList" v-if="conditionFile.type == 'file'" v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}</option>
+                <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'" v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}</option>
               </select>
             </div>
             <div v-if="conditionInputType === '2'">
@@ -442,10 +417,10 @@
           <button type="button" id="jupyterBootButton" v-on:click.stop="openJupyterNotebook">
             <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" id="jupyterImg" alt="graph">
           </button>
-          <button type="button" id="createFolderButton" class="createFileDirButton">
+          <button type="button" id="createFolderButton" class="createFileDirButton" v-on:click="createFileFolder('folder')">
             <img src="/image/btn_addFolder_n.png" alt="graph">
           </button>
-          <button type="button" id="createFileButton" class="createFileDirButton">
+          <button type="button" id="createFileButton" class="createFileDirButton" v-on:click="createFileFolder('file')">
             <img src="/image/btn_addFile_n.png" alt="graph">
           </button>
           <button type="button" id="fileUploadButton" class="createFileDirButton">
@@ -458,10 +433,10 @@
           <div id="dirBackButtonArea"></div>
           <ul id="fileList"></ul>
           <div id="editButtonsArea">
-            <button type="button" id="editFileButton" class="editButtons">
+            <button type="button" id="editFileButton" class="editButtons" v-on:click="editFile(false)">
               <img src="/image/img_edit.png" alt="graph">
             </button>
-            <button type="button" id="editPSFileButton" class="editButtons">
+            <button type="button" id="editPSFileButton" class="editButtons" v-on:click="editFile(true)">
               <img src="/image/img_edit_PS.png" alt="graph">
             </button>
           </div>
@@ -497,7 +472,6 @@
       </ul>
     </div>
   </div>
-
   <!-- ログボタン -->
   <div>
     <button type="button" id="displayLogButton" class="displayLogButton" value="Log">
