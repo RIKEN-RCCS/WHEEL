@@ -8,7 +8,8 @@ import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/workflow.css';
 
-import Vue from 'vue/dist/vue.esm.js';
+import './rapid2.js'
+
 import Cookies from 'js-cookie';
 import SVG from 'svgjs/dist/svg.js';
 import 'svg.draggable.js/dist/svg.draggable.js';
@@ -58,8 +59,9 @@ $(() => {
 
   // create vue.js instance for property subscreen
   let vm = new Vue({
-    el: '#property',
+    el: '#app',
     data: {
+      normal: true,
       node: {},
       newInputFilename: "",
       newOutputFilename: "",
@@ -299,8 +301,13 @@ $(() => {
     }
   });
 
+  //rapid以外の要素をhideしてrapidだけ表示
+  $('#editPSFileButton').click(function () {
+    vm.normal = false;
+  });
+
   // set default view
-  $('#project_manage_area').hide();
+  $('#workflow_listview_area').hide();
   $('#graphView').prop('checked', true);
   $('#log_area').hide();
   $('#property').hide();
@@ -663,12 +670,12 @@ $(() => {
 
   // change view mode
   $('#listView').click(function () {
-    $('#workflow_manage_area').hide();
-    $('#project_manage_area').show();
+    $('#workflow_graphview_area').hide();
+    $('#workflow_listview_area').show();
   });
   $('#graphView').click(function () {
-    $('#project_manage_area').hide();
-    $('#workflow_manage_area').show();
+    $('#workflow_listview_area').hide();
+    $('#workflow_graphview_area').show();
     drawComponents();
   });
 
@@ -853,7 +860,7 @@ $(() => {
   }
 
   /**
-   * draw components 
+   * draw components
    */
   function drawComponents() {
     // remove all node from workflow editor

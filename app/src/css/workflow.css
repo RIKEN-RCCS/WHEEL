@@ -1,13 +1,13 @@
 html,
 body {
-    background-color: #000000;
-    color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     height: 100%;
-    margin: 0;
-    white-space: nowrap;
     width: 100%;
+    margin: 0;
+    background-color: #000000;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 0;
+    color: #FFFFFF;
+    white-space: nowrap;
 }
 
 li {
@@ -16,12 +16,15 @@ li {
 
 /* ヘッダー*/
 header {
-    padding: 12px 16px 10px 16px;
+    padding: 12px 16px 0px 16px;
     position: relative;
     background: #000000;
     font-size: 24px;
     text-decoration: none;
+    /* temporary change for rapid2
     height: 24px;
+    padding: 12px 16px 10px 16px;
+    height: 42px;*/
 }
 
 #title {
@@ -194,7 +197,7 @@ img.btn_menu_n{
 }
 
 /* コントローラバー*/
-.controler_bar_area {
+.projectInfoArea {
     display: inline-flex;
     flex-direction: row;
     margin: 0 0 6px 16px;
@@ -267,7 +270,7 @@ img.btn_menu_n{
     margin-left: 8px;
 }
 
-.controler_bar_right_area {
+.projectInfoRightArea {
     text-align: center;
     display: flex;
     padding-top: 2px;
@@ -276,7 +279,7 @@ img.btn_menu_n{
 }
 
 /*ビューコントローラー*/
-#view_controler_area{
+#viewControlArea{
     padding: 4px 0 4px 16px;
     background-color: #222226;
 }
@@ -302,6 +305,8 @@ img.btn_menu_n{
     border: none;
     border-radius: 3px;
     cursor: pointer;
+    /* temporary change for rapid2*/
+    padding-right: 6px;
 }
 
 .img_breadcrumbButton_icon{
@@ -348,6 +353,8 @@ img.btn_menu_n{
 #taskLibraryButton{
     position: absolute;
     height: 48px;
+    /* temporary change for rapid2*/
+    width: 24px;
     margin-top: 6px;
     left: 0;
     z-index: 40;
@@ -357,6 +364,10 @@ img.btn_menu_n{
     border: 0;
 	cursor: pointer;
     border-collapse: collapse;
+}
+
+#workflowComponents ul{
+    margin: 12px 0 12px 0;
 }
 
 #taskLibraryButton img{
@@ -544,6 +555,10 @@ img.btn_menu_n{
     border-collapse: collapse;
 }
 
+select::-ms-expand {
+    display: block;
+}
+
 #propertyArea{
     margin: 12px;
 }
@@ -671,8 +686,11 @@ img.btn_menu_n{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#scriptSelectField, #remotehostSelectField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField, 
+#scriptSelectField, #remotehostSelectField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
 #retryConditionInputField, #fileForCondition{
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 22px;
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 22px;
@@ -745,7 +763,7 @@ img.btn_menu_n{
 #startInputField, #endInputField{
     margin: 2px 0 0 2px;
     padding-left: 5px;
-    height: 15px;
+    height: 20px;
     width: 73px;
     background-color: #000000;
     border: 0;
@@ -755,7 +773,7 @@ img.btn_menu_n{
 #stepInputField{
     margin: 2px 0 0 5px;
     padding-left: 5px;
-    height: 15px;
+    height: 20px;
     width: 73px;
     background-color: #000000;
     border: 0;
@@ -956,7 +974,7 @@ img.btn_menu_n{
     height: 40px;
 }
 
-.view_controler_right_area {
+.viewControlRightArea {
     position: relative;
     right: 48px;
     flex-direction: row;
@@ -1069,38 +1087,6 @@ img.btn_menu_n{
     align-items: center;
     vertical-align: middle;
     position: relative;
-}
-
-.file_dialog {
-    height: calc(100% - 115px);
-}
-
-.register_list_area {
-    height: calc(100% - 300px);
-    width: 700px;
-    min-height: 100px;
-}
-
-.select_workflow_area {
-    height: calc(100% - 160px);
-}
-
-.project_manage_area {
-    display: flex;
-    flex-direction: row;
-    position: relative;
-}
-
-.workflow_manage_area {
-    display: flex;
-    flex-direction: row;
-    color: #FFFFFF;
-    background-color: #2F2F33;
-    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
-    height: calc(100% - 108px);
-    overflow: auto;
-    font-size: 14px;
-    user-select: none;
 }
 
 .select_dir_container,
@@ -1261,13 +1247,29 @@ img.btn_menu_n{
     position: absolute;
 }
 
-#project_manage_area{
+.workflow_graphview_area {
     display: flex;
     flex-direction: row;
     color: #FFFFFF;
     background-color: #2F2F33;
     box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    height: calc(100% - 62px);
+    overflow: auto;
+    font-size: 14px;
+    user-select: none;
+}
+
+#workflow_listview_area{
+    display: flex;
+    flex-direction: row;
+    color: #FFFFFF;
+    background-color: #2F2F33;
+    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    /* temporary change for rapid2
     height: calc(100% - 108px);
+    */
+    /*62 = projectInfoArea(30px) + viewControlArea(32px)*/
+    height: calc(100% - 62px);
     width: 100%;
     border: none;
     /* overflow: auto; */
@@ -1293,7 +1295,7 @@ img.btn_menu_n{
     margin :0;
     width: calc(100% - 16px);
     word-wrap: break-word;
-    border-collapse: collapse; 
+    border-collapse: collapse;
     border: solid 1px #2F2F33;
     border-bottom-color: #222226;
 }
@@ -1370,10 +1372,10 @@ th.componentStateLabel{
 }
 
 #showMoreButtonArea{
-    display: inline-block; 
+    display: inline-block;
     position: relative;
     box-sizing: border-box;
-    background-color: #4C4C55;       
+    background-color: #4C4C55;
     width: 20px;
     height: 25px;
     cursor: pointer;
@@ -1393,10 +1395,10 @@ th.componentStateLabel{
 }
 
 .componentLabel{
-    display:none;        
+    display:none;
     width: 150px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
     border-collapse: separate;
 }
 
@@ -1538,16 +1540,16 @@ tspan{
     background-color: #222226;
     border: none !important;
   }
-  
+
   .ui-dialog-titlebar{
-    background-color: #222226;    
+    background-color: #222226;
     color: #FFFFFF;
-    font-size: 16px; 
+    font-size: 16px;
     font-weight: initial;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     border: 0;
   }
-  
+
   .ui-button{
     background-color: #5B5B5F;
     border-color: #5B5B5F;
@@ -1557,13 +1559,13 @@ tspan{
     height: 24px;
     padding: 0;
   }
-   
+
   .ui-dialog-buttonpane{
     background-color: #222226;
     border: none;
     height: 32px;
   }
-  
+
   /* workflow.js only setting*/
   .ui-button.cancelButton{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
@@ -1577,7 +1579,7 @@ tspan{
   }
 
   .ui-button.notUseButton{
-      display: none;  
+      display: none;
   }
 
 #newfileName.dialogTextbox, #newfolderName.dialogTextbox, #newName.dialogTextbox,
@@ -1615,6 +1617,23 @@ tspan{
 #sshConnectionLabel{
   margin: 8px;
   color: #FFFFFF;
+}
+
+.gutter {
+    background-color: gray;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+#app {
+/*body size - header size*/
+  height: calc(100% - 48px);
+}
+#normalArea {
+  height: 100%;
+}
+#rapid {
+  height: 100%;
 }
 
 .ui-tooltip {
