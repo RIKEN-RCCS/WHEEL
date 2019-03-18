@@ -128,9 +128,9 @@ async function getSourceFilename(projectRootDir, component, sio) {
       const filelist = await getSourceCandidates(projectRootDir, component.ID);
       if (filelist.length === 1) {
         resolve(filelist[0]);
+      } else {
+        sio.emit("askSourceFilename", component.ID, component.name, component.description, filelist);
       }
-
-      sio.emit("askSourceFilename", component.ID, component.name, component.description, filelist);
     }
   });
 }
