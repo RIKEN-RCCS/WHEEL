@@ -65,6 +65,10 @@ header {
     background-color: #000000;
 }
 
+#drawerIcon{
+    margin-bottom: 5px;
+}
+
 #img_btn_menu_n{
     right:16px;
 
@@ -1619,6 +1623,7 @@ tspan{
   color: #FFFFFF;
 }
 
+/* rapid2 css*/
 .gutter {
     background-color: gray;
   height: 100%;
@@ -1642,3 +1647,13 @@ tspan{
 body .ui-tooltip {
 	border-width: 2px;
 }
+
+/* viewer html css*/
+/* 
+#viewerImages {
+    list-style-type: none;
+ }
+
+#viewerImages li {
+    display: inline-block;
+} */

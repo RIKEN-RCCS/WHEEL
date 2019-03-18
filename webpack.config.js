@@ -11,6 +11,7 @@ module.exports = {
     workflow: "./app/src/js/workflow",
     rapid: "./app/src/js/rapid",
     remotehost: "./app/src/js/remotehost",
+    viewer: "./app/src/js/viewer",
   },
   stats: "detailed",
   devtool: "eval-source-map",
@@ -62,11 +63,11 @@ module.exports = {
         use: [
           {
             loader: 'file-loader',
-            options:{
+            options: {
               name: '[name].[ext]',
               outputPath: 'image/',
-              publicPath: (path)=>{
-                return '../'+path;
+              publicPath: (path) => {
+                return '../' + path;
               }
             }
           }

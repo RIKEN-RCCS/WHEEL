@@ -25,7 +25,6 @@ import SvgParentNodeUI from './svgNodeUI';
 import * as svgParentNode from './svgNodeUI';
 import configToolTip from './configToolTip';
 import Viewer from 'viewerjs';
-import 'viewerjs/dist/viewer.css';
 
 $(() => {
   // setup socket.io client
@@ -56,7 +55,9 @@ $(() => {
   let projectRootDir = currentWorkDir;
   let firstConnection = true;
   let componentPath;
-
+  let viewerWindow;
+  let viewerInstance;
+  let viewerTargetHTML = "";
   // create vue.js instance for property subscreen
   let vm = new Vue({
     el: '#app',
@@ -382,49 +383,49 @@ $(() => {
     });
     sio.on('results', (viewList) => {
       console.log(viewList);
-      var viewerWindow = window.open("");
-      viewerWindow.document.open();
-      viewerWindow.document.open();
-      viewerWindow.document.write("<html>");
-      viewerWindow.document.write("<head>");
-      viewerWindow.document.write('<meta charset="UTF-8">');
-      // viewerWindow.document.write('<link rel="stylesheet" href="/css/common.css" />');
-      // viewerWindow.document.write('<link rel="stylesheet" href="/css/viewer.css" />');
-      viewerWindow.document.write('<title>WHEEL viewer</title>');
-      viewerWindow.document.write('</head>');
-      viewerWindow.document.write('<body>');
-      viewerWindow.document.write('<header><label id="title">WHEEL</label></header>');
-      viewerWindow.document.write('<div id="pageNameArea"><label id="pageName">image list</label></div>');
-      viewerWindow.document.write('<ul id="viewerImages">');
-      for (let i = 0; i < viewList.length; i++) {
-        viewerWindow.document.write(`<li><img src=${viewList[i].url} alt="HTML"><p>${viewList[i].filename}</p></li>`);
-      }
-      viewerWindow.document.write('</ul >');
-      viewerWindow.document.write('</body>');
-      viewerWindow.document.write('</html>');
-      viewerWindow.document.close();
-      var options = {
-        ready: function () {
-          console.log('ready!!!!!!');
-        },
-        show: function () {
-          console.log('show!!!!!!');
-        },
-        shown: function () {
-          console.log('shown!!!!!!');
-        },
-        viewed: function () {
-          console.log('viewed!!!!!!');
-        },
-        hide: function () {
-          console.log('hide!!!!!!');
-        },
-        hidden: function () {
-          console.log('hidden!!!!!!');
+      if (typeof viewerWindow === "undefined" || viewerWindow.closed === true) {
+        viewerWindow = window.open("");
+        viewerWindow.document.open();
+        viewerWindow.document.write("<html>");
+        viewerWindow.document.write("<head>");
+        viewerWindow.document.write('<meta charset="UTF-8">');
+        // viewerWindow.document.write('<link rel="stylesheet" href="/css/common.css" />');
+        viewerWindow.document.write('<link rel="stylesheet" href="/css/viewer.css" />');
+        viewerWindow.document.write('<title>WHEEL viewer</title>');
+        viewerWindow.document.write('</head>');
+        viewerWindow.document.write('<body>');
+        viewerWindow.document.write('<header><label id="title">WHEEL</label></header>');
+        viewerWindow.document.write('<div id="pageNameArea"><label id="pageName">image list</label></div>');
+        viewerWindow.document.write('<ul id="viewerImages">');
+        for (let i = 0; i < viewList.length; i++) {
+          viewerWindow.document.write(`<li><img src=${viewList[i].url} alt="HTML"><p>${viewList[i].filename}</p></li>`);
         }
-      };
-      console.log(viewerWindow.document.getElementById('viewerImages'));
-      var viewer = new Viewer(viewerWindow.document.getElementById('viewerImages'), options);
+        viewerWindow.document.write('</ul >');
+        viewerWindow.document.write('</body>');
+        viewerWindow.document.write('</html>');
+        viewerWindow.document.close();
+        var options = {
+          ready: function () {
+          },
+          show: function () {
+          },
+          shown: function () {
+          },
+          viewed: function () {
+          },
+          hide: function () {
+          },
+          hidden: function () {
+          }
+        };
+        viewerTargetHTML = viewerWindow.document.getElementById('viewerImages');
+        viewerInstance = new Viewer(viewerTargetHTML, options);
+      } else {
+        for (let j = 0; j < viewList.length; j++) {
+          viewerTargetHTML.insertAdjacentHTML("beforeend", `<li><img src=${viewList[j].url} alt="HTML"><p>${viewList[j].filename}</p></li>`)
+        }
+        viewerInstance.update();
+      }
     });
 
     sio.on('workflow', function (wf) {
@@ -463,6 +464,7 @@ $(() => {
       rootId = Object.keys(projectJson.componentPath).filter((key) => {
         return projectJson.componentPath[key] === './'
       });
+      console.log(projectJson);
       componentPath = projectJson.componentPath;
       $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
@@ -514,6 +516,10 @@ $(() => {
 
     //setup log reciever
     logReciever(sio);
+  });
+
+  $(viewerWindow).on('unload', function () {
+    createdViewInstance = false;
   });
 
   // register btn click event listeners
