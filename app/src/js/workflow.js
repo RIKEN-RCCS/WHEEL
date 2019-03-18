@@ -518,10 +518,6 @@ $(() => {
     logReciever(sio);
   });
 
-  $(viewerWindow).on('unload', function () {
-    createdViewInstance = false;
-  });
-
   // register btn click event listeners
   /* 'header' area buttons */
 
@@ -1212,11 +1208,14 @@ $(() => {
 
   function changeViewState() {
     if (isEditDisable()) {
-      hideTaskLibrary();
+      if (isTaskLibrary) {
+        hideTaskLibrary();
+      }
     }
 
     var editDisable = isEditDisable();
-    var disable = editDisable || (vm.node !== null && vm.node.disable);
+    // var disable = editDisable || (vm.node !== null && vm.node.disable);
+    var disable = editDisable;
 
     var ids = [
       // 入力域は readonlyのみ。チェックボックスなどは disableも
