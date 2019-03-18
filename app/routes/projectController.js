@@ -230,7 +230,7 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
   order.InstanceType = hostInfo.InstanceType;
   order.rootVolume = hostInfo.rootVolume;
   order.shareStorage = hostInfo.shareStorage;
-  //order.playbook = hostInfo.playbook;
+  order.playbook = hostInfo.playbook;
   //order.mpi = hostInfo.mpi;
   //order.compiler = hostInfo.compiler;
   order.batch = hostInfo.jobScheduler;
