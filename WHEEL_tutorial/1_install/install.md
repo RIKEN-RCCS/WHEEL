@@ -19,7 +19,7 @@ WHEELのダウンロード先は、次のURLです。
 サイトへ遷移後、下図内の手順に従い、WHEELのモジュールをユーザマシンへダウンロードします。
 
 1. ![img](./img/WHEEL_download_cloud.PNG "download")ボタンをクリックします。
-1. 拡張子[ tar.gz ]を選択します。  
+1. 拡張子[ tar.gz ](または、[.zip])を選択します。  
 
 ![img](./img/WHEEL_download.PNG "download")  
 
