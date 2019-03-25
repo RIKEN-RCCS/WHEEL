@@ -13,7 +13,7 @@ const { getDateString, isValidOutputFilename } = require("../lib/utility");
 const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSsh, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger } = require("../core/projectResource");
+const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSsh, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
 const {
   getHosts,
@@ -253,7 +253,9 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
 
   const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
   if (hostInfo.type === "aws") {
-    await arssh.exec("cloud-init status -w");
+    logger.debug("wait for cloud-init");
+    await arssh.exec("cloud-init status -w > /dev/null");
+    logger.debug("cloud-init done");
   }
   if (hostInfo.renewInterval) {
     arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
@@ -321,6 +323,7 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //actual project run start from here
   try {
+    await updateProjectState(projectRootDir, "prepareing");
     const sourceComponents = await getSourceComponents(projectRootDir);
 
     for (const component of sourceComponents) {
