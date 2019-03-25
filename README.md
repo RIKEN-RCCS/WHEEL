@@ -17,6 +17,7 @@ __W__orkflow in __H__ierarchical distribut __E__d parall __EL__.
 on several Linux distribution (e.g. RHEL, CentOS) you have to rebuild nodegit as follows.
 please be sure to install C++, make openssl-devel and libcurl-devel package on your machine before rebuild.
 ```
+> sudo yum install -y gcc-c++ openssl-devel libcurl-devel
 > cd WHEEL/node_modules/nodegit
 > BUILD_ONLY=yes npm install
 ```
