@@ -126,11 +126,16 @@ async function getSourceFilename(projectRootDir, component, sio) {
       sio.emit("requestSourceFile", component.ID, component.name, component.description);
     } else {
       const filelist = await getSourceCandidates(projectRootDir, component.ID);
+      getLogger(projectRootDir).trace("sourceFile: candidates=", filelist);
+
       if (filelist.length === 1) {
         resolve(filelist[0]);
+      } else if (filelist.length === 0) {
+        getLogger(projectRootDir).warn("no files found in source component");
+        sio.emit("requestSourceFile", component.ID, component.name, component.description);
+      } else {
+        sio.emit("askSourceFilename", component.ID, component.name, component.description, filelist);
       }
-
-      sio.emit("askSourceFilename", component.ID, component.name, component.description, filelist);
     }
   });
 }
@@ -330,7 +335,10 @@ async function onRunProject(sio, projectRootDir, cb) {
       const filename = await getSourceFilename(projectRootDir, component, sio);
       const componentDir = await getComponentDir(projectRootDir, component.ID);
       const outputFile = component.outputFiles[0].name;
+      getLogger(projectRootDir).trace("sourceFile:", filename, "will be used as", outputFile);
+
       if (!isValidOutputFilename(outputFile)) {
+        getLogger(projectRootDir).trace("sourceFile: invalid outputFilename", outputFile);
         continue;
       }
       if (filename !== outputFile) {

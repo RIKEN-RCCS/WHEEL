@@ -2,7 +2,6 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/sortable';
 import 'jquery-ui/ui/widgets/tooltip';
 import 'jquery-contextmenu';
-
 import 'jquery-ui/themes/base/theme.css';
 import 'jquery-ui/themes/base/sortable.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
@@ -25,8 +24,11 @@ import * as svgNode from './svgNodeUI';
 import SvgParentNodeUI from './svgNodeUI';
 import * as svgParentNode from './svgNodeUI';
 import configToolTip from './configToolTip';
+import Viewer from 'viewerjs';
 
 $(() => {
+  // setup socket.io client
+  const sio = io('/workflow');
   // chek project Json file path
   const projectFilePath = Cookies.get('project');
   if (projectFilePath == null) {
@@ -35,6 +37,7 @@ $(() => {
   let rootId = [''];
   let rootWorkflow = Cookies.get('root');
   let rootDir = Cookies.get('rootDir');
+  let pathSep = rootDir[0] === '/' ? '/' : '\\';
   const jupyterURL = Cookies.get('jupyterURL');
   const jupyterToken = Cookies.get('jupyterToken');
   let currentWorkFlow = rootWorkflow;
@@ -52,7 +55,9 @@ $(() => {
   let projectRootDir = currentWorkDir;
   let firstConnection = true;
   let componentPath;
-
+  let viewerWindow;
+  let viewerInstance;
+  let viewerTargetHTML = "";
   // create vue.js instance for property subscreen
   let vm = new Vue({
     el: '#app',
@@ -213,92 +218,101 @@ $(() => {
             this.queueList = hostInfo.queue.split(',');
           }
         }
+      },
+      createFileFolder: function (isFileOrFolder) {
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          const html = `<p class="dialogMessage">Input new ${isFileOrFolder} name (ex. aaa.txt)</p><input type=text id="new${isFileOrFolder}Name" class="dialogTextbox">`
+          const dialogOptions = {
+            title: `Create new ${isFileOrFolder}`
+          };
+          dialogWrapper('#dialog', html, dialogOptions)
+            .done(function () {
+              let newName = $(`#new${isFileOrFolder}Name`).val().trim();
+              let newPath = fb.getRequestedPath() + "/" + newName;
+              if (isFileOrFolder === 'file') {
+                sio.emit('createNewFile', newPath, (result) => {
+                });
+              }
+              if (isFileOrFolder === 'folder') {
+                sio.emit('createNewDir', newPath, (result) => {
+                });
+              }
+            });
+        }
+      },
+      editFile: function (isPS) {
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          const path = fb.getRequestedPath();
+          const name = fb.getSelectedFile();
+          const params = $.param({
+            "path": path,
+            "filename": name,
+            "pm": isPS
+          });
+          window.open(`/editor?${params}`);
+        }
       }
     }
 
   });
-
-  // set default view
-  $('#project_manage_area').hide();
-  $('#graphView').prop('checked', true);
-  $('#log_area').hide();
-  $('#property').hide();
-  $('#taskLibraryMenu').hide();
-
-  // setup socket.io client
-  const sio = io('/workflow');
-
   // setup FileBrowser
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
-  // sio.on('download', (message) => {
-  //   console.log(message.toString());
-  // });
 
-  // file edit by button.
-  let filePathStack = [];
-  let filePath = '';
-  let filename = '';
-
-  $(document).on('click', '.file', function () {
-    filePath = $(this).attr("data-path");
-    filename = $(this).attr("data-name");
-  });
-
+  // property subscreen 'Files' area buttons.
+  let dirPathStack = [];
   $(document).on('dblclick', '.dir, .snd, .sndd', function () {
-    filePath = $(this).attr("data-path");
-    filename = $(this).attr("data-name");
-    const datatype = $(this).attr("data-type");
-    const pathSep = filePath[0] === '/' ? '/' : '\\';
+    const targetInfo = fb.getDirsInfo();
+    dirPathStack.push(targetInfo.dataPath);
     let replacePath = projectRootDir + pathSep;
-    let currentDirPath = filePath.replace(replacePath, "") + pathSep + filename;
-    filePathStack.push(filePath);
+    let currentDirPath = targetInfo.dataPath.replace(replacePath, "") + pathSep + targetInfo.dataName;
     $('#componentPath').html("." + pathSep + currentDirPath);
     let backDirHtml;
-    if (datatype === "snd") {
-      backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}"><img src="/image/img_filesToSND.png" alt="config" class="backButton"></button>`;
-    } else if (datatype === "sndd") {
-      backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}"><img src="/image/img_dirsToSNDD.png" alt="config" class="backButton"></button>`;
+    if (targetInfo.dataType === "snd") {
+      backDirHtml = `<button id="dirBackButton" data-path="${targetInfo.dataPath}" data-name="${targetInfo.dataName}"><img src="/image/img_filesToSND.png" alt="config" class="backButton"></button>`;
+    } else if (targetInfo.dataType === "sndd") {
+      backDirHtml = `<button id="dirBackButton" data-path="${targetInfo.dataPath}" data-name="${targetInfo.dataNam}"><img src="/image/img_dirsToSNDD.png" alt="config" class="backButton"></button>`;
     } else {
-      backDirHtml = `<button id="dirBackButton" data-path="${filePath}" data-name="${filename}">../</button>`;
+      backDirHtml = `<button id="dirBackButton" data-path="${targetInfo.dataPath}" data-name="${targetInfo.dataNam}">../</button>`;
     }
     $('#dirBackButtonArea').html(backDirHtml);
   });
 
   $(document).on('click', '#dirBackButton', function () {
-    if (filePathStack.length !== 0) {
-      filePath = filePathStack[filePathStack.length - 1];
-      const pathSep = filePath[0] === '/' ? '/' : '\\';
+    if (dirPathStack.length !== 0) {
+      var filePath = dirPathStack[dirPathStack.length - 1];
       let replacePath = projectRootDir + pathSep;
       let fileListDirPath = "." + pathSep + filePath.replace(replacePath, "");
       fb.request('getFileList', filePath, null);
       $('#componentPath').html(fileListDirPath);
-      filePathStack.pop();
+      dirPathStack.pop();
     }
-    if (filePathStack.length === 0) {
+    if (dirPathStack.length === 0) {
       $('#dirBackButton').css("display", "none");
     }
   });
 
-  $('#editFileButton').click(function () {
+  // setup file uploader
+  const uploader = new SocketIOFileUpload(sio);
+  uploader.listenOnDrop(document.getElementById('fileBrowser'));
+  uploader.listenOnInput(document.getElementById('fileSelector'));
+
+  $('#fileUploadButton').click(function () {
     if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-      if (filePath !== '') {
-        const path = filePath
-        const name = filename
-        const params = $.param({
-          "path": path,
-          "filename": name,
-          "pm": false
-        });
-        window.open(`/editor?${params}`);
-      }
-      filePath = '';
+      $('#fileSelector').click();
     }
   });
 
   //rapid以外の要素をhideしてrapidだけ表示
-  $('#editPSFileButton').click(function(){
-    vm.normal=false;
+  $('#editPSFileButton').click(function () {
+    vm.normal = false;
   });
+
+  // set default view
+  $('#workflow_listview_area').hide();
+  $('#graphView').prop('checked', true);
+  $('#log_area').hide();
+  $('#property').hide();
+  $('#taskLibraryMenu').hide();
 
   // container of svg elements
   let nodes = [];
@@ -367,6 +381,52 @@ $(() => {
           $('#fileSelector').click();
         });
     });
+    sio.on('results', (viewList) => {
+      console.log(viewList);
+      if (typeof viewerWindow === "undefined" || viewerWindow.closed === true) {
+        viewerWindow = window.open("");
+        viewerWindow.document.open();
+        viewerWindow.document.write("<html>");
+        viewerWindow.document.write("<head>");
+        viewerWindow.document.write('<meta charset="UTF-8">');
+        // viewerWindow.document.write('<link rel="stylesheet" href="/css/common.css" />');
+        viewerWindow.document.write('<link rel="stylesheet" href="/css/viewer.css" />');
+        viewerWindow.document.write('<title>WHEEL viewer</title>');
+        viewerWindow.document.write('</head>');
+        viewerWindow.document.write('<body>');
+        viewerWindow.document.write('<header><label id="title">WHEEL</label></header>');
+        viewerWindow.document.write('<div id="pageNameArea"><label id="pageName">image list</label></div>');
+        viewerWindow.document.write('<ul id="viewerImages">');
+        for (let i = 0; i < viewList.length; i++) {
+          viewerWindow.document.write(`<li><img src=${viewList[i].url} alt="HTML"><p>${viewList[i].filename}</p></li>`);
+        }
+        viewerWindow.document.write('</ul >');
+        viewerWindow.document.write('</body>');
+        viewerWindow.document.write('</html>');
+        viewerWindow.document.close();
+        var options = {
+          ready: function () {
+          },
+          show: function () {
+          },
+          shown: function () {
+          },
+          viewed: function () {
+          },
+          hide: function () {
+          },
+          hidden: function () {
+          }
+        };
+        viewerTargetHTML = viewerWindow.document.getElementById('viewerImages');
+        viewerInstance = new Viewer(viewerTargetHTML, options);
+      } else {
+        for (let j = 0; j < viewList.length; j++) {
+          viewerTargetHTML.insertAdjacentHTML("beforeend", `<li><img src=${viewList[j].url} alt="HTML"><p>${viewList[j].filename}</p></li>`)
+        }
+        viewerInstance.update();
+      }
+    });
 
     sio.on('workflow', function (wf) {
       nodeStack[nodeStack.length - 1] = wf.name;
@@ -404,6 +464,7 @@ $(() => {
       rootId = Object.keys(projectJson.componentPath).filter((key) => {
         return projectJson.componentPath[key] === './'
       });
+      console.log(projectJson);
       componentPath = projectJson.componentPath;
       $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
@@ -448,6 +509,7 @@ $(() => {
       vm.hostList = hostlist;
     });
 
+    /*create fileList selectbox ex.task script*/
     sio.on('fileList', function (filelist) {
       vm.fileList = filelist;
     });
@@ -457,13 +519,87 @@ $(() => {
   });
 
   // register btn click event listeners
+  /* 'header' area buttons */
+
+  // translate user icon.
+  var pos = $("#titleUserName").offset();
+  $("#img_user").css('right', window.innerWidth - pos.left + "px");
+
+  // remotehost screen transition
+  $('#drawer_button').click(function () {
+    if (!isEditDisable()) {
+      $('#drawerMenu').toggleClass('action', true);
+    }
+  });
+
+  $('#drawerMenu').mouseleave(function () {
+    if (!isEditDisable()) {
+      $('#drawerMenu').toggleClass('action', false);
+    }
+  });
+
+  //open project info drawer
+  $('#projectInfo').click(function () {
+    if (!isEditDisable()) {
+      $('#projectInfoDrawer').toggleClass('action', true);
+    }
+  });
+
+  $('#projectInfoDrawer').mouseleave(function () {
+    $('#projectInfoDrawer').toggleClass('action', false);
+  });
+
+  //change project description
+  $('#projectDescription').blur(function () {
+    if (!isEditDisable()) {
+      var prjDesc = document.getElementById('projectDescription').value;
+      sio.emit('updateProjectJson', 'description', prjDesc);
+    }
+  });
+
+  // run
   $('#run_menu').on('click', function () {
     updateList = [];
     sio.emit('runProject', rootWorkflow);
   });
+  $('#run_button').mouseover(function () {
+    if (presentState !== 'running') {
+      $('#run_button').attr("src", "/image/btn_play_h.png");
+    }
+  });
+  $('#run_button').mouseleave(function () {
+    if (presentState !== 'running') {
+      $('#run_button').attr("src", "/image/btn_play_n.png");
+    }
+  });
+
+  // pause
   $('#pause_menu').on('click', function () {
     sio.emit('pauseProject', true);
   });
+  $('#pause_button').mouseover(function () {
+    if (presentState !== 'paused') {
+      $('#pause_button').attr("src", "/image/btn_pause_h.png");
+    }
+  });
+  $('#pause_button').mouseleave(function () {
+    if (presentState !== 'paused') {
+      $('#pause_button').attr("src", "/image/btn_pause_n.png");
+    }
+  });
+
+  // stop
+  $('#stop_menu').on('click', function () {
+    sio.emit('stopProject', true);
+  });
+  $('#stop_button').mouseover(function () {
+    $('#stop_button').attr("src", "/image/btn_stop_h.png");
+  });
+  $('#stop_button').mouseleave(function () {
+    $('#stop_button').attr("src", "/image/btn_stop_n.png");
+  });
+
+  // clean
   $('#clean_menu').on('click', function () {
     if (presentState !== 'running') {
       updateList = [];
@@ -483,9 +619,15 @@ $(() => {
       sio.emit('cleanProject', true);
     }
   });
-
-  $('#stop_menu').on('click', function () {
-    sio.emit('stopProject', true);
+  $('#clean_button').mouseover(function () {
+    if (presentState !== 'running') {
+      $('#clean_button').attr("src", "/image/btn_replay_h.png");
+    }
+  });
+  $('#clean_button').mouseleave(function () {
+    if (presentState !== 'running') {
+      $('#clean_button').attr("src", "/image/btn_replay_n.png");
+    }
   });
 
   //save
@@ -528,30 +670,58 @@ $(() => {
     }
   });
 
+  // change view mode
+  $('#listView').click(function () {
+    $('#workflow_graphview_area').hide();
+    $('#workflow_listview_area').show();
+  });
+  $('#graphView').click(function () {
+    $('#workflow_listview_area').hide();
+    $('#workflow_graphview_area').show();
+    drawComponents();
+  });
+
+  // create pankuzu list
+  function updateBreadrumb() {
+    let breadcrumb = $('#breadcrumb');
+    breadcrumb.empty();
+    for (let index = 0; index < nodeStack.length; index++) {
+      if (0 < index) {
+        breadcrumb.append(`<span class="img_pankuzuArrow_icon"><img src="/image/img_pankuzuArrow.png"  /></span>`)
+      }
+      let id = `breadcrumbButton_${index}`;
+      let nodeIconPath = config.node_icon[nodeTypeStack[index]];
+      let correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
+      let nodeColor = config.node_color[nodeTypeStack[index]];
+      breadcrumb.append(`<button type="button" id=${id} class="breadcrumbButton" value=${nodeStack[index]}>
+        <img src=${correctNodeIconPath} class="img_breadcrumbButton_icon" /><span class="breadcrunbName">${nodeStack[index]}</span></button>`)
+      $(`#${id}`).css("background-color", nodeColor);
+
+      $(`#${id}`).click(function () {
+        while (index + 1 < nodeStack.length) {
+          currentNode = nodeStack.pop();
+          dirStack.pop();
+          wfStack.pop();
+          currentWorkDir = dirStack[nodeStack.length - 1];
+          currentWorkFlow = wfStack[nodeStack.length - 1];
+          $('#property').hide();
+        }
+        updateBreadrumb();
+        fb.request('getFileList', currentWorkDir, null);
+        sio.emit('getWorkflow', currentWorkFlow);
+      });
+    }
+  }
+
+  /* workflow edit area [#node_svg] */
   // hide property and select parent WF if background is clicked
   $('#node_svg').on('mousedown', function () {
     $('#property').hide();
     // property Files Area initialize
-    filePathStack = [];
+    dirPathStack = [];
     $('#editFileButton').css('visibility', 'hidden');
     $('#editPSFileButton').css('visibility', 'hidden');
     $('#dirBackButton').css("display", "none");
-  });
-
-  // setup file uploader
-  const uploader = new SocketIOFileUpload(sio);
-  uploader.listenOnDrop(document.getElementById('fileBrowser'));
-  uploader.listenOnInput(document.getElementById('fileSelector'));
-
-  // change view mode
-  $('#listView').click(function () {
-    $('#workflow_manage_area').hide();
-    $('#project_manage_area').show();
-  });
-  $('#graphView').click(function () {
-    $('#project_manage_area').hide();
-    $('#workflow_manage_area').show();
-    drawComponents();
   });
 
   // setup context menu
@@ -583,7 +753,7 @@ $(() => {
   });
 
   /**
-  * get mouse positoin where contextmenu is created
+  * get mouse position where contextmenu is created
   * @param option second argument of callback function of jquery.contextMenu
   */
   function getClickPosition(option) {
@@ -748,7 +918,6 @@ $(() => {
           return e.ID === nodeIndex;
         });
         let name = target.name;
-        const pathSep = currentWorkDir[0] === '/' ? '/' : '\\';
         let nodePath = currentWorkDir + pathSep + name;
         fb.request('getFileList', nodePath, null);
         let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + pathSep + name;
@@ -774,7 +943,6 @@ $(() => {
           if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
             let nodeIndex = e.target.instance.parent('.node').data('index');
             let name = e.target.instance.parent('.node').data('name');
-            const pathSep = currentWorkDir[0] === '/' ? '/' : '\\';
             currentWorkDir = currentWorkDir + pathSep + name;
             currentWorkFlow = e.target.instance.parent('.node').data('ID');
             dirStack.push(currentWorkDir);
@@ -885,37 +1053,6 @@ $(() => {
       drawComponents();
     }, 200);
   };
-
-  function updateBreadrumb() {
-    let breadcrumb = $('#breadcrumb');
-    breadcrumb.empty();
-    for (let index = 0; index < nodeStack.length; index++) {
-      if (0 < index) {
-        breadcrumb.append(`<span class="img_pankuzuArrow_icon"><img src="/image/img_pankuzuArrow.png"  /></span>`)
-      }
-      let id = `breadcrumbButton_${index}`;
-      let nodeIconPath = config.node_icon[nodeTypeStack[index]];
-      let correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
-      let nodeColor = config.node_color[nodeTypeStack[index]];
-      breadcrumb.append(`<button type="button" id=${id} class="breadcrumbButton" value=${nodeStack[index]}>
-        <img src=${correctNodeIconPath} class="img_breadcrumbButton_icon" /><span class="breadcrunbName">${nodeStack[index]}</span></button>`)
-      $(`#${id}`).css("background-color", nodeColor);
-
-      $(`#${id}`).click(function () {
-        while (index + 1 < nodeStack.length) {
-          currentNode = nodeStack.pop();
-          dirStack.pop();
-          wfStack.pop();
-          currentWorkDir = dirStack[nodeStack.length - 1];
-          currentWorkFlow = wfStack[nodeStack.length - 1];
-          $('#property').hide();
-        }
-        updateBreadrumb();
-        fb.request('getFileList', currentWorkDir, null);
-        sio.emit('getWorkflow', currentWorkFlow);
-      });
-    }
-  }
 
   // draw taskStateList
   function insertSubComponetStateListHTML(target, id, iconPath, name) {
@@ -1054,119 +1191,7 @@ $(() => {
     }
   }
 
-  //create File/Folder in property 'Files'
-  $('#createFileButton').click(function () {
-    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-      const html = '<p class="dialogMessage">Input new file name (ex. aaa.txt)</p><input type=text id="newFileName" class="dialogTextbox">'
-      const dialogOptions = {
-        title: "Create new file"
-      };
-      dialogWrapper('#dialog', html, dialogOptions)
-        .done(function () {
-          let newFileName = $('#newFileName').val().trim();
-          let newFilePath = fb.getRequestedPath() + "/" + newFileName;
-          sio.emit('createNewFile', newFilePath, (result) => {
-          });
-        });
-    }
-  });
-
-  $('#createFolderButton').click(function () {
-    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-      const html = '<p class="dialogMessage">Input new folder name</p><input id="newFolderName" type=text class="dialogTextbox">'
-      const dialogOptions = {
-        title: "Create new folder"
-      };
-      dialogWrapper('#dialog', html, dialogOptions)
-        .done(function () {
-          let newFolderName = $('#newFolderName').val().trim();
-          let newFolderPath = fb.getRequestedPath() + "/" + newFolderName;
-          sio.emit('createNewDir', newFolderPath, (result) => {
-          });
-        });
-    }
-  });
-
-  $('#fileUploadButton').click(function () {
-    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-      $('#fileSelector').click();
-    }
-  });
-
-  $('#drawer_button').click(function () {
-    if (!isEditDisable()) {
-      $('#drawerMenu').toggleClass('action', true);
-    }
-  });
-
-  $('#drawerMenu').mouseleave(function () {
-    if (!isEditDisable()) {
-      $('#drawerMenu').toggleClass('action', false);
-    }
-  });
-
-  $('#projectInfo').click(function () {
-    if (!isEditDisable()) {
-      $('#projectInfoDrawer').toggleClass('action', true);
-    }
-  });
-
-  $('#projectInfoDrawer').mouseleave(function () {
-    $('#projectInfoDrawer').toggleClass('action', false);
-  });
-
-  //change project description
-  $('#projectDescription').blur(function () {
-    if (!isEditDisable()) {
-      var prjDesc = document.getElementById('projectDescription').value;
-      sio.emit('updateProjectJson', 'description', prjDesc);
-    }
-  });
-
-  //header buttons
-  $('#run_button').mouseover(function () {
-    if (presentState !== 'running') {
-      $('#run_button').attr("src", "/image/btn_play_h.png");
-    }
-  });
-  $('#run_button').mouseleave(function () {
-    if (presentState !== 'running') {
-      $('#run_button').attr("src", "/image/btn_play_n.png");
-    }
-  });
-
-  $('#pause_button').mouseover(function () {
-    if (presentState !== 'paused') {
-      $('#pause_button').attr("src", "/image/btn_pause_h.png");
-    }
-  });
-  $('#pause_button').mouseleave(function () {
-    if (presentState !== 'paused') {
-      $('#pause_button').attr("src", "/image/btn_pause_n.png");
-    }
-  });
-
-  $('#stop_button').mouseover(function () {
-    $('#stop_button').attr("src", "/image/btn_stop_h.png");
-  });
-  $('#stop_button').mouseleave(function () {
-    $('#stop_button').attr("src", "/image/btn_stop_n.png");
-  });
-
-  $('#clean_button').mouseover(function () {
-    if (presentState !== 'running') {
-      $('#clean_button').attr("src", "/image/btn_replay_h.png");
-    }
-  });
-  $('#clean_button').mouseleave(function () {
-    if (presentState !== 'running') {
-      $('#clean_button').attr("src", "/image/btn_replay_n.png");
-    }
-  });
-
-  var pos = $("#titleUserName").offset();
-  $("#img_user").css('right', window.innerWidth - pos.left + "px");
-
+  // set tooltip for workflow screen help
   function updateToolTip() {
     configToolTip.toolTipTexts.forEach((v) => {
       if (config.tooltip_lang.lang === "jpn") {
@@ -1183,11 +1208,14 @@ $(() => {
 
   function changeViewState() {
     if (isEditDisable()) {
-      hideTaskLibrary();
+      if (isTaskLibrary) {
+        hideTaskLibrary();
+      }
     }
 
     var editDisable = isEditDisable();
-    var disable = editDisable || (vm.node !== null && vm.node.disable);
+    // var disable = editDisable || (vm.node !== null && vm.node.disable);
+    var disable = editDisable;
 
     var ids = [
       // 入力域は readonlyのみ。チェックボックスなどは disableも
