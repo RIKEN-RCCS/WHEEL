@@ -1,6 +1,10 @@
 {
     "toolTipTexts": [
         {
+            "key": "drawer_button",
+            "jpn": "メニューを表示します"
+        },
+        {
             "key": "projectInfo",
             "jpn": "プロジェクト情報（ディレクトリパス、説明文）を表示します"
         },
@@ -54,6 +58,10 @@
         },
         {
             "key": "propertyOutputFiles",
+            "jpn": "後行コンポーネントに渡すファイル名を設定します"
+        },
+        {
+            "key": "propertyOutputFile",
             "jpn": "後行コンポーネントに渡すファイル名を設定します"
         },
         {
