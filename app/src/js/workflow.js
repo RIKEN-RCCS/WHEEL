@@ -253,7 +253,6 @@ $(() => {
         }
       }
     }
-
   });
   // setup FileBrowser
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
@@ -675,6 +674,7 @@ $(() => {
     $('#workflow_graphview_area').hide();
     $('#workflow_listview_area').show();
   });
+
   $('#graphView').click(function () {
     $('#workflow_listview_area').hide();
     $('#workflow_graphview_area').show();
@@ -858,7 +858,10 @@ $(() => {
   }
 
   function isEditDisable() {
-    return presentState === 'running';
+    if (presentState === 'running' || presentState === 'prepareing') {
+      var disableFlag = true;
+    }
+    return disableFlag;
   }
 
   /**
@@ -1266,8 +1269,8 @@ $(() => {
       } catch (e) { }
     });
 
-    $("[id=propertyDisable]").attr('readonly', editDisable);
-    $("[id=propertyDisable]").prop('disabled', editDisable);
+    $("[id=disableInputField]").attr('readonly', editDisable);
+    $("[id=disableInputField]").prop('disabled', editDisable);
 
     svgNode.setEditDisable(svg, nodes, editDisable);
     fb.setDisable(disable);

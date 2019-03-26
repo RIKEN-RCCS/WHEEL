@@ -78,37 +78,8 @@
         <span id="cbMessageArea"></span>
         <div class="viewControlRightArea"></div>
       </div>
-      <div id="workflow_listview_area" class="sub_content_area" onmousedown="return false;">
-        <div id="project_tree_svg">
-          <div id="tableHeadArea">
-            <table id="projectHeadTable" name="ListviewTable">
-              <thead id="project_table_head">
-                <tr id="project_table_tr">
-                  <th class="componentNameLabel">Name</th>
-                  <th class="componentStateLabel">State</th>
-                  <th class="componentStartTimeLabel">Started</th>
-                  <th id="showMoreButtonArea">
-                    <input type="image" src="/image/btn_openCloseR_n.png" alt="showMoreButton" id="showMoreButton" class="showMoreButton">
-                  </th>
-                  <th class="componentLabel">Prepared</th>
-                  <th class="componentLabel">Job Submitted</th>
-                  <th class="componentLabel">Job Ran</th>
-                  <th class="componentLabel">Job Finished</th>
-                  <th class="componentEndTimeLabel">Finished</th>
-                  <th class="componentDescriptionLabel">Description</th>
-                </tr>
-              </thead>
-            </table>
-          </div>
-          <div id="tableDataArea">
-            <table id="projectBodyTable" name="ListviewTable">
-              <tbody id="project_table_body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
       <!-- グラフビュー -->
-      <div id="workflow_graphview_area" class="workflow_graphview_area">
+      <div id="workflow_graphview_area">
         <!-- タスクライブラリメニュー -->
         <div id="taskLibraryMenu" class="taskLibraryMenu">
           <p id="taskAreaTitle">Component Library</p>
@@ -183,9 +154,9 @@
             <p id="propertyTitle">Property</p>
             <div id="propertyComponents">
               <div id="propertyDisableArea">
-                <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');" name="check" id="propertyDisable"
-                  value="true">
-                <label id="propertyDisable" for="propertyDisable">disable</label>
+                <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');" name="check" id="disableInputField"
+                  class="propertyDisable" value="true">
+                <label id="propertyDisable" class="propertyDisable" for="propertyDisable">disable</label>
               </div>
               <span id="propertyType">
                 <img src="/image/img_workflow_p.png" id="img_node_type" class="workflow_component_icon" />
@@ -235,10 +206,7 @@
               <div v-if="node.type !=='viewer' && node.type !=='source' && node.hasOwnProperty('outputFiles')">
                 <label id="propertyOutputFiles">OutputFiles</label>
               </div>
-              <div v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')">
-                <label id="propertyOutputFiles">OutputFile</label>
-              </div>
-              <template v-for="(outputFile, index) in node.outputFiles" v-if="node.type !=='viewer' && node.hasOwnProperty('outputFiles')">
+              <template v-for="(outputFile, index) in node.outputFiles" v-if="node.type !=='viewer' && node.type !=='source' && node.hasOwnProperty('outputFiles')">
                 <div>
                   <input type="text" v-model.lazy.trim="outputFile.name" v-on:blur="renameOutputFile(outputFile.name, index)" class="newOutputFileNameInputField"
                     id="newOutputFileNameInputField">
@@ -255,13 +223,14 @@
                   <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
                 </button>
               </div>
-              <div v-if="node.type ==='source' && node.hasOwnProperty('outputFiles') && node.outputFiles.length === 0 ">
-                <input type="text" v-model.lazy.trim="newOutputFilename" class="newOutputFileNameInputField" id="newOutputFileNameInputField">
-                <button v-on:click="addOutputFile" class="outputAddDelButton" id="outputAddDelButton">
-                  <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
-                </button>
+              <div v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')">
+                <label id="propertyOutputFile">OutputFile</label>
               </div>
-
+              <select name="outputFile" v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')" v-model="node.outputFiles[0].name"
+                id="outputFileSelectField" v-on:change="renameOutputFile(node.outputFiles[0].name, 0)">
+                <option v-for="outputFile in fileList" v-if="outputFile.type === 'file' || outputFile.type === 'dir'" v-bind:value="outputFile.name"
+                  v-bind:key="outputFile.name">{{ outputFile.name }}</option>
+              </select>
               <div v-if="node.hasOwnProperty('host')">
                 <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
               </div>
@@ -272,14 +241,14 @@
               <div v-if="node.hasOwnProperty('useJobScheduler')">
                 <label for="parameterRemotehost" id="propertyuseJobScheduler">UseJobScheduler</label>
               </div>
-              <div id="checkboxArea">
+              <div class="checkboxArea">
                 <input type="checkbox" v-model.lazy.trim="node.useJobScheduler" v-if="node.hasOwnProperty('useJobScheduler')" v-on:change="updateQueueList();updateProperty('useJobScheduler');"
                   name="check" id="useJobSchedulerFlagField" value="true">
               </div>
               <div v-if="node.hasOwnProperty('uploadOnDemand')">
                 <label id="propertyuploadOnDemand">UploadOnDemand</label>
               </div>
-              <div id="checkboxArea">
+              <div class="checkboxArea">
                 <input type="checkbox" v-model.lazy.trim="node.uploadOnDemand" v-if="node.hasOwnProperty('uploadOnDemand')" v-on:change="updateProperty('uploadOnDemand');"
                   name="check" id="uploadOnDemandFlagField" value="true">
               </div>
@@ -450,6 +419,36 @@
           </div>
         </div>
       </div>
+      <!-- リストビュー -->
+      <div id="workflow_listview_area" class="sub_content_area" onmousedown="return false;">
+        <div id="project_tree_svg">
+          <div id="tableHeadArea">
+            <table id="projectHeadTable" name="ListviewTable">
+              <thead id="project_table_head">
+                <tr id="project_table_tr">
+                  <th class="componentNameLabel">Name</th>
+                  <th class="componentStateLabel">State</th>
+                  <th class="componentStartTimeLabel">Started</th>
+                  <th id="showMoreButtonArea">
+                    <input type="image" src="/image/btn_openCloseR_n.png" alt="showMoreButton" id="showMoreButton" class="showMoreButton">
+                  </th>
+                  <th class="componentLabel">Prepared</th>
+                  <th class="componentLabel">Job Submitted</th>
+                  <th class="componentLabel">Job Ran</th>
+                  <th class="componentLabel">Job Finished</th>
+                  <th class="componentEndTimeLabel">Finished</th>
+                  <th class="componentDescriptionLabel">Description</th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+          <div id="tableDataArea">
+            <table id="projectBodyTable" name="ListviewTable">
+              <tbody id="project_table_body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       <!-- 下ドロアーメニュー -->
       <div id="projectInfoDrawer" data-position="top">
         <div id="drawerMargin"></div>
@@ -508,8 +507,13 @@
     </div>
     <!-- rapid -->
     <div id="rapid" v-else>
-      <new-rapid>
-        </>
+      <!-- <div id="editorTitle">
+        <label id="rapid2Title">File Editor</label>
+        <button type="button" name="view" value="graph" id="backToGraphView" class="btn_view_change">
+          <img src="/image/btn_flow_n.png" alt="graph">
+        </button>
+      </div> -->
+      <new-rapid></new-rapid>
     </div>
   </div>
 </body>

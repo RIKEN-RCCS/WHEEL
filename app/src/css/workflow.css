@@ -606,12 +606,12 @@ select::-ms-expand {
     margin: 0;
 }
 
-#propertyDisable:checked+label{
+.propertyDisable:checked+label{
     margin: 0;
     color: #FF0000;
 }
 
-#propertyDisable{
+.propertyDisable{
     margin: 0;
 }
 
@@ -633,7 +633,7 @@ select::-ms-expand {
     display: inline-block;
 }
 
-#propertyOutputFiles, #propertyParameterSettingFile, #propertyCondition,
+#propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
 #propertyIndexList, #propertyStart, #propertyStep,
 #propertyRemotehost, #propertyQueue, #propertyuseJobScheduler, #propertyuploadOnDemand, #propertyRetry{
     margin: 8px 0 0 0;
@@ -740,7 +740,7 @@ select::-ms-expand {
     margin-top: 4px;
 }
 
-#checkboxArea{
+.checkboxArea{
     margin: 0;
     padding: 0px;
 }
@@ -1251,7 +1251,7 @@ select::-ms-expand {
     position: absolute;
 }
 
-.workflow_graphview_area {
+#workflow_graphview_area {
     display: flex;
     flex-direction: row;
     color: #FFFFFF;
@@ -1349,6 +1349,7 @@ select::-ms-expand {
 .project_table_component{
     border: solid 1px #2F2F33;
     border-bottom-color: #222226;
+    box-sizing: content-box;
 }
 
 .componentNameLabel{
@@ -1431,7 +1432,7 @@ th.componentStateLabel{
 
 .componentState{
     display: inline-block;
-    padding-right: 44px;
+    padding-right: 50px;
     font-size: 14px;
     width: 90px;
 }
@@ -1442,7 +1443,7 @@ th.componentStateLabel{
 
 .componentStartTime{
     display: inline-block;
-    padding-right: 44px;
+    padding-right: 64px;
     width: 150px;
     font-size: 14px;
 }
@@ -1624,6 +1625,22 @@ tspan{
 }
 
 /* rapid2 css*/
+#editorTitle{
+    background: #222226;
+    padding: 4px 0 4px 16px;
+    height: 32px;
+}
+
+#backToGraphView{
+    position: absolute;
+    right: 16px;
+}
+
+#rapid2Title{
+    font-size: 16px;
+    position: relative;
+}
+
 .gutter {
     background-color: gray;
   height: 100%;
@@ -1634,11 +1651,13 @@ tspan{
 /*body size - header size*/
   height: calc(100% - 48px);
 }
+
 #normalArea {
   height: 100%;
 }
+
 #rapid {
-  height: 100%;
+  /* height: 100%; */
 }
 
 .ui-tooltip {
@@ -1646,6 +1665,18 @@ tspan{
 }
 body .ui-tooltip {
 	border-width: 2px;
+}
+
+.application--wrap{
+    min-height: calc(100vh - 48px) !important;
+}
+
+.container{
+    padding: 0px !important;
+}
+
+.ace-idle-fingers .ace_print-margin{
+    width: 0px !important;
 }
 
 /* viewer html css*/

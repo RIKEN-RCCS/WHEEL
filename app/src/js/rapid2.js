@@ -1,7 +1,7 @@
 import Split from "split.js";
 
 Vue.component("new-rapid", {
-  template: `\
+  template: `
     <v-app dark>
       <v-container fill-height fluid>
         <v-layout split column id="text">
@@ -66,7 +66,7 @@ Vue.component("new-rapid", {
       this.files.push(newFile);
       this.newFilename = null;
       //select tab after DOM updated
-      this.$nextTick(function() {
+      this.$nextTick(function () {
         this.activeTab = newIndex;
       });
     },
@@ -95,7 +95,7 @@ Vue.component("new-rapid", {
     });
     this.editor.on("changeSession", this.editor.resize.bind(this.editor));
 
-    this.files.forEach((file)=>{
+    this.files.forEach((file) => {
       file.editorSession = ace.createEditSession(file.content);
     });
     this.editor.setSession(this.files[this.activeTab].editorSession);
