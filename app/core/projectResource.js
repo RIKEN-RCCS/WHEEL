@@ -58,7 +58,10 @@ class Project extends EventEmitter {
     this.ssh.clear();
   }
 
-  async _updateProjectState(projectJson, state) {
+  async updateProjectState(state, projectJson) {
+    if (!projectJson) {
+      projectJson = await readJsonGreedy(this.projectJsonFilename);
+    }
     projectJson.state = state;
     projectJson.mtime = getDateString(true);
     this.emit("projectStateChanged", projectJson);
@@ -86,9 +89,9 @@ class Project extends EventEmitter {
       this.rootDispatcher.doCleanup = defaultCleanupRemoteRoot;
     }
 
-    await this._updateProjectState(projectJson, "running");
+    await this.updateProjectState("running", projectJson);
     rootWF.state = await this.rootDispatcher.start();
-    await this._updateProjectState(projectJson, rootWF.state);
+    await this.updateProjectState(rootWF.state, projectJson);
 
     await fs.writeJson(this.rootWFFilename, rootWF, { spaces: 4, replacer: componentJsonReplacer });
 
@@ -104,7 +107,7 @@ class Project extends EventEmitter {
     this._removeSsh();
     await cancelDispatchedTasks(this.tasks, this.logger);
     const projectJson = await readJsonGreedy(this.projectJsonFilename);
-    await this._updateProjectState(projectJson, "paused");
+    await this.updateProjectState("paused", projectJson);
   }
 
   async clean() {
@@ -242,6 +245,10 @@ function setSio(projectRootDir, sio) {
   getProject(projectRootDir).logger.addContext("sio", sio);
 }
 
+async function updateProjectState(projectRootDir, state) {
+  return getProject(projectRootDir).updateProjectState(state);
+}
+
 module.exports = {
   openProject,
   setCwd,
@@ -266,5 +273,6 @@ module.exports = {
   setSio,
   runProject,
   cleanProject,
-  pauseProject
+  pauseProject,
+  updateProjectState
 };
