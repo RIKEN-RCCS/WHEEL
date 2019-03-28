@@ -32,7 +32,7 @@ const testDirRoot = "WHEEL_TEST_TMP";
 const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 
 
-describe.only("project Controller UT", function() {
+describe("git operator UT", function() {
   after(async()=>{
     await fs.remove(testDirRoot);
   });
@@ -57,7 +57,7 @@ describe.only("project Controller UT", function() {
       expect(newRepoDir).to.be.a.directory().with.contents([".git"]);
     });
   });
-  describe.only("#gitAdd", ()=>{
+  describe("#gitAdd", ()=>{
     beforeEach(async ()=>{
       await Promise.all([
         fs.outputFile(path.resolve(testDirRoot,"hoge","huga","hige"), "hige"),

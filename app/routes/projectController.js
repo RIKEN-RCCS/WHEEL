@@ -226,8 +226,8 @@ async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
 }
 
 async function createCloudInstance(projectRootDir, hostInfo, sio) {
-  const order = hostInfo.additionalParams;
-  order.headOnlyParam = hostInfo.additionalParamsForHead;
+  const order = hostInfo.additionalParams || {};
+  order.headOnlyParam = hostInfo.additionalParamsForHead || {};
   order.provider = hostInfo.type;
   order.os = hostInfo.os;
   order.region = hostInfo.region;
