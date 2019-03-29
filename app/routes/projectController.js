@@ -360,10 +360,23 @@ async function onRunProject(sio, projectRootDir, cb) {
         await createSsh(projectRootDir, remoteHostName, hostInfo, sio);
       }
     }
-    await runProject(projectRootDir);
   } catch (err) {
+    getLogger(projectRootDir).error("fatal error occurred while prepareing phase:", err);
+    await updateProjectState(projectRootDir, "not-started");
+    await sendProjectJson(emit, projectRootDir);
+    cb(false);
+    return false;
+  } finally {
+    removeSsh(projectRootDir);
+    removeCluster(projectRootDir);
+  }
+  
+  try{
+    await runProject(projectRootDir);
+  }catch(err){
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
-    await sendProjectJson(emit, projectRootDir, "failed");
+    await updateProjectState(projectRootDir, "failed");
+    await sendProjectJson(emit, projectRootDir);
     cb(false);
     return false;
   } finally {
