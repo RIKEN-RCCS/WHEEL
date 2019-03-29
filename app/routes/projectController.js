@@ -362,13 +362,12 @@ async function onRunProject(sio, projectRootDir, cb) {
     }
   } catch (err) {
     getLogger(projectRootDir).error("fatal error occurred while prepareing phase:", err);
+    removeSsh(projectRootDir);
+    removeCluster(projectRootDir);
     await updateProjectState(projectRootDir, "not-started");
     await sendProjectJson(emit, projectRootDir);
     cb(false);
     return false;
-  } finally {
-    removeSsh(projectRootDir);
-    removeCluster(projectRootDir);
   }
   
   try{
