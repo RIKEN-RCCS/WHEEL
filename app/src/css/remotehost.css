@@ -384,6 +384,7 @@ input::-webkit-input-placeholder {
   background-color: #000000;
   color: #FFFFFF;
   border: 1px solid #000000;
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif; 
 }
 
 .hostRegFormAreaForCloud textarea{
@@ -394,6 +395,7 @@ input::-webkit-input-placeholder {
   color: #FFFFFF;
   border: 1px solid #000000;
   vertical-align: middle;
+  font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif; 
 }
 
 #leftFormArea div{
