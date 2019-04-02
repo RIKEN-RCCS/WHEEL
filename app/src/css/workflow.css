@@ -1380,7 +1380,6 @@ th.componentStateLabel{
     display: inline-block;
     position: relative;
     box-sizing: border-box;
-    background-color: #4C4C55;
     width: 20px;
     height: 25px;
     cursor: pointer;

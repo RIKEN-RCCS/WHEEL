@@ -41,6 +41,10 @@
             "jpn": "リストビュー画面を表示します"
         },
         {
+            "key": "showMoreButton",
+            "jpn": "taskの詳細情報を表示します"
+        },
+        {
             "key": "propertyName",
             "jpn": "コンポーネント名を設定します"
         },
