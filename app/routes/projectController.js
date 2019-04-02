@@ -226,8 +226,8 @@ async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
 }
 
 async function createCloudInstance(projectRootDir, hostInfo, sio) {
-  const order = hostInfo.additionalParams;
-  order.headOnlyParam = hostInfo.additionalParamsForHead;
+  const order = hostInfo.additionalParams || {};
+  order.headOnlyParam = hostInfo.additionalParamsForHead || {};
   order.provider = hostInfo.type;
   order.os = hostInfo.os;
   order.region = hostInfo.region;
@@ -360,10 +360,22 @@ async function onRunProject(sio, projectRootDir, cb) {
         await createSsh(projectRootDir, remoteHostName, hostInfo, sio);
       }
     }
-    await runProject(projectRootDir);
   } catch (err) {
+    getLogger(projectRootDir).error("fatal error occurred while prepareing phase:", err);
+    removeSsh(projectRootDir);
+    removeCluster(projectRootDir);
+    await updateProjectState(projectRootDir, "not-started");
+    await sendProjectJson(emit, projectRootDir);
+    cb(false);
+    return false;
+  }
+  
+  try{
+    await runProject(projectRootDir);
+  }catch(err){
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
-    await sendProjectJson(emit, projectRootDir, "failed");
+    await updateProjectState(projectRootDir, "failed");
+    await sendProjectJson(emit, projectRootDir);
     cb(false);
     return false;
   } finally {
