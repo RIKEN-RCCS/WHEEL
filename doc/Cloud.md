@@ -80,3 +80,39 @@ AWS起動時の認証に使う、access keyおよび secret access keyは前項�
 Shared Credentials Fileの記述方法などは、以下のURLに記載があります。
 
 https://docs.aws.amazon.com/ja_jp/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html
+
+## 起動されるクラスタの構成
+- クラスタ内には外部からsshの公開鍵認証でアクセス可能なhead nodeが1ノードのみ存在します。
+- numNodesで2以上を指定した場合は、そこから1(head nodeの分)を引いた数のchild nodeがprivate network内に作成されます。
+- private network内の各インスタンスはホストベース認証により相互にsshでアクセスすることができます。
+- head node, child nodeともに外部へのアクセスとその戻りの通信は許可されています。
+- head nodeにはansibleがインストールされており、デフォルトのインベントリファイルには全ノードが指定されています。
+- インベントリは2グループに分かれており、head nodeは "head" グループ、child nodeは "child"グループに含まれています。
+- shareStorageがtrueの時は、head nodeのホームディレクトリがNFSv4でchild nodeと共有されています。
+
+```
+            +------ private network --------+
+            |                 +-------+     |
+ internet   |             +---| node0 |     |
+            |             |   +-------+     |
+          +-----------+   |   +-------+     |
+          | head node |---|---| node1 |     |
+          +-----------+   |   +-------+     |
+            |             |   +-------+     |
+            |             +---| node2 |     |
+            |             .   +-------+     |
+            |             .                 |
+            |             .                 |
+            |             .                 |
+            +-------------------------------+
+```
+
+AWSでは、起動されたEC2インスタンスにAmazonEC2FullAccessおよび、AmazonEC2RoleforSSM Roleが設定されており、
+system managerからログインして起動中のインスタンスをモニタリングすることも可能です。
+
+認証に使う鍵ペアはAWS側で作成しており、秘密鍵はWHEELのメモリ内に保持されます。
+この鍵を取り出して、sshでインスタンスへアクセスすることは、通常の手段ではできませんので
+起動中のインスタンスへアクセスする必要がある場合は、system managerの機能をお使いください。
+
+
+
