@@ -1188,10 +1188,20 @@ $(() => {
           $(`#${taskId}`).css("margin-left", marginArea + "px");
           $(`#${taskId}`).css("margin-right", marginRight + "px");
           $(`#${taskId}`).css("background-color", nodeColor);
+          $(`.componentDescriptionLabel`).css("margin-right", marginArea + "px");
           $(`.componentNameLabel`).css("margin-right", maxancestorsLength * 32 + "px");
         }
       }
     }
+  }
+
+  // for listview scroll action
+  getElement("tableDataArea").onscroll = scrollTogether;
+  function scrollTogether() {
+    getElement("tableHeadArea").scrollLeft = getElement("tableDataArea").scrollLeft;
+  }
+  function getElement(elementID) {
+    return document.getElementById(elementID);
   }
 
   // set tooltip for workflow screen help
@@ -1217,8 +1227,7 @@ $(() => {
     }
 
     var editDisable = isEditDisable();
-    // var disable = editDisable || (vm.node !== null && vm.node.disable);
-    var disable = editDisable;
+    var disable = editDisable || (vm.node !== null && vm.node.disable);
 
     var ids = [
       // 入力域は readonlyのみ。チェックボックスなどは disableも
