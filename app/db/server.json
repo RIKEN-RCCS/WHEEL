@@ -1,5 +1,5 @@
 {
-    "port": 8089,
+    "port": 8080,
     "remotehostJsonFile": "./remotehost.json",
     "useraccountJsonFile": "./useraccount.json",
     "projectListJsonFile": "./projectList.json",

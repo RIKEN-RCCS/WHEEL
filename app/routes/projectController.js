@@ -259,7 +259,7 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
   const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
   if (hostInfo.type === "aws") {
     logger.debug("wait for cloud-init");
-    await arssh.exec("cloud-init status -w > /dev/null");
+    await arssh.watch("tail /var/log/cloud-init-output.log >&2 && cloud-init status", { out: /done|error|disabled/ }, 30000, 40, {}, logger.debug.bind(logger), logger.debug.bind(logger));
     logger.debug("cloud-init done");
   }
   if (hostInfo.renewInterval) {
@@ -369,7 +369,7 @@ async function onRunProject(sio, projectRootDir, cb) {
     cb(false);
     return false;
   }
-  
+
   try{
     await runProject(projectRootDir);
   }catch(err){
