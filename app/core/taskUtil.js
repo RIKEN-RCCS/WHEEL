@@ -1,9 +1,10 @@
 "use strict";
 const { remoteHost, jobScheduler } = require("../db/db");
-const { getSsh } = require("./projectResource");
+const { getSsh } = require("./sshManager");
 const { cancel } = require("./executer");
 
-async function cancelRemoteJob(task, ssh, logger) {
+async function cancelRemoteJob(task, logger) {
+  const ssh = getSsh(task.label, task.remotehostID);
   const hostinfo = remoteHost.get(task.remotehostID);
   const JS = jobScheduler[hostinfo.jobScheduler];
   const cancelCmd = `${JS.del} ${task.jobID}`;
@@ -26,11 +27,8 @@ async function killLocalProcess(task) {
 
 async function killTask(task, logger) {
   if (task.remotehostID !== "localhost") {
-    const hostinfo = remoteHost.get(task.remotehostID);
-
     if (task.useJobScheduler) {
-      const arssh = getSsh(task.label, hostinfo.host);
-      await cancelRemoteJob(task, arssh, logger);
+      await cancelRemoteJob(task, logger);
     } else {
 
       //do nothing for remoteExec at this time

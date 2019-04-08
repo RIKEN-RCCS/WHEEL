@@ -13,8 +13,9 @@ const { getDateString, isValidOutputFilename } = require("../lib/utility");
 const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSsh, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
+const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
+const { addSsh, removeSsh } = require("../core/sshManager");
 const {
   getHosts,
   getSourceComponents,
@@ -29,7 +30,8 @@ const {
   removeLink,
   removeFileLink,
   cleanComponent,
-  removeComponent
+  removeComponent,
+  validateComponents
 } = require("../core/componentFilesOperator");
 const { taskStateFilter } = require("../core/taskUtil");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
@@ -175,7 +177,7 @@ async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
 
   //remoteHostName is name property of remote host entry
   //hostInfo.host is hostname or IP address of remote host
-  addSsh(projectRootDir, hostInfo.host, arssh);
+  addSsh(projectRootDir, hostInfo.id, arssh);
 
   try {
     //1st try
@@ -260,7 +262,7 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
   const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
   if (hostInfo.type === "aws") {
     logger.debug("wait for cloud-init");
-    await arssh.watch("tail /var/log/cloud-init-output.log >&2 && cloud-init status", { out: /done|error|disabled/ }, 30000, 40, {}, logger.debug.bind(logger), logger.debug.bind(logger));
+    await arssh.watch("tail /var/log/cloud-init-output.log >&2 && cloud-init status", { out: /done|error|disabled/ }, 30000, 60, {}, logger.debug.bind(logger), logger.debug.bind(logger));
     logger.debug("cloud-init done");
   }
   if (hostInfo.renewInterval) {
@@ -272,7 +274,7 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
   }
 
   hostInfo.host = config.host;
-  addSsh(projectRootDir, config.host, arssh);
+  addSsh(projectRootDir, hostInfo.id, arssh);
 }
 
 async function onRunProject(sio, projectRootDir, cb) {
@@ -280,6 +282,18 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   if (typeof cb !== "function") {
     cb = ()=>{};
+  }
+  try {
+    const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
+    const rootWF = await readJsonGreedy(path.resolve(projectRootDir, componentJsonFilename));
+    await validateComponents(projectRootDir, rootWF.ID);
+    await gitCommit(projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
+  } catch (err) {
+    getLogger(projectRootDir).error("fatal error occurred while validation phase:", err);
+    await updateProjectState(projectRootDir, "not-started");
+    await sendProjectJson(emit, projectRootDir);
+    cb(false);
+    return false;
   }
 
   const emit = sio.emit.bind(sio);
@@ -325,7 +339,6 @@ async function onRunProject(sio, projectRootDir, cb) {
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
   once(projectRootDir, "resultFilesReady", onResultFilesReady);
-
 
   //actual project run start from here
   try {
