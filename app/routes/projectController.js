@@ -35,8 +35,9 @@ const { taskStateFilter } = require("../core/taskUtil");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
 //read and send current workflow and its child and grandson
-async function sendWorkflow(emit, projectRootDir) {
-  const wf = await getComponent(projectRootDir, path.resolve(getCwd(projectRootDir), componentJsonFilename));
+async function sendWorkflow(emit, projectRootDir, cwd) {
+  const componentDir = cwd ? cwd : getCwd(projectRootDir);
+  const wf = await getComponent(projectRootDir, path.resolve(componentDir, componentJsonFilename));
   const rt = Object.assign({}, wf);
   rt.descendants = await getChildren(projectRootDir, wf.ID);
 
@@ -370,9 +371,9 @@ async function onRunProject(sio, projectRootDir, cb) {
     return false;
   }
 
-  try{
+  try {
     await runProject(projectRootDir);
-  }catch(err){
+  } catch (err) {
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
     await updateProjectState(projectRootDir, "failed");
     await sendProjectJson(emit, projectRootDir);
@@ -430,7 +431,7 @@ async function onCleanProject(emit, projectRootDir, cb) {
   }
   await emitLongArray(emit, "taskStateList", [], blockSize);
   await sendProjectJson(emit, projectRootDir);
-  await sendWorkflow(emit, projectRootDir);
+  await sendWorkflow(emit, projectRootDir, projectRootDir);
   getLogger(projectRootDir).debug("clean project done");
   cb(true);
 }
