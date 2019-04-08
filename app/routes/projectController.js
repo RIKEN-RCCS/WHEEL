@@ -63,8 +63,10 @@ async function sendWorkflow(emit, projectRootDir, cwd) {
 
 //read and send projectJson
 async function sendProjectJson(emit, projectRootDir) {
+  getLogger(projectRootDir).trace("projectState: sendProjectJson", projectRootDir);
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
+  getLogger(projectRootDir).trace("projectState: stat=", projectJson.state);
   emit("projectJson", projectJson);
 }
 
@@ -279,6 +281,7 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
 
 async function onRunProject(sio, projectRootDir, cb) {
   getLogger(projectRootDir).debug("run event recieved");
+  const emit = sio.emit.bind(sio);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -296,7 +299,6 @@ async function onRunProject(sio, projectRootDir, cb) {
     return false;
   }
 
-  const emit = sio.emit.bind(sio);
   //event listener for task state changed
   async function onTaskStateChanged() {
     const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
@@ -829,6 +831,7 @@ async function onCleanComponent(emit, projectRootDir, targetID, cb) {
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
   on(projectRootDir, "projectStateChanged", (projectJson)=>{
+    getLogger(projectRootDir).trace("projectState: onProjectStateChanged", projectJson.state);
     emit("projectJson", projectJson);
   });
   socket.on("runProject", onRunProject.bind(null, socket, projectRootDir));
