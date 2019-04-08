@@ -68,7 +68,7 @@ taskコンポーネント内で実行するスクリプトなど、処理に必�
 ## クラス構成
 workflowおよびその実行に関連するクラスのクラス図は次のとおりです。
 
-![クラス図](./classDiagram.svg)
+![クラス図](./classDiagram.png)
 
 BaseWorkflowComponentの各派生クラスのプロパティのうち、エンドユーザが設定することのできる項目は次のとおりです。
 
@@ -192,7 +192,7 @@ inputFileおよびoutputFileオブジェクトは次のプロパティを持つ
 property    | type     | description
 ------------|----------|--------------------------------------------
 name        | string   | ファイルまたはディレクトリ名
-src         | string[] | 
+src         | string[] |
 src.srcNode | string   | 送信元ノードのID
 src.srcName | string   | 送信元ノードでのファイルまたはディレクトリ名
 src.transit | string   | 他階層からファイルを受け取る時に経由するコンポーネント(画面表示用)
@@ -201,7 +201,7 @@ src.transit | string   | 他階層からファイルを受け取る時に経由�
 property    | type     | description
 ------------|----------| --------------------------------------------
 name        | string   | ファイル,ディレクトリ名またはglobパターン
-dst         | string[] | 
+dst         | string[] |
 dst.dstNode | string   | 送信先ノードのID
 dst.dstName | string   | 送信先ノードでのファイルまたはディレクトリ名
 dst.transit | string   | 他階層からファイルを受け取る時に経由するコンポーネント(画面表示用)
@@ -258,7 +258,7 @@ dispatcherがWorkflow, ParamterStudy, For, While, Foreachを見つけた時は�
 ### プロジェクトおよび各コンポーネントのstatus表示について
 プロジェクトの状態は以下5つのうちいずれかの状態を取ります。
 
-- not-started 
+- not-started
 - running
 - finished
 - unknown
@@ -380,5 +380,5 @@ cleanボタンの押下         | rm -fr && git reset HEAD --hard
 
 
 ## 画面遷移
-![画面遷移図](./screen_transition.svg)
+![画面遷移図](./screen_transition.png)
 
