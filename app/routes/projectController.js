@@ -13,8 +13,9 @@ const { getDateString, isValidOutputFilename } = require("../lib/utility");
 const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addSsh, removeSsh, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
+const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
 const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
+const { addSsh, removeSsh } = require("../core/sshManager");
 const {
   getHosts,
   getSourceComponents,
@@ -29,14 +30,16 @@ const {
   removeLink,
   removeFileLink,
   cleanComponent,
-  removeComponent
+  removeComponent,
+  validateComponents
 } = require("../core/componentFilesOperator");
 const { taskStateFilter } = require("../core/taskUtil");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
 //read and send current workflow and its child and grandson
-async function sendWorkflow(emit, projectRootDir) {
-  const wf = await getComponent(projectRootDir, path.resolve(getCwd(projectRootDir), componentJsonFilename));
+async function sendWorkflow(emit, projectRootDir, cwd) {
+  const componentDir = cwd ? cwd : getCwd(projectRootDir);
+  const wf = await getComponent(projectRootDir, path.resolve(componentDir, componentJsonFilename));
   const rt = Object.assign({}, wf);
   rt.descendants = await getChildren(projectRootDir, wf.ID);
 
@@ -60,8 +63,10 @@ async function sendWorkflow(emit, projectRootDir) {
 
 //read and send projectJson
 async function sendProjectJson(emit, projectRootDir) {
+  getLogger(projectRootDir).trace("projectState: sendProjectJson", projectRootDir);
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
+  getLogger(projectRootDir).trace("projectState: stat=", projectJson.state);
   emit("projectJson", projectJson);
 }
 
@@ -174,7 +179,7 @@ async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
 
   //remoteHostName is name property of remote host entry
   //hostInfo.host is hostname or IP address of remote host
-  addSsh(projectRootDir, hostInfo.host, arssh);
+  addSsh(projectRootDir, hostInfo.id, arssh);
 
   try {
     //1st try
@@ -259,7 +264,7 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
   const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
   if (hostInfo.type === "aws") {
     logger.debug("wait for cloud-init");
-    await arssh.exec("cloud-init status -w > /dev/null");
+    await arssh.watch("tail /var/log/cloud-init-output.log >&2 && cloud-init status", { out: /done|error|disabled/ }, 30000, 60, {}, logger.debug.bind(logger), logger.debug.bind(logger));
     logger.debug("cloud-init done");
   }
   if (hostInfo.renewInterval) {
@@ -271,17 +276,29 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
   }
 
   hostInfo.host = config.host;
-  addSsh(projectRootDir, config.host, arssh);
+  addSsh(projectRootDir, hostInfo.id, arssh);
 }
 
 async function onRunProject(sio, projectRootDir, cb) {
   getLogger(projectRootDir).debug("run event recieved");
+  const emit = sio.emit.bind(sio);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
+  try {
+    const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
+    const rootWF = await readJsonGreedy(path.resolve(projectRootDir, componentJsonFilename));
+    await validateComponents(projectRootDir, rootWF.ID);
+    await gitCommit(projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
+  } catch (err) {
+    getLogger(projectRootDir).error("fatal error occurred while validation phase:", err);
+    await updateProjectState(projectRootDir, "not-started");
+    await sendProjectJson(emit, projectRootDir);
+    cb(false);
+    return false;
+  }
 
-  const emit = sio.emit.bind(sio);
   //event listener for task state changed
   async function onTaskStateChanged() {
     const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
@@ -324,7 +341,6 @@ async function onRunProject(sio, projectRootDir, cb) {
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
   once(projectRootDir, "resultFilesReady", onResultFilesReady);
-
 
   //actual project run start from here
   try {
@@ -369,10 +385,10 @@ async function onRunProject(sio, projectRootDir, cb) {
     cb(false);
     return false;
   }
-  
-  try{
+
+  try {
     await runProject(projectRootDir);
-  }catch(err){
+  } catch (err) {
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
     await updateProjectState(projectRootDir, "failed");
     await sendProjectJson(emit, projectRootDir);
@@ -430,7 +446,7 @@ async function onCleanProject(emit, projectRootDir, cb) {
   }
   await emitLongArray(emit, "taskStateList", [], blockSize);
   await sendProjectJson(emit, projectRootDir);
-  await sendWorkflow(emit, projectRootDir);
+  await sendWorkflow(emit, projectRootDir, projectRootDir);
   getLogger(projectRootDir).debug("clean project done");
   cb(true);
 }
@@ -815,6 +831,7 @@ async function onCleanComponent(emit, projectRootDir, targetID, cb) {
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
   on(projectRootDir, "projectStateChanged", (projectJson)=>{
+    getLogger(projectRootDir).trace("projectState: onProjectStateChanged", projectJson.state);
     emit("projectJson", projectJson);
   });
   socket.on("runProject", onRunProject.bind(null, socket, projectRootDir));
