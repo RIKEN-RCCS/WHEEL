@@ -302,9 +302,9 @@ $(() => {
   });
 
   //rapid以外の要素をhideしてrapidだけ表示
-  $('#editPSFileButton').click(function () {
-    vm.normal = false;
-  });
+  // $('#editPSFileButton').click(function () {
+  //   vm.normal = false;
+  // });
 
   // set default view
   $('#workflow_listview_area').hide();
