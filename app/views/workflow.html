@@ -262,10 +262,12 @@
               <div v-if="node.hasOwnProperty('parameterFile')">
                 <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>
               </div>
-              <select name="parameterFile" v-if="node.hasOwnProperty('parameterFile')" v-model="node.parameterFile" id="parameterFileSelectField"
-                v-on:change="updateProperty('parameterFile')">
-                <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'" v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
-              </select>
+              <div>
+                <select name="parameterFile" v-if="node.hasOwnProperty('parameterFile')" v-model="node.parameterFile" id="parameterFileSelectField"
+                  v-on:change="updateProperty('parameterFile')">
+                  <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'" v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
+                </select>
+              </div>
               <div v-if="node.hasOwnProperty('retryTimes')">
                 <label for="retry" id="propertyRetry">Retry</label>
                 <div id="propertyRetryArea">
