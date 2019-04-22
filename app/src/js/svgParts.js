@@ -441,7 +441,7 @@ class SvgBox {
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
-      .addClass(`${name}_box`);
+      .addClass(`svg_${name}_box`);
 
     // add state info
     if (type === "parameterStudy" || type === "for" || type === "foreach") {

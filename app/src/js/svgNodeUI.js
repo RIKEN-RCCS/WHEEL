@@ -102,8 +102,8 @@ export class SvgNodeUI {
     this.group
       .on('dragstart', (e) => {
         if (!this.editDisable) {
-          diffX = e.detail.p.x - e.target.instance.select(`.${node.name}_box`).first().x();
-          diffY = e.detail.p.y - e.target.instance.select(`.${node.name}_box`).first().y()
+          diffX = e.detail.p.x - e.target.instance.select(`.svg_${node.name}_box`).first().x();
+          diffY = e.detail.p.y - e.target.instance.select(`.svg_${node.name}_box`).first().y()
           startX = e.detail.p.x;
           startY = e.detail.p.y;
         } else {
