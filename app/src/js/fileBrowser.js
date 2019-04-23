@@ -207,7 +207,7 @@ export default class {
         var icon = this.drawIconImage(data.type, data.path, data.name, data.isdir, data.islink);
         var dataName = data.name;
         var idName = dataName.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
-        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class=${data.type} id=${idName}>${icon}${data.name}</li>`);
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class="${data.type}" id="${idName}_data">${icon}${data.name}</li>`);
         var compare = this.compare;
         var lengthBefore = $(`${this.idFileList} li`).length;
         var counter = 0;

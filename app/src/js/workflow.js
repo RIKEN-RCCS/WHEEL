@@ -1116,7 +1116,7 @@ $(() => {
     for (let i = 0; i < taskStateList.length; i++) {
       let taskIdTemp = "";
       if (taskStateList[i].ancestorsName === "") {
-        taskIdTemp = `${taskStateList[i].name}_${i}`;
+        taskIdTemp = `${taskStateList[i].name}`;
       } else {
         taskIdTemp = `${taskStateList[i].name}_${taskStateList[i].ancestorsName}`;
       }
@@ -1133,7 +1133,6 @@ $(() => {
         if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
           nodeState = 'running'
         }
-
         let nodeComponentState = config.state_icon[nodeState];
         $(`#${taskId}_stateIcon`).attr("src", nodeComponentState);
         $(`#${taskId}_state`).html(taskStateList[i].state);
@@ -1173,7 +1172,7 @@ $(() => {
           let ancestorsIdTemp;
           for (let j = 0; j < ancestorsNameList.length; j++) {
             let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
-            ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${i}_${j}_${taskId}`;
+            ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${taskId}`;
             ancestorsId = escapeCharacter(ancestorsIdTemp);
             insertSubComponetStateListHTML(targetElement, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
             $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
