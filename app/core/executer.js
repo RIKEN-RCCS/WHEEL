@@ -104,7 +104,7 @@ async function prepareRemoteExecDir(task) {
   const remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
   const ssh = getSsh(task.projectRootDir, task.remotehostID);
-  await ssh.send(task.workingDir, task.remoteWorkingDir);
+  await ssh.send(task.workingDir, path.posix.dirname(task.remoteWorkingDir));
   return ssh.chmod(remoteScriptPath, "744");
 }
 
@@ -126,7 +126,7 @@ async function gatherFiles(task, rt) {
   if (outputFilesArray.length > 0) {
     const outputFiles = `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
     logger.debug("try to get outputFiles", outputFiles, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir);
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null);
+    await ssh.recv(outputFiles, task.workingDir, null, null);
   }
 
   //get files which match include filter
@@ -134,7 +134,7 @@ async function gatherFiles(task, rt) {
     const include = `${task.remoteWorkingDir}/${parseFilter(task.include)}`;
     const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
     logger.debug("try to get ", include, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir, "\n  exclude filter:", exclude);
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude);
+    await ssh.recv(include, task.workingDir, null, exclude);
   }
 
   //clean up remote working directory
