@@ -12,5 +12,6 @@
     "logFilename": "wheel.log",
     "numLogFiles": 5,
     "maxLogSize": 8388608,
-    "compressLogFile": true
+    "compressLogFile": true,
+    "numJobOnLocal": 2
 }

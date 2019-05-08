@@ -3,7 +3,7 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-const { remoteHost, jobScheduler, componentJsonFilename } = require("../db/db");
+const { remoteHost, jobScheduler, componentJsonFilename, numJobOnLocal } = require("../db/db");
 const { addX } = require("./fileUtils");
 const { replacePathsep } = require("./pathUtils");
 const { getDateString } = require("../lib/utility");
@@ -431,7 +431,7 @@ function createExecuter(task) {
     err.hostinfo = hostinfo;
     throw err;
   }
-  const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
+  const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : numJobOnLocal;
   const host = hostinfo != null ? hostinfo.host : null;
   const queues = hostinfo != null ? hostinfo.queue : null;
   const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
