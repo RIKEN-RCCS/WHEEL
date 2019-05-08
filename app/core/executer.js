@@ -3,7 +3,7 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-const { remoteHost, jobScheduler, componentJsonFilename, numJobOnLocal } = require("../db/db");
+const { remoteHost, jobScheduler, componentJsonFilename, numJobOnLocal, statusFilename } = require("../db/db");
 const { addX } = require("./fileUtils");
 const { replacePathsep } = require("./pathUtils");
 const { getDateString } = require("../lib/utility");
@@ -14,6 +14,12 @@ let logger; //logger is injected when exec() is called;
 
 function getMaxNumJob(hostinfo, onRemote) {
   return onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : numJobOnLocal;
+}
+
+async function createStatusFile(task){
+  const filename = path.resolve(task.workingDir,statusFilename);
+  const statusFile = `${task.state}\n${task.rt}\n${task.jobStatus}`
+  return fs.writeFile(filename, statusFile);
 }
 
 /**
@@ -57,16 +63,18 @@ function passToSSHerr(data) {
   logger.ssherr(data.toString().trim());
 }
 
-function getReturnCode(outputText, reReturnCode) {
+function getReturnCode(outputText, reReturnCode, jobStatus=false) {
   const re = new RegExp(reReturnCode, "m");
   const result = re.exec(outputText);
 
   if (result === null || result[1] === null) {
-    logger.warn("get return code failed, rt is overwrited by -1");
+    const kind = jobStatus ? "job status":"return";
+    logger.warn(`get ${kind} code failed, rt is overwrited by -1`);
     return -1;
   }
   return result[1];
 }
+
 
 /**
  * check if job is finished or not on remote server
@@ -95,6 +103,7 @@ async function isFinished(JS, task) {
 
   if (finished) {
     const strRt = getReturnCode(outputText, JS.reReturnCode);
+    task.jobStatus = getReturnCode(outputText, JS.reJobStatus, true);
     return parseInt(strRt, 10);
   }
   return null;
@@ -248,9 +257,8 @@ class Executer {
     this.batch = new SBS({
       exec: async(task)=>{
         task.startTime = getDateString(true, true);
-        let rt;
         try {
-          rt = await this.exec(task);
+          task.rt = await this.exec(task);
         } catch (e) {
           if (e.jobStatusCheckFaild) {
             await setTaskState(task, "unknown");
@@ -269,12 +277,12 @@ class Executer {
         task.endTime = getDateString(true, true);
 
         //update task status
-        const state = rt === 0 ? "finished" : "failed";
+        const state = task.rt === 0 ? "finished" : "failed";
         await setTaskState(task, state);
 
         //to use retry function in the future release, return Promise.reject if task finished with non-zero value
         if (state === "failed") {
-          return Promise.reject(rt);
+          return Promise.reject(task.rt);
         }
         return state;
       },
@@ -348,6 +356,8 @@ class Executer {
       await this.batch.qwait(task.sbsID);
     } catch (e) {
       logger.warn(task.name, "failed due to", e);
+    } finally {
+      await createStatusFile(task);
     }
   }
 

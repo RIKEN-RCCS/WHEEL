@@ -25,6 +25,7 @@ function getJupyterPort() {
 module.exports.suffix = ".wheel";
 module.exports.projectJsonFilename = "prj.wheel.json";
 module.exports.componentJsonFilename = "cmp.wheel.json";
+module.exports.statusFilename = "status.wheel.txt";
 
 //export accessor to jupyter parameter
 module.exports.setJupyterToken = setJupyterToken;
