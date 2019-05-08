@@ -811,6 +811,19 @@ async function getSourceComponents(projectRootDir) {
   });
 }
 
+/**
+ * determin specified path is componennt dir or not
+ * @param {string} target - directory path
+ * @return {boolean}
+ */
+async function isComponentDir(target){
+  const stats = await fs.lstat(path.resolve(target));
+  if(!stats.isDirectory()){
+    return false
+  }
+  return fs.pathExists(path.resolve(target, componentJsonFilename));
+}
+
 
 module.exports = {
   getHosts,
@@ -831,5 +844,6 @@ module.exports = {
   removeLink,
   removeFileLink,
   cleanComponent,
-  removeComponent
+  removeComponent,
+  isComponentDir
 };

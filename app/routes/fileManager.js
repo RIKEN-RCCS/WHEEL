@@ -9,9 +9,24 @@ const { gitAdd, gitRm } = require("../core/gitOperator");
 const { getSystemFiles } = require("./utility");
 const { convertPathSep } = require("../core/pathUtils");
 const { getLogger } = require("../core/projectResource");
+const { isComponentDir } = require("../core/componentFilesOperator")
+
+/**
+ * return component dir names under target directory
+ * @param {string} target
+ * @returns {string[]} - array of component dir names
+ */
+async function getComponentDirs(target){
+  const contents = await fs.readdir(target);
+  return Promise.all(contents.map((e)=>{
+    return isComponentDir(path.resolve(target, e));
+  }))
+}
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
   request = request || target;
+  const componentDirs = await getComponentDirs(request);
+  const regexComponentDirs = new RegExp(`(${componentDirs.join('|')})`);
   const result = await fileBrowser(target, {
     request,
     SND: withSND,
@@ -19,7 +34,8 @@ async function sendDirectoryContents(emit, target, request, withSND = true, send
     sendFilename: sendFile,
     filter: {
       all: allFilter,
-      file: getSystemFiles()
+      file: getSystemFiles(),
+      dir: regexComponentDirs
     }
   });
   emit("fileList", result);
