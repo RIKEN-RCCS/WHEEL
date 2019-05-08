@@ -70,7 +70,6 @@ let portNumber = parseInt(process.env.PORT, 10) || port || defaultPort;
 if (portNumber < 0) {
   portNumber = defaultPort;
 }
-app.set("port", port);
 
 //error handler
 app.use((err, req, res, next)=>{
@@ -84,7 +83,7 @@ app.use((req, res, next)=>{
 });
 
 //Listen on provided port, on all network interfaces.
-server.listen(port);
+server.listen(portNumber);
 server.on("error", onError);
 server.on("listening", onListening);
 
