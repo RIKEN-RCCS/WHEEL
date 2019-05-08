@@ -307,7 +307,7 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   try {
     projectJson = await readJsonGreedy(projectJsonFilepath);
   } catch (e) {
-    logger.error("root workflow JSON file read error\n", e);
+    logger.error("project JSON file read error\n", e);
     cb(false);
     return;
   }
