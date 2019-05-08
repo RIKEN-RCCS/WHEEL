@@ -34,7 +34,7 @@ const silentLogger = {
  * @param {string} state - state string
  */
 function isFinishedState(state) {
-  return state === "finished" || state === "failed";
+  return state === "finished" || state === "failed" || state === "unknown";
 }
 
 

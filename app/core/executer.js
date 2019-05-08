@@ -12,7 +12,7 @@ const { getSsh } = require("./sshManager.js");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 
-function getMaxNumJob(hostinfo, onRemote){
+function getMaxNumJob(hostinfo, onRemote) {
   return onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : numJobOnLocal;
 }
 
@@ -252,7 +252,11 @@ class Executer {
         try {
           rt = await this.exec(task);
         } catch (e) {
-          await setTaskState(task, "failed");
+          if (e.jobStatusCheckFaild) {
+            await setTaskState(task, "unknown");
+          } else {
+            await setTaskState(task, "failed");
+          }
           return Promise.reject(e);
         }
 
@@ -277,21 +281,21 @@ class Executer {
       retry: false,
       maxConcurrent: maxNumJob,
       interval: execInterval * 1000,
-      name: `executer-${hostname ? hostname: "localhost"}-${this.useJobScheduler?"Job":"task"}`
+      name: `executer-${hostname ? hostname : "localhost"}-${this.useJobScheduler ? "Job" : "task"}`
     });
 
     if (this.useJobScheduler) {
-      this.statCheckQ = new SBS({
+      this.statusCheckFailedCount = 0;
+      this.statusCheckCount = 0;
+      this.statusCheckQ = new SBS({
       //TODO exec should be changed for local submit case
         exec: async(task)=>{
           if (task.state !== "running") {
             return false;
           }
           //TODO to be checked!!
-          let statFailedCount = 0;
-          let statCheckCount = 0;
-          logger.debug(task.jobID, "status checked", statCheckCount);
-          ++statCheckCount;
+          logger.debug(task.jobID, "status checked", this.statusCheckCount);
+          ++this.statusCheckCount;
 
           try {
             const rt = await isFinished(JS, task);
@@ -299,25 +303,29 @@ class Executer {
             if (rt === null) {
               //"not finished" is used for retry flag so reject with error is not prefered at this time
               //eslint-disable-next-line prefer-promise-reject-errors
-              return Promise.reject("not finished");
+              return Promise.reject(new Error("not finished"));
             }
             logger.info(task.jobID, "is finished (remote). rt =", rt);
             await gatherFiles(task, rt);
             return rt;
           } catch (err) {
-            ++statFailedCount;
+            ++this.statusCheckFailedCount;
             err.jobID = task.jobID;
             err.JS = JS;
             logger.warn("status check failed", err);
 
-            if (statFailedCount > this.maxStatusCheckError) {
-              return Promise.reject(new Error("job status check failed over", this.maxStatusCheckError, "times"));
+            if (this.statusCheckFailedCount > this.maxStatusCheckError) {
+              err.jobStatusCheckFaild = true;
+              err.statusCheckFailedCount = this.statusCheckFailedCount;
+              err.statusCheckCount = this.statusCheckCount;
+              err.maxStatusCheckError = maxStatusCheckError;
+              return Promise.reject(err);
             }
+            return Promise.reject(new Error("not finished"));
           }
-          return Promise.reject(new Error("never reach here!!"));
         },
         retry: (e)=>{
-          return e === "not finished";
+          return e.message === "not finished";
         },
         retryLater: true,
         maxConcurrent: 1,
@@ -340,7 +348,6 @@ class Executer {
       await this.batch.qwait(task.sbsID);
     } catch (e) {
       logger.warn(task.name, "failed due to", e);
-      await setTaskState(task, "failed");
     }
   }
 
@@ -391,7 +398,7 @@ class Executer {
     const jobID = result[1];
     task.jobID = jobID;
     logger.info("submit success:", submitCmd, jobID);
-    return this.statCheckQ.qsubAndWait(task);
+    return this.statusCheckQ.qsubAndWait(task);
   }
 
   setMaxNumJob(v) {
@@ -404,7 +411,7 @@ class Executer {
 
   setStatusCheckInterval(v) {
     if (this.useJobScheduler) {
-      this.statCheckQ.interval = v * 1000;
+      this.statusCheckQ.interval = v * 1000;
     }
   }
 
