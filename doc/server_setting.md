@@ -5,7 +5,7 @@ WHEELの動作に影響するパラメータのうち一部のものは```app/db
 server.jsonの既定値
 
 ```
-    "port": 8080,
+    "port": 8089,
     "remotehostJsonFile": "./remotehost.json",
     "useraccountJsonFile": "./useraccount.json",
     "projectListJsonFile": "./projectList.json",
