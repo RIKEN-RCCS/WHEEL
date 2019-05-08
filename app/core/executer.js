@@ -12,6 +12,10 @@ const { getSsh } = require("./sshManager.js");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 
+function getMaxNumJob(hostinfo, onRemote){
+  return onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : numJobOnLocal;
+}
+
 /**
  * set task component's status and notice it's changed
  */
@@ -273,7 +277,7 @@ class Executer {
       retry: false,
       maxConcurrent: maxNumJob,
       interval: execInterval * 1000,
-      name: `executer ${hostname}`
+      name: `executer-${hostname ? hostname: "localhost"}-${this.useJobScheduler?"Job":"task"}`
     });
 
     if (this.useJobScheduler) {
@@ -431,7 +435,7 @@ function createExecuter(task) {
     err.hostinfo = hostinfo;
     throw err;
   }
-  const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : numJobOnLocal;
+  const maxNumJob = getMaxNumJob(hostinfo, onRemote);
   const host = hostinfo != null ? hostinfo.host : null;
   const queues = hostinfo != null ? hostinfo.queue : null;
   const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
@@ -459,7 +463,7 @@ function exec(task, loggerInstance) {
     logger.debug("reuse existing executer for", task.host, " with job scheduler", task.useJobScheduler);
     const onRemote = executer.remotehostID !== "localhost";
     const hostinfo = remoteHost.get(executer.remotehostID);
-    const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
+    const maxNumJob = getMaxNumJob(hostinfo, onRemote);
     const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
     const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
     const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;
