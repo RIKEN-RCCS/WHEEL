@@ -133,6 +133,7 @@ function makeCmd(paramSettings) {
 
 
 function forGetNextIndex(component) {
+  ++component.numFinished;
   return component.hasOwnProperty("currentIndex") ? component.currentIndex + component.step : component.start;
 }
 
@@ -140,7 +141,13 @@ function forIsFinished(component) {
   return (component.currentIndex > component.end && component.step > 0) || (component.currentIndex < component.end && component.step < 0);
 }
 
+function forTripCount(component){
+  return Math.ceil((component.end - component.start)/component.step);
+  
+}
+
 function whileGetNextIndex(component) {
+  ++component.numFinished;
   return component.hasOwnProperty("currentIndex") ? ++(component.currentIndex) : 0;
 }
 
@@ -151,6 +158,7 @@ async function whileIsFinished(cwfDir, logger, component) {
 }
 
 function foreachGetNextIndex(component) {
+  ++component.numFinished;
   if (component.hasOwnProperty("currentIndex")) {
     const i = component.indexList.findIndex((e)=>{
       return e === component.currentIndex;
@@ -167,10 +175,17 @@ function foreachGetNextIndex(component) {
 function foreachIsFinished(component) {
   return component.currentIndex === null;
 }
+function foreachTripCount(component){
+  return component.indexList.length
+}
 
-function loopInitialize(component) {
+function loopInitialize(component, getTripCount) {
   component.initialized = true;
   component.originalName = component.name;
+  component.numFinished = 0;
+  if(typeof getTripCount === "function"){
+  component.numTotal = getTripCount(component);
+  }
 }
 
 /**
@@ -565,7 +580,7 @@ class Dispatcher extends EventEmitter {
     await fs.writeJson(path.join(componentDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
   }
 
-  async _loopHandler(getNextIndex, isFinished, component) {
+  async _loopHandler(getNextIndex, isFinished, getTripCount, component) {
     if (component.childLoopRunning) {
       //send back itself to searchList for next loop trip
       this.nextSearchList.push(component);
@@ -575,7 +590,7 @@ class Dispatcher extends EventEmitter {
     component.childLoopRunning = true;
 
     if (!component.initialized) {
-      loopInitialize(component);
+      loopInitialize(component, getTripCount);
     }
 
     //determine old loop block directory
@@ -931,13 +946,13 @@ class Dispatcher extends EventEmitter {
         cmd = this._checkIf;
         break;
       case "for":
-        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished);
+        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished, forTripCount);
         break;
       case "while":
-        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger));
+        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger), null);
         break;
       case "foreach":
-        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished);
+        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished, foreachTripCount);
         break;
       case "workflow":
         cmd = this._delegate;
