@@ -18,14 +18,18 @@ const { isComponentDir } = require("../core/componentFilesOperator");
  */
 async function getComponentDirs(target) {
   const contents = await fs.readdir(target);
-  return Promise.all(contents.map((e)=>{
+  const flags = await Promise.all(contents.map((e)=>{
     return isComponentDir(path.resolve(target, e));
   }));
+  return contents.filter((e, i)=>{
+    return flags[i];
+  });
 }
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
   request = request || target;
   const componentDirs = await getComponentDirs(request);
+  console.log("DEBUG:", componentDirs);
   const regexComponentDirs = new RegExp(`(${componentDirs.join("|")})`);
   const result = await fileBrowser(target, {
     request,
