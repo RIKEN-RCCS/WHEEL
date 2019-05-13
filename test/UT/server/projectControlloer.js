@@ -21,11 +21,11 @@ const testDirRoot = "WHEEL_TEST_TMP";
 const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 
 //helper functions
-const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
+const { projectJsonFilename, componentJsonFilename, statusFilename } = require("../../../app/db/db");
 const { createNewProject } = require("../../../app/core/projectFilesOperator");
 const { updateComponent, createNewComponent, addInputFile, addOutputFile, addLink, addFileLink } = require("../../../app/core/componentFilesOperator");
 
-const { scriptName, pwdCmd, scriptHeader, referenceEnv } = require("./testScript");
+const { scriptName, pwdCmd, scriptHeader, referenceEnv, exit } = require("./testScript");
 const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 const { escapeRegExp } = require("../../../app/lib/utility");
 
@@ -66,9 +66,38 @@ describe("project Controller UT", function() {
       beforeEach(async()=>{
         const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
-        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
       });
-      it("should run project and successfully finish", async()=>{
+      it.only("should run project and fail", async()=>{
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), `${scriptPwd}\n${exit(10)}`);
+        await runProject(projectRootDir);
+        expect(dummyLogger.stdout).to.have.been.calledOnce;
+        expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state", "ancestorsName"],
+          properties: {
+            state: { enum: ["failed"] },
+            ancestorsName: { enum: [""] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", statusFilename)).to.be.a.file().with.content("failed\n10\nundefined");
+      });
+      it.only("should run project and successfully finish", async()=>{
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
         expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
@@ -94,6 +123,7 @@ describe("project Controller UT", function() {
             ancestorsName: { enum: [""] }
           }
         });
+        expect(path.resolve(projectRootDir, "task0", statusFilename)).to.be.a.file().with.content("finished\n0\nundefined");
       });
     });
     describe("3 local tasks with execution order dependency", ()=>{
