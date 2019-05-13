@@ -67,7 +67,7 @@ describe("project Controller UT", function() {
         const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
       });
-      it.only("should run project and fail", async()=>{
+      it("should run project and fail", async()=>{
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), `${scriptPwd}\n${exit(10)}`);
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
@@ -96,7 +96,7 @@ describe("project Controller UT", function() {
         });
         expect(path.resolve(projectRootDir, "task0", statusFilename)).to.be.a.file().with.content("failed\n10\nundefined");
       });
-      it.only("should run project and successfully finish", async()=>{
+      it("should run project and successfully finish", async()=>{
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
