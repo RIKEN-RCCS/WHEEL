@@ -141,9 +141,8 @@ function forIsFinished(component) {
   return (component.currentIndex > component.end && component.step > 0) || (component.currentIndex < component.end && component.step < 0);
 }
 
-function forTripCount(component){
-  return Math.ceil((component.end - component.start)/component.step);
-  
+function forTripCount(component) {
+  return Math.ceil((component.end - component.start) / component.step);
 }
 
 function whileGetNextIndex(component) {
@@ -159,6 +158,7 @@ async function whileIsFinished(cwfDir, logger, component) {
 
 function foreachGetNextIndex(component) {
   ++component.numFinished;
+
   if (component.hasOwnProperty("currentIndex")) {
     const i = component.indexList.findIndex((e)=>{
       return e === component.currentIndex;
@@ -175,16 +175,17 @@ function foreachGetNextIndex(component) {
 function foreachIsFinished(component) {
   return component.currentIndex === null;
 }
-function foreachTripCount(component){
-  return component.indexList.length
+function foreachTripCount(component) {
+  return component.indexList.length;
 }
 
 function loopInitialize(component, getTripCount) {
   component.initialized = true;
   component.originalName = component.name;
   component.numFinished = 0;
-  if(typeof getTripCount === "function"){
-  component.numTotal = getTripCount(component);
+
+  if (typeof getTripCount === "function") {
+    component.numTotal = getTripCount(component);
   }
 }
 
@@ -325,19 +326,21 @@ class Dispatcher extends EventEmitter {
     }
     const promises = [];
 
-    while (this.currentSearchList.length > 0) {
-      this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
-        return e.name;
-      }));
-      this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
-        return e.name;
-      }));
+    this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
+      return e.name;
+    }));
+    this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
+      return e.name;
+    }));
 
+    while (this.currentSearchList.length > 0) {
       const target = this.currentSearchList.shift();
+      if (target.disable) {
+        continue;
+      }
       if (target.type === "source") {
         await this._setComponentState(target, "finished");
       }
-
       if (target.state === "finished") {
         await this._addNextComponent(target);
         continue;
