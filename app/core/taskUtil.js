@@ -69,7 +69,11 @@ function taskStateFilter(task) {
     ancestorsType: task.ancestorsType,
     dispatchedTime: task.dispatchedTime,
     startTime: task.startTime,
-    endTime: task.endTime
+    endTime: task.endTime,
+    preparedTime: task.preparedTime,
+    jobSubmittedTime: task.jobSubmittedTime,
+    jobStartTime: task.jobStartTime,
+    jobEndTime: task.jobEndTime
   };
 }
 

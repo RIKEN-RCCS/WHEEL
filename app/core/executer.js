@@ -118,7 +118,8 @@ async function prepareRemoteExecDir(task) {
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
   const ssh = getSsh(task.projectRootDir, task.remotehostID);
   await ssh.send(task.workingDir, path.posix.dirname(task.remoteWorkingDir));
-  return ssh.chmod(remoteScriptPath, "744");
+  await ssh.chmod(remoteScriptPath, "744");
+  task.preparedTime = getDateString(true, true);
 }
 
 async function gatherFiles(task, rt) {
@@ -301,6 +302,7 @@ class Executer {
           if (task.state !== "running") {
             return false;
           }
+          task.jobStartTime = task.jobStartTime || getDateString(true,true);
           //TODO to be checked!!
           logger.debug(task.jobID, "status checked", this.statusCheckCount);
           ++this.statusCheckCount;
@@ -314,6 +316,7 @@ class Executer {
               return Promise.reject(new Error("not finished"));
             }
             logger.info(task.jobID, "is finished (remote). rt =", rt);
+            task.jobEndTime = task.jobEndTime || getDateString(true,true);
             await gatherFiles(task, rt);
             return rt;
           } catch (err) {
@@ -408,6 +411,7 @@ class Executer {
     const jobID = result[1];
     task.jobID = jobID;
     logger.info("submit success:", submitCmd, jobID);
+    task.jobSubmittedTime = getDateString(true, true);
     return this.statusCheckQ.qsubAndWait(task);
   }
 
