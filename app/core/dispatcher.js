@@ -326,13 +326,6 @@ class Dispatcher extends EventEmitter {
     }
     const promises = [];
 
-    this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
-      return e.name;
-    }));
-    this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
-      return e.name;
-    }));
-
     while (this.currentSearchList.length > 0) {
       const target = this.currentSearchList.shift();
       if (target.disable) {
@@ -349,6 +342,14 @@ class Dispatcher extends EventEmitter {
         this.nextSearchList.push(target);
         continue;
       }
+      
+    this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
+      return e.name;
+    }));
+    this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
+      return e.name;
+    }));
+
 
       await this._setComponentState(target, "running");
       promises.push(
@@ -506,8 +507,8 @@ class Dispatcher extends EventEmitter {
     task.endTime = "not finished"; //to be assigned in executer
     task.preparedTime = null; //to be assigned in executer
     task.jobSubmittedTime = null; //to be assigned in executer
-    task.startTime = null; //to be assigned in executer
-    task.endTime = null; //to be assigned in executer
+    task.jobStartTime = null; //to be assigned in executer
+    task.jobEndTime = null; //to be assigned in executer
     task.projectStartTime = this.projectStartTime;
     task.projectRootDir = this.projectRootDir;
     task.workingDir = path.resolve(this.cwfDir, task.name);
