@@ -5,6 +5,8 @@ const { promisify } = require("util");
 const childProcess = require("child_process");
 const { EventEmitter } = require("events");
 const glob = require("glob");
+const readChunk = require('read-chunk');
+const fileType = require('file-type');
 const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
@@ -16,6 +18,15 @@ const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeIn
 const { componentJsonReplacer } = require("./componentFilesOperator");
 const { isInitialComponent } = require("./workflowComponent");
 
+
+const viewerSupportedTypes = ["png","jpg","gif","bmp"];
+
+async function getFiletype(filename){
+     const buffer = await readChunk(filename, 0, fileType.minimumBytes);
+     const rt = fileType(buffer);
+     rt.name = filename;
+     return rt;
+}
 
 const silentLogger = {
   error: ()=>{},
@@ -783,18 +794,25 @@ class Dispatcher extends EventEmitter {
     const dir = await fs.mkdtemp(viewerURLRoot + path.sep);
 
     const componentRoot = path.resolve(this.cwfDir, component.name);
-    const files = component.files;
+    const files = await Promise.all(component.files.map((e)=>{return getFiletype(e.dst)}));
     delete component.files;
     const rt = await Promise.all(
-      files.map((e)=>{
-        return deliverFile(e.dst, path.resolve(dir, path.relative(componentRoot, e.dst)));
+      files
+      .filter((e)=>{
+        if(viewerSupportedTypes.includes(e.ext)){
+          return e.name;
+        }
+        this.logger.warn("unsupported type for viewer", path.basename(e.name));
+        return false;
+      })
+      .map((e)=>{
+        return deliverFile(e.name, path.resolve(dir, path.relative(componentRoot, e.name)));
       })
     );
-    const results = rt.map((e)=>{
+    this.emitEvent("resultFilesReady", rt.map((e)=>{
       return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: path.relative(viewerURLRoot, e.dst) };
-    });
-    this.emitEvent("resultFilesReady", results);
-
+    })
+    );
     await this._setComponentState(component, "finished");
   }
 
@@ -807,7 +825,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(ID);
 
         if (!isFinishedState(previous.state)) {
-          this.logger.debug(component.ID, "is not ready because", previous.ID, "is not finished");
+          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
           return false;
         }
       }
@@ -821,12 +839,13 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state)) {
-          this.logger.debug(component.ID, "is not ready because", previous.ID, "(has file dependency)is not finished");
+          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
           return false;
         }
       }
     }
     const result = await this._getOutputFiles(component);
+    // store gatherd filenames. it will be used and removed in _ViewerHandler()
     if (component.type === "viewer") {
       component.files = result;
     }
