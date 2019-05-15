@@ -330,7 +330,7 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   //event listener for result files ready
   function onResultFilesReady(results) {
-    emitLongArray(emit, "results", results)
+    emitLongArray(emit, "results", results);
   }
 
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);

@@ -5,8 +5,8 @@ const { promisify } = require("util");
 const childProcess = require("child_process");
 const { EventEmitter } = require("events");
 const glob = require("glob");
-const readChunk = require('read-chunk');
-const fileType = require('file-type');
+const readChunk = require("read-chunk");
+const fileType = require("file-type");
 const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
@@ -19,13 +19,16 @@ const { componentJsonReplacer } = require("./componentFilesOperator");
 const { isInitialComponent } = require("./workflowComponent");
 
 
-const viewerSupportedTypes = ["png","jpg","gif","bmp"];
+const viewerSupportedTypes = ["png", "jpg", "gif", "bmp"];
 
-async function getFiletype(filename){
-     const buffer = await readChunk(filename, 0, fileType.minimumBytes);
-     const rt = fileType(buffer);
-     rt.name = filename;
-     return rt;
+async function getFiletype(filename) {
+  const realFilename = await fs.realpath(filename);
+  const buffer = await readChunk(realFilename, 0, fileType.minimumBytes);
+  const rt = fileType(buffer);
+  if (rt) {
+    rt.name = filename;
+  }
+  return rt;
 }
 
 const silentLogger = {
@@ -355,13 +358,13 @@ class Dispatcher extends EventEmitter {
         this.nextSearchList.push(target);
         continue;
       }
-      
-    this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
-      return e.name;
-    }));
-    this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
-      return e.name;
-    }));
+
+      this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
+        return e.name;
+      }));
+      this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
+        return e.name;
+      }));
 
 
       await this._setComponentState(target, "running");
@@ -794,26 +797,32 @@ class Dispatcher extends EventEmitter {
     const dir = await fs.mkdtemp(viewerURLRoot + path.sep);
 
     const componentRoot = path.resolve(this.cwfDir, component.name);
-    const files = await Promise.all(component.files.map((e)=>{return getFiletype(e.dst)}));
+    const files = await Promise.all(component.files.map((e)=>{
+      return getFiletype(e.dst);
+    }));
     delete component.files;
     const rt = await Promise.all(
       files
-      .filter((e)=>{
-        if(viewerSupportedTypes.includes(e.ext)){
-          return e.name;
-        }
-        this.logger.warn("unsupported type for viewer", path.basename(e.name));
-        return false;
-      })
-      .map((e)=>{
-        return deliverFile(e.name, path.resolve(dir, path.relative(componentRoot, e.name)));
-      })
+        .filter((e)=>{
+          if (typeof e === "undefined") {
+            return false;
+          }
+          if (viewerSupportedTypes.includes(e.ext)) {
+            return e.name;
+          }
+          this.logger.warn("unsupported type for viewer", path.basename(e.name));
+          return false;
+        })
+        .map((e)=>{
+          return deliverFile(e.name, path.resolve(dir, path.relative(componentRoot, e.name)));
+        })
     );
-    this.logger.debug("send URLs",rt.map((e)=>{return e.src}))
+    this.logger.debug("send URLs", rt.map((e)=>{
+      return e.src;
+    }));
     this.emitEvent("resultFilesReady", rt.map((e)=>{
       return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: path.relative(viewerURLRoot, e.dst) };
-    })
-    );
+    }));
     await this._setComponentState(component, "finished");
   }
 
@@ -846,7 +855,7 @@ class Dispatcher extends EventEmitter {
       }
     }
     const result = await this._getOutputFiles(component);
-    // store gatherd filenames. it will be used and removed in _ViewerHandler()
+    //store gatherd filenames. it will be used and removed in _ViewerHandler()
     if (component.type === "viewer") {
       component.files = result;
     }
