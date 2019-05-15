@@ -331,16 +331,11 @@ async function onRunProject(sio, projectRootDir, cb) {
   //event listener for result files ready
   function onResultFilesReady(results) {
     emitLongArray(emit, "results", results)
-      .then(()=>{
-        setTimeout(()=>{
-          once(projectRootDir, "resultFilesReady", onResultFilesReady);
-        }, interval);
-      });
   }
 
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
-  once(projectRootDir, "resultFilesReady", onResultFilesReady);
+  on(projectRootDir, "resultFilesReady", onResultFilesReady);
 
   //actual project run start from here
   try {
@@ -401,9 +396,11 @@ async function onRunProject(sio, projectRootDir, cb) {
 
   off(projectRootDir, "taskStateChanged", onTaskStateChanged);
   off(projectRootDir, "componentStateChanged", onComponentStateChanged);
+  off(projectRootDir, "resultFilesReady", onResultFilesReady);
 
   try {
     //directly send last status just in case
+    //TODO プロジェクト再実行時などに、この部分から送っているものしかsocketIOが送ってくれない
     await sendProjectJson(emit, projectRootDir);
     await sendWorkflow(emit, projectRootDir);
     await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);

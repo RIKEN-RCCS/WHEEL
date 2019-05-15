@@ -809,6 +809,7 @@ class Dispatcher extends EventEmitter {
         return deliverFile(e.name, path.resolve(dir, path.relative(componentRoot, e.name)));
       })
     );
+    this.logger.debug("send URLs",rt.map((e)=>{return e.src}))
     this.emitEvent("resultFilesReady", rt.map((e)=>{
       return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: path.relative(viewerURLRoot, e.dst) };
     })
