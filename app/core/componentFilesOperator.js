@@ -8,7 +8,7 @@ const { updateComponentPath, removeComponentPath, getComponentDir, getDescendant
 const { componentJsonFilename, remoteHost, jobScheduler } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
 const { gitAdd, gitRm, gitResetHEAD } = require("./gitOperator");
-const { isValidName } = require("../lib/utility");
+const { isValidName,  isValidInputFilename, isValidOutputFilename} = require("../lib/utility");
 const { hasChild, isInitialComponent } = require("./workflowComponent");
 const { replacePathsep } = require("../core/pathUtils");
 
@@ -532,6 +532,9 @@ async function updateComponent(projectRootDir, ID, prop, value) {
 }
 
 async function addInputFile(projectRootDir, ID, name) {
+  if(!isValidInputFilename(name)){
+    return Promise.reject(new Error(`${name} is not valid inputFile name`));
+  }
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
   if (!componentJson.hasOwnProperty("inputFiles")) {
@@ -543,6 +546,9 @@ async function addInputFile(projectRootDir, ID, name) {
   return writeComponentJson(projectRootDir, componentDir, componentJson);
 }
 async function addOutputFile(projectRootDir, ID, name) {
+  if(!isValidOutputFilename(name)){
+    return Promise.reject(new Error(`${name} is not valid outputFile name`));
+  }
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
   if (!componentJson.hasOwnProperty("outputFiles")) {
@@ -615,6 +621,9 @@ async function removeOutputFile(projectRootDir, ID, name) {
   return Promise.all(p);
 }
 async function renameInputFile(projectRootDir, ID, index, newName) {
+  if(!isValidInputFilename(newName)){
+    return Promise.reject(new Error(`${newName} is not valid inputFile name`));
+  }
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
   if (index < 0 || componentJson.inputFiles.length - 1 < index) {
@@ -644,6 +653,9 @@ async function renameInputFile(projectRootDir, ID, index, newName) {
   return Promise.all(p);
 }
 async function renameOutputFile(projectRootDir, ID, index, newName) {
+  if(!isValidOutputFilename(newName)){
+    return Promise.reject(new Error(`${newName} is not valid outputFile name`));
+  }
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
   if (index < 0 || componentJson.outputFiles.length - 1 < index) {
