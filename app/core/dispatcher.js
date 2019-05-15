@@ -329,12 +329,14 @@ class Dispatcher extends EventEmitter {
     while (this.currentSearchList.length > 0) {
       const target = this.currentSearchList.shift();
       if (target.disable) {
+        this.logger.info(`disabled component: ${target.name}(${target.ID})`);
         continue;
       }
       if (target.type === "source") {
         await this._setComponentState(target, "finished");
       }
       if (target.state === "finished") {
+        this.logger.info(`finished component: ${target.name}(${target.ID})`);
         await this._addNextComponent(target);
         continue;
       }
