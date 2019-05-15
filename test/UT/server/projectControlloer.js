@@ -63,13 +63,47 @@ describe("project Controller UT", function() {
   });
   describe("#runProject", ()=>{
     describe("one local task", ()=>{
+      let task0;
       beforeEach(async()=>{
-        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
+      });
+      it("should retry 2 times and fail", async()=>{
+        await updateComponent(projectRootDir, task0.ID, "retryTimes", 2);
+        await updateComponent(projectRootDir, task0.ID, "retryCondition", true);
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), `${scriptPwd}\n${exit(10)}`);
+        await runProject(projectRootDir);
+
+        expect(dummyLogger.stdout).to.have.been.calledThrice;
+        expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state", "ancestorsName"],
+          properties: {
+            state: { enum: ["failed"] },
+            ancestorsName: { enum: [""] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", statusFilename)).to.be.a.file().with.content("failed\n10\nundefined");
       });
       it("should run project and fail", async()=>{
         await fs.outputFile(path.join(projectRootDir, "task0", scriptName), `${scriptPwd}\n${exit(10)}`);
         await runProject(projectRootDir);
+
         expect(dummyLogger.stdout).to.have.been.calledOnce;
         expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
         expect(dummyLogger.stderr).not.to.have.been.called;

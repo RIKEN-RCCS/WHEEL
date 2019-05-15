@@ -3,8 +3,9 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-const { remoteHost, jobScheduler, componentJsonFilename, numJobOnLocal, statusFilename } = require("../db/db");
+const { remoteHost, jobScheduler, componentJsonFilename, numJobOnLocal, statusFilename, defaultTaskRetryCount } = require("../db/db");
 const { addX } = require("./fileUtils");
+const { evalCondition } = require("./dispatchUtils");
 const { replacePathsep } = require("./pathUtils");
 const { getDateString } = require("../lib/utility");
 const { componentJsonReplacer } = require("./componentFilesOperator");
@@ -16,9 +17,9 @@ function getMaxNumJob(hostinfo, onRemote) {
   return onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : numJobOnLocal;
 }
 
-async function createStatusFile(task){
-  const filename = path.resolve(task.workingDir,statusFilename);
-  const statusFile = `${task.state}\n${task.rt}\n${task.jobStatus}`
+async function createStatusFile(task) {
+  const filename = path.resolve(task.workingDir, statusFilename);
+  const statusFile = `${task.state}\n${task.rt}\n${task.jobStatus}`;
   return fs.writeFile(filename, statusFile);
 }
 
@@ -63,12 +64,12 @@ function passToSSHerr(data) {
   logger.ssherr(data.toString().trim());
 }
 
-function getReturnCode(outputText, reReturnCode, jobStatus=false) {
+function getReturnCode(outputText, reReturnCode, jobStatus = false) {
   const re = new RegExp(reReturnCode, "m");
   const result = re.exec(outputText);
 
   if (result === null || result[1] === null) {
-    const kind = jobStatus ? "job status":"return";
+    const kind = jobStatus ? "job status" : "return";
     logger.warn(`get ${kind} code failed, rt is overwrited by -1`);
     return -1;
   }
@@ -258,6 +259,7 @@ class Executer {
     this.batch = new SBS({
       exec: async(task)=>{
         task.startTime = getDateString(true, true);
+
         try {
           task.rt = await this.exec(task);
         } catch (e) {
@@ -281,13 +283,12 @@ class Executer {
         const state = task.rt === 0 ? "finished" : "failed";
         await setTaskState(task, state);
 
-        //to use retry function in the future release, return Promise.reject if task finished with non-zero value
+        //to use task in retry function, exec() will be rejected with task object if failed
         if (state === "failed") {
-          return Promise.reject(task.rt);
+          return Promise.reject(task);
         }
         return state;
       },
-      retry: false,
       maxConcurrent: maxNumJob,
       interval: execInterval * 1000,
       name: `executer-${hostname ? hostname : "localhost"}-${this.useJobScheduler ? "Job" : "task"}`
@@ -302,7 +303,7 @@ class Executer {
           if (task.state !== "running") {
             return false;
           }
-          task.jobStartTime = task.jobStartTime || getDateString(true,true);
+          task.jobStartTime = task.jobStartTime || getDateString(true, true);
           //TODO to be checked!!
           logger.debug(task.jobID, "status checked", this.statusCheckCount);
           ++this.statusCheckCount;
@@ -316,7 +317,7 @@ class Executer {
               return Promise.reject(new Error("not finished"));
             }
             logger.info(task.jobID, "is finished (remote). rt =", rt);
-            task.jobEndTime = task.jobEndTime || getDateString(true,true);
+            task.jobEndTime = task.jobEndTime || getDateString(true, true);
             await gatherFiles(task, rt);
             return rt;
           } catch (err) {
@@ -350,7 +351,27 @@ class Executer {
   }
 
   async submit(task) {
-    task.sbsID = this.batch.qsub(task);
+    const job = {
+      args: task,
+      maxRetry: task.retryTimes || defaultTaskRetryCount,
+      retry: false
+    };
+
+    if (task.hasOwnProperty("retryCondition")) {
+      job.retry = async(task)=>{
+        let rt = false;
+        try {
+          rt = await evalCondition(task.retryCondition, task.workingDir, task.currentIndex, logger);
+        } catch (err) {
+          //ignore exception
+        }
+        if (rt) {
+          logger.info(`${task.name}(${task.ID}) failed but retring`);
+        }
+        return rt;
+      };
+    }
+    task.sbsID = this.batch.qsub(job);
 
     if (task.sbsID !== null) {
       await setTaskState(task, "waiting");

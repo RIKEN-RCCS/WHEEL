@@ -13,5 +13,6 @@
     "numLogFiles": 5,
     "maxLogSize": 8388608,
     "compressLogFile": true,
-    "numJobOnLocal": 2
+    "numJobOnLocal": 2,
+    "defaultTaskRetryCount": 1
 }

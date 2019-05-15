@@ -2,7 +2,6 @@
 const fs = require("fs-extra");
 const path = require("path");
 const { promisify } = require("util");
-const childProcess = require("child_process");
 const { EventEmitter } = require("events");
 const glob = require("glob");
 const readChunk = require("read-chunk");
@@ -13,10 +12,11 @@ const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
 const { getDateString } = require("../lib/utility");
 const { sanitizePath, convertPathSep, replacePathsep } = require("./pathUtils");
-const { readJsonGreedy, addX, deliverFile } = require("./fileUtils");
+const { readJsonGreedy, deliverFile } = require("./fileUtils");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
 const { componentJsonReplacer } = require("./componentFilesOperator");
 const { isInitialComponent } = require("./workflowComponent");
+const { evalCondition } = require("./dispatchUtils");
 
 
 const viewerSupportedTypes = ["png", "jpg", "gif", "bmp"];
@@ -201,64 +201,6 @@ function loopInitialize(component, getTripCount) {
   if (typeof getTripCount === "function") {
     component.numTotal = getTripCount(component);
   }
-}
-
-/**
- * evalute condition by executing external command or evalute JS expression
- * @param {string} condition - command name or javascript expression
- */
-async function evalCondition(condition, cwd, currentIndex, logger) {
-  return new Promise(async(resolve, reject)=>{
-    //condition is always string for now. but keep following just in case
-    if (typeof condition === "boolean") {
-      resolve(condition);
-    }
-
-    if (typeof condition !== "string") {
-      logger.warn("condition must be string or boolean");
-      reject(new Error(`illegal condition specified ${typeof condition} \n${condition}`));
-    }
-    const script = path.resolve(cwd, condition);
-
-    if (await fs.pathExists(script)) {
-      logger.debug("execute ", script);
-      await addX(script);
-      const dir = path.dirname(script);
-      const options = {
-        env: process.env,
-        cwd: dir
-      };
-
-      if (typeof currentIndex === "number") {
-        options.env.WHEEL_CURRENT_INDEX = currentIndex.toString();
-      }
-      const cp = childProcess.spawn(script, options, (err)=>{
-        if (err) {
-          reject(err);
-        }
-      });
-      cp.on("close", (code)=>{
-        logger.debug("return value of conditional expression = ", code);
-        resolve(code === 0);
-      });
-      cp.stdout.on("data", (data)=>{
-        logger.trace(data.toString());
-      });
-      cp.stderr.on("data", (data)=>{
-        logger.trace(data.toString());
-      });
-    } else {
-      logger.debug("evalute ", condition);
-      let conditionExpression = "";
-
-      if (typeof currentIndex === "number") {
-        conditionExpression += `var WHEEL_CURRENT_INDEX=${currentIndex};`;
-      }
-      conditionExpression += condition;
-      //eslint-disable-next-line no-eval
-      resolve(eval(conditionExpression));
-    }
-  });
 }
 
 async function replaceTargetFile(srcDir, dstDir, targetFiles, params) {
