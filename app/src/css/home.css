@@ -141,6 +141,9 @@ button:hover{
 #projectList{
   width: 100%;
   list-style-type: none;
+  overflow-y: auto;
+  /* 228px:home screen height except projectList*/
+  height: calc(100vh - 228px);
 }
 
 #projectList ul{
