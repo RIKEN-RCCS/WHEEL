@@ -164,7 +164,7 @@
           <span>
             <label id="hostLabel">Label</label>
           </span>
-          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
+          <input id="hostLabelInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
           <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
         </div>
         <div>
@@ -177,7 +177,7 @@
           <span>
             <label id="hostName">Host Name</label>
           </span>
-          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.host" v-bind:class="{'ui-state-error': !validation.host}">
+          <input id="hostNameInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.host" v-bind:class="{'ui-state-error': !validation.host}">
         </div>
         <div>
           <span>
@@ -189,13 +189,14 @@
           <span>
             <label id="hostUserID">User ID</label>
           </span>
-          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.username" v-bind:class="{'ui-state-error': !validation.username}">
+          <input id="hostUserIDInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.username"
+            v-bind:class="{'ui-state-error': !validation.username}">
         </div>
         <div>
           <span>
             <label id="hostWorkDir">Host Work Dir</label>
           </span>
-          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.path">
+          <input id="hostWorkDirInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.path">
         </div>
       </div>
       <div id="centerFormArea">
@@ -235,7 +236,7 @@
           <span>
             <label id="hostQueue">Queue</label>
           </span>
-          <input type="text" v-model.lazy="newHostInfo.queue">
+          <input id="hostQueueInputArea" type="text" v-model.lazy="newHostInfo.queue">
         </div>
       </div>
       <div id="rightFormArea">
