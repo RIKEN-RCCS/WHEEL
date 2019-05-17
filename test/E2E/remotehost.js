@@ -9,13 +9,13 @@ describe("#remotehost screen", function () {
     //Xpath
     const drawerRemotehost = '//*[@id="drawerMenuList"]/li[1]/a';
     const hostlist = '//*[@id="pageNameArea"]';
-    const labelArea = '//*[@id="leftFormArea"]/div[1]/input';
-    const hostNameArea = '//*[@id="leftFormArea"]/div[3]/input';
-    const userIDArea = '//*[@id="leftFormArea"]/div[5]/input';
-    const workDirArea = '//*[@id="leftFormArea"]/div[6]/input';
-    const queueArea = '//*[@id="centerFormArea"]/div[5]/input';
-    const confirmButton = '//*[@id="confirmButton"]';
-    const okBtn = '//*[@id="dialogOkButton"]';
+    const labelArea = 'hostLabelInputArea';
+    const hostNameArea = 'hostNameInputArea';
+    const userIDArea = 'hostUserIDInputArea';
+    const workDirArea = 'hostWorkDirInputArea';
+    const queueArea = 'hostQueueInputArea';
+    const confirmButton = 'confirmButton';
+    const okBtn = '/html/body/div[4]/div[3]/div/button[2]';
     const labelName = 'testHost';
     const hostName = 'testHostName';
     const userID = "testUserID";
@@ -40,12 +40,12 @@ describe("#remotehost screen", function () {
     it("add remotehost", function () {
         // add remotehost
         browser.click("#newButton")
-            .setValue(labelArea, labelName)
-            .setValue(hostNameArea, hostName)
-            .setValue(userIDArea, userID)
-            .setValue(workDirArea, workDir)
-            .setValue(queueArea, queue);
-        browser.click(confirmButton)
+            .setValue(`#${labelArea}`, labelName)
+            .setValue(`#${hostNameArea}`, hostName)
+            .setValue(`#${userIDArea}`, userID)
+            .setValue(`#${workDirArea}`, workDir)
+            .setValue(`#${queueArea}`, queue);
+        browser.click(`#${confirmButton}`)
             .waitForVisible(`#${labelName}`);
     });
     it("copy remotehost", function () {
@@ -57,7 +57,7 @@ describe("#remotehost screen", function () {
     it("delete remotehost", function () {
         // delete remotehost
         browser.click("#deleteButton")
-            .waitForVisible("#deleteCheckDialog");
+            .waitForVisible("#dialog");
         browser.click(okBtn)
             .waitForExist(".dialogStateError", 10000, true);
     });

@@ -9,7 +9,7 @@ describe("remotehost SecretKey Check #issue 241 259 : ", function () {
     //Xpath
     const drawerRemotehost = '//*[@id="drawerMenuList"]/li[1]/a';
     const hostlist = '//*[@id="pageNameArea"]';
-    const dialogOKButton = '/html/body/div[3]/div[3]/div/button[2]';
+    const dialogOKButton = '/html/body/div[4]/div[3]/div/button[2]';
     const E2ETestDir = "E2ETestDir";
     const keyfile = 'keyfile_txt';
 

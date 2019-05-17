@@ -17,7 +17,7 @@ describe("component property check:", function () {
     const task0Id = 'task0_box';
     const createFileName = "test.txt";
     const createFolderName = "test";
-    const fileDialogOkButton = '/html/body/div[8]/div[3]/div/button[2]';
+    const fileDialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
     //workflow0 component info(parent)
     const workflow0Id = 'workflow0_box';
     const renameParent = 'workflow1';
