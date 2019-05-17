@@ -7,7 +7,8 @@
     "reJobID": "pjsub Job (\\d+) submitted.",
     "reFinishedState": "^ST *EC\\nEXT *0",
     "reReturnCode": "^ST *EC\\nEXT *(\\d+)",
-    "reFailedState": "^ST *EC\\n(CCL|ERR|EXT|RJT)"
+    "reFailedState": "^ST *EC\\n(CCL|ERR|EXT|RJT)",
+    "reJobStatus": "^ST *EC\\n(\\S+)"
   },
   "PBSPro":{
     "submit": "qsub",
@@ -17,7 +18,8 @@
     "reJobID": "(\\d+).*",
     "reFinishedState": "substate \\= 92$",
     "reReturnCode": "Exit_status \\= (\\d+)$",
-    "reFailedState": "substate \\= (91|93)$"
+    "reFailedState": "substate \\= (91|93)$",
+    "reJobStatus": "substate \\= (\\d+)$"
   },
   "SLURM":{
     "submit": "sbatch",
@@ -27,6 +29,7 @@
     "reJobID": "Submitted batch job (\\d+)",
     "reFinishedState": "^COMPLETED,0",
     "reReturnCode": "^COMPLETED,(\\d+):\\d+$",
-    "reFailedState": "^(COMPLETED|FAILED|CANCELLED|DEADLINE|NODE_FAIL|TIMEOUT)"
+    "reFailedState": "^(COMPLETED|FAILED|CANCELLED|DEADLINE|NODE_FAIL|TIMEOUT)",
+    "reJobStatus": "^(\\S+)"
   }
 }

@@ -171,7 +171,7 @@ describe("workflow editor UT", function() {
     viewer0Schema.addInputFile("viewer");
 
     source0Schema = getSchema("source", "source0", source0.ID, rootWf.ID);
-    source0Schema.renameOutputFile("source")
+    source0Schema.renameOutputFile("source");
 
     projectJsonSchema = {
       properties: {
@@ -304,21 +304,21 @@ describe("workflow editor UT", function() {
     it("should be rejected while attempting to rename root workflow", ()=>{
       return expect(updateComponent(projectRootDir, components.root.ID, "name", "hoge")).to.be.eventually.rejected;
     });
-    it("should not rename root workflow", async  ()=>{
+    it("should not rename root workflow", async()=>{
       await updateComponent(projectRootDir, components.root.ID, "name", "hoge").catch(()=>{});
       expect(path.join(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema(rootSchema);
     });
     it("should be rejected while attempting to update inputFiles property", ()=>{
       return expect(updateComponent(projectRootDir, components.task0.ID, "inputFiles", "hoge")).to.be.eventually.rejected;
     });
-    it("should not update inputFiles", async ()=>{
+    it("should not update inputFiles", async()=>{
       await updateComponent(projectRootDir, components.task0.ID, "inputFiles", "hoge").catch(()=>{});
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
     });
     it("should be rejected while attempting to update outputFiles property", ()=>{
       return expect(updateComponent(projectRootDir, components.task0.ID, "outputFiles", "hoge")).to.be.eventually.rejected;
     });
-    it("should not update outputFiles", async ()=>{
+    it("should not update outputFiles", async()=>{
       await updateComponent(projectRootDir, components.task0.ID, "outputFiles", "hoge").catch(()=>{});
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
     });
@@ -361,7 +361,7 @@ describe("workflow editor UT", function() {
     it("should be rejected while attempting to add inputFile to source", ()=>{
       return expect(addInputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
     });
-    it("should not add inputFile entry to source component", async ()=>{
+    it("should not add inputFile entry to source component", async()=>{
       const filename = path.join(projectRootDir, "source0", componentJsonFilename);
       await addInputFile(projectRootDir, components.source0.ID, "piyo").catch(()=>{});
       expect(filename).to.be.a.file().with.json.using.schema(source0Schema);
@@ -376,7 +376,7 @@ describe("workflow editor UT", function() {
     it("should be rejected while attempting to add outputFile entry to viewer component", ()=>{
       return expect(addOutputFile(projectRootDir, components.viewer0.ID, "piyo")).to.be.eventually.rejected;
     });
-    it("should not affect viewer component", async ()=>{
+    it("should not affect viewer component", async()=>{
       const filename = path.join(projectRootDir, "viewer0", componentJsonFilename);
       await addOutputFile(projectRootDir, components.viewer0.ID, "piyo").catch(()=>{});
       expect(filename).to.be.a.file().with.json.using.schema(viewer0Schema);
@@ -384,7 +384,7 @@ describe("workflow editor UT", function() {
     it("should be rejected while attempting to add outputFile entry to source component", ()=>{
       return expect(addOutputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
     });
-    it("should not affect source component", async ()=>{
+    it("should not affect source component", async()=>{
       const filename = path.join(projectRootDir, "source0", componentJsonFilename);
       await addOutputFile(projectRootDir, components.source0.ID, "piyo").catch(()=>{});
       expect(filename).to.be.a.file().with.json.using.schema(source0Schema);
@@ -401,7 +401,7 @@ describe("workflow editor UT", function() {
     it("should be rejected while attempting to remove inputFile from source component", ()=>{
       return expect(removeInputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
     });
-    it("should not affect source component", async ()=>{
+    it("should not affect source component", async()=>{
       const filename = path.join(projectRootDir, "source0", componentJsonFilename);
       await removeInputFile(projectRootDir, components.source0.ID, "piyo").catch(()=>{});
       expect(filename).to.be.a.file().with.json.using.schema(source0Schema);
@@ -418,7 +418,7 @@ describe("workflow editor UT", function() {
     it("should be rejected while attempting to remove outputFile from viewer component", ()=>{
       return expect(removeOutputFile(projectRootDir, components.viewer0.ID, "piyo")).to.be.eventually.rejected;
     });
-    it("should not affect viewer component", async ()=>{
+    it("should not affect viewer component", async()=>{
       const filename = path.join(projectRootDir, "viewer0", componentJsonFilename);
       await removeOutputFile(projectRootDir, components.viewer0.ID, "piyo").catch(()=>{});
       expect(filename).to.be.a.file().with.json.using.schema(viewer0Schema);
@@ -454,13 +454,13 @@ describe("workflow editor UT", function() {
       return expect(addLink(projectRootDir, components.source0.ID, components.wf1.ID, false)).to.be.eventually.rejectedWith(Error, "can not have link");
     });
     it("should be rejected when attemting to make link to source", ()=>{
-      return expect(addLink(projectRootDir, components.wf1.ID,components.source0.ID,  false)).to.be.eventually.rejectedWith(Error, "can not have link");
+      return expect(addLink(projectRootDir, components.wf1.ID, components.source0.ID, false)).to.be.eventually.rejectedWith(Error, "can not have link");
     });
     it("should be rejected when attemting to make link from viewer", ()=>{
-      return expect(addLink(projectRootDir,components.viewer0.ID, components.wf1.ID,false)).to.be.eventually.rejectedWith(Error, "can not have link");
+      return expect(addLink(projectRootDir, components.viewer0.ID, components.wf1.ID, false)).to.be.eventually.rejectedWith(Error, "can not have link");
     });
     it("should be rejected when attemting to make link to viewer", ()=>{
-      return expect(addLink(projectRootDir, components.wf1.ID,components.viewer0.ID,  false)).to.be.eventually.rejectedWith(Error, "can not have link");
+      return expect(addLink(projectRootDir, components.wf1.ID, components.viewer0.ID, false)).to.be.eventually.rejectedWith(Error, "can not have link");
     });
   });
   describe("#removeLink", ()=>{
@@ -476,28 +476,28 @@ describe("workflow editor UT", function() {
     it("should add new file link from source0 to wf1", async()=>{
       await addFileLink(projectRootDir, components.source0.ID, "source", components.wf1.ID, "bar");
       source0Schema.addOutputFileLink(components.wf1.ID, "bar");
-      wf1Schema.addInputFileLink(0,components.source0.ID, "source");
+      wf1Schema.addInputFileLink(0, components.source0.ID, "source");
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
       expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
     });
     it("should add new file link from source0 to task1", async()=>{
       await addFileLink(projectRootDir, components.source0.ID, "source", components.task1.ID, "f");
       source0Schema.addOutputFileLink(components.task1.ID, "f");
-      task1Schema.addInputFileLink(0,components.source0.ID, "source");
-      expect(path.join(projectRootDir, "wf1","task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
+      task1Schema.addInputFileLink(0, components.source0.ID, "source");
+      expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
       expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
     });
     it("should add new file link from wf1 to viewer0", async()=>{
       await addFileLink(projectRootDir, components.wf1.ID, "hoge", components.viewer0.ID, "viewer");
-      viewer0Schema.addInputFileLink(0,components.wf1.ID, "hoge");
-      wf1Schema.addOutputFileLink(0,components.viewer0.ID, "viewer");
+      viewer0Schema.addInputFileLink(0, components.wf1.ID, "hoge");
+      wf1Schema.addOutputFileLink(0, components.viewer0.ID, "viewer");
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
       expect(path.join(projectRootDir, "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(viewer0Schema);
     });
     it("should add new file link from task1 to viewer0", async()=>{
       await addFileLink(projectRootDir, components.task1.ID, "a", components.viewer0.ID, "viewer");
-      viewer0Schema.addInputFileLink(0,components.task1.ID, "a");
-      task1Schema.addOutputFileLink(0,components.viewer0.ID, "viewer");
+      viewer0Schema.addInputFileLink(0, components.task1.ID, "a");
+      task1Schema.addOutputFileLink(0, components.viewer0.ID, "viewer");
       expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
       expect(path.join(projectRootDir, "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(viewer0Schema);
     });
@@ -538,19 +538,19 @@ describe("workflow editor UT", function() {
     });
   });
   describe("#removeFileLink", ()=>{
-    it("should remove file link from source0 to viewer0", async ()=>{
+    it("should remove file link from source0 to viewer0", async()=>{
       await addFileLink(projectRootDir, components.source0.ID, "source", components.viewer0.ID, "viewer");
       await removeFileLink(projectRootDir, components.source0.ID, "source", components.viewer0.ID, "viewer");
       expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
       expect(path.join(projectRootDir, "viewer0", componentJsonFilename)).to.be.a.file().with.json.using.schema(viewer0Schema);
     });
-    it("should remove file link from source0 to task1", async ()=>{
+    it("should remove file link from source0 to task1", async()=>{
       await addFileLink(projectRootDir, components.source0.ID, "source", components.task1.ID, "f");
       await removeFileLink(projectRootDir, components.source0.ID, "source", components.task1.ID, "f");
-      expect(path.join(projectRootDir, "wf1","task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
+      expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);
       expect(path.join(projectRootDir, "source0", componentJsonFilename)).to.be.a.file().with.json.using.schema(source0Schema);
     });
-    it("should remove file link from task1 to viewer0", async ()=>{
+    it("should remove file link from task1 to viewer0", async()=>{
       await addFileLink(projectRootDir, components.task1.ID, "a", components.viewer0.ID, "viewer");
       await removeFileLink(projectRootDir, components.task1.ID, "a", components.viewer0.ID, "viewer");
       expect(path.join(projectRootDir, "wf1", "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema(task1Schema);

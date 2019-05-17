@@ -3,14 +3,25 @@ const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
 const SBS = require("simple-batch-system");
-const { remoteHost, jobScheduler, componentJsonFilename } = require("../db/db");
+const { remoteHost, jobScheduler, componentJsonFilename, numJobOnLocal, statusFilename, defaultTaskRetryCount } = require("../db/db");
 const { addX } = require("./fileUtils");
+const { evalCondition } = require("./dispatchUtils");
 const { replacePathsep } = require("./pathUtils");
 const { getDateString } = require("../lib/utility");
 const { componentJsonReplacer } = require("./componentFilesOperator");
 const { getSsh } = require("./sshManager.js");
 const executers = [];
 let logger; //logger is injected when exec() is called;
+
+function getMaxNumJob(hostinfo, onRemote) {
+  return onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : numJobOnLocal;
+}
+
+async function createStatusFile(task) {
+  const filename = path.resolve(task.workingDir, statusFilename);
+  const statusFile = `${task.state}\n${task.rt}\n${task.jobStatus}`;
+  return fs.writeFile(filename, statusFile);
+}
 
 /**
  * set task component's status and notice it's changed
@@ -53,16 +64,18 @@ function passToSSHerr(data) {
   logger.ssherr(data.toString().trim());
 }
 
-function getReturnCode(outputText, reReturnCode) {
+function getReturnCode(outputText, reReturnCode, jobStatus = false) {
   const re = new RegExp(reReturnCode, "m");
   const result = re.exec(outputText);
 
   if (result === null || result[1] === null) {
-    logger.warn("get return code failed, rt is overwrited by -1");
+    const kind = jobStatus ? "job status" : "return";
+    logger.warn(`get ${kind} code failed, rt is overwrited by -1`);
     return -1;
   }
   return result[1];
 }
+
 
 /**
  * check if job is finished or not on remote server
@@ -91,6 +104,7 @@ async function isFinished(JS, task) {
 
   if (finished) {
     const strRt = getReturnCode(outputText, JS.reReturnCode);
+    task.jobStatus = getReturnCode(outputText, JS.reJobStatus, true);
     return parseInt(strRt, 10);
   }
   return null;
@@ -104,8 +118,9 @@ async function prepareRemoteExecDir(task) {
   const remoteScriptPath = path.posix.join(task.remoteWorkingDir, task.script);
   logger.debug(`send ${task.workingDir} to ${task.remoteWorkingDir}`);
   const ssh = getSsh(task.projectRootDir, task.remotehostID);
-  await ssh.send(task.workingDir, task.remoteWorkingDir);
-  return ssh.chmod(remoteScriptPath, "744");
+  await ssh.send(task.workingDir, path.posix.dirname(task.remoteWorkingDir));
+  await ssh.chmod(remoteScriptPath, "744");
+  task.preparedTime = getDateString(true, true);
 }
 
 async function gatherFiles(task, rt) {
@@ -126,7 +141,7 @@ async function gatherFiles(task, rt) {
   if (outputFilesArray.length > 0) {
     const outputFiles = `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
     logger.debug("try to get outputFiles", outputFiles, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir);
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, outputFiles, null);
+    await ssh.recv(outputFiles, task.workingDir, null, null);
   }
 
   //get files which match include filter
@@ -134,7 +149,7 @@ async function gatherFiles(task, rt) {
     const include = `${task.remoteWorkingDir}/${parseFilter(task.include)}`;
     const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
     logger.debug("try to get ", include, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir, "\n  exclude filter:", exclude);
-    await ssh.recv(task.remoteWorkingDir, task.workingDir, include, exclude);
+    await ssh.recv(include, task.workingDir, null, exclude);
   }
 
   //clean up remote working directory
@@ -244,11 +259,15 @@ class Executer {
     this.batch = new SBS({
       exec: async(task)=>{
         task.startTime = getDateString(true, true);
-        let rt;
+
         try {
-          rt = await this.exec(task);
+          task.rt = await this.exec(task);
         } catch (e) {
-          await setTaskState(task, "failed");
+          if (e.jobStatusCheckFaild) {
+            await setTaskState(task, "unknown");
+          } else {
+            await setTaskState(task, "failed");
+          }
           return Promise.reject(e);
         }
 
@@ -261,33 +280,33 @@ class Executer {
         task.endTime = getDateString(true, true);
 
         //update task status
-        const state = rt === 0 ? "finished" : "failed";
+        const state = task.rt === 0 ? "finished" : "failed";
         await setTaskState(task, state);
 
-        //to use retry function in the future release, return Promise.reject if task finished with non-zero value
+        //to use task in retry function, exec() will be rejected with task object if failed
         if (state === "failed") {
-          return Promise.reject(rt);
+          return Promise.reject(task);
         }
         return state;
       },
-      retry: false,
       maxConcurrent: maxNumJob,
       interval: execInterval * 1000,
-      name: `executer ${hostname}`
+      name: `executer-${hostname ? hostname : "localhost"}-${this.useJobScheduler ? "Job" : "task"}`
     });
 
     if (this.useJobScheduler) {
-      this.statCheckQ = new SBS({
+      this.statusCheckFailedCount = 0;
+      this.statusCheckCount = 0;
+      this.statusCheckQ = new SBS({
       //TODO exec should be changed for local submit case
         exec: async(task)=>{
           if (task.state !== "running") {
             return false;
           }
+          task.jobStartTime = task.jobStartTime || getDateString(true, true);
           //TODO to be checked!!
-          let statFailedCount = 0;
-          let statCheckCount = 0;
-          logger.debug(task.jobID, "status checked", statCheckCount);
-          ++statCheckCount;
+          logger.debug(task.jobID, "status checked", this.statusCheckCount);
+          ++this.statusCheckCount;
 
           try {
             const rt = await isFinished(JS, task);
@@ -295,25 +314,30 @@ class Executer {
             if (rt === null) {
               //"not finished" is used for retry flag so reject with error is not prefered at this time
               //eslint-disable-next-line prefer-promise-reject-errors
-              return Promise.reject("not finished");
+              return Promise.reject(new Error("not finished"));
             }
             logger.info(task.jobID, "is finished (remote). rt =", rt);
+            task.jobEndTime = task.jobEndTime || getDateString(true, true);
             await gatherFiles(task, rt);
             return rt;
           } catch (err) {
-            ++statFailedCount;
+            ++this.statusCheckFailedCount;
             err.jobID = task.jobID;
             err.JS = JS;
             logger.warn("status check failed", err);
 
-            if (statFailedCount > this.maxStatusCheckError) {
-              return Promise.reject(new Error("job status check failed over", this.maxStatusCheckError, "times"));
+            if (this.statusCheckFailedCount > this.maxStatusCheckError) {
+              err.jobStatusCheckFaild = true;
+              err.statusCheckFailedCount = this.statusCheckFailedCount;
+              err.statusCheckCount = this.statusCheckCount;
+              err.maxStatusCheckError = maxStatusCheckError;
+              return Promise.reject(err);
             }
+            return Promise.reject(new Error("not finished"));
           }
-          return Promise.reject(new Error("never reach here!!"));
         },
         retry: (e)=>{
-          return e === "not finished";
+          return e.message === "not finished";
         },
         retryLater: true,
         maxConcurrent: 1,
@@ -327,7 +351,27 @@ class Executer {
   }
 
   async submit(task) {
-    task.sbsID = this.batch.qsub(task);
+    const job = {
+      args: task,
+      maxRetry: task.retryTimes || defaultTaskRetryCount,
+      retry: false
+    };
+
+    if (task.hasOwnProperty("retryCondition")) {
+      job.retry = async(task)=>{
+        let rt = false;
+        try {
+          rt = await evalCondition(task.retryCondition, task.workingDir, task.currentIndex, logger);
+        } catch (err) {
+          //ignore exception
+        }
+        if (rt) {
+          logger.info(`${task.name}(${task.ID}) failed but retring`);
+        }
+        return rt;
+      };
+    }
+    task.sbsID = this.batch.qsub(job);
 
     if (task.sbsID !== null) {
       await setTaskState(task, "waiting");
@@ -336,7 +380,8 @@ class Executer {
       await this.batch.qwait(task.sbsID);
     } catch (e) {
       logger.warn(task.name, "failed due to", e);
-      await setTaskState(task, "failed");
+    } finally {
+      await createStatusFile(task);
     }
   }
 
@@ -387,7 +432,8 @@ class Executer {
     const jobID = result[1];
     task.jobID = jobID;
     logger.info("submit success:", submitCmd, jobID);
-    return this.statCheckQ.qsubAndWait(task);
+    task.jobSubmittedTime = getDateString(true, true);
+    return this.statusCheckQ.qsubAndWait(task);
   }
 
   setMaxNumJob(v) {
@@ -400,7 +446,7 @@ class Executer {
 
   setStatusCheckInterval(v) {
     if (this.useJobScheduler) {
-      this.statCheckQ.interval = v * 1000;
+      this.statusCheckQ.interval = v * 1000;
     }
   }
 
@@ -431,7 +477,7 @@ function createExecuter(task) {
     err.hostinfo = hostinfo;
     throw err;
   }
-  const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
+  const maxNumJob = getMaxNumJob(hostinfo, onRemote);
   const host = hostinfo != null ? hostinfo.host : null;
   const queues = hostinfo != null ? hostinfo.queue : null;
   const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
@@ -459,7 +505,7 @@ function exec(task, loggerInstance) {
     logger.debug("reuse existing executer for", task.host, " with job scheduler", task.useJobScheduler);
     const onRemote = executer.remotehostID !== "localhost";
     const hostinfo = remoteHost.get(executer.remotehostID);
-    const maxNumJob = onRemote && !Number.isNaN(parseInt(hostinfo.numJob, 10)) ? Math.max(parseInt(hostinfo.numJob, 10), 1) : 1;
+    const maxNumJob = getMaxNumJob(hostinfo, onRemote);
     const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
     const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
     const maxStatusCheckError = hostinfo != null ? hostinfo.maxStatusCheckError : 10;

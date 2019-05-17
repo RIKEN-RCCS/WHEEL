@@ -2,20 +2,34 @@
 const fs = require("fs-extra");
 const path = require("path");
 const { promisify } = require("util");
-const childProcess = require("child_process");
 const { EventEmitter } = require("events");
 const glob = require("glob");
+const readChunk = require("read-chunk");
+const fileType = require("file-type");
 const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
 const { exec } = require("./executer");
 const { getDateString } = require("../lib/utility");
 const { sanitizePath, convertPathSep, replacePathsep } = require("./pathUtils");
-const { readJsonGreedy, addX, deliverFile } = require("./fileUtils");
+const { readJsonGreedy, deliverFile } = require("./fileUtils");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
 const { componentJsonReplacer } = require("./componentFilesOperator");
 const { isInitialComponent } = require("./workflowComponent");
+const { evalCondition } = require("./dispatchUtils");
 
+
+const viewerSupportedTypes = ["png", "jpg", "gif", "bmp"];
+
+async function getFiletype(filename) {
+  const realFilename = await fs.realpath(filename);
+  const buffer = await readChunk(realFilename, 0, fileType.minimumBytes);
+  const rt = fileType(buffer);
+  if (rt) {
+    rt.name = filename;
+  }
+  return rt;
+}
 
 const silentLogger = {
   error: ()=>{},
@@ -34,7 +48,7 @@ const silentLogger = {
  * @param {string} state - state string
  */
 function isFinishedState(state) {
-  return state === "finished" || state === "failed";
+  return state === "finished" || state === "failed" || state === "unknown";
 }
 
 
@@ -133,6 +147,7 @@ function makeCmd(paramSettings) {
 
 
 function forGetNextIndex(component) {
+  ++component.numFinished;
   return component.hasOwnProperty("currentIndex") ? component.currentIndex + component.step : component.start;
 }
 
@@ -140,7 +155,12 @@ function forIsFinished(component) {
   return (component.currentIndex > component.end && component.step > 0) || (component.currentIndex < component.end && component.step < 0);
 }
 
+function forTripCount(component) {
+  return Math.ceil((component.end - component.start) / component.step);
+}
+
 function whileGetNextIndex(component) {
+  ++component.numFinished;
   return component.hasOwnProperty("currentIndex") ? ++(component.currentIndex) : 0;
 }
 
@@ -151,6 +171,8 @@ async function whileIsFinished(cwfDir, logger, component) {
 }
 
 function foreachGetNextIndex(component) {
+  ++component.numFinished;
+
   if (component.hasOwnProperty("currentIndex")) {
     const i = component.indexList.findIndex((e)=>{
       return e === component.currentIndex;
@@ -167,68 +189,18 @@ function foreachGetNextIndex(component) {
 function foreachIsFinished(component) {
   return component.currentIndex === null;
 }
-
-function loopInitialize(component) {
-  component.initialized = true;
-  component.originalName = component.name;
+function foreachTripCount(component) {
+  return component.indexList.length;
 }
 
-/**
- * evalute condition by executing external command or evalute JS expression
- * @param {string} condition - command name or javascript expression
- */
-async function evalCondition(condition, cwd, currentIndex, logger) {
-  return new Promise(async(resolve, reject)=>{
-    //condition is always string for now. but keep following just in case
-    if (typeof condition === "boolean") {
-      resolve(condition);
-    }
+function loopInitialize(component, getTripCount) {
+  component.initialized = true;
+  component.originalName = component.name;
+  component.numFinished = 0;
 
-    if (typeof condition !== "string") {
-      logger.warn("condition must be string or boolean");
-      reject(new Error(`illegal condition specified ${typeof condition} \n${condition}`));
-    }
-    const script = path.resolve(cwd, condition);
-
-    if (await fs.pathExists(script)) {
-      logger.debug("execute ", script);
-      await addX(script);
-      const dir = path.dirname(script);
-      const options = {
-        env: process.env,
-        cwd: dir
-      };
-
-      if (typeof currentIndex === "number") {
-        options.env.WHEEL_CURRENT_INDEX = currentIndex.toString();
-      }
-      const cp = childProcess.spawn(script, options, (err)=>{
-        if (err) {
-          reject(err);
-        }
-      });
-      cp.on("close", (code)=>{
-        logger.debug("return value of conditional expression = ", code);
-        resolve(code === 0);
-      });
-      cp.stdout.on("data", (data)=>{
-        logger.trace(data.toString());
-      });
-      cp.stderr.on("data", (data)=>{
-        logger.trace(data.toString());
-      });
-    } else {
-      logger.debug("evalute ", condition);
-      let conditionExpression = "";
-
-      if (typeof currentIndex === "number") {
-        conditionExpression += `var WHEEL_CURRENT_INDEX=${currentIndex};`;
-      }
-      conditionExpression += condition;
-      //eslint-disable-next-line no-eval
-      resolve(eval(conditionExpression));
-    }
-  });
+  if (typeof getTripCount === "function") {
+    component.numTotal = getTripCount(component);
+  }
 }
 
 async function replaceTargetFile(srcDir, dstDir, targetFiles, params) {
@@ -311,19 +283,16 @@ class Dispatcher extends EventEmitter {
     const promises = [];
 
     while (this.currentSearchList.length > 0) {
-      this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
-        return e.name;
-      }));
-      this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
-        return e.name;
-      }));
-
       const target = this.currentSearchList.shift();
+      if (target.disable) {
+        this.logger.info(`disabled component: ${target.name}(${target.ID})`);
+        continue;
+      }
       if (target.type === "source") {
         await this._setComponentState(target, "finished");
       }
-
       if (target.state === "finished") {
+        this.logger.info(`finished component: ${target.name}(${target.ID})`);
         await this._addNextComponent(target);
         continue;
       }
@@ -331,6 +300,14 @@ class Dispatcher extends EventEmitter {
         this.nextSearchList.push(target);
         continue;
       }
+
+      this.logger.debug("currentList:", this.currentSearchList.map((e)=>{
+        return e.name;
+      }));
+      this.logger.debug("next waiting component", this.nextSearchList.map((e)=>{
+        return e.name;
+      }));
+
 
       await this._setComponentState(target, "running");
       promises.push(
@@ -483,8 +460,13 @@ class Dispatcher extends EventEmitter {
   async _dispatchTask(task) {
     this.logger.debug("_dispatchTask called", task.name);
     task.dispatchedTime = getDateString(true, true);
+    //following props are assigned in executer
     task.startTime = "not started"; //to be assigned in executer
     task.endTime = "not finished"; //to be assigned in executer
+    task.preparedTime = null; //to be assigned in executer
+    task.jobSubmittedTime = null; //to be assigned in executer
+    task.jobStartTime = null; //to be assigned in executer
+    task.jobEndTime = null; //to be assigned in executer
     task.projectStartTime = this.projectStartTime;
     task.projectRootDir = this.projectRootDir;
     task.workingDir = path.resolve(this.cwfDir, task.name);
@@ -565,7 +547,7 @@ class Dispatcher extends EventEmitter {
     await fs.writeJson(path.join(componentDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
   }
 
-  async _loopHandler(getNextIndex, isFinished, component) {
+  async _loopHandler(getNextIndex, isFinished, getTripCount, component) {
     if (component.childLoopRunning) {
       //send back itself to searchList for next loop trip
       this.nextSearchList.push(component);
@@ -575,7 +557,7 @@ class Dispatcher extends EventEmitter {
     component.childLoopRunning = true;
 
     if (!component.initialized) {
-      loopInitialize(component);
+      loopInitialize(component, getTripCount);
     }
 
     //determine old loop block directory
@@ -757,18 +739,32 @@ class Dispatcher extends EventEmitter {
     const dir = await fs.mkdtemp(viewerURLRoot + path.sep);
 
     const componentRoot = path.resolve(this.cwfDir, component.name);
-    const files = component.files;
+    const files = await Promise.all(component.files.map((e)=>{
+      return getFiletype(e.dst);
+    }));
     delete component.files;
     const rt = await Promise.all(
-      files.map((e)=>{
-        return deliverFile(e.dst, path.resolve(dir, path.relative(componentRoot, e.dst)));
-      })
+      files
+        .filter((e)=>{
+          if (typeof e === "undefined") {
+            return false;
+          }
+          if (viewerSupportedTypes.includes(e.ext)) {
+            return e.name;
+          }
+          this.logger.warn("unsupported type for viewer", path.basename(e.name));
+          return false;
+        })
+        .map((e)=>{
+          return deliverFile(e.name, path.resolve(dir, path.relative(componentRoot, e.name)));
+        })
     );
-    const results = rt.map((e)=>{
+    this.logger.debug("send URLs", rt.map((e)=>{
+      return e.src;
+    }));
+    this.emitEvent("resultFilesReady", rt.map((e)=>{
       return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: path.relative(viewerURLRoot, e.dst) };
-    });
-    this.emitEvent("resultFilesReady", results);
-
+    }));
     await this._setComponentState(component, "finished");
   }
 
@@ -781,7 +777,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(ID);
 
         if (!isFinishedState(previous.state)) {
-          this.logger.debug(component.ID, "is not ready because", previous.ID, "is not finished");
+          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
           return false;
         }
       }
@@ -795,12 +791,13 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state)) {
-          this.logger.debug(component.ID, "is not ready because", previous.ID, "(has file dependency)is not finished");
+          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
           return false;
         }
       }
     }
     const result = await this._getOutputFiles(component);
+    //store gatherd filenames. it will be used and removed in _ViewerHandler()
     if (component.type === "viewer") {
       component.files = result;
     }
@@ -931,13 +928,13 @@ class Dispatcher extends EventEmitter {
         cmd = this._checkIf;
         break;
       case "for":
-        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished);
+        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished, forTripCount);
         break;
       case "while":
-        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger));
+        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger), null);
         break;
       case "foreach":
-        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished);
+        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished, foreachTripCount);
         break;
       case "workflow":
         cmd = this._delegate;

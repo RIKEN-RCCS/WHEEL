@@ -1,5 +1,5 @@
 {
-    "port": 8080,
+    "port": 8089,
     "remotehostJsonFile": "./remotehost.json",
     "useraccountJsonFile": "./useraccount.json",
     "projectListJsonFile": "./projectList.json",
@@ -12,5 +12,7 @@
     "logFilename": "wheel.log",
     "numLogFiles": 5,
     "maxLogSize": 8388608,
-    "compressLogFile": true
+    "compressLogFile": true,
+    "numJobOnLocal": 2,
+    "defaultTaskRetryCount": 1
 }

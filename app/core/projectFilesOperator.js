@@ -30,7 +30,6 @@ async function getDescendantsIDs(projectRootDir, ID) {
   return rt;
 }
 
-
 /**
  * create new project dir, initial files and new git repository
  * @param {string} projectRootDir - project projectRootDir's absolute path

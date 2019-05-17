@@ -21,11 +21,11 @@ const testDirRoot = "WHEEL_TEST_TMP";
 const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 
 //helper functions
-const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
+const { projectJsonFilename, componentJsonFilename, statusFilename } = require("../../../app/db/db");
 const { createNewProject } = require("../../../app/core/projectFilesOperator");
 const { updateComponent, createNewComponent, addInputFile, addOutputFile, addLink, addFileLink } = require("../../../app/core/componentFilesOperator");
 
-const { scriptName, pwdCmd, scriptHeader, referenceEnv } = require("./testScript");
+const { scriptName, pwdCmd, scriptHeader, referenceEnv, exit } = require("./testScript");
 const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 const { escapeRegExp } = require("../../../app/lib/utility");
 
@@ -63,12 +63,75 @@ describe("project Controller UT", function() {
   });
   describe("#runProject", ()=>{
     describe("one local task", ()=>{
+      let task0;
       beforeEach(async()=>{
-        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
-        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
+      });
+      it("should retry 2 times and fail", async()=>{
+        await updateComponent(projectRootDir, task0.ID, "retryTimes", 2);
+        await updateComponent(projectRootDir, task0.ID, "retryCondition", true);
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), `${scriptPwd}\n${exit(10)}`);
+        await runProject(projectRootDir);
+
+        expect(dummyLogger.stdout).to.have.been.calledThrice;
+        expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state", "ancestorsName"],
+          properties: {
+            state: { enum: ["failed"] },
+            ancestorsName: { enum: [""] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", statusFilename)).to.be.a.file().with.content("failed\n10\nundefined");
+      });
+      it("should run project and fail", async()=>{
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), `${scriptPwd}\n${exit(10)}`);
+        await runProject(projectRootDir);
+
+        expect(dummyLogger.stdout).to.have.been.calledOnce;
+        expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["failed"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state", "ancestorsName"],
+          properties: {
+            state: { enum: ["failed"] },
+            ancestorsName: { enum: [""] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", statusFilename)).to.be.a.file().with.content("failed\n10\nundefined");
       });
       it("should run project and successfully finish", async()=>{
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledOnce;
         expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
@@ -94,13 +157,17 @@ describe("project Controller UT", function() {
             ancestorsName: { enum: [""] }
           }
         });
+        expect(path.resolve(projectRootDir, "task0", statusFilename)).to.be.a.file().with.content("finished\n0\nundefined");
       });
     });
     describe("3 local tasks with execution order dependency", ()=>{
+      let task0 = null;
+      let task1 = null;
+      let task2 = null;
       beforeEach(async()=>{
-        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
-        const task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
-        const task2 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task2 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await updateComponent(projectRootDir, task1.ID, "script", scriptName);
         await updateComponent(projectRootDir, task2.ID, "script", scriptName);
@@ -109,6 +176,47 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "task2", scriptName), scriptPwd);
         await addLink(projectRootDir, task0.ID, task1.ID);
         await addLink(projectRootDir, task1.ID, task2.ID);
+      });
+      it("should not run disable task and its dependent task but project should be successfully finished", async()=>{
+        await updateComponent(projectRootDir, task1.ID, "disable", true);
+
+        await runProject(projectRootDir);
+        expect(dummyLogger.stdout).to.have.been.calledOnce;
+        const firstCall = dummyLogger.stdout.getCall(0);
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
       });
       it("should run project and successfully finish", async()=>{
         await runProject(projectRootDir);
@@ -155,10 +263,13 @@ describe("project Controller UT", function() {
       });
     });
     describe("3 local tasks with file dependency", ()=>{
+      let task0 = null;
+      let task1 = null;
+      let task2 = null;
       beforeEach(async()=>{
-        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
-        const task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
-        const task2 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        task2 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await updateComponent(projectRootDir, task1.ID, "script", scriptName);
         await updateComponent(projectRootDir, task2.ID, "script", scriptName);
@@ -172,6 +283,50 @@ describe("project Controller UT", function() {
         await addInputFile(projectRootDir, task2.ID, "c");
         await addFileLink(projectRootDir, task0.ID, "a", task1.ID, "b");
         await addFileLink(projectRootDir, task1.ID, "b", task2.ID, "c");
+      });
+      it("should not run disable task and its dependent task but project should be successfully finished", async()=>{
+        await updateComponent(projectRootDir, task1.ID, "disable", true);
+
+        await runProject(projectRootDir);
+        expect(dummyLogger.stdout).to.have.been.calledOnce;
+        const firstCall = dummyLogger.stdout.getCall(0);
+        expect(firstCall).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", "a")).to.be.a.file().with.contents("a");
+        expect(path.resolve(projectRootDir, "task1", "b")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "task2", "c")).not.to.be.a.path();
       });
       it("should run project and successfully finish", async()=>{
         await runProject(projectRootDir);
@@ -221,11 +376,79 @@ describe("project Controller UT", function() {
       });
     });
     describe("task in the sub workflow", ()=>{
+      let task0 = null;
+      let wf0 = null;
       beforeEach(async()=>{
-        await createNewComponent(projectRootDir, projectRootDir, "workflow", { x: 10, y: 10 });
-        const task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "workflow0"), "task", { x: 10, y: 10 });
+        wf0 = await createNewComponent(projectRootDir, projectRootDir, "workflow", { x: 10, y: 10 });
+        task0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "workflow0"), "task", { x: 10, y: 10 });
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await fs.outputFile(path.join(projectRootDir, "workflow0", "task0", scriptName), scriptPwd);
+      });
+      it("should not run disable workflow and its sub-component but successfully finished project", async()=>{
+        await updateComponent(projectRootDir, wf0.ID, "disable", true);
+
+        await runProject(projectRootDir);
+        expect(dummyLogger.stdout).not.to.have.been.called;
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "workflow0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "workflow0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
+      });
+      it("should not run disable task and successfully finished parent sub-workflow", async()=>{
+        await updateComponent(projectRootDir, task0.ID, "disable", true);
+
+        await runProject(projectRootDir);
+        expect(dummyLogger.stdout).not.to.have.been.called;
+        expect(dummyLogger.stderr).not.to.have.been.called;
+        expect(dummyLogger.sshout).not.to.have.been.called;
+        expect(dummyLogger.ssherr).not.to.have.been.called;
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "workflow0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "workflow0", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
       });
       it("should run project and successfully finish", async()=>{
         await runProject(projectRootDir);

@@ -40,11 +40,11 @@ const dummyLogger = {
   sshout: sinon.stub(),
   ssherr: sinon.stub()
 };
-// dummyLogger.error = console.log;
-// dummyLogger.warn = console.log;
-// dummyLogger.info = console.log;
-// dummyLogger.debug = console.log;
-// dummyLogger.trace = console.log;
+//dummyLogger.error = console.log;
+//dummyLogger.warn = console.log;
+//dummyLogger.info = console.log;
+//dummyLogger.debug = console.log;
+//dummyLogger.trace = console.log;
 
 
 describe("UT for source component", function() {
@@ -64,40 +64,39 @@ describe("UT for source component", function() {
     await updateComponent(projectRootDir, task0.ID, "script", scriptName);
     await addInputFile(projectRootDir, task0.ID, "bar");
     await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
-    await addFileLink(projectRootDir,source0.ID, "foo", task0.ID, "bar");
+    await addFileLink(projectRootDir, source0.ID, "foo", task0.ID, "bar");
   });
   after(async()=>{
     await fs.remove(testDirRoot);
   });
   describe("#runProject", ()=>{
-    it("should copy foo to task0/bar", async ()=>{
+    it("should copy foo to task0/bar", async()=>{
       await runProject(projectRootDir);
       expect(path.resolve(projectRootDir, "task0", "bar")).to.be.a.file().with.contents("foo");
-        expect(dummyLogger.stdout).to.have.been.calledOnce;
-        expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
-        expect(dummyLogger.stderr).not.to.have.been.called;
-        expect(dummyLogger.sshout).not.to.have.been.called;
-        expect(dummyLogger.ssherr).not.to.have.been.called;
-        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
-          required: ["state"],
-          properties: {
-            state: { enum: ["finished"] }
-          }
-        });
-        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
-          required: ["state"],
-          properties: {
-            state: { enum: ["finished"] }
-          }
-        });
-        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
-          required: ["state", "ancestorsName"],
-          properties: {
-            state: { enum: ["finished"] },
-            ancestorsName: { enum: [""] }
-          }
-        });
+      expect(dummyLogger.stdout).to.have.been.calledOnce;
+      expect(dummyLogger.stdout).to.have.been.calledWithMatch(path.resolve(projectRootDir, "task0"));
+      expect(dummyLogger.stderr).not.to.have.been.called;
+      expect(dummyLogger.sshout).not.to.have.been.called;
+      expect(dummyLogger.ssherr).not.to.have.been.called;
+      expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+        required: ["state"],
+        properties: {
+          state: { enum: ["finished"] }
+        }
+      });
+      expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        required: ["state"],
+        properties: {
+          state: { enum: ["finished"] }
+        }
+      });
+      expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+        required: ["state", "ancestorsName"],
+        properties: {
+          state: { enum: ["finished"] },
+          ancestorsName: { enum: [""] }
+        }
+      });
     });
   });
 });
-
