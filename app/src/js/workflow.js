@@ -1064,6 +1064,10 @@ $(() => {
   }
 
   function insertTaskStateListHTML(target, id, iconPath, name, componentState, state, started, prepared, jobSubmited, jobRan, jobFinished, finished, desc) {
+    if (prepared === null) prepared = "-";
+    if (jobSubmited === null) jobSubmited = "-";
+    if (jobRan === null) jobRan = "-";
+    if (jobFinished === null) jobFinished = "-";
     target.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
     <td id="${id}" class="componentName">
     <img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td>
@@ -1137,10 +1141,26 @@ $(() => {
         $(`#${taskId}_stateIcon`).attr("src", nodeComponentState);
         $(`#${taskId}_state`).html(taskStateList[i].state);
         $(`#${taskId}_startTime`).html(taskStateList[i].startTime);
-        $(`#${taskId}_prepared`).html(taskStateList[i].startTime);
-        $(`#${taskId}_jobSubmited`).html(taskStateList[i].startTime);
-        $(`#${taskId}_jobRan`).html(taskStateList[i].startTime);
-        $(`#${taskId}_jobFinished`).html(taskStateList[i].startTime);
+        if (taskStateList[i].preparedTime === null) {
+          $(`#${taskId}_prepared`).html("-");
+        } else {
+          $(`#${taskId}_prepared`).html(taskStateList[i].preparedTime);
+        }
+        if (taskStateList[i].jobSubmittedTime === null) {
+          $(`#${taskId}_jobSubmited`).html("-");
+        } else {
+          $(`#${taskId}_jobSubmited`).html(taskStateList[i].jobSubmittedTime);
+        }
+        if (taskStateList[i].jobStartTime === null) {
+          $(`#${taskId}_jobRan`).html("-");
+        } else {
+          $(`#${taskId}_jobRan`).html(taskStateList[i].jobStartTime);
+        }
+        if (taskStateList[i].jobEndTime === null) {
+          $(`#${taskId}_jobFinished`).html("-");
+        } else {
+          $(`#${taskId}_jobFinished`).html(taskStateList[i].jobEndTime);
+        }
         $(`#${taskId}_endTime`).html(taskStateList[i].endTime);
       } else {
         let ancestorsNameList = [];
@@ -1156,7 +1176,7 @@ $(() => {
 
         if (taskStateList[i].ancestorsName === "") {
           insertTaskStateListHTML(targetElement, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
-            taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].endTime, taskStateList[i].description)
+            taskStateList[i].startTime, taskStateList[i].preparedTime, taskStateList[i].jobSubmittedTime, taskStateList[i].jobStartTime, taskStateList[i].jobEndTime, taskStateList[i].endTime, taskStateList[i].description)
           changeComponentDisplayMode(jobInfoViewFlag);
           $(`#${taskId}`).css("background-color", nodeColor);
           $(`#${taskId}`).css("margin-right", maxancestorsLength * 32 + "px");
@@ -1180,7 +1200,7 @@ $(() => {
             $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
           }
           insertTaskStateListHTML(targetElement, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
-            taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].startTime, taskStateList[i].endTime, taskStateList[i].description)
+            taskStateList[i].startTime, taskStateList[i].preparedTime, taskStateList[i].jobSubmittedTime, taskStateList[i].jobStartTime, taskStateList[i].jobEndTime, taskStateList[i].endTime, taskStateList[i].description)
           changeComponentDisplayMode(jobInfoViewFlag);
           let marginArea = 32 * ancestorsNameList.length;
           let marginRight = (maxancestorsLength - ancestorsNameList.length) * 32;
