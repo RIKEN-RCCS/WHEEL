@@ -381,7 +381,6 @@ $(() => {
         });
     });
     sio.on('results', (viewList) => {
-      console.log(viewList);
       if (typeof viewerWindow === "undefined" || viewerWindow.closed === true) {
         viewerWindow = window.open("");
         viewerWindow.document.open();
@@ -463,7 +462,6 @@ $(() => {
       rootId = Object.keys(projectJson.componentPath).filter((key) => {
         return projectJson.componentPath[key] === './'
       });
-      console.log(projectJson);
       componentPath = projectJson.componentPath;
       $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
@@ -1249,7 +1247,6 @@ $(() => {
     }
 
     var editDisable = isEditDisable();
-    console.log(editDisable);
     var disablePropertyFlag;
     if (vm.node.disable === true) {
       disablePropertyFlag = true;
@@ -1302,8 +1299,6 @@ $(() => {
       try {
         if (v.readonly === true) {
           $("[id=" + v.id + "]").attr('readonly', propertyEditableFlag);
-          console.log(v.id);
-          console.log(propertyEditableFlag);
         }
       } catch (e) { }
       try {
