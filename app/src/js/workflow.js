@@ -858,8 +858,11 @@ $(() => {
   }
 
   function isEditDisable() {
+    var disableFlag;
     if (presentState === 'running' || presentState === 'prepareing') {
-      var disableFlag = true;
+      disableFlag = true;
+    } else {
+      disableFlag = false;
     }
     return disableFlag;
   }
@@ -1246,15 +1249,26 @@ $(() => {
     }
 
     var editDisable = isEditDisable();
-    var disable = editDisable || (vm.node !== null && vm.node.disable);
+    console.log(editDisable);
+    var disablePropertyFlag;
+    if (vm.node.disable === true) {
+      disablePropertyFlag = true;
+    } else {
+      disablePropertyFlag = false;
+    }
+    var propertyEditableFlag = editDisable || (vm.node !== null && disablePropertyFlag);
 
     var ids = [
-      // 入力域は readonlyのみ。チェックボックスなどは disableも
+      // input field (ex. textbox)->"readonly"
+      // button,checkbox,selectbox->"disable"
+      { id: "cleanStateButton", readonly: true, disable: true },
       { id: "nameInputField", readonly: true, disable: false },
       { id: "descriptionInputField", readonly: true, disable: false },
       { id: "scriptSelectField", readonly: true, disable: true },
       { id: "newInputFileNameInputField", readonly: true, disable: false },
       { id: "newOutputFileNameInputField", readonly: true, disable: false },
+      { id: "inputAddDelButton", readonly: true, disable: true },
+      { id: "outputAddDelButton", readonly: true, disable: true },
       { id: "parameterFileSelectField", readonly: true, disable: true },
       { id: "conditionFlag1", readonly: true, disable: true },
       { id: "conditionFlag2", readonly: true, disable: true },
@@ -1287,12 +1301,14 @@ $(() => {
     ids.forEach((v) => {
       try {
         if (v.readonly === true) {
-          $("[id=" + v.id + "]").attr('readonly', disable);
+          $("[id=" + v.id + "]").attr('readonly', propertyEditableFlag);
+          console.log(v.id);
+          console.log(propertyEditableFlag);
         }
       } catch (e) { }
       try {
         if (v.disable === true) {
-          $("[id=" + v.id + "]").prop('disabled', disable);
+          $("[id=" + v.id + "]").prop('disabled', propertyEditableFlag);
         }
       } catch (e) { }
     });
@@ -1301,7 +1317,7 @@ $(() => {
     $("[id=disableInputField]").prop('disabled', editDisable);
 
     svgNode.setEditDisable(svg, nodes, editDisable);
-    fb.setDisable(disable);
+    fb.setDisable(propertyEditableFlag);
 
     updateToolTip();
 
