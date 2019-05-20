@@ -1,0 +1,10 @@
+node_modules
+*.log*
+doc
+test*
+WHEEL_tutorial
+.git
+.eslintrc.json
+.gitignore
+.npmignore
+Dockerfile
