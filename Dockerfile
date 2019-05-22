@@ -3,18 +3,18 @@ FROM node:8
 # Create app directory
 WORKDIR /usr/src/app
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-COPY package*.json ./
+# copy necessary files
+COPY package*.json webpack.config.js ./
+COPY app ./app
 
 RUN npm install
-# do NOT use following options to install and run webpack for now
-# If you are building your code for production
-# RUN npm ci --only=production
+RUN npm run prepare
 
-# Bundle app source
-COPY . .
+# install jupyter not work for now...
+#RUN apt update
+#RUN apt -y install python3-pip python3-dev
+#RUN pip3 install jupyter
+
 
 EXPOSE 8089
 CMD [ "npm", "start" ]
