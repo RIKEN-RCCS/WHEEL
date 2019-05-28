@@ -1126,12 +1126,14 @@ $(() => {
         taskIdTemp = `${taskStateList[i].name}_${taskStateList[i].ancestorsName}`;
       }
       let taskId = escapeCharacter(taskIdTemp);
-      if (taskStateList[i].startTime !== 'not started') {
-        taskStateList[i].startTime = sliceInfo(taskStateList[i].startTime);
-      }
-      if (taskStateList[i].endTime !== 'not finished') {
-        taskStateList[i].endTime = sliceInfo(taskStateList[i].endTime);
-      }
+
+      //cut detailed time info
+      if (taskStateList[i].startTime !== 'not started') taskStateList[i].startTime = sliceInfo(taskStateList[i].startTime);
+      if (taskStateList[i].preparedTime !== null) taskStateList[i].preparedTime = sliceInfo(taskStateList[i].preparedTime);
+      if (taskStateList[i].jobSubmittedTime !== null) taskStateList[i].jobSubmittedTime = sliceInfo(taskStateList[i].jobSubmittedTime);
+      if (taskStateList[i].jobStartTime !== null) taskStateList[i].jobStartTime = sliceInfo(taskStateList[i].jobStartTime);
+      if (taskStateList[i].jobEndTime !== null) taskStateList[i].jobEndTime = sliceInfo(taskStateList[i].jobEndTime);
+      if (taskStateList[i].endTime !== 'not finished') taskStateList[i].endTime = sliceInfo(taskStateList[i].endTime);
 
       if (document.getElementById(`${taskId}`) != null) {
         let nodeState = taskStateList[i].state;
