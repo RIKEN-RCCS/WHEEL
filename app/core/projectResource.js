@@ -99,6 +99,7 @@ class Project extends EventEmitter {
     await cancelDispatchedTasks(this.tasks, this.logger);
     const projectJson = await readJsonGreedy(this.projectJsonFilename);
     await this.updateProjectState("paused", projectJson);
+    this.rootDispatcher = null;
   }
 
   async clean() {
