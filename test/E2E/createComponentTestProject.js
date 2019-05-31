@@ -6,7 +6,7 @@ chai.use(chaiWebdriver(browser));
 
 describe("#home", function () {
   const url = '/';
-  const E2ETestDir = "E2ETestDir";
+  const E2ETestDir = "E2ETestDir_data";
   //Xpath for ok button in dialog
   const okBtn = "/html/body/div[5]/div[3]/div/button[2]";
   const testProjectName = "E2E_ComponentTest"
@@ -28,7 +28,7 @@ describe("#home", function () {
       .waitForVisible(`#prj_${testProjectName}`);
     browser.doubleClick(`#prj_${testProjectName}`)
       .waitForVisible('#project_name');
-    expect(browser.getTitle()).to.equal("WHEEL workflow");
+    expect(browser.getTitle()).to.equal(testProjectName);
   });
   it("create components for next test", function () {
     //task component
