@@ -412,14 +412,15 @@ class Executer {
     const ssh = getSsh(task.projectRootDir, task.remotehostID);
     const output = [];
     const rt = await ssh.exec(submitCmd, {}, output, output);
+    const outputText = output.join("");
 
     if (rt !== 0) {
       const err = new Error("submit command failed");
       err.cmd = submitCmd;
       err.rt = rt;
+      err.outputText = outputText;
       return Promise.reject(err);
     }
-    const outputText = output.join("");
     const re = new RegExp(this.JS.reJobID);
     const result = re.exec(outputText);
 
