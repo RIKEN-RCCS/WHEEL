@@ -38,7 +38,7 @@
     "watch": "webpack -w",
     "dev": "run-p watch node-dev",
     "node-dev": "node-dev --inspect app/index",
-    "verbose": "cross-env DEBUG=* ",
+    "verbose": "cross-env DEBUG=* node app/index",
     "license-report": "license-report"
   },
   "dependencies": {
