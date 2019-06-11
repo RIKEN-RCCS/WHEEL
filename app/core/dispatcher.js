@@ -258,17 +258,15 @@ class Dispatcher extends EventEmitter {
     }
 
     const children = await promisify(glob)(path.join(this.cwfDir, "*", componentJsonFilename));
-    const tmp = await Promise.all(children.map((e)=>{
+    const childComponents = await Promise.all(children.map((e)=>{
       return readJsonGreedy(e);
     }));
 
-    const childComponents = await tmp.filter((e)=>{
-      return !e.subComponent;
-    });
+    this.currentSearchList = childComponents
+      .filter((component)=>{
+        return !component.subComponent && isInitialComponent(component);
+      });
 
-    this.currentSearchList = childComponents.filter((component)=>{
-      return isInitialComponent(component);
-    });
     this.logger.debug("initial tasks : ", this.currentSearchList.map((e)=>{
       return e.name;
     }));
@@ -649,7 +647,7 @@ class Dispatcher extends EventEmitter {
     //TODO check paramSpace
 
     //ignore all filenames in file type parameter space and parameter study setting file
-    const ignoreFiles = [paramSettingsFilename]
+    const ignoreFiles = [componentJsonFilename, paramSettingsFilename]
       .concat(
         getFilenames(paramSpace),
         targetFiles,
