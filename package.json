@@ -38,11 +38,11 @@
     "watch": "webpack -w",
     "dev": "run-p watch node-dev",
     "node-dev": "node-dev --inspect app/index",
-    "verbose": "cross-env DEBUG=* ",
+    "verbose": "cross-env DEBUG=* node app/index",
     "license-report": "license-report"
   },
   "dependencies": {
-    "abc4": "^0.10.0",
+    "abc4": "^0.10.1",
     "ace-builds": "^1.4.3",
     "arssh2-client": "^2.0.1",
     "bcrypt": "^1.0.3",

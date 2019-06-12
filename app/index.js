@@ -1,4 +1,14 @@
 "use strict";
+
+//this line must be placed before require express, socket.io and any other depending library
+if (process.env.WHEEL_DEBUG_VERBOSE) {
+  const debugLib = require("debug");
+  const orgNamespaces = debugLib.load();
+  const newNamespaces = "socket.io:*,express:*,abc4*,arssh2*,sbs*";
+  const namespaces = orgNamespaces ? `${orgNamespaces},${newNamespaces}` : newNamespaces;
+  debugLib.enable(namespaces);
+}
+
 const path = require("path");
 const { spawn } = require("child_process");
 const express = require("express");
@@ -20,8 +30,10 @@ const sio = require("socket.io")(server);
 
 //setup logger
 const logger = getLogger();
+
+
 //eslint-disable-next-line no-console
-process.on("unhandledRejection", console.dir);
+process.on("unhandledRejection", logger.debug.bind(logger));
 
 //template engine
 app.set("views", path.resolve(__dirname, "views"));

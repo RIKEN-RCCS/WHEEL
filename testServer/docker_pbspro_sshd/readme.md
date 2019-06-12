@@ -44,4 +44,9 @@ specify ```-p{portnumber}:22``` with docker run
 after bootup, you are logged in as root.
 
 ### how to change max number of queued job
-edit line 10 of entrypoint.sh and start from the beginning.
+change value of "o:PBS_ALL" (default 3) in entrypoint.sh
+
+```
+/opt/pbs/bin/qmgr -c 'set queue workq max_queued="[o:PBS_ALL=3]"'
+                                                            ^^^
+```
