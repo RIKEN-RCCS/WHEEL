@@ -51,7 +51,6 @@ $(() => {
   //for 'save' button control
   let presentState = '';
   //taskStateList
-  let updateList = [];
   let projectRootDir = currentWorkDir;
   let firstConnection = true;
   let componentPath;
@@ -556,7 +555,6 @@ $(() => {
 
   // run
   $('#run_menu').on('click', function () {
-    updateList = [];
     sio.emit('runProject', rootWorkflow);
   });
   $('#run_button').mouseover(function () {
@@ -587,6 +585,7 @@ $(() => {
 
   // stop
   $('#stop_menu').on('click', function () {
+    $('#project_table_body').empty();
     sio.emit('stopProject', true);
   });
   $('#stop_button').mouseover(function () {
@@ -599,7 +598,6 @@ $(() => {
   // clean
   $('#clean_menu').on('click', function () {
     if (presentState !== 'running') {
-      updateList = [];
       $('#project_table_body').empty();
       // update pankuzu
       let rootNodeStack = nodeStack[0];
@@ -1106,7 +1104,7 @@ $(() => {
   }
 
   function escapeCharacter(string) {
-    return string.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
+    return string.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
   }
 
   function sortTaskStateList(a, b) {
@@ -1120,10 +1118,11 @@ $(() => {
     let targetElement = document.getElementById("project_table_body");
     for (let i = 0; i < taskStateList.length; i++) {
       let taskIdTemp = "";
+      // check component type (task or task in subcomponent)
       if (taskStateList[i].ancestorsName === "") {
         taskIdTemp = `${taskStateList[i].name}`;
       } else {
-        taskIdTemp = `${taskStateList[i].name}_${taskStateList[i].ancestorsName}`;
+        taskIdTemp = `${taskStateList[i].ancestorsName}_${taskStateList[i].name}`;
       }
       let taskId = escapeCharacter(taskIdTemp);
 
@@ -1135,6 +1134,7 @@ $(() => {
       if (taskStateList[i].jobEndTime !== null) taskStateList[i].jobEndTime = sliceInfo(taskStateList[i].jobEndTime);
       if (taskStateList[i].endTime !== 'not finished') taskStateList[i].endTime = sliceInfo(taskStateList[i].endTime);
 
+      // insert HTML
       if (document.getElementById(`${taskId}`) != null) {
         let nodeState = taskStateList[i].state;
         if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
