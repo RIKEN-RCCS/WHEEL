@@ -300,6 +300,8 @@ class Executer {
       this.statusCheckQ = new SBS({
       //TODO exec should be changed for local submit case
         exec: async(task)=>{
+          logger.debug(task.jobID, "status check start");
+
           if (task.state !== "running") {
             return false;
           }
@@ -312,8 +314,6 @@ class Executer {
             const rt = await isFinished(JS, task);
 
             if (rt === null) {
-              //"not finished" is used for retry flag so reject with error is not prefered at this time
-              //eslint-disable-next-line prefer-promise-reject-errors
               return Promise.reject(new Error("not finished"));
             }
             logger.info(task.jobID, "is finished (remote). rt =", rt);
@@ -327,6 +327,7 @@ class Executer {
             logger.warn("status check failed", err);
 
             if (this.statusCheckFailedCount > this.maxStatusCheckError) {
+              logger.warn("max status check error count exceeded");
               err.jobStatusCheckFaild = true;
               err.statusCheckFailedCount = this.statusCheckFailedCount;
               err.statusCheckCount = this.statusCheckCount;
@@ -363,7 +364,8 @@ class Executer {
         try {
           rt = await evalCondition(task.retryCondition, task.workingDir, task.currentIndex, logger);
         } catch (err) {
-          //ignore exception
+          logger.info(`retryCondition of ${task.name}(${task.ID}) is set but exception occurred while evaluting it. so give up retring`);
+          return false;
         }
         if (rt) {
           logger.info(`${task.name}(${task.ID}) failed but retring`);

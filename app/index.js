@@ -32,8 +32,8 @@ const sio = require("socket.io")(server);
 const logger = getLogger();
 
 
-//eslint-disable-next-line no-console
 process.on("unhandledRejection", logger.debug.bind(logger));
+process.on("uncaughtException", logger.debug.bind(logger));
 
 //template engine
 app.set("views", path.resolve(__dirname, "views"));
