@@ -10,3 +10,4 @@ coverage
 *.log*
 errorShots
 logs
+test
