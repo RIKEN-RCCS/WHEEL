@@ -4,6 +4,18 @@ __W__orkflow in __H__ierarchical distribut __E__d parall __EL__.
 ## Prerequirements
 [node.js](https://nodejs.org/en/) v8.0.0 or later
 
+## tested environments
+
+| OS                          | node    | checked            |
+|-----------------------------|---------|--------------------|
+| 18.04.2 LTS (Bionic Beaver) |  8.16.0 | :white_check_mark: |
+|                             | 10.16.0 | :white_check_mark: |
+| macOS Mojave 10.14.5        |  8.16.0 | :white_check_mark: |
+|                             | 10.16.0 | :white_check_mark: |
+| windows10 Pro               |  8.16.0 | :white_check_mark: |
+|                             | 10.16.0 | :white_check_mark: |
+
+
 ## How to use by cloning this repository
 ### install
 ```
@@ -20,6 +32,13 @@ please be sure to install C++, make openssl-devel and libcurl-devel package on y
 > cd WHEEL/node_modules/nodegit
 > BUILD_ONLY=yes npm install
 ```
+
+if you are using node v10, you have to edit package.json before npm install
+```
+> sed -i -e 's/"bcrypt": "^1.0.3"/"bcrypt": "^3.0.0"/' package.json
+> npm install
+```
+
 
 
 ### run
