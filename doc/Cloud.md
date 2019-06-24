@@ -62,11 +62,8 @@ additionalParams {Object}: aws-sdkのEC2.runInstancesに渡すことのできる
 additionalParamsForHead: additionalParamsと同様ですがヘッドノードのみに適用する値を指定します。
 ```
 
-
-
 ### taskの設定
 ワークフローエディタでtaskコンポーネントのプロパティ画面を表示し、remotehost設定から前項で追加した設定を選んでください。
-
 
 ## 認証情報について
 AWS起動時の認証に使う、access keyおよび secret access keyは前項の例のようにadditionalParamsプロパティに含めて指定することもできますが、node.jsを起動するユーザの環境変数や、shared credential fileを用いて設定することもできます。
@@ -154,6 +151,18 @@ addtionalParamsオプジェクトのbatchSetupScript プロパティに指定す
 また、WHEELはバッチサーバから終了したジョブの履歴を取得することができることを前提としていますので
 この機能を無効にする設定 (```set server job_history_enable=False``) を指定した場合、クラウド環境で実行されるジョブは
 正常に扱えなくなりますのでお気をつけください。
+
+### 既存のVPCへの組み込み
+デフォルトでは、クラスタ起動時に新規にVPCを作成しその中に全てのインスタンスが所属する形のネットワーク構成でクラスタが作成されます。
+既存のVPC内に新しくインスタンスを起動してクラスタを構成する場合は、additionalParamsプロパティに以下のように
+SubnetIdとSecurityGroupIdsの2つのプロパティを指定してください。
+```
+"additionalParams": {
+  "SubnetId": "subnet-xxxxxxxx",
+  "SecurityGroupIds": ["sg-xxxxxxxx"]
+},
+```
+どちらか一方でも指定が無い場合は、無視され新規に作成されたVPC内にクラスタが作成されます。
 
 ### その他カスタマイズ  
 その他のカスタマイズは起動時に実行されるplaybookを指定することで行ないます。

@@ -10,3 +10,5 @@ coverage
 *.log*
 errorShots
 logs
+server.crt
+server.key

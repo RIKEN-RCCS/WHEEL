@@ -10,6 +10,7 @@ if (process.env.WHEEL_DEBUG_VERBOSE) {
 }
 
 const path = require("path");
+const fs = require("fs");
 const { spawn } = require("child_process");
 const express = require("express");
 const cookieParser = require("cookie-parser");
@@ -17,15 +18,18 @@ const bodyParser = require("body-parser");
 const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
-const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort } = require("./db/db");
+const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename } = require("./db/db");
 const { getLogger } = require("./logSettings");
 
 /*
  * set up express, http and socket.io
  */
 const app = express();
-//TODO if certification setting is available, use https instead
-const server = require("http").createServer(app);
+const opt = {
+  key: fs.readFileSync(keyFilename),
+  cert: fs.readFileSync(certFilename)
+};
+const server = require("https").createServer(opt, app);
 const sio = require("socket.io")(server);
 
 //setup logger

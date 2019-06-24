@@ -26,6 +26,8 @@ module.exports.suffix = ".wheel";
 module.exports.projectJsonFilename = "prj.wheel.json";
 module.exports.componentJsonFilename = "cmp.wheel.json";
 module.exports.statusFilename = "status.wheel.txt";
+module.exports.keyFilename = path.resolve(__dirname, "server.key");
+module.exports.certFilename = path.resolve(__dirname, "server.crt");
 
 //export accessor to jupyter parameter
 module.exports.setJupyterToken = setJupyterToken;
