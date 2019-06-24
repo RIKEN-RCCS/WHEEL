@@ -171,6 +171,13 @@ $(() => {
         if (!isEditDisable()) {
           if (property === "disable" || vm.node === null || !vm.node.disable) {
             let val = this.node[property];
+            // temporary. refactoring target.
+            if ((property === "host") || (property === "useJobScheduler" && val === false)) {
+              sio.emit('updateNode', this.node.ID, "queue", null, (result) => {
+                if (result !== true) return;
+              });
+            }
+            //
             sio.emit('updateNode', this.node.ID, property, val, (result) => {
               if (result !== true) return;
               $('#cbMessageArea').text(val);
@@ -1126,6 +1133,12 @@ $(() => {
       }
       let taskId = escapeCharacter(taskIdTemp);
 
+      let nodeState = taskStateList[i].state;
+      if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
+        nodeState = 'running'
+      }
+      let nodeComponentState = config.state_icon[nodeState];
+
       //cut detailed time info
       if (taskStateList[i].startTime !== 'not started') taskStateList[i].startTime = sliceInfo(taskStateList[i].startTime);
       if (taskStateList[i].preparedTime !== null) taskStateList[i].preparedTime = sliceInfo(taskStateList[i].preparedTime);
@@ -1135,47 +1148,28 @@ $(() => {
       if (taskStateList[i].endTime !== 'not finished') taskStateList[i].endTime = sliceInfo(taskStateList[i].endTime);
 
       // insert HTML
-      if (document.getElementById(`${taskId}`) != null) {
-        let nodeState = taskStateList[i].state;
-        if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
-          nodeState = 'running'
-        }
-        let nodeComponentState = config.state_icon[nodeState];
+      if (document.getElementById(`${taskId}`) !== null) {
         $(`#${taskId}_stateIcon`).attr("src", nodeComponentState);
         $(`#${taskId}_state`).html(taskStateList[i].state);
         $(`#${taskId}_startTime`).html(taskStateList[i].startTime);
-        if (taskStateList[i].preparedTime === null) {
-          $(`#${taskId}_prepared`).html("-");
-        } else {
-          $(`#${taskId}_prepared`).html(taskStateList[i].preparedTime);
-        }
-        if (taskStateList[i].jobSubmittedTime === null) {
-          $(`#${taskId}_jobSubmited`).html("-");
-        } else {
-          $(`#${taskId}_jobSubmited`).html(taskStateList[i].jobSubmittedTime);
-        }
-        if (taskStateList[i].jobStartTime === null) {
-          $(`#${taskId}_jobRan`).html("-");
-        } else {
-          $(`#${taskId}_jobRan`).html(taskStateList[i].jobStartTime);
-        }
-        if (taskStateList[i].jobEndTime === null) {
-          $(`#${taskId}_jobFinished`).html("-");
-        } else {
-          $(`#${taskId}_jobFinished`).html(taskStateList[i].jobEndTime);
-        }
         $(`#${taskId}_endTime`).html(taskStateList[i].endTime);
+        if (taskStateList[i].preparedTime !== null) {
+          $(`#${taskId}_prepared`).html(taskStateList[i].preparedTime);
+        } else {
+          $(`#${taskId}_prepared`).html("-");
+          $(`#${taskId}_jobSubmited`).html("-");
+          $(`#${taskId}_jobRan`).html("-");
+          $(`#${taskId}_jobFinished`).html("-");
+        }
+        if (taskStateList[i].jobSubmittedTime !== null) $(`#${taskId}_jobSubmited`).html(taskStateList[i].jobSubmittedTime);
+        if (taskStateList[i].jobStartTime !== null) $(`#${taskId}_jobRan`).html(taskStateList[i].jobStartTime);
+        if (taskStateList[i].jobEndTime !== null) $(`#${taskId}_jobFinished`).html(taskStateList[i].jobEndTime);
       } else {
         let ancestorsNameList = [];
         let ancestorsTypeList = [];
         let nodeType = "task";
-        let nodeState = taskStateList[i].state;
-        if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
-          nodeState = 'running'
-        }
         let nodeIconPath = config.node_icon[nodeType];
         let nodeColor = config.node_color[nodeType];
-        let nodeComponentState = config.state_icon[nodeState];
 
         if (taskStateList[i].ancestorsName === "") {
           insertTaskStateListHTML(targetElement, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
