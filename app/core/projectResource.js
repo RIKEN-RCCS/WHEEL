@@ -161,24 +161,18 @@ function addCluster(projectRootDir, cluster) {
 }
 
 function once(projectRootDir, eventName, cb) {
-  const pj = getProject(projectRootDir);
-  if (pj.listenerCount(eventName) === 0) {
-    pj.once(eventName, cb);
-  }
+  return getProject(projectRootDir).once(eventName, cb);
 }
 function on(projectRootDir, eventName, cb) {
-  const pj = getProject(projectRootDir);
-  if (pj.listenerCount(eventName) === 0) {
-    pj.on(eventName, cb);
-  }
+  return getProject(projectRootDir).on(eventName, cb);
 }
 
 function emitEvent(projectRootDir, eventName, ...args) {
-  getProject(projectRootDir).emit(eventName, ...args);
+  return getProject(projectRootDir).emit(eventName, ...args);
 }
 
 function off(projectRootDir, eventName, fn) {
-  getProject(projectRootDir).removeListener(eventName, fn);
+  return getProject(projectRootDir).removeListener(eventName, fn);
 }
 
 function getTasks(projectRootDir) {

@@ -299,44 +299,6 @@ async function onRunProject(sio, projectRootDir, cb) {
     return false;
   }
 
-  //event listener for task state changed
-  async function onTaskStateChanged() {
-    const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
-    getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
-    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
-    getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
-    setTimeout(()=>{
-      getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
-      const remaining = getNumberOfUpdatedTasks(projectRootDir);
-      once(projectRootDir, "taskStateChanged", onTaskStateChanged);
-
-      if (remaining.length > 0) {
-        setImmediate(()=>{
-          emitEvent(projectRootDir, "taskStateChanged");
-        });
-      }
-    }, interval);
-  }
-
-  //event listener for component state changed
-  function onComponentStateChanged() {
-    sendWorkflow(emit, projectRootDir)
-      .then(()=>{
-        setTimeout(()=>{
-          once(projectRootDir, "componentStateChanged", onComponentStateChanged);
-        }, interval);
-      });
-  }
-
-  //event listener for result files ready
-  function onResultFilesReady(results) {
-    emitLongArray(emit, "results", results);
-  }
-
-  once(projectRootDir, "taskStateChanged", onTaskStateChanged);
-  once(projectRootDir, "componentStateChanged", onComponentStateChanged);
-  on(projectRootDir, "resultFilesReady", onResultFilesReady);
-
   //actual project run start from here
   try {
     await updateProjectState(projectRootDir, "prepareing");
@@ -394,13 +356,8 @@ async function onRunProject(sio, projectRootDir, cb) {
     removeCluster(projectRootDir);
   }
 
-  off(projectRootDir, "taskStateChanged", onTaskStateChanged);
-  off(projectRootDir, "componentStateChanged", onComponentStateChanged);
-  off(projectRootDir, "resultFilesReady", onResultFilesReady);
-
   try {
     //directly send last status just in case
-    //TODO プロジェクト再実行時などに、この部分から送っているものしかsocketIOが送ってくれない
     await sendProjectJson(emit, projectRootDir);
     await sendWorkflow(emit, projectRootDir);
     await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
@@ -827,10 +784,56 @@ async function onCleanComponent(emit, projectRootDir, targetID, cb) {
 
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
+
   on(projectRootDir, "projectStateChanged", (projectJson)=>{
     getLogger(projectRootDir).trace("projectState: onProjectStateChanged", projectJson.state);
     emit("projectJson", projectJson);
   });
+
+  //event listener for task state changed
+  async function onTaskStateChanged() {
+    const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
+    getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
+    getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
+    setTimeout(()=>{
+      getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
+      const remaining = getNumberOfUpdatedTasks(projectRootDir);
+      once(projectRootDir, "taskStateChanged", onTaskStateChanged);
+
+      if (remaining.length > 0) {
+        setImmediate(()=>{
+          emitEvent(projectRootDir, "taskStateChanged");
+        });
+      }
+    }, interval);
+  }
+
+  //event listener for component state changed
+  function onComponentStateChanged() {
+    sendWorkflow(emit, projectRootDir)
+      .then(()=>{
+        setTimeout(()=>{
+          once(projectRootDir, "componentStateChanged", onComponentStateChanged);
+        }, interval);
+      });
+  }
+
+  //event listener for result files ready
+  function onResultFilesReady(results) {
+    emitLongArray(emit, "results", results);
+  }
+
+  once(projectRootDir, "taskStateChanged", onTaskStateChanged);
+  once(projectRootDir, "componentStateChanged", onComponentStateChanged);
+  on(projectRootDir, "resultFilesReady", onResultFilesReady);
+
+  socket.on("disconnecting", ()=>{
+    off(projectRootDir, "taskStateChanged", onTaskStateChanged);
+    off(projectRootDir, "componentStateChanged", onComponentStateChanged);
+    off(projectRootDir, "resultFilesReady", onResultFilesReady);
+  });
+
   socket.on("runProject", onRunProject.bind(null, socket, projectRootDir));
   socket.on("pauseProject", onPauseProject.bind(null, emit, projectRootDir));
   socket.on("cleanProject", onCleanProject.bind(null, emit, projectRootDir));
