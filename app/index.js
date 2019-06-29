@@ -12,6 +12,7 @@ if (process.env.WHEEL_DEBUG_VERBOSE) {
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
+const cors = require("cors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
@@ -44,6 +45,7 @@ app.set("views", path.resolve(__dirname, "views"));
 app.set("view engine", "ejs");
 
 //middlewares
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
