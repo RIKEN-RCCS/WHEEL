@@ -33,6 +33,7 @@ const {
   removeComponent,
   validateComponents
 } = require("../core/componentFilesOperator");
+const { getProjectState } = require("../core/projectFilesOperator");
 const { taskStateFilter } = require("../core/taskUtil");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
@@ -88,11 +89,6 @@ async function sendTaskStateList(emit, projectRootDir) {
         .map(taskStateFilter);
       await emitLongArray(emit, "taskStateList", data, blockSize);
     });
-}
-
-async function getProjectState(projectRootDir) {
-  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
-  return projectJson.state;
 }
 
 async function getState(projectRootDir) {

@@ -6,6 +6,7 @@ const projectController = require("./projectController");
 const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
+const { getProjectState } = require("../core/projectFilesOperator");
 
 module.exports = function(io) {
   let projectRootDir = null;
@@ -29,6 +30,26 @@ module.exports = function(io) {
     //redirect error to logger
     socket.on("error", (err)=>{
       getLogger(projectRootDir).debug("socketIO errror occurred:\n", err);
+    });
+    //kill itself 10 minuets later after when the last client disconnected
+    socket.on("disconnect", ()=>{
+      if (io.engine.clientsCount === 0) {
+        const delay = 1000 * 60 * 10;
+        getLogger(projectRootDir).debug(`the last client disconnected wheel will be shutdown after ${delay / 1000} sec`);
+        const timeout = setTimeout(async()=>{
+          const projectStatus = await getProjectState(projectRootDir);
+          if (io.engine.clientsCount > 0) {
+            getLogger(projectRootDir).debug(`shutdown canceled because we have ${io.engine.clientsCount} client now`);
+            clearTimeout(timeout);
+          } else if (["running", "prepareing"].includes(projectStatus)) {
+            getLogger(projectRootDir).debug(`shutdown canceled because project status is ${projectStatus}`);
+            clearTimeout(timeout);
+          } else {
+            getLogger(projectRootDir).info("this process will be shutdown");
+            process.exit(0); //eslint-disable-line no-process-exit
+          }
+        }, delay);
+      }
     });
   });
 
