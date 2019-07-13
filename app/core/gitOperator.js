@@ -14,7 +14,8 @@ class Git extends EventEmitter {
   constructor(rootDir) {
     super();
     this.rootDir = rootDir;
-    this.registerWriteIndex();
+    this.addBuffer = [];
+    this.rmBuffer = [];
   }
 
   registerWriteIndex() {
@@ -27,18 +28,26 @@ class Git extends EventEmitter {
   //please use this.emit("writeIndex") instead
   async _write() {
     setImmediate(async()=>{
-      await this.index.write();
+      if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
+        const index = await this.repo.refreshIndex();
+        if (this.rmBuffer.length > 0) {
+          await index.removeAll(this.rmBuffer, null);
+        }
+        if (this.addBuffer.length > 0) {
+          await index.addAll(this.addBuffer, 0, null);
+        }
+        await index.write();
+      }
       this.registerWriteIndex();
     });
   }
 
   /**
-   * open git repository and index
+   * open git repository
    */
   async open() {
     const repoPath = path.resolve(this.rootDir, ".git");
     this.repo = await nodegit.Repository.open(repoPath);
-    this.index = await this.repo.refreshIndex();
     this.registerWriteIndex();
   }
 
@@ -70,16 +79,16 @@ class Git extends EventEmitter {
         });
 
         if (isRemoving) {
-          await this.index.removeAll(files, null);
+          this.rmBuffer.push(...files);
         } else {
-          await this.index.addAll(files, 0, null);
+          this.addBuffer.push(...files);
         }
       } else {
         const filename = replacePathsep(path.relative(this.rootDir, absTargetPath));
         if (isRemoving) {
-          await this.index.removeByPath(filename);
+          this.rmBuffer.push(filename);
         } else {
-          await this.index.addByPath(filename);
+          this.addBuffer.push(filename);
         }
       }
       this.emit("writeIndex");
@@ -106,7 +115,8 @@ class Git extends EventEmitter {
   async commit(name, mail, message) {
     const author = nodegit.Signature.now(name, mail);
     const commiter = await author.dup();
-    const oid = await this.index.writeTree();
+    const index = await this.repo.refreshIndex();
+    const oid = await index.writeTree();
     const headCommit = await this.repo.getHeadCommit();
     return this.repo.createCommit("HEAD", author, commiter, message, oid, [headCommit]);
   }
@@ -131,7 +141,6 @@ class Git extends EventEmitter {
 
 const repos = new Map();
 
-//TODO 同時Openの最大値を決めて、それを越えたら古い順にcloseする (indexの取扱がどうなるか要確認)
 //return empty git instance if rootDir/.git is not exists
 async function getGitOperator(rootDir) {
   if (!repos.has(rootDir)) {
