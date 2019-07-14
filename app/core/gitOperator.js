@@ -28,17 +28,35 @@ class Git extends EventEmitter {
   //please use this.emit("writeIndex") instead
   async _write() {
     setImmediate(async()=>{
-      if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
-        const index = await this.repo.refreshIndex();
-        if (this.rmBuffer.length > 0) {
-          await index.removeAll(this.rmBuffer, null);
+      try {
+        if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
+          const index = await this.repo.refreshIndex();
+          if (this.rmBuffer.length > 0) {
+            await index.removeAll(this.rmBuffer, null);
+            this.rmBuffer = [];
+          }
+          if (this.addBuffer.length > 0) {
+            try {
+              await index.addAll(this.addBuffer, 0, null);
+            } catch (err) {
+              //just ignore file or parent directory does not exists
+              if (!err.message.startsWith("could not find") && !err.message.startsWith("failed to open directory")) {
+                return Promise.reject(err);
+              }
+            }
+            this.addBuffer = [];
+          }
+          await index.write();
         }
-        if (this.addBuffer.length > 0) {
-          await index.addAll(this.addBuffer, 0, null);
-        }
-        await index.write();
+      } catch (err) {
+        this.emit("error");
       }
-      this.registerWriteIndex();
+      if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
+        this._write();
+      } else {
+        this.registerWriteIndex();
+        this.emit("done");
+      }
     });
   }
 
@@ -71,32 +89,43 @@ class Git extends EventEmitter {
    */
   async add(absTargetPath, isRemoving = false) {
     const stats = await fs.stat(absTargetPath);
-    try {
-      if (stats.isDirectory()) {
-        let files = await promisify(glob)("**", { cwd: absTargetPath });
-        files = files.map((e)=>{
-          return replacePathsep(path.relative(this.rootDir, path.join(absTargetPath, e)));
-        });
+    if (stats.isDirectory()) {
+      let files = await promisify(glob)("**", { cwd: absTargetPath });
+      files = files.map((e)=>{
+        return replacePathsep(path.relative(this.rootDir, path.join(absTargetPath, e)));
+      });
 
-        if (isRemoving) {
-          this.rmBuffer.push(...files);
-        } else {
-          this.addBuffer.push(...files);
-        }
+      if (isRemoving) {
+        this.rmBuffer.push(...files);
       } else {
-        const filename = replacePathsep(path.relative(this.rootDir, absTargetPath));
-        if (isRemoving) {
-          this.rmBuffer.push(filename);
-        } else {
-          this.addBuffer.push(filename);
-        }
+        this.addBuffer.push(...files);
       }
-      this.emit("writeIndex");
-    } catch (e) {
-      e.isRemoving = isRemoving;
-      e.argFilename = absTargetPath;
-      throw e;
+    } else {
+      const filename = replacePathsep(path.relative(this.rootDir, absTargetPath));
+      if (isRemoving) {
+        this.rmBuffer.push(filename);
+      } else {
+        this.addBuffer.push(filename);
+      }
     }
+    this.emit("writeIndex");
+    return new Promise((resolve, reject)=>{
+      const onStop = ()=>{
+        /*eslint-disable no-use-before-define */
+        this.removeListener("error", onError);
+        this.removeListener("done", onDone);
+      };
+      const onDone = ()=>{
+        onStop();
+        resolve();
+      };
+      const onError = (err)=>{
+        onStop();
+        reject(err);
+      };
+      this.once("done", onDone);
+      this.once("error", onError);
+    });
   }
 
   /**
