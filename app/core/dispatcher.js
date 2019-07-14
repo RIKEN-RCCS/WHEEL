@@ -92,35 +92,35 @@ async function replaceByNunjucks(templateRoot, instanceRoot, targetFiles, params
   );
 }
 
-//TODO パラメータ展開後の特定のインスタンスのみにファイルをコピーする時は、recipe.dstNameに
-//固定値を書くので、このままだとfs.copyでscatterのエントリ数分上書きを繰り返すことになる。
-//実際にコピーする前にsrc/dstペアから重複を取り除く必要あり
-//gather Fileも同様にする?
 async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
-  return Promise.all(
-    scatterRecipe.map(async(e)=>{
-      const dstDir = path.join(instanceRoot, e.dstNode);
-      const dst = path.join(dstDir, nunjucks.renderString(e.dstName, params));
-      for (const recipe of scatterRecipe) {
-        const srcName = nunjucks.renderString(recipe.srcName, params);
-        const srces = await promisify(glob)(srcName, { cwd: templateRoot });
-        return srces.map((src)=>{
-          return fs.copy(path.join(templateRoot, src), dst);
-        });
-      }
-    })
-  );
+  const p = [];
+  for (const recipe of scatterRecipe) {
+    const srcName = nunjucks.renderString(recipe.srcName, params);
+    const srces = await promisify(glob)(srcName, { cwd: templateRoot });
+    const dstDir = recipe.hasOwnProperty("dstNode") ? path.join(instanceRoot, recipe.dstNode) : instanceRoot;
+    const dstName = nunjucks.renderString(recipe.dstName, params);
+    for (const src of srces) {
+      const dst = recipe.dstName.endsWith("/") || recipe.dstName.endsWith("\\") ? path.join(dstDir, dstName.slice(0, -1), src) : path.join(dstDir, dstName);
+      p.push(fs.copy(path.join(templateRoot, src), dst));
+    }
+  }
+  return Promise.all(p).catch((e)=>{
+    if (e.code !== "ENOENT") {
+      return Promise.reject(e);
+    }
+    return true;
+  });
 }
 
 async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
   const p = [];
   for (const recipe of gatherRecipe) {
-    const srcName = nunjucks.renderString(recipe.srcName, params);
     const srcDir = recipe.hasOwnProperty("srcNode") ? path.join(instanceRoot, recipe.srcNode) : instanceRoot;
+    const srcName = nunjucks.renderString(recipe.srcName, params);
     const srces = await promisify(glob)(srcName, { cwd: srcDir });
+    const dstName = nunjucks.renderString(recipe.dstName, params);
     for (const src of srces) {
-      const dstName = recipe.dstName.endsWith("/") ? path.join(templateRoot, recipe.dstName, src) : path.join(templateRoot, recipe.dstName);
-      const dst = nunjucks.renderString(dstName, params);
+      const dst = recipe.dstName.endsWith("/") || recipe.dstName.endsWith("\\") ? path.join(templateRoot, dstName.slice(0, -1), src) : path.join(templateRoot, dstName);
       p.push(fs.copy(path.join(srcDir, src), dst));
     }
   }
@@ -128,6 +128,7 @@ async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
     if (e.code !== "ENOENT") {
       return Promise.reject(e);
     }
+    return true;
   });
 }
 

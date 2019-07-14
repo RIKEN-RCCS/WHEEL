@@ -180,7 +180,7 @@ async function getGitOperator(rootDir) {
   return repos.get(rootDir);
 }
 
-//initialize repo and commit all files under the root directory
+//initialize repo
 async function gitInit(rootDir, user, mail) {
   const repo = new Git(rootDir);
   await repo.init(user, mail);

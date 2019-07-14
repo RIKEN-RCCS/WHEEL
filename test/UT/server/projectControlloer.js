@@ -1061,9 +1061,11 @@ describe("project Controller UT", function() {
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
 
         await fs.outputFile(path.join(projectRootDir, "PS0", "input1.txt"), "{{ KEYWORD1 }} {{ KEYWORD3 }}");
-        await fs.outputFile(path.join(projectRootDir, "PS0", "filename.txt"), "{{ filename }} {{ KEYWORD2 }}");
-        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "input2.txt"), "{{ KEYWORD1 }}");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "non-targetFile.txt"), "{{ filename }} {{ KEYWORD2 }}");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "input2.txt"), "{{ KEYWORD1 }}{{ KEYWORD2 }}");
         await fs.outputFile(path.join(projectRootDir, "PS0", "testData"), "hoge");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "testData_foo"), "foo");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "testData_bar"), "bar");
         await fs.outputFile(path.join(projectRootDir, "PS0", "data_1"), "data_1");
         await fs.outputFile(path.join(projectRootDir, "PS0", "data_2"), "data_2");
         await fs.outputFile(path.join(projectRootDir, "PS0", "data_3"), "data_3");
@@ -1085,13 +1087,14 @@ describe("project Controller UT", function() {
               keyword: "filename",
               files: ["data_*"]
             }
-
           ],
           scatter: [
-            { srcName: "testData", dstNode: task0.ID, dstName: "hoge{{ KEYWORD1 }}" }
+            { srcName: "testData", dstNode: task0.ID, dstName: "hoge{{ KEYWORD1 }}" },
+            { srcName: "testData_{{ KEYWORD3 }}", dstNode: task0.ID, dstName: "foobar" }
           ],
           gather: [
-            { srcName: "hoge{{ KEYWORD1 }}", srcNode: task0.ID, dstName: "results/{{ KEYWORD1 }}/{{ KEYWORD3 }}_{{ filename }}/hoge" }
+            { srcName: "hoge{{ KEYWORD1 }}", srcNode: task0.ID, dstName: "results/{{ KEYWORD1 }}/{{ KEYWORD3 }}_{{ filename }}/" },
+            { srcName: "input2.txt", srcNode: task0.ID, dstName: "results/{{ KEYWORD1 }}/{{ KEYWORD3 }}_{{ filename }}/input2.txt" }
           ]
         };
         await fs.writeJson(path.join(projectRootDir, "PS0", "input.txt.json"), parameterSetting, { spaces: 4 });
@@ -1105,82 +1108,29 @@ describe("project Controller UT", function() {
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
 
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_1", "input1.txt")).to.be.a.file().with.content("1 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_2", "input1.txt")).to.be.a.file().with.content("1 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_3", "input1.txt")).to.be.a.file().with.content("1 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_1", "input1.txt")).to.be.a.file().with.content("2 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_2", "input1.txt")).to.be.a.file().with.content("2 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_3", "input1.txt")).to.be.a.file().with.content("2 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_1", "input1.txt")).to.be.a.file().with.content("3 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_2", "input1.txt")).to.be.a.file().with.content("3 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_3", "input1.txt")).to.be.a.file().with.content("3 foo");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_1", "input1.txt")).to.be.a.file().with.content("1 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_2", "input1.txt")).to.be.a.file().with.content("1 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_3", "input1.txt")).to.be.a.file().with.content("1 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_1", "input1.txt")).to.be.a.file().with.content("2 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_2", "input1.txt")).to.be.a.file().with.content("2 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_3", "input1.txt")).to.be.a.file().with.content("2 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_1", "input1.txt")).to.be.a.file().with.content("3 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_2", "input1.txt")).to.be.a.file().with.content("3 bar");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_3", "input1.txt")).to.be.a.file().with.content("3 bar");
+        for (const filename of ["data_1", "data_2", "data_3"]) {
+          for (const KEYWORD1 of [1, 2, 3]) {
+            for (const KEYWORD3 of ["foo", "bar"]) {
+              //check parameter expansion for input file
+              expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "input1.txt")).to.be.a.file().with.content(`${KEYWORD1} ${KEYWORD3}`);
+              //check parameter expansion for input file with targetNode option and not-defiend parameter
+              expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "task0", "input2.txt")).to.be.a.file().with.content(`${KEYWORD1}`);
+              //check parameter expansion is not performed on non-target file
+              expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "non-targetFile.txt")).to.be.a.file().with.content("{{ filename }} {{ KEYWORD2 }}");
+              //check scatter 1 (testData)
+              expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "task0", `hoge${KEYWORD1}`)).to.be.a.file().with.content("hoge");
+              //check scatter 2 (testData_{foo|bar})
+              expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "task0", "foobar")).to.be.a.file().with.content(KEYWORD3);
+              //check gather 1 (hoge_*)
+              expect(path.resolve(projectRootDir, "PS0", "results", `${KEYWORD1}`, `${KEYWORD3}_${filename}`, `hoge${KEYWORD1}`)).to.be.a.file().with.content("hoge");
+              //check gather 2 (input2.txt)
+              expect(path.resolve(projectRootDir, "PS0", "results", `${KEYWORD1}`, `${KEYWORD3}_${filename}`, "input2.txt")).to.be.a.file().with.content(`${KEYWORD1}`);
 
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_1", "task0", "input2.txt")).to.be.a.file().with.content("1");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_2", "task0", "input2.txt")).to.be.a.file().with.content("1");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_3", "task0", "input2.txt")).to.be.a.file().with.content("1");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_1", "task0", "input2.txt")).to.be.a.file().with.content("2");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_2", "task0", "input2.txt")).to.be.a.file().with.content("2");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_3", "task0", "input2.txt")).to.be.a.file().with.content("2");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_1", "task0", "input2.txt")).to.be.a.file().with.content("3");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_2", "task0", "input2.txt")).to.be.a.file().with.content("3");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_3", "task0", "input2.txt")).to.be.a.file().with.content("3");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_1", "task0", "input2.txt")).to.be.a.file().with.content("1");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_2", "task0", "input2.txt")).to.be.a.file().with.content("1");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_3", "task0", "input2.txt")).to.be.a.file().with.content("1");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_1", "task0", "input2.txt")).to.be.a.file().with.content("2");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_2", "task0", "input2.txt")).to.be.a.file().with.content("2");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_3", "task0", "input2.txt")).to.be.a.file().with.content("2");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_1", "task0", "input2.txt")).to.be.a.file().with.content("3");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_2", "task0", "input2.txt")).to.be.a.file().with.content("3");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_3", "task0", "input2.txt")).to.be.a.file().with.content("3");
-
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_1", "task0", "hoge1")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_2", "task0", "hoge1")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_3", "task0", "hoge1")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_1", "task0", "hoge2")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_2", "task0", "hoge2")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_3", "task0", "hoge2")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_1", "task0", "hoge3")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_2", "task0", "hoge3")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_3", "task0", "hoge3")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_1", "task0", "hoge1")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_2", "task0", "hoge1")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_3", "task0", "hoge1")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_1", "task0", "hoge2")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_2", "task0", "hoge2")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_3", "task0", "hoge2")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_1", "task0", "hoge3")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_2", "task0", "hoge3")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_3", "task0", "hoge3")).to.be.a.file().with.content("hoge");
-
-        expect(path.resolve(projectRootDir, "PS0", "results", "1", "foo_data_1", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "1", "foo_data_2", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "1", "foo_data_3", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "2", "foo_data_1", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "2", "foo_data_2", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "2", "foo_data_3", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "3", "foo_data_1", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "3", "foo_data_2", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "3", "foo_data_3", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "1", "bar_data_1", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "1", "bar_data_2", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "1", "bar_data_3", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "2", "bar_data_1", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "2", "bar_data_2", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "2", "bar_data_3", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "3", "bar_data_1", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "3", "bar_data_2", "hoge")).to.be.a.file().with.content("hoge");
-        expect(path.resolve(projectRootDir, "PS0", "results", "3", "bar_data_3", "hoge")).to.be.a.file().with.content("hoge");
-
+              //check task status
+              expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
+            }
+          }
+        }
         expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
           required: ["state"],
           properties: {
@@ -1199,25 +1149,6 @@ describe("project Controller UT", function() {
             state: { enum: ["finished"] }
           }
         });
-
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_foo_filename_data_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1_KEYWORD3_bar_filename_data_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_foo_filename_data_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2_KEYWORD3_bar_filename_data_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_foo_filename_data_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_1", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_2", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
-        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3_KEYWORD3_bar_filename_data_3", "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({ required: ["state"], properties: { state: { enum: ["finished"] } } });
       });
     });
     describe.skip("task in nested PS(does not work for now)", ()=>{
@@ -1524,9 +1455,9 @@ describe("project Controller UT", function() {
       it("should not overwrite files and run project ", async()=>{
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
-        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
-        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
-        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0"));
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(new RegExp(path.join(projectRootDir, "PS0_KEYWORD1_(1|2|3)", "task0")));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(new RegExp(path.join(projectRootDir, "PS0_KEYWORD1_(1|2|3)", "task0")));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(new RegExp(path.join(projectRootDir, "PS0_KEYWORD1_(1|2|3)", "task0")));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
@@ -1575,9 +1506,9 @@ describe("project Controller UT", function() {
         await updateComponent(projectRootDir, ps0.ID, "forceOverwrite", true);
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
-        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
-        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
-        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0"));
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(new RegExp(path.join(projectRootDir, "PS0_KEYWORD1_(1|2|3)", "task0")));
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(new RegExp(path.join(projectRootDir, "PS0_KEYWORD1_(1|2|3)", "task0")));
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(new RegExp(path.join(projectRootDir, "PS0_KEYWORD1_(1|2|3)", "task0")));
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
