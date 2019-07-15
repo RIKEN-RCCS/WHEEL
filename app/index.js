@@ -83,7 +83,7 @@ app.use("/remotehost", routes.remotehost);
 
 //port number
 const defaultPort = 443;
-let portNumber = parseInt(process.env.PORT, 10) || port || defaultPort;
+let portNumber = parseInt(process.env.WHEEL_PORT, 10) || port || defaultPort;
 
 if (portNumber < 0) {
   portNumber = defaultPort;
@@ -107,15 +107,16 @@ server.on("listening", onListening);
 
 //boot jupyter
 if (jupyter) {
-  const cmd = typeof jupyter === "string" ? jupyter : "jupyter";
+  const cmd = typeof jupyter === "string" ? jupyter : "jupyter-notebook";
   const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
+  const notebookRoot = process.env.WHEEL_NOTEBOOK_ROOT || "/";
   const opts = [
     "notebook",
     "--no-browser",
     `--port ${jupyterPortNumber}`,
     "--port-retries=0",
     "--ip=*",
-    "--notebook-dir=/"
+    `--notebook-dir=${notebookRoot}`
   ];
   setJupyterPort(jupyterPortNumber);
 
