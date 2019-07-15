@@ -17,5 +17,4 @@ RUN pip3 install jupyter
 RUN npm install
 RUN npm run prepare
 
-EXPOSE 8089
 CMD [ "npm", "start" ]
