@@ -713,10 +713,10 @@ class Dispatcher extends EventEmitter {
           return fs.copy(path.resolve(templateRoot, e), path.resolve(instanceRoot, e), options);
         }));
 
-      this.logger.debug("rewrite target files");
-      await rewriteTargetFile(templateRoot, instanceRoot, targetFiles, params);
       this.logger.debug("scatter files");
       await scatterFiles(templateRoot, instanceRoot, scatterRecipe, params);
+      this.logger.debug("rewrite target files");
+      await rewriteTargetFile(templateRoot, instanceRoot, targetFiles, params);
 
       const newComponent = Object.assign({}, component);
       newComponent.name = newName;
