@@ -101,7 +101,17 @@ async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
     const dstName = nunjucks.renderString(recipe.dstName, params);
     for (const src of srces) {
       const dst = recipe.dstName.endsWith("/") || recipe.dstName.endsWith("\\") ? path.join(dstDir, dstName.slice(0, -1), src) : path.join(dstDir, dstName);
-      p.push(fs.copy(path.join(templateRoot, src), dst));
+      p.push(
+        fs.remove(dst)
+          .catch((err)=>{
+            if (err.code !== "ENOEXISTS") {
+              return Promise.reject(err);
+            }
+          })
+          .then(()=>{
+            return fs.copy(path.join(templateRoot, src), dst);
+          })
+      );
     }
   }
   return Promise.all(p).catch((e)=>{
@@ -121,7 +131,17 @@ async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
     const dstName = nunjucks.renderString(recipe.dstName, params);
     for (const src of srces) {
       const dst = recipe.dstName.endsWith("/") || recipe.dstName.endsWith("\\") ? path.join(templateRoot, dstName.slice(0, -1), src) : path.join(templateRoot, dstName);
-      p.push(fs.copy(path.join(srcDir, src), dst));
+      p.push(
+        fs.remove(dst)
+          .catch((err)=>{
+            if (err.code !== "ENOEXISTS") {
+              return Promise.reject(err);
+            }
+          })
+          .then(()=>{
+            return fs.copy(path.join(srcDir, src), dst);
+          })
+      );
     }
   }
   return Promise.all(p).catch((e)=>{
