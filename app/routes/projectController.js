@@ -378,6 +378,9 @@ async function onPauseProject(emit, projectRootDir, cb) {
 
   try {
     await pauseProject(projectRootDir);
+    await sendProjectJson(emit, projectRootDir);
+    await sendWorkflow(emit, projectRootDir);
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
   } catch (e) {
     cb(false);
     return;
@@ -394,13 +397,13 @@ async function onCleanProject(emit, projectRootDir, cb) {
 
   try {
     await cleanProject(projectRootDir);
+    await emitLongArray(emit, "taskStateList", [], blockSize);
+    await sendProjectJson(emit, projectRootDir);
+    await sendWorkflow(emit, projectRootDir, projectRootDir);
   } catch (e) {
     cb(false);
     return;
   }
-  await emitLongArray(emit, "taskStateList", [], blockSize);
-  await sendProjectJson(emit, projectRootDir);
-  await sendWorkflow(emit, projectRootDir, projectRootDir);
   getLogger(projectRootDir).debug("clean project done");
   cb(true);
 }
@@ -785,10 +788,14 @@ async function onCleanComponent(emit, projectRootDir, targetID, cb) {
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
 
-  on(projectRootDir, "projectStateChanged", (projectJson)=>{
+  async function onProjectStateChange(projectJson) {
     getLogger(projectRootDir).trace("projectState: onProjectStateChanged", projectJson.state);
     emit("projectJson", projectJson);
-  });
+    emit("projectState", projectJson.state);
+    setTimeout(()=>{
+      once(projectRootDir, "projectStateChanged", onProjectStateChange);
+    }, interval);
+  }
 
   //event listener for task state changed
   async function onTaskStateChanged() {
@@ -824,6 +831,7 @@ function registerListeners(socket, projectRootDir) {
     emitLongArray(emit, "results", results);
   }
 
+  once(projectRootDir, "projectStateChanged", onProjectStateChange);
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
   on(projectRootDir, "resultFilesReady", onResultFilesReady);
