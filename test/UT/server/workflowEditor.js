@@ -256,6 +256,20 @@ describe("workflow editor UT", function() {
     });
   });
   describe("#updateComponent", ()=>{
+    it("can update even if component json has null value", async()=>{
+      await updateComponent(projectRootDir, components.wf1.ID, "script", null);
+      await updateComponent(projectRootDir, components.wf1.ID, "name", "wf4");
+      wf1Schema.properties.name = { enum: ["wf4"] };
+      expect(path.join(projectRootDir, "wf1")).not.to.be.path();
+      expect(path.join(projectRootDir, "wf4")).to.be.directory().with.contents(["wf2", "task1", componentJsonFilename]);
+      expect(path.join(projectRootDir, "wf4", componentJsonFilename)).to.be.file().with.json.using.schema(wf1Schema);
+      expect(await getComponentDir(projectRootDir, components.wf1.ID)).to.equal(path.resolve(projectRootDir, "wf4"));
+      projectJsonSchema.properties.componentPath.properties[components.wf1.ID] = { enum: ["./wf4"] };
+      projectJsonSchema.properties.componentPath.properties[components.task1.ID] = { enum: ["./wf4/task1"] };
+      projectJsonSchema.properties.componentPath.properties[components.wf2.ID] = { enum: ["./wf4/wf2"] };
+      projectJsonSchema.properties.componentPath.properties[components.task2.ID] = { enum: ["./wf4/wf2/task2"] };
+      expect(path.join(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema(projectJsonSchema);
+    });
     it("should rename component which has child", async()=>{
       await updateComponent(projectRootDir, components.wf1.ID, "name", "wf4");
       wf1Schema.properties.name = { enum: ["wf4"] };
