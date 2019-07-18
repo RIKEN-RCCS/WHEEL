@@ -1064,19 +1064,18 @@ $(() => {
   };
 
   // draw taskStateList
-  function insertSubComponetStateListHTML(target, id, iconPath, name) {
-    target.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
+  function insertSubComponetStateHTML(target, id, iconPath, name) {
+    target.insertAdjacentHTML("beforeend", `<tr class="project_table_component" id="line_${id}">
     <td id="${id}" class="componentName"><img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td></tr>`);
   }
 
-  function insertTaskStateListHTML(target, id, iconPath, name, componentState, state, started, prepared, jobSubmited, jobRan, jobFinished, finished, desc) {
+  function insertTaskStateHTML(target, insertPosition, id, iconPath, name, componentState, state, started, prepared, jobSubmited, jobRan, jobFinished, finished, desc) {
     if (prepared === null) prepared = "-";
     if (jobSubmited === null) jobSubmited = "-";
     if (jobRan === null) jobRan = "-";
     if (jobFinished === null) jobFinished = "-";
-    target.insertAdjacentHTML("beforeend", `<tr class="project_table_component" >
-    <td id="${id}" class="componentName">
-    <img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td>
+    target.insertAdjacentHTML(insertPosition, `<tr class="project_table_component" id="line_${id}">
+    <td id="${id}" class="componentName"><img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td>
     <td class="componentState"><img src=${componentState} class="stateIcon" id="${id}_stateIcon"><label class="stateLabel" id="${id}_state">${state}</label></td>
     <td class="componentStartTime" id="${id}_startTime">${started}</td>
     <td class="componentLabel" id="${id}_prepared">${prepared}</td>
@@ -1122,8 +1121,9 @@ $(() => {
 
   let maxancestorsLength = 0;
   function drawTaskStateList(taskStateList) {
-    let targetElement = document.getElementById("project_table_body");
+    console.log(taskStateList);
     for (let i = 0; i < taskStateList.length; i++) {
+      let targetElement = document.getElementById("project_table_body");
       let taskIdTemp = "";
       // check component type (task or task in subcomponent)
       if (taskStateList[i].ancestorsName === "") {
@@ -1170,9 +1170,10 @@ $(() => {
         let nodeType = "task";
         let nodeIconPath = config.node_icon[nodeType];
         let nodeColor = config.node_color[nodeType];
+        let insertPosition = "beforeend";
 
         if (taskStateList[i].ancestorsName === "") {
-          insertTaskStateListHTML(targetElement, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
+          insertTaskStateHTML(targetElement, insertPosition, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
             taskStateList[i].startTime, taskStateList[i].preparedTime, taskStateList[i].jobSubmittedTime, taskStateList[i].jobStartTime, taskStateList[i].jobEndTime, taskStateList[i].endTime, taskStateList[i].description)
           changeComponentDisplayMode(jobInfoViewFlag);
           $(`#${taskId}`).css("background-color", nodeColor);
@@ -1184,19 +1185,28 @@ $(() => {
           if (maxancestorsLength < ancestorsNameList.length) {
             maxancestorsLength = ancestorsNameList.length;
           }
+          let ancestorsId = "";
           //arrange components expect task component.
-          let ancestorsId;
-          let ancestorsIdTemp;
-          for (let j = 0; j < ancestorsNameList.length; j++) {
+          for (let j = 0; j < ancestorsTypeList.length; j++) {
+            if (j === 0) {
+              ancestorsId = ancestorsNameList[j];
+            } else {
+              ancestorsId += "_" + ancestorsNameList[j];
+            }
             let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
-            ancestorsIdTemp = `ancestors_${ancestorsNameList[j]}_${taskId}`;
-            ancestorsId = escapeCharacter(ancestorsIdTemp);
-            insertSubComponetStateListHTML(targetElement, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
-            $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
-            let loopMarginArea = 32 * j;
-            $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
+            if (document.getElementById(`${ancestorsId}`) === null) {
+              insertSubComponetStateHTML(targetElement, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
+              $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
+              let loopMarginArea = 32 * j;
+              $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
+            }
           }
-          insertTaskStateListHTML(targetElement, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
+          //draw task in subcomponent.
+          if (ancestorsTypeList[ancestorsTypeList.length - 1] === "parameterStudy") {
+            targetElement = document.getElementById(`line_${ancestorsId}`);
+            insertPosition = "afterend";
+          }
+          insertTaskStateHTML(targetElement, insertPosition, taskId, nodeIconPath, taskStateList[i].name, nodeComponentState, taskStateList[i].state,
             taskStateList[i].startTime, taskStateList[i].preparedTime, taskStateList[i].jobSubmittedTime, taskStateList[i].jobStartTime, taskStateList[i].jobEndTime, taskStateList[i].endTime, taskStateList[i].description)
           changeComponentDisplayMode(jobInfoViewFlag);
           let marginArea = 32 * ancestorsNameList.length;
