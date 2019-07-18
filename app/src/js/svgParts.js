@@ -111,7 +111,7 @@ function collisionDetectionFrame(svg, counterpart, x, y, hitScale) {
   minX -= extendX;
   maxX += extendX;
   minY -= extendY;
-  maxY += extendY + nearestFrameBox.y();
+  maxY += extendY;
   minX += nearestFrameBox.x();
   maxX += nearestFrameBox.x();
   minY += nearestFrameBox.y();
@@ -1062,9 +1062,11 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
       if (editDisable === undefined || editDisable === false) {
         cable.endX = e.target.instance.x();
         cable.endY = e.target.instance.y();
-        let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY, config.box_appearance.plug_drop_area_scale);
+        const dragEndPosX = cable.endX;
+        const dragEndPosY = cable.endY;
+        let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, dragEndPosX, dragEndPosY, config.box_appearance.plug_drop_area_scale);
         if (hitIndex === -1 && counterpart === ".receptorPlug") {
-          [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', cable.endX, cable.endY, 1.0);
+          [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
 
           if (hitIndex !== -1) {
             // inputfileへの追加とコネクション
@@ -1093,7 +1095,7 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
   return [plug, cable.cable];
 }
 
-function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback) {
+function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, sio, callback) {
   //plugの位置（originX,originY）を決める
   let plug = svg.polygon(plugShape).fill(color);
   const bbox = plug.bbox();
@@ -1133,8 +1135,17 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
       if (editDisable === undefined || editDisable === false) {
         cable.endX = e.target.instance.x();
         cable.endY = e.target.instance.y();
-        const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY, config.box_appearance.plug_drop_area_scale);
-
+        const dragEndPosX = cable.endX;
+        const dragEndPosY = cable.endY;
+        let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, dragEndPosX, dragEndPosY, config.box_appearance.plug_drop_area_scale);
+        // ここに追加する必要があるが工夫が必要
+        if (hitIndex === -1 && counterpart === ".receptorPlug") {
+          [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
+          if (hitIndex !== -1) {
+            // inputfileへの追加とコネクション
+            [hitIndex, hitPlug] = addInputFile(svg, plug, hitIndex, hitPlug, sio);
+          }
+        }
         if (hitIndex === -1) {
           cable.remove();
           plug.remove();
@@ -1200,7 +1211,7 @@ export function createFilesNameBox(svg, x, y, type, name, inputFiles, outputFile
 //parent -> children connector
 export function createParentConnector(svg, originX, originY, offsetX, offsetY, sio) {
   // offsetY += calcFileBasePosY();
-  return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
+  return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', sio, function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
     sio.emit('addFileLink', myIndex, srcName, hitIndex, dstName);
