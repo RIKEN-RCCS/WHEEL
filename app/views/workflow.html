@@ -186,12 +186,14 @@
               <div v-if="node.hasOwnProperty('script')">
                 <label for="scriptInputField" id="propertyScript">Script</label>
               </div>
-              <select name="script" v-if="node.hasOwnProperty('script')" v-model="node.script" id="scriptSelectField"
-                v-on:change="updateProperty('script')">
-                <option v-if="node.hasOwnProperty('script') && node.script !== null">{{ node.script }}</option>
-                <option v-for="v in fileList" v-if="v.type === 'file' && v.name !== node.script" v-bind:value="v.name"
-                  v-bind:key="v.name">{{ v.name }}</option>
-              </select>
+              <div>
+                <select name="script" v-if="node.hasOwnProperty('script')" v-model="node.script" id="scriptSelectField"
+                  v-on:change="updateProperty('script')">
+                  <option v-if="node.hasOwnProperty('script') && node.script !== null">{{ node.script }}</option>
+                  <option v-for="v in fileList" v-if="v.type === 'file' && v.name !== node.script" v-bind:value="v.name"
+                    v-bind:key="v.name">{{ v.name }}</option>
+                </select>
+              </div>
               <div v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
                 <label id="propertyInputFiles">InputFiles</label>
               </div>
@@ -239,20 +241,24 @@
               <div v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')">
                 <label id="propertyOutputFile">OutputFile</label>
               </div>
-              <select name="outputFile" v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')"
-                v-model="node.outputFiles[0].name" id="outputFileSelectField"
-                v-on:change="renameOutputFile(node.outputFiles[0].name, 0)">
-                <option v-for="outputFile in fileList" v-if="outputFile.type === 'file' || outputFile.type === 'dir'"
-                  v-bind:value="outputFile.name" v-bind:key="outputFile.name">{{ outputFile.name }}</option>
-              </select>
+              <div>
+                <select name="outputFile" v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')"
+                  v-model="node.outputFiles[0].name" id="outputFileSelectField"
+                  v-on:change="renameOutputFile(node.outputFiles[0].name, 0)">
+                  <option v-for="outputFile in fileList" v-if="outputFile.type === 'file' || outputFile.type === 'dir'"
+                    v-bind:value="outputFile.name" v-bind:key="outputFile.name">{{ outputFile.name }}</option>
+                </select>
+              </div>
               <div v-if="node.hasOwnProperty('host')">
                 <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
               </div>
-              <select name="remotehost" v-if="node.hasOwnProperty('host')" v-model="node.host"
-                id="remotehostSelectField" v-on:change="updateQueueList(); updateProperty('host');">
-                <option value="localhost">localhost</option>
-                <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
-              </select>
+              <div>
+                <select name="remotehost" v-if="node.hasOwnProperty('host')" v-model="node.host"
+                  id="remotehostSelectField" v-on:change="updateQueueList(); updateProperty('host');">
+                  <option value="localhost">localhost</option>
+                  <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
+                </select>
+              </div>
               <div v-if="node.hasOwnProperty('useJobScheduler')">
                 <label for="parameterRemotehost" id="propertyuseJobScheduler">UseJobScheduler</label>
               </div>
@@ -273,12 +279,14 @@
               <div v-show="node.hasOwnProperty('queue')">
                 <label for="parameterRemotehost" id="propertyQueue">Queue</label>
               </div>
-              <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField"
-                v-on:change="updateProperty('queue')" v-bind:disabled="node.useJobScheduler !== true"
-                v-bind:class="{queueSelectFieldColor: node.useJobScheduler}">
-                <option v-if="node.useJobScheduler === true" v-for="v in queueList" v-bind:value="v" v-bind:key="v">
-                  {{ v}}</option>
-              </select>
+              <div>
+                <select name="queue" v-if="node.hasOwnProperty('queue')" v-model="node.queue" id="queueSelectField"
+                  v-on:change="updateProperty('queue')" v-bind:disabled="node.useJobScheduler !== true"
+                  v-bind:class="{queueSelectFieldColor: node.useJobScheduler}">
+                  <option v-if="node.useJobScheduler === true" v-for="v in queueList" v-bind:value="v" v-bind:key="v">
+                    {{ v}}</option>
+                </select>
+              </div>
               <div v-if="node.hasOwnProperty('parameterFile')">
                 <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>
               </div>
