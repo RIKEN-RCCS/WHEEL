@@ -101,7 +101,7 @@ exclude         | string       | リモート環境から回収しないファ�
 0は削除、1は削除しない、2は親ノードと同じ挙動を意味する。
 初期値は2だが、rootワークフローは作成時にserver.jsonに定義された"defaultCleanupRemoteRoot"の値に変更される。
 
-*2 include, excludeともにglobパターンを指定することができる。
+*2 include, excludeともにglobパターンまたはカンマ区切りで複数のglobを指定することができる。
 includeにマッチしなおかつexcludeにマッチしないファイルを回収してくる。
 ただし、outputFilesに指定されたファイルは、include/excludeの指定に関わらず全て回収される。
 
