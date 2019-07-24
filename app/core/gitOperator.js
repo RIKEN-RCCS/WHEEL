@@ -71,16 +71,24 @@ class Git extends EventEmitter {
 
   /**
    * create new repository
-   * @param {string} root - new repository's root directory
    * @param {string} user - author's name
    * @param {string} mail - author's mailaddress
+   * @returns {undefined} -
    */
   async init(user, mail) {
     const repo = await nodegit.Repository.init(this.rootDir, 0);
     const author = nodegit.Signature.now(user, mail);
-    const commiter = await author.dup();
-    const files = await promisify(glob)("**", { cwd: this.rootDir });
-    await repo.createCommitOnHead(files, author, commiter, "create new project");
+    const containts = await promisify(glob)("**", { cwd: this.rootDir, dot: true, ignore: ".git/**/*" });
+    const files = await Promise.all(
+      containts
+        .map(async(e)=>{
+          const stats = await fs.stat(path.resolve(this.rootDir, e));
+          return stats.isFile() ? e : null;
+        })
+    );
+    await repo.createCommitOnHead(files.filter((e)=>{
+      return e !== null;
+    }), author, author, "create new project");
   }
 
   /**
