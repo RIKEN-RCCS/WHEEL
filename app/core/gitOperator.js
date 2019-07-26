@@ -3,6 +3,7 @@ const path = require("path");
 const EventEmitter = require("events");
 const { promisify } = require("util");
 const fs = require("fs-extra");
+const promiseRetry = require("promise-retry");
 const nodegit = require("nodegit");
 const glob = require("glob");
 const { replacePathsep } = require("./pathUtils");
@@ -28,8 +29,11 @@ class Git extends EventEmitter {
   //please use this.emit("writeIndex") instead
   async _write() {
     setImmediate(async()=>{
+      if (this.rmBuffer.length === 0 && this.addBuffer.length === 0) {
+        return;
+      }
       try {
-        if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
+        await promiseRetry(async(retry)=>{
           const index = await this.repo.refreshIndex();
           if (this.rmBuffer.length > 0) {
             await index.removeAll(this.rmBuffer, null);
@@ -38,20 +42,30 @@ class Git extends EventEmitter {
           if (this.addBuffer.length > 0) {
             try {
               await index.addAll(this.addBuffer, 0, null);
+              this.addBuffer = [];
             } catch (err) {
-              //just ignore file or parent directory does not exists
+              //retry if failed to read descriptor error
+              if (err.errno === -1) {
+                retry();
+              }
+              //just ignore error file or parent directory does not exists
               if (!err.message.startsWith("could not find") && !err.message.startsWith("failed to open directory")) {
-                return Promise.reject(err);
+                throw err;
               }
             }
-            this.addBuffer = [];
           }
           await index.write();
-        }
+        },
+        {
+          retries: 10,
+          minTimeout: 500,
+          factor: 1
+        });
       } catch (err) {
         this.emit("error");
       }
       if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
+        //re-call if buffer is not empty
         this._write();
       } else {
         this.registerWriteIndex();
