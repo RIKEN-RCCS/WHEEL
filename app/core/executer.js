@@ -505,7 +505,7 @@ function exec(task, loggerInstance) {
     executer = createExecuter(task);
     executers.push(executer);
   } else {
-    logger.debug("reuse existing executer for", task.host, " with job scheduler", task.useJobScheduler);
+    logger.debug(`reuse existing executer for ${task.host} ${task.useJobScheduler ? "with" : "without"} job scheduler`);
     const onRemote = executer.remotehostID !== "localhost";
     const hostinfo = remoteHost.get(executer.remotehostID);
     const maxNumJob = getMaxNumJob(hostinfo, onRemote);
