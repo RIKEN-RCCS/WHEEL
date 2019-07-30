@@ -95,7 +95,6 @@ class Project extends EventEmitter {
     if (this.rootDispatcher !== null) {
       this.rootDispatcher.pause();
     }
-    removeSsh(this.projectRootDir);
     await cancelDispatchedTasks(this.tasks, this.logger);
     const projectJson = await readJsonGreedy(this.projectJsonFilename);
     await this.updateProjectState("paused", projectJson);
