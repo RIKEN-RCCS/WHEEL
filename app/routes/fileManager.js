@@ -29,7 +29,7 @@ async function getComponentDirs(target) {
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
   request = request || target;
   const componentDirs = await getComponentDirs(request);
-  const regexComponentDirs = new RegExp(`^(?!.*(${componentDirs.join("|")})).+$`);
+  const regexComponentDirs = componentDirs.length > 0 ? new RegExp(`^(?!.*(${componentDirs.join("|")})).+$`) : null;
   const result = await fileBrowser(target, {
     request,
     SND: withSND,
