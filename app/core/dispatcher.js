@@ -626,7 +626,10 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("_PSHandler called", component.name);
     const templateRoot = path.resolve(this.cwfDir, component.name);
     const paramSettingsFilename = path.resolve(templateRoot, component.parameterFile);
-    const paramSettings = await readJsonGreedy(paramSettingsFilename);
+    const paramSettings = await readJsonGreedy(paramSettingsFilename).catch((err)=>{
+      this.logger.warn("parameter file read failed", err);
+      throw err;
+    });
     this.logger.debug(`read prameter setting done. version = ${paramSettings.version}`);
 
     //treat single value as array contains single element

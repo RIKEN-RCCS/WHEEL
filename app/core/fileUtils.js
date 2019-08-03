@@ -12,22 +12,22 @@ async function readJsonGreedy(filename) {
     const buf = await fs.readFile(filename)
       .catch((e)=>{
         if (e.code === "ENOENT") {
-          retry();
+          retry(e);
         }
-        throw (e);
+        throw e;
       });
     const strData = buf.toString("utf8").replace(/^\uFEFF/, "");
     if (strData.length === 0) {
-      retry();
+      retry(new Error("read failed"));
     }
     let jsonData;
     try {
       jsonData = JSON.parse(strData);
     } catch (e) {
       if (e instanceof SyntaxError) {
-        retry();
+        retry(e);
       }
-      throw (e);
+      throw e;
     }
     //need check by jsonSchema but it may cause performance problem
     return jsonData;

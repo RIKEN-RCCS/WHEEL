@@ -392,7 +392,17 @@ async function validateParameterStudy(projectRootDir, component) {
     return Promise.reject(new Error(`parameter setting file is not specified ${component.name}`));
   }
   const componentDir = await getComponentDir(projectRootDir, component.ID, true);
-  return fs.access(path.resolve(componentDir, component.parameterFile));
+  const filename = path.resolve(componentDir, component.parameterFile);
+  await fs.access(filename);
+
+  try {
+    await readJsonGreedy(filename);
+  } catch (err) {
+    err.orgMessage = err.message;
+    err.message = "parameter file parse error";
+    err.parameterFile = component.parameterFile;
+    return Promise.reject(err);
+  }
 }
 
 async function validateForeach(component) {
