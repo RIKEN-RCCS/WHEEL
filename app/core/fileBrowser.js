@@ -89,7 +89,7 @@ function compare(a, b) {
  * @param {Object} [options.filter.file=.*] filter regex only for files
  * plese note, if both options.filter.all and options.filter.{dir|file} is specified,
  * both filter is used.
- * so the only {directory | file} which is valid filter.all and filter.{dir|file} will be sent.
+ * so the only {directory | file} which is matched filter.all and filter.{dir|file} will be sent.
  */
 async function ls(targetDir, options = {}) {
   const request = path.resolve(options.request != null ? options.request : targetDir);
