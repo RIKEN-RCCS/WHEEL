@@ -28,50 +28,51 @@ class Git extends EventEmitter {
   //never call this function directly!!
   //please use this.emit("writeIndex") instead
   async _write() {
-    setImmediate(async()=>{
-      if (this.rmBuffer.length === 0 && this.addBuffer.length === 0) {
-        return;
-      }
-      try {
-        await promiseRetry(async(retry)=>{
-          const index = await this.repo.refreshIndex();
-          if (this.rmBuffer.length > 0) {
-            await index.removeAll(this.rmBuffer, null);
-            this.rmBuffer = [];
-          }
-          if (this.addBuffer.length > 0) {
-            try {
-              await index.addAll(this.addBuffer, 0, null);
-              this.addBuffer = [];
-            } catch (err) {
-              //retry if failed to read descriptor error
-              if (err.errno === -1) {
-                retry();
-              }
-              //just ignore error file or parent directory does not exists
-              if (!err.message.startsWith("could not find") && !err.message.startsWith("failed to open directory")) {
-                throw err;
-              }
+    if (this.rmBuffer.length === 0 && this.addBuffer.length === 0) {
+      this.registerWriteIndex();
+      return;
+    }
+    try {
+      const index = await this.repo.refreshIndex();
+      await promiseRetry(async(retry)=>{
+        if (this.rmBuffer.length > 0) {
+          const pathspecs = Array.from(this.rmBuffer);
+          this.rmBuffer = [];
+          await index.removeAll(pathspecs, null);
+        }
+        if (this.addBuffer.length > 0) {
+          try {
+            const pathspecs = Array.from(this.addBuffer);
+            this.addBuffer = [];
+            await index.addAll(pathspecs, 0, null);
+          } catch (err) {
+            //retry if failed to read descriptor error
+            if (err.errno === -1) {
+              retry();
+            }
+            //just ignore error file or parent directory does not exists
+            if (!err.message.startsWith("could not find") && !err.message.startsWith("failed to open directory")) {
+              throw err;
             }
           }
-          await index.write();
-        },
-        {
-          retries: 10,
-          minTimeout: 500,
-          factor: 1
-        });
-      } catch (err) {
-        this.emit("error");
-      }
-      if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
-        //re-call if buffer is not empty
-        this._write();
-      } else {
-        this.registerWriteIndex();
-        this.emit("done");
-      }
-    });
+        }
+      },
+      {
+        retries: 10,
+        minTimeout: 500,
+        factor: 1
+      });
+      await index.write();
+    } catch (err) {
+      this.emit("error");
+    }
+    if (this.rmBuffer.length > 0 || this.addBuffer.length > 0) {
+      //re-call if buffer is not empty
+      this._write();
+    } else {
+      this.registerWriteIndex();
+      this.emit("done");
+    }
   }
 
   /**
