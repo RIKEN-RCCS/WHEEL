@@ -20,12 +20,14 @@ class Git extends EventEmitter {
   }
 
   registerWriteIndex() {
-    this.once("writeIndex", ()=>{
-      this._write();
-    });
+    if (this.listenerCount("writeIndex") === 0) {
+      this.once("writeIndex", ()=>{
+        this._write();
+      });
+    }
   }
 
-  //never call this function directly!!
+  //never call this function from outside of this class!!
   //please use this.emit("writeIndex") instead
   async _write() {
     if (this.rmBuffer.length === 0 && this.addBuffer.length === 0) {
@@ -172,7 +174,7 @@ class Git extends EventEmitter {
   async commit(name, mail, message) {
     if (this.addBuffer.length > 0 || this.rmBuffer.length > 0) {
       console.log("GIT: add or rm remaining files in buffer");
-      this._write();
+      await this._write();
     }
     const author = nodegit.Signature.now(name, mail);
     const commiter = await author.dup();
