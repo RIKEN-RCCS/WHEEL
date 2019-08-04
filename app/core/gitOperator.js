@@ -38,13 +38,17 @@ class Git extends EventEmitter {
         if (this.rmBuffer.length > 0) {
           const pathspecs = Array.from(this.rmBuffer);
           this.rmBuffer = [];
+          console.log("GIT: git rm", pathspecs);
           await index.removeAll(pathspecs, null);
+          console.log("GIT: git rm done", pathspecs);
         }
         if (this.addBuffer.length > 0) {
           try {
             const pathspecs = Array.from(this.addBuffer);
             this.addBuffer = [];
+            console.log("GIT: git add", pathspecs);
             await index.addAll(pathspecs, 0, null);
+            console.log("GIT: git add done", pathspecs);
           } catch (err) {
             //retry if failed to read descriptor error
             if (err.errno === -1) {
@@ -63,6 +67,7 @@ class Git extends EventEmitter {
         factor: 1
       });
       await index.write();
+      console.log("GIT: write index done");
     } catch (err) {
       this.emit("error");
     }
@@ -165,6 +170,10 @@ class Git extends EventEmitter {
    * @param {string} mail - e-mail address for both author and commiter
    */
   async commit(name, mail, message) {
+    if (this.addBuffer.length > 0 || this.rmBuffer.length > 0) {
+      console.log("GIT: add or rm remaining files in buffer");
+      this._write();
+    }
     const author = nodegit.Signature.now(name, mail);
     const commiter = await author.dup();
     const index = await this.repo.refreshIndex();
