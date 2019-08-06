@@ -859,16 +859,6 @@ select::-ms-expand {
     background-color: #222226;
 }
 
-.createFileDirButton, .editButtons{
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
-    margin: 8px 0 0 8px;
-    padding: 0px;
-    border: 0;
-    background-color: #222226;
-}
-
 #dirBackButton{
     cursor: pointer;
     width: 24px;
@@ -901,6 +891,22 @@ select::-ms-expand {
 #jupyterImg{
     width: 24px;
     height: 29px;
+}
+
+#fileListLoadButton{
+    margin: 0 0 2px 162px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    font-size: 0px;
+    border: 0;
+    background-color: #222226;
+    vertical-align: middle;
+}
+
+#loadFileListImg{
+    width: 18px;
+    height: 18px;
 }
 
 #startInputField, #endInputField, #stepInputField{

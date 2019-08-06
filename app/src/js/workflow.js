@@ -202,6 +202,12 @@ $(() => {
             });
         }
       },
+      loadFileList: function () {
+        if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
+          const nodePath = currentWorkDir + pathSep + vm.node.name;
+          fb.request('getFileList', nodePath, null);
+        }
+      },
       openJupyterNotebook: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
           const parentDirPath = `${currentWorkDir[1] === ":" ? currentWorkDir.slice(2) : currentWorkDir}`;
@@ -605,6 +611,7 @@ $(() => {
   // clean
   $('#clean_menu').on('click', function () {
     if (presentState !== 'running') {
+      $('#property').hide();
       $('#project_table_body').empty();
       // update pankuzu
       let rootNodeStack = nodeStack[0];
@@ -617,7 +624,6 @@ $(() => {
       dirStack.push(rootDirStack);
       wfStack.push(rootWfStack);
       currentWorkDir = dirStack[nodeStack.length - 1];
-      fb.request('getFileList', currentWorkDir, null);
       sio.emit('cleanProject', true);
     }
   });
@@ -1248,6 +1254,7 @@ $(() => {
   function changeViewState() {
     if (isEditDisable()) {
       if (isTaskLibrary) {
+        isTaskLibrary = !isTaskLibrary;
         hideTaskLibrary();
       }
     }
