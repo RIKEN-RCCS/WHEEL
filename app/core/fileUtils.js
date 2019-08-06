@@ -1,7 +1,9 @@
 "use strict";
 const promiseRetry = require("promise-retry");
 const fs = require("fs-extra");
+const path = require("path");
 const Mode = require("stat-mode");
+const { gitAdd } = require("./gitOperator");
 
 /**
  * read Json file until get some valid JSON data
@@ -100,9 +102,93 @@ async function deliverFile(src, dst) {
   }
 }
 
+/**
+ * @typedef File
+ * @param {Object} File
+ * @param {string} File.filename - filename
+ * @param {string} File.dirname - dirname of the file
+ * @param {string} File.content - file content
+ */
+
+/**
+ * open file or target Files which is listed in parameter setting file
+ * @param {string} argFilename - target file's name
+ * @param {boolean} forceNormal - if true absFilename is not treated as parameter setting file
+ * @returns {File[]} - array of file object which is read
+ */
+async function openFile(argFilename, forceNormal = false) {
+  const absFilename = path.resolve(argFilename);
+  let content;
+  try {
+    const bufffer = await fs.readFile(absFilename);
+    content = bufffer.toString();
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      await fs.ensureFile(absFilename);
+      return [{ content: "", filename: path.basename(absFilename), dirname: path.dirname(absFilename) }];
+    }
+    throw err;
+  }
+
+  let contentJson = {};
+  try {
+    contentJson = JSON.parse(content);
+  } catch (err) {
+    //just ignore if JSON.parse failed
+  }
+  if (!contentJson.hasOwnProperty("targetFiles") || !Array.isArray(contentJson.targetFiles) || forceNormal) {
+    return [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename) }];
+  }
+  //return all targetFiles
+  const rt = [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename) }];
+  const dirname = path.dirname(absFilename);
+  const contents = await Promise.all(contentJson.targetFiles.map((targetFile)=>{
+    return fs.readFile(path.resolve(dirname, targetFile));
+  }));
+
+  rt.push(...contentJson.targetFiles.map((targetFile, i)=>{
+    const absTargetFile = path.resolve(dirname, targetFile);
+    return {
+      content: contents[i].toString(),
+      dirname: path.dirname(absTargetFile),
+      filename: path.basename(absTargetFile)
+    };
+  }));
+
+  return rt;
+}
+
+/**
+ * write content to the file
+ * @param {string} argFilename - target file's name
+ * @param {*} content - content to write
+ * @returns {Promise} -
+ */
+async function saveFile(argFilename, content) {
+  const absFilename = path.resolve(argFilename);
+  await fs.writeFile(absFilename, content);
+
+  const { root } = path.parse(absFilename);
+  let repoDir = path.dirname(absFilename);
+
+  while (!await fs.pathExists(path.join(repoDir, ".git"))) {
+    if (repoDir === root) {
+      const err = new Error("git repository not found");
+      err.filename = argFilename;
+      err.absFilename = absFilename;
+      throw err;
+    }
+    repoDir = path.dirname(repoDir);
+  }
+
+  await gitAdd(repoDir, absFilename);
+}
+
 
 module.exports = {
   readJsonGreedy,
   addX,
-  deliverFile
+  deliverFile,
+  openFile,
+  saveFile
 };

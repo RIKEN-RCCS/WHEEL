@@ -200,6 +200,13 @@ class Git extends EventEmitter {
   async clean() {
     console.log("not implemented");
   }
+
+  /**
+   * perform getStatus
+   */
+  async getStatus() {
+    return this.repo.getStatus();
+  }
 }
 
 const repos = new Map();
@@ -261,10 +268,20 @@ async function gitResetHEAD(rootDir, filePatterns) {
   return git.resetHEAD(filePatterns);
 }
 
+/**
+ * git status
+ * @param {string} rootDir  - directory path which has ".git" directory
+ */
+async function gitStatus(rootDir) {
+  const git = await getGitOperator(rootDir);
+  return git.getStatus();
+}
+
 module.exports = {
   gitInit,
   gitCommit,
   gitAdd,
   gitRm,
-  gitResetHEAD
+  gitResetHEAD,
+  gitStatus
 };
