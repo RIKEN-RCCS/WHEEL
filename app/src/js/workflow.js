@@ -7,7 +7,6 @@ import 'jquery-ui/themes/base/sortable.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/workflow.css';
-
 import './rapid2.js'
 
 import Cookies from 'js-cookie';
@@ -25,6 +24,8 @@ import SvgParentNodeUI from './svgNodeUI';
 import * as svgParentNode from './svgNodeUI';
 import configToolTip from './configToolTip';
 import Viewer from 'viewerjs';
+
+Vue.use(Vuetify)
 
 $(() => {
   // setup socket.io client
@@ -58,11 +59,12 @@ $(() => {
   let viewerWindow;
   let viewerInstance;
   let viewerTargetHTML = "";
-  // create vue.js instance for property subscreen
+
   let vm = new Vue({
+    vuetify: new Vuetify(),
     el: '#app',
     data: {
-      normal: true,
+      normal: true, //flag for normal view (true) or editor (false)
       node: {},
       newInputFilename: "",
       newOutputFilename: "",
@@ -73,7 +75,8 @@ $(() => {
       nodeScript: null,
       names: [],
       conditionInputType: '1',
-      retryConditionInputType: '1'
+      retryConditionInputType: '1',
+      sio
     },
     methods: {
       addInputFile: function () {
@@ -324,9 +327,9 @@ $(() => {
   });
 
   //rapid以外の要素をhideしてrapidだけ表示
-  // $('#editPSFileButton').click(function () {
-  //   vm.normal = false;
-  // });
+  $('#editPSFileButton').click(function () {
+    vm.normal = false;
+  });
 
   // set default view
   $('#workflow_listview_area').hide();

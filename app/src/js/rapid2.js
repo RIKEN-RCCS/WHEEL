@@ -23,7 +23,7 @@ Vue.component("new-rapid", {
                       <v-text-field v-model="newFilename" label="new file name"></v-text-field>
                     </v-card-text>
                     <v-card-actions>
-                      <v-btn @click="newFilePrompt=false;openNewTab()"><v-icon>save</v-icon>save</v-btn>
+                      <v-btn @click="openNewTab()"><v-icon>save</v-icon>save</v-btn>
                       <v-btn @click="newFilename=null;newFilePrompt=false"><v-icon>cancel</v-icon>cancel</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -46,29 +46,35 @@ Vue.component("new-rapid", {
       newFilePrompt: false,
       newFilename: null,
       files: [
-        { name: "file1", content: "foo" },
-        { name: "file2", content: "bar" },
-        { name: "file3", content: "baz" },
-        { name: "file4", content: "hoge" }
+        {name: "dummy", content: "foo"}
       ],
       editor: null
     };
   },
   methods: {
-    openNewTab(newContents = "") {
+    async openNewTab(newContents = "") {
       //console.log("openNewTab called", this.newFilename, newContents)
       const newIndex = this.files.length;
+      //memo Vuexを導入してそちらのactionにsocketIOの通信をまとめる方が望ましい
+      this.$root.$data.sio.emit("openFile","/tmp/hoge", (isOK)=>{
+        if(!isOK){
+          console.log("ERROR!!!");
+          return
+        }
+      });
       const newFile = {
         name: this.newFilename,
         content: newContents,
         editorSession: ace.createEditSession(newContents)
       };
       this.files.push(newFile);
-      this.newFilename = null;
       //select tab after DOM updated
       this.$nextTick(function () {
         this.activeTab = newIndex;
       });
+      //clear temporaly variables
+      this.newFilename = null;
+      this.newFilePrompt=false;
     },
     onChange(index) {
       //console.log("onChange called", index);
