@@ -12,7 +12,11 @@ async function onOpenFile(emit, projectRootDir, filename, forceNormal, cb) {
   try {
     const files = await openFile(filename, forceNormal);
     for (const file of files) {
-      emit("file", file);
+      if (file.isParameterSettingFile) {
+        emit("parameterSettingFile", file);
+      } else {
+        emit("file", file);
+      }
     }
   } catch (err) {
     getLogger(projectRootDir).warn("openFile event failed", err);

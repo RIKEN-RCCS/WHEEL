@@ -140,7 +140,7 @@ async function openFile(argFilename, forceNormal = false) {
     return [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename) }];
   }
   //return all targetFiles
-  const rt = [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename) }];
+  const rt = [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename), isParameterSettingFile: true }];
   const dirname = path.dirname(absFilename);
   const contents = await Promise.all(contentJson.targetFiles.map((targetFile)=>{
     return fs.readFile(path.resolve(dirname, targetFile));

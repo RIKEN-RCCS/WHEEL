@@ -82,6 +82,7 @@ describe.only("file utility functions", ()=>{
       expect(rt).to.be.an("array").that.have.lengthOf(3);
       expect(rt[0].filename).to.equal("ps.json");
       expect(rt[0].dirname).to.equal(path.dirname(notExisting));
+      expect(rt[0].isParameterSettingFile).to.be.true;
       expect(JSON.parse(rt[0].content)).to.deep.equal(psJson);
       expect(rt.slice(1)).to.have.deep.members([
         { content: "foo", filename: "foo", dirname: path.dirname(notExisting) },
