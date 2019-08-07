@@ -1,16 +1,17 @@
 "use strict";
+const path = require("path");
 const { getLogger } = require("../core/projectResource");
 const { openFile, saveFile } = require("../core/fileUtils");
 
-async function onOpenFile(emit, projectRootDir, filename, forceNormal, cb) {
-  getLogger(projectRootDir).debug("openFile event recieved:", filename, forceNormal);
+async function onOpenFile(emit, projectRootDir, filename, dirname, forceNormal, cb) {
+  getLogger(projectRootDir).debug("openFile event recieved:", filename, dirname, forceNormal);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
 
   try {
-    const files = await openFile(filename, forceNormal);
+    const files = await openFile(path.resolve(dirname, filename), forceNormal);
     for (const file of files) {
       if (file.isParameterSettingFile) {
         emit("parameterSettingFile", file);
@@ -20,22 +21,22 @@ async function onOpenFile(emit, projectRootDir, filename, forceNormal, cb) {
     }
   } catch (err) {
     getLogger(projectRootDir).warn("openFile event failed", err);
-    return cb(false);
+    return cb(err);
   }
   cb(true);
 }
 
-async function onSaveFile(emit, projectRootDir, filename, content, cb) {
-  getLogger(projectRootDir).debug("saveFile event recieved:", filename);
+async function onSaveFile(emit, projectRootDir, filename, dirname, content, cb) {
+  getLogger(projectRootDir).debug("saveFile event recieved:", filename, dirname);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
   try {
-    await saveFile(filename, content);
+    await saveFile(path.resolve(dirname, filename), content);
   } catch (err) {
     getLogger(projectRootDir).warn("saveFile event failed", err);
-    return cb(false);
+    return cb(err);
   }
   cb(true);
 }

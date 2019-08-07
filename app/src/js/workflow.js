@@ -76,6 +76,7 @@ $(() => {
       names: [],
       conditionInputType: '1',
       retryConditionInputType: '1',
+      fb:null,
       sio
     },
     methods: {
@@ -272,6 +273,7 @@ $(() => {
   });
   // setup FileBrowser
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
+  vm.fb=fb;
 
   // property subscreen 'Files' area buttons.
   let dirPathStack = [];
@@ -328,7 +330,7 @@ $(() => {
 
   //rapid以外の要素をhideしてrapidだけ表示
   $('#editPSFileButton').click(function () {
-    vm.normal = false;
+      vm.normal = false;
   });
 
   // set default view

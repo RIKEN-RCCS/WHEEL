@@ -6,9 +6,9 @@ Vue.component("new-rapid", {
       <v-container fill-height fluid>
         <v-layout split column id="text">
           <v-flex shrink>
-            <v-tabs v-model="activeTab" @change="onChange">
+            <v-tabs v-model="activeTab" @change="changeTab">
               <v-tab v-for="(file,index) of files" :key="file.order">
-                {{ file.name }}
+                {{ file.filename }}
                 <v-btn small icon @click.stop="closeTab(index)">
                   <v-icon small>close</v-icon>
                 </v-btn>
@@ -23,7 +23,7 @@ Vue.component("new-rapid", {
                       <v-text-field v-model="newFilename" label="new file name"></v-text-field>
                     </v-card-text>
                     <v-card-actions>
-                      <v-btn @click="openNewTab()"><v-icon>save</v-icon>save</v-btn>
+                      <v-btn @click="openNewTab()"><v-icon>create</v-icon>open</v-btn>
                       <v-btn @click="newFilename=null;newFilePrompt=false"><v-icon>cancel</v-icon>cancel</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -45,53 +45,83 @@ Vue.component("new-rapid", {
       activeTab: 0,
       newFilePrompt: false,
       newFilename: null,
-      files: [
-        {name: "dummy", content: "foo"}
-      ],
+      files: [],
       editor: null
     };
   },
   methods: {
     async openNewTab(newContents = "") {
-      //console.log("openNewTab called", this.newFilename, newContents)
-      const newIndex = this.files.length;
       //memo Vuexを導入してそちらのactionにsocketIOの通信をまとめる方が望ましい
-      this.$root.$data.sio.emit("openFile","/tmp/hoge", (isOK)=>{
-        if(!isOK){
-          console.log("ERROR!!!");
-          return
-        }
+      const currentDir = this.$root.$data.fb.getRequestedPath();
+      console.log("DEBUG: open new tab", this.newFilename, currentDir);
+      const existingTab = this.files.findIndex((e)=>{
+        console.log(e);
+        return e.filename === this.newFilename && e.dirname === currentDir
       });
-      const newFile = {
-        name: this.newFilename,
-        content: newContents,
-        editorSession: ace.createEditSession(newContents)
-      };
-      this.files.push(newFile);
-      //select tab after DOM updated
-      this.$nextTick(function () {
-        this.activeTab = newIndex;
-      });
-      //clear temporaly variables
+      if(existingTab === -1){
+        this.$root.$data.sio.emit("openFile",this.newFilename, currentDir, false, (rt)=>{
+          if(!rt){
+            console.log("file open error!",rt);
+            return
+          }
+        });
+      }else{
+        this.activeTab=existingTab+1;
+        this.changeTab(existingTab+1);
+      }
+      //clear temporaly variables and close prompt
       this.newFilename = null;
       this.newFilePrompt=false;
     },
-    onChange(index) {
-      //console.log("onChange called", index);
+    changeTab(argIndex) {
+      if(argIndex === 0){
+        //just ignored
+        return
+      }
+      const index = argIndex-1
       if (index < this.files.length) {
+        console.log("DEBUG: tab changed to ", argIndex, "(1-origin)");
         const session = this.files[index].editorSession;
         this.editor.setSession(session);
-      } else {
-        console.log("session not found for", index);
       }
     },
     closeTab(index) {
-      //console.log("closeTab called", index);
-      //TODO save file
+      console.log("DEBUG: close ",index,"th tab");
+      const file = this.files[index];
+      const document = file.editorSession.getDocument()
+      //TODO 差分が無ければsaveFileを呼ばないようにする
+      const content = document.getValue();
+      this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+        if(! rt){
+          console.log("ERROR: file save failed:", rt);
+        }
+      });
+      if(index === 0){
+        document.setValue("");
+      }
       this.files.splice(index, 1);
     }
   },
   mounted() {
+    //editorのセッションが全部一緒になってしもとる
+    this.$root.$data.sio.on("file", (file)=>{
+      console.log("DEBUG: file recieved",file.filename);
+      file.editorSession=ace.createEditSession(file.content)
+      this.files.push(file);
+
+      //select last tab after DOM is updated
+      this.$nextTick(function () {
+        this.activeTab = this.files.length;
+        const index=this.activeTab -1
+        console.log("DEBUG: open files[",index,"]");
+        this.editor.setSession(this.files[index].editorSession);
+      });
+    });
+    const currentDir = this.$root.$data.fb.getRequestedPath();
+    const selectedFile = this.$root.$data.fb.getSelectedFile();
+    this.$root.$data.sio.emit("openFile",selectedFile, currentDir, false, (isOK)=>{
+      console.log("DEBUG: open ",selectedFile,isOK);
+    });
     this.editor = ace.edit("editor");
     this.editor.setOptions({
       theme: "ace/theme/idle_fingers",
@@ -100,11 +130,6 @@ Vue.component("new-rapid", {
       highlightActiveLine: true
     });
     this.editor.on("changeSession", this.editor.resize.bind(this.editor));
-
-    this.files.forEach((file) => {
-      file.editorSession = ace.createEditSession(file.content);
-    });
-    this.editor.setSession(this.files[this.activeTab].editorSession);
     Split(["#text", "#parameter"]);
   }
 });
