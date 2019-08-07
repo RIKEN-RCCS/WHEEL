@@ -945,6 +945,8 @@ $(() => {
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
+        $('#editFileButton').css('visibility', 'hidden');
+        $('#editPSFileButton').css('visibility', 'hidden');
         $.when(
           $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100),
           drawStrokeColor(e)
