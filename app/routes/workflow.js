@@ -2,6 +2,7 @@
 const path = require("path");
 const express = require("express");
 const fileManager = require("./fileManager");
+const rapid2 = require("./rapid2");
 const projectController = require("./projectController");
 const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
@@ -26,6 +27,9 @@ module.exports = function(io) {
 
     //event listeners for file operation
     fileManager(socket, projectRootDir);
+
+    //event listeners for file editor
+    rapid2(socket, projectRootDir);
 
     //redirect error to logger
     socket.on("error", (err)=>{
