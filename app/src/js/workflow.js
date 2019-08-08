@@ -45,6 +45,7 @@ $(() => {
   let currentNode = '';
   let nodeStack = [''];
   let nodeTypeStack = [''];
+  let nodePath = '';
   let dirStack = [rootDir];
   let wfStack = [rootWorkflow];
   let currentWf = {};
@@ -204,8 +205,8 @@ $(() => {
       },
       loadFileList: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-          const nodePath = currentWorkDir + pathSep + vm.node.name;
-          fb.request('getFileList', nodePath, null);
+          const loadNodePath = currentWorkDir + pathSep + vm.node.name;
+          fb.request('getFileList', loadNodePath, null);
         }
       },
       openJupyterNotebook: function () {
@@ -495,6 +496,14 @@ $(() => {
       } else if (projectJson.state === 'paused') {
         $('#project_state').css('background-color', '#444480');
         $('#pause_button').attr("src", "/image/btn_pause_d.png");
+        $('#run_button').attr("src", "/image/btn_play_n.png");
+      } else if (projectJson.state === 'finished') {
+        console.log(nodePath);
+        if (nodePath !== '') {
+          fb.request('getFileList', nodePath, null);
+        }
+        $('#project_state').css('background-color', '#000000');
+        $('#pause_button').attr("src", "/image/btn_pause_n.png");
         $('#run_button').attr("src", "/image/btn_play_n.png");
       } else {
         $('#project_state').css('background-color', '#000000');
@@ -933,7 +942,7 @@ $(() => {
           return e.ID === nodeIndex;
         });
         let name = target.name;
-        let nodePath = currentWorkDir + pathSep + name;
+        nodePath = currentWorkDir + pathSep + name;
         fb.request('getFileList', nodePath, null);
         let currentPropertyDir = "." + currentWorkDir.replace(projectRootDir, "") + pathSep + name;
         let nodeType = target.type;
