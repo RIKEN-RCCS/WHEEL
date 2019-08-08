@@ -792,9 +792,6 @@ function registerListeners(socket, projectRootDir) {
     getLogger(projectRootDir).trace("projectState: onProjectStateChanged", projectJson.state);
     emit("projectJson", projectJson);
     emit("projectState", projectJson.state);
-    setTimeout(()=>{
-      once(projectRootDir, "projectStateChanged", onProjectStateChange);
-    }, interval);
   }
 
   //event listener for task state changed
@@ -831,7 +828,7 @@ function registerListeners(socket, projectRootDir) {
     emitLongArray(emit, "results", results);
   }
 
-  once(projectRootDir, "projectStateChanged", onProjectStateChange);
+  on(projectRootDir, "projectStateChanged", onProjectStateChange);
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
   on(projectRootDir, "resultFilesReady", onResultFilesReady);
