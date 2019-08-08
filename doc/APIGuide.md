@@ -546,9 +546,10 @@ linkデータの形式はaddLink APIと同じ
 statusをnot-startedにします。
 
 #### password(pw, cb)
-- @param {string} pw - パスワード
+- @param {string | null} pw - パスワード
 
 askPassword APIで要求されたパスワードを送信します。
+ユーザがパスワード入力をキャンセルした時はnullを送信します。
 
 #### sourceFile(id, filename, cb)
 - @param {string} id - ファイルの選択を要求しているsourceコンポーネントのid文字列

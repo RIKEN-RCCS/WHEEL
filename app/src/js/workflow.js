@@ -353,8 +353,10 @@ $(() => {
         .done(() => {
           const password = $('#password').val();
           sio.emit('password', password);
+        })
+        .fail(()=>{
+          sio.emit('password', null);
         });
-      //TODO ユーザがキャンセルした時の対応を検討
     });
     sio.on('askSourceFilename', (id, name, description, filelist) => {
       const html = `<p class="dialogMessage"> Select file for ${name} component</p>
