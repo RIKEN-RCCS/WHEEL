@@ -226,8 +226,6 @@ export default class {
         }
         this.defaultColor = $(`${this.idFileList} li`).css('background-color');
         this.requestedPath = data.path;
-        //default hidden
-        this.changeFileEditButtonWhenSelected('dir');
       })
     });
   }
