@@ -134,7 +134,7 @@ async function openFile(argFilename, forceNormal = false) {
   try {
     contentJson = JSON.parse(content);
   } catch (err) {
-    //just ignore if JSON.parse failed
+    //just ignore if JSON.parse() failed
   }
   if (!contentJson.hasOwnProperty("targetFiles") || !Array.isArray(contentJson.targetFiles) || forceNormal) {
     return [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename) }];
