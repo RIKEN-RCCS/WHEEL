@@ -65,7 +65,7 @@ version2の設定ファイルの例を以下に示します。
       "targetName": "input2.txt"
     }
   ],
-  "target_param": [
+  "params": [
     {
       "keyword": "KEYWORD1",
       "min": 1,
