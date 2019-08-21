@@ -60,8 +60,10 @@ $(() => {
   let viewerInstance;
   let viewerTargetHTML = "";
 
+  //memo socketIOのインスタンスをVueのdataに入れてコンポーネント内部から通信できるようにしているが
+  //Vuexを導入してactionにemitはまとめる方が望ましい。
   let vm = new Vue({
-    vuetify: new Vuetify(),
+    vuetify: new Vuetify({theme:{dark: true}, themes:{dark:{primary: "green"}}}),
     el: '#app',
     data: {
       normal: true, //flag for normal view (true) or editor (false)
