@@ -346,9 +346,9 @@ $(() => {
 
     sio.on('showMessage', showMessage);
     sio.on('askPassword', (hostname) => {
-      const html = `<p class="dialogMessage">Input SSH connection password for ${hostname}</p><input type=password id="password" class="dialogTextbox">`;
+      const html = `<p class="dialogMessage">Enter password/phrase to connect ${hostname}</p><input type=password id="password" class="dialogTextbox">`;
       const dialogOptions = {
-        title: "SSH connecton check"
+        title: `SSH connection`
       };
       dialogWrapper('#dialog', html, dialogOptions)
         .done(() => {
