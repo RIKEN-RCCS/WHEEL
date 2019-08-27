@@ -39,6 +39,14 @@ export default function (dialogID, html, options) {
             $(this).dialog('close');
         }
     });
+    //ESC key event
+    $(dialogID).keydown(function (e) {
+        if (e.which == $.ui.keyCode.ESCAPE) {
+            def.reject();
+            $(this).dialog('close');
+        }
+        e.stopPropagation();
+    });
     if (options != null) $(dialogID).dialog('option', options);
     $(dialogID).dialog('open');
     return def.promise();

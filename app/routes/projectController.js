@@ -151,8 +151,13 @@ async function getSourceFilename(projectRootDir, component, sio) {
  * @param {string} hostname - name or kind of label for the host
  */
 function askPassword(sio, hostname) {
-  return new Promise((resolve)=>{
+  return new Promise((resolve, reject)=>{
     sio.on("password", (data)=>{
+      if(data === null){
+        const err = new Error("user canceled ssh password prompt");
+        err.reason="CANCELED";
+        reject(err);
+      }
       resolve(data);
     });
     sio.emit("askPassword", hostname);
@@ -334,7 +339,11 @@ async function onRunProject(sio, projectRootDir, cb) {
       }
     }
   } catch (err) {
-    getLogger(projectRootDir).error("fatal error occurred while prepareing phase:", err);
+    if(err.reason==="CANCELED"){
+      getLogger(projectRootDir).debug(err.message);
+    }else{
+      getLogger(projectRootDir).error("fatal error occurred while prepareing phase:", err);
+    }
     removeSsh(projectRootDir);
     removeCluster(projectRootDir);
     await updateProjectState(projectRootDir, "not-started");
@@ -792,9 +801,6 @@ function registerListeners(socket, projectRootDir) {
     getLogger(projectRootDir).trace("projectState: onProjectStateChanged", projectJson.state);
     emit("projectJson", projectJson);
     emit("projectState", projectJson.state);
-    setTimeout(()=>{
-      once(projectRootDir, "projectStateChanged", onProjectStateChange);
-    }, interval);
   }
 
   //event listener for task state changed
@@ -831,7 +837,7 @@ function registerListeners(socket, projectRootDir) {
     emitLongArray(emit, "results", results);
   }
 
-  once(projectRootDir, "projectStateChanged", onProjectStateChange);
+  on(projectRootDir, "projectStateChanged", onProjectStateChange);
   once(projectRootDir, "taskStateChanged", onTaskStateChanged);
   once(projectRootDir, "componentStateChanged", onComponentStateChanged);
   on(projectRootDir, "resultFilesReady", onResultFilesReady);
