@@ -187,12 +187,15 @@
                 <label for="scriptInputField" id="propertyScript">Script</label>
               </div>
               <div>
-                <select name="script" v-if="node.hasOwnProperty('script')" v-model="node.script" id="scriptSelectField"
-                  v-on:change="updateProperty('script')">
-                  <option v-if="node.hasOwnProperty('script') && node.script !== null">{{ node.script }}</option>
-                  <option v-for="v in fileList" v-if="v.type === 'file' && v.name !== node.script" v-bind:value="v.name"
-                    v-bind:key="v.name">{{ v.name }}</option>
-                </select>
+                <template v-if="node.hasOwnProperty('script')">
+                  <select name="script" v-model="node.script" id="scriptSelectField"
+                    v-on:change="updateProperty('script')">
+                    <option v-if="nodeScript !== null">{{ nodeScript }}</option>
+                    <option v-for="file in fileList" v-if="file.type === 'file' && file.name !== nodeScript"
+                      v-bind:value="file.name" v-bind:key="file.name">{{ file.name }}
+                    </option>
+                  </select>
+                </template>
               </div>
               <div v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
                 <label id="propertyInputFiles">InputFiles</label>

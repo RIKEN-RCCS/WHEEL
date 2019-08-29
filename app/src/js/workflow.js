@@ -70,6 +70,7 @@ $(() => {
       hostList: [],
       queueList: [],
       fileList: [],
+      nodeScript: null,
       names: [],
       conditionInputType: '1',
       retryConditionInputType: '1'
@@ -214,7 +215,6 @@ $(() => {
           const parentDirPath = `${currentWorkDir[1] === ":" ? currentWorkDir.slice(2) : currentWorkDir}`;
           // jupyterURL ends with "/"
           const url = `${jupyterURL}tree${parentDirPath}/${this.node.name}?token=${jupyterToken}`;
-          console.log(url);
           window.open(url);
         }
       },
@@ -298,8 +298,17 @@ $(() => {
       $('#componentPath').html(fileListDirPath);
       dirPathStack.pop();
     }
+    if (vm.node.type === 'task') {
+      vm.nodeScript = vm.node.script;
+    }
     if (dirPathStack.length === 0) {
       $('#dirBackButton').css("display", "none");
+    }
+  });
+
+  $(document).on('dblclick', '.snd', function () {
+    if (vm.node.type === 'task') {
+      vm.nodeScript = vm.node.script;
     }
   });
 
@@ -355,7 +364,7 @@ $(() => {
           const password = $('#password').val();
           sio.emit('password', password);
         })
-        .fail(()=>{
+        .fail(() => {
           sio.emit('password', null);
         });
     });
@@ -500,7 +509,6 @@ $(() => {
         $('#pause_button').attr("src", "/image/btn_pause_d.png");
         $('#run_button').attr("src", "/image/btn_play_n.png");
       } else if (projectJson.state === 'finished') {
-        console.log(nodePath);
         if (nodePath !== '') {
           fb.request('getFileList', nodePath, null);
         }
@@ -950,7 +958,7 @@ $(() => {
         let nodeType = target.type;
         let nodeIconPath = config.node_icon[nodeType];
         $('#img_node_type').attr("src", nodeIconPath);
-
+        vm.nodeScript = target.script;
         if (nodeType === 'task') {
           sio.emit('getHostList', true);
         }
@@ -1140,7 +1148,6 @@ $(() => {
 
   let maxancestorsLength = 0;
   function drawTaskStateList(taskStateList) {
-    console.log(taskStateList);
     for (let i = 0; i < taskStateList.length; i++) {
       let targetElement = document.getElementById("project_table_body");
       let taskIdTemp = "";
