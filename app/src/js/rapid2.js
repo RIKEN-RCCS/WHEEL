@@ -9,7 +9,7 @@ Vue.component("new-rapid", {
             <v-tabs v-model="activeTab" @change="changeTab">
               <v-tab v-for="(file,index) of files" :key="file.order">
                 {{ file.filename }}
-                <v-btn small icon @click.stop="closeTab(index)">
+                <v-btn small icon @click.stop="closeTab(index)" v-if="! isTargetFile(file)">
                   <v-icon small>close</v-icon>
                 </v-btn>
               </v-tab>
@@ -36,153 +36,140 @@ Vue.component("new-rapid", {
         </v-layout>
 
         <v-layout split id="parameter" column>
-            <v-card v-if="newParamInput">
-              <v-card-title> <v-select outlined v-model="newParam.type" :items="['min-max-step', 'list','files']"></v-select></v-card-title>
-              <v-card-text>
-                <v-layout v-if="newParam.type==='min-max-step'">
-                  <v-text-field v-model="newParam.min" type="number" hint="min" persistent-hint></v-text-field>
-                  <v-text-field v-model="newParam.max" type="number" hint="max" persistent-hint></v-text-field>
-                  <v-text-field v-model="newParam.step" type="number" hint="step" persistent-hint></v-text-field>
-                </v-layout>
-                <div v-if="newParam.type==='list'">
-                placeholder for list
-                  <v-data-table
-                  :headers="['item']"
-                  :items="newParamListTable"
-                  >
-                  <template slot="items" slot-scope="props">
-                  <td>
-                  <v-edit-dialog
-                  :return-value.sync="props.item.item"
-                  lazy
-                  >
-                  {{ props.item.item }}
-                  <v-text-field
-                  slot="input"
-                  v-model="props.item.item"
-                  label="edit"
-                  single-line
-                  >
-                  </v-text-field>
-                  </v-edit-dialog>
-                  </td>
-                  </template>
-                  </v-data-table>
-                </div>
-                <div v-if="newParam.type==='files'">
-                placeholder for file
-                </div>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn @click=addParam><v-icon>save</v-icon>save</v-btn>
-                <v-btn @click="resetParamInputForm();newParamInput=false"><v-icon>cancel</v-icon>cancel</v-btn>
-              </v-card-actions>
-            </v-card>
+          <v-card v-if="newParamInput">
+            <v-card-title> <v-select outlined v-model="newParam.type" :items="['min-max-step', 'list','files']"></v-select></v-card-title>
+            <v-card-text>
+              <v-layout v-if="newParam.type==='min-max-step'">
+                <v-text-field v-model="newParam.min" type="number" hint="min" persistent-hint></v-text-field>
+                <v-text-field v-model="newParam.max" type="number" hint="max" persistent-hint></v-text-field>
+                <v-text-field v-model="newParam.step" type="number" hint="step" persistent-hint></v-text-field>
+              </v-layout>
+              <div v-if="newParam.type==='list'">
+              placeholder for list
+                <v-data-table
+                dense
+                :headers="['item']"
+                :items="newParamListTable"
+                >
+                <template slot="items" slot-scope="props">
+                <td>
+                <v-edit-dialog
+                :return-value.sync="props.item.item"
+                lazy
+                >
+                {{ props.item.item }}
+                <v-text-field
+                slot="input"
+                v-model="props.item.item"
+                label="edit"
+                single-line
+                >
+                </v-text-field>
+                </v-edit-dialog>
+                </td>
+                </template>
+                </v-data-table>
+              </div>
+              <div v-if="newParam.type==='files'">
+              placeholder for file
+              </div>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn @click=addParam><v-icon>save</v-icon>save</v-btn>
+              <v-btn @click="resetParamInputForm();newParamInput=false"><v-icon>cancel</v-icon>cancel</v-btn>
+            </v-card-actions>
+          </v-card>
+
+          <v-card>
+            <v-toolbar>
+              <v-toolbar-title> targetFiles </v-toolbar-title>
+              <div class="flex-grow-1"></div>
+              <v-btn @click="openDialog('targetFile')" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
+            </v-toolbar>
             <v-data-table
-              :headers="[{value: 'keyword',sortable: true},{ text: 'Actions', value: 'action', sortable: false },]"
-              :items="parameterSetting.params"
+               dense
+              :headers="[ {value: 'targetName', text: 'filename', sortable: true}, { text: 'Actions', value: 'action', sortable: false }]"
+              :items="parameterSetting.targetFiles"
               :items-per-page="5"
-              hide-default-header
+              :footer-props="tableFooterProps"
             >
-            <template v-slot:top>
-            <v-layout>
-              <p>parameters</p>
+              <template v-slot:item.action="{ item }">
+                <v-icon small class="mr-2" @click="openDialog('targetFile', item)" > edit </v-icon>
+                <v-icon small @click="deleteItem(item,parameterSetting.targetFiles)" > delete </v-icon>
+              </template>
+            </v-data-table>
+          </v-card>
+
+          <v-card>
+            <v-toolbar>
+              <v-toolbar-title> parameters </v-toolbar-title>
+              <div class="flex-grow-1"></div>
               <v-text-field outlined readonly v-model="newParam.keyword"></v-text-field>
               <v-btn @click="resetParamInputForm();newParamInput=true" class="text-capitalize">
-                <v-icon>create</v-icon>
-                create new parameter setting
+                <v-icon>add</v-icon>
+                add new parameter
               </v-btn>
-            </v-layout>
-            </template>
-            <template v-slot:item.action="{ item }">
-              <v-icon
-                small
-                class="mr-2"
-                @click="editParam(item)"
-              >
-                edit
-              </v-icon>
-              <v-icon
-                small
-                @click="deleteParam(item)"
-              >
-                delete
-              </v-icon>
-            </template>
-            </v-data-table>
-            <v-divider></v-divider>
+            </v-toolbar>
             <v-data-table
+               dense
+              :headers="[{value: 'keyword',sortable: true},{ text: 'Actions', value: 'action', sortable: false }]"
+              :items="parameterSetting.params"
+              :items-per-page="5"
+              :footer-props="tableFooterProps"
+            >
+              <template v-slot:item.action="{ item }">
+                <v-icon small class="mr-2" @click="editParam(item)" > edit </v-icon>
+                <v-icon small @click="deleteItem(item,parameterSetting.params)" > delete </v-icon>
+              </template>
+            </v-data-table>
+          </v-card>
+
+          <v-card>
+            <v-toolbar>
+              <v-toolbar-title> scatter </v-toolbar-title>
+              <div class="flex-grow-1"></div>
+              <v-btn @click="filenameDialog=True" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
+            </v-toolbar>
+            <v-data-table
+               dense
               :headers="[ {value: 'dstName', text: 'dstName', sortable: true},
                           {value: 'srcName', text: 'srcName', sortable: true},
                           {value: 'dstNode', text: 'dstNode', sortable: true},
                           {value: 'action',  text: 'Actions',  sortable: false },]"
               :items="parameterSetting.scatter"
               :items-per-page="5"
+              :footer-props="tableFooterProps"
             >
-            <template v-slot:top>
-            <v-banner single-line>
-              scatter
-              <template v-slot:actions>
-                <v-btn @click="resetParamInputForm();newParamInput=true" class="text-capitalize">
-                  <v-icon>create</v-icon>
-                  create new
-                </v-btn>
+              <template v-slot:item.action="{ item }">
+                <v-icon small class="mr-2" @click="editParam(item)" > edit </v-icon>
+                <v-icon small @click="deleteItem(item,parameterSetting.scatter)" > delete </v-icon>
               </template>
-            </v-banner single-line>
-            </template>
-            <template v-slot:item.action="{ item }">
-              <v-icon
-                small
-                class="mr-2"
-                @click="editParam(item)"
-              >
-                edit
-              </v-icon>
-              <v-icon
-                small
-                @click="deleteParam(item)"
-              >
-                delete
-              </v-icon>
-            </template>
             </v-data-table>
-            <v-divider></v-divider>
+          </v-card>
+
+          <v-card>
+            <v-toolbar>
+              <v-toolbar-title> gather </v-toolbar-title>
+              <div class="flex-grow-1"></div>
+              <v-btn @click="filenameDialog=True" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
+            </v-toolbar>
             <v-data-table
+               dense
               :headers="[ {value: 'srcName', text: 'srcName', sortable: true},
                           {value: 'dstName', text: 'dstName', sortable: true},
                           {value: 'srcNode', text: 'srcNode', sortable: true},
                           {value: 'action',  text: 'Actions',  sortable: false },]"
               :items="parameterSetting.gather"
               :items-per-page="5"
+              :footer-props="tableFooterProps"
             >
-            <template v-slot:top>
-            <v-banner single-line>
-              gather
-              <template v-slot:actions>
-                <v-btn @click="resetParamInputForm();newParamInput=true" class="text-capitalize">
-                  <v-icon>create</v-icon>
-                  create new
-                </v-btn>
+              <template v-slot:item.action="{ item }">
+                <v-icon small class="mr-2" @click="editParam(item)" > edit </v-icon>
+                <v-icon small @click="deleteItem(item, parameterSetting.gather)" > delete </v-icon>
               </template>
-            </v-banner single-line>
-            </template>
-            <template v-slot:item.action="{ item }">
-              <v-icon
-                small
-                class="mr-2"
-                @click="editParam(item)"
-              >
-                edit
-              </v-icon>
-              <v-icon
-                small
-                @click="deleteParam(item)"
-              >
-                delete
-              </v-icon>
-            </template>
             </v-data-table>
+          </v-card>
         </v-layout>
       </v-container>
     </v-app>
@@ -212,7 +199,14 @@ Vue.component("new-rapid", {
         gather:[]
       },
       parameterSettingFilename: "parameterSetting.json", //default new param setting filename
-      parameterSettingDirname: null
+      parameterSettingDirname: null,
+      tableFooterProps: {
+        showFirstLastPage: true,
+        firstIcon: 'fast_rewind',
+        lastIcon: 'fast_forward',
+        prevIcon: 'navigate_before',
+        nextIcon: 'navigate_next'
+      }
     };
   },
   computed:{
@@ -221,13 +215,27 @@ Vue.component("new-rapid", {
     }
   },
   methods: {
-    editParam(item){
+    openDialog(kind, item){
+      if(typeof item === "undefined"){
+        item={};
+      }
+      if(kind === "targetFile"){
+        open
+      }
     },
-    deleteParam(item){
-      const targetIndex = parameterSetting.params.findIndex((e)=>{
-        return e===item;
-      });
-      parameterSetting.params.splice(targetIndex,1);
+    deleteItem(item, data, match){
+      console.log("deleteItem called",item,data,match);
+      if(typeof match !== "function"){
+        match = (e)=>{return e===item}
+      }
+      const targetIndex = data.findIndex(match);
+      if(targetIndex === -1){
+        return
+      }
+      data.splice(targetIndex,1);
+    },
+    isTargetFile(file){
+      return ! this.parameterSetting.targetFiles.find((e)=>{e.filename == file.filename && e.dirname === file.dirname});
     },
     resetParamInputForm(){
       this.newParam.type="min-max-step";
