@@ -4,6 +4,8 @@ const fs = require("fs-extra");
 const path = require("path");
 const Mode = require("stat-mode");
 const { gitAdd } = require("./gitOperator");
+const { projectJsonFilename } = require("../db/db");
+
 
 /**
  * read Json file until get some valid JSON data
@@ -112,11 +114,12 @@ async function deliverFile(src, dst) {
 
 /**
  * open file or target Files which is listed in parameter setting file
+ * @param {string} projectRootDir -
  * @param {string} argFilename - target file's name
  * @param {boolean} forceNormal - if true absFilename is not treated as parameter setting file
  * @returns {File[]} - array of file object which is read
  */
-async function openFile(argFilename, forceNormal = false) {
+async function openFile(projectRootDir, argFilename, forceNormal = false) {
   const absFilename = path.resolve(argFilename);
   let content;
   try {
@@ -139,21 +142,44 @@ async function openFile(argFilename, forceNormal = false) {
   if (!contentJson.hasOwnProperty("targetFiles") || !Array.isArray(contentJson.targetFiles) || forceNormal) {
     return [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename) }];
   }
-  //return all targetFiles
+
+  //resolve targetFile's path
   const rt = [{ content, filename: path.basename(absFilename), dirname: path.dirname(absFilename), isParameterSettingFile: true }];
   const dirname = path.dirname(absFilename);
-  const contents = await Promise.all(contentJson.targetFiles.map((targetFile)=>{
-    return fs.readFile(path.resolve(dirname, targetFile));
+  const absTargetFiles = contentJson.targetFiles
+    .map((targetFile)=>{
+      if (typeof targetFile === "string") {
+        return path.resolve(dirname, targetFile);
+      }
+      if (!targetFile.hasOwnProperty("targetName")) {
+        return null;
+      }
+      if (targetFile.hasOwnProperty("targetNode")) {
+      //to avoid circurler dependency, do not use getComponentDir in projectFilesOperator.js
+        const ID = targetFile.targetNode;
+        const projectJson = JSON.parse(fs.readFileSync(path.resolve(projectRootDir, projectJsonFilename)).toString());
+        const relativePath = projectJson.componentPath[ID];
+        return path.resolve(projectRootDir, relativePath, targetFile.targetName);
+      }
+      return null;
+    })
+    .filter((e)=>{
+      return e !== null;
+    });
+
+  //read all targetFiles
+  const contents = await Promise.all(absTargetFiles.map((targetFile)=>{
+    return fs.readFile(targetFile);
   }));
 
-  rt.push(...contentJson.targetFiles.map((targetFile, i)=>{
-    const absTargetFile = path.resolve(dirname, targetFile);
-    return {
-      content: contents[i].toString(),
-      dirname: path.dirname(absTargetFile),
-      filename: path.basename(absTargetFile)
-    };
-  }));
+  rt.push(...absTargetFiles
+    .map((targetFile, i)=>{
+      return {
+        content: contents[i].toString(),
+        dirname: path.dirname(targetFile),
+        filename: path.basename(targetFile)
+      };
+    }));
 
   return rt;
 }

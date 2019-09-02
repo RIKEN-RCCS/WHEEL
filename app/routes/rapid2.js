@@ -11,7 +11,7 @@ async function onOpenFile(emit, projectRootDir, filename, dirname, forceNormal, 
   }
 
   try {
-    const files = await openFile(path.resolve(dirname, filename), forceNormal);
+    const files = await openFile(projectRootDir, path.resolve(dirname, filename), forceNormal);
     for (const file of files) {
       if (file.isParameterSettingFile) {
         emit("parameterSettingFile", file);
