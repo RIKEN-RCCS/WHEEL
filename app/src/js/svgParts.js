@@ -221,19 +221,13 @@ function collisionDetection(svg, counterpart, x, y, hitScale) {
  * @param hitPlug selector of frame 
  * @param plug selector of output plug (e.g. '.receptorFrame')
  */
-function addInputFile(svg, plug, hitIndex, hitPlug, sio) {
+function autoAddFilePreCheck(svg, hitPlug, taskNodeID, taskBoxNode, filename) {
+  // hitPlug check
   if (hitPlug == undefined || hitPlug.parent() == undefined) return [-1, -1];
-
-  // add Input file
-  const box = hitPlug.parent();
-  const taskBoxNode = hitPlug.parent().parent();
-  const taskNodeID = taskBoxNode.data('ID');
-
-  const filename = plug.data('name');
-
-  // 重複検査
+  // task type check (expect "source" task)
+  if (taskBoxNode.data('type') === "source") return [-1, -1];
+  // deplicate check
   let addInputPlug = null;
-
   let receptorPlugs = svg.select(".receptorPlug");
   receptorPlugs.each(function (i, v) {
     let index = v[i].parent().node.instance.data('ID');
@@ -242,21 +236,41 @@ function addInputFile(svg, plug, hitIndex, hitPlug, sio) {
       return true;  // 処理中断
     }
   });
+  // exist same file name -> addInputPlug : task ID || else -> addInputPlug : null 
+  return [taskNodeID, addInputPlug];
+}
 
-  // 既にファイルが存在するので、追加説にコネクトのみ処理
-  if (addInputPlug !== null) return [taskNodeID, addInputPlug];
+function addInputFile(svg, plug, hitIndex, hitPlug, sio) {
+  if (hitPlug == undefined || hitPlug.parent() == undefined) return [-1, -1];
 
-  // 追加先sourceは不可
-  if (taskBoxNode.data('type') === "source") {
-    return [-1, -1];
-  }
+  // add Input file
+  const taskBoxNode = hitPlug.parent().parent();
+  const taskNodeID = taskBoxNode.data('ID');
+  const filename = plug.data('name');
+  const box = hitPlug.parent();
+  let addInputPlug = null;
 
-  sio.emit('addInputFile', taskNodeID, filename, (result) => {
-    if (result !== true) return;
-  });
+  // sio.emit('addInputFile', taskNodeID, filename, (result) => {
+  //   console.log(result);
+  //   if (result !== true) return;
+  //   if (result) {
+  //   addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
+  //   addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
+  //   plug.parent().add(addInputPlug);
+  //     console.log(taskNodeID);
+  //     console.log(addInputPlug);
 
+  //     if (addInputPlug !== null) {
+  //       return [taskNodeID, addInputPlug];
+  //     }
+  //   } else {
+  //     // 外れの時は -1を二つ(indexとplug)返す
+  //     return [-1, -1];
+  //   }
+  // });
   // 接続を生成するにはreceptorPlugが必要
   // あとで再作成されるため、ここで任意の位置に一度生成して返答する。
+  console.log("after callback");
   addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
   addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
   plug.parent().add(addInputPlug);
@@ -266,6 +280,12 @@ function addInputFile(svg, plug, hitIndex, hitPlug, sio) {
   }
   // 外れの時は -1を二つ(indexとplug)返す
   return [-1, -1];
+}
+
+function initializeCableInfo(cable, plug, clone) {
+  cable.remove();
+  plug.remove();
+  return clone;
 }
 
 export class SvgCable {
@@ -1065,29 +1085,71 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
         const dragEndPosX = cable.endX;
         const dragEndPosY = cable.endY;
         let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, dragEndPosX, dragEndPosY, config.box_appearance.plug_drop_area_scale);
-        if (hitIndex === -1 && counterpart === ".receptorPlug") {
-          [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
-
-          if (hitIndex !== -1) {
-            // inputfileへの追加とコネクション
-            [hitIndex, hitPlug] = addInputFile(svg, plug, hitIndex, hitPlug, sio);
-          }
-        }
-
+        // recepter, upperとの衝突なし
         if (hitIndex === -1) {
-          cable.remove();
-          plug.remove();
-          plug = clone
-          console.log("not connect");
-          return;
+          // recepterの場合、titleFrameとの衝突を確認し、自動追加対象かチェックする
+          if (counterpart === ".receptorPlug") {
+            [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
+            // titleFrameとの衝突あり
+            if (hitIndex !== -1) {
+              const box = hitPlug.parent();
+              const taskBoxNode = box.parent();
+              const taskNodeID = taskBoxNode.data('ID');
+              const filename = plug.data('name');
+              [hitIndex, hitPlug] = autoAddFilePreCheck(svg, hitPlug, taskNodeID, taskBoxNode, filename);
+              // 同名ファイルが存在しないため、recepterを作成する
+              if (hitPlug === null) {
+                sio.emit('addInputFile', taskNodeID, filename, (result) => {
+                  if (result) {
+                    let addInputPlug = null;
+                    addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
+                    addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
+                    plug.parent().add(addInputPlug);
+                    if (addInputPlug !== null) {
+                      [hitIndex, hitPlug] = [taskNodeID, addInputPlug];
+                    }
+                    const myIndex = plug.parent().node.instance.data('ID');
+                    if (hitIndex !== myIndex) {
+                      callback(myIndex, hitIndex, plug, hitPlug);
+                    }
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("connect:auto add inputfile");
+                  } else {
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("not connect:addInputFileAPI false");
+                    return;
+                  }
+                });
+              } else {
+                //同名ファイルが存在する場合、線をつなぐ
+                const myIndex = plug.parent().node.instance.data('ID');
+                if (hitIndex !== myIndex) {
+                  callback(myIndex, hitIndex, plug, hitPlug);
+                }
+                plug = initializeCableInfo(cable, plug, clone);
+                console.log("connect:exsit same name");
+              }
+            } else {
+              // titleFrameにhitしない場合
+              plug = initializeCableInfo(cable, plug, clone);
+              console.log("not connect:doesn't hit titleFrame");
+              return;
+            }
+          } else {
+            // 接続対象がupper
+            plug = initializeCableInfo(cable, plug, clone);
+            console.log("not connect:connect target 'upper'");
+            return;
+          }
+        } else {
+          // 通常のファイル接続の場合
+          const myIndex = plug.parent().node.instance.data('ID');
+          if (hitIndex !== myIndex) {
+            callback(myIndex, hitIndex, plug, hitPlug);
+          }
+          plug = initializeCableInfo(cable, plug, clone);
+          console.log("normal connect");
         }
-        const myIndex = plug.parent().node.instance.data('ID');
-        if (hitIndex !== myIndex) {
-          callback(myIndex, hitIndex, plug, hitPlug);
-        }
-        cable.remove();
-        plug.remove();
-        plug = clone;
       } else {
         e.preventDefault();
       }
@@ -1138,27 +1200,71 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
         const dragEndPosX = cable.endX;
         const dragEndPosY = cable.endY;
         let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, dragEndPosX, dragEndPosY, config.box_appearance.plug_drop_area_scale);
-        // ここに追加する必要があるが工夫が必要
-        if (hitIndex === -1 && counterpart === ".receptorPlug") {
-          [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
-          if (hitIndex !== -1) {
-            // inputfileへの追加とコネクション
-            [hitIndex, hitPlug] = addInputFile(svg, plug, hitIndex, hitPlug, sio);
-          }
-        }
+        // recepter, upperとの衝突なし
         if (hitIndex === -1) {
-          cable.remove();
-          plug.remove();
-          plug = clone
-          return;
+          // recepterの場合、titleFrameとの衝突を確認し、自動追加対象かチェックする
+          if (counterpart === ".receptorPlug") {
+            [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
+            // titleFrameとの衝突あり
+            if (hitIndex !== -1) {
+              const box = hitPlug.parent();
+              const taskBoxNode = box.parent();
+              const taskNodeID = taskBoxNode.data('ID');
+              const filename = plug.data('name');
+              [hitIndex, hitPlug] = autoAddFilePreCheck(svg, hitPlug, taskNodeID, taskBoxNode, filename);
+              // 同名ファイルが存在しないため、recepterを作成する
+              if (hitPlug === null) {
+                sio.emit('addInputFile', taskNodeID, filename, (result) => {
+                  if (result) {
+                    let addInputPlug = null;
+                    addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
+                    addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
+                    plug.parent().add(addInputPlug);
+                    if (addInputPlug !== null) {
+                      [hitIndex, hitPlug] = [taskNodeID, addInputPlug];
+                    }
+                    const myIndex = plug.parent().node.instance.data('ID');
+                    if (hitIndex !== myIndex) {
+                      callback(myIndex, hitIndex, plug, hitPlug);
+                    }
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("connect:auto add inputfile");
+                  } else {
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("not connect:addInputFileAPI false");
+                    return;
+                  }
+                });
+              } else {
+                //同名ファイルが存在する場合、線をつなぐ
+                const myIndex = "parent";
+                if (hitIndex !== myIndex) {
+                  callback(myIndex, hitIndex, plug, hitPlug);
+                }
+                plug = initializeCableInfo(cable, plug, clone);
+                console.log("connect:exsit same name");
+              }
+            } else {
+              // titleFrameにhitしない場合
+              plug = initializeCableInfo(cable, plug, clone);
+              console.log("not connect:doesn't hit titleFrame");
+              return;
+            }
+          } else {
+            // 接続対象がupper
+            plug = initializeCableInfo(cable, plug, clone);
+            console.log("not connect:connect target 'upper'");
+            return;
+          }
+        } else {
+          // 通常のファイル接続の場合
+          const myIndex = plug.parent().node.instance.data('ID');
+          if (hitIndex !== myIndex) {
+            callback(myIndex, hitIndex, plug, hitPlug);
+          }
+          plug = initializeCableInfo(cable, plug, clone);
+          console.log("normal connect");
         }
-        const myIndex = "parent";
-        if (hitIndex !== myIndex) {
-          callback(myIndex, hitIndex, plug, hitPlug);
-        }
-        cable.remove();
-        plug.remove();
-        plug = clone;
       } else {
         e.preventDefault();
       }
