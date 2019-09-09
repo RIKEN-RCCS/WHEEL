@@ -85,7 +85,7 @@ Vue.component("new-rapid", {
             <v-toolbar>
               <v-toolbar-title> targetFiles </v-toolbar-title>
               <div class="flex-grow-1"></div>
-              <v-btn @click="openDialog('targetFile')" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
+              <v-btn @click="targetFileDialog=true" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
             </v-toolbar>
             <v-data-table
                dense
@@ -95,11 +95,30 @@ Vue.component("new-rapid", {
               :footer-props="tableFooterProps"
             >
               <template v-slot:item.action="{ item }">
-                <v-icon small class="mr-2" @click="openDialog('targetFile', item)" > edit </v-icon>
+                <v-icon small class="mr-2" @click="currentItem=item;targetFileDialog=true;" > edit </v-icon>
                 <v-icon small @click="deleteItem(item,parameterSetting.targetFiles)" > delete </v-icon>
               </template>
             </v-data-table>
           </v-card>
+          <v-dialog v-model="targetFileDialog" persistent>
+            <v-card>
+              <v-card-title>
+                <span class="headline">target filename</span>
+              </v-card-title>
+              <v-card-text>
+                <v-text-field
+                v-model.trim.lazy="newTargetFilename"
+                :label="'filename'"
+                >
+                </v-text-field>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn flat @click=commitTargetFileChange>OK</v-btn>
+                <v-btn flat @click="newTargetFilename='';targetFileDialog=false;">Cancel</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
 
           <v-card>
             <v-toolbar>
@@ -176,6 +195,9 @@ Vue.component("new-rapid", {
 `,
   data() {
     return {
+      targetFileDialog: false,
+      newTargetFilename: "",
+      currentItem: null,
       activeTab: 0,
       newFilePrompt: false,
       newFilename: null,
@@ -215,13 +237,50 @@ Vue.component("new-rapid", {
     }
   },
   methods: {
-    openDialog(kind, item){
-      if(typeof item === "undefined"){
-        item={};
+    commitTargetFileChange(){
+      if(this.currentItem === null ){
+        this.addNewTargetFile();
+      }else{
+        this.renameTargetFile(this.currentItem);
       }
-      if(kind === "targetFile"){
-        open
+      this.targetFileDialog=false;
+    },
+    renameTargetFile(item){
+      console.log("DEBUG componentPath=",this.$root.$data.componentPath);
+      console.log("DEBUG old item=",item);
+      const targetInTargetFiles = this.parameterSetting.targetFiles.find((e)=>{
+        console.log("DEBUG targetFile=", e);
+        if( typeof item.targetNode === "undefined" || item.targetNode === e.targetNode){
+          return e.targetName === item.targetName;
+        }
+        return false;
+      });
+
+      const targetInTab = this.files.find((e)=>{
+        return e.targetName === item.filename;
+      });
+      targetInTab.filename = this.newTargetFilename;
+    },
+    addNewTargetFile(){
+      const file={
+        filename: this.newTargetFilename,
+        dirname: this.$root.$data.fb.getRequestedPath(),
+        content: ""
       }
+
+      //just ignore if target file is already exists
+      if(this.isTargetFile(file)){
+      this.targetFileDialog=false;
+        return;
+      }
+
+      //add new file only in client side
+      this.files.push(file);
+      //TODO targetNodeをユーザに指定させる
+      this.parameterSetting.targetFiles.push({
+        targetName: this.newTargetFilename
+      });
+      this.targetFileDialog=false;
     },
     deleteItem(item, data, match){
       console.log("deleteItem called",item,data,match);
@@ -235,7 +294,19 @@ Vue.component("new-rapid", {
       data.splice(targetIndex,1);
     },
     isTargetFile(file){
-      return ! this.parameterSetting.targetFiles.find((e)=>{e.filename == file.filename && e.dirname === file.dirname});
+      const currentComponentID=this.$root.$data.node.ID;
+      const componentPath=this.$root.$data.componentPath;
+      const currentComponentDir=componentPath[currentComponentID];
+      const dirnamePrefix=this.$root.$data.rootDir+this.$root.$data.pathSep
+      return this.parameterSetting.targetFiles.findIndex((e)=>{
+        let dirname = e.hasOwnProperty("targetNode") ? componentPath[e.targetNode] : currentComponentDir;
+        dirname=dirname.replace(/^\.\//,""); //remove prefix
+        let fullPath =dirnamePrefix+dirname+this.$root.$data.pathSep+e.targetName;
+        if(this.$root.$data.pathSep==="\\"){
+          fullPath=fullPath.replace("/",this.$root.$data.pathSep);
+        }
+        return fullPath===file.dirname+this.$root.$data.pathSep+file.filename;
+      }) !== -1;
     },
     resetParamInputForm(){
       this.newParam.type="min-max-step";
@@ -265,7 +336,6 @@ Vue.component("new-rapid", {
       const currentDir = this.$root.$data.fb.getRequestedPath();
       console.log("DEBUG: open new tab", this.newFilename, currentDir);
       const existingTab = this.files.findIndex((e)=>{
-        console.log(e);
         return e.filename === this.newFilename && e.dirname === currentDir
       });
       if(existingTab === -1){
@@ -324,10 +394,16 @@ Vue.component("new-rapid", {
         console.log("ERROR: illegal parameter setting file data",file);
         return
       }
-      this.parameterSetting=JSON.parse(file.content);
+      const parameterSetting=JSON.parse(file.content);
+      parameterSetting.targetFiles=parameterSetting.targetFiles.map((e)=>{
+        if(typeof e === "string"){
+          return {targetName: e}
+        }
+        return e;
+      });
+      this.parameterSetting=parameterSetting;
       this.parameterSettingFilename=file.filename;
       this.parameterSettingDirname=file.dirname;
-      console.log(this.parameterSetting);
     });
     this.$root.$data.sio.on("file", (file)=>{
       console.log("DEBUG: file recieved",file.filename);

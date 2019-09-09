@@ -79,7 +79,10 @@ $(() => {
       conditionInputType: '1',
       retryConditionInputType: '1',
       fb:null,
-      sio
+      sio,
+      componentPath,
+      rootDir,
+      pathSep
     },
     methods: {
       addInputFile: function () {
@@ -494,6 +497,7 @@ $(() => {
         return projectJson.componentPath[key] === './'
       });
       componentPath = projectJson.componentPath;
+      vm.componentPath = componentPath;
       $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);
