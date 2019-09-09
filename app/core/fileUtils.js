@@ -155,13 +155,13 @@ async function openFile(projectRootDir, argFilename, forceNormal = false) {
         return null;
       }
       if (targetFile.hasOwnProperty("targetNode")) {
-      //to avoid circurler dependency, do not use getComponentDir in projectFilesOperator.js
+        //to avoid circurler dependency, do not use getComponentDir in projectFilesOperator.js
         const ID = targetFile.targetNode;
         const projectJson = JSON.parse(fs.readFileSync(path.resolve(projectRootDir, projectJsonFilename)).toString());
         const relativePath = projectJson.componentPath[ID];
         return path.resolve(projectRootDir, relativePath, targetFile.targetName);
       }
-      return null;
+      return path.resolve(dirname, targetFile.targetName);
     })
     .filter((e)=>{
       return e !== null;
