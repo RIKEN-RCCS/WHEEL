@@ -1,6 +1,16 @@
+"use strict";
 import Split from "split.js";
+import targetFiles from "./targetFiles.js";
+import gatherScatter from "./gatherScatter.js";
+import parameter from "./parameter.js";
+import {isTargetFile} from "./rapid2Util.js";
 
 Vue.component("new-rapid", {
+  components:{
+    targetFiles,
+    gatherScatter,
+    parameter
+  },
   template: `
     <v-app>
       <v-container fill-height fluid>
@@ -36,172 +46,39 @@ Vue.component("new-rapid", {
         </v-layout>
 
         <v-layout split id="parameter" column>
-          <v-card v-if="newParamInput">
-            <v-card-title> <v-select outlined v-model="newParam.type" :items="['min-max-step', 'list','files']"></v-select></v-card-title>
-            <v-card-text>
-              <v-layout v-if="newParam.type==='min-max-step'">
-                <v-text-field v-model="newParam.min" type="number" hint="min" persistent-hint></v-text-field>
-                <v-text-field v-model="newParam.max" type="number" hint="max" persistent-hint></v-text-field>
-                <v-text-field v-model="newParam.step" type="number" hint="step" persistent-hint></v-text-field>
-              </v-layout>
-              <div v-if="newParam.type==='list'">
-              placeholder for list
-                <v-data-table
-                dense
-                :headers="['item']"
-                :items="newParamListTable"
-                >
-                <template slot="items" slot-scope="props">
-                <td>
-                <v-edit-dialog
-                :return-value.sync="props.item.item"
-                lazy
-                >
-                {{ props.item.item }}
-                <v-text-field
-                slot="input"
-                v-model="props.item.item"
-                label="edit"
-                single-line
-                >
-                </v-text-field>
-                </v-edit-dialog>
-                </td>
-                </template>
-                </v-data-table>
-              </div>
-              <div v-if="newParam.type==='files'">
-              placeholder for file
-              </div>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn @click=addParam><v-icon>save</v-icon>save</v-btn>
-              <v-btn @click="resetParamInputForm();newParamInput=false"><v-icon>cancel</v-icon>cancel</v-btn>
-            </v-card-actions>
-          </v-card>
+          <target-files
+            :files="files"
+            :targetFiles="parameterSetting.targetFiles"
+          :lowerLevelComponents="lowerLevelComponents"
+          ></target-files>
+          <parameter
+          :newParam="newParam"
+          :parameterSetting="parameterSetting"
+          ></parameter>
 
-          <v-card>
-            <v-toolbar>
-              <v-toolbar-title> targetFiles </v-toolbar-title>
-              <div class="flex-grow-1"></div>
-              <v-btn @click="targetFileDialog=true" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
-            </v-toolbar>
-            <v-data-table
-               dense
-              :headers="[ {value: 'targetName', text: 'filename', sortable: true}, { text: 'Actions', value: 'action', sortable: false }]"
-              :items="parameterSetting.targetFiles"
-              :items-per-page="5"
-              :footer-props="tableFooterProps"
-            >
-              <template v-slot:item.action="{ item }">
-                <v-icon small class="mr-2" @click="currentItem=item;targetFileDialog=true;" > edit </v-icon>
-                <v-icon small @click="deleteItem(item,parameterSetting.targetFiles)" > delete </v-icon>
-              </template>
-            </v-data-table>
-          </v-card>
-          <v-dialog v-model="targetFileDialog" persistent>
-            <v-card>
-              <v-card-title>
-                <span class="headline">target filename</span>
-              </v-card-title>
-              <v-card-text>
-                <v-text-field
-                v-model.trim.lazy="newTargetFilename"
-                :label="'filename'"
-                >
-                </v-text-field>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn flat @click=commitTargetFileChange>OK</v-btn>
-                <v-btn flat @click="newTargetFilename='';targetFileDialog=false;">Cancel</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
+          <gather-scatter
+          :container="parameterSetting.scatter"
+          :lowerLevelComponents="lowerLevelComponents"
+          :title="'scatter'"
+          :counterpartProp="'dstNode'"
+          ></gather-scatter>
 
-          <v-card>
-            <v-toolbar>
-              <v-toolbar-title> parameters </v-toolbar-title>
-              <div class="flex-grow-1"></div>
-              <v-text-field outlined readonly v-model="newParam.keyword"></v-text-field>
-              <v-btn @click="resetParamInputForm();newParamInput=true" class="text-capitalize">
-                <v-icon>add</v-icon>
-                add new parameter
-              </v-btn>
-            </v-toolbar>
-            <v-data-table
-               dense
-              :headers="[{value: 'keyword',sortable: true},{ text: 'Actions', value: 'action', sortable: false }]"
-              :items="parameterSetting.params"
-              :items-per-page="5"
-              :footer-props="tableFooterProps"
-            >
-              <template v-slot:item.action="{ item }">
-                <v-icon small class="mr-2" @click="editParam(item)" > edit </v-icon>
-                <v-icon small @click="deleteItem(item,parameterSetting.params)" > delete </v-icon>
-              </template>
-            </v-data-table>
-          </v-card>
+          <gather-scatter
+          :container="parameterSetting.gather"
+          :lowerLevelComponents="lowerLevelComponents"
+          :title="'gather'"
+          :counterpartProp="'srcNode'"
+          ></gather-scatter>
 
-          <v-card>
-            <v-toolbar>
-              <v-toolbar-title> scatter </v-toolbar-title>
-              <div class="flex-grow-1"></div>
-              <v-btn @click="filenameDialog=True" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
-            </v-toolbar>
-            <v-data-table
-               dense
-              :headers="[ {value: 'dstName', text: 'dstName', sortable: true},
-                          {value: 'srcName', text: 'srcName', sortable: true},
-                          {value: 'dstNode', text: 'dstNode', sortable: true},
-                          {value: 'action',  text: 'Actions',  sortable: false },]"
-              :items="parameterSetting.scatter"
-              :items-per-page="5"
-              :footer-props="tableFooterProps"
-            >
-              <template v-slot:item.action="{ item }">
-                <v-icon small class="mr-2" @click="editParam(item)" > edit </v-icon>
-                <v-icon small @click="deleteItem(item,parameterSetting.scatter)" > delete </v-icon>
-              </template>
-            </v-data-table>
-          </v-card>
-
-          <v-card>
-            <v-toolbar>
-              <v-toolbar-title> gather </v-toolbar-title>
-              <div class="flex-grow-1"></div>
-              <v-btn @click="filenameDialog=True" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
-            </v-toolbar>
-            <v-data-table
-               dense
-              :headers="[ {value: 'srcName', text: 'srcName', sortable: true},
-                          {value: 'dstName', text: 'dstName', sortable: true},
-                          {value: 'srcNode', text: 'srcNode', sortable: true},
-                          {value: 'action',  text: 'Actions',  sortable: false },]"
-              :items="parameterSetting.gather"
-              :items-per-page="5"
-              :footer-props="tableFooterProps"
-            >
-              <template v-slot:item.action="{ item }">
-                <v-icon small class="mr-2" @click="editParam(item)" > edit </v-icon>
-                <v-icon small @click="deleteItem(item, parameterSetting.gather)" > delete </v-icon>
-              </template>
-            </v-data-table>
-          </v-card>
         </v-layout>
       </v-container>
     </v-app>
 `,
   data() {
     return {
-      targetFileDialog: false,
-      newTargetFilename: "",
-      currentItem: null,
       activeTab: 0,
       newFilePrompt: false,
       newFilename: null,
-      newParamInput: false,
       newParam:{
         type:"min-max-step", // can be set to "list" and "files"
         keyword: "",
@@ -221,117 +98,74 @@ Vue.component("new-rapid", {
         gather:[]
       },
       parameterSettingFilename: "parameterSetting.json", //default new param setting filename
-      parameterSettingDirname: null,
-      tableFooterProps: {
-        showFirstLastPage: true,
-        firstIcon: 'fast_rewind',
-        lastIcon: 'fast_forward',
-        prevIcon: 'navigate_before',
-        nextIcon: 'navigate_next'
-      }
+      parameterSettingDirname: null
     };
   },
   computed:{
     newParamListTable(){
       return this.newParam.list.map((e)=>{return {item: e}});
+    },
+    lowerLevelComponents(){
+      const PSDir = this.$root.$data.componentPath[this.$root.$data.node.ID];
+      const reversePathMap = Object.entries(this.$root.$data.componentPath)
+        .filter(([k,v])=>{
+          return v.startsWith(PSDir)
+        })
+        .map(([k,v])=>{
+          const level=v.split('/').length - 1
+          return {id: k, path: v, level}
+        });
+      let copiedMap = Array.from(reversePathMap);
+      copiedMap.sort((r,l)=>{
+        return r.path > l.path ? 1 : -1;
+      });
+      const root = copiedMap.shift();
+      const rt=[];
+      let currentContainer = rt
+      let currentLevel= root.level + 1;
+      let currentPath= root.path;
+      let previousPath=currentPath;
+      for(const e of copiedMap){
+        if(e.level === currentLevel){
+          //sibling
+          const relPath = e.path.replace(currentPath+'/','');
+          currentContainer.push({id: e.id, name:relPath, children:[]});
+        }else if( e.level === currentLevel +1){
+          //children
+          currentPath=previousPath;
+          currentContainer=currentContainer[currentContainer.length-1].children;
+          const relPath = e.path.replace(currentPath+'/','');
+          currentContainer.push({id: e.id, name:relPath, children:[]});
+        }else{
+          //reset!!
+          currentContainer=rt;
+          currentLevel= root.level + 1;
+          currentPath = root.path;
+          previousPath=currentPath;
+
+          const splitedPath = e.path.split('/');
+          splitedPath.shift(); // drop '.'
+          splitedPath.shift(); // drop PS directory
+          for(const dir of splitedPath){
+            const target = currentContainer.find((e2)=>{
+              return e2.name=== dir
+            });
+            if(typeof target === "undefined"){
+              break;
+            }
+            currentContainer=target.children
+            currentPath+='/'+target.name;
+          }
+          const relPath = e.path.replace(currentPath+'/','');
+          currentContainer.push({id: e.id, name:relPath, children:[]});
+        }
+        currentLevel=e.level;
+        previousPath=e.path;
+      }
+      return rt;
     }
   },
   methods: {
-    commitTargetFileChange(){
-      if(this.currentItem === null ){
-        this.addNewTargetFile();
-      }else{
-        this.renameTargetFile(this.currentItem);
-      }
-      this.targetFileDialog=false;
-    },
-    renameTargetFile(item){
-      console.log("DEBUG componentPath=",this.$root.$data.componentPath);
-      console.log("DEBUG old item=",item);
-      const targetInTargetFiles = this.parameterSetting.targetFiles.find((e)=>{
-        console.log("DEBUG targetFile=", e);
-        if( typeof item.targetNode === "undefined" || item.targetNode === e.targetNode){
-          return e.targetName === item.targetName;
-        }
-        return false;
-      });
-
-      const targetInTab = this.files.find((e)=>{
-        return e.targetName === item.filename;
-      });
-      targetInTab.filename = this.newTargetFilename;
-    },
-    addNewTargetFile(){
-      const file={
-        filename: this.newTargetFilename,
-        dirname: this.$root.$data.fb.getRequestedPath(),
-        content: ""
-      }
-
-      //just ignore if target file is already exists
-      if(this.isTargetFile(file)){
-      this.targetFileDialog=false;
-        return;
-      }
-
-      //add new file only in client side
-      this.files.push(file);
-      //TODO targetNodeをユーザに指定させる
-      this.parameterSetting.targetFiles.push({
-        targetName: this.newTargetFilename
-      });
-      this.targetFileDialog=false;
-    },
-    deleteItem(item, data, match){
-      console.log("deleteItem called",item,data,match);
-      if(typeof match !== "function"){
-        match = (e)=>{return e===item}
-      }
-      const targetIndex = data.findIndex(match);
-      if(targetIndex === -1){
-        return
-      }
-      data.splice(targetIndex,1);
-    },
-    isTargetFile(file){
-      const currentComponentID=this.$root.$data.node.ID;
-      const componentPath=this.$root.$data.componentPath;
-      const currentComponentDir=componentPath[currentComponentID];
-      const dirnamePrefix=this.$root.$data.rootDir+this.$root.$data.pathSep
-      return this.parameterSetting.targetFiles.findIndex((e)=>{
-        let dirname = e.hasOwnProperty("targetNode") ? componentPath[e.targetNode] : currentComponentDir;
-        dirname=dirname.replace(/^\.\//,""); //remove prefix
-        let fullPath =dirnamePrefix+dirname+this.$root.$data.pathSep+e.targetName;
-        if(this.$root.$data.pathSep==="\\"){
-          fullPath=fullPath.replace("/",this.$root.$data.pathSep);
-        }
-        return fullPath===file.dirname+this.$root.$data.pathSep+file.filename;
-      }) !== -1;
-    },
-    resetParamInputForm(){
-      this.newParam.type="min-max-step";
-      this.newParam.list=[];
-      this.newParam.files=[];
-      this.newParam.min=0;
-      this.newParam.max=0;
-      this.newParam.step=1;
-    },
-    addParam(){
-      const newParam={keyword: this.newParam.keyword}
-      if(this.newParam.type==="min-max-step"){
-        newParam.min=this.newParam.min;
-        newParam.max=this.newParam.max;
-        newParam.step=this.newParam.step;
-      }else if(this.newParam.type==="files"){
-        newParam.files=this.newParam.files;
-      }else if(this.newParam.type==="list"){
-        newParam.list=this.newParam.list;
-      }
-      this.parameterSetting.params.push(newParam);
-      const tmp=this.newParam.type;
-      this.resetParamInputForm();
-      this.newParam.type=tmp;
-    },
     async openNewTab(newContents = "") {
       const currentDir = this.$root.$data.fb.getRequestedPath();
       console.log("DEBUG: open new tab", this.newFilename, currentDir);
@@ -385,6 +219,9 @@ Vue.component("new-rapid", {
         document.setValue("");
       }
       this.files.splice(index, 1);
+    },
+    isTargetFile(file){
+      return isTargetFile(file, this.$root.$data.rootDir, this.$root.$data.pathSep, this.parameterSetting.targetFiles, this.$root.$data.componentPath, this.$root.$data.node.ID);
     }
   },
   mounted() {
