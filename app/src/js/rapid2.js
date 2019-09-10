@@ -46,6 +46,7 @@ Vue.component("new-rapid", {
         </v-layout>
 
         <v-layout split id="parameter" column>
+        <v-btn @click="saveAllFiles"><v-icon>save</v-icon>save all files</v-btn>
           <target-files
             :files="files"
             :targetFiles="parameterSetting.targetFiles"
@@ -155,6 +156,25 @@ Vue.component("new-rapid", {
     }
   },
   methods: {
+    async saveAllFiles(){
+      //save parameter setting file
+      const PSFileContent=JSON.stringify(this.parameterSetting, null,4);
+      this.$root.$data.sio.emit("saveFile", this.parameterSettingFilename, this.parameterSettingDirname, PSFileContent, (rt)=>{
+        if(! rt){
+          console.log("ERROR: file save failed:", rt);
+        }
+      });
+      for(const file of this.files){
+        const document = file.editorSession.getDocument()
+        //TODO 差分が無ければsaveFileを呼ばないようにする
+        const content = document.getValue();
+        this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+          if(! rt){
+            console.log("ERROR: file save failed:", rt);
+          }
+        });
+      }
+    },
     async openNewTab(newContents = "") {
       const currentDir = this.$root.$data.fb.getRequestedPath();
       console.log("DEBUG: open new tab", this.newFilename, currentDir);
