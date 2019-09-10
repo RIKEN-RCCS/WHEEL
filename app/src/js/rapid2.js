@@ -17,7 +17,7 @@ Vue.component("new-rapid", {
         <v-layout split column id="text">
           <v-flex shrink>
             <v-tabs v-model="activeTab" @change="changeTab">
-              <v-tab v-for="(file,index) of files" :key="file.order">
+              <v-tab class="text-none" v-for="(file,index) of files" :key="file.order">
                 {{ file.filename }}
                 <v-btn small icon @click.stop="closeTab(index)" v-if="! isTargetFile(file)">
                   <v-icon small>close</v-icon>
@@ -52,8 +52,8 @@ Vue.component("new-rapid", {
           :lowerLevelComponents="lowerLevelComponents"
           ></target-files>
           <parameter
-          :newParam="newParam"
-          :parameterSetting="parameterSetting"
+          :keyword="selectedText"
+          :params="parameterSetting.params"
           ></parameter>
 
           <gather-scatter
@@ -79,15 +79,7 @@ Vue.component("new-rapid", {
       activeTab: 0,
       newFilePrompt: false,
       newFilename: null,
-      newParam:{
-        type:"min-max-step", // can be set to "list" and "files"
-        keyword: "",
-        list:[],
-        files: [],
-        min:0,
-        max:0,
-        step:1,
-      },
+      selectedText: null,
       files: [],
       editor: null,
       parameterSetting: {
@@ -102,9 +94,6 @@ Vue.component("new-rapid", {
     };
   },
   computed:{
-    newParamListTable(){
-      return this.newParam.list.map((e)=>{return {item: e}});
-    },
     lowerLevelComponents(){
       const PSDir = this.$root.$data.componentPath[this.$root.$data.node.ID];
       const reversePathMap = Object.entries(this.$root.$data.componentPath)
@@ -197,10 +186,10 @@ Vue.component("new-rapid", {
         console.log("DEBUG: tab changed to ", argIndex, "(1-origin)");
         const session = this.files[index].editorSession;
         this.editor.setSession(session);
-        this.newParam.keyword=""
+        this.selectedText=""
         session.selection.on('changeSelection', ()=>{
-          this.newParam.keyword=this.editor.getSelectedText();
-          console.log("DEBUG: selection",this.newParam.keyword)
+          this.selectedText=this.editor.getSelectedText();
+          console.log("DEBUG: selection",this.selectedText)
          });
       }
     },
@@ -254,10 +243,10 @@ Vue.component("new-rapid", {
         console.log("DEBUG: open files[",index,"]");
         const session = this.files[index].editorSession
         this.editor.setSession(session);
-        this.newParam.keyword=""
+        this.selectedText=""
         session.selection.on('changeSelection', ()=>{
-          this.newParam.keyword=this.editor.getSelectedText();
-          console.log("DEBUG: selection",this.newParam.keyword)
+          this.selectedText=this.editor.getSelectedText();
+          console.log("DEBUG: selection",this.selectedText)
          });
       });
     });

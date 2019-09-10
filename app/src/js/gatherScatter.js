@@ -11,16 +11,19 @@ export default {
     <div>
     <v-card>
       <v-toolbar>
-        <v-toolbar-title> {{ title }}</v-toolbar-title>
+        <v-toolbar-title> {{ title }} </v-toolbar-title>
         <div class="flex-grow-1"></div>
-        <v-btn @click="dialog=true" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
+        <v-btn @click="dialog=true" class="text-capitalize">
+          <v-icon>add</v-icon>
+          add new
+        </v-btn>
       </v-toolbar>
       <v-data-table
          dense
         :headers="[ {value: 'dstName',     text: 'dstName', sortable: true},
                     {value: 'srcName',     text: 'srcName', sortable: true},
                     {value: 'counterpart', text: counterpartProp, sortable: true},
-                    {value: 'action',      text: 'Actions',  sortable: false },]"
+                    {value: 'action',      text: 'Actions',  sortable: false }]"
         :items="container"
         :items-per-page="5"
         :footer-props="tableFooterProps"

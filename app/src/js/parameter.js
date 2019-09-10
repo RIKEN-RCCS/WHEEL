@@ -1,5 +1,5 @@
 "use strict";
-import { tableFooterProps } from "./rapid2Util.js";
+import { tableFooterProps, removeFromArray } from "./rapid2Util.js";
 
 export default {
   template:`
@@ -8,113 +8,186 @@ export default {
       <v-toolbar>
         <v-toolbar-title> parameters </v-toolbar-title>
         <div class="flex-grow-1"></div>
-        <v-text-field outlined readonly v-model="newParam.keyword"></v-text-field>
-        <v-btn @click="resetParamInputForm();newParamInput=true" class="text-capitalize">
+        <v-text-field outlined readonly v-model="keyword"></v-text-field>
+        <v-btn @click="dialog=true" class="text-capitalize">
           <v-icon>add</v-icon>
           add new parameter
         </v-btn>
       </v-toolbar>
       <v-data-table
          dense
-        :headers="[{value: 'keyword',sortable: true},{ text: 'Actions', value: 'action', sortable: false }]"
-        :items="parameterSetting.params"
+        :headers="[{text: 'keyword', value: 'keyword', sortable: true},
+        { text: 'Actions', value: 'action', sortable: false }]"
+        :items="params"
         :items-per-page="5"
         :footer-props="tableFooterProps"
       >
         <template v-slot:item.action="{ item }">
-          <v-icon small class="mr-2" @click="editParam(item)" > edit </v-icon>
-          <v-icon small @click="deleteItem(item,parameterSetting.params)" > delete </v-icon>
+          <v-btn  small class="mr-2"><v-icon small class="mr-2"> edit </v-icon>add filter</v-btn>
+          <v-icon small class="mr-2" @click="openDialog(item)"> edit </v-icon>
+          <v-icon small @click="deleteItem(item)" > delete </v-icon>
         </template>
       </v-data-table>
     </v-card>
-    <v-card v-if="newParamInput">
-      <v-card-title> <v-select outlined v-model="newParam.type" :items="['min-max-step', 'list','files']"></v-select></v-card-title>
-      <v-card-text>
-        <v-layout v-if="newParam.type==='min-max-step'">
-          <v-text-field v-model="newParam.min" type="number" hint="min" persistent-hint></v-text-field>
-          <v-text-field v-model="newParam.max" type="number" hint="max" persistent-hint></v-text-field>
-          <v-text-field v-model="newParam.step" type="number" hint="step" persistent-hint></v-text-field>
-        </v-layout>
-        <div v-if="newParam.type==='list'">
-        placeholder for list
-          <v-data-table
-          dense
-          :headers="['item']"
-          :items="newParamListTable"
-          >
-          <template slot="items" slot-scope="props">
-          <td>
-          <v-edit-dialog
-          :return-value.sync="props.item.item"
-          lazy
-          >
-          {{ props.item.item }}
-          <v-text-field
-          slot="input"
-          v-model="props.item.item"
-          label="edit"
-          single-line
-          >
-          </v-text-field>
-          </v-edit-dialog>
-          </td>
-          </template>
-          </v-data-table>
-        </div>
-        <div v-if="newParam.type==='files'">
-        placeholder for file
-        </div>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn @click=addParam><v-icon>save</v-icon>save</v-btn>
-        <v-btn @click="resetParamInputForm();newParamInput=false"><v-icon>cancel</v-icon>cancel</v-btn>
-      </v-card-actions>
-  </v-card>
-   </div>
+    <v-dialog v-model="dialog" persistent>
+      <v-card>
+        <v-card-title>
+        <span class="headline"> parameter setting </span>
+        </v-card-title>
+        <v-card-text>
+          <v-select
+            outlined
+            v-model="newItem.type"
+            :items="['min-max-step', 'list', 'files']"
+          ></v-select>
+          <v-layout v-if="newItem.type==='min-max-step'">
+            <v-text-field v-model="newItem.min" type="number" hint="min" persistent-hint></v-text-field>
+            <v-text-field v-model="newItem.max" type="number" hint="max" persistent-hint></v-text-field>
+            <v-text-field v-model="newItem.step" type="number" hint="step" persistent-hint></v-text-field>
+          </v-layout>
+          <div v-if="newItem.type==='list'">
+            <v-data-table
+            dense
+            :headers="[{text: 'value', value: 'item', sortable: true},
+                       { text: 'Actions', value: 'action', sortable: false }]"
+            :items="newParamListTable"
+            >
+              <template v-slot:top>
+                <v-btn @click="newItem.list.push('')" class="text-capitalize">
+                  <v-icon>add</v-icon>
+                  add new
+                </v-btn>
+              </template v-slot:top>
+              <template v-slot:item.action="{ item }">
+                <v-icon small @click="removeFromArray(newItem.list,item.item)" > delete </v-icon>
+              </template>
+              <template v-slot:item.item="props">
+                <v-edit-dialog
+                :return-value.sync="props.item.item"
+                lazy
+                >
+                  {{ props.item.item }}
+                  <template v-slot:input>
+                    <v-text-field
+                      v-model="props.item.item"
+                      label="edit"
+                      single-line
+                    ></v-text-field>
+                  </template>
+                </v-edit-dialog>
+              </template>
+            </v-data-table>
+          </div>
+          <div v-if="newItem.type==='files'">
+            placeholder for file
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click=addItem><v-icon>save</v-icon>save</v-btn>
+          <v-btn @click="closeAndResetDialog();"><v-icon>cancel</v-icon>cancel</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
   `,
   data(){
     return{
-      newParamInput: false,
+      dialog: false,
+      newItem:{
+        type:"min-max-step", // can be set to "list" and "files"
+        keyword: "",
+        list:[],
+        files: [],
+        min:0,
+        max:0,
+        step:1,
+      },
+      currentItem: null,
       tableFooterProps
     }
   },
-  props:["newParam", "parameterSetting" ],
+  props:["keyword", "params" ],
+  computed:{
+    newParamListTable(){
+      return this.newItem.list.map((e)=>{return {item: e}});
+    },
+  },
   methods:{
-    deleteItem(item, data, match){
-      console.log("deleteItem called",item,data,match);
-      if(typeof match !== "function"){
-        match = (e)=>{return e===item}
+    openDialog(item){
+      this.currentItem=item;
+      Object.assign(this.newItem, item);
+      if(item.hasOwnProperty("list")){
+        this.newItem.type="list";
+      }else if(item.hasOwnProperty("files")){
+        this.newItem.type="files";
+      }else{
+        this.newItem.type="min-max-step";
       }
-      const targetIndex = data.findIndex(match);
+      this.dialog=true;
+    },
+    addItem(){
+      const newParam={keyword: this.keyword}
+      if(this.newItem.type==="min-max-step"){
+        newParam.min=this.newItem.min;
+        newParam.max=this.newItem.max;
+        newParam.step=this.newItem.step;
+      }else if(this.newItem.type==="files"){
+        newParam.files=Array.from(this.newItem.files);
+      }else if(this.newItem.type==="list"){
+        newParam.list=Array.from(this.newItem.list);
+      }
+      this.params.push(newParam);
+      const tmp=this.newItem.type;
+      this.closeAndResetDialog();
+      this.newItem.type=tmp;
+    },
+    updateItem(item){
+      const targetIndex = this.params.findIndex((e)=>{
+        return e===item;
+      });
       if(targetIndex === -1){
         return
       }
-      data.splice(targetIndex,1);
-    },
-    resetParamInputForm(){
-      this.newParam.type="min-max-step";
-      this.newParam.list=[];
-      this.newParam.files=[];
-      this.newParam.min=0;
-      this.newParam.max=0;
-      this.newParam.step=1;
-    },
-    addParam(){
-      const newParam={keyword: this.newParam.keyword}
-      if(this.newParam.type==="min-max-step"){
-        newParam.min=this.newParam.min;
-        newParam.max=this.newParam.max;
-        newParam.step=this.newParam.step;
-      }else if(this.newParam.type==="files"){
-        newParam.files=this.newParam.files;
-      }else if(this.newParam.type==="list"){
-        newParam.list=this.newParam.list;
+      const newParam=this.params[targetIndex];
+      if(this.newItem.type==="min-max-step"){
+        newParam.min=this.newItem.min;
+        newParam.max=this.newItem.max;
+        newParam.step=this.newItem.step;
+      }else if(this.newItem.type==="files"){
+        newParam.files=Array.from(this.newItem.files);
+      }else if(this.newItem.type==="list"){
+        newParam.list=Array.from(this.newItem.list);
       }
-      this.parameterSetting.params.push(newParam);
-      const tmp=this.newParam.type;
-      this.resetParamInputForm();
-      this.newParam.type=tmp;
+      const tmp=this.newItem.type;
+      this.closeAndResetDialog();
+      this.newItem.type=tmp;
+    },
+    deleteItem(item){
+      removeFromArray(this.params,item);
+    },
+    removeFromArray(container, item){
+      removeFromArray(container, item);
+    },
+    commitChange(){
+      if(this.currentItem === null ){
+        this.addItem();
+      }else{
+        this.updateItem(this.currentItem);
+      }
+      this.closeAndResetDialog();
+    },
+    closeAndResetDialog(){
+      this.dialog=false;
+      this.newItem={
+        type:"min-max-step",
+        list:[],
+        files: [],
+        min:0,
+        max:0,
+        step:1,
+      },
+      this.currentItem=null;
     },
   }
 }
