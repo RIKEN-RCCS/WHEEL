@@ -10,22 +10,27 @@ if (process.env.WHEEL_DEBUG_VERBOSE) {
 }
 
 const path = require("path");
+const fs = require("fs");
 const { spawn } = require("child_process");
+const cors = require("cors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const siofu = require("socketio-file-upload");
 const passport = require("passport");
-const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort } = require("./db/db");
+const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename } = require("./db/db");
 const { getLogger } = require("./logSettings");
 
 /*
  * set up express, http and socket.io
  */
 const app = express();
-//TODO if certification setting is available, use https instead
-const server = require("http").createServer(app);
+const opt = {
+  key: fs.readFileSync(keyFilename),
+  cert: fs.readFileSync(certFilename)
+};
+const server = require("https").createServer(opt, app);
 const sio = require("socket.io")(server);
 
 //setup logger
@@ -40,6 +45,7 @@ app.set("views", path.resolve(__dirname, "views"));
 app.set("view engine", "ejs");
 
 //middlewares
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -77,7 +83,7 @@ app.use("/remotehost", routes.remotehost);
 
 //port number
 const defaultPort = 443;
-let portNumber = parseInt(process.env.PORT, 10) || port || defaultPort;
+let portNumber = parseInt(process.env.WHEEL_PORT, 10) || port || defaultPort;
 
 if (portNumber < 0) {
   portNumber = defaultPort;
@@ -101,15 +107,16 @@ server.on("listening", onListening);
 
 //boot jupyter
 if (jupyter) {
-  const cmd = typeof jupyter === "string" ? jupyter : "jupyter";
+  const cmd = typeof jupyter === "string" ? jupyter : "jupyter-notebook";
   const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
+  const notebookRoot = process.env.WHEEL_NOTEBOOK_ROOT || "/";
   const opts = [
     "notebook",
     "--no-browser",
     `--port ${jupyterPortNumber}`,
     "--port-retries=0",
     "--ip=*",
-    "--notebook-dir=/"
+    `--notebook-dir=${notebookRoot}`
   ];
   setJupyterPort(jupyterPortNumber);
 

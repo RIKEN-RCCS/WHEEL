@@ -143,11 +143,17 @@ async function getComponentDir(projectRootDir, ID, isAbsolute) {
   return null;
 }
 
+async function getProjectState(projectRootDir) {
+  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
+  return projectJson.state;
+}
+
 module.exports = {
   createNewProject,
   updateComponentPath,
   removeComponentPath,
   getComponentDir,
   getDescendantsIDs,
-  setProjectState
+  setProjectState,
+  getProjectState
 };

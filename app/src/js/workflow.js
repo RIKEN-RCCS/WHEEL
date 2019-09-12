@@ -7,7 +7,6 @@ import 'jquery-ui/themes/base/sortable.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/workflow.css';
-
 import './rapid2.js'
 
 import Cookies from 'js-cookie';
@@ -25,6 +24,8 @@ import SvgParentNodeUI from './svgNodeUI';
 import * as svgParentNode from './svgNodeUI';
 import configToolTip from './configToolTip';
 import Viewer from 'viewerjs';
+
+Vue.use(Vuetify)
 
 $(() => {
   // setup socket.io client
@@ -58,11 +59,14 @@ $(() => {
   let viewerWindow;
   let viewerInstance;
   let viewerTargetHTML = "";
-  // create vue.js instance for property subscreen
+
+  //memo socketIOのインスタンスをVueのdataに入れてコンポーネント内部から通信できるようにしているが
+  //Vuexを導入してactionにemitはまとめる方が望ましい。
   let vm = new Vue({
+    vuetify: new Vuetify({theme:{dark: true}, themes:{dark:{primary: "green"}}}),
     el: '#app',
     data: {
-      normal: true,
+      normal: true, //flag for normal view (true) or editor (false)
       node: {},
       newInputFilename: "",
       newOutputFilename: "",
@@ -73,7 +77,12 @@ $(() => {
       nodeScript: null,
       names: [],
       conditionInputType: '1',
-      retryConditionInputType: '1'
+      retryConditionInputType: '1',
+      fb:null,
+      sio,
+      componentPath,
+      rootDir,
+      pathSep
     },
     methods: {
       addInputFile: function () {
@@ -269,6 +278,7 @@ $(() => {
   });
   // setup FileBrowser
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
+  vm.fb=fb;
 
   // property subscreen 'Files' area buttons.
   let dirPathStack = [];
@@ -324,9 +334,9 @@ $(() => {
   });
 
   //rapid以外の要素をhideしてrapidだけ表示
-  // $('#editPSFileButton').click(function () {
-  //   vm.normal = false;
-  // });
+  $('#editPSFileButton').click(function () {
+      vm.normal = false;
+  });
 
   // set default view
   $('#workflow_listview_area').hide();
@@ -487,6 +497,7 @@ $(() => {
         return projectJson.componentPath[key] === './'
       });
       componentPath = projectJson.componentPath;
+      vm.componentPath = componentPath;
       $('title').html(projectJson.name);
       $('#project_name').text(projectJson.name);
       $('#project_state').text(projectJson.state);

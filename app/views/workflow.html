@@ -6,10 +6,11 @@
   <link rel="stylesheet" href="/css/common.css" />
   <link rel="stylesheet" href="/css/workflow.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@3.x/css/materialdesignicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/vuetify/dist/vuetify.min.css">
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.1/ace.js"></script>
   <script src="https://unpkg.com/vue/dist/vue.js"></script>
-  <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+  <script src="https://unpkg.com/vuetify@2.x/dist/vuetify.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/siofu/client.js"></script>
   <script type="text/javascript" src="/js/common.js"></script>
@@ -31,7 +32,7 @@
   </header>
   <!-- header終わり -->
   <div id="app">
-    <div id="normalArea" v-if="normal">
+    <div id="normalArea" v-show="normal">
       <!-- コントローラバー -->
       <div class="projectInfoArea">
         <div id="projectInfo">
@@ -471,7 +472,7 @@
                 <button type="button" id="editFileButton" class="editButtons" v-on:click="editFile(false)">
                   <img src="/image/img_edit.png" alt="graph">
                 </button>
-                <button type="button" id="editPSFileButton" class="editButtons" v-on:click="editFile(true)">
+                <button type="button" id="editPSFileButton" class="editButtons" v-on:click="normal=false">
                   <img src="/image/img_edit_PS.png" alt="graph">
                 </button>
               </div>
@@ -567,13 +568,13 @@
       </div>
     </div>
     <!-- rapid -->
-    <div id="rapid" v-else>
-      <!-- <div id="editorTitle">
+    <div id="rapid" v-if="!normal">
+      <div id="editorTitle">
         <label id="rapid2Title">File Editor</label>
-        <button type="button" name="view" value="graph" id="backToGraphView" class="btn_view_change">
+        <button type="button" name="view" value="graph" id="backToGraphView" class="btn_view_change" @click="normal=true">
           <img src="/image/btn_flow_n.png" alt="graph">
         </button>
-      </div> -->
+      </div>
       <new-rapid></new-rapid>
     </div>
   </div>
