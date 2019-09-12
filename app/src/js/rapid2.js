@@ -33,7 +33,7 @@ Vue.component("new-rapid", {
                       <v-text-field v-model="newFilename" label="new file name"></v-text-field>
                     </v-card-text>
                     <v-card-actions>
-                      <v-btn @click="openNewTab()"><v-icon>create</v-icon>open</v-btn>
+                      <v-btn @click=openNewTab><v-icon>create</v-icon>open</v-btn>
                       <v-btn @click="newFilename=null;newFilePrompt=false"><v-icon>cancel</v-icon>cancel</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -50,7 +50,8 @@ Vue.component("new-rapid", {
           <target-files
             :files="files"
             :targetFiles="parameterSetting.targetFiles"
-          :lowerLevelComponents="lowerLevelComponents"
+            :lowerLevelComponents="lowerLevelComponents"
+            @open-new-tab="openNewTab"
           ></target-files>
           <parameter
           :keyword="selectedText"
@@ -175,14 +176,14 @@ Vue.component("new-rapid", {
         });
       }
     },
-    async openNewTab(newContents = "") {
+    async openNewTab(newFilename=this.newFilename, newContents = "") {
       const currentDir = this.$root.$data.fb.getRequestedPath();
-      console.log("DEBUG: open new tab", this.newFilename, currentDir);
+      console.log("DEBUG: open new tab", newFilename, currentDir);
       const existingTab = this.files.findIndex((e)=>{
-        return e.filename === this.newFilename && e.dirname === currentDir
+        return e.filename === newFilename && e.dirname === currentDir
       });
       if(existingTab === -1){
-        this.$root.$data.sio.emit("openFile",this.newFilename, currentDir, false, (rt)=>{
+        this.$root.$data.sio.emit("openFile", newFilename, currentDir, false, (rt)=>{
           if(!rt){
             console.log("file open error!",rt);
             return
@@ -193,7 +194,7 @@ Vue.component("new-rapid", {
         this.changeTab(existingTab+1);
       }
       //clear temporaly variables and close prompt
-      this.newFilename = null;
+      newFilename = null;
       this.newFilePrompt=false;
     },
     changeTab(argIndex) {

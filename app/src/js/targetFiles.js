@@ -78,29 +78,27 @@ export default {
       });
       targetInTargetFiles.targetName=this.newTargetFilename;
 
-      const targetInTab = this.files.find((e)=>{
-        return oldAbsPath === file2absPath(e,this.$root.$data.pathSep);
-      });
-      targetInTab.filename = this.newTargetFilename;
+      this.$emit('open-new-tab', this.newTargetFilename);
+      this.closeAndResetDialog();
     },
     addNewTargetFile(){
-      const file={
-        filename: this.newTargetFilename,
-        dirname: this.$root.$data.fb.getRequestedPath(),
-        content: ""
-      }
+      const dirnamePrefix=this.$root.$data.rootDir+this.$root.$data.pathSep
+      const newAbsPath=targetFile2absPath({targetName: this.newTargetFilename}, this.$root.$data.componentPath, this.$root.$data.pathSep, dirnamePrefix, this.$root.$data.node.ID);
+      const targetInTargetFiles = this.targetFiles.findIndex((e)=>{
+        return newAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.$root.$data.pathSep, dirnamePrefix, this.$root.$data.node.ID);
+      });
 
-      //just ignore if target file is already exists
-      if(isTargetFile(file, this.$root.$data.rootDir,this.$root.$data.pathSep, this.targetFiles,this.$root.$data.componentPath, this.$root.$data.node.ID)){
-        return;
+      if(targetInTargetFiles !== -1){
+        //just ignore if already exists
+        return
       }
-
-      //add new file only in client side
-      this.files.push(file);
       this.targetFiles.push({
         targetName: this.newTargetFilename
       });
-      this.targetFileDialog=false;
+
+      console.log("emit open-new-tab event", this.newTargetFilename);
+      this.$emit('open-new-tab', this.newTargetFilename);
+      this.closeAndResetDialog();
     },
   }
 }
