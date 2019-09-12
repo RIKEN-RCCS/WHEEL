@@ -82,6 +82,14 @@ export default {
       tableFooterProps
     }
   },
+  mounted(){
+    if(this.counterpartProp === "srcNode"){
+      const first = this.headers.shift()
+      const second = this.headers.shift()
+      this.headers.unshift(first);
+      this.headers.unshift(second);
+    }
+  },
   methods:{
     getComponentName(name){
       const tmp=name.split('/');
