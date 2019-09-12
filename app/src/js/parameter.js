@@ -23,7 +23,7 @@ export default {
         :footer-props="tableFooterProps"
       >
         <template v-slot:item.action="{ item }">
-          <v-btn  small class="mr-2"><v-icon small class="mr-2"> edit </v-icon>add filter</v-btn>
+          <v-btn  small class="mr-2" @click="openFilterDialog(item)"><v-icon small class="mr-2"> edit </v-icon>add filter</v-btn>
           <v-icon small class="mr-2" @click="openDialog(item)"> edit </v-icon>
           <v-icon small @click="deleteItem(item)" > delete </v-icon>
         </template>
@@ -50,16 +50,16 @@ export default {
             dense
             :headers="[{text: 'value', value: 'item', sortable: true},
                        { text: 'Actions', value: 'action', sortable: false }]"
-            :items="newParamListTable"
+            :items="newItem.list"
             >
               <template v-slot:top>
-                <v-btn @click="newItem.list.push('')" class="text-capitalize">
+                <v-btn @click="newItem.list.push({item:''})" class="text-capitalize">
                   <v-icon>add</v-icon>
                   add new
                 </v-btn>
               </template v-slot:top>
               <template v-slot:item.action="{ item }">
-                <v-icon small @click="removeFromArray(newItem.list,item.item)" > delete </v-icon>
+                <v-icon small @click="removeFromArray(newItem.list,item)" > delete </v-icon>
               </template>
               <template v-slot:item.item="props">
                 <v-edit-dialog
@@ -79,13 +79,56 @@ export default {
             </v-data-table>
           </div>
           <div v-if="newItem.type==='files'">
-            placeholder for file
+            <v-data-table
+            dense
+            :headers="[{text: 'value', value: 'item', sortable: true},
+                       { text: 'Actions', value: 'action', sortable: false }]"
+            :items="newItem.files"
+            >
+              <template v-slot:top>
+                <v-btn @click="newItem.files.push({item:''})" class="text-capitalize">
+                  <v-icon>add</v-icon>
+                  add new
+                </v-btn>
+              </template v-slot:top>
+              <template v-slot:item.action="{ item }">
+                <v-icon small @click="removeFromArray(newItem.files,item)" > delete </v-icon>
+              </template>
+              <template v-slot:item.item="props">
+                <v-edit-dialog
+                :return-value.sync="props.item.item"
+                lazy
+                >
+                  {{ props.item.item }}
+                  <template v-slot:input>
+                    <v-text-field
+                      v-model="props.item.item"
+                      label="edit"
+                      single-line
+                    ></v-text-field>
+                  </template>
+                </v-edit-dialog>
+              </template>
+            </v-data-table>
           </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click=addItem><v-icon>save</v-icon>save</v-btn>
-          <v-btn @click="closeAndResetDialog();"><v-icon>cancel</v-icon>cancel</v-btn>
+          <v-btn @click=commitChange><v-icon>save</v-icon>save</v-btn>
+          <v-btn @click=closeAndResetDialog><v-icon>cancel</v-icon>cancel</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="filterDialog" persistent>
+      <v-card>
+        <v-card-title>
+        </v-card-title>
+        <v-card-text>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click=commitChange><v-icon>save</v-icon>save</v-btn>
+          <v-btn @click=closeAndResetDialog><v-icon>cancel</v-icon>cancel</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -94,6 +137,7 @@ export default {
   data(){
     return{
       dialog: false,
+      filterDialog: false,
       newItem:{
         type:"min-max-step", // can be set to "list" and "files"
         keyword: "",
@@ -108,39 +152,45 @@ export default {
     }
   },
   props:["keyword", "params" ],
-  computed:{
-    newParamListTable(){
-      return this.newItem.list.map((e)=>{return {item: e}});
-    },
-  },
   methods:{
+    openFilterDialog(item){
+      this.filterDialog=true
+    },
     openDialog(item){
       this.currentItem=item;
       Object.assign(this.newItem, item);
       if(item.hasOwnProperty("list")){
         this.newItem.type="list";
+        this.newItem.list=item.list.map((e)=>{return {item:e}});
       }else if(item.hasOwnProperty("files")){
         this.newItem.type="files";
+        this.newItem.files=item.files.map((e)=>{return {item:e}});
       }else{
         this.newItem.type="min-max-step";
       }
       this.dialog=true;
     },
+    deleteItem(item){
+      removeFromArray(this.params,item);
+    },
+    removeFromArray(container, item){
+      removeFromArray(container, item);
+    },
+    storeParam(target){
+      if(this.newItem.type==="min-max-step"){
+        target.min=this.newItem.min;
+        target.max=this.newItem.max;
+        target.step=this.newItem.step;
+      }else if(this.newItem.type==="list"){
+        target.list=this.newItem.list.map((e)=>{return e.item});
+      }else if(this.newItem.type==="files"){
+        target.files=this.newItem.files.map((e)=>{return e.item});
+      }
+    },
     addItem(){
       const newParam={keyword: this.keyword}
-      if(this.newItem.type==="min-max-step"){
-        newParam.min=this.newItem.min;
-        newParam.max=this.newItem.max;
-        newParam.step=this.newItem.step;
-      }else if(this.newItem.type==="files"){
-        newParam.files=Array.from(this.newItem.files);
-      }else if(this.newItem.type==="list"){
-        newParam.list=Array.from(this.newItem.list);
-      }
       this.params.push(newParam);
-      const tmp=this.newItem.type;
-      this.closeAndResetDialog();
-      this.newItem.type=tmp;
+      this.storeParam(newParam);
     },
     updateItem(item){
       const targetIndex = this.params.findIndex((e)=>{
@@ -149,25 +199,7 @@ export default {
       if(targetIndex === -1){
         return
       }
-      const newParam=this.params[targetIndex];
-      if(this.newItem.type==="min-max-step"){
-        newParam.min=this.newItem.min;
-        newParam.max=this.newItem.max;
-        newParam.step=this.newItem.step;
-      }else if(this.newItem.type==="files"){
-        newParam.files=Array.from(this.newItem.files);
-      }else if(this.newItem.type==="list"){
-        newParam.list=Array.from(this.newItem.list);
-      }
-      const tmp=this.newItem.type;
-      this.closeAndResetDialog();
-      this.newItem.type=tmp;
-    },
-    deleteItem(item){
-      removeFromArray(this.params,item);
-    },
-    removeFromArray(container, item){
-      removeFromArray(container, item);
+      this.storeParam(this.params[targetIndex]);
     },
     commitChange(){
       if(this.currentItem === null ){
@@ -175,7 +207,10 @@ export default {
       }else{
         this.updateItem(this.currentItem);
       }
+      //keep type prop
+      const tmp=this.newItem.type;
       this.closeAndResetDialog();
+      this.newItem.type=tmp;
     },
     closeAndResetDialog(){
       this.dialog=false;
