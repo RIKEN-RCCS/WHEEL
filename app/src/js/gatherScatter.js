@@ -20,10 +20,7 @@ export default {
       </v-toolbar>
       <v-data-table
          dense
-        :headers="[ {value: 'dstName',     text: 'dstName', sortable: true},
-                    {value: 'srcName',     text: 'srcName', sortable: true},
-                    {value: 'counterpart', text: counterpartProp, sortable: true},
-                    {value: 'action',      text: 'Actions',  sortable: false }]"
+        :headers="headers"
         :items="container"
         :items-per-page="5"
         :footer-props="tableFooterProps"
@@ -34,7 +31,7 @@ export default {
         </template>
         <template v-slot:item.counterpart="{ item }">
         <div v-if="item.hasOwnProperty(counterpartProp)">
-        {{ item[counterpartProp].slice(0,8) }}
+        {{ getComponentName($root.$data.componentPath[item[counterpartProp]]) }}
         </div>
         </template>
       </v-data-table>
@@ -78,10 +75,18 @@ export default {
       currentItem: null,
       newItem: {srcName:"",dstName:""},
       active: [],
+      headers: [ {value: 'srcName', text: 'srcName', sortable: true},
+        {value: 'dstName',     text: 'dstName', sortable: true},
+        {value: 'counterpart', text: this.counterpartProp, sortable: true},
+        {value: 'action',      text: 'Actions',  sortable: false }],
       tableFooterProps
     }
   },
   methods:{
+    getComponentName(name){
+      const tmp=name.split('/');
+      return tmp[tmp.length -1]
+    },
     isValid(){
       if(! isValidName(this.newItem.srcName) ){
         console.log("DEBUG: invalid srcName", this.newItem);
