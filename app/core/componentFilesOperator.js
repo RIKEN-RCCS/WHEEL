@@ -453,6 +453,9 @@ async function validateComponents(projectRootDir, parentID) {
   const children = await getChildren(projectRootDir, parentID);
 
   for (const component of children) {
+    if (component.disable) {
+      continue;
+    }
     if (component.type === "task") {
       promises.push(validateTask(projectRootDir, component));
     } else if (component.type === "if" || component.type === "while") {
