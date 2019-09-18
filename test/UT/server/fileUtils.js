@@ -40,7 +40,7 @@ const psJson = {
 };
 
 //helper functions
-describe.only("file utility functions", ()=>{
+describe("file utility functions", ()=>{
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
     await fs.mkdir(testDirRoot);
@@ -60,7 +60,7 @@ describe.only("file utility functions", ()=>{
 
   describe("#openFile", ()=>{
     it("should create empty file if not existing filename is specified", async()=>{
-      const rt = await openFile(notExisting);
+      const rt = await openFile(testDirRoot, notExisting);
       expect(notExisting).to.be.a.file().and.empty;
       expect(rt).to.be.an("array").that.have.lengthOf(1);
       expect(rt[0]).to.deep.equal({ content: "", filename: path.basename(notExisting), dirname: path.dirname(notExisting) });
@@ -73,12 +73,12 @@ describe.only("file utility functions", ()=>{
       expect(stat.isNew()).not.to.equal(0);
     });
     it("should return existing file", async()=>{
-      const rt = await openFile(path.resolve(testDirRoot, "foo"));
+      const rt = await openFile(testDirRoot, path.resolve(testDirRoot, "foo"));
       expect(rt).to.be.an("array").that.have.lengthOf(1);
       expect(rt[0]).to.deep.equal({ content: "foo", filename: "foo", dirname: path.dirname(notExisting) });
     });
     it("should return json file and targetFiles in the json", async()=>{
-      const rt = await openFile(path.resolve(testDirRoot, "ps.json"));
+      const rt = await openFile(testDirRoot, path.resolve(testDirRoot, "ps.json"));
       expect(rt).to.be.an("array").that.have.lengthOf(3);
       expect(rt[0].filename).to.equal("ps.json");
       expect(rt[0].dirname).to.equal(path.dirname(notExisting));
@@ -90,14 +90,14 @@ describe.only("file utility functions", ()=>{
       ]);
     });
     it("should return only json file if forceNormal==true", async()=>{
-      const rt = await openFile(path.resolve(testDirRoot, "ps.json"), true);
+      const rt = await openFile(testDirRoot, path.resolve(testDirRoot, "ps.json"), true);
       expect(rt).to.be.an("array").that.have.lengthOf(1);
       expect(rt[0].filename).to.equal("ps.json");
       expect(rt[0].dirname).to.equal(path.dirname(notExisting));
       expect(JSON.parse(rt[0].content)).to.deep.equal(psJson);
     });
     it("should throw error while attempting to open directory", async()=>{
-      return expect(openFile(path.resolve(testDirRoot, "hoge"))).to.be.rejectedWith("EISDIR");
+      return expect(openFile(testDirRoot, path.resolve(testDirRoot, "hoge"))).to.be.rejectedWith("EISDIR");
     });
   });
   describe("#saveFile", ()=>{
