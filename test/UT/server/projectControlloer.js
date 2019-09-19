@@ -1063,6 +1063,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "PS0", "input1.txt"), "{{ KEYWORD1 }} {{ KEYWORD3 }}");
         await fs.outputFile(path.join(projectRootDir, "PS0", "non-targetFile.txt"), "{{ filename }} {{ KEYWORD2 }}");
         await fs.outputFile(path.join(projectRootDir, "PS0", "task0", "input2.txt"), "{{ KEYWORD1 }}{{ KEYWORD2 }}");
+        await fs.outputFile(path.join(projectRootDir, "PS0", "input3.txt"), "{{ KEYWORD1 }}{{ KEYWORD2 }}");
         await fs.outputFile(path.join(projectRootDir, "PS0", "testData"), "hoge");
         await fs.outputFile(path.join(projectRootDir, "PS0", "testData_foo"), "foo");
         await fs.outputFile(path.join(projectRootDir, "PS0", "testData_bar"), "bar");
@@ -1071,7 +1072,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "PS0", "data_3"), "data_3");
         const parameterSetting = {
           version: 2,
-          targetFiles: ["input1.txt", { targetNode: task0.ID, targetName: "input2.txt" }],
+          targetFiles: ["input1.txt", { targetNode: task0.ID, targetName: "input2.txt" }, {targetName: "input3.txt"}],
           target_param: [
             {
               keyword: "KEYWORD1",
@@ -1113,8 +1114,10 @@ describe("project Controller UT", function() {
             for (const KEYWORD3 of ["foo", "bar"]) {
               //check parameter expansion for input file
               expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "input1.txt")).to.be.a.file().with.content(`${KEYWORD1} ${KEYWORD3}`);
-              //check parameter expansion for input file with targetNode option and not-defiend parameter
+              //check parameter expansion for input file with targetName and targetNode option and not-defiend parameter
               expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "task0", "input2.txt")).to.be.a.file().with.content(`${KEYWORD1}`);
+              //check parameter expansion for input file only with targetName 
+              expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "input3.txt")).to.be.a.file().with.content(`${KEYWORD1}`);
               //check parameter expansion is not performed on non-target file
               expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "non-targetFile.txt")).to.be.a.file().with.content("{{ filename }} {{ KEYWORD2 }}");
               //check scatter 1 (testData)

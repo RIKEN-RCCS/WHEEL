@@ -645,8 +645,8 @@ class Dispatcher extends EventEmitter {
 
     //convert id to relative path from PS component
     const targetFiles = paramSettings.hasOwnProperty("targetFiles") ? paramSettings.targetFiles.map((e)=>{
-      if (e.hasOwnProperty("targetNode") && e.hasOwnProperty("targetName")) {
-        const targetDir = path.relative(templateRoot, this._getComponentDir(e.targetNode));
+      if (e.hasOwnProperty("targetName")) {
+        const targetDir = e.hasOwnProperty("targetNode") ? path.relative(templateRoot, this._getComponentDir(e.targetNode)) : "";
         return path.join(targetDir, e.targetName);
       }
       return e;
