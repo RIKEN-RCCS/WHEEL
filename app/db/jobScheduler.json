@@ -1,7 +1,7 @@
 {
   "ParallelNavi": {
-    "submit": "pjsub -X -Lelapse=00:30:00",
-    "queueOpt": "-Lrscgrp=",
+    "submit": "pjsub -X",
+    "queueOpt": "-L rscgrp=",
     "stat": "pjstat -H day=3 --choose st,ec",
     "del": "pjdel",
     "reJobID": "pjsub Job (\\d+) submitted.",
