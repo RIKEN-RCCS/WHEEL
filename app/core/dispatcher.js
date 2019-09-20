@@ -713,7 +713,10 @@ class Dispatcher extends EventEmitter {
       })
         .map((e)=>{
         //TODO files should be deliverd under specific component
-          return fs.copy(path.resolve(templateRoot, e), path.resolve(instanceRoot, e), options);
+          const src = path.resolve(templateRoot, e);
+          const dst = path.resolve(instanceRoot, e);
+          this.logger.debug("parameter: copy from", src, "to ", dst);
+          return fs.copy(src, dst, { overwrite: component.forceOverwrite });
         }));
 
       this.logger.debug("scatter files");
