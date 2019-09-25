@@ -2,13 +2,13 @@
   "ParallelNavi": {
     "submit": "pjsub -X",
     "queueOpt": "-L rscgrp=",
-    "stat": "pjstat -H day=3 --choose st,ec",
+    "stat": "pjstat -v -H day=3 --choose st,ec",
     "del": "pjdel",
     "reJobID": "pjsub Job (\\d+) submitted.",
-    "reFinishedState": "^ST *EC\\nEXT *0",
-    "reReturnCode": "^ST *EC\\nEXT *(\\d+)",
-    "reFailedState": "^ST *EC\\n(CCL|ERR|EXT|RJT)",
-    "reJobStatus": "^ST *EC\\n(\\S+)"
+    "reFinishedState": "^ST *EC *\\ nEXT *0",
+    "reReturnCode": "^ST *EC *\\nEXT *(\\d+)",
+    "reFailedState": "^ST *EC *\\n(CCL|ERR|EXT|RJT)",
+    "reJobStatus": "^ST *EC *\\n(\\S+)"
   },
   "PBSPro":{
     "submit": "qsub",
