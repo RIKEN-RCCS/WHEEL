@@ -105,9 +105,9 @@ class Project extends EventEmitter {
     if (this.rootDispatcher !== null) {
       this.rootDispatcher.remove();
     }
-    removeSsh(this.projectRootDir);
     await cancelDispatchedTasks(this.tasks, this.logger);
     this.tasks.clear();
+    removeSsh(this.projectRootDir);
     await rmfr(this.projectRootDir);
     await gitResetHEAD(this.projectRootDir);
     const projectJson = await readJsonGreedy(this.projectJsonFilename);

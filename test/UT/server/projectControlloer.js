@@ -578,7 +578,7 @@ describe("project Controller UT", function() {
         });
 
         expect(path.resolve(projectRootDir, "parentTask0", "a")).to.be.a.file().with.contents("a");
-        expect(path.resolve(projectRootDir, "wf0", "b")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "wf0", "b")).to.be.a.file().with.contents("a");
         expect(path.resolve(projectRootDir, "wf0", "childTask0", "c")).to.be.a.file().with.contents("a");
         expect(path.resolve(projectRootDir, "wf0", "childTask1", "d")).to.be.a.file().with.contents("a");
         expect(path.resolve(projectRootDir, "wf0", "e")).not.to.be.a.path();
@@ -913,7 +913,7 @@ describe("project Controller UT", function() {
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
         expect(path.resolve(projectRootDir, "parentTask0", "a")).to.be.a.file().with.content("a");
-        expect(path.resolve(projectRootDir, "for0", "b")).not.to.be.a.path();
+        expect(path.resolve(projectRootDir, "for0", "b")).to.be.a.file().with.content("a");
         expect(path.resolve(projectRootDir, "for0", "task0", "c")).to.be.a.file().with.content("a");
         expect(path.resolve(projectRootDir, "for0", "task0", "d")).to.be.a.file().with.content(`2${os.EOL}`);
         expect(path.resolve(projectRootDir, "for0_0", "task0", "c")).to.be.a.file().with.content("a");

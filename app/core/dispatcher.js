@@ -859,12 +859,6 @@ class Dispatcher extends EventEmitter {
     const deliverRecipes = new Set();
     for (const inputFile of component.inputFiles) {
       const dstName = inputFile.name;
-
-      //this component does not need the file
-      if (inputFile.hasOwnProperty("forwardTo")) {
-        continue;
-      }
-
       //resolve real src
       for (const src of inputFile.src) {
         //get files from upper level
