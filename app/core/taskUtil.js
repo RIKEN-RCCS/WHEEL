@@ -4,7 +4,7 @@ const { getSsh } = require("./sshManager");
 const { cancel } = require("./executer");
 
 async function cancelRemoteJob(task, logger) {
-  const ssh = getSsh(task.label, task.remotehostID);
+  const ssh = getSsh(task.projectRootDir, task.remotehostID);
   const hostinfo = remoteHost.get(task.remotehostID);
   const JS = jobScheduler[hostinfo.jobScheduler];
   const cancelCmd = `${JS.del} ${task.jobID}`;
