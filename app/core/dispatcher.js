@@ -550,7 +550,7 @@ class Dispatcher extends EventEmitter {
 
     if (lastDir !== dstDir) {
       this.logger.debug("copy ", lastDir, "to", dstDir);
-      await fs.copy(lastDir, dstDir); //dst will be overwrite always
+      await fs.copy(lastDir, dstDir, {overwrite: true, dereference: true}); //dst will be overwrite always
     }
 
     this.logger.debug("loop finished", component.name);
