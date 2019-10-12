@@ -50,6 +50,7 @@ module.exports.maxLogSize = config.maxLogSize;
 module.exports.compressLogFile = config.compressLogFile;
 module.exports.numJobOnLocal = config.numJobOnLocal;
 module.exports.defaultTaskRetryCount = config.defaultTaskRetryCount;
+module.exports.shutdownDelay = config.shutdownDelay;
 
 
 module.exports.jobScheduler = jobScheduler;

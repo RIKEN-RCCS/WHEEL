@@ -1,5 +1,5 @@
 {
-    "port": 8089,
+    "port": 8189,
     "remotehostJsonFile": "./remotehost.json",
     "useraccountJsonFile": "./useraccount.json",
     "projectListJsonFile": "./projectList.json",
@@ -14,5 +14,6 @@
     "maxLogSize": 8388608,
     "compressLogFile": true,
     "numJobOnLocal": 2,
-    "defaultTaskRetryCount": 1
+    "defaultTaskRetryCount": 1,
+    "shutdownDelay": 600000 
 }

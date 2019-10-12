@@ -19,7 +19,9 @@ server.jsonの既定値
     "numLogFiles": 5,
     "maxLogSize": 8388608,
     "compressLogFile": true,
-    "numJobOnLocal": 2
+    "numJobOnLocal": 2,
+    "defaultTaskRetryCount": 1,
+    "shutdownDelay": 600000 
 ```
 
 ## port (整数)
@@ -58,3 +60,11 @@ jupyter notebookを起動する時のポート番号を指定します。無効�
 
 ## numJobOnLocal (整数)
 localhostで実行するtaskの同時実行本数を指定します。
+
+## defaultTaskRetryCount (整数)
+taskのリトライ機能を有効にした時にリトライする回数のデフォルト値
+本設定の値にかかわらず、taskコンポーネント側でretryを指定しなければretryは行なわれない
+
+## shutdownDelay (整数)
+workflow画面に接続するクライアントが0になってからWHEEL自身のプロセスをkillするまでの待ち時間(ミリ秒単位)
+

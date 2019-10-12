@@ -4,7 +4,7 @@ const express = require("express");
 const fileManager = require("./fileManager");
 const rapid2 = require("./rapid2");
 const projectController = require("./projectController");
-const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort } = require("../db/db");
+const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
 const { getProjectState } = require("../core/projectFilesOperator");
@@ -37,9 +37,8 @@ module.exports = function(io) {
     });
     //kill itself 10 minuets later after when the last client disconnected
     socket.on("disconnect", ()=>{
-      if (io.engine.clientsCount === 0) {
-        const delay = 1000 * 60 * 10;
-        getLogger(projectRootDir).debug(`the last client disconnected wheel will be shutdown after ${delay / 1000} sec`);
+      if (io.engine.clientsCount === 0 && shutdownDelay > 0) {
+        getLogger(projectRootDir).debug(`the last client disconnected wheel will be shutdown after ${shutdownDelay/ 1000} sec`);
         const timeout = setTimeout(async()=>{
           const projectStatus = await getProjectState(projectRootDir);
           if (io.engine.clientsCount > 0) {
@@ -52,7 +51,7 @@ module.exports = function(io) {
             getLogger(projectRootDir).info("this process will be shutdown");
             process.exit(0); //eslint-disable-line no-process-exit
           }
-        }, delay);
+        }, shutdownDelay);
       }
     });
   });
