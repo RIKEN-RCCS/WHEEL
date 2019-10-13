@@ -300,14 +300,14 @@ class Executer {
       this.statusCheckQ = new SBS({
       //TODO exec should be changed for local submit case
         exec: async(task)=>{
-          logger.debug(task.jobID, "status check start");
+          logger.trace(task.jobID, "status check start");
 
           if (task.state !== "running") {
             return false;
           }
           task.jobStartTime = task.jobStartTime || getDateString(true, true);
           //TODO to be checked!!
-          logger.debug(task.jobID, "status checked", this.statusCheckCount);
+          logger.trace(task.jobID, "status checked", this.statusCheckCount);
           ++this.statusCheckCount;
 
           try {

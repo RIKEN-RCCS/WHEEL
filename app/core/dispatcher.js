@@ -803,7 +803,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(ID);
 
         if (!isFinishedState(previous.state)) {
-          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
+          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
           return false;
         }
       }
@@ -817,7 +817,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state)) {
-          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
+          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
           return false;
         }
       }
