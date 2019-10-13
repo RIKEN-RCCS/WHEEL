@@ -59,7 +59,7 @@ describe("project Controller UT", function() {
     setLogger(projectRootDir, dummyLogger);
   });
   after(async()=>{
-    await fs.remove(testDirRoot);
+//    await fs.remove(testDirRoot);
   });
   describe("#runProject", ()=>{
     describe("one local task", ()=>{

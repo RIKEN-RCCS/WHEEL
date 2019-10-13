@@ -169,7 +169,7 @@ function makeCmd(paramSettings) {
 
 function forGetNextIndex(component) {
   ++component.numFinished;
-  return component.hasOwnProperty("currentIndex") ? component.currentIndex + component.step : component.start;
+  return component.currentIndex !== null ? component.currentIndex + component.step : component.start;
 }
 
 function forIsFinished(component) {
@@ -182,7 +182,7 @@ function forTripCount(component) {
 
 function whileGetNextIndex(component) {
   ++component.numFinished;
-  return component.hasOwnProperty("currentIndex") ? ++(component.currentIndex) : 0;
+  return component.currentIndex !== null ?  ++(component.currentIndex) : 0;
 }
 
 async function whileIsFinished(cwfDir, logger, component) {
@@ -194,7 +194,7 @@ async function whileIsFinished(cwfDir, logger, component) {
 function foreachGetNextIndex(component) {
   ++component.numFinished;
 
-  if (component.hasOwnProperty("currentIndex")) {
+  if (component.currentIndex !== null) {
     const i = component.indexList.findIndex((e)=>{
       return e === component.currentIndex;
     });
@@ -218,6 +218,7 @@ function loopInitialize(component, getTripCount) {
   component.initialized = true;
   component.originalName = component.name;
   component.numFinished = 0;
+  component.currentIndex=null;
 
   if (typeof getTripCount === "function") {
     component.numTotal = getTripCount(component);
@@ -575,13 +576,13 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("_loopHandler called", component.name);
     component.childLoopRunning = true;
 
+    //determine old loop block directory
+    let srcDir = component.initialized ? `${component.originalName}_${sanitizePath(component.currentIndex)}` : component.name;
+    srcDir = path.resolve(this.cwfDir, srcDir);
+
     if (!component.initialized) {
       loopInitialize(component, getTripCount);
     }
-
-    //determine old loop block directory
-    let srcDir = component.hasOwnProperty("currentIndex") ? `${component.originalName}_${sanitizePath(component.currentIndex)}` : component.name;
-    srcDir = path.resolve(this.cwfDir, srcDir);
 
     //update index variable(component.currentIndex)
     component.currentIndex = await getNextIndex(component);

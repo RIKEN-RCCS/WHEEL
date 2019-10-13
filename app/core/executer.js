@@ -167,7 +167,7 @@ async function gatherFiles(task, rt) {
 }
 
 function makeEnv(task) {
-  return task.currentIndex ? `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} ` : "";
+  return task.hasOwnProperty("currentIndex") ? `env WHEEL_CURRENT_INDEX=${task.currentIndex.toString()} ` : "";
 }
 
 function makeQueueOpt(task, JS, queues) {
