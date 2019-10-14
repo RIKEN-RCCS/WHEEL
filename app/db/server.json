@@ -15,5 +15,5 @@
     "compressLogFile": true,
     "numJobOnLocal": 2,
     "defaultTaskRetryCount": 1,
-    "shutdownDelay": 0
+    "shutdownDelay": 600000
 }
