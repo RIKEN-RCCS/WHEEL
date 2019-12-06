@@ -41,9 +41,9 @@ export default {
             :items="['min-max-step', 'list', 'files']"
           ></v-select>
           <v-layout v-if="newItem.type==='min-max-step'">
-            <v-text-field v-model="newItem.min" type="number" hint="min" persistent-hint></v-text-field>
-            <v-text-field v-model="newItem.max" type="number" hint="max" persistent-hint></v-text-field>
-            <v-text-field v-model="newItem.step" type="number" hint="step" persistent-hint></v-text-field>
+            <v-text-field v-model="newItem.min" type="number" hint="min" persistent-hint :rules="[rules.required]"></v-text-field>
+            <v-text-field v-model="newItem.max" type="number" hint="max" persistent-hint :rules="[rules.required]"></v-text-field>
+            <v-text-field v-model="newItem.step" type="number" hint="step" persistent-hint :rules="[rules.required]"></v-text-field>
           </v-layout>
           <div v-if="newItem.type==='list'">
             <v-data-table
@@ -148,13 +148,18 @@ export default {
         step:1,
       },
       currentItem: null,
+      rules:{
+        required(v){
+          return v !== '' || 'must be number.';
+        }
+      },
       tableFooterProps
-    }
+    };
   },
   props:["keyword", "params" ],
   methods:{
     openFilterDialog(item){
-      this.filterDialog=true
+      this.filterDialog=true;
     },
     openDialog(item){
       this.currentItem=item;
@@ -178,9 +183,17 @@ export default {
     },
     storeParam(target){
       if(this.newItem.type==="min-max-step"){
-        target.min=this.newItem.min;
-        target.max=this.newItem.max;
-        target.step=this.newItem.step;
+        const min=Number(this.newItem.min);
+        const max=Number(this.newItem.max);
+        const step=Number(this.newItem.step);
+        if(Number.isNaN(min) || Number.isNaN(max) || Number.isNaN(step)){
+          console.log('min, max or step is Nan', min, max, step)
+          //TODO エラーメッセージをトーストあたりで出す
+          return;
+        }
+        target.min=min;
+        target.max=max;
+        target.step=step;
       }else if(this.newItem.type==="list"){
         target.list=this.newItem.list.map((e)=>{return e.item});
       }else if(this.newItem.type==="files"){
@@ -207,7 +220,7 @@ export default {
       }else{
         this.updateItem(this.currentItem);
       }
-      //keep type prop
+      //clear all input value except for type prop
       const tmp=this.newItem.type;
       this.closeAndResetDialog();
       this.newItem.type=tmp;
