@@ -44,6 +44,12 @@ async function getComponent(projectRootDir, ID) {
 
 
 async function isParent(projectRootDir, parentID, childID) {
+  if (parentID === "parent") {
+    return true;
+  }
+  if (childID === "parent") {
+    return false;
+  }
   const childJson = await getComponent(projectRootDir, childID);
   if (childJson === null || typeof childID !== "string") {
     return false;
@@ -214,7 +220,7 @@ async function addFileLinkBetweenSiblings(projectRootDir, srcNode, srcName, dstN
   return Promise.all(p);
 }
 
-async function removeFileLinkToParent(projectRootDir, srcNode, srcName, dstNode, dstName) {
+async function removeFileLinkToParent(projectRootDir, srcNode, srcName, dstName) {
   const p = [];
   const srcDir = await getComponentDir(projectRootDir, srcNode, true);
   const srcJson = await readComponentJson(srcDir);
@@ -241,7 +247,7 @@ async function removeFileLinkToParent(projectRootDir, srcNode, srcName, dstNode,
   return Promise.all(p);
 }
 
-async function removeFileLinkFromParent(projectRootDir, srcNode, srcName, dstNode, dstName) {
+async function removeFileLinkFromParent(projectRootDir, srcName, dstNode, dstName) {
   const p = [];
   const dstDir = await getComponentDir(projectRootDir, dstNode, true);
   const dstJson = await readComponentJson(dstDir);
@@ -581,29 +587,31 @@ async function removeInputFile(projectRootDir, ID, name) {
   const counterparts = new Set();
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
-  componentJson.inputFiles = componentJson.inputFiles.filter((inputFile)=>{
-    if (name !== inputFile.name) {
-      return true;
-    }
+  componentJson.inputFiles.forEach((inputFile)=>{
     for (const src of inputFile.src) {
-      counterparts.add(src.srcNode);
+      counterparts.add(src);
     }
-    return false;
   });
 
-  const p = [writeComponentJson(projectRootDir, componentDir, componentJson)];
-  for (const counterPartID of counterparts) {
-    const counterpartDir = await getComponentDir(projectRootDir, counterPartID, true);
+  const p1 = [];
+  for (const counterPart of counterparts) {
+    const counterpartDir = await getComponentDir(projectRootDir, counterPart.srcNode, true);
     const counterpartJson = await readComponentJson(counterpartDir);
-
-    for (const outputFile of counterpartJson.outputFiles) {
-      outputFile.dst = outputFile.dst.filter((dst)=>{
-        return dst.dstNode !== ID;
-      });
-    }
-    p.push(writeComponentJson(projectRootDir, counterpartDir, counterpartJson));
+    p1.push(
+      removeFileLink(projectRootDir, counterPart.srcNode, counterPart.srcName, ID, name)
+        .then(()=>{
+          writeComponentJson(projectRootDir, counterpartDir, counterpartJson);
+        })
+    );
   }
-  return Promise.all(p);
+  await Promise.all(p1);
+
+  const p2 = [];
+  componentJson.inputFiles = componentJson.inputFiles.filter((inputFile)=>{
+    return name !== inputFile.name;
+  });
+  p2.push(writeComponentJson(projectRootDir, componentDir, componentJson));
+  return Promise.all(p2);
 }
 async function removeOutputFile(projectRootDir, ID, name) {
   const counterparts = new Set();
@@ -633,6 +641,7 @@ async function removeOutputFile(projectRootDir, ID, name) {
   }
   return Promise.all(p);
 }
+
 async function renameInputFile(projectRootDir, ID, index, newName) {
   if (!isValidInputFilename(newName)) {
     return Promise.reject(new Error(`${newName} is not valid inputFile name`));
@@ -761,14 +770,6 @@ async function addFileLink(projectRootDir, srcNode, srcName, dstNode, dstName) {
   if (srcNode === dstNode) {
     return Promise.reject(new Error("cyclic link is not allowed"));
   }
-  if (dstNode === "parent") {
-    return addFileLinkToParent(projectRootDir, srcNode, srcName, dstName);
-  }
-  if (srcNode === "parent") {
-    return addFileLinkFromParent(projectRootDir, srcName, dstNode, dstName);
-  }
-  //isParent() does not accept "parent" as parent or child ID.
-  //so make sure both srcNode and dstNode is not "parent" before call it
   if (await isParent(projectRootDir, dstNode, srcNode)) {
     return addFileLinkToParent(projectRootDir, srcNode, srcName, dstName);
   }
@@ -779,19 +780,11 @@ async function addFileLink(projectRootDir, srcNode, srcName, dstNode, dstName) {
 }
 
 async function removeFileLink(projectRootDir, srcNode, srcName, dstNode, dstName) {
-  if (dstNode === "parent") {
-    return removeFileLinkToParent(projectRootDir, srcNode, srcName, dstNode, dstName);
-  }
-  if (srcNode === "parent") {
-    return removeFileLinkFromParent(projectRootDir, srcNode, srcName, dstNode, dstName);
-  }
-  //isParent() does not accept "parent" as parent or child ID.
-  //so make sure both srcNode and dstNode is not "parent" before call it
   if (await isParent(projectRootDir, dstNode, srcNode)) {
-    return removeFileLinkToParent(projectRootDir, srcNode, srcName, dstNode, dstName);
+    return removeFileLinkToParent(projectRootDir, srcNode, srcName, dstName);
   }
   if (await isParent(projectRootDir, srcNode, dstNode)) {
-    return removeFileLinkFromParent(projectRootDir, srcNode, srcName, dstNode, dstName);
+    return removeFileLinkFromParent(projectRootDir, srcName, dstNode, dstName);
   }
   return removeFileLinkBetweenSiblings(projectRootDir, srcNode, srcName, dstNode, dstName);
 }

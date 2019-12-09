@@ -59,7 +59,7 @@ describe("project Controller UT", function() {
     setLogger(projectRootDir, dummyLogger);
   });
   after(async()=>{
-//    await fs.remove(testDirRoot);
+    //await fs.remove(testDirRoot);
   });
   describe("#runProject", ()=>{
     describe("one local task", ()=>{
@@ -1072,7 +1072,7 @@ describe("project Controller UT", function() {
         await fs.outputFile(path.join(projectRootDir, "PS0", "data_3"), "data_3");
         const parameterSetting = {
           version: 2,
-          targetFiles: ["input1.txt", { targetNode: task0.ID, targetName: "input2.txt" }, {targetName: "input3.txt"}],
+          targetFiles: ["input1.txt", { targetNode: task0.ID, targetName: "input2.txt" }, { targetName: "input3.txt" }],
           target_param: [
             {
               keyword: "KEYWORD1",
@@ -1116,7 +1116,7 @@ describe("project Controller UT", function() {
               expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "input1.txt")).to.be.a.file().with.content(`${KEYWORD1} ${KEYWORD3}`);
               //check parameter expansion for input file with targetName and targetNode option and not-defiend parameter
               expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "task0", "input2.txt")).to.be.a.file().with.content(`${KEYWORD1}`);
-              //check parameter expansion for input file only with targetName 
+              //check parameter expansion for input file only with targetName
               expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "input3.txt")).to.be.a.file().with.content(`${KEYWORD1}`);
               //check parameter expansion is not performed on non-target file
               expect(path.resolve(projectRootDir, `PS0_KEYWORD1_${KEYWORD1}_KEYWORD3_${KEYWORD3}_filename_${filename}`, "non-targetFile.txt")).to.be.a.file().with.content("{{ filename }} {{ KEYWORD2 }}");

@@ -72,12 +72,30 @@ describe("workflow editor UT", function() {
     /*
      * create dummy project
      *
+     * hierarchy:
      * root--+--task0
      *       +--wf1----+---task1
      *       |         +---wf2------task2
      *       +--foreach0 <-- no children !!
      *       +---source0
      *       +---viewer0
+     *
+     * outputFile:
+     *   task0    "foo"
+     *   wf1      "hoge"
+     *   task1    "a"
+     *   wf2      "e"
+     *   task2    "d"
+     *   source0  "source"
+     *
+     * inputFile:
+     *   wf1      "bar"
+     *   foreach0 "hoge"
+     *   task1    "f"
+     *   wf2      "b"
+     *   task2    "c"
+     *   viewer0  "viewer"
+     *
      *
      * dependency:
      *  - task0 -> wf1
@@ -412,6 +430,15 @@ describe("workflow editor UT", function() {
       task0Schema.properties.outputFiles.items[0].properties.dst = getSchema("emptyArray");
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
     });
+    it("should remove inputFile entry from child component and modify linked parent component", async()=>{
+      await addFileLink(projectRootDir, components.task1.ID, "a", components.task2.ID, "c");
+
+      await removeInputFile(projectRootDir, components.task2.ID, "c");
+      task2Schema.properties.inputFiles = getSchema("emptyArray");
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+      wf2Schema.properties.inputFiles.items[0].properties.forwardTo = getSchema("emptyArray");
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
+    });
     it("should be rejected while attempting to remove inputFile from source component", ()=>{
       return expect(removeInputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
     });
@@ -428,6 +455,15 @@ describe("workflow editor UT", function() {
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
       foreach0Schema.properties.inputFiles.items[0].properties.src = getSchema("emptyArray");
       expect(path.join(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema(foreach0Schema);
+    });
+    it("should remove outputFile entry from child component and modify linked parent component", async()=>{
+      await addFileLink(projectRootDir, components.task2.ID, "d", components.task1.ID, "f");
+
+      await removeOutputFile(projectRootDir, components.task2.ID, "d");
+      task2Schema.properties.outputFiles = getSchema("emptyArray");
+      expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+      wf2Schema.properties.outputFiles.items[0].properties.origin = getSchema("emptyArray");
+      expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
     });
     it("should be rejected while attempting to remove outputFile from viewer component", ()=>{
       return expect(removeOutputFile(projectRootDir, components.viewer0.ID, "piyo")).to.be.eventually.rejected;
