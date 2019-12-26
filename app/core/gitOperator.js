@@ -120,7 +120,7 @@ class Git extends EventEmitter {
   async add(absTargetPath, isRemoving = false) {
     const stats = await fs.stat(absTargetPath);
     if (stats.isDirectory()) {
-      let files = await promisify(glob)("**", { cwd: absTargetPath });
+      let files = await promisify(glob)("{**,**/.gitkeep}", { cwd: absTargetPath });
       files = files.map((e)=>{
         return replacePathsep(path.relative(this.rootDir, path.join(absTargetPath, e)));
       });
