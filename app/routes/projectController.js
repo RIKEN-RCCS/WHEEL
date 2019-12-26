@@ -306,6 +306,10 @@ async function onRunProject(sio, projectRootDir, cb) {
     const sourceComponents = await getSourceComponents(projectRootDir);
 
     for (const component of sourceComponents) {
+      if(component.disable){
+        getLogger(projectRootDir).debug(`disabled component: ${component.name}(${component.ID})`);
+        continue;
+      }
       const filename = await getSourceFilename(projectRootDir, component, sio);
       const componentDir = await getComponentDir(projectRootDir, component.ID);
       const outputFile = component.outputFiles[0].name;
