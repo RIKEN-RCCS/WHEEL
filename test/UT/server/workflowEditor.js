@@ -482,6 +482,9 @@ describe("workflow editor UT", function() {
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
       expect(path.join(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema(task0Schema);
     });
+    it("should rename inputFile entry of wf1", async()=>{
+      return expect(renameInputFile(projectRootDir, components.wf1.ID, 0, "bar=bar")).to.be.rejectedWith("bar=bar is not valid inputFile name");
+    });
   });
   describe("#renameOutputFile", ()=>{
     it("should rename outputFile entry of wf1", async()=>{
@@ -490,6 +493,9 @@ describe("workflow editor UT", function() {
       foreach0Schema.properties.inputFiles.items[0].properties.src.items[0].properties.srcName = { enum: ["hogehoge"] };
       expect(path.join(projectRootDir, "wf1", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf1Schema);
       expect(path.join(projectRootDir, "foreach0", componentJsonFilename)).to.be.a.file().with.json.using.schema(foreach0Schema);
+    });
+    it("should rename outputFile entry of wf1", async()=>{
+      return expect(renameOutputFile(projectRootDir, components.wf1.ID, 0, "hoge=hoge")).to.be.rejectedWith("hoge=hoge is not valid outputFile name");
     });
   });
   describe("#addLink", ()=>{
