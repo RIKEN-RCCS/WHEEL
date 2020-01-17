@@ -588,30 +588,24 @@ async function removeInputFile(projectRootDir, ID, name) {
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
   componentJson.inputFiles.forEach((inputFile)=>{
+    if (name !== inputFile.name) {
+      return true;
+    }
     for (const src of inputFile.src) {
       counterparts.add(src);
     }
   });
 
-  const p1 = [];
+  const p = [];
   for (const counterPart of counterparts) {
-    const counterpartDir = await getComponentDir(projectRootDir, counterPart.srcNode, true);
-    const counterpartJson = await readComponentJson(counterpartDir);
-    p1.push(
-      removeFileLink(projectRootDir, counterPart.srcNode, counterPart.srcName, ID, name)
-        .then(()=>{
-          writeComponentJson(projectRootDir, counterpartDir, counterpartJson);
-        })
-    );
+    p.push( removeFileLink(projectRootDir, counterPart.srcNode, counterPart.srcName, ID, name));
   }
-  await Promise.all(p1);
+  await Promise.all(p);
 
-  const p2 = [];
   componentJson.inputFiles = componentJson.inputFiles.filter((inputFile)=>{
     return name !== inputFile.name;
   });
-  p2.push(writeComponentJson(projectRootDir, componentDir, componentJson));
-  return Promise.all(p2);
+  return  writeComponentJson(projectRootDir, componentDir, componentJson);
 }
 async function removeOutputFile(projectRootDir, ID, name) {
   const counterparts = new Set();
@@ -623,23 +617,16 @@ async function removeOutputFile(projectRootDir, ID, name) {
       return true;
     }
     for (const dst of outputFile.dst) {
-      counterparts.add(dst.dstNode);
+      counterparts.add(dst);
     }
     return false;
   });
-
-  const p = [writeComponentJson(projectRootDir, componentDir, componentJson)];
-  for (const counterPartID of counterparts) {
-    const counterpartDir = await getComponentDir(projectRootDir, counterPartID, true);
-    const counterpartJson = await readComponentJson(counterpartDir);
-    for (const inputFile of counterpartJson.inputFiles) {
-      inputFile.src = inputFile.src.filter((src)=>{
-        return src.srcNode !== ID;
-      });
-    }
-    p.push(writeComponentJson(projectRootDir, counterpartDir, counterpartJson));
+  const p = [];
+  for (const counterPart of counterparts) {
+    p.push( removeFileLink(projectRootDir, ID, name, counterPart.dstNode, counterPart.dstName));
   }
-  return Promise.all(p);
+  await Promise.all(p);
+  return writeComponentJson(projectRootDir, componentDir, componentJson);
 }
 
 async function renameInputFile(projectRootDir, ID, index, newName) {
