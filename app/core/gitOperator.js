@@ -7,6 +7,9 @@ const promiseRetry = require("promise-retry");
 const nodegit = require("nodegit");
 const glob = require("glob");
 const { replacePathsep } = require("./pathUtils");
+const { getLogger } = require("../logSettings");
+const logger = getLogger();
+
 
 /**
  * git operation class
@@ -40,17 +43,17 @@ class Git extends EventEmitter {
         if (this.rmBuffer.length > 0) {
           const pathspecs = Array.from(this.rmBuffer);
           this.rmBuffer = [];
-          console.log("GIT: git rm", pathspecs);
+          logger.trace("GIT: git rm", pathspecs);
           await index.removeAll(pathspecs, null);
-          console.log("GIT: git rm done", pathspecs);
+          logger.trace("GIT: git rm done", pathspecs);
         }
         if (this.addBuffer.length > 0) {
           try {
             const pathspecs = Array.from(this.addBuffer);
             this.addBuffer = [];
-            console.log("GIT: git add", pathspecs);
+            logger.trace("GIT: git add", pathspecs);
             await index.addAll(pathspecs, 0, null);
-            console.log("GIT: git add done", pathspecs);
+            logger.trace("GIT: git add done", pathspecs);
           } catch (err) {
             //retry if failed to read descriptor error
             if (err.errno === -1) {
@@ -69,7 +72,7 @@ class Git extends EventEmitter {
         factor: 1
       });
       await index.write();
-      console.log("GIT: write index done");
+      logger.trace("GIT: write index done");
     } catch (err) {
       this.emit("error");
     }
@@ -173,15 +176,14 @@ class Git extends EventEmitter {
    */
   async commit(name, mail, message) {
     if (this.addBuffer.length > 0 || this.rmBuffer.length > 0) {
-      console.log("GIT: add or rm remaining files in buffer");
+      logger.trace("GIT: add or rm remaining files in buffer");
       await this._write();
     }
     const author = nodegit.Signature.now(name, mail);
-    const commiter = await author.dup();
     const index = await this.repo.refreshIndex();
     const oid = await index.writeTree();
     const headCommit = await this.repo.getHeadCommit();
-    return this.repo.createCommit("HEAD", author, commiter, message, oid, [headCommit]);
+    return this.repo.createCommit("HEAD", author, author, message, oid, [headCommit]);
   }
 
   /**
@@ -198,7 +200,7 @@ class Git extends EventEmitter {
    * perform git clean -df
    */
   async clean() {
-    console.log("not implemented");
+    logger.trace("not implemented");
   }
 
   /**

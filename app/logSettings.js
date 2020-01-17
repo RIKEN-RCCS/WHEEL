@@ -58,7 +58,7 @@ const defaultSettings = {
         "console",
         "file"
       ],
-      level: "debug"
+      level: "trace"
     },
     workflow: {
       appenders: [
