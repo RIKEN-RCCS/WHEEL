@@ -52,9 +52,7 @@ $(() => {
   let currentWf = {};
   //for 'save' button control
   let presentState = '';
-  //taskStateList
   let projectRootDir = currentWorkDir;
-  let firstConnection = true;
   let componentPath;
   let viewerWindow;
   let viewerInstance;
@@ -469,21 +467,16 @@ $(() => {
     });
 
     let firstReadTaskStateList = [];
+    let firstConnection = true;
     sio.on('taskStateList', (taskStateList, cb) => {
       if (taskStateList.length !== 0) {
         if (firstConnection === true) {
           Array.prototype.push.apply(firstReadTaskStateList, taskStateList);
-          firstReadTaskStateList.sort(sortTaskStateList);
-        }
-      }
-      if (taskStateList.length < 100) {
-        firstConnection = false;
-      }
-
-      if (firstConnection === false) {
-        if (firstReadTaskStateList.length !== 0) {
-          drawTaskStateList(firstReadTaskStateList);
-          firstReadTaskStateList = [];
+          if (taskStateList.length > 0 && taskStateList.length < 100) {
+            firstReadTaskStateList.sort(sortTaskStateList);
+            drawTaskStateList(firstReadTaskStateList);
+            firstConnection = false;
+          }
         } else {
           drawTaskStateList(taskStateList);
         }
@@ -1102,8 +1095,8 @@ $(() => {
   };
 
   // draw taskStateList
-  function insertSubComponetStateHTML(target, id, iconPath, name) {
-    target.insertAdjacentHTML("beforeend", `<tr class="project_table_component" id="line_${id}">
+  function insertSubComponetStateHTML(target, insertPosition, id, iconPath, name) {
+    target.insertAdjacentHTML(insertPosition, `<tr class="project_table_component" id="line_${id}">
     <td id="${id}" class="componentName"><img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td></tr>`);
   }
 
@@ -1170,11 +1163,11 @@ $(() => {
       }
       let taskId = escapeCharacter(taskIdTemp);
 
-      let nodeState = taskStateList[i].state;
+      const nodeState = taskStateList[i].state;
       if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
         nodeState = 'running'
       }
-      let nodeComponentState = config.state_icon[nodeState];
+      const nodeComponentState = config.state_icon[nodeState];
 
       //cut detailed time info
       if (taskStateList[i].startTime !== 'not started') taskStateList[i].startTime = sliceInfo(taskStateList[i].startTime);
@@ -1223,6 +1216,7 @@ $(() => {
             maxancestorsLength = ancestorsNameList.length;
           }
           let ancestorsId = "";
+          let ancestorsIdInPS = "";
           //arrange components expect task component.
           for (let j = 0; j < ancestorsTypeList.length; j++) {
             if (j === 0) {
@@ -1232,14 +1226,25 @@ $(() => {
             }
             let ancestorsIconPath = config.node_icon[ancestorsTypeList[j]];
             if (document.getElementById(`${ancestorsId}`) === null) {
-              insertSubComponetStateHTML(targetElement, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
+              if (ancestorsIdInPS !== "") {
+                const targetElement2 = document.getElementById(`line_${ancestorsIdInPS}`);
+                const insertPosition2 = "afterend";
+                insertSubComponetStateHTML(targetElement2, insertPosition2, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
+                ancestorsIdInPS = "";
+              } else {
+                insertSubComponetStateHTML(targetElement, insertPosition, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
+              }
               $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
               let loopMarginArea = 32 * j;
               $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
+            } else {
+              if (ancestorsTypeList[j] === "parameterStudy") {
+                ancestorsIdInPS = ancestorsId;
+              }
             }
           }
           //draw task in subcomponent.
-          if (ancestorsTypeList[ancestorsTypeList.length - 1] === "parameterStudy") {
+          if (ancestorsTypeList.indexOf('parameterStudy') !== -1) {
             targetElement = document.getElementById(`line_${ancestorsId}`);
             insertPosition = "afterend";
           }
