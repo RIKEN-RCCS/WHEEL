@@ -85,30 +85,6 @@ const defaultSettings = {
       ],
       level: "debug"
     },
-    login: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
-    },
-    admin: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
-    },
-    rapid: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
-    }
   },
   levels: {
     stdout: {

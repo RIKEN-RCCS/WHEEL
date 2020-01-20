@@ -125,35 +125,5 @@ describe("Unit test for log4js's helper functions", ()=>{
       const log = sio.emit.getCall(0).args[1];
       expect(log).to.match(/bar$/);
     });
-    it("should output to login logger", ()=>{
-      const logger = getLogger("login");
-      logger.addContext("sio", sio);
-      logger.info("foo");
-      logger.error("bar");
-      expect(sio.emit).to.have.been.calledOnce;
-      expect(sio.emit).to.always.have.been.calledWith("showMessage");
-      const log = sio.emit.getCall(0).args[1];
-      expect(log).to.match(/bar$/);
-    });
-    it("should output to admin logger", ()=>{
-      const logger = getLogger("admin");
-      logger.addContext("sio", sio);
-      logger.info("foo");
-      logger.error("bar");
-      expect(sio.emit).to.have.been.calledOnce;
-      expect(sio.emit).to.always.have.been.calledWith("showMessage");
-      const log = sio.emit.getCall(0).args[1];
-      expect(log).to.match(/bar$/);
-    });
-    it("should output to rapid logger", ()=>{
-      const logger = getLogger("rapid");
-      logger.addContext("sio", sio);
-      logger.info("foo");
-      logger.error("bar");
-      expect(sio.emit).to.have.been.calledOnce;
-      expect(sio.emit).to.always.have.been.calledWith("showMessage");
-      const log = sio.emit.getCall(0).args[1];
-      expect(log).to.match(/bar$/);
-    });
   });
 });

@@ -1,12 +1,9 @@
 {
     "port": 8089,
     "remotehostJsonFile": "./remotehost.json",
-    "useraccountJsonFile": "./useraccount.json",
     "projectListJsonFile": "./projectList.json",
     "interval": 1000,
     "defaultCleanupRemoteRoot": true,
-    "saltRound": 10,
-    "admin": "admin",
     "jupyter": true,
     "jupyterPort": "auto",
     "logFilename": "wheel.log",
@@ -15,5 +12,5 @@
     "compressLogFile": true,
     "numJobOnLocal": 2,
     "defaultTaskRetryCount": 1,
-    "shutdownDelay": 600000
+    "shutdownDelay": 0
 }
