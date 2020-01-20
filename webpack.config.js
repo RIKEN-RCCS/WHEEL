@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
   entry: {
@@ -19,25 +19,16 @@ module.exports = {
     path: path.resolve(__dirname, 'app/public'),
     filename: "js/[name].js"
   },
+  optimization: {
+    splitChunks: {
+      name: "common",
+      chunks: 'initial',
+    }
+  },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'common',
-      chunks: ['home', 'workflow', 'remotehost', 'rapid'],
-      minChunks: function (module, count) {
-        // extract all css from node_module
-        if (module.resource && module.context
-          && (/^.*\.(css|scss)$/).test(module.resource)
-          && module.context.indexOf("node_modules") !== -1) {
-          return true;
-        }
-        return count >= 2;
-      }
-    }),
-    new ExtractTextPlugin({
-      filename: (getPath) => {
-        return getPath('css/[name].css').replace('css/js', 'css');
-      },
-      allChunks: true
+    new MiniCssExtractPlugin({
+      filename: 'css/[name].css',
+      chunkFilename: '[id].css',
     })
   ],
   module: {
@@ -47,16 +38,12 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: 'css-loader'
-        })
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },
       {
         test: /\.json$/,
-        use: [
-          'json-loader'
-        ]
+        loader:  "json-loader",
+        type: "javascript/auto"
       },
       {
         test: /\.(png|svg|jpg|gif)$/,
