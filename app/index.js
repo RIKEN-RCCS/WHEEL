@@ -42,7 +42,6 @@ process.on("uncaughtException", logger.debug.bind(logger));
 
 //template engine
 app.set("views", path.resolve(__dirname, "views"));
-app.set("view engine", "ejs");
 
 //middlewares
 app.use(cors());
@@ -67,18 +66,12 @@ app.use(passport.session());
 const routes = {
   home: require(path.resolve(__dirname, "routes/home"))(sio),
   workflow: require(path.resolve(__dirname, "routes/workflow"))(sio),
-  remotehost: require(path.resolve(__dirname, "routes/remotehost"))(sio),
-  login: require(path.resolve(__dirname, "routes/login")),
-  admin: require(path.resolve(__dirname, "routes/admin"))(sio),
-  rapid: require(path.resolve(__dirname, "routes/rapid"))(sio)
+  remotehost: require(path.resolve(__dirname, "routes/remotehost"))(sio)
 };
-//TODO 起動時のオプションに応じて/に対するroutingをhomeとloginで切り替える
+
 app.use("/", routes.home);
 app.use("/home", routes.home);
-app.use("/login", routes.login);
-app.use("/admin", routes.admin);
 app.use("/workflow", routes.workflow);
-app.use("/editor", routes.rapid);
 app.use("/remotehost", routes.remotehost);
 
 //port number
@@ -164,6 +157,7 @@ if (jupyter) {
 
 /**
  * Event listener for HTTP server "error" event.
+ * @param error
  */
 function onError(error) {
   if (error.syscall !== "listen") {
