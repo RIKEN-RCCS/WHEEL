@@ -1163,7 +1163,7 @@ $(() => {
       }
       let taskId = escapeCharacter(taskIdTemp);
 
-      const nodeState = taskStateList[i].state;
+      let nodeState = taskStateList[i].state;
       if (nodeState === 'stage-in' || nodeState === 'waiting' || nodeState === 'queued' || nodeState === 'stage-out') {
         nodeState = 'running'
       }
