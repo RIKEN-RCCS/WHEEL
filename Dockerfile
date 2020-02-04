@@ -11,15 +11,14 @@ RUN apt-get update &&\
 WORKDIR /usr/src/
 
 # copy necessary files
-COPY package.json webpack.config.js app/ test/ ./
-COPY  app/ ./app
-COPY  test/ ./test
+COPY package.json webpack.config.js ./
+COPY  app/ ./app/
+COPY  test/ ./test/
 
-RUN pwd && ls 
 RUN npm install --production && npm run prepare
 
 ##remove build tools
-RUN npm uninstal --no-save\
+RUN npm uninstal --save\
     ace-builds\
     css-loader\
     extract-text-webpack-plugin\
@@ -33,6 +32,7 @@ RUN npm uninstal --no-save\
     jstree\
     material-design-icons-iconfont\
     mini-css-extract-plugin\
+    terser-webpack-plugin\
     split.js\
     style-loader\
     svg.draggable.js\

@@ -104,8 +104,8 @@ if (jupyter) {
   const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
   const notebookRoot = process.env.WHEEL_NOTEBOOK_ROOT || "/";
   const opts = [
-    "notebook",
     "--no-browser",
+    "--allow-root",
     `--port ${jupyterPortNumber}`,
     "--port-retries=0",
     "--ip=*",
