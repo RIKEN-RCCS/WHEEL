@@ -1,7 +1,7 @@
 {
     "port": 8089,
-    "remotehostJsonFile": "./remotehost.json",
-    "projectListJsonFile": "./projectList.json",
+    "remotehostJsonFile": "remotehost.json",
+    "projectListJsonFile": "projectList.json",
     "interval": 1000,
     "defaultCleanupRemoteRoot": true,
     "jupyter": true,
@@ -12,5 +12,6 @@
     "compressLogFile": true,
     "numJobOnLocal": 2,
     "defaultTaskRetryCount": 1,
+    "rootDir": "/",
     "shutdownDelay": 0
 }

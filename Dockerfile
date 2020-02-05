@@ -13,37 +13,10 @@ WORKDIR /usr/src/
 # copy necessary files
 COPY package.json webpack.config.js ./
 COPY  app/ ./app/
-COPY  test/ ./test/
 
-RUN npm install --production && npm run prepare
+RUN npm install && npm run prepare
 
 ##remove build tools
-RUN npm uninstal --save\
-    ace-builds\
-    css-loader\
-    extract-text-webpack-plugin\
-    file-loader\
-    font-awesome\
-    jquery\
-    jquery-contextmenu\
-    jquery-ui\
-    js-cookie\
-    json-loader\
-    jstree\
-    material-design-icons-iconfont\
-    mini-css-extract-plugin\
-    terser-webpack-plugin\
-    split.js\
-    style-loader\
-    svg.draggable.js\
-    svgjs\
-    uglifyjs-webpack-plugin\
-    url-loader\
-    viewerjs\
-    vue\
-    vuetify\
-    webpack-cli\
-    webpack
-  
+RUN npm prune --production
 
 CMD [ "npm", "start" ]

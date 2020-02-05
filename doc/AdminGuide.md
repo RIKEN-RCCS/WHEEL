@@ -47,11 +47,11 @@ dockerを使わずにホストOSでWHEELを起動する場合は以下の手順�
 ## インストール後の設定
 ### 証明書
 WHEELはhttpsおよびwssにて通信を行なうため、起動する前にサーバ証明書等の設定が必要です。
-秘密鍵ファイルを `app/db/server.key`、証明書ファイルを `app/db/server.crt`という名前で配置してください。
+秘密鍵ファイルを `app/config/server.key`、証明書ファイルを `app/config/server.crt`という名前で配置してください。
 __BUG__ 正しい鍵および証明書ファイルを配置せずにWHEELを起動すると、後述の`remotehost.json`および`projectList.json`ファイルが破壊されるという既知の問題があります(2020/1/20時点)
 
 ### server設定
-WHEELの動作に影響するパラメータは、`app/db/server.json`ファイルにjson形式で記述します。
+WHEELの動作に影響するパラメータは、`app/config/server.json`ファイルにjson形式で記述します。
 設定可能なプロパティは以下のとおりです。
 
 server.jsonの既定値
@@ -71,6 +71,7 @@ server.jsonの既定値
     "numJobOnLocal": 2,
     "defaultTaskRetryCount": 1,
     "shutdownDelay": 0
+    "rootDir": undefined
 ```
 
 #### port (整数)
@@ -79,11 +80,11 @@ WHEELが待ち受けるポート番号を設定します。
 
 #### remotehostJsonFile (文字列)
 リモートホスト設定を記載するJsonファイルのファイル名を指定します。
-app/dbディレクトリからの相対パスか絶対パスで指定します。
+app/configディレクトリからの相対パスで指定します。
 
 #### projectListJsonFile(文字列)
 WHEELが管理するプロジェクトの一覧を記載するJsonファイルのファイル名を指定します。
-app/dbディレクトリからの相対パスか絶対パスで指定します。
+app/configディレクトリからの相対パスで指定します。
 
 #### interval (整数)
 一部のイベントループを実行するインターバル(ミリ秒単位)
@@ -122,17 +123,42 @@ taskのリトライ機能を有効にした時にリトライする回数のデ�
 #### shutdownDelay (整数)
 workflow画面に接続するクライアントが0になってからWHEEL自身のプロセスをkillするまでの待ち時間(ミリ秒単位)
 
+### rootDir (文字列)
+プロジェクトファイル等のユーザが作成/使用するファイルを格納するディレクトリのパスを指定します。
+デフォルト値は未指定ですが、指定が無い場合は環境変数HOMEが使われ、さらにHOMEが未設定の場合は/が使われます。
+
 ### jobScheduler設定
-WHEELが利用するジョブスケジューラシステムに関する設定は `app/db/jobScheduler.json`ファイルにjson形式で記述します。
+WHEELが利用するジョブスケジューラシステムに関する設定は `app/config/jobScheduler.json`ファイルにjson形式で記述します。
 本設定ファイルは通常の運用の範囲内では変更する必要はありませんが、
 ジョブ投入/ステータスチェック/キャンセル時に想定していないオプションが必要になった時や、
 ジョブスケジューラ側のソフトウェアの更新などにより、出力されるメッセージが変わった時などに変更する必要があります。
 
 ## 起動・終了方法
 ### dockerを利用する場合
+1. コンテナと共有する領域の用意(初回起動時のみ)
+ホスト側に以下の2つのディレクトリを作成してください
+
+- 設定ファイルの格納領域(config)
+- ユーザが作成したプロジェクトファイルの格納領域 (rootDir)
+
+1のディレクトリ内には何も配置する必要はありません。
+2のディレクトリ内には、以下のファイルを配置してください。
+
+- app/config/server.json
+- app/config/jobScheduler.json
+- SSL鍵、証明書ファイル
+
+2. コンテナの起動
 インストール時に作成したdocker imageを起動してください。CMD行にWHEELを起動するコマンドを記述しているので、docker runのみで
 WHEELのプロセスが立ち上がります。
-なお、ホストとのストレージの共有(-v)およびポートフォワードの設定(-p)の指定は別途必要です。
+起動時に、-vオプションを使用して前項で作成した2つのディレクトリをコンテナと共有してください。
+
+config: /usr/src/app/config
+rootDir: server.jsonに設定したrootDir、未指定の場合は"/root"
+
+また、-pオプションを使用してポートフォワードの設定を行なってください。
+WHEELが使用するポート番号は、前述のserver.json内で指定したportですが、jupyter notebook機能を使用する時はWHEELが使用するポート番号+1の番号に対しても
+ポートフォワードを行なう必要があります。なお、このポート番号がコンテナ側とホスト側で一致していない場合はWHEELのGUIからjupyter notebookにアクセスすることはできません。
 
 ### dockerを利用しない場合
 WHEELのインストールディレクトリまたは、そのサブディレクトリ内で以下のコマンドを実行してください。
@@ -144,8 +170,8 @@ WHEELのインストールディレクトリまたは、そのサブディレク
 WHEELが動作中に参照するユーザデータの保存先として、以下の2ファイルが使われます。
 (ファイル名は、前述のserver.jsonで変更することもできます。)
 
-- app/db/remotehost.json
-- app/db/projectList.json
+- app/config/remotehost.json
+- app/config/projectList.json
 
 remotehost.jsonには、ユーザが接続する外部サーバのホスト名、IDなどの情報が平文で保存されています。
 定期的にバックアップを取るなど障害への準備を行なうとともに、取り扱いに注意してください。
