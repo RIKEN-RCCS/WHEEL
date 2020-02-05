@@ -16,10 +16,8 @@ const cors = require("cors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
-const session = require("express-session");
 const siofu = require("socketio-file-upload");
-const passport = require("passport");
-const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename } = require("./db/db");
+const { port, jupyter, jupyterPort, notebookRoot, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename } = require("./db/db");
 const { getLogger } = require("./logSettings");
 
 /*
@@ -36,31 +34,17 @@ const sio = require("socket.io")(server);
 //setup logger
 const logger = getLogger();
 
-
 process.on("unhandledRejection", logger.debug.bind(logger));
 process.on("uncaughtException", logger.debug.bind(logger));
-
-//template engine
-app.set("views", path.resolve(__dirname, "views"));
 
 //middlewares
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(session({
-  secret: "wheel",
-  resave: true,
-  saveUninitialized: false,
-  cookie: {
-    secure: "auto"
-  }
-}));
 app.use(express.static(path.resolve(__dirname, "viewer"), { index: false }));
 app.use(express.static(path.resolve(__dirname, "public"), { index: false }));
 app.use(siofu.router);
-app.use(passport.initialize());
-app.use(passport.session());
 
 //routing
 const routes = {
@@ -102,10 +86,9 @@ server.on("listening", onListening);
 if (jupyter) {
   const cmd = typeof jupyter === "string" ? jupyter : "jupyter-notebook";
   const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
-  const notebookRoot = process.env.WHEEL_NOTEBOOK_ROOT || "/";
   const opts = [
-    "notebook",
     "--no-browser",
+    "--allow-root",
     `--port ${jupyterPortNumber}`,
     "--port-retries=0",
     "--ip=*",

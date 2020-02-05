@@ -96,11 +96,14 @@ class Git extends EventEmitter {
 
   /**
    * create new repository
-   * @param {string} user - author's name
-   * @param {string} mail - author's mailaddress
+   * @param {string} user author's name
+   * @param {string} mail author's mailaddress
    * @returns {undefined} -
    */
   async init(user, mail) {
+    if (await fs.pathExists(path.resolve(this.rootDir, ".git"))) {
+      throw new Error("repository is already initialized");
+    }
     const repo = await nodegit.Repository.init(this.rootDir, 0);
     const author = nodegit.Signature.now(user, mail);
     const containts = await promisify(glob)("**", { cwd: this.rootDir, dot: true, ignore: ".git/**/*" });
@@ -118,7 +121,8 @@ class Git extends EventEmitter {
 
   /**
    * perform git add
-   * @param {string} absTargetPath - target's absolute path
+   * @param {string} absTargetPath target's absolute path
+   * @param isRemoving
    */
   async add(absTargetPath, isRemoving = false) {
     const stats = await fs.stat(absTargetPath);
@@ -163,7 +167,7 @@ class Git extends EventEmitter {
 
   /**
    * perform git rm
-   * @param {string} absTargetPath - target's absolute path
+   * @param {string} absTargetPath target's absolute path
    */
   async rm(absTargetPath) {
     return this.add(absTargetPath, true);
@@ -171,8 +175,9 @@ class Git extends EventEmitter {
 
   /**
    * commit already added changed
-   * @param {string} name - name for both author and commiter
-   * @param {string} mail - e-mail address for both author and commiter
+   * @param {string} name name for both author and commiter
+   * @param {string} mail e-mail address for both author and commiter
+   * @param message
    */
   async commit(name, mail, message) {
     if (this.addBuffer.length > 0 || this.rmBuffer.length > 0) {
@@ -188,6 +193,7 @@ class Git extends EventEmitter {
 
   /**
    * perform git reset HEAD --hard
+   * @param filePatterns
    */
   async resetHEAD(filePatterns) {
     const pathSpec = typeof filePatterns === "string" ? [filePatterns] : filePatterns;
@@ -214,6 +220,9 @@ class Git extends EventEmitter {
 const repos = new Map();
 
 //return empty git instance if rootDir/.git is not exists
+/**
+ * @param rootDir
+ */
 async function getGitOperator(rootDir) {
   if (!repos.has(rootDir)) {
     const repo = new Git(rootDir);
@@ -224,6 +233,11 @@ async function getGitOperator(rootDir) {
 }
 
 //initialize repo
+/**
+ * @param rootDir
+ * @param user
+ * @param mail
+ */
 async function gitInit(rootDir, user, mail) {
   const repo = new Git(rootDir);
   await repo.init(user, mail);
@@ -232,6 +246,12 @@ async function gitInit(rootDir, user, mail) {
 }
 
 //commit already staged(indexed) files
+/**
+ * @param rootDir
+ * @param name
+ * @param mail
+ * @param message
+ */
 async function gitCommit(rootDir, name, mail, message = "save project") {
   const git = await getGitOperator(rootDir);
   return git.commit(name, mail, message);
@@ -264,6 +284,7 @@ async function gitRm(rootDir, filename) {
 /**
  * performe git reset HEAD
  * @param {string} rootDir  - directory path which has ".git" directory
+ * @param filePatterns
  */
 async function gitResetHEAD(rootDir, filePatterns) {
   const git = await getGitOperator(rootDir);

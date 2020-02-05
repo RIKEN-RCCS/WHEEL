@@ -64,7 +64,7 @@ async function getAllProject() {
 }
 
 async function adaptorSendFiles(withFile, emit, msg, cb) {
-  const target = msg ? path.normalize(convertPathSep(msg)) : rootDir || os.homedir() || "/";
+  const target = msg ? path.normalize(convertPathSep(msg)) : rootDir;
   const request = msg || target;
 
   try {

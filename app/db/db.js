@@ -1,22 +1,40 @@
 "use strict";
+const os = require("os");
 const path = require("path");
 const JsonArrayManager = require("./jsonArrayManager");
-const config = require("./server.json");
-const jobScheduler = require("./jobScheduler.json");
-const remotehostFilename = path.resolve(__dirname, config.remotehostJsonFile);
-const projectListFilename = path.resolve(__dirname, config.projectListJsonFile);
+const configDir = path.resolve(__dirname, "../config");
+const config = require(path.resolve(configDir, "server.json"));
+const jobScheduler = require(path.resolve(configDir, "jobScheduler.json"));
+const remotehostFilename = path.resolve(configDir, config.remotehostJsonFile);
+const projectListFilename = path.resolve(configDir, config.projectListJsonFile);
 
 let jupyterToken;
 let actualJupyterPortNumber;
+
+/**
+ * @param token
+ */
 function setJupyterToken(token) {
   jupyterToken = token;
 }
+
+/**
+ *
+ */
 function getJupyterToken() {
   return jupyterToken;
 }
+
+/**
+ * @param port
+ */
 function setJupyterPort(port) {
   actualJupyterPortNumber = port;
 }
+
+/**
+ *
+ */
 function getJupyterPort() {
   return actualJupyterPortNumber;
 }
@@ -25,8 +43,8 @@ module.exports.suffix = ".wheel";
 module.exports.projectJsonFilename = "prj.wheel.json";
 module.exports.componentJsonFilename = "cmp.wheel.json";
 module.exports.statusFilename = "status.wheel.txt";
-module.exports.keyFilename = path.resolve(__dirname, "server.key");
-module.exports.certFilename = path.resolve(__dirname, "server.crt");
+module.exports.keyFilename = path.resolve(configDir, "server.key");
+module.exports.certFilename = path.resolve(configDir, "server.crt");
 
 //export accessor to jupyter parameter
 module.exports.setJupyterToken = setJupyterToken;
@@ -37,7 +55,8 @@ module.exports.getJupyterPort = getJupyterPort;
 //re-export server settings
 module.exports.interval = config.interval;
 module.exports.port = config.port;
-module.exports.rootDir = config.rootDir;
+module.exports.rootDir = config.rootDir || os.homedir() || "/";
+module.exports.notebook = module.exports.rootDir;
 module.exports.defaultCleanupRemoteRoot = config.defaultCleanupRemoteRoot;
 module.exports.jupyter = config.jupyter;
 module.exports.jupyterPort = config.jupyterPort;
