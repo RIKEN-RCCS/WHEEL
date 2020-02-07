@@ -12,6 +12,5 @@
     "compressLogFile": true,
     "numJobOnLocal": 2,
     "defaultTaskRetryCount": 1,
-    "rootDir": "/",
     "shutdownDelay": 0
 }

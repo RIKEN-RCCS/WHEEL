@@ -1,2 +1,6 @@
 *.log
 *.log.*
+app/config
+app/viewer
+app/public/css
+app/public/js
