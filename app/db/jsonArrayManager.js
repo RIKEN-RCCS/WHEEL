@@ -24,8 +24,8 @@ class JsonArrayManager {
 
   /**
    * add new entry
-   * @param {Object} - entry
-   * If the entry has 'id' key, the value will be overwritten.
+   * please note that if the entry has 'id' key, the value will be overwritten.
+   * @param {Object} entry
    */
   add(entry) {
     entry.id = uuidv1();
@@ -44,7 +44,7 @@ class JsonArrayManager {
 
   /**
    * update entry
-   * @param {Object} - entry
+   * @param {Object} entry
    */
   update(entry) {
     const targetIndex = this.data.findIndex((e)=>{
@@ -98,8 +98,8 @@ class JsonArrayManager {
 
   /**
    * return entry id with specific key:value pair
-   * @param {string} - key
-   * @param {string} - value
+   * @param {string} key
+   * @param {string} value
    */
   getID(key, value) {
     const entry = this.query(key, value);
@@ -108,8 +108,8 @@ class JsonArrayManager {
 
   /**
    * return entry with specific key:value pair
-   * @param {string} - key
-   * @param {string} - value
+   * @param {string} key
+   * @param {string} value
    */
   query(key, value) {
     return this.data.find((e)=>{

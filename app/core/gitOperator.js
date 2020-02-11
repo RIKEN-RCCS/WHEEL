@@ -96,8 +96,8 @@ class Git extends EventEmitter {
 
   /**
    * create new repository
-   * @param {string} user author's name
-   * @param {string} mail author's mailaddress
+   * @param {string} user - author's name
+   * @param {string} mail - author's mailaddress
    * @returns {undefined} -
    */
   async init(user, mail) {
@@ -121,7 +121,7 @@ class Git extends EventEmitter {
 
   /**
    * perform git add
-   * @param {string} absTargetPath target's absolute path
+   * @param {string} absTargetPath - target's absolute path
    * @param isRemoving
    */
   async add(absTargetPath, isRemoving = false) {
@@ -167,7 +167,7 @@ class Git extends EventEmitter {
 
   /**
    * perform git rm
-   * @param {string} absTargetPath target's absolute path
+   * @param {string} absTargetPath - target's absolute path
    */
   async rm(absTargetPath) {
     return this.add(absTargetPath, true);
@@ -175,8 +175,8 @@ class Git extends EventEmitter {
 
   /**
    * commit already added changed
-   * @param {string} name name for both author and commiter
-   * @param {string} mail e-mail address for both author and commiter
+   * @param {string} name - name for both author and commiter
+   * @param {string} mail - e-mail address for both author and commiter
    * @param message
    */
   async commit(name, mail, message) {
@@ -259,7 +259,7 @@ async function gitCommit(rootDir, name, mail, message = "save project") {
 
 /**
  * performe git add
- * @param {string} rootDir  - directory path which has ".git" directory
+ * @param {string} rootDir - directory path which has ".git" directory
  * @param {string} filename - filename which should be add to repo.
  * filename should be absolute path or relative path from rootDir.
  */
@@ -271,7 +271,7 @@ async function gitAdd(rootDir, filename) {
 
 /**
  * performe git rm recursively
- * @param {string} rootDir  - directory path which has ".git" directory
+ * @param {string} rootDir - directory path which has ".git" directory
  * @param {string} filename - filename which should be add to repo.
  * filename should be absolute path or relative path from rootDir.
  */
@@ -283,7 +283,7 @@ async function gitRm(rootDir, filename) {
 
 /**
  * performe git reset HEAD
- * @param {string} rootDir  - directory path which has ".git" directory
+ * @param {string} rootDir - directory path which has ".git" directory
  * @param filePatterns
  */
 async function gitResetHEAD(rootDir, filePatterns) {
@@ -293,7 +293,7 @@ async function gitResetHEAD(rootDir, filePatterns) {
 
 /**
  * git status
- * @param {string} rootDir  - directory path which has ".git" directory
+ * @param {string} rootDir - directory path which has ".git" directory
  */
 async function gitStatus(rootDir) {
   const git = await getGitOperator(rootDir);

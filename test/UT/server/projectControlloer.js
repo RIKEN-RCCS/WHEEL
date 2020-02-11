@@ -599,13 +599,13 @@ describe("project Controller UT", function() {
         await updateComponent(projectRootDir, if3.ID, "condition", "(()=>{return false})()");
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await updateComponent(projectRootDir, task1.ID, "script", scriptName);
-        await addLink(projectRootDir, if0.ID, task0.ID, );
+        await addLink(projectRootDir, if0.ID, task0.ID);
         await addLink(projectRootDir, if0.ID, task1.ID, true);
-        await addLink(projectRootDir, if1.ID, task1.ID, );
+        await addLink(projectRootDir, if1.ID, task1.ID);
         await addLink(projectRootDir, if1.ID, task0.ID, true);
-        await addLink(projectRootDir, if2.ID, task0.ID, );
+        await addLink(projectRootDir, if2.ID, task0.ID);
         await addLink(projectRootDir, if2.ID, task1.ID, true);
-        await addLink(projectRootDir, if3.ID, task1.ID, );
+        await addLink(projectRootDir, if3.ID, task1.ID);
         await addLink(projectRootDir, if3.ID, task0.ID, true);
         await fs.outputFile(path.join(projectRootDir, "if0", scriptName), "#!/bin/bash\nexit 0\n");
         await fs.outputFile(path.join(projectRootDir, "if1", scriptName), "#!/bin/bash\nexit 1\n");

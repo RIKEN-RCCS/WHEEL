@@ -75,7 +75,7 @@ class EmitArbitrator extends EventEmitter {
           this.emit("error");
         }
         this.start = this.end;
-        this.end = this.end + chunksize;
+        this.end += chunksize;
 
         if (this.start < this.array.length) {
           this.emit("send");

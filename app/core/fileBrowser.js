@@ -73,20 +73,19 @@ function compare(a, b) {
 
 /**
  * send directory contents via socket.io
- *
  * @param {Function} emit - function which is used to sed directory contents
- * @param {string} eventName event name which is used sending directory contents
- * @param {string} targetDir directory path to read
- * @param {Object} options   dictionary contains following option value
- * @param {string}  [options.request]      requested directory path
- * @param {boolean} [options.sendDirname=true]  flag for send directory name or not
- * @param {boolean} [options.sendFilename=true] flag for send file name or not
- * @param {boolean} [options.withParentDir=false] flag for send parent dir('../') or not
- * @param {boolean} [options.SND=false]  flag for bundle serial number data or not
- * @param {Object} [options.filter]  item name filter
- * @param {Object} [options.filter.all=.*]  filter regex for both directories and files
- * @param {Object} [options.filter.dir=.*]  filter regex only for directories
- * @param {Object} [options.filter.file=.*] filter regex only for files
+ * @param {string} eventName - event name which is used sending directory contents
+ * @param {string} targetDir - directory path to read
+ * @param {Object} options -   dictionary contains following option value
+ * @param {string}  [options.request] -      requested directory path
+ * @param {boolean} [options.sendDirname=true] -  flag for send directory name or not
+ * @param {boolean} [options.sendFilename=true] - flag for send file name or not
+ * @param {boolean} [options.withParentDir=false] - flag for send parent dir('../') or not
+ * @param {boolean} [options.SND=false] -  flag for bundle serial number data or not
+ * @param {Object} [options.filter] -  item name filter
+ * @param {Object} [options.filter.all=.*] -  filter regex for both directories and files
+ * @param {Object} [options.filter.dir=.*] -  filter regex only for directories
+ * @param {Object} [options.filter.file=.*] - filter regex only for files
  * plese note, if both options.filter.all and options.filter.{dir|file} is specified,
  * both filter is used.
  * so the only {directory | file} which is matched filter.all and filter.{dir|file} will be sent.

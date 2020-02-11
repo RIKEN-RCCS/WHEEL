@@ -149,9 +149,9 @@ async function getSourceFilename(projectRootDir, component, sio) {
 function askPassword(sio, hostname) {
   return new Promise((resolve, reject)=>{
     sio.on("password", (data)=>{
-      if(data === null){
+      if (data === null) {
         const err = new Error("user canceled ssh password prompt");
-        err.reason="CANCELED";
+        err.reason = "CANCELED";
         reject(err);
       }
       resolve(data);
@@ -306,7 +306,7 @@ async function onRunProject(sio, projectRootDir, cb) {
     const sourceComponents = await getSourceComponents(projectRootDir);
 
     for (const component of sourceComponents) {
-      if(component.disable){
+      if (component.disable) {
         getLogger(projectRootDir).debug(`disabled component: ${component.name}(${component.ID})`);
         continue;
       }
@@ -339,9 +339,9 @@ async function onRunProject(sio, projectRootDir, cb) {
       }
     }
   } catch (err) {
-    if(err.reason==="CANCELED"){
+    if (err.reason === "CANCELED") {
       getLogger(projectRootDir).debug(err.message);
-    }else{
+    } else {
       getLogger(projectRootDir).error("fatal error occurred while prepareing phase:", err);
     }
     removeSsh(projectRootDir);

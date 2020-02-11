@@ -38,7 +38,7 @@ module.exports = function(io) {
     //kill itself 10 minuets later after when the last client disconnected
     socket.on("disconnect", ()=>{
       if (io.engine.clientsCount === 0 && shutdownDelay > 0) {
-        getLogger(projectRootDir).debug(`the last client disconnected wheel will be shutdown after ${shutdownDelay/ 1000} sec`);
+        getLogger(projectRootDir).debug(`the last client disconnected wheel will be shutdown after ${shutdownDelay / 1000} sec`);
         const timeout = setTimeout(async()=>{
           const projectStatus = await getProjectState(projectRootDir);
           if (io.engine.clientsCount > 0) {

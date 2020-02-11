@@ -31,57 +31,57 @@ const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 const { escapeRegExp } = require("../../../app/lib/utility");
 
 const stub = sinon.stub();
-const debugLogger= {
+const debugLogger = {
   error: sinon.stub(),
-  warn:  sinon.stub(),
-  info:  sinon.stub(),
+  warn: sinon.stub(),
+  info: sinon.stub(),
   debug: sinon.stub(),
   trace: sinon.stub()
 };
 
-describe("UT for Dispatcher class", function (){
+describe("UT for Dispatcher class", function() {
   this.timeout(0);
   let rootWF;
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
     await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
-    rootWF=await fs.readJson(path.resolve(projectRootDir, componentJsonFilename));
+    rootWF = await fs.readJson(path.resolve(projectRootDir, componentJsonFilename));
   });
   after(async()=>{
     await fs.remove(testDirRoot);
   });
   describe.only("#For component", ()=>{
-  let projectJson;
+    let projectJson;
     let for0;
     beforeEach(async()=>{
       for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
       await updateComponent(projectRootDir, for0.ID, "start", 0);
-      await updateComponent(projectRootDir, for0.ID, "end"  , 2);
-      await updateComponent(projectRootDir, for0.ID, "step" , 1);
-    projectJson=await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
+      await updateComponent(projectRootDir, for0.ID, "end", 2);
+      await updateComponent(projectRootDir, for0.ID, "step", 1);
+      projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
     });
     it("should copy 3times and back to original component", async()=>{
       const DP = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, "dummy start time", debugLogger, projectJson.componentPath, stub);
       expect(await DP.start()).to.be.equal("finished");
-      expect(path.resolve(projectRootDir, for0.name+"_0")).to.be.a.directory();
-      expect(path.resolve(projectRootDir, for0.name+"_1")).to.be.a.directory();
-      expect(path.resolve(projectRootDir, for0.name+"_2")).to.be.a.directory();
-      expect(path.resolve(projectRootDir, for0.name+"_3")).not.to.be.a.path();
+      expect(path.resolve(projectRootDir, `${for0.name}_0`)).to.be.a.directory();
+      expect(path.resolve(projectRootDir, `${for0.name}_1`)).to.be.a.directory();
+      expect(path.resolve(projectRootDir, `${for0.name}_2`)).to.be.a.directory();
+      expect(path.resolve(projectRootDir, `${for0.name}_3`)).not.to.be.a.path();
       expect(path.resolve(projectRootDir, for0.name, componentJsonFilename)).to.be.a.file().with.json.using.schema({
-        properties:{
+        properties: {
           numFinishd: {
             type: "integer",
             minimum: 3,
             maximum: 3
-            
+
           },
-          numTotal:{  
+          numTotal: {
             type: "integer",
             minimum: 3,
             maximum: 3
           }
-        }});
-        
+        }
+      });
     });
   });
 });

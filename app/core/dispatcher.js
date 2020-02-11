@@ -177,12 +177,12 @@ function forIsFinished(component) {
 }
 
 function forTripCount(component) {
-  return Math.ceil((component.end - component.start) / component.step) + 1 ;
+  return Math.ceil((component.end - component.start) / component.step) + 1;
 }
 
 function whileGetNextIndex(component) {
   ++component.numFinished;
-  return component.currentIndex !== null ?  ++(component.currentIndex) : 0;
+  return component.currentIndex !== null ? ++(component.currentIndex) : 0;
 }
 
 async function whileIsFinished(cwfDir, logger, component) {
@@ -218,7 +218,7 @@ function loopInitialize(component, getTripCount) {
   component.initialized = true;
   component.originalName = component.name;
   component.numFinished = -1; //numFinishd is incremented at the begining of loop
-  component.currentIndex=null;
+  component.currentIndex = null;
 
   if (typeof getTripCount === "function") {
     component.numTotal = getTripCount(component);
@@ -245,11 +245,11 @@ async function replaceTargetFile(srcDir, dstDir, targetFiles, params) {
 /**
  * parse workflow graph and dispatch ready tasks to executer
  * @param {string} projectRootDir - root directory path of project
- * @param {string} cwfID          - current dispatching workflow ID
- * @param {string} cwfDir         - current dispatching workflow directory (absolute path);
- * @param {string} startTime      - project start time
- * @param {Object} logger         - logger instance from log4js
- * @param {Object} componentPath  - componentPath in project Json
+ * @param {string} cwfID -          current dispatching workflow ID
+ * @param {string} cwfDir -         current dispatching workflow directory (absolute path);
+ * @param {string} startTime -      project start time
+ * @param {Object} logger -         logger instance from log4js
+ * @param {Object} componentPath -  componentPath in project Json
  */
 class Dispatcher extends EventEmitter {
   constructor(projectRootDir, cwfID, cwfDir, startTime, logger, componentPath, emit, ancestorsType) {
@@ -551,7 +551,7 @@ class Dispatcher extends EventEmitter {
 
     if (lastDir !== dstDir) {
       this.logger.debug("copy ", lastDir, "to", dstDir);
-      await fs.copy(lastDir, dstDir, {overwrite: true, dereference: true}); //dst will be overwrite always
+      await fs.copy(lastDir, dstDir, { overwrite: true, dereference: true }); //dst will be overwrite always
     }
 
     this.logger.debug("loop finished", component.name);

@@ -302,8 +302,8 @@ async function removeFileLinkBetweenSiblings(projectRootDir, srcNode, srcName, d
 
 /**
  * add suffix to dirname and make directory
- * @param basename dirname
- * @param suffix   number
+ * @param basename - dirname
+ * @param suffix -   number
  * @returns actual directory name
  *
  * makeDir create "basenme+suffix" direcotry. suffix is increased until the dirname is no longer duplicated.
@@ -598,14 +598,14 @@ async function removeInputFile(projectRootDir, ID, name) {
 
   const p = [];
   for (const counterPart of counterparts) {
-    p.push( removeFileLink(projectRootDir, counterPart.srcNode, counterPart.srcName, ID, name));
+    p.push(removeFileLink(projectRootDir, counterPart.srcNode, counterPart.srcName, ID, name));
   }
   await Promise.all(p);
 
   componentJson.inputFiles = componentJson.inputFiles.filter((inputFile)=>{
     return name !== inputFile.name;
   });
-  return  writeComponentJson(projectRootDir, componentDir, componentJson);
+  return writeComponentJson(projectRootDir, componentDir, componentJson);
 }
 async function removeOutputFile(projectRootDir, ID, name) {
   const counterparts = new Set();
@@ -623,7 +623,7 @@ async function removeOutputFile(projectRootDir, ID, name) {
   });
   const p = [];
   for (const counterPart of counterparts) {
-    p.push( removeFileLink(projectRootDir, ID, name, counterPart.dstNode, counterPart.dstName));
+    p.push(removeFileLink(projectRootDir, ID, name, counterPart.dstNode, counterPart.dstName));
   }
   await Promise.all(p);
   return writeComponentJson(projectRootDir, componentDir, componentJson);
