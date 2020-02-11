@@ -751,7 +751,6 @@ $(() => {
     $('#property').hide();
     // property Files Area initialize
     dirPathStack = [];
-    $('#editFileButton').css('visibility', 'hidden');
     $('#editPSFileButton').css('visibility', 'hidden');
     $('#dirBackButton').css("display", "none");
   });
@@ -968,7 +967,6 @@ $(() => {
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
-        $('#editFileButton').css('visibility', 'hidden');
         $('#editPSFileButton').css('visibility', 'hidden');
         $.when(
           $('#property').show().animate({ width: '272px', 'min-width': '272px' }, 100),
@@ -1339,7 +1337,6 @@ $(() => {
       { id: "createFileButton", readonly: true, disable: true },
       { id: "fileUploadButton", readonly: true, disable: true },
       { id: "fileSelector", readonly: true, disable: true },
-      { id: "editFileButton", readonly: true, disable: true },
       { id: "editPSFileButton", readonly: true, disable: true },
       { id: "uploadOnDemandFlagField", readonly: true, disable: true }
     ];

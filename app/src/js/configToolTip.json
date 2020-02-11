@@ -169,12 +169,8 @@
             "jpn": "ファイルをアップロードします"
         },
         {
-            "key": "editFileButton",
-            "jpn": "ファイル編集画面を起動します"
-        },
-        {
             "key": "editPSFileButton",
-            "jpn": "PS用ファイル編集画面を起動します"
+            "jpn": "ファイル編集画面を起動します"
         },
         {
             "key": "taskLibraryButton",

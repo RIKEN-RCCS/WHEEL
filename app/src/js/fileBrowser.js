@@ -292,10 +292,8 @@ export default class {
   }
   changeFileEditButtonWhenSelected(dataType) {
     if (dataType === 'file') {
-      $('#editFileButton').css('visibility', 'visible');
       $('#editPSFileButton').css('visibility', 'visible');
     } else {
-      $('#editFileButton').css('visibility', 'hidden');
       $('#editPSFileButton').css('visibility', 'hidden');
     }
   }
