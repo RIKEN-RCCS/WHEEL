@@ -177,7 +177,7 @@ function forIsFinished(component) {
 }
 
 function forTripCount(component) {
-  return Math.ceil((component.end - component.start) / component.step);
+  return Math.ceil((component.end - component.start) / component.step) + 1 ;
 }
 
 function whileGetNextIndex(component) {
@@ -217,7 +217,7 @@ function foreachTripCount(component) {
 function loopInitialize(component, getTripCount) {
   component.initialized = true;
   component.originalName = component.name;
-  component.numFinished = 0;
+  component.numFinished = -1; //numFinishd is incremented at the begining of loop
   component.currentIndex=null;
 
   if (typeof getTripCount === "function") {
