@@ -33,7 +33,7 @@ const {
   removeComponent,
   validateComponents
 } = require("../core/componentFilesOperator");
-const { getProjectState } = require("../core/projectFilesOperator");
+const { getProjectState, setProjectState } = require("../core/projectFilesOperator");
 const { taskStateFilter } = require("../core/taskUtil");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
@@ -425,6 +425,7 @@ async function onSaveProject(emit, projectRootDir, cb) {
 
   const projectState = await getProjectState(projectRootDir);
   if (projectState === "not-started") {
+    await setProjectState(projectRootDir, "not-started", true);
     await gitCommit(projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
     await sendProjectJson(emit, projectRootDir);
   } else {

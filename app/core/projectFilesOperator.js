@@ -120,15 +120,14 @@ async function updateComponentPath(projectRootDir, ID, absPath) {
   return gitAdd(projectRootDir, filename);
 }
 
-async function setProjectState(projectRootDir, state) {
+async function setProjectState(projectRootDir, state, force) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
-  if (projectJson === state) {
+  if (!force && projectJson.state === state) {
     return Promise.resolve();
   }
   projectJson.state = state;
   const timestamp = getDateString(true);
-  projectJson.ctime = timestamp;
   projectJson.mtime = timestamp;
   await fs.writeJson(filename, projectJson, { spaces: 4 });
   return gitAdd(projectRootDir, filename);
