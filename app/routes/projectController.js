@@ -398,17 +398,20 @@ async function onPauseProject(emit, projectRootDir, cb) {
   cb(true);
 }
 
-async function onCleanProject(emit, projectRootDir, cb) {
+async function onCleanProject(emit, projectRootDir, withPause, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("clean event recieved");
 
   try {
+    if (withPause) {
+      await pauseProject(projectRootDir);
+    }
     await cleanProject(projectRootDir);
-    await emitLongArray(emit, "taskStateList", [], blockSize);
     await sendProjectJson(emit, projectRootDir);
     await sendWorkflow(emit, projectRootDir, projectRootDir);
+    await emitLongArray(emit, "taskStateList", [], blockSize);
   } catch (e) {
     cb(false);
     return;
@@ -851,13 +854,10 @@ function registerListeners(socket, projectRootDir) {
 
   socket.on("runProject", onRunProject.bind(null, socket, projectRootDir));
   socket.on("pauseProject", onPauseProject.bind(null, emit, projectRootDir));
-  socket.on("cleanProject", onCleanProject.bind(null, emit, projectRootDir));
+  socket.on("cleanProject", onCleanProject.bind(null, emit, projectRootDir, false));
   socket.on("saveProject", onSaveProject.bind(null, emit, projectRootDir));
   socket.on("revertProject", onRevertProject.bind(null, emit, projectRootDir));
-  socket.on("stopProject", async()=>{
-    await onPauseProject(emit, projectRootDir);
-    await onCleanProject(emit, projectRootDir);
-  });
+  socket.on("stopProject", onCleanProject.bind(null, emit, projectRootDir, true));
   socket.on("updateProjectJson", onUpdateProjectJson.bind(null, emit, projectRootDir));
   socket.on("getProjectState", onGetProjectState.bind(null, emit, projectRootDir));
   socket.on("getProjectJson", onGetProjectJson.bind(null, emit, projectRootDir));
