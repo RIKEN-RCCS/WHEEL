@@ -25,7 +25,6 @@
     "profiler": "node --prof app/index",
     "mocha": "mocha",
     "lint": "eslint --fix app/**/*.js test/UT/**/*.js",
-    "esw": "esw --no-color --watch --clear --fix app/*.js app/routes/*.js app/db/*.js",
     "coverage": "nyc --reporter=html --reporter=text npm run fullTest",
     "coverage:server": "nyc --reporter=html --reporter=text npm run UT:server",
     "coverage:client": "nyc --reporter=html --reporter=text npm run UT:client",
@@ -38,7 +37,6 @@
     "watch": "webpack -w",
     "dev": "run-p watch node-dev",
     "node-dev": "node-dev --inspect app/index",
-    "verbose": "cross-env DEBUG=* node app/index",
     "license-report": "license-report"
   },
   "dependencies": {
