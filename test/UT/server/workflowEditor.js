@@ -14,9 +14,6 @@ chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
 chai.use(require("chai-as-promised"));
 
-//display detailed information of unhandled rejection
-process.on("unhandledRejection", console.dir);
-
 //testee
 const {
   createNewComponent,

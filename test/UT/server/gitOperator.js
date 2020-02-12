@@ -15,9 +15,6 @@ chai.use(require("chai-fs"));
 //helper function
 const { escapeRegExp } = require("../../../app/lib/utility.js");
 
-//display detailed information of unhandled rejection
-process.on("unhandledRejection", console.dir);
-
 //testee
 const {
   gitInit,

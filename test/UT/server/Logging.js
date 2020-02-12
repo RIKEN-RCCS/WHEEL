@@ -16,9 +16,6 @@ chai.use((_chai, _)=>{
 });
 const rewire = require("rewire");
 
-//display detailed information of unhandled rejection
-process.on("unhandledRejection", console.dir);
-
 //testee
 const { setup, getLogger, setFilename, setMaxLogSize, setNumBackup, setCompress, shutdown, getCurrentSettings } = require("../../../app/logSettings.js");
 

@@ -10,9 +10,6 @@ chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
 
-//display detailed information of unhandled rejection
-process.on("unhandledRejection", console.dir);
-
 //testee
 const { runProject, setLogger } = require("../../../app/core/projectResource");
 
