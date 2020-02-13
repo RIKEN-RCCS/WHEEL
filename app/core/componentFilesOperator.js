@@ -547,7 +547,8 @@ async function updateComponent(projectRootDir, ID, prop, value) {
   const componentDir = await getComponentDir(projectRootDir, ID, true);
   const componentJson = await readComponentJson(componentDir);
   componentJson[prop] = value;
-  return writeComponentJson(projectRootDir, componentDir, componentJson);
+  await writeComponentJson(projectRootDir, componentDir, componentJson);
+  return componentJson;
 }
 
 async function addInputFile(projectRootDir, ID, name) {
