@@ -123,7 +123,7 @@ async function prepareRemoteExecDir(task) {
   task.preparedTime = getDateString(true, true);
 }
 
-async function gatherFiles(task, rt) {
+async function gatherFiles(task) {
   await setTaskState(task, "stage-out");
   logger.debug("start to get files from remote server if specified");
   const ssh = getSsh(task.projectRootDir, task.remotehostID);
@@ -141,7 +141,14 @@ async function gatherFiles(task, rt) {
   if (outputFilesArray.length > 0) {
     const outputFiles = `${task.remoteWorkingDir}/${parseFilter(outputFilesArray.join())}`;
     logger.debug("try to get outputFiles", outputFiles, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir);
-    await ssh.recv(outputFiles, task.workingDir, null, null);
+    try{
+      await ssh.recv(outputFiles, task.workingDir, null, null);
+    }catch(e){
+      // ignore if src file is not exists
+      if(e.message !== "src must be existing file or directory"){
+        throw e;
+      }
+    }
   }
 
   //get files which match include filter
@@ -149,7 +156,14 @@ async function gatherFiles(task, rt) {
     const include = `${task.remoteWorkingDir}/${parseFilter(task.include)}`;
     const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
     logger.debug("try to get ", include, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir, "\n  exclude filter:", exclude);
-    await ssh.recv(include, task.workingDir, null, exclude);
+    try{
+      await ssh.recv(include, task.workingDir, null, exclude);
+    }catch(e){
+      // ignore if src file is not exists
+      if(e.message !== "src must be existing file or directory"){
+        throw e;
+      }
+    }
   }
 
   //clean up remote working directory
@@ -163,7 +177,6 @@ async function gatherFiles(task, rt) {
       logger.warn("remote cleanup failed but ignored", e);
     }
   }
-  return rt;
 }
 
 function makeEnv(task) {
@@ -318,7 +331,9 @@ class Executer {
             }
             logger.info(task.jobID, "is finished (remote). rt =", rt);
             task.jobEndTime = task.jobEndTime || getDateString(true, true);
-            await gatherFiles(task, rt);
+            if(rt === 0){
+              await gatherFiles(task);
+            }
             return rt;
           } catch (err) {
             ++this.statusCheckFailedCount;
@@ -402,7 +417,10 @@ class Executer {
     const ssh = getSsh(task.projectRootDir, task.remotehostID);
     const rt = await ssh.exec(cmd, {}, passToSSHout, passToSSHerr);
     logger.debug(task.name, "(remote) done. rt =", rt);
-    return rt === 0 ? gatherFiles(task, rt) : rt;
+    if(rt === 0){
+      await gatherFiles(task);
+    }
+    return  rt
   }
 
   async remoteSubmit(task) {
