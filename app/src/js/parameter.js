@@ -41,9 +41,9 @@ export default {
             :items="['min-max-step', 'list', 'files']"
           ></v-select>
           <v-layout v-if="newItem.type==='min-max-step'">
-            <v-text-field v-model="newItem.min" type="number" hint="min" persistent-hint :rules="[rules.required]"></v-text-field>
-            <v-text-field v-model="newItem.max" type="number" hint="max" persistent-hint :rules="[rules.required]"></v-text-field>
-            <v-text-field v-model="newItem.step" type="number" hint="step" persistent-hint :rules="[rules.required]"></v-text-field>
+            <v-text-field v-model="newItem.min" type="number" hint="min" persistent-hint :rules="[rules.required]" novalidate></v-text-field>
+            <v-text-field v-model="newItem.max" type="number" hint="max" persistent-hint :rules="[rules.required]" novalidate></v-text-field>
+            <v-text-field v-model="newItem.step" type="number" hint="step" persistent-hint :rules="[rules.required]" novalidate></v-text-field>
           </v-layout>
           <div v-if="newItem.type==='list'">
             <v-data-table
