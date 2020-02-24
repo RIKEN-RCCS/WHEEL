@@ -49,30 +49,19 @@
 
 1. run ボタン：プロジェクトの実行開始
 1. pause ボタン：プロジェクト実行の一時停止
-1. stop ボタン：プロジェクトの実行停止と初期化
-1. clean：プロジェクトの初期化  
+1. stop ボタン：プロジェクトの実行停止と実行前の状態に戻す
+1. clean：プロジェクトに追加されたファイルを削除し、プロジェクトを直前の保存状態に戻す
 
-また、WHEELでは、gitを用いたファイル管理を行っております。
-そのため、上記[ clean ]ボタンは、以下の gitコマンド操作を行っております。
-
-```
-clean -> git clean -fd  
-```
+また、WHEELでは、gitを用いたファイル管理を行っております。  
+git操作の詳細については開発者向けドキュメント[詳細設計書](../../../doc/design/design.md)をご確認ください。
 
 ### プロジェクトの保存ボタンエリア
-プロジェクト保存、リバートを操作するボタンとその詳細は以下です。  
+プロジェクトの保存、リバートを操作するボタンとその詳細は以下です。  
 
 ![img](./img/graphview/save_button_area.png "save_button_area") 
 
-1. save ボタン：projectのsave(commit)を指示する
-1. revert ボタン：projectの状態を直前のcommitまで戻すことを指示する
-
-[ save ], [ revert ] ボタンは、以下の gitコマンド操作を行っております。
-
-```
-save   -> git commit  
-revert -> git reset HEAD --hard  
-```
+1. save ボタン：プロジェクトを保存する
+1. revert ボタン：プロジェクトを直前の保存状態に戻す
 
 ### ワークフロー画面切替ボタン
 ワークフロー画面には、ワークフローの作成を行うグラフビュー画面とワークフローの進行状態を確認するリストビュー画面があります。  
@@ -108,13 +97,9 @@ revert -> git reset HEAD --hard
 ワークフローの作成に用いるコンポーネントライブラリを表示します。  
 コンポーネントライブラリの詳細については次章にて説明します。  
 
-##### コンポーネントライブラリ非表示  
+##### 非表示/表示  
 
-![img](./img/graphview/component_library.png "conponent_library")
-
-##### コンポーネントライブラリ表示  
-
-![img](./img/graphview/component_library_open.png "component_library_open")   
+![img](./img/graphview/component_library.png "component_library")   
 
 ### ワークフロー作成用エリア
 ワークフローの作成用領域です。  
@@ -144,9 +129,4 @@ revert -> git reset HEAD --hard
 1. Stderr：ローカルホストで実行されたtaskの標準エラー出力
 1. Stdout(SSH)：リモートホストで実行されたtaskの標準出力
 1. Stderr(SSH)：リモートホストで実行されたtaskの標準エラー出力
-1. All log clear：ログを全て消去する  
-
-##### ログ表示例 (Debug)
-
-![img](./img/graphview/log_exe_debug.png "log_debug")  
-
+1. All log clear：ログを全て消去する
