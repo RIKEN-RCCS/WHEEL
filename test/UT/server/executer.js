@@ -10,9 +10,12 @@ const sinon = require("sinon");
 chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
+const rewire = require("rewire");
 
 //testee
 const { exec, cancel } = require("../../../app/core/executer");
+const executer = rewire("../../../app/core/executer");
+const gatherFiles = executer.__get__("gatherFiles");
 
 //test data
 const testDirRoot = "WHEEL_TEST_TMP";
@@ -40,12 +43,13 @@ const dummyLogger = {
   debug: sinon.stub(),
   trace: sinon.stub(),
   stdout: sinon.stub(),
-  stderr:  sinon.stub(),
+  stderr: sinon.stub(),
   sshout: sinon.stub(),
   ssherr: sinon.spy(console, "log")
 };
+executer.__set__("logger", dummyLogger);
 
-describe.only("UT for executer class", function() {
+describe("UT for executer class", function() {
   this.timeout(0);
   let task0;
   beforeEach(async()=>{
@@ -133,16 +137,33 @@ describe.only("UT for executer class", function() {
         await arssh.disconnect();
       }
     });
-      beforeEach(()=>{
-        task0.host = "testServer";
-      });
-      afterEach(async()=>{
-        await arssh.exec(`rm -fr ${path.posix.join("/home/pbsuser", task0.projectStartTime)}`);
-      });
-      after(async()=>{
-        await arssh.disconnect();
-      });
+    beforeEach(()=>{
+      task0.host = "testServer";
+      //following lines are from Executer.exec but planning to move to Dispatcher._dispatchTask()
+      task0.remotehostID = remoteHost.getID("name", task0.host) || "localhost";
+      task0.remoteWorkingDir = path.posix.join("/home/pbsuser", task0.projectStartTime);
+    });
+    afterEach(async()=>{
+      await arssh.exec(`rm -fr ${path.posix.join("/home/pbsuser", task0.projectStartTime)}`);
+    });
+    after(async()=>{
+      if(arssh){
+      await arssh.disconnect();
+      }
+    });
 
+    describe("#gatherFiles", ()=>{
+      beforeEach(async()=>{
+        await arssh.mkdir_p(task0.remoteWorkingDir);
+        await arssh.exec(`cd ${task0.remoteWorkingDir};(echo -n foo > foo && echo -n bar > bar && echo baz > baz)`);
+      });
+      it("issue 462", async()=>{
+        task0.outputFiles = [{ name: "hu/ga" }, { name: "ho/ge" }];
+        await gatherFiles(task0, arssh);
+        expect(path.join(task0.workingDir, "hu/ga")).not.to.be.a.path();
+        expect(path.join(task0.workingDir, "ho/ge")).not.to.be.a.path();
+      });
+    });
     describe("#remote exec", ()=>{
       it("run shell script which returns 0 and status should be Finished", async()=>{
         await exec(task0, dummyLogger);
@@ -178,17 +199,6 @@ describe.only("UT for executer class", function() {
         expect(dummyLogger.ssherr).not.to.be.called;
         expect(path.join(task0.workingDir, "hoge")).to.be.a.file().with.content("hoge");
       });
-      it("get outputFiles after successfully run if name contains /", async()=>{
-        task0.outputFiles = [{ name: "hoge/hoge" }];
-        await fs.outputFile(path.join(projectRootDir, task0.name, scriptName), `${scriptPwd}\nmkdir hoge\necho -n hoge > hoge/hoge\n${exit(0)}`);
-        await exec(task0, dummyLogger);
-        expect(path.join(task0.workingDir, statusFilename)).to.be.a.file().with.content("finished\n0\nundefined");
-        expect(dummyLogger.stdout).not.to.be.called;
-        expect(dummyLogger.stderr).not.to.be.called;
-        expect(dummyLogger.sshout).to.be.calledOnceWith(`/home/pbsuser/${task0.projectStartTime}/${task0.name}`);
-        expect(dummyLogger.ssherr).not.to.be.called;
-        expect(path.join(task0.workingDir, "hoge")).to.be.a.file().with.content("hoge");
-      });
       it("do nothing if outputFile is not found", async()=>{
         task0.outputFiles = [{ name: "huga" }];
         await fs.outputFile(path.join(projectRootDir, task0.name, scriptName), `${scriptPwd}\necho -n hoge > hoge\n${exit(0)}`);
@@ -199,17 +209,6 @@ describe.only("UT for executer class", function() {
         expect(dummyLogger.sshout).to.be.calledOnceWith(`/home/pbsuser/${task0.projectStartTime}/${task0.name}`);
         expect(dummyLogger.ssherr).not.to.be.called;
         expect(path.join(task0.workingDir, "huga")).not.to.be.a.path();
-      });
-      it.only("do nothing if outputFile is not found and its name contains /", async()=>{
-        task0.outputFiles = [{ name: "hu/ga" }];
-        await fs.outputFile(path.join(projectRootDir, task0.name, scriptName), `${scriptPwd}\necho -n hoge > hoge\n${exit(0)}`);
-        await exec(task0, dummyLogger);
-        expect(path.join(task0.workingDir, statusFilename)).to.be.a.file().with.content("finished\n0\nundefined");
-        expect(dummyLogger.stdout).not.to.be.called;
-        expect(dummyLogger.stderr).not.to.be.called;
-        expect(dummyLogger.sshout).to.be.calledOnceWith(`/home/pbsuser/${task0.projectStartTime}/${task0.name}`);
-        expect(dummyLogger.ssherr).not.to.be.called;
-        expect(path.join(task0.workingDir, "hu/ga")).not.to.be.a.path();
       });
       it("run shell script which returns 1 and status should be failed", async()=>{
         await fs.outputFile(path.join(projectRootDir, task0.name, scriptName), `${scriptPwd}\n${exit(1)}`);
