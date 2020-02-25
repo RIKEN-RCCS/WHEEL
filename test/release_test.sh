@@ -6,9 +6,9 @@ cleanup()
 {
     echo "============================================="
     echo "starting cleanup process"
-    rm -fr ${CONFIG_DIR}
     docker stop ${TAG} ${TAG_TEST_SERVER}
     sleep 3
+    rm -fr ${CONFIG_DIR}
     echo "remaining container"
     docker ps -a
 }
@@ -51,11 +51,8 @@ extendedKeyUsage=serverAuth
 cp ../app/config/{server,jobScheduler}.json ${CONFIG_DIR}
 
 # start containers
-docker run -d -v $(readlink -f ${CONFIG_DIR}):/usr/src/app/config -p 8089:8089 -p 8090:8090 --name ${TAG} ${TAG}
-docker run -d -p 20022:22 --rm --name ${TAG_TEST_SERVER} ${TAG_TEST_SERVER}
-
-docker exec ${TAG} pwd
-docker exec ${TAG} ls
+docker run --rm -d -v $(readlink -f ${CONFIG_DIR}):/usr/src/app/config -p 8089:8089 -p 8090:8090 --name ${TAG} ${TAG}
+docker run --rm -d -p 20022:22 --name ${TAG_TEST_SERVER} ${TAG_TEST_SERVER}
 
 # install test tools
 docker cp ../test/ ${TAG}:/usr/src/test/
