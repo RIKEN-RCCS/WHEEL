@@ -19,8 +19,6 @@
     1. ワークフロー画面
         1. [グラフビュー画面仕様説明](WHEEL_manual/3_workflow_screen/1_graphview.md)
         1. [リストビュー画面仕様説明](WHEEL_manual/3_workflow_screen/2_listview.md)
-        1. [エディタ画面仕様説明](WHEEL_manual/3_workflow_screen/3_editor.md)
-        1. [PS用エディタ画面仕様説明](WHEEL_manual/3_workflow_screen/4_PS_editor.md)
     1. コンポーネントの説明
         1. [Task](WHEEL_manual/4_component/1_Task.md)
         1. [If](WHEEL_manual/4_component/2_If.md)

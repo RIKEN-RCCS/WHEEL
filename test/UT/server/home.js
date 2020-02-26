@@ -10,9 +10,6 @@ chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
 const rewire = require("rewire");
 
-//display detailed information of unhandled rejection
-process.on("unhandledRejection", console.dir);
-
 //testee
 const home = rewire("../../../app/routes/home");
 const onGetProjectList = home.__get__("onGetProjectList");

@@ -30,7 +30,7 @@
     "coverage:client": "nyc --reporter=html --reporter=text npm run UT:client",
     "coverage:E2E": "nyc --reporter=html --reporter=text npm run E2E",
     "fullTest": "run-p UT:server UT:client E2E",
-    "UT:server": "cross-env WHEEL_DISABLE_LOG=1  WHEEL_DISABLE_CONSOLE_LOG=1 mocha --recursive test/UT/server/",
+    "UT:server": "cross-env WHEEL_DISABLE_LOG=1  WHEEL_DISABLE_CONSOLE_LOG=1 mocha --recursive test/UT/server/ --unhandled-rejections=strict",
     "UT:client": "opener test/UT/client/index.html",
     "E2E": "wdio run test/E2E/wdio.conf.js",
     "prepare": "webpack",
@@ -42,7 +42,7 @@
   "dependencies": {
     "abc4": "^0.11.5",
     "ajv": "^6.11.0",
-    "arssh2-client": "^2.0.1",
+    "arssh2-client": "^2.2.0",
     "bcrypt": "^3.0.7",
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.4",

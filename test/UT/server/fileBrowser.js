@@ -10,9 +10,6 @@ chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 const rewire = require("rewire");
 
-//display detailed information of unhandled rejection
-process.on("unhandledRejection", console.dir);
-
 //testee
 const tmp = rewire("../../../app/core/fileBrowser");
 const getSNDs = tmp.__get__("getSNDs");

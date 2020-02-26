@@ -15,6 +15,7 @@ async function createSshConfig(hostInfo, password) {
   const config = {
     host: hostInfo.host,
     port: hostInfo.port,
+    keepaliveInterval: hostInfo.keepaliveInterval || 30000,
     username: hostInfo.username
   };
 

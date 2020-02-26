@@ -33,11 +33,11 @@ WHEELのPS用ファイル編集機能によりインプットデータにパラ�
 
 コンポーネント内に配置しているコンポーネント（子コンポーネント）は、親コンポーネントにアイコンとして表示されます。
 
-![img](./img/parameterstudy//PS_workflow.png "PS_workflow")  
+![img](./img/parameterstudy/PS_workflow.png "PS_workflow")  
 
 ## ■ PSワークフロー　子階層　構成図
 
-![img](./img/parameterstudy//PS_child_workflow.png "PS_child_workflow") 
+![img](./img/parameterstudy/PS_child_workflow.png "PS_child_workflow") 
 
 ## ■  ワークフローを構成するコンポーネント
 
@@ -137,7 +137,7 @@ g++ wheel_tutorial_solver.cc -o wheel_tutorial_solver
 
 ## ■ PS用ファイル編集画面
 
-![img](./img/parameterstudy//edit.png "edit") 
+![img](./img/parameterstudy/edit.png "edit") 
 
 入力データにパラメータ設定を行う場合、プロパティ画面[ Files ]エリアよりファイル編集を行います。  
 手順は以下です。
@@ -150,7 +150,7 @@ g++ wheel_tutorial_solver.cc -o wheel_tutorial_solver
 
 #### PS用ファイル編集画面
 
-![img](./img/parameterstudy//edit_for_PS.png "edit_for_PS")  
+![img](./img/parameterstudy/edit_for_PS.png "edit_for_PS")  
 
 PS用ファイル編集画面でのパラメータ設定手順は以下です。  
 次の手順では、上記図 {{ hoge }}を「6から10」まで変化させる場合の設定を示しています。  
@@ -165,29 +165,29 @@ PS用ファイル編集画面でのパラメータ設定手順は以下です。
 
 #### 1. 「＋Add New」
 
-![img](./img/parameterstudy//add_targetFile.png "add_targetFile")  
+![img](./img/parameterstudy/add_targetFile.png "add_targetFile")  
 
 #### 2. targetFileの設定
 
-![img](./img/parameterstudy//set_targetFile.png "set_targetFile")  
+![img](./img/parameterstudy/set_targetFile.png "set_targetFile")  
 
 #### 3. パラメータの範囲選択
 
-![img](./img/parameterstudy//select_param.png "select_param")  
+![img](./img/parameterstudy/select_param.png "select_param")  
 
 #### 4. パラメータの設定
 
-![img](./img/parameterstudy//set_param.png "set_param")  
+![img](./img/parameterstudy/set_param.png "set_param")  
 
 #### 5. 設定の保存
 
-![img](./img/parameterstudy//save_files.png "save_files")  
+![img](./img/parameterstudy/save_files.png "save_files")  
 
 #### 6. 編集したファイル名.jsonの確認
 保存後、ワークフロー編集画面に戻りプロパティを表示すると、「 parameterSetting.json 」ファイルが作成されていることを確認します。  
 このデータをプロパティ[ parameter setting file ]に設定します。
 
-![img](./img/parameterstudy//set_json.png "set_json")  
+![img](./img/parameterstudy/set_json.png "set_json")  
 
 以上がParameter Studyワークフローにおけるパラメータ設定手順になります。
 
@@ -199,17 +199,17 @@ PSワークフロー実行時には、プロジェクトディレクトリ内に
 
 #### プロジェクトディレクトリ内に生成されるディレクトリ
 
-![img](./img/parameterstudy//project_directory.png "project_directory")  
+![img](./img/parameterstudy/project_directory.png "project_directory")  
 
 PSワークフローを実行すると生成されたワークフローが順に実行されます。  
 実行後の結果は以下です。
 
 #### PSワークフロー実行結果
 
-![img](./img/parameterstudy//PS_finished.png "PS_finished") 
+![img](./img/parameterstudy/PS_finished.png "PS_finished") 
 
 また、標準出力（Stdout）の結果は以下です。  
 
- ![img](./img/parameterstudy//PS_stdout.png "PS_stdout")   
+ ![img](./img/parameterstudy/PS_stdout.png "PS_stdout")   
 
 

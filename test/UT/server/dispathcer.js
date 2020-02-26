@@ -11,9 +11,6 @@ chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
 
-//display detailed information of unhandled rejection
-//process.on("unhandledRejection", console.dir);
-
 //testee
 const Dispatcher = require("../../../app/core/dispatcher");
 
@@ -69,7 +66,7 @@ describe("UT for Dispatcher class", function() {
       expect(path.resolve(projectRootDir, next.name, "a")).not.to.be.a.path();
       expect(path.resolve(projectRootDir, next.name, "b")).to.be.a.file().and.equal(path.resolve(projectRootDir, previous.name, "a"));
     });
-    it("should nothing is outputFile has glob which match nothing", async()=>{
+    it("should nothing if outputFile has glob which match nothing", async()=>{
       await addOutputFile(projectRootDir, previous.ID, "a*");
       await addInputFile(projectRootDir, next.ID, "b");
       await addFileLink(projectRootDir, previous.ID, "a*", next.ID, "b");
