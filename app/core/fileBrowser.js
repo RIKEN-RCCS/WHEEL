@@ -107,7 +107,13 @@ async function ls(targetDir, options = {}) {
       return;
     }
     const absoluteFilename = path.join(targetDir, name);
-    const stats = await fs.lstat(absoluteFilename);
+    let stats;
+    try{
+      stats = await fs.lstat(absoluteFilename);
+    }catch(err){
+      //just ignore error
+      return;
+    }
 
     if (stats.isDirectory() && sendDirname) {
       if (dirFilter && !dirFilter.test(name)) {
