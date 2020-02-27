@@ -101,7 +101,7 @@ async function ls(targetDir, options = {}) {
   const fileFilter = options.filter && options.filter.file;
   const dirList = [];
   const fileList = [];
-  const names = await fs.readdir(targetDir);
+  const names = await fs.readdir(path.normalize(targetDir));
   await Promise.all(names.map(async(name)=>{
     if (allFilter && !allFilter.test(name)) {
       return;

@@ -45,7 +45,7 @@ async function sendDirectoryContents(emit, target, request, withSND = true, send
 }
 
 async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
-  requestDir = convertPathSep(requestDir);
+  requestDir = path.normalize(convertPathSep(requestDir));
   getLogger(projectRootDir).debug(`current dir = ${requestDir}`);
 
   if (typeof cb !== "function") {
@@ -70,7 +70,7 @@ async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
 }
 
 async function onGetSNDContents(emit, projectRootDir, requestDir, glob, isDir, cb) {
-  requestDir = convertPathSep(requestDir);
+  requestDir = path.normalize(convertPathSep(requestDir));
   getLogger(projectRootDir).debug("getSNDContents event recieved:", requestDir, glob, isDir);
 
   if (typeof cb !== "function") {
