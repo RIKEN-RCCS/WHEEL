@@ -84,7 +84,7 @@ const defaultSettings = {
         "errorlog"
       ],
       level: "debug"
-    },
+    }
   },
   levels: {
     stdout: {
@@ -93,7 +93,7 @@ const defaultSettings = {
     },
     stderr: {
       value: 20000,
-      colour: "green"
+      colour: "yellow"
     },
     sshout: {
       value: 20000,
@@ -101,7 +101,7 @@ const defaultSettings = {
     },
     ssherr: {
       value: 20000,
-      colour: "green"
+      colour: "yellow"
     }
   }
 };
