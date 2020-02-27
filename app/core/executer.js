@@ -137,18 +137,19 @@ async function gatherFiles(task) {
       }
       return `${e.name}`;
     });
-    
-  for (const outputFile of outputFiles){
-    const dst=`${path.join(task.workingDir, path.dirname(outputFile))}/`
+
+  for (const outputFile of outputFiles) {
+    const dst = `${path.join(task.workingDir, path.dirname(outputFile))}/`;
     logger.debug("try to get outputFiles", outputFile, "\n  from:", task.remoteWorkingDir, "\n  to:", dst);
+
     try {
-      console.log(path.dirname(outputFile))
+      console.log(path.dirname(outputFile));
       await ssh.recv(path.posix.join(task.remoteWorkingDir, outputFile), dst, null, null);
     } catch (e) {
       //ignore if src file is not exists
       if (e.message !== "src must be existing file or directory") {
         throw e;
-      }else{
+      } else {
         logger.debug("src file not found but ignored", outputFile);
       }
     }
@@ -167,7 +168,7 @@ async function gatherFiles(task) {
       //ignore if src file is not exists
       if (e.message !== "src must be existing file or directory") {
         throw e;
-      }else{
+      } else {
         logger.debug("file not found but ignored", e);
       }
     }
