@@ -44,7 +44,7 @@
             <th class="hostWorkDir">Host Work Dir</th>
             <th class="authType">Auth Type</th>
             <th class="authPath">Auth Path</th>
-            <th class="jobScheduler">Job Scheduler</th>
+            <th class="jobScheduler">JobScheduler</th>
             <th class="jobSubmissionLimit">Max Job</th>
             <th class="queue">Queue</th>
           </tr>
@@ -96,9 +96,6 @@
             <th class="region">region</th>
             <th class="numNodes">numNodes</th>
             <th class="instanceType">InstanceType</th>
-            <!-- <th class="jobScheduler">Job Scheduler</th>
-            <th class="jobSubmissionLimit">Max Job</th>
-            <th class="queue">Queue</th> -->
           </tr>
         </table>
       </div>
@@ -119,12 +116,6 @@
                 {{ host.numNodes }}</td>
               <td class="instanceType">
                 {{ host.InstanceType }}</td>
-              <!-- <td class="jobScheduler">
-                {{ host.jobScheduler }}</td>
-              <td class="jobSubmissionLimit">
-                {{ host.numJob }}</td>
-              <td class="queue">
-                {{ host.queue }}</td> -->
             </tr>
           </template>
         </table>
@@ -222,7 +213,7 @@
         </div>
         <div>
           <span>
-            <label id="hostJobScheduler">Job Scheduler</label>
+            <label id="hostJobScheduler">JobScheduler</label>
           </span>
           <input type="text" v-model.lazy.trim="newHostInfo.jobScheduler">
         </div>
@@ -354,7 +345,7 @@
       <div id="rightFormArea">
         <div>
           <span>
-            <label id="cloudJobScheduler">Job Scheduler</label>
+            <label id="cloudJobScheduler">JobScheduler</label>
           </span>
           <input type="text" v-model.lazy.trim="newHostInfo.jobScheduler">
         </div>
