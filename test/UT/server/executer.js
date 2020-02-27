@@ -45,7 +45,7 @@ const dummyLogger = {
   stdout: sinon.stub(),
   stderr: sinon.stub(),
   sshout: sinon.stub(),
-  ssherr: sinon.spy(console, "log")
+  ssherr: sinon.stub()
 };
 executer.__set__("logger", dummyLogger);
 
@@ -147,8 +147,8 @@ describe("UT for executer class", function() {
       await arssh.exec(`rm -fr ${path.posix.join("/home/pbsuser", task0.projectStartTime)}`);
     });
     after(async()=>{
-      if(arssh){
-      await arssh.disconnect();
+      if (arssh) {
+        await arssh.disconnect();
       }
     });
 
