@@ -26,12 +26,12 @@ export default {
         :footer-props="tableFooterProps"
       >
         <template v-slot:item.action="{ item }">
-          <v-icon small class="mr-2" @click="currentItem=item;Object.assign(newItem, item);dialog=true" > edit </v-icon>
+          <v-icon small class="mr-2" @click="openDialog(item)" > edit </v-icon>
           <v-icon small @click="deleteItem(item)" > delete </v-icon>
         </template>
         <template v-slot:item.counterpart="{ item }">
         <div v-if="item.hasOwnProperty(counterpartProp)">
-        {{ getComponentName($root.$data.componentPath[item[counterpartProp]]) }}
+        {{ getComponentName(item[counterpartProp]) }}
         </div>
         </template>
       </v-data-table>
@@ -91,9 +91,32 @@ export default {
     }
   },
   methods:{
-    getComponentName(name){
+    openDialog(item){
+      console.log("DEBUG: ",item)
+      this.currentItem=item;
+      Object.assign(this.newItem, item);
+      if (typeof this.newItem[this.counterpartProp] !== "undefined"){
+        this.active[0]=this.newItem[this.counterpartProp];
+      }
+      console.log("DEBUG:",this.active)
+      this.dialog=true
+    },
+    getComponentName(id){
+      const name = this.$root.$data.componentPath[id]; 
       const tmp=name.split('/');
       return tmp[tmp.length -1]
+    },
+    isDuplicated(){
+      const index=this.container.findIndex((e)=>{
+        return e.srcName === this.newItem.srcName
+        && e.dstName === this.newItem.dstName
+        && e[this.counterpartProp] === this.newItem[this.counterpartProp]
+      });
+      if( index  !== -1){
+        console.log("DEBUG: duplicated", this.newItem);
+        return true;
+      }
+      return false
     },
     isValid(){
       if(! isValidName(this.newItem.srcName) ){
@@ -104,23 +127,16 @@ export default {
         console.log("DEBUG: invalid dstName", this.newItem);
         return false;
       }
-
-      const index=this.container.findIndex((e)=>{
-        return e.srcName === this.newItem.srcName
-        && e.dstName === this.newItem.dstName
-        && e[this.counterpartProp] === this.newItem[this.counterpartProp]
-      });
-      if( index  !== -1){
-        console.log("DEBUG: duplicated", this.newItem);
-        return false;
-      }
       return true;
     },
     addItem(){
-      if(this.active[0]){
+      if(typeof this.active[0] === "string"){
         this.newItem[this.counterpartProp]=this.active[0];
       }
       if(!this.isValid()){
+        return
+      }
+      if(this.isDuplicated()){
         return
       }
       this.container.push(this.newItem);
@@ -138,9 +154,8 @@ export default {
       }
       this.container[targetIndex].srcName = this.newItem.srcName;
       this.container[targetIndex].dstName = this.newItem.dstName;
-      this.container[targetIndex][this.counterpartProp] = this.newItem[this.counterpartProp];
-      if(typeof this.newItem[this.counterpartProp]=== "undefined"){
-        delete this.container[targetIndex][this.counterpartProp]
+      if(typeof this.newItem[this.counterpartProp] === "string"){
+        this.container[targetIndex][this.counterpartProp] = this.newItem[this.counterpartProp];
       }
     },
     deleteItem(item){
@@ -158,7 +173,7 @@ export default {
       this.dialog= false;
       this.currentItem= null;
       this.newItem={srcName:"",dstName:""};
-      this.active=[];
+      this.active.pop();
     }
   }
 }

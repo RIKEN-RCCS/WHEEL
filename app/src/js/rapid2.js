@@ -157,6 +157,11 @@ Vue.component("new-rapid", {
     }
   },
   methods: {
+    getComponentName(id){
+      const name = this.$root.$data.componentPath[id]; 
+      const tmp=name.split('/');
+      return tmp[tmp.length -1]
+    },
     async saveAllFiles(){
       //save parameter setting file
       const PSFileContent=JSON.stringify(this.parameterSetting, null,4);

@@ -8,18 +8,25 @@ export default {
       <v-toolbar>
         <v-toolbar-title> targetFiles </v-toolbar-title>
         <div class="flex-grow-1"></div>
-        <v-btn @click="targetFileDialog=true" class="text-capitalize"> <v-icon> add </v-icon> add new </v-btn>
+        <v-btn @click="targetFileDialog=true" class="text-capitalize"> <v-icon> add </v-icon> add new target file</v-btn>
       </v-toolbar>
       <v-data-table
          dense
-        :headers="[ {value: 'targetName', text: 'filename', sortable: true}, { text: 'Actions', value: 'action', sortable: false }]"
+        :headers="[{ value: 'targetName', text: 'filename', sortable: true },
+                   { value: 'targetNode', text: 'component', sortable: true }, 
+                   { value: 'action', text: 'Actions',  sortable: false }]"
         :items="targetFiles"
         :items-per-page="5"
         :footer-props="tableFooterProps"
       >
         <template v-slot:item.action="{ item }">
-          <v-icon small class="mr-2" @click="currentItem=item;targetFileDialog=true;" > edit </v-icon>
+          <v-icon small class="mr-2" @click="currentItem=item;newTargetFilename=item.targetName;targetFileDialog=true;" > edit </v-icon>
           <v-icon small @click="deleteItem(item)" > delete </v-icon>
+        </template>
+        <template v-slot:item.targetNode="{ item }">
+        <div v-if="item.hasOwnProperty('targetNode')">
+        {{ getComponentName(item.targetNode) }}
+        </div>
         </template>
       </v-data-table>
     </v-card>
@@ -34,6 +41,12 @@ export default {
           :label="'filename'"
           >
           </v-text-field>
+          <v-treeview
+          :items=lowerLevelComponents
+          :active.sync=active
+          dense
+          activatable
+          ></v-treeview>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -44,16 +57,22 @@ export default {
     </v-dialog>
   </div>
   `,
-  props: ['files', 'targetFiles'],
+  props: ['files', 'targetFiles', 'lowerLevelComponents'],
   data(){
     return{
       targetFileDialog: false,
       newTargetFilename: "",
       currentItem: null,
+      active:[],
       tableFooterProps
     }
   },
   methods:{
+    getComponentName(id){
+      const name = this.$root.$data.componentPath[id]; 
+      const tmp=name.split('/');
+      return tmp[tmp.length -1]
+    },
     deleteItem(item){
       removeFromArray(this.targetFiles, item);
     },
@@ -61,8 +80,13 @@ export default {
       this.currentItem=null;
       this.targetFileDialog=false;
       this.newTargetFilename="";
+      this.active=[];
     },
     commitTargetFileChange(){
+      if(this.newTargetFilename === ""){
+        //regard as canceled
+        return this.closeAndResetDialog();
+      }
       if(this.currentItem === null ){
         this.addNewTargetFile();
       }else{
@@ -77,6 +101,11 @@ export default {
         return oldAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.$root.$data.pathSep, dirnamePrefix, this.$root.$data.node.ID);
       });
       targetInTargetFiles.targetName=this.newTargetFilename;
+      if(this.active[0] ){
+        targetInTargetFiles.targetNode=this.active[0] ;
+      }else{
+        delete targetInTargetFiles.targetNode
+      }
 
       this.$emit('open-new-tab', this.newTargetFilename);
       this.closeAndResetDialog();
@@ -90,11 +119,18 @@ export default {
 
       if(targetInTargetFiles !== -1){
         //just ignore if already exists
+        if(this.active[0]){
+          this.targetFiles[targetInTargetFiles].targetNode=this.active[0];
+        }else{
+        delete this.targetFiles[targetInTargetFiles].targetNode
+        }
         return
       }
-      this.targetFiles.push({
-        targetName: this.newTargetFilename
-      });
+      const newTarget= {targetName: this.newTargetFilename}
+      if(this.active[0]){
+        newTarget.targetNode=this.active[0]
+      }
+      this.targetFiles.push( newTarget );
 
       console.log("emit open-new-tab event", this.newTargetFilename);
       this.$emit('open-new-tab', this.newTargetFilename);
