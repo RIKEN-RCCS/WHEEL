@@ -254,6 +254,14 @@ Vue.component("new-rapid", {
     });
     this.$root.$data.sio.on("file", (file)=>{
       console.log("DEBUG: file recieved",file.filename);
+      //check arraived file is already opened or not
+      const existingTab = this.files.findIndex((e)=>{
+        return e.filename === file.filename
+      });
+      if(existingTab !== -1){
+          this.activeTab = existingTab
+          return
+      }
       file.editorSession=ace.createEditSession(file.content)
       this.files.push(file);
 
