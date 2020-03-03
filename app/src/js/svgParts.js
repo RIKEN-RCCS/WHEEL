@@ -620,7 +620,7 @@ class SvgBox {
       state = 'running'
     }
     const nodeStatePath = config.state_icon[state];
-    if (state === 'running' && numTotal !== null) {
+    if (state === 'running' && !isNaN(numTotal)) {
       const calcProgress = numFinished / numTotal * 100;
       const calcProgress2 = numFailed / numTotal * 100;
       const radius = 7;
@@ -631,7 +631,7 @@ class SvgBox {
       let progress = convertedPercentage * calcProgress;
       let progress2 = convertedPercentage * calcProgress2;
       let progressTotal = progress + progress2;
-      if (numFailed !== null) {
+      if (!isNaN(numFailed)) {
         return [
           this.draw
             .circle(`${diameter}`)
@@ -652,7 +652,7 @@ class SvgBox {
             .x(statePosX + 11)
             .y(statePosY + 9)
         ]
-      } else if (numFailed === null) {
+      } else {
         return [
           this.draw
             .circle(`${diameter}`)
@@ -687,8 +687,8 @@ class SvgBox {
       state = 'running'
     }
     const nodeStatePath = config.state_icon[state];
-    if (state === 'running' && numFinished !== null) {
-      if (numFailed === null) {
+    if (state === 'running' && !isNaN(numFinished)) {
+      if (isNaN(numFailed)) {
         numFailed = 0;
       }
       let strFinishedNum = numFinished + "";
