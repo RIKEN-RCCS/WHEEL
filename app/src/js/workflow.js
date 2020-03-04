@@ -83,6 +83,10 @@ $(() => {
       pathSep
     },
     methods: {
+    closeRapid(){
+      fb.request('getFileList', projectRootDir+'/'+this.componentPath[this.node.ID], null);
+      this.normal=true
+    },
       addInputFile: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
           let filename = this.newInputFilename;
@@ -329,11 +333,6 @@ $(() => {
     if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
       $('#fileSelector').click();
     }
-  });
-
-  //rapid以外の要素をhideしてrapidだけ表示
-  $('#editPSFileButton').click(function () {
-      vm.normal = false;
   });
 
   // set default view
