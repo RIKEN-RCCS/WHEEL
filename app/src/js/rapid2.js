@@ -37,12 +37,27 @@ Vue.component("new-rapid", {
   template: `
     <v-app>
       <v-container fill-height fluid>
+      <v-dialog v-model="dialog" persistent>
+        <v-card>
+          <v-card-title>
+          unsaved file
+          </v-card-title>
+          <v-card-text>
+            {{ closingFilename }} is not saved
+          </v-card-text>
+          <v-card-actions>
+          <v-btn text @click.stop=saveAndCloseTab ><v-icon>save</v-icon> save </v-btn>
+          <v-btn text @click.stop=closeTab><v-icon>delete</v-icon> discard changes </v-btn>
+          <v-btn text @click.stop=closeDialog><v-icon>cancel</v-icon> cancel </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
         <v-layout split column id="text">
           <v-flex shrink>
             <v-tabs v-model="activeTab" @change="changeTab">
               <v-tab class="text-none" v-for="(file,index) of files" :key="file.order">
                 {{ file.filename }}
-                <v-btn small icon @click.stop="closeTab(index)" v-if="! isTargetFile(file)">
+                <v-btn small icon @click.stop="openDialog(index)" v-if="! isTargetFile(file)">
                   <v-icon small>close</v-icon>
                 </v-btn>
               </v-tab>
@@ -56,7 +71,7 @@ Vue.component("new-rapid", {
                       <v-text-field v-model="newFilename" label="new file name"></v-text-field>
                     </v-card-text>
                     <v-card-actions>
-                      <v-btn @click=openNewTab><v-icon>create</v-icon>open</v-btn>
+                      <v-btn @click="openNewTab"><v-icon>create</v-icon>open</v-btn>
                       <v-btn @click="newFilename=null;newFilePrompt=false"><v-icon>cancel</v-icon>cancel</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -101,6 +116,9 @@ Vue.component("new-rapid", {
 `,
   data() {
     return {
+      dialog: false,
+      closingTab: null,
+      closingFilename: null,
       activeTab: 0,
       newFilePrompt: false,
       newFilename: null,
@@ -212,7 +230,8 @@ Vue.component("new-rapid", {
         }
       }
     },
-    async openNewTab(newFilename=this.newFilename, newContents = "") {
+    async openNewTab() {
+      const newFilename=this.newFilename;
       const currentDir = this.$root.$data.fb.getRequestedPath();
       console.log("DEBUG: open new tab", newFilename, currentDir);
       const existingTab = this.files.findIndex((e)=>{
@@ -230,7 +249,7 @@ Vue.component("new-rapid", {
         this.changeTab(existingTab+1);
       }
       //clear temporaly variables and close prompt
-      newFilename = null;
+      this.newFilename = null;
       this.newFilePrompt=false;
     },
     changeTab(argIndex) {
@@ -250,24 +269,48 @@ Vue.component("new-rapid", {
          });
       }
     },
-    closeTab(index) {
-      console.log("DEBUG: close ",index,"th tab");
+    openDialog(index){
+      this.closingTab=index;
+      const file = this.files[index];
+      this.closingFilename=file.filename;
+      const document = file.editorSession.getDocument()
+      const content = document.getValue();
+      console.log("DEBUG: file.content", file.content)
+      console.log("DEBUG: content", content)
+      if(file.content === content){
+        console.log(`INFO: ${file.filename} is not changed. so just close tab`);
+        this.closeTab();
+        return
+      }
+      // open dialog and ask user how to treat this file
+      this.dialog=true;
+    },
+    closeDialog(){
+      this.closingTab=null;
+      this.dialog=false;
+    },
+    saveAndCloseTab(){
+      const index=this.closingTab;
       const file = this.files[index];
       const document = file.editorSession.getDocument()
       const content = document.getValue();
-      if(file.content === content){
-        console.log(`INFO: ${file.filename} is not changed. so just close tab`);
-      }else{
-        this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
-          if(! rt){
-            console.log("ERROR: file save failed:", rt);
-          }
-        });
-      }
+      this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+        if(! rt){
+          console.log("ERROR: file save failed:", rt);
+        }
+      });
+      this.closeTab();
+    },
+    closeTab() {
+      const index = this.closingTab;
+      console.log("DEBUG: close ",index,"th tab");
       if(index === 0){
+        const file = this.files[index];
+        const document = file.editorSession.getDocument()
         document.setValue("");
       }
       this.files.splice(index, 1);
+      this.closeDialog();
     },
     isTargetFile(file){
       return isTargetFile(file, this.$root.$data.rootDir, this.$root.$data.pathSep, this.parameterSetting.targetFiles, this.$root.$data.componentPath, this.$root.$data.node.ID);
