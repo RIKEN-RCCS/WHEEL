@@ -83,10 +83,11 @@ $(() => {
       pathSep
     },
     methods: {
-    closeRapid(){
-      fb.request('getFileList', projectRootDir+'/'+this.componentPath[this.node.ID], null);
-      this.normal=true
-    },
+      closeRapid() {
+        let targetPath =  this.componentPath[this.node.ID].slice(2) 
+        fb.request('getFileList', projectRootDir + '/' + targetPath, null);
+        this.normal=true
+      },
       addInputFile: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
           let filename = this.newInputFilename;
