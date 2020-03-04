@@ -5,6 +5,29 @@ import gatherScatter from "./gatherScatter.js";
 import parameter from "./parameter.js";
 import {isTargetFile} from "./rapid2Util.js";
 
+/**
+ * check if given PS setting is differ from original one
+ * @param {Object} psSetting - parameter setting object
+ * @return {boolean} - psSetting is changed or not
+ * 
+ * this function just compare with default value for now.
+ */
+function isChanged(psSetting){
+  if(psSetting.targetFiles.length > 0){
+    return true
+  }
+  if(psSetting.params.length > 0){
+    return true
+  }
+  if(psSetting.scatter.length > 0){
+    return true
+  }
+  if(psSetting.gather.length > 0){
+    return true
+  }
+  return false;
+}
+
 Vue.component("new-rapid", {
   components:{
     targetFiles,
@@ -164,21 +187,29 @@ Vue.component("new-rapid", {
     },
     async saveAllFiles(){
       //save parameter setting file
-      const PSFileContent=JSON.stringify(this.parameterSetting, null,4);
-      this.$root.$data.sio.emit("saveFile", this.parameterSettingFilename, this.parameterSettingDirname, PSFileContent, (rt)=>{
-        if(! rt){
-          console.log("ERROR: file save failed:", rt);
-        }
-      });
-      for(const file of this.files){
-        const document = file.editorSession.getDocument()
-        //TODO 差分が無ければsaveFileを呼ばないようにする
-        const content = document.getValue();
-        this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+      if(isChanged(this.parameterSetting)){
+        const PSFileContent=JSON.stringify(this.parameterSetting, null,4);
+        this.$root.$data.sio.emit("saveFile", this.parameterSettingFilename, this.parameterSettingDirname, PSFileContent, (rt)=>{
           if(! rt){
             console.log("ERROR: file save failed:", rt);
           }
         });
+      }else{
+        console.log(`INFO: ${this.parameterSettingFilename} is not changed. so it will not saved`);
+      }
+      //save other files
+      for(const file of this.files){
+        const document = file.editorSession.getDocument()
+        const content = document.getValue();
+        if(file.content === content){
+          console.log(`INFO: ${file.filename} is not changed. so just close tab`);
+        }else{
+          this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+            if(! rt){
+              console.log("ERROR: file save failed:", rt);
+            }
+          });
+        }
       }
     },
     async openNewTab(newFilename=this.newFilename, newContents = "") {
