@@ -27,8 +27,8 @@ async function getComponentDirs(target) {
 }
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
-  request = request || target;
-  const componentDirs = await getComponentDirs(request);
+  const modifiedRequestDir = request ? path.normalize(convertPathSep(request)) : target;
+  const componentDirs = await getComponentDirs(modifiedRequestDir);
   const regexComponentDirs = componentDirs.length > 0 ? new RegExp(`^(?!.*(${componentDirs.join("|")})).+$`) : null;
   const result = await fileBrowser(target, {
     request,
@@ -45,18 +45,18 @@ async function sendDirectoryContents(emit, target, request, withSND = true, send
 }
 
 async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
-  requestDir = path.normalize(convertPathSep(requestDir));
-  getLogger(projectRootDir).debug(`current dir = ${requestDir}`);
+  const modifiedRequestDir = path.normalize(convertPathSep(requestDir));
+  getLogger(projectRootDir).debug(`current dir = ${modifiedRequestDir}`);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
 
   try {
-    const stats = await fs.stat(requestDir);
-    const targetDir = stats.isDirectory() ? requestDir : path.dirname(requestDir);
+    const stats = await fs.stat(modifiedRequestDir);
+    const targetDir = stats.isDirectory() ? modifiedRequestDir : path.dirname(modifiedRequestDir);
 
-    if (targetDir !== requestDir) {
+    if (targetDir !== modifiedRequestDir) {
       getLogger(projectRootDir).debug("requested directory is not directory, show parent of reqested:", targetDir);
     }
     await sendDirectoryContents(emit, targetDir, requestDir);
@@ -70,8 +70,8 @@ async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
 }
 
 async function onGetSNDContents(emit, projectRootDir, requestDir, glob, isDir, cb) {
-  requestDir = path.normalize(convertPathSep(requestDir));
-  getLogger(projectRootDir).debug("getSNDContents event recieved:", requestDir, glob, isDir);
+  const modifiedRequestDir = path.normalize(convertPathSep(requestDir));
+  getLogger(projectRootDir).debug("getSNDContents event recieved:", modifiedRequestDir, glob, isDir);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -80,7 +80,7 @@ async function onGetSNDContents(emit, projectRootDir, requestDir, glob, isDir, c
   const sendFile = !isDir;
 
   try {
-    await sendDirectoryContents(emit, requestDir, requestDir, false, sendDir, sendFile, minimatch.makeRe(glob));
+    await sendDirectoryContents(emit, modifiedRequestDir, requestDir, false, sendDir, sendFile, minimatch.makeRe(glob));
   } catch (e) {
     getLogger(projectRootDir).error(requestDir, "read failed", e);
     cb(false);
