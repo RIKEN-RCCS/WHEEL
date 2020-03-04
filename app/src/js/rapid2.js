@@ -223,13 +223,16 @@ Vue.component("new-rapid", {
       console.log("DEBUG: close ",index,"th tab");
       const file = this.files[index];
       const document = file.editorSession.getDocument()
-      //TODO 差分が無ければsaveFileを呼ばないようにする
       const content = document.getValue();
-      this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
-        if(! rt){
-          console.log("ERROR: file save failed:", rt);
-        }
-      });
+      if(file.content === content){
+        console.log(`INFO: ${file.filename} is not changed. so just close tab`);
+      }else{
+        this.$root.$data.sio.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+          if(! rt){
+            console.log("ERROR: file save failed:", rt);
+          }
+        });
+      }
       if(index === 0){
         document.setValue("");
       }
