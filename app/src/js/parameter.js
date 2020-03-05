@@ -124,11 +124,12 @@ export default {
         <v-card-title>
         </v-card-title>
         <v-card-text>
+        <v-text-field v-model="filterText" label="filter"></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click=commitChange><v-icon>save</v-icon>save</v-btn>
-          <v-btn @click=closeAndResetDialog><v-icon>cancel</v-icon>cancel</v-btn>
+          <v-btn @click=updateFilter><v-icon>save</v-icon>save</v-btn>
+          <v-btn @click=closeFilterDialog><v-icon>cancel</v-icon>cancel</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -137,6 +138,8 @@ export default {
   data(){
     return{
       dialog: false,
+      filterEdittingItem: null,
+      filterText: "",
       filterDialog: false,
       newItem:{
         type:"min-max-step", // can be set to "list" and "files"
@@ -159,7 +162,17 @@ export default {
   props:["keyword", "params" ],
   methods:{
     openFilterDialog(item){
+      this.filterEdittingItem=item;
       this.filterDialog=true;
+      console.log("DEBUG:",this.filterEdittingItem)
+    },
+    updateFilter(){
+      this.$emit("updateFilter",this.filterText)
+      this.closeFilterDialog();
+    },
+    closeFilterDialog(){
+      this.filterEdittingItem=null;
+      this.filterDialog=false;
     },
     openDialog(item){
       this.currentItem=item;
@@ -204,6 +217,7 @@ export default {
       const newParam={keyword: this.keyword}
       this.params.push(newParam);
       this.storeParam(newParam);
+      this.$emit("newParamAdded")
     },
     updateItem(item){
       const targetIndex = this.params.findIndex((e)=>{

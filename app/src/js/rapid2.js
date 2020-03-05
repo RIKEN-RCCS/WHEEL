@@ -94,6 +94,8 @@ Vue.component("new-rapid", {
           <parameter
           :keyword="selectedText"
           :params="parameterSetting.params"
+          @newParamAdded="insertBraces"
+          @updateFilter="updateFilter"
           ></parameter>
 
           <gather-scatter
@@ -198,6 +200,17 @@ Vue.component("new-rapid", {
     }
   },
   methods: {
+    insertBraces(){
+      console.log("DEBUG: insertBraces called")
+      const selectedRange =this.editor.getSelection().getRange();
+      const session = this.editor.getSession();
+      session.insert(selectedRange.end, " }}");
+      session.insert(selectedRange.start, "{{ ");
+    },
+    updateFilter(keyword){
+      console.log("DEBUG: updateFilter called with", keyword)
+      
+    },
     getComponentName(id){
       const name = this.$root.$data.componentPath[id]; 
       const tmp=name.split('/');
