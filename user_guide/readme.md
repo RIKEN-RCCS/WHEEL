@@ -1,11 +1,11 @@
 # WHEEL　ユーザーガイド 
 
 ## はじめに
-### ・ 本チュートリアルの目的  
+### ・ 本ユーザガイドの目的  
 本ユーザーガイドは、ワークフローシステムWHEELの初学者が自身の課題を解決するためのワークフローを、WHEELを使って実現するための自習用ドキュメントです。  
 本チュートリアルの対象ユーザは、シェルスクリプトに関する知識、および「京」コンピュータのジョブスクリプトの作成方法とジョブの投入方法についての知識は有しているものとしています。  
-### ・ 本チュートリアルの構成  
-本チュートリアルは、以下の内容によって構成されています。  
+### ・ 本ユーザガイドの構成  
+本ユーザガイドは、以下の内容によって構成されています。  
 1. WHEELの手順書
     1. [WHEELのインストール](WHEEL_introduction/1_install/install.md)
     1. [WHEELの起動（サーバ、クライアント）](WHEEL_introduction/2_start/start.md)
@@ -34,3 +34,5 @@
 1. WHEELのチュートリアル
     1. [OpenFOAMを利用したパラメトリックスタディ解析ワークフロー](WHEEL_tutorial/1_OpenFOAM_PS_sample/OpenFOAM_PS_sample.md)  
     1. [京プリポストクラウドを計算資源としたOpenFOAM解析ワークフロー](WHEEL_tutorial/2_OpenFOAM_PS_sample/OpenFOAM_PS_sample.md)  
+1. WHEELの注意事項
+    1. [WHEELの注意事項](ATTENTION.md)
