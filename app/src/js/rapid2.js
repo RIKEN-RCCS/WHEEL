@@ -275,8 +275,6 @@ Vue.component("new-rapid", {
       this.closingFilename=file.filename;
       const document = file.editorSession.getDocument()
       const content = document.getValue();
-      console.log("DEBUG: file.content", file.content)
-      console.log("DEBUG: content", content)
       if(file.content === content){
         console.log(`INFO: ${file.filename} is not changed. so just close tab`);
         this.closeTab();
