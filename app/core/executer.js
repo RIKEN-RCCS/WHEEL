@@ -9,7 +9,7 @@ const { evalCondition } = require("./dispatchUtils");
 const { replacePathsep } = require("./pathUtils");
 const { getDateString } = require("../lib/utility");
 const { componentJsonReplacer } = require("./componentFilesOperator");
-const { getSsh } = require("./sshManager.js");
+const { getSsh, getSshHost } = require("./sshManager.js");
 const executers = [];
 let logger; //logger is injected when exec() is called;
 
@@ -497,7 +497,7 @@ class Executer {
 function createExecuter(task) {
   logger.debug("createExecuter called");
   const onRemote = task.remotehostID !== "localhost";
-  const hostinfo = onRemote ? remoteHost.get(task.remotehostID) : null;
+  const hostinfo = onRemote ? getSshHost(task.projectRootDir, task.remotehostID) : null;
   //TODO remove onRemote after local submit is supported
   const JS = onRemote && task.useJobScheduler && Object.keys(jobScheduler).includes(hostinfo.jobScheduler) ? jobScheduler[hostinfo.jobScheduler] : null;
   if (onRemote && task.useJobScheduler && JS === null) {
@@ -535,7 +535,7 @@ function exec(task, loggerInstance) {
   } else {
     logger.debug(`reuse existing executer for ${task.host} ${task.useJobScheduler ? "with" : "without"} job scheduler`);
     const onRemote = executer.remotehostID !== "localhost";
-    const hostinfo = remoteHost.get(executer.remotehostID);
+    const hostinfo = onRemote ? getSshHost(task.projectRootDir, executer.remotehostID) : remoteHost.get(executer.remotehostID);
     const maxNumJob = getMaxNumJob(hostinfo, onRemote);
     const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
     const statusCheckInterval = hostinfo != null ? hostinfo.statusCheckInterval : 5;
@@ -552,7 +552,7 @@ function exec(task, loggerInstance) {
   }
 
   if (task.remotehostID !== "localhost") {
-    const hostinfo = remoteHost.get(task.remotehostID);
+    const hostinfo = getSshHost(task.projectRootDir, task.remotehostID);
     const localWorkingDir = replacePathsep(path.relative(task.projectRootDir, task.workingDir));
     const remoteRoot = typeof hostinfo.path === "string" ? hostinfo.path : "";
     task.remoteWorkingDir = replacePathsep(path.posix.join(remoteRoot, task.projectStartTime, localWorkingDir));

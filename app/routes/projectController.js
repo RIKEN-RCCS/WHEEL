@@ -180,7 +180,7 @@ async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
 
   //remoteHostName is name property of remote host entry
   //hostInfo.host is hostname or IP address of remote host
-  addSsh(projectRootDir, hostInfo.id, arssh);
+  addSsh(projectRootDir, hostInfo, arssh);
 
   try {
     //1st try
@@ -277,7 +277,7 @@ async function createCloudInstance(projectRootDir, hostInfo, sio) {
   }
 
   hostInfo.host = config.host;
-  addSsh(projectRootDir, hostInfo.id, arssh);
+  addSsh(projectRootDir, hostInfo, arssh);
 }
 
 async function onRunProject(sio, projectRootDir, cb) {

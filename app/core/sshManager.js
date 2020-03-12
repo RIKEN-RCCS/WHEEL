@@ -1,10 +1,10 @@
 const db = new Map();
 
-function addSsh(projectRootDir, id, ssh) {
+function addSsh(projectRootDir, hostInfo, ssh) {
   if (!db.has(projectRootDir)) {
     db.set(projectRootDir, new Map());
   }
-  db.get(projectRootDir).set(id, ssh);
+  db.get(projectRootDir).set(hostInfo.id, { ssh: ssh, host: hostInfo });
 }
 function getSsh(projectRootDir, id) {
   if (!db.has(projectRootDir)) {
@@ -12,7 +12,15 @@ function getSsh(projectRootDir, id) {
     err.projectRootDir = projectRootDir;
     throw err;
   }
-  return db.get(projectRootDir).get(id);
+  return db.get(projectRootDir).get(id)["ssh"];
+}
+function getSshHost(projectRootDir, id) {
+  if (!db.has(projectRootDir)) {
+    const err = new Error("ssh instance is not registerd for the project");
+    err.projectRootDir = projectRootDir;
+    throw err;
+  }
+  return db.get(projectRootDir).get(id)["host"];
 }
 function removeSsh(projectRootDir) {
   const target = db.get(projectRootDir);
@@ -20,7 +28,7 @@ function removeSsh(projectRootDir) {
     return;
   }
   for (const e of target.values()) {
-    e.disconnect();
+    e["ssh"].disconnect();
   }
   db.get(projectRootDir).clear();
 }
@@ -28,5 +36,6 @@ function removeSsh(projectRootDir) {
 module.exports = {
   addSsh,
   getSsh,
+  getSshHost,
   removeSsh
 };

@@ -129,7 +129,7 @@ describe("UT for executer class", function() {
 
       try {
         await arssh.canConnect();
-        addSsh(projectRootDir, hostInfo.id, arssh);
+        addSsh(projectRootDir, hostInfo, arssh);
       } catch (e) {
         console.log(`ssh connection failed to ${remotehostID} due to ${e} so remote exec test is skiiped`);
         this.skip();
