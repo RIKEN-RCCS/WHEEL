@@ -814,7 +814,10 @@ $(() => {
       var xCoordinate = event.offsetX;
       var yCoordinate = event.offsetY;
       const pos = { x: xCoordinate, y: yCoordinate };
-      sio.emit('createNode', { "type": objectName, "pos": pos });
+      sio.emit('createNode', { "type": objectName, "pos": pos }, (result) => {
+        if (result !== true) return;
+        sio.emit('getProjectJson', rootWorkflow);
+      });
     };
   });
 
