@@ -205,7 +205,7 @@ export default class {
       fileList.forEach((data) => {
         if (!this.isValidData(data)) return;
         var icon = this.drawIconImage(data.type, data.path, data.name, data.isdir, data.islink);
-        var dataName = data.name;
+        var dataName = data.name.trim();
         var idName = dataName.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
         var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class="${data.type}" id="${idName}_data">${icon}${data.name}</li>`);
         var compare = this.compare;
@@ -233,7 +233,7 @@ export default class {
     $(this.idFileList).on("click", 'li,i', (event) => {
       var dataType = $(event.target).data('type');
       this.changeColorsWhenSelected(event);
-      this.lastClicked = $(event.target).data('name').trim();
+      this.lastClicked = $(event.target).data('name');
       this.changeFileEditButtonWhenSelected(dataType);
     });
   }
@@ -242,9 +242,9 @@ export default class {
     let rootDirPath = "";
     let target = "";
     $(this.idFileList).on("dblclick", 'li,i', (event) => {
-      const dataType = $(event.target).data('type').trim();
+      const dataType = $(event.target).data('type');
       const dataPath = $(event.target).data('path').trim();
-      const dataName = $(event.target).data('name').trim();
+      const dataName = $(event.target).data('name');
       if (dataType === 'dir') {
         if (dirPathStack.length === 0) {
           dirPathStack.push(this.requestedPath);
