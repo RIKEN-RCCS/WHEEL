@@ -160,6 +160,7 @@ $(() => {
           if (!dup) {
             sio.emit('updateNode', this.node.ID, 'name', this.node.name, (result) => {
               if (result !== true) return;
+              sio.emit('getProjectJson', rootWorkflow);
               const currentComponentDir = currentWorkDir + "\\" + val;
               fb.request('getFileList', currentComponentDir, null);
               const displayDirPath = "." + currentWorkDir.replace(projectRootDir, "") + "/" + val;
