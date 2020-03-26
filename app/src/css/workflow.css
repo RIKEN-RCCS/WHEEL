@@ -1538,57 +1538,16 @@ tspan{
     background-color: #222226;
 }
 
-/*all dialog setting*/
-#dialog{
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
-    color: #FFFFFF;
-  }
-
-.ui-dialog {
-    z-index: 200;
-    background-color: #222226;
-    border: none !important;
-  }
-
-  .ui-dialog-titlebar{
-    background-color: #222226;
-    color: #FFFFFF;
-    font-size: 16px;
-    font-weight: initial;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
-    border: 0;
-  }
-
-  .ui-button{
-    background-color: #5B5B5F;
-    border-color: #5B5B5F;
-    color: #ffffff;
-    border-radius: 0;
-    width: 72px;
-    height: 24px;
-    padding: 0;
-  }
-
-  .ui-dialog-buttonpane{
-    background-color: #222226;
-    border: none;
-    height: 32px;
-  }
-
-  /* workflow.js only setting*/
-  .ui-button.cancelButton{
+/*dialog setting*/
+.ui-button.cancelButton{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;
   }
 
-  .ui-button.okButton{
+.ui-button.okButton{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;
     margin: 9px 9px 9px 2px!important;
-  }
-
-  .ui-button.notUseButton{
-      display: none;
   }
 
 #newfileName.dialogTextbox, #newfolderName.dialogTextbox, #newName.dialogTextbox,
@@ -1660,10 +1619,6 @@ tspan{
   height: 100%;
 }
 
-#rapid {
-  /* height: 100%; */
-}
-
 .ui-tooltip {
 	font-size: 12px;
 }
@@ -1682,13 +1637,3 @@ body .ui-tooltip {
 .ace-idle-fingers .ace_print-margin{
     width: 0px !important;
 }
-
-/* viewer html css*/
-/* 
-#viewerImages {
-    list-style-type: none;
- }
-
-#viewerImages li {
-    display: inline-block;
-} */

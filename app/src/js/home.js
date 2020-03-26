@@ -5,6 +5,7 @@ import 'jquery-ui/themes/base/theme.css';
 import 'jquery-ui/themes/base/sortable.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 import '../css/home.css';
+import '../css/dialog.css';
 import FileBrowser from './fileBrowser';
 import dialogWrapper from './dialogWrapper';
 import showMessage from './showMessage';

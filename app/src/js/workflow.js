@@ -7,6 +7,7 @@ import 'jquery-ui/themes/base/sortable.css';
 import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/workflow.css';
+import '../css/dialog.css';
 import './rapid2.js'
 
 import Cookies from 'js-cookie';
@@ -61,7 +62,7 @@ $(() => {
   //memo socketIOのインスタンスをVueのdataに入れてコンポーネント内部から通信できるようにしているが
   //Vuexを導入してactionにemitはまとめる方が望ましい。
   let vm = new Vue({
-    vuetify: new Vuetify({theme:{dark: true}, themes:{dark:{primary: "green"}}}),
+    vuetify: new Vuetify({ theme: { dark: true }, themes: { dark: { primary: "green" } } }),
     el: '#app',
     data: {
       normal: true, //flag for normal view (true) or editor (false)
@@ -76,7 +77,7 @@ $(() => {
       names: [],
       conditionInputType: '1',
       retryConditionInputType: '1',
-      fb:null,
+      fb: null,
       sio,
       componentPath,
       rootDir,
@@ -84,9 +85,9 @@ $(() => {
     },
     methods: {
       closeRapid() {
-        let targetPath =  this.componentPath[this.node.ID].slice(2) 
+        let targetPath = this.componentPath[this.node.ID].slice(2)
         fb.request('getFileList', projectRootDir + '/' + targetPath, null);
-        this.normal=true
+        this.normal = true
       },
       addInputFile: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
@@ -282,7 +283,7 @@ $(() => {
   });
   // setup FileBrowser
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
-  vm.fb=fb;
+  vm.fb = fb;
 
   // property subscreen 'Files' area buttons.
   let dirPathStack = [];

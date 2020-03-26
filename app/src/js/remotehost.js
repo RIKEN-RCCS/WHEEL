@@ -7,6 +7,7 @@ import showMessage from './showMessage';
 
 import 'jquery-ui/themes/base/all.css';
 import '../css/remotehost.css';
+import '../css/dialog.css';
 import { log } from 'util';
 import config from './config';
 import configToolTip from './configToolTip';
