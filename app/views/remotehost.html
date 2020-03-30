@@ -174,7 +174,7 @@
           <span>
             <label id="hostPort">Port</label>
           </span>
-          <input type="number" v-model.number="newHostInfo.port">
+          <input id="hostPortInputArea" type="number" v-model.number="newHostInfo.port">
         </div>
         <div>
           <span>
@@ -194,7 +194,7 @@
         <div>
           <label id="hostAuthType">Auth Type</label>
           <span id="radioButtonArea">
-            <input type="radio" name="authType" v-model="authType" value="1">
+            <input id="hostPasswordInputArea" type="radio" name="authType" v-model="authType" value="1">
             <span>
               <label>Password</label>
             </span>
