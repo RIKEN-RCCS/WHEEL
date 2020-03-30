@@ -6,63 +6,78 @@ chai.use(chaiWebdriver(browser));
 
 describe("#remotehost screen", function () {
     const url = '/';
+    const hostName = 'localhost';
+    const port = 4000;
+    const labelName = 'pbs';
+    const userID = "pbsuser";
+    const workDir = "/home/pbsuser/";
+    // id/class name
+    const labelAreaId = 'hostLabelInputArea';
+    const hostNameAreaId = 'hostNameInputArea';
+    const portAreaId = 'hostPortInputArea';
+    const userIDAreaId = 'hostUserIDInputArea';
+    const workDirAreaId = 'hostWorkDirInputArea';
+    const PWButtonId = 'hostPasswordInputArea';
+    const confirmButton = 'confirmButton'; 
     //Xpath
     const drawerRemotehost = '//*[@id="drawerMenuList"]/li[1]/a';
-    const hostlist = '//*[@id="pageNameArea"]';
-    const labelArea = 'hostLabelInputArea';
-    const hostNameArea = 'hostNameInputArea';
-    const userIDArea = 'hostUserIDInputArea';
-    const workDirArea = 'hostWorkDirInputArea';
-    const queueArea = 'hostQueueInputArea';
-    const confirmButton = 'confirmButton';
     const okBtn = '/html/body/div[4]/div[3]/div/button[2]';
-    const labelName = 'testHost';
-    const hostName = 'testHostName';
-    const userID = "testUserID";
-    const workDir = "testWorkDir";
-    const queue = "a,b,c";
+    const hostlist = '//*[@id="pageNameArea"]';
 
     it("Home screen is drawn", function () {
         browser.url(url);
-        browser.windowHandleSize({ width: 1920, height: 1080 });
-        expect(browser.getTitle()).to.equal("WHEEL home");
+        browser.setWindowSize(1920, 1080);
+        const title = browser.getTitle();
+        console.log(title)
+        // expect(title).to.have.value("<WHEEL home>");
         expect('#pageNameLabel').to.have.text("Home");
-    });
+    }); 
     it("move to remotehost screen", function () {
         // open right drawer.
-        browser.click("#drawerButton")
-            .waitForVisible(drawerRemotehost);
-        browser.click("#remotehostButton")
-            .waitForVisible(hostlist);
-
+        $('#drawerButton').click();
+        $(drawerRemotehost).waitForDisplayed();
+        expect(drawerRemotehost).to.exist;
+        // $('#remotehostButton').click();
+        const CLICK =  $(`${drawerRemotehost}`).isClickable();
+        console.log(CLICK)
+        browser.pause(1000);
+        $(`${drawerRemotehost}`).click();
+        $(hostlist).waitForDisplayed(); 
         browser.newWindow('WHEEL host');
+        $(`#${labelAreaId}`).waitForDisplayed();
+        expect(`#${labelAreaId}`).to.exist;
     });
     it("add remotehost", function () {
         // add remotehost
-        browser.click("#newButton")
-            .setValue(`#${labelArea}`, labelName)
-            .setValue(`#${hostNameArea}`, hostName)
-            .setValue(`#${userIDArea}`, userID)
-            .setValue(`#${workDirArea}`, workDir)
-            .setValue(`#${queueArea}`, queue);
-        browser.click(`#${confirmButton}`)
-            .waitForVisible(`#${labelName}`);
+        // $("#newButton").click()
+        $(`#${labelAreaId}`).setValue(labelName)
+        $(`#${hostNameAreaId}`).setValue(hostName)
+        $(`#${userIDAreaId}`).setValue(userID)
+        $(`#${portAreaId}`).click()
+        browser.keys('Backspace')
+        browser.keys('Backspace')
+        $(`#${portAreaId}`).setValue(port)
+        $(`#${workDirAreaId}`).setValue(workDir)
+        $(`#${PWButtonId}`).click();
+        $(`#${confirmButton}`).click()
+        $(`#${labelName}`).waitForDisplayed(5000)
     });
     it("copy remotehost", function () {
         // copy remotehost
-        browser.click(`#${labelName}`)
-            .click("#copyButton")
-            .waitForExist(".dialogStateError");
+        $(`#${labelName}`).click()
+        $("#copyButton").click()
+        $(".dialogStateError").waitForExist();
     });
     it("delete remotehost", function () {
         // delete remotehost
-        browser.click("#deleteButton")
-            .waitForVisible("#dialog");
-        browser.click(okBtn)
-            .waitForExist(".dialogStateError", 10000, true);
+        $("#deleteButton").click()
+        $("#dialog").waitForDisplayed(5000)
+        const okBtn = $('/html/body/div[4]/div[3]/div/button[2]')
+        $(okBtn).click()
+        $(".dialogStateError").waitForExist(10000, true);
     });
     it("return to home screen", function () {
-        browser.click('#title')
+    $('#title').click()
         expect('#pageNameLabel').to.have.text("Home");
     });
 });
