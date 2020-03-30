@@ -5,11 +5,11 @@ const chaiWebdriver = require('chai-webdriverio').default;
 const fs = require("fs");
 chai.use(chaiWebdriver(browser));
 
-describe("component property check:", function () {
+describe("project result check", function () {
     const url = '/';
     const E2ETestDir = "E2ETestDir";
-    const ececPrjDir = "execPrjDir";
-    const testProjectJson = "prj_wheel_json";
+    const execPrjDir = "execPrjDir";
+    const id_targetProjectJson = "prj_wheel_json_data";
     // Xpath for "import"
     const importMenu = '//*[@id="importButton"]';
     const dialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
@@ -21,52 +21,54 @@ describe("component property check:", function () {
     targetPrjDir.forEach(function (target) {
         // set test project
         let testProject = target.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
-        let testProjectName = testProject.slice(0, -6);
+        let  projectName= testProject.slice(0, -6);
         it("Home screen is drawn", function () {
             browser.url(url);
-            browser.windowHandleSize({ width: 1920, height: 1080 });
+            browser.setWindowSize(1920, 1080);
             expect(browser.getTitle()).to.equal("WHEEL home");
             expect('#pageNameLabel').to.have.text("Home");
         });
         it(`project ${target} : import`, function () {
-            browser.click(importMenu)
-                .waitForVisible('.dir');
-            browser.doubleClick(`#${E2ETestDir}`)
-                .waitForVisible('.dir');
-            browser.doubleClick(`#${ececPrjDir}`)
-                .waitForVisible('.dir');
-            browser.doubleClick(`#${testProject}`)
-                .waitForVisible('.file');
-            browser.click(`#${testProjectJson}`)
-                .click(dialogOKButton)
-                .waitForExist(`#prj_${testProjectName}`, 10000, false);
+            $(importMenu).click();
+            $('.dir').waitForDisplayed();
+            $(`#${E2ETestDir}_data`).doubleClick();
+            $('.dir').waitForDisplayed();
+            $(`#${execPrjDir}_data`).doubleClick();
+            $('.dir').waitForDisplayed();
+            $(`#${testProject}_data`).doubleClick();
+            $('.file').waitForDisplayed();
+            $(`#${id_targetProjectJson}`).click();
+            $(dialogOKButton).click();
+            $(`#prj_${projectName}`).waitForExist();
         });
         it(`project ${target} : open`, function () {
-            browser.doubleClick(`#prj_${testProjectName}`)
-                .waitForVisible('#project_name');
+            $(`#prj_${projectName}`).doubleClick();
+            $('#project_name').waitForDisplayed();
         });
         it(`project ${target} : execute`, function () {
             const updateTimeBeforeElement = $('#project_create_date');
             const updateTimeAfterElement = $('#project_update_date');
-            const updateTimeBeforeRun = updateTimeBeforeElement.getText();
+            const updateTimeBeforeRun = $(updateTimeBeforeElement).getText();
             let updateTimeCheckFlag = false;
 
             browser.pause(2000);
-            browser.click('#listView')
-            browser.click('#run_button')
-                .waitUntil(function () {
-                    return browser.getText('#project_state') === 'finished'
-                }, 60000, 'expected text to be different after 60s');
+            $('#listView').click();
+            $('#run_button').click();
+            browser.waitUntil(function () {
+                return $('#project_state').getText() === 'finished'
+            }, 60000, 'expected text to be different after 60s');
 
-            const updateTimeAftereRun = updateTimeAfterElement.getText();
+            const updateTimeAftereRun = $(updateTimeAfterElement).getText();
 
-            if (updateTimeBeforeRun !== updateTimeAftereRun) {
+            console.log(`${updateTimeBeforeRun}`)
+            console.log(`${updateTimeAftereRun}`)
+
+            if (`${updateTimeBeforeRun}` !== `${updateTimeAftereRun}`) {
                 updateTimeCheckFlag = true;
             }
-            expect(updateTimeCheckFlag).to.equal(true);
-            browser.click('graphView')
+            expect(`${updateTimeCheckFlag}`).to.equal("true");
+            $('#graphView').click();
 
         });
     });
-
 });
