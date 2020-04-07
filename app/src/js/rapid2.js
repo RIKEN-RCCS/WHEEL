@@ -3,7 +3,7 @@ import Split from "split.js";
 import targetFiles from "./targetFiles.js";
 import gatherScatter from "./gatherScatter.js";
 import parameter from "./parameter.js";
-import {isTargetFile} from "./rapid2Util.js";
+import {tableFooterProps,isTargetFile} from "./rapid2Util.js";
 
 /**
  * check if given PS setting is differ from original one
@@ -37,6 +37,41 @@ Vue.component("new-rapid", {
   template: `
     <v-app>
       <v-container fill-height fluid>
+      <v-dialog v-model="filterEditor" persistent>
+       <v-card>
+       <v-card-title>
+           <v-text-field
+           v-model="newFilter"
+           label="filter"
+           ></v-text-field>
+           <v-btn @click=applyFilter class="text-capitalize"> <v-icon>add</v-icon> apply </v-btn>
+           <v-spacer></v-spacer>
+           <v-text-field
+           v-model="search"
+           append-icon="mdi-magnify"
+           label="Search"
+           single-line
+          ></v-text-field>
+           <v-btn @click=closeFilterEditor class="text-capitalize"> <v-icon>close</v-icon> close </v-btn>
+       </v-card-title>
+       <v-card-text>
+          <v-data-table
+             dense
+             show-select
+             :single-select=false
+             v-model="selected"
+             :search="search"
+             :headers="[{ value: 'text',     text: 'placeholder',  sortable: true },
+                        { value: 'filename', text: 'filename', sortable: true, filterable: false },
+                        { value: 'row',      text: 'row', sortable: true, filterable: false}, 
+                        { value: 'column',   text: 'column',  sortable: true, filterable: false} ]"
+             :items="placeholders"
+             :items-per-page="5"
+             :footer-props="tableFooterProps"
+          ></v-data-table>
+       </v-card-text>
+    </v-card>
+      </v-dialog>
       <v-dialog v-model="dialog" persistent>
         <v-card>
           <v-card-title>
@@ -71,7 +106,7 @@ Vue.component("new-rapid", {
                       <v-text-field v-model="newFilename" label="new file name"></v-text-field>
                     </v-card-text>
                     <v-card-actions>
-                      <v-btn @click="openNewTab"><v-icon>create</v-icon>open</v-btn>
+                      <v-btn @click="openNewTab(newFilename)"><v-icon>create</v-icon>open</v-btn>
                       <v-btn @click="newFilename=null;newFilePrompt=false"><v-icon>cancel</v-icon>cancel</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -95,7 +130,7 @@ Vue.component("new-rapid", {
           :keyword="selectedText"
           :params="parameterSetting.params"
           @newParamAdded="insertBraces"
-          @updateFilter="updateFilter"
+          @openFilterEditor="openFilterEditor"
           ></parameter>
 
           <gather-scatter
@@ -119,6 +154,11 @@ Vue.component("new-rapid", {
   data() {
     return {
       dialog: false,
+      placeholders: [],
+      selected:[],
+      newFilter: "",
+      search: "",
+      filterEditor: false,
       closingTab: null,
       closingFilename: null,
       activeTab: 0,
@@ -135,7 +175,8 @@ Vue.component("new-rapid", {
         gather:[]
       },
       parameterSettingFilename: "parameterSetting.json", //default new param setting filename
-      parameterSettingDirname: null
+      parameterSettingDirname: null,
+      tableFooterProps
     };
   },
   computed:{
@@ -200,16 +241,68 @@ Vue.component("new-rapid", {
     }
   },
   methods: {
+    updatePlaceholderList(){
+      this.editor.$search.setOptions({
+        needle: /{{.*}}/,
+        regExp: true,
+        wrap: true,
+      }); 
+      let i=0;
+      this.placeholders=[];
+      for(const file of this.files){
+        const placeholders_in_file= this.editor.$search.findAll(file.editorSession)
+        .map((e)=>{
+          return {
+            range: e,
+            text: file.editorSession.getTextRange(e)
+          }
+        });
+        if(placeholders_in_file .length == 0){
+          continue;
+        }
+        for(const ph of placeholders_in_file){
+          this.placeholders.push({
+            filename: file.filename,
+            editorSession: file.editorSession,
+            row: ph.range.start.row,
+            column: ph.range.start.column,
+            row_end: ph.range.end.row,
+            column_end: ph.range.end.column,
+            text: ph.text,
+            id:i++
+          });
+        }
+      }
+    },
+    openFilterEditor(){
+      this.filterEditor=true;
+      this.updatePlaceholderList();
+    },
+    applyFilter(){
+     const placeholders = Array.from(this.selected)
+     placeholders.sort((a,b)=>{
+       if(a.filename === b.filename){
+         return a.row_end - b.row_end !== 0 ? b.row_end - a.row_end : b.column_end - a.column_end
+       }
+       return a.filename > b.filename ? 1 : -1
+     })
+     const filter = "| "+this.newFilter + " ";
+     placeholders.forEach((ph)=>{
+       ph.editorSession.insert({row: ph.row_end, column: ph.column_end - 2}, filter);
+     });
+     console.log(placeholders); //DEBUG
+     this.updatePlaceholderList();
+    },
+    closeFilterEditor(){
+      this.filterEditor=false;
+      this.params=null;
+    },
     insertBraces(){
       console.log("DEBUG: insertBraces called")
       const selectedRange =this.editor.getSelection().getRange();
       const session = this.editor.getSession();
       session.insert(selectedRange.end, " }}");
       session.insert(selectedRange.start, "{{ ");
-    },
-    updateFilter(keyword){
-      console.log("DEBUG: updateFilter called with", keyword)
-      
     },
     getComponentName(id){
       const name = this.$root.$data.componentPath[id]; 
@@ -243,8 +336,7 @@ Vue.component("new-rapid", {
         }
       }
     },
-    async openNewTab() {
-      const newFilename=this.newFilename;
+    async openNewTab(newFilename) {
       const currentDir = this.$root.$data.fb.getRequestedPath();
       console.log("DEBUG: open new tab", newFilename, currentDir);
       const existingTab = this.files.findIndex((e)=>{
