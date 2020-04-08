@@ -13,6 +13,10 @@ export default {
           <v-icon>add</v-icon>
           add new parameter
         </v-btn>
+        <v-btn @click="$emit('openFilterEditor')">
+        <v-icon> edit </v-icon>
+        add filter
+        </v-btn>
       </v-toolbar>
       <v-data-table
          dense
@@ -23,7 +27,6 @@ export default {
         :footer-props="tableFooterProps"
       >
         <template v-slot:item.action="{ item }">
-          <v-btn  small class="mr-2" @click="openFilterDialog(item)"><v-icon small class="mr-2"> edit </v-icon>add filter</v-btn>
           <v-icon small class="mr-2" @click="openDialog(item)"> edit </v-icon>
           <v-icon small @click="deleteItem(item)" > delete </v-icon>
         </template>
