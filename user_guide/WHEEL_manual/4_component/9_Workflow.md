@@ -9,20 +9,17 @@ Workflowコンポーネントのプロパティは以下です。
 
 | プロパティ | 入力値 | プロパティ説明 |
 |----|----|----|
-| name | 文字列 *1 |  コンポーネントのディレクトリ名 |
-| description | 文字列 | コンポーネントの説明文 | 
-| inputFiles | ファイルまたはディレクトリ名 *2 | 先行コンポーネントから受け取るファイル | 
-| outputFiles | ファイル, ディレクトリ名またはglobパターン *2 | 後続コンポーネントへ渡すファイル | 
-| clean up flag | ラジオボタン | リモート環境に作成した一時ファイルの取り扱い決定フラグ | 
-|  | clean up | 削除する | 
-|  | keep files | 削除しない | 
-|  | follow parent setting | 親コンポーネントと同じ挙動をする *3 | 
+| name | 文字列 | コンポーネント名 |
+| description | 文字列 | コンポーネントの説明文 |
+| inputFiles | ファイルまたはディレクトリ名 | 先行コンポーネントから受け取るファイル |
+| outputFiles | ファイル, ディレクトリ名またはglobパターン | 後続コンポーネントへ渡すファイル |
+| clean up flag | ラジオボタン | リモート環境に作成した一時ファイルの取り扱い決定フラグ |
+|  | clean up | 削除する |
+|  | keep files | 削除しない |
+|  | follow parent setting | 親コンポーネントと同じ挙動をする |
+| state clean | ボタン | コンポーネントの進行状態を初期状態に戻す *1 |
 
-*1 プロパティに使用できる文字列は、半角英数字[0-9 a-Z]、ハイフン[ - ]、アンダースコア[ _ ]のみです。  
-　ただし、Descriptionは任意の文字列を使用できます。    
-*2 詳細は次節にて説明  
-*3 clean up flag の初期値は、[ follow parent setting ]です。  
-　ただし、rootワークフロー作成時は、[ clean up ]へ変更します。
+*1 コンポーネントの進行状態が"finished"もしくは"failed"の時のみ表示されます。
 
 # Workflowコンポーネントの使用例
 
@@ -35,22 +32,22 @@ Workflowコンポーネントを使用することで、ワークフロー編集
 
 #### Workflowコンポーネント未使用  
 
-![img](./img/workflow/Workflow_1.png "Workflow_1")   
+![img](./img/workflow/Workflow_1.png "Workflow_1")
 
 #### Workflowコンポーネント使用  
 
-![img](./img/workflow/Workflow_2.png "Workflow_2")   
+![img](./img/workflow/Workflow_2.png "Workflow_2")
 
 以下に実行結果を示します。  
 
 #### Workflowコンポーネント未使用 実行結果  
 
-![img](./img/workflow/Workflow_1_result.png "Workflow_1_result")   
+![img](./img/workflow/Workflow_1_result.png "Workflow_1_result")
 
 #### Workflowコンポーネント未使用実行結果（ログ）
 
-![img](./img/workflow/Workflow_1_result_log.png "Workflow_1_result_log")   
+![img](./img/workflow/Workflow_1_result_log.png "Workflow_1_result_log")
 
 #### Workflowコンポーネント使用実行結果
 
-![img](./img/workflow/Workflow_2_result.png "Workflow_2_result")   
+![img](./img/workflow/Workflow_2_result.png "Workflow_2_result")
