@@ -175,6 +175,7 @@ Taskコンポーネントは、[ script ]プロパティに設定されたHelloW
 ```
 #!/bin/bash
 echo Hello World!
+exit 0
 ```
 
 scriptプロパティに任意のスクリプトを設定することで任意の処理をWHEEL上で実行することができます。
