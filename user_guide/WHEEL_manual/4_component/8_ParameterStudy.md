@@ -20,7 +20,7 @@ PSコンポーネントのプロパティは以下です。
 
 *1 コンポーネントの進行状態が"finished"もしくは"failed"の時のみ表示されます。
 
-# PSコンポーネントの使用例  
+# PSコンポーネントの使用例
 
 PSコンポーネントは、パラメトリックスタディ用のコンポーネントです。  
 WHEELのPS用ファイル編集機能によりインプットデータにパラメータ設定を行うことで、簡単にPSを実施することができます。  
@@ -41,7 +41,7 @@ WHEELのPS用ファイル編集機能によりインプットデータにパラ�
 | OutputFiles | - |
 | Parameter setting file | parameterSetting.json*1 |  
 | Files | inputData.txt, parameterSetting.json |
-*1 inputdata.txtのパラメータ化したデータの情報をもつJSONファイル、詳細は後述  
+*1 inputdata.txtのパラメータ展開情報をもつJSONファイル、詳細は後述  
 
 #### ・inputData.txt
 
@@ -124,53 +124,56 @@ exit 0
 
 ## PS用ファイル編集画面
 
-![img](./img/parameterstudy/edit.png "edit") 
+![img](./img/parameterstudy/edit.png "edit")
 
 入力データにパラメータ設定を行う場合、プロパティ画面[ Files ]エリアよりファイル編集を行います。  
 手順は以下です。
 
 1. PSコンポーネントにパラメータ設定を行う入力データファイルをインポート、または作成する
 1. 準備したファイルをクリックする
-1. [ Files ]領域内の上記Files領域図ボタンをクリックする
+1. [ Files ]エリアにあるテキストエディタ起動ボタンをクリックする
 
-上記操作により、PS用ファイル編集画面が表示されます。
+上記操作により、テキストエディタ画面が表示されます。  
+以降、基本的な使用方法を示します。詳細については、[テキストエディタ画面仕様説明](../3_workflow_screen/3_rapid.md)をご参考ください。
 
 #### PS用ファイル編集画面
 
 ![img](./img/parameterstudy/edit_for_PS.png "edit_for_PS")  
 
-PS用ファイル編集画面でのパラメータ設定手順は以下です。  
+テキストエディタ画面でのパラメータ設定手順は以下です。テキストエディタ画面右のPS用エリアを使用します。  
 次の手順では、上記図 {{ hoge }}を「6から10」まで変化させる場合の設定を示しています。  
 
-1. 「＋Add New」をクリックする
-1. パラメータを変化させるtargetFileを設定する（今回はinputdata.txt）
-1. パラメータ化する部分を範囲選択する
+1. パラメータ書き換え対象ファイルを設定する  
+　1.「＋Add New Target File」ボタンをクリックする  
+　2. ターゲットファイルにinputdata.txtを設定する
+1. パラメータ書き換え部分を選択する
 1. 「Parameters」に選択した部分が正しく表示されていることを確認し、「+ Add New Parameter」をクリックする
 1. 選択した部分に対し変化させる値を設定し、「save」をクリックする（min:6, max:10, step:1）
 1. 「SAVE ALL FILES」をクリックし設定内容を保存する
 1. 設定が終了したら、右上のアイコンをクリックしてグラフビュー画面に遷移する
 
-#### 1. 「＋Add New」
+#### 1.1 「＋Add New Target File」
 
 ![img](./img/parameterstudy/add_targetFile.png "add_targetFile")  
 
-#### 2. targetFileの設定
+#### 1.2 ターゲットファイルの設定
 
 ![img](./img/parameterstudy/set_targetFile.png "set_targetFile")  
 
-#### 3. パラメータの範囲選択
+#### 2. パラメータ書き換え部分の選択
 
 ![img](./img/parameterstudy/select_param.png "select_param")  
 
-#### 4. パラメータの設定
+#### 3. パラメータの設定
 
 ![img](./img/parameterstudy/set_param.png "set_param")  
 
-#### 5. 設定の保存
+#### 4. 設定の保存
 
 ![img](./img/parameterstudy/save_files.png "save_files")  
 
-#### 6. 編集したファイル名.jsonの確認
+#### 5. 編集したファイル名.jsonの確認
+
 保存後、ワークフロー編集画面に戻りプロパティを表示すると、「 parameterSetting.json 」ファイルが作成されていることを確認します。  
 このデータをプロパティ[ parameter setting file ]に設定します。
 
@@ -179,6 +182,7 @@ PS用ファイル編集画面でのパラメータ設定手順は以下です。
 以上がParameter Studyワークフローにおけるパラメータ設定手順になります。
 
 ## PSワークフローの実行
+
 PSワークフロー実行時のWHEELの動作について説明します。  
 PSワークフロー実行時には、プロジェクトディレクトリ内に変化させるパラメータの数だけディレクトリを生成します。  
 上記例では、三角形を構成する一つの頂点のY座標値を6から10まで変更しているため、「10-6＋1=5」計5個のディレクトリが生成されます。  
@@ -198,4 +202,3 @@ PSワークフローを実行すると生成されたワークフローが順に
 また、標準出力（Stdout）の結果は以下です。  
 
  ![img](./img/parameterstudy/PS_stdout.png "PS_stdout")
- 
