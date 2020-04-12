@@ -246,7 +246,7 @@ describe("UT for executer class", function() {
         expect(path.join(task0.workingDir, "hoge")).not.to.be.a.path();
       });
     });
-    describe("#remote job", ()=>{
+    describe.skip("#remote job", ()=>{
       beforeEach(()=>{
         task0.useJobScheduler = true;
       });

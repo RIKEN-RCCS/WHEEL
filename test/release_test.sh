@@ -104,18 +104,7 @@ if [ $? -ne 0 ];then
 fi
 
 # install devdependencies
-docker exec ${TAG} npm install \
-  chai\
-  chai-as-promised\
-  chai-fs\
-  chai-iterator\
-  chai-json-schema\
-  mocha\
-  npm-run-all\
-  nyc\
-  rewire\
-  sinon\
-  sinon-chai
+docker exec ${TAG} npm install 
  
 if [ $? -ne 0 ];then
   echo "ERROR: install test tools failed $?"
@@ -124,9 +113,15 @@ if [ $? -ne 0 ];then
 fi
 
 # run UT on container
-docker exec ${TAG} npm run UT:server
-if [ $? -ne 0 ];then
-  echo "ERROR: unit test failed $?"
+docker exec ${TAG} npm run coverage:server
+rt=$?
+
+LOG_DIR=$(date "+%Y%m%d-%H%M")
+mkdir $LOG_DIR
+docker cp ${TAG}:/usr/src/coverage/ $LOG_DIR
+
+if [ ${rt} -ne 0 ];then
+  echo "ERROR: unit test failed ${rt}"
   cleanup
   exit 7
 fi
