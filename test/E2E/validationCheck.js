@@ -4,9 +4,9 @@ const expect = chai.expect;
 const chaiWebdriver = require('chai-webdriverio').default;
 chai.use(chaiWebdriver(browser));
 
-describe("#issue 177 check", function () {
+describe("#validation Check", function () {
     const url = '/';
-    const targetProjectName = "issue_177";
+    const targetProjectName = "validationCheck";
     const inputRename = "="
     const outputRename = "="
     // class/id name 

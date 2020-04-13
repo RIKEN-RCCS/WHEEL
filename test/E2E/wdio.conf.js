@@ -21,14 +21,14 @@ exports.config = {
     //
     specs: [
         'test/E2E/remotehost.js',
-        'test/E2E/workflow.js',
+        //'test/E2E/workflow.js',
         'test/E2E/remoteTask.js',
         'test/E2E/execTask.js',
         'test/E2E/execProject.js',
         'test/E2E/pauseButton.js',
         'test/E2E/stateCleanButton.js',
         'test/E2E/filesArea.js',
-        'test/E2E/issue_177.js',
+        'test/E2E/validationCheck.js',
     ],
     // Patterns to exclude.
     exclude: [
@@ -63,15 +63,7 @@ exports.config = {
         maxInstances: 1,
         //
         browserName: 'chrome',
-
-        // proxy: {
-        //     proxyType: "manual",
-        //     httpsProxy: "rep.proxy.nic.fujitsu.com:8080",
-        //     socksUsername: "miyamoto.shinya@jp.fujitsu.com",
-        //     socksPassword: "6340863408",
-        //     noProxy: "127.0.0.1,localhost"
-        // }
-        
+        //
         // If outputDir is provided WebdriverIO can capture driver session logs
         // it is possible to configure which logTypes to include/exclude.
         // excludeDriverLogs: ['*'], // pass '*' to exclude all driver session logs
