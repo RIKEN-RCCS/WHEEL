@@ -156,7 +156,7 @@
             <label id="hostLabel">Label</label>
           </span>
           <input id="hostLabelInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
-          <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
+          <p v-if="isDuplicate" class="decoupleError">duplicated label</p>
         </div>
         <div>
           <span>
@@ -265,7 +265,7 @@
             <label id="cloudLabel">Label</label>
           </span>
           <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
-          <p v-if="isDuplicate" class="dialogStateError">duplicated label.</p>
+          <p v-if="isDuplicate" class="decoupleError">duplicated label</p>
         </div>
         <div>
           <span>

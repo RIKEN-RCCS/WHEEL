@@ -20,15 +20,15 @@ exports.config = {
     // directory is where your package.json resides, so `wdio` will be called from there.
     //
     specs: [
-        'test/E2E/remotehost.js',
-        //'test/E2E/workflow.js',
+        // 'test/E2E/remotehost.js',
+        // 'test/E2E/workflow.js',
         'test/E2E/remoteTask.js',
-        'test/E2E/execTask.js',
-        'test/E2E/execProject.js',
-        'test/E2E/pauseButton.js',
-        'test/E2E/stateCleanButton.js',
-        'test/E2E/filesArea.js',
-        'test/E2E/validationCheck.js',
+        // 'test/E2E/execTask.js',
+        // 'test/E2E/execProject.js',
+        // 'test/E2E/pauseButton.js',
+        // 'test/E2E/stateCleanButton.js',
+        // 'test/E2E/filesArea.js',
+        // 'test/E2E/validationCheck.js',
     ],
     // Patterns to exclude.
     exclude: [

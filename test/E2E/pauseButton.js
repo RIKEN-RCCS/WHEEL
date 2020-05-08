@@ -153,6 +153,6 @@ describe("#pause button check #issue358,(296, 361, 409)", function () {
         $("#dialog").waitForDisplayed(5000)
         const okBtn = $('/html/body/div[4]/div[3]/div/button[2]')
         $(okBtn).click()
-        $(".dialogStateError").waitForExist(10000, true);
+        $(".decoupleError").waitForExist(10000, true);
     });
 });

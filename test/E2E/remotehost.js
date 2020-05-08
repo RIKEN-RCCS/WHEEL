@@ -12,14 +12,18 @@ describe("#remotehost screen", function () {
     const userID = "pbsuser";
     const workDir = "/home/pbsuser/";
     // id/class name
-    const labelAreaId = 'hostLabelInputArea';
-    const hostNameAreaId = 'hostNameInputArea';
-    const portAreaId = 'hostPortInputArea';
-    const userIDAreaId = 'hostUserIDInputArea';
-    const workDirAreaId = 'hostWorkDirInputArea';
-    const PWButtonId = 'hostPasswordInputArea';
-    const confirmButton = 'confirmButton'; 
-    //Xpath
+    const id_pageName = 'pageNameLabel';
+    const id_hostLabel = 'hostLabelInputArea';
+    const id_hostName = 'hostNameInputArea';
+    const id_port = 'hostPortInputArea';
+    const id_userId = 'hostUserIDInputArea';
+    const id_workDir = 'hostWorkDirInputArea';
+    const id_pw = 'hostPasswordInputArea';
+    const id_confirmButton = 'confirmButton';
+    const id_copyButton = 'copyButton';
+    const id_deleteButton = 'deleteButton';
+    const class_decoupleError = 'decoupleError';
+    // Xpath
     const drawerRemotehost = '//*[@id="drawerMenuList"]/li[1]/a';
     const okBtn = '/html/body/div[4]/div[3]/div/button[2]';
     const hostlist = '//*[@id="pageNameArea"]';
@@ -29,55 +33,49 @@ describe("#remotehost screen", function () {
         browser.setWindowSize(1920, 1080);
         const title = browser.getTitle();
         console.log(title)
-        // expect(title).to.have.value("<WHEEL home>");
-        expect('#pageNameLabel').to.have.text("Home");
+        expect(`#${id_pageName}`).to.have.text("Home");
     }); 
     it("move to remotehost screen", function () {
-        // open right drawer.
         $('#drawerButton').click();
         $(drawerRemotehost).waitForDisplayed();
-        expect(drawerRemotehost).to.exist;
-        // $('#remotehostButton').click();
         const CLICK =  $(`${drawerRemotehost}`).isClickable();
         console.log(CLICK)
         browser.pause(1000);
         $(`${drawerRemotehost}`).click();
         $(hostlist).waitForDisplayed(); 
         browser.newWindow('WHEEL host');
-        $(`#${labelAreaId}`).waitForDisplayed();
-        expect(`#${labelAreaId}`).to.exist;
+        $(`#${id_hostLabel}`).waitForDisplayed();
+        expect(`#${id_hostLabel}`).to.exist;
     });
     it("add remotehost", function () {
-        // add remotehost
-        // $("#newButton").click()
-        $(`#${labelAreaId}`).setValue(labelName)
-        $(`#${hostNameAreaId}`).setValue(hostName)
-        $(`#${userIDAreaId}`).setValue(userID)
-        $(`#${portAreaId}`).click()
+        $(`#${id_hostLabel}`).setValue(labelName)
+        $(`#${id_hostName}`).setValue(hostName)
+        $(`#${id_userId}`).setValue(userID)
+        $(`#${id_port}`).click()
         browser.keys('Backspace')
         browser.keys('Backspace')
-        $(`#${portAreaId}`).setValue(port)
-        $(`#${workDirAreaId}`).setValue(workDir)
-        $(`#${PWButtonId}`).click();
-        $(`#${confirmButton}`).click()
+        $(`#${id_port}`).setValue(port)
+        $(`#${id_workDir}`).setValue(workDir)
+        $(`#${id_pw}`).click();
+        $(`#${id_confirmButton}`).click()
         $(`#${labelName}`).waitForDisplayed(5000)
+        expect(`#${labelName}`).to.exist;
     });
     it("copy remotehost", function () {
-        // copy remotehost
         $(`#${labelName}`).click()
-        $("#copyButton").click()
-        $(".dialogStateError").waitForExist();
+        $(`#${id_copyButton}`).click()
+        $(`.${class_decoupleError}`).waitForExist();
+        expect(`.${class_decoupleError}`).to.have.text("duplicated label");
     });
     it("delete remotehost", function () {
-        // delete remotehost
-        $("#deleteButton").click()
+        $(`#${id_deleteButton}`).click()
         $("#dialog").waitForDisplayed(5000)
-        const okBtn = $('/html/body/div[4]/div[3]/div/button[2]')
         $(okBtn).click()
-        $(".dialogStateError").waitForExist(10000, true);
+        $(`.${class_decoupleError}`).waitForExist(10000, true);
+        expect(`.${class_decoupleError}`).to.not.have.text("duplicated label");
     });
     it("return to home screen", function () {
-    $('#title').click()
-        expect('#pageNameLabel').to.have.text("Home");
+        $('#title').click()
+        expect(`#${id_pageName}`).to.have.text("Home");
     });
 });
