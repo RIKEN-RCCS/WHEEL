@@ -8,7 +8,7 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
     const url = '/';
     const targetProjectName = "pause";
     const SSHConnectionPW = "hoge";
-    // class/id name 
+    // id name 
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog"

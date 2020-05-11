@@ -7,19 +7,19 @@ chai.use(chaiWebdriver(browser));
 describe("#validation Check", function () {
     const url = '/';
     const targetProjectName = "validationCheck";
-    const inputRename = "="
-    const outputRename = "="
-    // class/id name 
+    const inputRename = "=";
+    const outputRename = "=";
+    // id/class name 
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
-    const id_dialog = "dialog"
+    const id_dialog = "dialog";
     // Xpath for `home screen`
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
     // Xpath for 'workflow screen'
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
-    const x_inputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[9]/input'
-    const x_outputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[12]/input'
+    const x_inputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[9]/input';
+    const x_outputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[12]/input';
     
     it("Home screen is drawn", function () {
         browser.url(url);
@@ -36,7 +36,9 @@ describe("#validation Check", function () {
         $(`#${id_testProjectJson}`).waitForDisplayed();
         $(`#${id_testProjectJson}`).click();
         $(importDialogOKButton).click();
-        $(`#prj_${targetProjectName}`).waitForExist();
+        $(`#prj_${targetProjectName}`).waitForDisplayed();
+        let elem = $(`#prj_${targetProjectName}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
@@ -46,19 +48,25 @@ describe("#validation Check", function () {
     it("open task component property", function(){
         $('.svg_task0_box').click();
         $('#property').waitForDisplayed();
+        let elem = $('#property').isDisplayed();
+        expect(elem).to.be.true;
     })
     it("rename input file bad example", function(){
         $(x_inputField).setValue(inputRename);
         browser.keys('Tab')        
         $(`#${id_dialog}`).waitForDisplayed();
         $(dialogOkButton).click();
-        $(`#${id_dialog}`, true).waitForExist();
+        $(`#${id_dialog}`).waitForDisplayed(10000,true);
+        let elem = $(`#${id_dialog}`).isDisplayed();
+        expect(elem).to.not.be.true;
     })
     it("rename output fille bad example", function(){
         $(x_outputField).setValue(outputRename);
         browser.keys('Tab')    
         $(`#${id_dialog}`).waitForDisplayed();
         $(dialogOkButton).click();
-        $(`#${id_dialog}`, true).waitForExist();
+        $(`#${id_dialog}`).waitForDisplayed(10000,true);
+        let elem = $(`#${id_dialog}`).isDisplayed();
+        expect(elem).to.not.be.true;
     })
 });

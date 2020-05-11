@@ -15,39 +15,48 @@ describe("execute test : ", function () {
   const scriptFileName = "echo.sh";
   const createFileDialogOkButton = '/html/body/div[8]/div[3]/div/button[2]';
   const script = "#!/bin/sh \n echo Hello World!";
+  // id name
+  const id_pageName = "pageNameLabel";
+  const id_newButton = "newButton";
+  const id_newProjectName = "newProjectName";
+  const id_description = "description";
+  const id_prjName = "project_name";
+  const id_taskLibrary = "taskLibraryButton";
+  const class_taskComponent = "task0_box";
   const deleteMenu = '/html/body/ul/li[3]';
 
   it("Home screen is drawn", function () {
     browser.url(url);
+    browser.setWindowSize(1920, 1080);
     expect(browser.getTitle()).to.equal("WHEEL home");
-    expect('#pageNameLabel').to.have.text("Home");
-  });
+    expect(`#${id_pageName}`).to.have.text("Home");
+});
   it("create test project", function () {
-    browser.url(url)
-      .click('#newButton')
-      .setValue('#newProjectName', testProjectName)
-      .setValue('#description', testProjectDescription)
-      .click(okBtn)
-      .waitForVisible(`#prj_${testProjectName}`);
+    browser.url(url);
+    $(`#${id_newButton}`).click();
+    $(`#${id_newProjectName}`).setValue(testProjectName);
+    $(`#${id_description}`).setValue(testProjectDescription)
+    $(okBtn).click();
+    $(`#prj_${testProjectName}`).waitForDisplayed();
+    let elem = $(`#${id_hostLabel}`).isDisplayed();
+    expect(elem).to.be.true;
   });
   it("open test project", function () {
     browser.doubleClick(`#prj_${testProjectName}`)
-      .waitForVisible('#project_name');
+    $(`#${id_prjName}`).waitForDisplayed();
     expect(browser.getTitle()).to.equal("WHEEL workflow");
   });
   it("create task component", function () {
-    //open component library
-    browser.click('#taskLibraryButton')
+    browser.click(`#${id_taskLibrary}`)
       .waitForVisible('#workflow');
-
-    //create component
     browser.selectorExecute('#node_svg', function () {
       const pos = { x: 300, y: 200 };
       const sio = io('/workflow');
       sio.emit('createNode', { "type": 'task', "pos": pos });
     });
-    browser.windowHandleSize({ width: 1920, height: 1080 })
-      .waitForVisible('.task0_box');
+    $(`.${class_taskComponent}`).waitForDisplayed();
+    let elem = $(`.${class_taskComponent}`).isDisplayed();
+    expect(elem).to.be.true;
   });
   it("set task property 'name'", function () {
     // rename

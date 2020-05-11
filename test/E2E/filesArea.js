@@ -7,36 +7,38 @@ chai.use(chaiWebdriver(browser));
 describe("#Files area check", function () {
     const url = '/';
     const targetProjectName = "filesArea";
-    const dialogMessage_createDir = "Input new folder name (ex. aaa.txt)"
-    const dialogMessage_createFile = "Input new file name (ex. aaa.txt)"
-    const dialogMessage_renameFile = "Input new file name."
-    const dialogMessage_delete = "Are you sure to delete this file?"
-    const dirName = "test_dir"
-    const fileName = "test.txt"
-    const fileName_1 = "test_1.txt"
-    const fileName_2 = "test_2.txt"
-    // class/id name 
+    const dialogMessage_createDir = "Input new folder name (ex. aaa.txt)";
+    const dialogMessage_createFile = "Input new file name (ex. aaa.txt)";
+    const dialogMessage_renameFile = "Input new file name.";
+    const dialogMessage_delete = "Are you sure to delete this file?";
+    const dirName = "test_dir";
+    const fileName = "test.txt";
+    const fileName_1 = "test_1.txt";
+    const fileName_2 = "test_2.txt";
+    // id/class name 
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
-    const id_dialog = "dialog"
-    const class_dialogMessage = "dialogMessage"
-    const id_createDirButton = "createFolderButton"
-    const id_createFileButton = "createFileButton"
-    const id_inputDirName = "newfolderName"
-    const id_inputFileName = "newfileName"
-    const id_inputFileRename = "newName"
-    const id_dirName = "test_dir_data"
-    const id_fileName = "test_txt_data"
-    const id_fileName_1 = "test_1_txt_data"
-    const id_fileName_2 = "test_2_txt_data"
-    const id_globFile = "test___txt_data"
+    const id_dialog = "dialog";
+    const class_dialogMessage = "dialogMessage";
+    const id_dirBackButton = "dirBackButton";
+    const class_backButton = "backButton";
+    const id_createDirButton = "createFolderButton";
+    const id_createFileButton = "createFileButton";
+    const id_inputDirName = "newfolderName";
+    const id_inputFileName = "newfileName";
+    const id_inputFileRename = "newName";
+    const id_dirName = "test_dir_data";
+    const id_fileName = "test_txt_data";
+    const id_fileName_1 = "test_1_txt_data";
+    const id_fileName_2 = "test_2_txt_data";
+    const id_globFile = "test___txt_data";
     // Xpath for `home screen`
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
     // Xpath for 'workflow screen'
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
     const renameButton = '/html/body/ul[2]/li[1]';
-    const deleteButton = '/html/body/ul[2]/li[2]'
+    const deleteButton = '/html/body/ul[2]/li[2]';
 
     it("Home screen is drawn", function () {
         browser.url(url);
@@ -53,7 +55,9 @@ describe("#Files area check", function () {
         $(`#${id_testProjectJson}`).waitForDisplayed();
         $(`#${id_testProjectJson}`).click();
         $(importDialogOKButton).click();
-        expect(`#prj_${targetProjectName}`).to.exist;
+        $(`#prj_${targetProjectName}`).waitForDisplayed();
+        let elem = $(`#prj_${targetProjectName}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
@@ -65,6 +69,8 @@ describe("#Files area check", function () {
         $('#property').waitForDisplayed();
         $('#property').scrollIntoView(0, 700);
         $(`#${id_createDirButton}`).waitForDisplayed();
+        let elem = $(`#${id_createDirButton}`).isDisplayed();
+        expect(elem).to.be.true;
     })
     it("create new directory", function(){
         $(`#${id_createDirButton}`).click()
@@ -73,9 +79,9 @@ describe("#Files area check", function () {
         $(`#${id_inputDirName}`).setValue(dirName); 
         $(dialogOkButton).click();
         $(`#${id_dirName}`).waitForDisplayed();
-        expect(`#${id_dirName}`).to.exist;
         $(`#${id_dirName}`).doubleClick();
-        expect('#dirBackButton').to.exist;
+        let elem = $(`#${id_dirBackButton}`).isDisplayed();
+        expect(elem).to.be.true;
     })
     it("create new file", function(){
         $(`#${id_createFileButton}`).click();
@@ -83,7 +89,9 @@ describe("#Files area check", function () {
         expect(`.${class_dialogMessage}`).to.have.text(dialogMessage_createFile);
         $(`#${id_inputFileName}`).setValue(fileName_1);
         $(dialogOkButton).click();
-        expect(`#${id_fileName_1}`).to.exist;
+        $(`#${id_fileName_1}`).waitForDisplayed();
+        let elem = $(`#${id_fileName_1}`).isDisplayed();
+        expect(elem).to.be.true;
     })
     it("create new file for glob pattern", function(){
         $(`#${id_createFileButton}`).click();
@@ -91,13 +99,17 @@ describe("#Files area check", function () {
         expect(`.${class_dialogMessage}`).to.have.text(dialogMessage_createFile);
         $(`#${id_inputFileName}`).setValue(fileName_2);
         $(dialogOkButton).click();
-        expect(`#${id_globFile}`).to.exist;
+        $(`#${id_globFile}`).waitForDisplayed();
+        let elem = $(`#${id_globFile}`).isDisplayed();
+        expect(elem).to.be.true;
     })
     it("open glob file", function(){
         $(`#${id_globFile}`).doubleClick();
-        $('.backButton').waitForDisplayed();
-        expect(`#${id_fileName_1}`).to.exist;
-        expect(`#${id_fileName_2}`).to.exist;
+        $(`.${class_backButton}`).waitForDisplayed();
+        let elem1 = $(`#${id_fileName_1}`).isDisplayed();
+        let elem2 = $(`#${id_fileName_1}`).isDisplayed();
+        expect(elem1).to.be.true;
+        expect(elem2).to.be.true;
     })
     it("rename file", function(){
         $(`#${id_fileName_1}`).click({button: "right"});
@@ -107,15 +119,15 @@ describe("#Files area check", function () {
         expect(`.${class_dialogMessage}`).to.have.text(dialogMessage_renameFile);
         $(`#${id_inputFileRename}`).setValue(fileName);
         $(dialogOkButton).click();
-        expect(`#${id_fileName}`).to.exist;
+        $(`#${id_fileName}`).waitForDisplayed();
+        let elem = $(`#${id_fileName}`).isDisplayed();
+        expect(elem).to.be.true;
     })
     it("delete directory", function(){
         $('#node_svg').click();
         $('#property').waitForExist(true);
-        console.log("browser.click('#node_svg')")
         $('.svg_task0_box').click();
         $('#property').waitForDisplayed();
-        console.log("click('.svg_task0_box')")
         $('#property').scrollIntoView(0, 500);
         $(`#${id_createDirButton}`).waitForDisplayed();
         $(`#${id_dirName}`).click({button: "right"});
@@ -124,6 +136,8 @@ describe("#Files area check", function () {
         $(`#${id_dialog}`).waitForDisplayed();
         expect(`.${class_dialogMessage}`).to.have.text(dialogMessage_delete);
         $(dialogOkButton).click();
-        expect(`#${id_dirName}`).to.exist;
+        $(`#${id_dirName}`).waitForDisplayed(10000,true);
+        let elem = $(`#${id_dirName}`).isDisplayed();
+        expect(elem).to.not.be.true;
     })
 });
