@@ -45,7 +45,8 @@ describe("#remotehost screen", function () {
         $(hostlist).waitForDisplayed(); 
         browser.newWindow('WHEEL host');
         $(`#${id_hostLabel}`).waitForDisplayed();
-        expect(`#${id_hostLabel}`).to.exist;
+        let elem = $(`#${id_hostLabel}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it("add remotehost", function () {
         $(`#${id_hostLabel}`).setValue(labelName)
@@ -60,6 +61,8 @@ describe("#remotehost screen", function () {
         $(`#${id_confirmButton}`).click()
         $(`#${labelName}`).waitForDisplayed(5000)
         expect(`#${labelName}`).to.exist;
+        let elem = $(`#${labelName}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it("copy remotehost", function () {
         $(`#${labelName}`).click()

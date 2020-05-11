@@ -33,12 +33,11 @@ describe("#remote task component execute check", function () {
     const id_hostLabel = 'hostLabelInputArea';
     const id_hostName = 'hostNameInputArea';
     const id_port = 'hostPortInputArea';
-    const userIDAreaId = 'hostUserIDInputArea';
+    const id_userId = 'hostUserIDInputArea';
     const id_workDir = 'hostWorkDirInputArea';
     const id_pw = 'hostPasswordInputArea';
     const id_confirmButton = 'confirmButton';
     const id_deleteButton = 'deleteButton';
-    const class_decoupleError = 'decoupleError';
     //Xpath
     const drawerRemotehost = '//*[@id="drawerMenuList"]/li[1]/a';
     const okBtn = '/html/body/div[4]/div[3]/div/button[2]';
@@ -61,12 +60,13 @@ describe("#remote task component execute check", function () {
         $(hostlist).waitForDisplayed(); 
         browser.newWindow('WHEEL host');
         $(`#${id_hostLabel}`).waitForDisplayed();
-        expect(`#${id_hostLabel}`).to.exist;
+        let elem = $(`#${id_hostLabel}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it("add remotehost", function () {
         $(`#${id_hostLabel}`).setValue(labelName)
         $(`#${id_hostName}`).setValue(hostName)
-        $(`#${userIDAreaId}`).setValue(userID)
+        $(`#${id_userId}`).setValue(userID)
         $(`#${id_port}`).click()
         browser.keys('Backspace')
         browser.keys('Backspace')
@@ -75,7 +75,8 @@ describe("#remote task component execute check", function () {
         $(`#${id_pw}`).click();
         $(`#${id_confirmButton}`).click();
         $(`#${labelName}`).waitForDisplayed(5000);
-        expect(`#${labelName}`).to.exist;
+        let elem = $(`#${labelName}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it("return to home screen", function () {
         $('#title').click()
@@ -91,13 +92,15 @@ describe("#remote task component execute check", function () {
         $(`#${id_testProjectJson}`).waitForDisplayed();
         $(`#${id_testProjectJson}`).click();
         $(importDialogOKButton).click();
-        $(`#prj_${targetProjectName}`, 10000, false).waitForExist();
-        expect(`#prj_${targetProjectName}`).to.exist;
+        $(`#prj_${targetProjectName}`).waitForDisplayed();
+        let elem = $(`#prj_${targetProjectName}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
         $('#project_name').waitForDisplayed();
-        expect('#project_name').to.exist;
+        let elem = $('#project_name').isDisplayed();
+        expect(elem).to.be.true;
     });
     it("SSH connection dialog check #issue329", function(){
         $(`#${id_runButton}`).click();
@@ -125,7 +128,8 @@ describe("#remote task component execute check", function () {
         $('#property').waitForDisplayed();
         $('#property').scrollIntoView(0, 500);
         $(`#${testFileName}`).waitForDisplayed();
-        expect('#project_name').to.exist;
+        let elem = $(`#${testFileName}`).isDisplayed();
+        expect(elem).to.be.true;
     })
     it("rerun project check #issue286, 312", function(){
         $(`#${id_cleanButton}`).click();
@@ -150,7 +154,8 @@ describe("#remote task component execute check", function () {
         browser.pause(1000);
         browser.newWindow('WHEEL host');
         $(`#${id_hostLabel}`).waitForDisplayed();
-        expect(`#${id_hostLabel}`).to.exist;
+        let elem = $(`#${id_hostLabel}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it("delete remotehost", function () {
         $(`#${labelName}`).click();
@@ -161,5 +166,7 @@ describe("#remote task component execute check", function () {
         $("#dialog").waitForDisplayed();
         $(okBtn).click();
         $(`#${labelName}`).waitForExist(10000,true);
+        let elem = $(`#${labelName}`).isDisplayed();
+        expect(elem).to.not.be.true;
     });
 });

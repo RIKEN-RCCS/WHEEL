@@ -5,27 +5,29 @@ const assert = require("assert");
 const chaiWebdriver = require('chai-webdriverio').default;
 chai.use(chaiWebdriver(browser));
 
-describe("#state clean button check #issue288", function () {
+describe("#state clean test :issue #288", function () {
     const url = '/';
-    const targetProjectName = "stateCleanButton";
+    const targetProjectName = "stateClean";
     const dialogMessage = "Are you sure to clean this state?"
-    // class/id name 
+    // id/class name 
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog"
-    const class_dialogMessage = "dialogMessage"
+    const id_pageName = 'pageNameLabel';
+    const id_cleanStateButton = 'cleanStateButton';
+    const id_runButton = "run_button"
+    const id_cleanButton = "clean_button"
     // Xpath for `home screen`
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
     // Xpath for 'workflow screen'
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
-    const dialogCancelButton = '/html/body/div[2]/div[3]/div/button[1]';
 
     it("Home screen is drawn", function () {
         browser.url(url);
         browser.setWindowSize(1920, 1080);
         expect(browser.getTitle()).to.equal("WHEEL home");
-        expect('#pageNameLabel').to.have.text("Home");
+        expect(`#${id_pageName}`).to.have.text("Home");
     });
     it(`project ${targetProjectName} : import`, function () {
         $(importMenu).click();
@@ -36,25 +38,39 @@ describe("#state clean button check #issue288", function () {
         $(`#${id_testProjectJson}`).waitForDisplayed();
         $(`#${id_testProjectJson}`).click();
         $(importDialogOKButton).click();    
-        $(`#prj_${targetProjectName}`, 10000, false).waitForExist();
+        $(`#prj_${targetProjectName}`).waitForDisplayed();
+        let elem = $(`#prj_${targetProjectName}`).isDisplayed();
+        expect(elem).to.be.true;
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
         $('#project_name').waitForDisplayed();
-        expect('#project_state').to.have.text('finished')
+        expect('#project_state').to.have.text('finished');
     });
     it("open task component property", function(){
-        $('.svg_workflow0_box').doubleClick();
-        $('.svg_task0_box').waitForDisplayed();
         $('.svg_task0_box').click();
-        $('#cleanStateButton').waitForDisplayed();
+        $(`#${id_cleanStateButton}`).waitForDisplayed();
+        let elem = $(`#${id_cleanStateButton}`).isDisplayed();
+        expect(elem).to.be.true;
     })
     it("state clean button click", function(){
-        $('#cleanStateButton').click();
+        $(`#${id_cleanStateButton}`).click();
         $(`#${id_dialog}`).waitForDisplayed();
-        expect(`.${class_dialogMessage}`).to.have.text(dialogMessage);
         $(dialogOkButton).click();
-        $('#cleanStateButton').waitForExist({ reverce: true });
-        expect('#project_state').to.have.text('finished')
+        $(`#${id_cleanStateButton}`).waitForDisplayed(5000,true);
+        let elem = $(`#${id_cleanStateButton}`).isDisplayed();
+        expect(elem).to.not.be.true;
+    })
+    it("initialize project", function(){
+        $(`#${id_cleanButton}`).click();
+        browser.waitUntil(function(){
+            return $('#project_state').getText() === 'not-started'
+        }, 1000, 'expected text to be different after 1s');
+        expect('#project_state').to.have.text("not-started");
+        $(`#${id_runButton}`).click();
+        browser.waitUntil(function(){
+            return $('#project_state').getText() === 'finished'
+        }, 5000, 'expected text to be different after 5s');
+        expect('#project_state').to.have.text("finished");
     })
 });
