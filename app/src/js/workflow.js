@@ -560,7 +560,7 @@ $(() => {
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
 
   // remotehost screen transition
-  $('#drawer_button').click(function () {
+  $('#drawerButton').click(function () {
     if (!isEditDisable()) {
       $('#drawerMenu').toggleClass('action', true);
     }
