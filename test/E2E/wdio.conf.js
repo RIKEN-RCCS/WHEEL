@@ -24,12 +24,12 @@ exports.config = {
         'test/E2E/remoteTask.js',
         'test/E2E/script.js',
         'test/E2E/execProject.js',
-        'test/E2E/execTask.js',
         'test/E2E/pause.js',
         'test/E2E/stateClean.js',
         'test/E2E/filesArea.js',
         'test/E2E/validationCheck.js',
-        // 'test/E2E/component.js',
+        'test/E2E/component.js',
+        'test/E2E/source.js',
     ],
     // Patterns to exclude.
     exclude: [

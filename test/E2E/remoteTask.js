@@ -127,7 +127,7 @@ describe("#remote task component execute check", function () {
         expect(`#${id_prjState}`).to.have.text("finished");  
     })
     it("Files area check #issue275", function(){
-        $(`#${targetComponent}`).click();
+        $(`.${targetComponent}`).click();
         $(`#${id_property}`).waitForDisplayed();
         $(`#${id_property}`).scrollIntoView(0, 500);
         $(`#${testFileName}`).waitForDisplayed();
