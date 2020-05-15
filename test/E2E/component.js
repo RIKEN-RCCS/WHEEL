@@ -76,7 +76,7 @@ describe("#workflow screen:", function () {
 
   it("Home screen is drawn", function () {
     browser.url(url);
-    // browser.setWindowSize(1920, 1080);
+    browser.setWindowSize(1400, 1080);
     expect(browser.getTitle()).to.equal("WHEEL home");
     expect(`#${id_pageName}`).to.have.text("Home");
   });

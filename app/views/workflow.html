@@ -401,15 +401,15 @@
               </div>
               <div id="flags">
                 <div>
-                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')"
+                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
                     name="cleanupFlag" value="0" id="cleanUpFlag0">clean up
                 </div>
                 <div>
-                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')"
+                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
                     name="cleanupFlag" value="1" id="cleanUpFlag1">keep files
                 </div>
                 <div>
-                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:blur="updateProperty('cleanupFlag')"
+                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
                     name="cleanupFlag" value="2" id="cleanUpFlag2" checked>Follow parent setting
                 </div>
               </div>
