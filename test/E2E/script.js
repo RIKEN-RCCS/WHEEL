@@ -1,7 +1,6 @@
 // setup test framework
 const chai = require("chai");
 const expect = chai.expect;
-const assert = require("assert");
 const chaiWebdriver = require('chai-webdriverio').default;
 chai.use(chaiWebdriver(browser));
 
@@ -13,19 +12,23 @@ describe("script field test :#issue313, 348", function () {
     const testScriptName = "test_1.sh";
     const defaultScriptFile = "test_sh_data";
     const testScriptFiles = "test___sh_data";
-    // id/class name
+    // id/class
     const id_E2ETestDir = "E2ETestDir_data";
     const id_targetProjectJson = "prj_wheel_json_data";
-    const id_pageName = 'pageNameLabel';
+    const id_pageName = "pageNameLabel";
     const id_dialog = "dialog";
+    const id_prjName = "project_name";
+    const id_prjState = "project_state";
+    const id_nodeSvg = "node_svg";
+    const id_property = "property";
     const id_runButton = "run_button";
     const id_disableInputField = "disableInputField";
     const id_scriptField = "scriptSelectField";
     const id_dirBackButton = "dirBackButton";
-    // Xpath for 'home screen'
+    // Xpath home screen
     const importMenu = '//*[@id="importButton"]';
     const dialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
-    // Xpath for 'workflow screen'
+    // Xpath workflow screen
     const errorDialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
 
     it("Home screen is drawn", function () {
@@ -49,20 +52,20 @@ describe("script field test :#issue313, 348", function () {
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
-        $('#project_name').waitForDisplayed();
-        expect('#project_name').to.have.text(targetProjectName)  
+        $(`#${id_prjName}`).waitForDisplayed();
+        expect(`#${id_prjName}`).to.have.text(targetProjectName)  
     });
     it("run project without script #issue 313", function () {
         $(`#${id_runButton}`).click();
         $(`#${id_dialog}`).waitForDisplayed();
         $(errorDialogOkButton).click();
-        expect('#project_state').to.have.text("not-started");  
+        expect(`#${id_prjState}`).to.have.text("not-started");  
     });
     it("set script", function () {
         $(`.${targetComponent0}`).click();
-        $("#property").waitForDisplayed();
+        $(`#${id_property}`).waitForDisplayed();
         $(`#${id_disableInputField}`).click();
-        $('#property').scrollIntoView(0, 500);
+        $(`#${id_property}`).scrollIntoView(0, 500);
         $(`#${testScriptFiles}`).waitForDisplayed();
         $(`#${testScriptFiles}`).doubleClick();
         $(`#${id_dirBackButton}`).waitForDisplayed();
@@ -71,17 +74,17 @@ describe("script field test :#issue313, 348", function () {
         expect(elem).to.equal(testScriptName);
     });
     it("script check #issue 348", function () {
-        $('#node_svg').click();;
+        $(`#${id_nodeSvg}`).click();;
         $(`.${targetComponent0}`).click();
-        $("#property").waitForDisplayed();
+        $(`#${id_property}`).waitForDisplayed();
         let elem = $(`#${id_scriptField}`).getValue();
         expect(elem).to.equal(testScriptName);
     });
-    it("post process for retry", function () {
-        $('#node_svg').click();
+    it("initialize project", function () {
+        $(`#${id_nodeSvg}`).click();
         $(`.${targetComponent0}`).click();
-        $("#property").waitForDisplayed();
-        $('#property').scrollIntoView(0, 500);
+        $(`#${id_property}`).waitForDisplayed();
+        $(`#${id_property}`).scrollIntoView(0, 500);
         $(`#${defaultScriptFile}`).waitForDisplayed();
         $(`#${id_scriptField}`).selectByVisibleText(defaultScriptName);
         $(`#${id_disableInputField}`).click();

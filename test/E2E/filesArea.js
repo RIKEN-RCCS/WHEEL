@@ -7,6 +7,7 @@ chai.use(chaiWebdriver(browser));
 describe("#Files area check", function () {
     const url = '/';
     const targetProjectName = "filesArea";
+    const targetComponent = "svg_task0_box";
     const dialogMessage_createDir = "Input new folder name (ex. aaa.txt)";
     const dialogMessage_createFile = "Input new file name (ex. aaa.txt)";
     const dialogMessage_renameFile = "Input new file name.";
@@ -19,6 +20,10 @@ describe("#Files area check", function () {
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog";
+    const id_nodeSvg = "node_svg";
+    const id_pageName = "pageNameLabel";
+    const id_prjName = "project_name";
+    const id_property = "property";
     const class_dialogMessage = "dialogMessage";
     const id_dirBackButton = "dirBackButton";
     const class_backButton = "backButton";
@@ -44,7 +49,7 @@ describe("#Files area check", function () {
         browser.url(url);
         browser.setWindowSize(1920, 1080);
         expect(browser.getTitle()).to.equal("WHEEL home");
-        expect('#pageNameLabel').to.have.text("Home");
+        expect(`#${id_pageName}`).to.have.text("Home");
     });
     it(`project ${targetProjectName} : import`, function () {
         $(importMenu).click();
@@ -61,13 +66,13 @@ describe("#Files area check", function () {
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
-        $('#project_name').waitForDisplayed();
-        expect('#project_name').to.have.text(targetProjectName)  
+        $(`#${id_prjName}`).waitForDisplayed();
+        expect(`#${id_prjName}`).to.have.text(targetProjectName)  
     });
     it("open task component property", function(){
-        $('.svg_task0_box').click();
-        $('#property').waitForDisplayed();
-        $('#property').scrollIntoView(0, 700);
+        $(`.${targetComponent}`).click();
+        $(`#${id_property}`).waitForDisplayed();
+        $(`#${id_property}`).scrollIntoView(0, 700);
         $(`#${id_createDirButton}`).waitForDisplayed();
         let elem = $(`#${id_createDirButton}`).isDisplayed();
         expect(elem).to.be.true;
@@ -124,11 +129,11 @@ describe("#Files area check", function () {
         expect(elem).to.be.true;
     })
     it("delete directory", function(){
-        $('#node_svg').click();
-        $('#property').waitForExist(true);
-        $('.svg_task0_box').click();
-        $('#property').waitForDisplayed();
-        $('#property').scrollIntoView(0, 500);
+        $(`#${id_nodeSvg}`).click();
+        $(`#${id_property}`).waitForExist(true);
+        $(`.${targetComponent}`).click();
+        $(`#${id_property}`).waitForDisplayed();
+        $(`#${id_property}`).scrollIntoView(0, 500);
         $(`#${id_createDirButton}`).waitForDisplayed();
         $(`#${id_dirName}`).click({button: "right"});
         $(deleteButton).waitForDisplayed();

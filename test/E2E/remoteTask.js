@@ -7,16 +7,22 @@ chai.use(chaiWebdriver(browser));
 describe("#remote task component execute check", function () {
     const url = '/';
     const targetProjectName = "remoteTask_test";
+    const targetComponent ="svg_remoteTask_box";
     const SSHConnectionPW = "hoge";
     const testFileName = "test___txt_data";
-    // class/id name 
+    // id/class name 
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
-    const id_dialog = "dialog"
-    const id_runButton = "run_button"
-    const id_password = "password"
-    const id_cleanButton = "clean_button"
-    const id_remotehostButton = "remotehostButton"
+    const id_dialog = "dialog";
+    const id_title = "title";
+    const id_prjName = "project_name";
+    const id_prjState = "project_state";
+    const id_property = "property";
+    const id_drawerButton = "drawerButton";
+    const id_runButton = "run_button";
+    const id_password = "password";
+    const id_cleanButton = "clean_button";
+    const id_remotehostButton = "remotehostButton";
     // Xpath for 'home screen'
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
@@ -50,13 +56,10 @@ describe("#remote task component execute check", function () {
         expect(`#${id_pageName}`).to.have.text("Home");
     });
     it("move to remotehost screen", function () {
-        $('#drawerButton').click();
+        $(`#${id_drawerButton}`).click();
         $(drawerRemotehost).waitForDisplayed();
-        expect(drawerRemotehost).to.exist;
-        const CLICK =  $(`${drawerRemotehost}`).isClickable();
-        console.log(CLICK)
         browser.pause(1000);
-        $(`${drawerRemotehost}`).click();
+        $(drawerRemotehost).click();
         $(hostlist).waitForDisplayed(); 
         browser.newWindow('WHEEL host');
         $(`#${id_hostLabel}`).waitForDisplayed();
@@ -79,7 +82,7 @@ describe("#remote task component execute check", function () {
         expect(elem).to.be.true;
     });
     it("return to home screen", function () {
-        $('#title').click()
+        $(`#${id_title}`).click()
         browser.pause(1000);
         expect(`#${id_pageName}`).to.have.text("Home");
     });
@@ -98,17 +101,17 @@ describe("#remote task component execute check", function () {
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
-        $('#project_name').waitForDisplayed();
-        let elem = $('#project_name').isDisplayed();
+        $(`#${id_prjName}`).waitForDisplayed();
+        let elem = $(`#${id_prjName}`).isDisplayed();
         expect(elem).to.be.true;
     });
     it("SSH connection dialog check #issue329", function(){
         $(`#${id_runButton}`).click();
         $(`#${id_dialog}`).waitForDisplayed();
-        expect('#project_state').to.have.text("prepareing");  
+        expect(`#${id_prjState}`).to.have.text("prepareing");  
         $(dialogCancelButton).click();
         $(`#${id_dialog}`, true).waitForExist();
-        expect('#project_state').to.have.text("not-started");
+        expect(`#${id_prjState}`).to.have.text("not-started");
     })
     it("run remoteTask #issue314", function(){
         $(`#${id_runButton}`).click();
@@ -116,17 +119,17 @@ describe("#remote task component execute check", function () {
         $(`#${id_password}`).setValue(SSHConnectionPW);
         $(dialogOkButton).click();
         browser.waitUntil(function(){
-            return $('#project_state').getText() === 'running'
+            return $(`#${id_prjState}`).getText() === 'running'
         }, 1000, 'expected text to be different after 1s');
         browser.waitUntil(function(){
-            return $('#project_state').getText() === 'finished'
+            return $(`#${id_prjState}`).getText() === 'finished'
         }, 5000, 'expected text to be different after 5s');
-        expect('#project_state').to.have.text("finished");  
+        expect(`#${id_prjState}`).to.have.text("finished");  
     })
     it("Files area check #issue275", function(){
-        $('.svg_remoteTask_box').click();
-        $('#property').waitForDisplayed();
-        $('#property').scrollIntoView(0, 500);
+        $(`#${targetComponent}`).click();
+        $(`#${id_property}`).waitForDisplayed();
+        $(`#${id_property}`).scrollIntoView(0, 500);
         $(`#${testFileName}`).waitForDisplayed();
         let elem = $(`#${testFileName}`).isDisplayed();
         expect(elem).to.be.true;
@@ -136,19 +139,16 @@ describe("#remote task component execute check", function () {
         // $(`#${id_dialog}`).waitForDisplayed();   // dev2019から実装される機能
         // $(dialogOkButton).click();
         browser.waitUntil(function(){
-            return $('#project_state').getText() === 'not-started'
+            return $(`#${id_prjState}`).getText() === 'not-started'
         }, 5000, 'expected text to be different after 5s');
         $(`#${id_runButton}`).click();
         $(`#${id_dialog}`).waitForDisplayed();
         $(dialogCancelButton).click();
-        expect('#project_state').to.have.text("not-started");  
+        expect(`#${id_prjState}`).to.have.text("not-started");  
     })
     it("move to remotehost screen", function () {
-        $('#drawer_button').click();
+        $(`#${id_drawerButton}`).click();
         $(`#${id_remotehostButton}`).waitForDisplayed();
-        expect(`#${id_remotehostButton}`).to.exist;
-        const CLICK =  $(`#${id_remotehostButton}`).isClickable();
-        console.log(CLICK)
         browser.pause(1000);
         $(`#${id_remotehostButton}`).click();
         browser.pause(1000);
@@ -163,7 +163,7 @@ describe("#remote task component execute check", function () {
             return $(`#${id_hostLabel}`).getValue() === `${labelName}`
         }, 5000, 'expected text to be different after 5s');
         $(`#${id_deleteButton}`).click();
-        $("#dialog").waitForDisplayed();
+        $(`#${id_dialog}`).waitForDisplayed();
         $(okBtn).click();
         $(`#${labelName}`).waitForExist(10000,true);
         let elem = $(`#${labelName}`).isDisplayed();

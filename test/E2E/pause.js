@@ -11,32 +11,36 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
     // id name 
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
-    const id_dialog = "dialog"
-    const id_runButton = "run_button"
-    const id_pauseButton = "pause_button"
-    const id_cleanButton = "clean_button"
-    const id_password = "password"
-    const id_remotehostButton = "remotehostButton"
-    // Xpath for `home screen`
+    const id_dialog = "dialog";
+    const id_title ="title";
+    const id_prjName = "project_name";
+    const id_prjState = "project_state";
+    const id_drawerButton = "drawerButton";
+    const id_runButton = "run_button";
+    const id_pauseButton = "pause_button";
+    const id_cleanButton = "clean_button";
+    const id_password = "password";
+    const id_remotehostButton = "remotehostButton";
+    // Xpath home screen
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
-    // Xpath for 'workflow screen'
+    // Xpath workflow screen
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
-    // for remotehost screen
-    const labelName = 'pbs';
-    const hostName = 'localhost';
+    // remotehost screen param
+    const labelName = "pbs";
+    const hostName = "localhost";
     const port = 4000;
     const userID = "pbsuser";
-    const workDir = "/home/pbsuser/";
-    const id_pageName = 'pageNameLabel';
-    const id_hostLabel = 'hostLabelInputArea';
-    const id_hostName = 'hostNameInputArea';
-    const id_port = 'hostPortInputArea';
-    const id_userId = 'hostUserIDInputArea';
-    const id_workDir = 'hostWorkDirInputArea';
-    const id_pw = 'hostPasswordInputArea';
-    const id_confirmButton = 'confirmButton';
-    const id_deleteButton = 'deleteButton';
+    const workDir = '/home/pbsuser/';
+    const id_pageName = "pageNameLabel";
+    const id_hostLabel = "hostLabelInputArea";
+    const id_hostName = "hostNameInputArea";
+    const id_port = "hostPortInputArea";
+    const id_userId = "hostUserIDInputArea";
+    const id_workDir = "hostWorkDirInputArea";
+    const id_pw = "hostPasswordInputArea";
+    const id_confirmButton = "confirmButton";
+    const id_deleteButton = "deleteButton";
     const drawerRemotehost = '//*[@id="drawerMenuList"]/li[1]/a';
     const okBtn = '/html/body/div[4]/div[3]/div/button[2]';
     const hostlist = '//*[@id="pageNameArea"]';
@@ -48,13 +52,10 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
         expect(`#${id_pageName}`).to.have.text("Home");
     });
     it("move to remotehost screen", function () {
-        $('#drawerButton').click();
+        $(`#${id_drawerButton}`).click();
         $(drawerRemotehost).waitForDisplayed();
-        expect(drawerRemotehost).to.exist;
-        const CLICK =  $(`${drawerRemotehost}`).isClickable();
-        console.log(CLICK)
         browser.pause(1000);
-        $(`${drawerRemotehost}`).click();
+        $(drawerRemotehost).click();
         $(hostlist).waitForDisplayed(); 
         browser.newWindow('WHEEL host');
         $(`#${id_hostLabel}`).waitForDisplayed();
@@ -77,7 +78,7 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
         expect(elem).to.be.true;
     });
     it("return to home screen", function () {
-        $('#title').click()
+        $(`#${id_title}`).click()
         browser.pause(1000);
         expect(`#${id_pageName}`).to.have.text("Home");
     });
@@ -96,8 +97,8 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
-        $('#project_name').waitForDisplayed();
-        expect('#project_name').to.have.text(targetProjectName)
+        $(`#${id_prjName}`).waitForDisplayed();
+        expect(`#${id_prjName}`).to.have.text(targetProjectName)
     });
     it("run project", function(){
         $(`#${id_runButton}`).click();
@@ -105,16 +106,16 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
         $(`#${id_password}`).setValue(`${SSHConnectionPW}`)
         $(dialogOkButton).click();
         browser.waitUntil(function(){
-            return $('#project_state').getText() === 'running'
+            return $(`#${id_prjState}`).getText() === 'running'
         }, 1000, 'expected text to be different after 1s');
-        expect('#project_state').to.have.text("running");
+        expect(`#${id_prjState}`).to.have.text("running");
     })
     it("pause project", function(){
         $(`#${id_pauseButton}`).click();
         browser.waitUntil(function(){
-            return $('#project_state').getText() === 'paused'
+            return $(`#${id_prjState}`).getText() === 'paused'
         }, 1000, 'expected text to be different after 1s');
-        expect('#project_state').to.have.text("paused");
+        expect(`#${id_prjState}`).to.have.text("paused");
     })
     it("rerun project", function(){
         $(`#${id_runButton}`).click();
@@ -122,19 +123,19 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
         $(`#${id_password}`).setValue(`${SSHConnectionPW}`)
         $(dialogOkButton).click();
         browser.waitUntil(function(){
-            return $('#project_state').getText() === 'finished'
+            return $(`#${id_prjState}`).getText() === 'finished'
         }, 20000, 'expected text to be different after 20s');
-        expect('#project_state').to.have.text("finished");
+        expect(`#${id_prjState}`).to.have.text("finished");
     })
     it("clean project", function(){
         $(`#${id_cleanButton}`).click();
         browser.waitUntil(function(){
-            return $('#project_state').getText() === 'not-started'
+            return $(`#${id_prjState}`).getText() === 'not-started'
         }, 1000, 'expected text to be different after 1s');
-        expect('#project_state').to.have.text("not-started");
+        expect(`#${id_prjState}`).to.have.text("not-started");
     })
     it("move to remotehost screen", function () {
-        $('#drawer_button').click();
+        $(`#${id_drawerButton}`).click();
         $(`#${id_remotehostButton}`).waitForDisplayed();
         expect(`#${id_remotehostButton}`).to.exist;
         const CLICK =  $(`#${id_remotehostButton}`).isClickable();
@@ -153,7 +154,7 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
             return $(`#${id_hostLabel}`).getValue() === `${labelName}`
         }, 5000, 'expected text to be different after 5s');
         $(`#${id_deleteButton}`).click();
-        $("#dialog").waitForDisplayed();
+        $(`#${id_dialog}`).waitForDisplayed();
         $(okBtn).click();
         $(`#${labelName}`).waitForExist(10000,true);
         let elem = $(`#${labelName}`).isDisplayed();

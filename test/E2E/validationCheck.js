@@ -7,16 +7,20 @@ chai.use(chaiWebdriver(browser));
 describe("#validation Check", function () {
     const url = '/';
     const targetProjectName = "validationCheck";
+    const tartgetComponent = "svg_task0_box";
     const inputRename = "=";
     const outputRename = "=";
-    // id/class name 
+    // id/class 
     const id_E2ETestDir = "E2ETestDir_data";
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog";
-    // Xpath for `home screen`
+    const id_pageName = "pageNameLabel";
+    const id_prjName = "project_name";
+    const id_property = "property";
+    // Xpath home screen
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
-    // Xpath for 'workflow screen'
+    // Xpath workflow screen
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
     const x_inputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[9]/input';
     const x_outputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[12]/input';
@@ -25,7 +29,7 @@ describe("#validation Check", function () {
         browser.url(url);
         browser.setWindowSize(1920, 1080);
         expect(browser.getTitle()).to.equal("WHEEL home");
-        expect('#pageNameLabel').to.have.text("Home");
+        expect(`#${id_pageName}`).to.have.text("Home");
     });
     it(`project ${targetProjectName} : import`, function () {
         $(importMenu).click();
@@ -42,13 +46,13 @@ describe("#validation Check", function () {
     });
     it(`project ${targetProjectName} : open`, function () {
         $(`#prj_${targetProjectName}`).doubleClick();
-        $('#project_name').waitForDisplayed();
-        expect('#project_name').to.have.text(targetProjectName)
+        $(`#${id_prjName}`).waitForDisplayed();
+        expect(`#${id_prjName}`).to.have.text(targetProjectName)
     });
     it("open task component property", function(){
-        $('.svg_task0_box').click();
-        $('#property').waitForDisplayed();
-        let elem = $('#property').isDisplayed();
+        $(`.${tartgetComponent}`).click();
+        $(`#${id_property}`).waitForDisplayed();
+        let elem = $(`#${id_property}`).isDisplayed();
         expect(elem).to.be.true;
     })
     it("rename input file bad example", function(){

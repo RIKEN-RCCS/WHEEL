@@ -6,15 +6,18 @@ chai.use(chaiWebdriver(browser));
 
 describe("#remotehost screen", function () {
     const url = '/';
-    const hostName = 'localhost';
+    const hostName = "localhost";
     const port = 4000;
-    const labelName = 'pbs';
+    const labelName = "pbs";
     const userID = "pbsuser";
-    const workDir = "/home/pbsuser/";
-    // id/class name
-    const id_pageName = 'pageNameLabel';
-    const id_hostLabel = 'hostLabelInputArea';
-    const id_hostName = 'hostNameInputArea';
+    const workDir = '/home/pbsuser/';
+    // id/class
+    const id_pageName = "pageNameLabel";
+    const id_title = "title";
+    const id_dialog = "dialog";
+    const id_drawerButton = "drawerButton";
+    const id_hostLabel = "hostLabelInputArea";
+    const id_hostName = "hostNameInputArea";
     const id_port = 'hostPortInputArea';
     const id_userId = 'hostUserIDInputArea';
     const id_workDir = 'hostWorkDirInputArea';
@@ -31,17 +34,14 @@ describe("#remotehost screen", function () {
     it("Home screen is drawn", function () {
         browser.url(url);
         browser.setWindowSize(1920, 1080);
-        const title = browser.getTitle();
-        console.log(title)
+        expect(browser.getTitle()).to.equal("WHEEL home");
         expect(`#${id_pageName}`).to.have.text("Home");
     }); 
     it("move to remotehost screen", function () {
-        $('#drawerButton').click();
+        $(`#${id_drawerButton}`).click();
         $(drawerRemotehost).waitForDisplayed();
-        const CLICK =  $(`${drawerRemotehost}`).isClickable();
-        console.log(CLICK)
         browser.pause(1000);
-        $(`${drawerRemotehost}`).click();
+        $(drawerRemotehost).click();
         $(hostlist).waitForDisplayed(); 
         browser.newWindow('WHEEL host');
         $(`#${id_hostLabel}`).waitForDisplayed();
@@ -72,13 +72,13 @@ describe("#remotehost screen", function () {
     });
     it("delete remotehost", function () {
         $(`#${id_deleteButton}`).click()
-        $("#dialog").waitForDisplayed(5000)
+        $(`#${id_dialog}`).waitForDisplayed(5000)
         $(okBtn).click()
         $(`.${class_decoupleError}`).waitForExist(10000, true);
         expect(`.${class_decoupleError}`).to.not.have.text("duplicated label");
     });
     it("return to home screen", function () {
-        $('#title').click()
+        $(`#${id_title}`).click()
         expect(`#${id_pageName}`).to.have.text("Home");
     });
 });
