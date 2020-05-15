@@ -180,7 +180,10 @@ $(() => {
       },
       renameOutputFile: function (newName, index) {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-          sio.emit("renameOutputFile", this.node.ID, index, newName);
+          sio.emit("renameOutputFile", this.node.ID, index, newName, (result) => {
+            if (result !== true) return;
+            $('#cbMessageArea').text(newName);
+          });
         }
       },
       updateProperty: function (property) {
@@ -193,7 +196,6 @@ $(() => {
                 if (result !== true) return;
               });
             }
-            //
             sio.emit('updateNode', this.node.ID, property, val, (result) => {
               if (result !== true) return;
               $('#cbMessageArea').text(val);
@@ -1306,6 +1308,7 @@ $(() => {
       disablePropertyFlag = false;
     }
     var propertyEditableFlag = editDisable || (vm.node !== null && disablePropertyFlag);
+    var fileSelectorFlag = presentState === 'running' || (vm.node !== null && disablePropertyFlag);
 
     var ids = [
       // input field (ex. textbox)->"readonly"
@@ -1324,7 +1327,6 @@ $(() => {
       { id: "conditionSelectField", readonly: true, disable: true },
       { id: "conditionInputField", readonly: true, disable: false },
       { id: "newIndexListField", readonly: true, disable: false },
-      { id: "indexListFieldAddButton", readonly: true, disable: false },
       { id: "startInputField", readonly: true, disable: false },
       { id: "endInputField", readonly: true, disable: false },
       { id: "stepInputField", readonly: true, disable: false },
@@ -1341,7 +1343,6 @@ $(() => {
       { id: "createFolderButton", readonly: true, disable: true },
       { id: "createFileButton", readonly: true, disable: true },
       { id: "fileUploadButton", readonly: true, disable: true },
-      { id: "fileSelector", readonly: true, disable: true },
       { id: "editPSFileButton", readonly: true, disable: true },
       { id: "uploadOnDemandFlagField", readonly: true, disable: true }
     ];
@@ -1359,6 +1360,7 @@ $(() => {
       } catch (e) { }
     });
 
+    $("[id=fileSelector]").prop('disabled', fileSelectorFlag);
     $("[id=disableInputField]").attr('readonly', editDisable);
     $("[id=disableInputField]").prop('disabled', editDisable);
 
