@@ -6,15 +6,16 @@ const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
 const { create } = require("abc4");
-const { createNewComponent, updateComponent } = require("../core/componentFilesOperator");
+const { createNewComponent, updateComponent, updateStepNumber } = require("../core/componentFilesOperator");
 const { createSshConfig, emitLongArray } = require("./utility");
+const { convertPathSep } = require("../core/pathUtils");
 const { readJsonGreedy, deliverFile } = require("../core/fileUtils");
 const { getDateString, isValidOutputFilename } = require("../lib/utility");
 const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
 const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
-const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
+const { gitAdd, gitCommit, gitResetHEAD, getWheelCommitId, gitStatus } = require("../core/gitOperator");
 const { addSsh, removeSsh } = require("../core/sshManager");
 const {
   getHosts,
@@ -550,9 +551,9 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
   let rt = null;
 
   try {
-    const parentDir = getCwd(projectRootDir);
+    const parentDir = convertPathSep(request.path);
     rt = await createNewComponent(projectRootDir, parentDir, request.type, request.pos);
-    await sendWorkflow(emit, projectRootDir);
+    await sendWorkflow(emit, projectRootDir, parentDir);
   } catch (e) {
     e.projectRootDir = projectRootDir;
     e.request = request;
@@ -578,6 +579,31 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
     e.ID = ID;
     e.prop = prop;
     e.value = value;
+    getLogger(projectRootDir).error("update node failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+/**
+ * @param {*} emit - instance of SocketIO.socket emit
+ * @param {*} projectRootDir - project root directory
+ * @param {*} rootID - project root component ID
+ * @param {*} cb - callback function
+ * @returns {*} -
+ */
+async function onUpdateStepNumber(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("updateStepNumber event recieved:", projectRootDir);
+
+  try {
+    await updateStepNumber(projectRootDir);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    e.projectRootDir = projectRootDir;
     getLogger(projectRootDir).error("update node failed", e);
     cb(false);
     return;

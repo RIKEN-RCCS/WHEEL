@@ -50,13 +50,14 @@ app.use(siofu.router);
 const routes = {
   home: require(path.resolve(__dirname, "routes/home"))(sio),
   workflow: require(path.resolve(__dirname, "routes/workflow"))(sio),
-  remotehost: require(path.resolve(__dirname, "routes/remotehost"))(sio)
+  remotehost: require(path.resolve(__dirname, "routes/remotehost"))(sio),
+  jobScript: require(path.resolve(__dirname, "routes/jobScript"))(sio)
 };
-
 app.use("/", routes.home);
 app.use("/home", routes.home);
 app.use("/workflow", routes.workflow);
 app.use("/remotehost", routes.remotehost);
+app.use("/jobScript", routes.jobScript);
 
 //port number
 const defaultPort = 443;

@@ -13,8 +13,8 @@ describe("#state clean test :issue #288", function () {
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog"
     const id_pageName = "pageNameLabel";
-    const id_prjName = "project_name";
-    const id_prjState = "project_state";
+    const id_prjName = "projectName";
+    const id_prjState = "projectState";
     const id_cleanStateButton = "cleanStateButton";
     const id_runButton = "run_button"
     const id_cleanButton = "clean_button"
@@ -23,6 +23,8 @@ describe("#state clean test :issue #288", function () {
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
     // Xpath workflow screen
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
+    const cleanCheckDialog = '/html/body/div[2]';
+    const cleanCheckDialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
 
     it("Home screen is drawn", function () {
         browser.url(url);
@@ -64,6 +66,8 @@ describe("#state clean test :issue #288", function () {
     })
     it("initialize project", function(){
         $(`#${id_cleanButton}`).click();
+        $(cleanCheckDialog).waitForDisplayed();
+        $(cleanCheckDialogOkButton).click();
         browser.waitUntil(function(){
             return $(`#${id_prjState}`).getText() === 'not-started'
         }, 1000, 'expected text to be different after 1s');

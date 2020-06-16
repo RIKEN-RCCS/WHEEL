@@ -1,4 +1,3 @@
-import SVG from 'svgjs/dist/svg.js';
 import 'svg.draggable.js/dist/svg.draggable.js';
 import '../css/workflow.css';
 
@@ -34,17 +33,24 @@ export class SvgNodeUI {
     this.group.data({ "ID": node.ID, "type": node.type, "name": node.name, "disable": node.disable }).draggable().addClass('node');
 
     // draw node
-    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host, node.useJobScheduler, node.updateOnDemand, node.disable);
+    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host, node.useJobScheduler, node.updateOnDemand, node.disable, node.stepnum);
     const boxBbox = box.bbox();
     const boxX = box.x();
     const boxY = box.y();
     this.group.add(box);
     this.group.data({ "boxBbox": boxBbox });
 
+    let useDependency;
+    if (typeof node.useDependency !== undefined) {
+      useDependency = node.useDependency;
+    } else {
+      useDependency = false;
+    }
+    this.useDependency = useDependency;
     //draw plugs
     if (node.type !== 'source' && node.type !== 'viewer') {
-      const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0, node.name);
-      upper.data({ "type": 'upperPlug', "ID": node.ID }).attr('id', `${node.name}_upper`);
+      const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0);
+      upper.data({ "type": 'upperPlug', "ID": node.ID, "useDependency": useDependency }).attr('id', `${node.name}_upper`);
       this.group.add(upper);
     }
 
@@ -52,10 +58,11 @@ export class SvgNodeUI {
     let tmp = null;
     if (node.type !== 'source' && node.type !== 'viewer') {
       numLower = node.type === 'if' ? 3 : 2;
+
       if (numLower === 2) {
-        [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio, node.name);
+        [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio, node.type);
       } else {
-        [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio, node.name);
+        [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio, node.type);
       }
       this.lowerPlug.addClass('lowerPlug').data({ "next": node.next }).attr('id', `${node.name}_lower`);
       this.group.add(this.lowerPlug).add(tmp);
@@ -65,8 +72,9 @@ export class SvgNodeUI {
     if (node.type !== 'viewer') {
       this.group.data({ "outputFiles": node.outputFiles });
       node.outputFiles.forEach((output, fileIndex) => {
-        let [plug, cable] = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight * fileIndex, sio, node.name);
-        plug.data({ "name": output.name, "dst": output.dst }).attr('id', `${node.name}_${output.name}_connector`);
+        let [plug, cable] = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight * fileIndex, sio, node.type);
+        const outputName = output.name.replace(/([*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
+        plug.data({ "name": output.name, "dst": output.dst }).attr('id', `${node.name}_${outputName}_connector`);
         this.group.add(plug);
         this.group.add(cable);
         this.connectors.push(plug);
@@ -77,13 +85,14 @@ export class SvgNodeUI {
       this.group.data({ "inputFiles": node.inputFiles });
       node.inputFiles.forEach((input, fileIndex) => {
         const receptor = parts.createReceptor(svg, boxX, boxY, 0, textHeight * fileIndex);
-        receptor.data({ "ID": node.ID, "name": input.name }).attr('id', `${node.name}_${input.name}_receptor`);
+        const inputName = input.name.replace(/([*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
+        receptor.data({ "ID": node.ID, "name": input.name, "type": node.type, "src": input.src }).attr('id', `${node.name}_${inputName}_receptor`);
         this.group.add(receptor);
       });
     }
 
     if (numLower === 3) {
-      [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.elseFlow, sio, node.name)
+      [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.elseFlow, sio)
       this.lower2Plug.addClass('elsePlug').data({ "else": node.else }).attr('id', `${node.name}_else`);
       this.group.add(this.lower2Plug).add(tmp);
     }
@@ -147,6 +156,9 @@ export class SvgNodeUI {
         const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
         cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
         cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
+        if (dstPlug.data('useDependency') === true) {
+          cable.cable.attr('stroke-dasharray', '4 4');
+        }
         this.nextLinks.push(cable);
         dstPlug.on('click', (e) => {
           if (!this.editDisable) {
@@ -329,8 +341,9 @@ export class SvgParentNodeUI {
       let connectorYpos = 32;
       const connectorHeight = 32;
       const connectorInterval = connectorHeight * 1.5;
-      let [plug, cable] = parts.createParentConnector(svg, connectorXpos, connectorYpos, 0, connectorInterval * fileIndex, sio);
-      plug.data({ "name": input.name, "forwardTo": input.forwardTo }).attr('id', `${parentnode.name}_${input.name}_connector`);
+      let [plug, cable] = parts.createParentConnector(svg, connectorXpos, connectorYpos, 0, connectorInterval * fileIndex, sio, parentnode.type);
+      const inputName = input.name.replace(/([*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
+      plug.data({ "name": input.name, "forwardTo": input.forwardTo }).attr('id', `${parentnode.name}_${inputName}_connector`);
       this.group.add(plug);
       this.group.add(cable);
       this.connectors.push(plug);
@@ -346,7 +359,8 @@ export class SvgParentNodeUI {
       const propertyAreaWidth = 272;
       let recepterPosX = window.innerWidth - propertyAreaWidth;
       const receptor = parts.createParentReceptor(svg, recepterPosX, recepterPosY, 0, recepterInterval * fileIndex);
-      receptor.data({ "ID": parentnode.ID, "name": output.name }).attr('id', `${parentnode.name}_${output.name}_receptor`);
+      const outputName = output.name.replace(/([*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "");
+      receptor.data({ "ID": parentnode.ID, "name": output.name ,"src": output.dst}).attr('id', `${parentnode.name}_${outputName}_receptor`);
 
       this.group.add(receptor);
     });

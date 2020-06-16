@@ -1,10 +1,11 @@
+/* eslint-disable valid-jsdoc */
 "use strict";
 const path = require("path");
 const fs = require("fs-extra");
 const { promisify } = require("util");
 const glob = require("glob");
 const { componentFactory } = require("./workflowComponent");
-const { updateComponentPath, removeComponentPath, getComponentDir, getDescendantsIDs } = require("./projectFilesOperator");
+const { updateComponentPath, removeComponentPath, getComponentDir, getDescendantsIDs, getAllComponentIDs } = require("./projectFilesOperator");
 const { componentJsonFilename, remoteHost, jobScheduler } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
 const { gitAdd, gitRm, gitResetHEAD } = require("./gitOperator");
@@ -367,6 +368,37 @@ async function validateTask(projectRootDir, component) {
   return true;
 }
 
+async function validateStepjobTask(projectRootDir, component) {
+  const isInitial = isInitialComponent(component);
+  if (component.name === null) {
+    return Promise.reject(new Error(`illegal path ${component.name}`));
+  }
+
+  if (component.useJobScheduler) {
+    const hostinfo = remoteHost.query("name", component.host);
+    if (typeof hostinfo === "undefined") {
+      //assume local job
+      //TODO add jobScheduler setting to server.json and read it
+    } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
+      return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
+    }
+  }
+
+  if (component.useDependency && isInitial) {
+    return Promise.reject(new Error("initial stepjobTask cannot specified the Dependency form"));
+  }
+
+  if (!(component.hasOwnProperty("script") && typeof component.script === "string")) {
+    return Promise.reject(new Error(`script is not specified ${component.name}`));
+  }
+  const componentDir = await getComponentDir(projectRootDir, component.ID, true);
+  const filename = path.resolve(componentDir, component.script);
+  if (!(await fs.stat(filename)).isFile()) {
+    return Promise.reject(new Error(`script is not existing file ${filename}`));
+  }
+  return true;
+}
+
 async function validateConditionalCheck(component) {
   if (!(component.hasOwnProperty("condition") && typeof component.condition === "string")) {
     return Promise.reject(new Error(`condition is not specified ${component.name}`));
@@ -416,8 +448,20 @@ async function validateForeach(component) {
     return Promise.reject(new Error(`index list is broken ${component.name}`));
   }
 
-  if (component.indexList.length <= 0) {
-    return Promise.reject(new Error(`index list is empty ${component.name}`));
+  return Promise.resolve();
+}
+
+/**
+ * validate inputFiles 
+ * @param {object} component - any component object which has inputFiles prop
+ * @returns
+ */
+async function validateInputFiles(component) {
+  for (const inputFile of component.inputFiles) {
+    const filename = inputFile.name;
+    if (inputFile.src.length > 1 && !(filename[filename.length - 1] === "/" || filename[filename.length - 1] === "\\")) {
+      return Promise.reject(new Error(`${component.name} inputFile '${inputFile.name}' data type is 'file' but it has two or more outputFiles.`));
+    }
   }
   return Promise.resolve();
 }
@@ -427,7 +471,7 @@ async function recursiveGetHosts(projectRootDir, parentID, hosts) {
   const children = await getChildren(projectRootDir, parentID);
 
   for (const component of children) {
-    if (component.type === "task" && component.host !== "localhost") {
+    if (component.type === "task" && component.host !== "localhost" || component.type === "stepjob") {
       hosts.push(component.host);
     }
     if (hasChild(component)) {
@@ -464,6 +508,8 @@ async function validateComponents(projectRootDir, parentID) {
     }
     if (component.type === "task") {
       promises.push(validateTask(projectRootDir, component));
+    } else if (component.type === "stepjobTask") {
+      promises.push(validateStepjobTask(projectRootDir, component));
     } else if (component.type === "if" || component.type === "while") {
       promises.push(validateConditionalCheck(component));
     } else if (component.type === "for") {
@@ -473,7 +519,9 @@ async function validateComponents(projectRootDir, parentID) {
     } else if (component.type === "foreach") {
       promises.push(validateForeach(component));
     }
-
+    if (component.hasOwnProperty("inputFiles")) {
+      promises.push(validateInputFiles(component));
+    }
     if (hasChild(component)) {
       promises.push(validateComponents(projectRootDir, component.ID));
     }
@@ -501,6 +549,11 @@ function componentJsonReplacer(key, value) {
 
 /**
  * create new component in parentDir
+ * @param {string} projectRootDir - project root directory path
+ * @param {string} parentDir - parent component's directory path
+ * @param {string} type - component type
+ * @param {object} pos - component's cordinate in browser
+ * @returns {object} component 
  */
 async function createNewComponent(projectRootDir, parentDir, type, pos) {
   const parentJson = await readJsonGreedy(path.resolve(parentDir, componentJsonFilename));
@@ -549,6 +602,91 @@ async function updateComponent(projectRootDir, ID, prop, value) {
   componentJson[prop] = value;
   await writeComponentJson(projectRootDir, componentDir, componentJson);
   return componentJson;
+}
+
+async function updateStepNumber(projectRootDir) {
+  const componentIDs = await getAllComponentIDs(projectRootDir);
+  const stepjobTaskComponentJson = [];
+  const stepjobComponentIDs = [];
+  const stepjobGroup = [];
+  //get stepjob, stepjobTask
+  for (const id of componentIDs) {
+    const componentDir = await getComponentDir(projectRootDir, id, true);
+    const componentJson = await readComponentJson(componentDir);
+    if (componentJson.type === "stepjobTask") {
+      stepjobTaskComponentJson.push(componentJson);
+    }
+    if (componentJson.type === "stepjob") {
+      stepjobComponentIDs.push(componentJson.ID);
+    }
+  }
+
+  for (const id of stepjobComponentIDs) {
+    const stepjobTaskIDs = stepjobTaskComponentJson.filter((component)=>{
+      return component.parent === id;
+    });
+    stepjobGroup.push(stepjobTaskIDs);
+  }
+
+  //arrange stepjobTask in consideration of connect relation
+  const arrangedComponents = await arrangeComponent(stepjobGroup);
+  let stepnum = 0;
+  const prop = "stepnum";
+  for (const componentJson of arrangedComponents) {
+    componentJson[prop] = stepnum;
+    const componentDir = await getComponentDir(projectRootDir, componentJson.ID, true);
+    await writeComponentJson(projectRootDir, componentDir, componentJson);
+    stepnum++;
+  }
+}
+
+async function arrangeComponent(stepjobGroupArray) {
+  let arrangedArray = [];
+  for (const stepjobTaskComponents of stepjobGroupArray) {
+    let arrangeArraytemp = [];
+    let notConnectTasks = [];
+
+    for (let i = 0; i < stepjobTaskComponents.length; i++) {
+      if (i === 0) {
+        arrangeArraytemp = stepjobTaskComponents.filter((stepjobTask)=>{
+          return stepjobTask.previous.length === 0 && stepjobTask.next.length !== 0;
+        });
+
+        if (arrangeArraytemp.length === 0) {
+          arrangeArraytemp = stepjobTaskComponents;
+          break;
+        }
+        continue;
+      }
+
+      let nextComponent = [];
+      nextComponent = stepjobTaskComponents.filter((stepjobTask)=>{
+        return stepjobTask.ID === arrangeArraytemp[i - 1].next[0];
+      });
+
+      if (nextComponent.length !== 0) {
+        arrangeArraytemp.push(nextComponent[0]);
+      }
+
+      notConnectTasks = stepjobTaskComponents.filter((stepjobTask)=>{
+        return stepjobTask.previous.length === 0 && stepjobTask.next.length === 0;
+      });
+    }
+
+    for (const stepJobTask of notConnectTasks) {
+      arrangeArraytemp.push(stepJobTask);
+    }
+    arrangedArray.push(arrangeArraytemp);
+  }
+
+  //flat single
+  let arrayList = [];
+  for (const stepJobList of arrangedArray) {
+    for (const stepJobTask of stepJobList) {
+      arrayList.push(stepJobTask);
+    }
+  }
+  return arrayList;
 }
 
 async function addInputFile(projectRootDir, ID, name) {
@@ -834,11 +972,13 @@ async function isComponentDir(target) {
 module.exports = {
   getHosts,
   getSourceComponents,
+  getComponent,
   validateComponents,
   componentJsonReplacer,
   createNewComponent,
   renameComponentDir,
   updateComponent,
+  updateStepNumber,
   addInputFile,
   addOutputFile,
   removeInputFile,

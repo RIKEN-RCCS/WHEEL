@@ -13,14 +13,14 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog";
     const id_title ="title";
-    const id_prjName = "project_name";
-    const id_prjState = "project_state";
+    const id_prjName = "projectName";
+    const id_prjState = "projectState";
     const id_drawerButton = "drawerButton";
     const id_runButton = "run_button";
     const id_pauseButton = "pause_button";
     const id_cleanButton = "clean_button";
     const id_password = "password";
-    const id_remotehostButton = "remotehostButton";
+    const id_remotehostButton = "remotehostEditorButton";
     // Xpath home screen
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
@@ -41,6 +41,8 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
     const id_pw = "hostPasswordInputArea";
     const id_confirmButton = "confirmButton";
     const id_deleteButton = "deleteButton";
+    const cleanCheckDialog = '/html/body/div[2]';
+    const cleanCheckDialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
     const drawerRemotehost = '//*[@id="drawerMenuList"]/li[1]/a';
     const okBtn = '/html/body/div[4]/div[3]/div/button[2]';
     const hostlist = '//*[@id="pageNameArea"]';
@@ -124,11 +126,13 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
         $(dialogOkButton).click();
         browser.waitUntil(function(){
             return $(`#${id_prjState}`).getText() === 'finished'
-        }, 20000, 'expected text to be different after 20s');
+        }, 30000, 'expected text to be different after 30s');
         expect(`#${id_prjState}`).to.have.text("finished");
     })
     it("clean project", function(){
         $(`#${id_cleanButton}`).click();
+        $(cleanCheckDialog).waitForDisplayed();
+        $(cleanCheckDialogOkButton).click();
         browser.waitUntil(function(){
             return $(`#${id_prjState}`).getText() === 'not-started'
         }, 1000, 'expected text to be different after 1s');
@@ -138,8 +142,6 @@ describe("#pause test :issue #296, 358, 361, 409", function () {
         $(`#${id_drawerButton}`).click();
         $(`#${id_remotehostButton}`).waitForDisplayed();
         expect(`#${id_remotehostButton}`).to.exist;
-        const CLICK =  $(`#${id_remotehostButton}`).isClickable();
-        console.log(CLICK)
         browser.pause(1000);
         $(`#${id_remotehostButton}`).click();
         browser.pause(1000);

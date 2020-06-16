@@ -5,8 +5,8 @@ WHEELでは、ワークフロー画面（Taskコンポーネント）にて使�
 ## リモートホスト登録画面への移動
 リモートホスト登録画面には、下記の2パターンの方法によって遷移します。
 
-* ホーム画面右上ドロワー内の[ remotehost ]
-* ワークフロー画面右上ドロワー内の[ remotehost ]  
+* ホーム画面右上ドロワー内の[ Remotehost Editor ]
+* ワークフロー画面右上ドロワー内の[ Remotehost Editor ]  
 
 1. ホーム画面右上ドロワー  
 ![img](./img/home_remotehost.png "home_remotehost")  

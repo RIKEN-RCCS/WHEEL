@@ -216,15 +216,19 @@ img.btn_menu_n{
     vertical-align: middle;
 }
 
-#project_name{
+#projectName{
     text-align: left;
     margin: 2px 10px 0 0;
     width:188px;
-    display: inline-flex;
+    display: inline-block;
     vertical-align: middle;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 120px;
 }
 
-#project_state{
+#projectState{
     margin: 0 0 0 0;
     width: 100px;
     border-radius: 12px;
@@ -329,7 +333,10 @@ img.btn_menu_n{
     color: #FFFFFF;
     font-size: 14px;
     position: relative;
-    top: -8px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 #img_pankuzuArrow{
@@ -349,12 +356,11 @@ img.btn_menu_n{
 
 
 /* タスクライブラリー*/
-#taskLibraryButtonArea{
-    position: absolute;
-    z-index: 40;
+.componentLibraryActive{
+    transform: translateX(256px);
 }
 
-#taskLibraryButton{
+#componentLibraryButton{
     position: absolute;
     height: 48px;
     /* temporary change for rapid2*/
@@ -368,97 +374,81 @@ img.btn_menu_n{
     border: 0;
 	cursor: pointer;
     border-collapse: collapse;
+    transition: all 300ms 0s ease;
 }
 
 #workflowComponents ul{
     margin: 12px 0 12px 0;
 }
 
-#taskLibraryButton img{
+.componentLibraryButton img{
     width: 10px;
 }
 
-#taskLibraryMenu{
-    position: absolute;
+#componentLibrary{
+    left: -256px;
+    position: fixed;
     margin-top: 6px;
     height: calc(100% - 124px);
+    width: 256px;
+    min-width: 256px;
     background-color: #222226;
     opacity: 0.9;
-    display: none;
+    /* display: none; */
     z-index: 40;
     border-collapse: collapse;
+    transition: all 300ms 0s ease;
 }
 
-#taskAreaTitle{
+#componentLibraryTitle{
     font-size: 18px;
     margin: 16px 0 0 16px;
 }
 
-#workflow li, #task li, #PS li, #if li, #for li, #while li, #foreach li, #source li, #viewer li{
+.type li{
     display: inline-block;
 }
 
-#img_workflow{
-    border-radius: 2px;
-    background-color: #803DB3;
+.imgSize{
     height: 32px;
     width: 32px;
+    border-radius: 2px;
+}
+
+#img_workflow{
+    background-color: #803DB3;
 }
 
 #img_task{
-    border-radius: 2px;
     background-color: #3B55B3;
-    height: 32px;
-    width: 32px;
 }
 
 #img_parameterStudy{
-    border-radius: 2px;
     background-color: #666622;
-    height: 32px;
-    width: 32px;
 }
 
 #img_if{
-    border-radius: 2px;
     background-color: #5B5B5F;
-    height: 32px;
-    width: 32px;
 }
 
-#img_for{
-    border-radius: 2px;
+#img_for, #img_while, #img_foreach{
     background-color: #247780;
-    height: 32px;
-    width: 32px;
-}
-
-#img_while{
-    border-radius: 2px;
-    background-color: #247780;
-    height: 32px;
-    width: 32px;
-}
-
-#img_foreach{
-    border-radius: 2px;
-    background-color: #247780;
-    height: 32px;
-    width: 32px;
 }
 
 #img_source{
-    border-radius: 2px;
     background-color: #00bff0;
-    height: 32px;
-    width: 32px;
 }
 
 #img_viewer{
-    border-radius: 2px;
     background-color: #00b050;
-    height: 32px;
-    width: 32px;
+}
+
+#img_stepjob{
+    background-color: #803DB3;
+}
+
+#img_stepjobTask{
+    background-color: #3B55B3;
 }
 
 .img_workflow_p{
@@ -524,6 +514,13 @@ img.btn_menu_n{
     width: 24px;
 }
 
+.img_stepjob_p{
+    border-radius: 2px;
+    background-color: #3B55B3 !important;
+    height: 24px;
+    width: 24px;
+}
+
 #workflowComponents{
     margin: 16px 16px 0 16px;
 }
@@ -538,9 +535,7 @@ img.btn_menu_n{
     background-color: green;
 }
 
-#img_workflow_name, #img_task_name, #img_parameterStudy_name,
-#img_if_name, #img_for_name, #img_while_name,
-#img_foreach_name, #img_source_name, #img_viewer_name{
+.workflowComponents-name{
     font-size: 14px;
     position: absolute;
     margin: 6px 0 0 8px;
@@ -606,12 +601,12 @@ select::-ms-expand {
     margin: 0;
 }
 
-.propertyDisable:checked+label{
+#propertyDisable:checked+label{
     margin: 0;
     color: #FF0000;
 }
 
-.propertyDisable{
+#propertyDisable{
     margin: 0;
 }
 
@@ -628,15 +623,22 @@ select::-ms-expand {
     display: inline-block;
 }
 
-#propertyInputFiles, #propertyScript, #propertyState{
+#propertyScript, #propertyState{
     margin: 2px 0 0 0;
     display: inline-block;
 }
 
-#propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
+#propertyInputFiles, #propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
 #propertyIndexList, #propertyStart, #propertyStep,
-#propertyRemotehost, #propertyQueue, #propertyuseJobScheduler, #propertyuploadOnDemand, #propertyRetry{
+#propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency
+{
     margin: 8px 0 0 0;
+    display: inline-block;
+}
+
+.propertyCheckboxLabel
+{
+    margin: 4px 0 0 0;
     display: inline-block;
 }
 
@@ -645,13 +647,24 @@ select::-ms-expand {
 }
 
 #nameInputField, .newInputFileNameInputField, .newOutputFileNameInputField,
-.newOutputFileNameInputField, #parameterFileInputField, #conditionInputField,
+.newOutputFileNameInputField, #parameterFileInputField, #retryConditionInputField, #conditionInputField,
 .newIndexListField, #retryTimesInputField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
     width: 192px;
     background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+}
+
+#dependencyInputField{
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 20px;
+    width: 192px;
+    background-color: #333333;
     border: 0;
     color: #FFFFFF;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
@@ -691,14 +704,14 @@ select::-ms-expand {
 }
 
 #scriptSelectField, #remotehostSelectField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
-#retryConditionInputField, #fileForCondition{
+#retryConditionSelectField, #fileForCondition{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 22px;
     margin: 2px 0 0 8px;
     padding-left: 5px;
-    height: 22px;
-    width: 198px;
+    height: 20px;
+    width: 192px;
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
@@ -720,14 +733,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-.queueSelectFieldColor{
-    margin: 2px 0 0 8px;
-    padding-left: 5px;
-    height: 20px;
-    width: 198px;
-    border: 0;
-    color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+.queueSelectFieldColor, .dependencyInputFieldColor{
     background-color: #000000 !important;
 }
 
@@ -741,16 +747,8 @@ select::-ms-expand {
 }
 
 .checkboxArea{
-    margin: 0;
+    margin-top: 8px;
     padding: 0px;
-}
-
-#useJobSchedulerFlagField{
-    margin: 0 0 0 8px;
-}
-
-#updateOnDamandFlagField{
-    margin: 0 0 0 8px;
 }
 
 #descriptionInputField{
@@ -784,33 +782,22 @@ select::-ms-expand {
     color: #FFFFFF;
 }
 
-.inputAddDelButton{
-    position: absolute;
-    cursor: pointer;
-    width: 22px;
-    height: 22px;
-    margin: 2px 0 0 5px;
-    padding: 0px;
-    border: 1px solid #5B5B5F;
-    background-color: #5B5B5F;
+#dependencyStepnum{
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 20px;
+    width: 192px;
+    background-color: #000000;
+    border: 0;
+    color: #777777;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-.inputAddDelButton, .outputAddDelButton, .cleanStateButton{
+.inputAddDelButton, .outputAddDelButton, .cleanStateButton, .indexListButton{
     position: absolute;
     cursor: pointer;
-    width: 22px;
-    height: 22px;
-    margin: 2px 0 0 5px;
-    padding: 0px;
-    border: 1px solid #5B5B5F;
-    background-color: #5B5B5F;
-}
-
-.indexListButton{
-    position: absolute;
-    cursor: pointer;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     margin: 2px 0 0 5px;
     padding: 0px;
     border: 1px solid #5B5B5F;
@@ -825,6 +812,10 @@ select::-ms-expand {
 #propertyCleanUpFlag, #propertyInclude, #propertyExclude{
     margin: 8px 0 0 8px;
     display: inline-block;
+}
+
+#propertyDependencyForm, #propertyStepNumber{
+    margin: 8px 0 0 8px;
 }
 
 #flags{
@@ -871,7 +862,7 @@ select::-ms-expand {
 }
 
 #createFolderButton{
-    margin: 8px 0 0 98px;
+    margin: 8px 0 0 62px;
 }
 
 #editButtonsArea{
@@ -1151,7 +1142,7 @@ select::-ms-expand {
 }
 
 /*　log Area */
-#displayLogButton {
+#logAreaButton {
 	bottom:0px;
     position: fixed;
     margin: 0 50% 0 50%;
@@ -1159,14 +1150,19 @@ select::-ms-expand {
     width: 48px;
     background-color: #4C4C55;
     border: 0;
+    transition: all 300ms 0s ease;
 }
 
-.displayLogButton.display {
+.logAreaActive{
+    transform: translateY(-320px);
+}
+
+.logAreaButton.display {
     -webkit-transform:translateY(-320px);
     transform:translateY(-320px);
 }
 
-#displayLogButtonImg{
+#logAreaButtonImg{
     position: absolute;
     cursor: pointer;
     width: 16px;
@@ -1186,15 +1182,20 @@ select::-ms-expand {
 }
 
 #logArea {
-    display: none;
-    background-color: rgba(28,28,32,0.75);
-    bottom:0;
+    /* display: none; */
+    background-color: rgba(28,28,32,0.93);
+    bottom:-320px;
     color: rgb(240, 240, 240);
 	position:fixed;
     width: 100%;
     height: 320px;
     z-index: 80;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    transition: all 300ms 0s ease;
+}
+
+.logAreaActive{
+    transform: rotateY(320px);
 }
 
 #logButtonArea{
@@ -1360,7 +1361,7 @@ select::-ms-expand {
 
 .componentNameLabel{
     display: inline-block;
-    width: 232px;
+    width: 165px;
     border-radius: 3px;
     font-size: 14px;
     border-collapse: separate;
@@ -1370,7 +1371,8 @@ th.componentStateLabel{
     display: inline-block;
     width: 90px;
     font-size: 14px;
-    margin-right:44px;
+    margin-right: 14px;
+    margin-left: 37px;
     border-collapse: separate;
 }
 
@@ -1426,12 +1428,11 @@ th.componentStateLabel{
     font-size: 14px;
 }
 
-
 .componentName{
     display: inline-block;
-    width: 224px;
+    width: 32px;
     height: 32px;
-    border-radius: 3px;
+    border-radius: 3px 0px 0px 3px;
     font-size: 14px;
 }
 
@@ -1440,6 +1441,26 @@ th.componentStateLabel{
     padding-right: 50px;
     font-size: 14px;
     width: 90px;
+}
+
+.nameLabelArea{
+    display: inline-block;
+    padding-right: 3px;
+    border-radius: 0px 3px 3px 0px;
+    height: 32px;
+}
+
+.nameLabelArea :hover{
+    display: table-cell;
+}
+
+.nameLabel{
+    width:130px;
+    font-size: 14px;
+    padding-top: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .stateIcon{
@@ -1466,12 +1487,6 @@ th.componentStateLabel{
     font-size: 14px;
 }
 
-.nameLabel{
-    display: inline-flex;
-    position: relative;
-    top: -11px;
-}
-
 .stateLabel{
     display: inline-flex;
     position: relative;
@@ -1480,6 +1495,7 @@ th.componentStateLabel{
 
 input[type="text"],
 input[type="password"],
+input[type="number"],
 textarea,
 select {
     outline: none;
@@ -1495,14 +1511,10 @@ svg g{
     font-size: 11px;
 }
 
-/* image{
-    height: 32px;
-    width: 32px;
-} */
-
 tspan{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;
+    
 }
 
 /* context, dialog*/
@@ -1538,22 +1550,63 @@ tspan{
     background-color: #222226;
 }
 
-/*dialog setting*/
-.ui-button.cancelButton{
+/*all dialog setting*/
+#dialog{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    color: #FFFFFF;
+    font-size: 14px;
+  }
+
+.ui-dialog {
+    z-index: 200;
+    background-color: #222226;
+    border: none !important;
+  }
+
+  .ui-dialog-titlebar{
+    background-color: #222226;
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: initial;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    border: 0;
+  }
+
+  .ui-button{
+    background-color: #5B5B5F;
+    border-color: #5B5B5F;
+    color: #ffffff;
+    border-radius: 0;
+    width: 72px;
+    height: 24px;
+    padding: 0;
+  }
+
+  .ui-dialog-buttonpane{
+    background-color: #222226;
+    border: none;
+    height: 32px;
+  }
+
+  /* workflow.js only setting*/
+  .ui-button.cancelButton{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;
   }
 
-.ui-button.okButton{
+  .ui-button.okButton{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;
     margin: 9px 9px 9px 2px!important;
   }
 
+  .ui-button.notUseButton{
+      display: none;
+  }
+
 #newfileName.dialogTextbox, #newfolderName.dialogTextbox, #newName.dialogTextbox,
 #password.dialogTextbox, #sourceFilename.dialogTextbox{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
-    font-size: 14px;
     color: #FFFFFF;
     background-color: #000000;
     border: 0;
@@ -1561,6 +1614,24 @@ tspan{
     height: 20px;
     margin: 8px 10px 8px 10px;
     padding-left: 5px;
+}
+
+#jobScriptSelectBox, #jobScriptName{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+}
+
+.jobScriptDialog{
+    color: #FFFFFF;
+    background-color: #000000;
+    border: 0;
+    width: 370px;
+    height: 20px;
+    margin: 4px 10px 8px 10px;
+    padding-left: 5px;
+}
+
+#jobScriptTemplateLabel{
+    margin-top: 8px;
 }
 
 #deleteMessage{
@@ -1619,6 +1690,10 @@ tspan{
   height: 100%;
 }
 
+#rapid {
+  /* height: 100%; */
+}
+
 .ui-tooltip {
 	font-size: 12px;
 }
@@ -1637,3 +1712,13 @@ body .ui-tooltip {
 .ace-idle-fingers .ace_print-margin{
     width: 0px !important;
 }
+
+/* viewer html css*/
+/* 
+#viewerImages {
+    list-style-type: none;
+ }
+
+#viewerImages li {
+    display: inline-block;
+} */

@@ -80,6 +80,29 @@ class JsonArrayManager {
   }
 
   /**
+   * add duplicated entry
+   * @param {string} id - id of src entry
+   */
+  /**
+   *
+   *
+   * @param {*} id
+   * @param {*} newLabel
+   * @returns
+   * @memberof JsonArrayManager
+   */
+  jobScriptcopy(id, newLabel) {
+    const target = this.data.find((e)=>{
+      return e.id === id;
+    });
+    const duplicate = Object.assign({}, target);
+    duplicate.id = uuidv1();
+    duplicate.templateName = newLabel;
+    this.data.push(duplicate);
+    return this.write();
+  }
+
+  /**
    * get the entry which have specified id
    * @param {string} id - id
    */

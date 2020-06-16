@@ -7,8 +7,10 @@ const minimatch = require("minimatch");
 const fileBrowser = require("../core/fileBrowser");
 const { gitAdd, gitRm } = require("../core/gitOperator");
 const { getSystemFiles } = require("./utility");
+const { jobScript } = require("../db/db");
 const { convertPathSep } = require("../core/pathUtils");
 const { getLogger } = require("../core/projectResource");
+const { saveFile } = require("../core/fileUtils");
 const { isComponentDir } = require("../core/componentFilesOperator");
 
 /**

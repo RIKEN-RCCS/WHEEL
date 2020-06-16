@@ -22,7 +22,7 @@ describe("#Files area check", function () {
     const id_dialog = "dialog";
     const id_nodeSvg = "node_svg";
     const id_pageName = "pageNameLabel";
-    const id_prjName = "project_name";
+    const id_prjName = "projectName";
     const id_property = "property";
     const class_dialogMessage = "dialogMessage";
     const id_dirBackButton = "dirBackButton";
@@ -47,7 +47,7 @@ describe("#Files area check", function () {
 
     it("Home screen is drawn", function () {
         browser.url(url);
-        browser.setWindowSize(1920, 1080);
+        browser.setWindowSize(1400, 1080);
         expect(browser.getTitle()).to.equal("WHEEL home");
         expect(`#${id_pageName}`).to.have.text("Home");
     });
@@ -105,8 +105,10 @@ describe("#Files area check", function () {
         $(`#${id_inputFileName}`).setValue(fileName_2);
         $(dialogOkButton).click();
         $(`#${id_globFile}`).waitForDisplayed();
-        let elem = $(`#${id_globFile}`).isDisplayed();
-        expect(elem).to.be.true;
+        let elem1 = $(`#${id_fileName_1}`).isDisplayed();
+        let elem2= $(`#${id_globFile}`).isDisplayed();
+        expect(elem1).to.not.be.true;
+        expect(elem2).to.be.true;
     })
     it("open glob file", function(){
         $(`#${id_globFile}`).doubleClick();

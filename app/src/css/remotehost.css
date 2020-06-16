@@ -175,6 +175,12 @@ header {
   width: 154px;
 }
 
+.grpName{
+  padding: 0 36px 0 0;
+  border: 0;    
+  width: 140px;
+}
+
 
 #hostPropertyAreaForHPC, #hostPropertyAreaForCloud{
   height: 201px;

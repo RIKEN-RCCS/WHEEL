@@ -4,7 +4,7 @@ const express = require("express");
 const fileManager = require("./fileManager");
 const rapid2 = require("./rapid2");
 const projectController = require("./projectController");
-const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay } = require("../db/db");
+const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay, jobScript } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
 const { getProjectState } = require("../core/projectFilesOperator");
@@ -20,6 +20,9 @@ module.exports = function(io) {
     setSio(projectRootDir, socket);
     socket.on("getHostList", ()=>{
       socket.emit("hostList", remoteHost.getAll());
+    });
+    socket.on("getJobScriptList", ()=>{
+      socket.emit("jobScriptList", jobScript.getAll());
     });
 
     //event listeners for project operation

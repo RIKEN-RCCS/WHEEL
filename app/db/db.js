@@ -6,6 +6,7 @@ const configDir = path.resolve(__dirname, "../config");
 const config = require(path.resolve(configDir, "server.json"));
 const jobScheduler = require(path.resolve(configDir, "jobScheduler.json"));
 const remotehostFilename = path.resolve(configDir, config.remotehostJsonFile);
+const jobScriptFilename = path.resolve(configDir, config.jobScriptJsonFile);
 const projectListFilename = path.resolve(configDir, config.projectListJsonFile);
 
 let jupyterToken;
@@ -71,4 +72,5 @@ module.exports.shutdownDelay = config.shutdownDelay;
 
 module.exports.jobScheduler = jobScheduler;
 module.exports.remoteHost = new JsonArrayManager(remotehostFilename);
+module.exports.jobScript = new JsonArrayManager(jobScriptFilename);
 module.exports.projectList = new JsonArrayManager(projectListFilename);

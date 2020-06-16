@@ -49,36 +49,35 @@ describe("#remotehost screen", function () {
         expect(elem).to.be.true;
     });
     it("add remotehost", function () {
-        $(`#${id_hostLabel}`).setValue(labelName)
-        $(`#${id_hostName}`).setValue(hostName)
-        $(`#${id_userId}`).setValue(userID)
-        $(`#${id_port}`).click()
-        browser.keys('Backspace')
-        browser.keys('Backspace')
-        $(`#${id_port}`).setValue(port)
-        $(`#${id_workDir}`).setValue(workDir)
+        $(`#${id_hostLabel}`).setValue(labelName);
+        $(`#${id_hostName}`).setValue(hostName);
+        $(`#${id_userId}`).setValue(userID);
+        $(`#${id_port}`).click();
+        browser.keys('Backspace');
+        browser.keys('Backspace');
+        $(`#${id_port}`).setValue(port);
+        $(`#${id_workDir}`).setValue(workDir);
         $(`#${id_pw}`).click();
-        $(`#${id_confirmButton}`).click()
-        $(`#${labelName}`).waitForDisplayed(5000)
-        expect(`#${labelName}`).to.exist;
+        $(`#${id_confirmButton}`).click();
+        $(`#${labelName}`).waitForDisplayed(5000);
         let elem = $(`#${labelName}`).isDisplayed();
         expect(elem).to.be.true;
     });
     it("copy remotehost", function () {
-        $(`#${labelName}`).click()
-        $(`#${id_copyButton}`).click()
+        $(`#${labelName}`).click();
+        $(`#${id_copyButton}`).click();
         $(`.${class_decoupleError}`).waitForExist();
         expect(`.${class_decoupleError}`).to.have.text("duplicated label");
     });
     it("delete remotehost", function () {
-        $(`#${id_deleteButton}`).click()
-        $(`#${id_dialog}`).waitForDisplayed(5000)
-        $(okBtn).click()
+        $(`#${id_deleteButton}`).click();
+        $(`#${id_dialog}`).waitForDisplayed(5000);
+        $(okBtn).click();
         $(`.${class_decoupleError}`).waitForExist(10000, true);
         expect(`.${class_decoupleError}`).to.not.have.text("duplicated label");
     });
     it("return to home screen", function () {
-        $(`#${id_title}`).click()
+        $(`#${id_title}`).click();
         expect(`#${id_pageName}`).to.have.text("Home");
     });
 });

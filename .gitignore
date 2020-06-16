@@ -5,6 +5,7 @@ public
 TestLogFile.txt
 remotehost.json
 projectList.json
+jobScript.json
 .nyc_output
 coverage
 *.log*

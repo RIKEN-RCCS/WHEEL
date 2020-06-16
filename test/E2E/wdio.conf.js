@@ -30,6 +30,8 @@ exports.config = {
         'test/E2E/validationCheck.js',
         'test/E2E/component.js',
         'test/E2E/source.js',
+        'test/E2E/jobScript.js',
+        'test/E2E/stepjobComponent.js',
     ],
     // Patterns to exclude.
     exclude: [
@@ -166,16 +168,19 @@ exports.config = {
         const configPath = './app/config/';
         const remotehostJsonPath = configPath + 'remotehost.json';
         const projectListJsonPath = configPath + 'projectList.json';
+        const jobScriptJsonPath = configPath + 'jobScript.json';
         var fileExistFlag = true;
         try {
             fs.statSync(remotehostJsonPath);
             fs.statSync(projectListJsonPath);
+            fs.statSync(jobScriptJsonPath);
         } catch (error) {
             fileExistFlag = false;
         }
         if (fileExistFlag === true) {
             fs.renameSync(remotehostJsonPath, configPath + 'remotehost_temp.json');
             fs.renameSync(projectListJsonPath, configPath + 'projectList_temp.json');
+            fs.renameSync(jobScriptJsonPath, configPath + 'jobScript_temp.json');
         }
         config.wheelProcess = spawn("npm", ["start"], { shell: true });
     },
@@ -269,16 +274,19 @@ exports.config = {
         const configPath = './app/config/';
         const remotehostJsonPath = configPath + 'remotehost.json';
         const projectListJsonPath = configPath + 'projectList.json';
+        const jobScriptJsonPath = configPath + 'jobScript.json';
         var fileExistFlag = true;
         try {
             fs.statSync(configPath + 'remotehost_temp.json');
             fs.statSync(configPath + 'projectList_temp.json');
+            fs.statSync(configPath + 'jobScript_temp.json');
         } catch (error) {
             fileExistFlag = false;
         }
         if (fileExistFlag === true) {
             fs.renameSync(configPath + 'remotehost_temp.json', remotehostJsonPath);
             fs.renameSync(configPath + 'projectList_temp.json', projectListJsonPath);
+            fs.renameSync(configPath + 'jobScript_temp.json', jobScriptJsonPath);
         }
     },
     /**

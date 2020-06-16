@@ -31,13 +31,30 @@ async function getDescendantsIDs(projectRootDir, ID) {
 }
 
 /**
+ * read project JSON file and return all component ID in project
+ * @param {string} projectRootDir - project projectRootDir's absolute path
+ * @returns {string[]} - array of id string
+ */
+async function getAllComponentIDs(projectRootDir) {
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await readJsonGreedy(filename);
+  const rt = [];
+
+  for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
+    rt.push(id);
+  }
+  return rt;
+}
+
+/**
  * create new project dir, initial files and new git repository
  * @param {string} projectRootDir - project projectRootDir's absolute path
- * @param {string} projectName - project name without suffix
+ * @param {string} name - project name without suffix
  * @param {string} description - project description text
  * @param {string} user - username of project owner
  * @param {string} mail - mail address of project owner
  * @param {Object} logger - log4js instance
+ * @returns {*} -
  */
 async function createNewProject(projectRootDir, name, description, user, mail, logger) {
   description = description != null ? description : "This is new project.";
@@ -153,6 +170,7 @@ module.exports = {
   removeComponentPath,
   getComponentDir,
   getDescendantsIDs,
+  getAllComponentIDs,
   setProjectState,
   getProjectState
 };

@@ -197,8 +197,50 @@ class Foreach extends GeneralComponent {
   }
 }
 
-/*
+/**
+ * Creates an instance of Stepjob.
+ * @class StepJob
+ * @param {*} args -
+ * @extends {GeneralComponent}
+ */
+class Stepjob extends GeneralComponent {
+  constructor(...args) {
+    super(...args);
+    this.type = "stepjob";
+
+    /*hostname where stepjobTask in this stepjob will execute on */
+    this.host = "localhost";
+
+    /*queue name */
+    this.useJobScheduler = true;
+    this.queue = null;
+  }
+}
+
+/**
+ * Creates an instance of StepjobTask.
+ * @class StepjobTask
+ * @param {*} args -
+ * @extends {Task}
+ */
+class StepjobTask extends Task {
+  constructor(pos, parent, stepnum, ...args) {
+    super(pos, parent, stepnum, ...args);
+    this.type = "stepjobTask";
+    this.useJobScheduler = true;
+
+    /*dependency equation */
+    this.stepnum = 0;
+    this.useDependency = false;
+    this.dependencyForm = null;
+  }
+}
+
+/**
  * factory method for workflow component class
+ * @param {*} type -
+ * @param {*} args -
+ * @returns{*} - component instance
  */
 function componentFactory(type, ...args) {
   let component;
@@ -231,6 +273,12 @@ function componentFactory(type, ...args) {
     case "viewer":
       component = new Viewer(...args);
       break;
+    case "stepjob":
+      component = new Stepjob(...args);
+      break;
+    case "stepjobTask":
+      component = new StepjobTask(...args);
+      break;
     default:
       component = null;
   }
@@ -238,7 +286,7 @@ function componentFactory(type, ...args) {
 }
 
 function hasChild(component) {
-  return component.type === "workflow" || component.type === "parameterStudy" || component.type === "for" || component.type === "while" || component.type === "foreach";
+  return component.type === "workflow" || component.type === "parameterStudy" || component.type === "for" || component.type === "while" || component.type === "foreach" || component.type === "stepjob";
 }
 
 function isInitialComponent(component) {

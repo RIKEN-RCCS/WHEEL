@@ -9,7 +9,8 @@ module.exports = {
     home: "./app/src/js/home",
     workflow: "./app/src/js/workflow",
     remotehost: "./app/src/js/remotehost",
-    viewer: "./app/src/js/viewer"
+    viewer: "./app/src/js/viewer",
+    jobScript: "./app/src/js/jobScript"
   },
   stats: "detailed",
   devtool: "eval-source-map",

@@ -1,3 +1,4 @@
+"use strict";
 const path = require("path");
 const fs = require("fs-extra");
 
@@ -11,6 +12,7 @@ const rewire = require("rewire");
 
 //testee
 const fileManager = rewire("../../../app/routes/fileManager");
+const gitInit = require("../../../app/core/gitOperator");
 const onGetFileList = fileManager.__get__("onGetFileList");
 const onGetSNDContents = fileManager.__get__("onGetSNDContents");
 const onRemoveFile = fileManager.__get__("onRemoveFile");
@@ -32,6 +34,7 @@ describe("fileManager UT", ()=>{
     await fs.remove(testDirRoot);
     cb.reset();
     emit.reset();
+    await gitInit(testDirRoot, "foo", "foo@example.com");
     await Promise.all([
       fs.ensureDir(path.join(testDirRoot, "foo")),
       fs.ensureDir(path.join(testDirRoot, "bar")),
