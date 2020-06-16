@@ -1,5 +1,5 @@
-#!/bin/bash -e
-TAG=wheel_release_test 
+#!/bin/bash
+TAG=wheel_release_test
 TAG_TEST_SERVER=wheel_release_test_server
 
 function cleanup()
@@ -13,14 +13,21 @@ function cleanup()
     docker ps -a
 }
 
+
+# stop container if already running
+docker stop ${TAG} >& /dev/null
+docker stop ${TAG_TEST_SERVER} >& /dev/null
+
+set -e -o pipefail
+trap cleanup EXIT
+
 #build test server container
 pushd testServer/docker_pbspro_sshd
-docker build --rm=true -t ${TAG_TEST_SERVER}  .
+docker build --rm=true -t ${TAG_TEST_SERVER} .
 rt=$?
 popd
 if [ ${rt} -ne 0 ];then
   echo "ERROR: build test server failed ${rt}"
-  cleanup
   exit 1
 fi
 
@@ -28,7 +35,6 @@ fi
 docker run --rm -d -p 4000:22 --name ${TAG_TEST_SERVER} ${TAG_TEST_SERVER}
 if [ $? -ne 0 ];then
   echo "ERROR: run test server failed $?"
-  cleanup
   exit 2
 fi
 IPAddress=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${TAG_TEST_SERVER})
@@ -40,12 +46,12 @@ rt=$?
 popd
 if [ ${rt} -ne 0 ];then
   echo "ERROR: build wheel failed ${rt}"
-  cleanup
   exit 3
 fi
 
 # crate config files
 CONFIG_DIR=$(mktemp -d tmp.XXXXXXXXXX)
+
 
 # create self-signed-certification files
 echo '[dn]
@@ -78,7 +84,7 @@ echo '  "renewInterval": 0,'
 echo '  "renewDelay": 0,'
 echo '  "statusCheckInterval": 10,'
 echo '  "maxStatusCheckError": 10'
-echo '}]' 
+echo '}]'
 } > ${CONFIG_DIR}/remotehost.json
 
 #create wheel container
@@ -91,24 +97,21 @@ docker run --env "WHEEL_TEST_REMOTEHOST=testServer" \
            --name ${TAG} ${TAG}
 if [ $? -ne 0 ];then
   echo "ERROR: run wheel failed $?"
-  cleanup
   exit 4
 fi
-          
+
 # install test tools
 docker cp ../test/ ${TAG}:/usr/src/test/
 if [ $? -ne 0 ];then
   echo "ERROR: copy test files failed $?"
-  cleanup
   exit 5
 fi
 
 # install devdependencies
-docker exec ${TAG} npm install 
- 
+docker exec ${TAG} npm install
+
 if [ $? -ne 0 ];then
   echo "ERROR: install test tools failed $?"
-  cleanup
   exit 6
 fi
 
@@ -122,13 +125,9 @@ docker cp ${TAG}:/usr/src/coverage/ $LOG_DIR
 
 if [ ${rt} -ne 0 ];then
   echo "ERROR: unit test failed ${rt}"
-  cleanup
   exit 7
 fi
 
 #run E2E test from host
 #TODO
-# please note that wheel and jupyter is already running at port 8089, 8090 respectively 
-
-#stop containers
-cleanup
+# please note that wheel and jupyter is already running at port 8089, 8090 respectively
