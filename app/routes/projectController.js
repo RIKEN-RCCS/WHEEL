@@ -1,20 +1,75 @@
 "use strict";
 const { promisify } = require("util");
-const memMeasurement = process.env.NODE_ENV === "development" && process.env.MEMORY_MONITOR;
 const fs = require("fs-extra");
 const path = require("path");
 const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
-const Dispatcher = require("./dispatcher");
-const { getDateString, createSshConfig, readJsonGreedy, emitLongArray } = require("./utility");
-const { interval, remoteHost, jobScheduler, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { getChildren, updateAndSendProjectJson, sendWorkflow, getComponentDir, componentJsonReplacer, isInitialNode, hasChild, getComponent } = require("./workflowUtil");
-const { openProject, addSsh, removeSsh, getUpdatedTaskStateList, getNumberOfUpdatedTasks, setRootDispatcher, getRootDispatcher, deleteRootDispatcher, cleanProject, once, getTasks, clearDispatchedTasks, removeListener, getLogger, emitEvent } = require("./projectResource");
-const { gitAdd, gitCommit, gitResetHEAD } = require("./gitOperator");
-const { cancel } = require("./executer");
-const { killTask, taskStateFilter } = require("./taskUtil");
+const { create } = require("abc4");
+const { createNewComponent, updateComponent } = require("../core/componentFilesOperator");
+const { createSshConfig, emitLongArray } = require("./utility");
+const { readJsonGreedy, deliverFile } = require("../core/fileUtils");
+const { getDateString, isValidOutputFilename } = require("../lib/utility");
+const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
+const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
+const { hasChild } = require("../core/workflowComponent");
+const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
+const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
+const { addSsh, removeSsh } = require("../core/sshManager");
+const {
+  getHosts,
+  getSourceComponents,
+  addInputFile,
+  addOutputFile,
+  removeInputFile,
+  removeOutputFile,
+  renameInputFile,
+  renameOutputFile,
+  addLink,
+  addFileLink,
+  removeLink,
+  removeFileLink,
+  cleanComponent,
+  removeComponent,
+  validateComponents
+} = require("../core/componentFilesOperator");
+const { getProjectState, setProjectState } = require("../core/projectFilesOperator");
+const { taskStateFilter } = require("../core/taskUtil");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
+
+//read and send current workflow and its child and grandson
+async function sendWorkflow(emit, projectRootDir, cwd) {
+  const componentDir = cwd ? cwd : getCwd(projectRootDir);
+  const wf = await getComponent(projectRootDir, path.resolve(componentDir, componentJsonFilename));
+  const rt = Object.assign({}, wf);
+  rt.descendants = await getChildren(projectRootDir, wf.ID);
+
+  for (const child of rt.descendants) {
+    if (child.handler) {
+      delete child.handler;
+    }
+
+    if (hasChild(child)) {
+      const grandson = await getChildren(projectRootDir, child.ID);
+      child.descendants = grandson.map((e)=>{
+        if (e.type === "task") {
+          return { type: e.type, pos: e.pos, host: e.host, useJobScheduler: e.useJobScheduler };
+        }
+        return { type: e.type, pos: e.pos };
+      });
+    }
+  }
+  emit("workflow", rt);
+}
+
+//read and send projectJson
+async function sendProjectJson(emit, projectRootDir) {
+  getLogger(projectRootDir).trace("projectState: sendProjectJson", projectRootDir);
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await readJsonGreedy(filename);
+  getLogger(projectRootDir).trace("projectState: stat=", projectJson.state);
+  emit("projectJson", projectJson);
+}
 
 async function sendTaskStateList(emit, projectRootDir) {
   const p = [];
@@ -36,11 +91,6 @@ async function sendTaskStateList(emit, projectRootDir) {
     });
 }
 
-async function getProjectState(projectRootDir) {
-  const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
-  return projectJson.state;
-}
-
 async function getState(projectRootDir) {
   const componentJsonFiles = await promisify(glob)(path.join("**", componentJsonFilename), { cwd: projectRootDir });
   const states = await Promise.all(componentJsonFiles.map(async(jsonFile)=>{
@@ -59,175 +109,105 @@ async function getState(projectRootDir) {
   return projectState;
 }
 
-function cancelDispatchedTasks(projectRootDir) {
-  for (const task of getTasks(projectRootDir)) {
-    if (task.state === "finished" || task.state === "failed") {
-      continue;
-    }
-    const canceled = cancel(task);
-
-    if (!canceled) {
-      killTask(projectRootDir, task);
-    }
-    task.state = "not-started";
-  }
+async function getSourceCandidates(projectRootDir, ID) {
+  const componentDir = await getComponentDir(projectRootDir, ID);
+  return promisify(glob)("*", { cwd: componentDir, ignore: componentJsonFilename });
 }
 
+/**
+ * ask user what file to be used
+ */
+async function getSourceFilename(projectRootDir, component, sio) {
+  return new Promise(async(resolve)=>{
+    sio.on("sourceFile", (id, filename)=>{
+      resolve(filename);
+    });
+
+    if (component.uploadOnDemand) {
+      sio.emit("requestSourceFile", component.ID, component.name, component.description);
+    } else {
+      const filelist = await getSourceCandidates(projectRootDir, component.ID);
+      getLogger(projectRootDir).trace("sourceFile: candidates=", filelist);
+
+      if (filelist.length === 1) {
+        resolve(filelist[0]);
+      } else if (filelist.length === 0) {
+        getLogger(projectRootDir).warn("no files found in source component");
+        sio.emit("requestSourceFile", component.ID, component.name, component.description);
+      } else {
+        sio.emit("askSourceFilename", component.ID, component.name, component.description, filelist);
+      }
+    }
+  });
+}
+
+/**
+ * ask password to client
+ * @param {Object} sio - instance of SocketIO.socket
+ * @param {string} hostname - name or kind of label for the host
+ */
 function askPassword(sio, hostname) {
-  return new Promise((resolve)=>{
+  return new Promise((resolve, reject)=>{
     sio.on("password", (data)=>{
+      if (data === null) {
+        const err = new Error("user canceled ssh password prompt");
+        err.reason = "CANCELED";
+        reject(err);
+      }
       resolve(data);
     });
     sio.emit("askPassword", hostname);
   });
 }
 
-async function validateTask(projectRootDir, component, hosts) {
-  if (component.name === null) {
-    return Promise.reject(new Error(`illegal path ${component.name}`));
-  }
-
-  if (component.host !== "localhost") {
-    hosts.push(component.host);
-  }
-
-  if (component.useJobScheduler) {
-    const hostinfo = remoteHost.query("name", component.host);
-    if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
-      return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
-    }
-  }
-
-  if (!(component.hasOwnProperty("script") && typeof component.script === "string")) {
-    return Promise.reject(new Error(`script is not specified ${component.name}`));
-  }
-  const componentDir = await getComponentDir(projectRootDir, component.ID);
-  return fs.access(path.resolve(componentDir, component.script));
-}
-
-async function validateConditionalCheck(component) {
-  if (!(component.hasOwnProperty("condition") && typeof component.condition === "string")) {
-    return Promise.reject(new Error(`condition is not specified ${component.name}`));
-  }
-  return Promise.resolve();
-}
-
-async function validateForLoop(component) {
-  if (!(component.hasOwnProperty("start") && typeof component.start === "number")) {
-    return Promise.reject(new Error(`start is not specified ${component.name}`));
-  }
-
-  if (!(component.hasOwnProperty("step") && typeof component.step === "number")) {
-    return Promise.reject(new Error(`step is not specified ${component.name}`));
-  }
-
-  if (!(component.hasOwnProperty("end") && typeof component.end === "number")) {
-    return Promise.reject(new Error(`end is not specified ${component.name}`));
-  }
-
-  if (component.step === 0 || (component.end - component.start) * component.step < 0) {
-    return Promise.reject(new Error(`inifinite loop ${component.name}`));
-  }
-  return Promise.resolve();
-}
-
-async function validateParameterStudy(projectRootDir, component) {
-  if (!(component.hasOwnProperty("parameterFile") && typeof component.parameterFile === "string")) {
-    return Promise.reject(new Error(`parameter setting file is not specified ${component.name}`));
-  }
-  const componentDir = await getComponentDir(projectRootDir, component.ID);
-  return fs.access(path.resolve(componentDir, component.parameterFile));
-}
-
-async function validateForeach(component) {
-  if (!Array.isArray(component.indexList)) {
-    return Promise.reject(new Error(`index list is broken ${component.name}`));
-  }
-
-  if (component.indexList.length <= 0) {
-    return Promise.reject(new Error(`index list is empty ${component.name}`));
-  }
-  return Promise.resolve();
-}
 
 /**
- * validate all components in workflow and gather remote hosts which is used in tasks
+ * create necessary ssh instance
+ * @param {Object} sio - instance of SocketIO.socket
  */
-async function validateComponents(projectRootDir, parentID, hosts) {
-  const promises = [];
-  const children = await getChildren(projectRootDir, parentID);
+async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
+  const password = await askPassword(sio, remoteHostName);
+  const config = await createSshConfig(hostInfo, password);
+  const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
 
-
-  for (const component of children) {
-    if (component.type === "task") {
-      promises.push(validateTask(projectRootDir, component, hosts));
-    } else if (component.type === "if" || component.type === "while") {
-      promises.push(validateConditionalCheck(component));
-    } else if (component.type === "for") {
-      promises.push(validateForLoop(component));
-    } else if (component.type === "parameterStudy") {
-      promises.push(validateParameterStudy(projectRootDir, component));
-    } else if (component.type === "foreach") {
-      promises.push(validateForeach(component));
-    }
-
-    if (hasChild(component)) {
-      promises.push(validateComponents(projectRootDir, component.ID, hosts));
-    }
+  if (hostInfo.renewInterval) {
+    arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
   }
 
-  const hasInitialNode = children.some((component)=>{
-    return isInitialNode(component);
-  });
-
-  if (!hasInitialNode) {
-    promises.push(Promise.reject(new Error("no component can be run")));
+  if (hostInfo.renewDelay) {
+    arssh.renewDelay = hostInfo.renewDelay * 1000;
   }
 
-  return Promise.all(promises);
-}
+  //remoteHostName is name property of remote host entry
+  //hostInfo.host is hostname or IP address of remote host
+  addSsh(projectRootDir, hostInfo, arssh);
 
-/**
- * check if all scripts and remote host setting are available or not
- */
-async function validationCheck(projectRootDir, rootWfID, sio) {
-  let hosts = [];
-  await validateComponents(projectRootDir, rootWfID, hosts);
-  hosts = Array.from(new Set(hosts)); //remove duplicate
-
-  //ask password to user and make session to each remote hosts
-  for (const remoteHostName of hosts) {
-    const id = remoteHost.getID("name", remoteHostName);
-    const hostInfo = remoteHost.get(id);
-
-    if (!hostInfo) {
-      return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
+  try {
+    //1st try
+    await arssh.canConnect();
+  } catch (e) {
+    if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
+      return Promise.reject(e);
     }
-    const password = await askPassword(sio, remoteHostName);
-    const config = await createSshConfig(hostInfo, password);
-    const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
+    let newPassword = await askPassword(sio, remoteHostName);
 
-    if (hostInfo.renewInterval) {
-      arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
+    if (config.passphrase) {
+      config.passphrase = newPassword;
     }
 
-    if (hostInfo.renewDelay) {
-      arssh.renewDelay = hostInfo.renewDelay * 1000;
+    if (config.password) {
+      config.password = newPassword;
     }
+    arssh.overwriteConfig(config);
 
-    //remoteHostName is name property of remote host entry
-    //hostInfo.host is hostname or IP address of remote host
-    addSsh(projectRootDir, hostInfo.host, arssh);
-
-    //TODO loopで書き直す
     try {
-      //1st try
+      //2nd try
       await arssh.canConnect();
-    } catch (e) {
-      if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
-        return Promise.reject(e);
+    } catch (e2) {
+      if (e2.reason !== "invalid passphrase" && e2.reason !== "authentication failure") {
+        return Promise.reject(e2);
       }
-      let newPassword = await askPassword(sio, remoteHostName);
+      newPassword = await askPassword(sio, remoteHostName);
 
       if (config.passphrase) {
         config.passphrase = newPassword;
@@ -239,170 +219,161 @@ async function validationCheck(projectRootDir, rootWfID, sio) {
       arssh.overwriteConfig(config);
 
       try {
-        //2nd try
+        //3rd try
         await arssh.canConnect();
-      } catch (e2) {
-        if (e2.reason !== "invalid passphrase" && e2.reason !== "authentication failure") {
-          return Promise.reject(e2);
+      } catch (e3) {
+        if (e3.reason !== "invalid passphrase" && e3.reason !== "authentication failure") {
+          return Promise.reject(e3);
         }
-        newPassword = await askPassword(sio, remoteHostName);
-
-        if (config.passphrase) {
-          config.passphrase = newPassword;
-        }
-
-        if (config.password) {
-          config.password = newPassword;
-        }
-        arssh.overwriteConfig(config);
-
-        try {
-          //3rd try
-          await arssh.canConnect();
-        } catch (e3) {
-          if (e3.reason !== "invalid passphrase" && e3.reason !== "authentication failure") {
-            return Promise.reject(e3);
-          }
-          return Promise.reject(new Error("wrong password for 3 times"));
-        }
+        return Promise.reject(new Error("wrong password for 3 times"));
       }
     }
   }
-  return Promise.resolve();
 }
 
+async function createCloudInstance(projectRootDir, hostInfo, sio) {
+  const order = hostInfo.additionalParams || {};
+  order.headOnlyParam = hostInfo.additionalParamsForHead || {};
+  order.provider = hostInfo.type;
+  order.os = hostInfo.os;
+  order.region = hostInfo.region;
+  order.numNodes = hostInfo.numNodes;
+  order.InstanceType = hostInfo.InstanceType;
+  order.rootVolume = hostInfo.rootVolume;
+  order.shareStorage = hostInfo.shareStorage;
+  order.playbook = hostInfo.playbook;
+  //order.mpi = hostInfo.mpi;
+  //order.compiler = hostInfo.compiler;
+  order.batch = hostInfo.jobScheduler;
+  order.id = order.hasOwnProperty("id") ? order.id : await askPassword(sio, "input access key for AWS");
+  order.pw = order.hasOwnProperty("pw") ? order.pw : await askPassword(sio, "input secret access key for AWS");
+  const logger = getLogger(projectRootDir);
+  order.info = logger.debug.bind(logger);
+  order.debug = logger.trace.bind(logger);
+
+  const cluster = await create(order);
+  addCluster(projectRootDir, cluster);
+  const config = {
+    host: cluster.headNodes[0].publicNetwork.hostname,
+    port: hostInfo.port,
+    username: cluster.user,
+    privateKey: cluster.privateKey,
+    passphrase: "",
+    password: null
+  };
+
+  const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
+  if (hostInfo.type === "aws") {
+    logger.debug("wait for cloud-init");
+    await arssh.watch("tail /var/log/cloud-init-output.log >&2 && cloud-init status", { out: /done|error|disabled/ }, 30000, 60, {}, logger.debug.bind(logger), logger.debug.bind(logger));
+    logger.debug("cloud-init done");
+  }
+  if (hostInfo.renewInterval) {
+    arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
+  }
+
+  if (hostInfo.renewDelay) {
+    arssh.renewDelay = hostInfo.renewDelay * 1000;
+  }
+
+  hostInfo.host = config.host;
+  addSsh(projectRootDir, hostInfo, arssh);
+}
 
 async function onRunProject(sio, projectRootDir, cb) {
-  if (typeof cb !== "function") {
-    cb = ()=>{};
-  }
   getLogger(projectRootDir).debug("run event recieved");
   const emit = sio.emit.bind(sio);
 
-  if (memMeasurement) {
-    getLogger(projectRootDir).debug("used heap size at start point =", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-  }
-
-  let projectJson;
-  try {
-    projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
-  } catch (err) {
-    getLogger(projectRootDir).error("get project state failed:", err);
-    cb(false);
-    return;
-  }
-
-  let rootWF;
-  try {
-    rootWF = await getComponent(projectRootDir, path.join(projectRootDir, componentJsonFilename));
-  } catch (err) {
-    getLogger(projectRootDir).error("read root workflow component failed:", err);
-    cb(false);
-    return;
-  }
-
-
-  const projectState = projectJson.state;
-  if (projectState === "not-started") {
-    clearDispatchedTasks(projectRootDir);
+  if (typeof cb !== "function") {
+    cb = ()=>{};
   }
   try {
-    await validationCheck(projectRootDir, rootWF.ID, sio);
-    await gitCommit(projectRootDir, "wheel", "wheel@example.com"); //TODO replace name and mail
+    const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
+    const rootWF = await readJsonGreedy(path.resolve(projectRootDir, componentJsonFilename));
+    await validateComponents(projectRootDir, rootWF.ID);
+    await gitCommit(projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
   } catch (err) {
-    getLogger(projectRootDir).error("invalid root workflow:", err);
-    removeSsh(projectRootDir);
+    getLogger(projectRootDir).error("fatal error occurred while validation phase:", err);
+    await updateProjectState(projectRootDir, "not-started");
+    await sendProjectJson(emit, projectRootDir);
     cb(false);
-    return;
+    return false;
   }
-  await updateAndSendProjectJson(emit, projectRootDir, "running");
 
-  const rootDispatcher = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, getDateString(), getLogger(projectRootDir), projectJson.componentPath);
-  if (rootWF.cleanupFlag === "2") {
-    rootDispatcher.doCleanup = defaultCleanupRemoteRoot;
-  }
-  setRootDispatcher(projectRootDir, rootDispatcher);
+  //actual project run start from here
+  try {
+    await updateProjectState(projectRootDir, "prepareing");
+    const sourceComponents = await getSourceComponents(projectRootDir);
 
-  //event listener for task state changed
-  async function onTaskStateChanged() {
-    const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
-    getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
-    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
-    getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
-    setTimeout(()=>{
-      getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
-      const remaining = getNumberOfUpdatedTasks(projectRootDir);
-      once(projectRootDir, "taskStateChanged", onTaskStateChanged);
-
-      if (remaining.length > 0) {
-        setImmediate(()=>{
-          emitEvent(projectRootDir, "taskStateChanged");
-        });
+    for (const component of sourceComponents) {
+      if (component.disable) {
+        getLogger(projectRootDir).debug(`disabled component: ${component.name}(${component.ID})`);
+        continue;
       }
-    }, interval);
+      const filename = await getSourceFilename(projectRootDir, component, sio);
+      const componentDir = await getComponentDir(projectRootDir, component.ID);
+      const outputFile = component.outputFiles[0].name;
+      getLogger(projectRootDir).trace("sourceFile:", filename, "will be used as", outputFile);
+
+      if (!isValidOutputFilename(outputFile)) {
+        getLogger(projectRootDir).trace("sourceFile: invalid outputFilename", outputFile);
+        continue;
+      }
+      if (filename !== outputFile) {
+        await deliverFile(path.resolve(componentDir, filename), path.resolve(componentDir, outputFile));
+      }
+    }
+
+    //TODO askPasswordの部分以外はcoreへ移動
+    const hosts = await getHosts(projectRootDir, null);
+    for (const remoteHostName of hosts) {
+      const id = remoteHost.getID("name", remoteHostName);
+      const hostInfo = remoteHost.get(id);
+      if (!hostInfo) {
+        return Promise.reject(new Error(`illegal remote host specified ${remoteHostName}`));
+      }
+      if (hostInfo.type === "aws") {
+        await createCloudInstance(projectRootDir, hostInfo, sio);
+      } else {
+        await createSsh(projectRootDir, remoteHostName, hostInfo, sio);
+      }
+    }
+  } catch (err) {
+    if (err.reason === "CANCELED") {
+      getLogger(projectRootDir).debug(err.message);
+    } else {
+      getLogger(projectRootDir).error("fatal error occurred while prepareing phase:", err);
+    }
+    removeSsh(projectRootDir);
+    removeCluster(projectRootDir);
+    await updateProjectState(projectRootDir, "not-started");
+    await sendProjectJson(emit, projectRootDir);
+    cb(false);
+    return false;
   }
 
-  //event listener for component state changed
-  function onComponentStateChanged() {
-    sendWorkflow(emit, projectRootDir)
-      .then(()=>{
-        setTimeout(()=>{
-          once(projectRootDir, "componentStateChanged", onComponentStateChanged);
-        }, interval);
-      });
-  }
-
-  once(projectRootDir, "taskStateChanged", onTaskStateChanged);
-  once(projectRootDir, "componentStateChanged", onComponentStateChanged);
-
-  //project start here
   try {
-    let timeout;
-
-    if (memMeasurement) {
-      getLogger(projectRootDir).debug("used heap size just before execution", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-      timeout = setInterval(()=>{
-        getLogger(projectRootDir).debug("used heap size ", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-      }, 30000);
-    }
-
-    rootWF.state = await rootDispatcher.start();
-    const filename = path.resolve(projectRootDir, componentJsonFilename);
-    await fs.writeJson(filename, rootWF, { spaces: 4, replacer: componentJsonReplacer });
-
-    const projectLastState = await getState(projectRootDir);
-    await updateAndSendProjectJson(emit, projectRootDir, projectLastState);
-
-    if (memMeasurement) {
-      getLogger(projectRootDir).debug("used heap size immediately after execution=", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-      clearInterval(timeout);
-    }
+    await runProject(projectRootDir);
   } catch (err) {
     getLogger(projectRootDir).error("fatal error occurred while parsing workflow:", err);
-    await updateAndSendProjectJson(emit, projectRootDir, "failed");
+    await updateProjectState(projectRootDir, "failed");
+    await sendProjectJson(emit, projectRootDir);
     cb(false);
-    return;
+    return false;
+  } finally {
+    removeSsh(projectRootDir);
+    removeCluster(projectRootDir);
   }
-
-  removeListener(projectRootDir, "taskStateChanged", onTaskStateChanged);
-  removeListener(projectRootDir, "componentStateChanged", onComponentStateChanged);
 
   try {
     //directly send last status just in case
-    await updateAndSendProjectJson(emit, projectRootDir);
-    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
+    await sendProjectJson(emit, projectRootDir);
     await sendWorkflow(emit, projectRootDir);
-    rootDispatcher.remove();
-    deleteRootDispatcher(projectRootDir);
-    removeSsh(projectRootDir);
-
-    if (memMeasurement) {
-      getLogger(projectRootDir).debug("used heap size at the end", process.memoryUsage().heapUsed / 1024 / 1024, "MB");
-    }
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
   } catch (e) {
     getLogger(projectRootDir).warn("project execution is successfully finished but error occurred in cleanup process", e);
     cb(false);
-    return;
+    return false;
   }
 
   cb(true);
@@ -413,40 +384,40 @@ async function onPauseProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("pause event recieved");
-  const rootDispatcher = getRootDispatcher(projectRootDir);
 
-  if (rootDispatcher) {
-    rootDispatcher.pause();
+  try {
+    await pauseProject(projectRootDir);
+    await sendProjectJson(emit, projectRootDir);
+    await sendWorkflow(emit, projectRootDir);
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
+  } catch (e) {
+    cb(false);
+    return;
   }
-
-  //TODO dispatcherから各ワークフローのstatusを取り出してファイルに書き込む必要あり
-  await cancelDispatchedTasks(projectRootDir);
-  removeSsh(projectRootDir);
-  await updateAndSendProjectJson(emit, projectRootDir, "paused");
   getLogger(projectRootDir).debug("pause project done");
-  cb();
+  cb(true);
 }
 
-async function onCleanProject(emit, projectRootDir, cb) {
+async function onCleanProject(emit, projectRootDir, withPause, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("clean event recieved");
-  const rootDispatcher = getRootDispatcher(projectRootDir);
 
-  if (rootDispatcher) {
-    rootDispatcher.remove();
-    deleteRootDispatcher(projectRootDir);
+  try {
+    if (withPause) {
+      await pauseProject(projectRootDir);
+    }
+    await cleanProject(projectRootDir);
+    await sendProjectJson(emit, projectRootDir);
+    await sendWorkflow(emit, projectRootDir, projectRootDir);
+    await emitLongArray(emit, "taskStateList", [], blockSize);
+  } catch (e) {
+    cb(false);
+    return;
   }
-  await cancelDispatchedTasks(projectRootDir);
-  clearDispatchedTasks(projectRootDir);
-  await emitLongArray(emit, "taskStateList", [], blockSize);
-  await cleanProject(projectRootDir);
-  await openProject(projectRootDir);
-  await sendWorkflow(emit, projectRootDir);
-  await updateAndSendProjectJson(emit, projectRootDir, "not-started");
   getLogger(projectRootDir).debug("clean project done");
-  cb();
+  cb(true);
 }
 
 async function onSaveProject(emit, projectRootDir, cb) {
@@ -457,8 +428,9 @@ async function onSaveProject(emit, projectRootDir, cb) {
 
   const projectState = await getProjectState(projectRootDir);
   if (projectState === "not-started") {
+    await setProjectState(projectRootDir, "not-started", true);
     await gitCommit(projectRootDir, "wheel", "wheel@example.com");//TODO replace name and mail
-    await updateAndSendProjectJson(emit, projectRootDir);
+    await sendProjectJson(emit, projectRootDir);
   } else {
     getLogger(projectRootDir).error(projectState, "project can not be saved");
   }
@@ -472,7 +444,7 @@ async function onRevertProject(emit, projectRootDir, cb) {
   }
   getLogger(projectRootDir).debug("revertProject event recieved");
   await gitResetHEAD(projectRootDir);
-  await updateAndSendProjectJson(emit, projectRootDir, "not-started");
+  await sendProjectJson(emit, projectRootDir, "not-started");
   await sendWorkflow(emit, projectRootDir);
   getLogger(projectRootDir).debug("revert project done");
   cb();
@@ -523,7 +495,7 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
   }
 
   try {
-    await updateAndSendProjectJson(emit, projectRootDir);
+    await sendProjectJson(emit, projectRootDir);
   } catch (e) {
     getLogger(projectRootDir).error("send project state failed", e);
     cb(false);
@@ -533,11 +505,11 @@ async function onGetProjectJson(emit, projectRootDir, cb) {
   cb(true);
 }
 
-async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
+async function onTaskStateListRequest(emit, projectRootDir, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
-  getLogger(projectRootDir).debug("getTaskStateList event recieved:", msg);
+  getLogger(projectRootDir).debug("getTaskStateList event recieved:");
 
   try {
     await sendTaskStateList(emit, projectRootDir);
@@ -550,21 +522,361 @@ async function onTaskStateListRequest(emit, projectRootDir, msg, cb) {
   cb(true);
 }
 
+
+async function onWorkflowRequest(emit, projectRootDir, ID, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("Workflow Request event recieved:", projectRootDir, ID);
+  const componentDir = await getComponentDir(projectRootDir, ID);
+  getLogger(projectRootDir).info("open workflow:", componentDir);
+
+  try {
+    await setCwd(projectRootDir, componentDir);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("read workflow failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onCreateNode(emit, projectRootDir, request, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("createNode event recieved:", request);
+  let rt = null;
+
+  try {
+    const parentDir = getCwd(projectRootDir);
+    rt = await createNewComponent(projectRootDir, parentDir, request.type, request.pos);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    e.projectRootDir = projectRootDir;
+    e.request = request;
+    getLogger(projectRootDir).error("create node failed", e);
+    cb(false);
+    return false;
+  }
+  cb(true);
+  return rt;
+}
+
+async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("updateNode event recieved:", projectRootDir, ID, prop, value);
+
+  try {
+    await updateComponent(projectRootDir, ID, prop, value);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    e.projectRootDir = projectRootDir;
+    e.ID = ID;
+    e.prop = prop;
+    e.value = value;
+    getLogger(projectRootDir).error("update node failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRemoveNode(emit, projectRootDir, targetID, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("removeNode event recieved:", projectRootDir, targetID);
+
+  try {
+    await removeComponent(projectRootDir, targetID);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("remove node failed:", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onAddInputFile(emit, projectRootDir, ID, name, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("addInputFile event recieved:", projectRootDir, ID, name);
+
+  try {
+    await addInputFile(projectRootDir, ID, name);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("addInputFile failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onAddOutputFile(emit, projectRootDir, ID, name, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("addOutputFile event recieved:", projectRootDir, ID, name);
+
+  try {
+    await addOutputFile(projectRootDir, ID, name);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("addOutputFile failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRemoveInputFile(emit, projectRootDir, ID, name, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("removeInputFile event recieved:", projectRootDir, ID, name);
+
+  try {
+    await removeInputFile(projectRootDir, ID, name);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("removeInputFile failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRemoveOutputFile(emit, projectRootDir, ID, name, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("removeOutputFile event recieved:", projectRootDir, ID, name);
+
+  try {
+    await removeOutputFile(projectRootDir, ID, name);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("removeOutputFile failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRenameInputFile(emit, projectRootDir, ID, index, newName, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("renameIntputFile event recieved:", projectRootDir, ID, index, newName);
+
+  try {
+    await renameInputFile(projectRootDir, ID, index, newName);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("renameInputFile failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRenameOutputFile(emit, projectRootDir, ID, index, newName, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("renameOuttputFile event recieved:", projectRootDir, ID, index, newName);
+
+  try {
+    await renameOutputFile(projectRootDir, ID, index, newName);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("renameOutputFile failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+/**
+ * @param {Object}  msg
+ * @param {string}  msg.src - リンク元ID
+ * @param {string}  msg.dst - リンク先ID
+ * @param {boolean} msg.isElse - elseからのリンクかどうかのフラグ
+ */
+async function onAddLink(emit, projectRootDir, msg, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("addLink event recieved:", msg.src, msg.dst, msg.isElse);
+
+
+  try {
+    await addLink(projectRootDir, msg.src, msg.dst, msg.isElse);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("addLink failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRemoveLink(emit, projectRootDir, msg, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("removeLink event recieved:", msg.src, msg.dst);
+
+  try {
+    await removeLink(projectRootDir, msg.src, msg.dst, msg.isElse);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("removeLink failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+
+async function onAddFileLink(emit, projectRootDir, srcNode, srcName, dstNode, dstName, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("addFileLink event recieved:", srcNode, srcName, dstNode, dstName);
+
+  try {
+    await addFileLink(projectRootDir, srcNode, srcName, dstNode, dstName);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("add file link failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onRemoveFileLink(emit, projectRootDir, srcNode, srcName, dstNode, dstName, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("removeFileLink event recieved:", srcNode, srcName, dstNode, dstName);
+
+  try {
+    await removeFileLink(projectRootDir, srcNode, srcName, dstNode, dstName);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("remove file link failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+async function onCleanComponent(emit, projectRootDir, targetID, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("cleanComponent event recieved:", targetID);
+
+  try {
+    await cleanComponent(projectRootDir, targetID);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    getLogger(projectRootDir).error("reset component failed:", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
+
+  async function onProjectStateChange(projectJson) {
+    getLogger(projectRootDir).trace("projectState: onProjectStateChanged", projectJson.state);
+    emit("projectJson", projectJson);
+    emit("projectState", projectJson.state);
+  }
+
+  //event listener for task state changed
+  async function onTaskStateChanged() {
+    const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
+    getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
+    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
+    getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
+    setTimeout(()=>{
+      getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
+      const remaining = getNumberOfUpdatedTasks(projectRootDir);
+      once(projectRootDir, "taskStateChanged", onTaskStateChanged);
+
+      if (remaining.length > 0) {
+        setImmediate(()=>{
+          emitEvent(projectRootDir, "taskStateChanged");
+        });
+      }
+    }, interval);
+  }
+
+  //event listener for component state changed
+  function onComponentStateChanged() {
+    sendWorkflow(emit, projectRootDir)
+      .then(()=>{
+        setTimeout(()=>{
+          once(projectRootDir, "componentStateChanged", onComponentStateChanged);
+        }, interval);
+      });
+  }
+
+  //event listener for result files ready
+  function onResultFilesReady(results) {
+    emitLongArray(emit, "results", results);
+  }
+
+  on(projectRootDir, "projectStateChanged", onProjectStateChange);
+  once(projectRootDir, "taskStateChanged", onTaskStateChanged);
+  once(projectRootDir, "componentStateChanged", onComponentStateChanged);
+  on(projectRootDir, "resultFilesReady", onResultFilesReady);
+
+  socket.on("disconnecting", ()=>{
+    off(projectRootDir, "taskStateChanged", onTaskStateChanged);
+    off(projectRootDir, "componentStateChanged", onComponentStateChanged);
+    off(projectRootDir, "resultFilesReady", onResultFilesReady);
+  });
+
   socket.on("runProject", onRunProject.bind(null, socket, projectRootDir));
   socket.on("pauseProject", onPauseProject.bind(null, emit, projectRootDir));
-  socket.on("cleanProject", onCleanProject.bind(null, emit, projectRootDir));
+  socket.on("cleanProject", onCleanProject.bind(null, emit, projectRootDir, false));
   socket.on("saveProject", onSaveProject.bind(null, emit, projectRootDir));
   socket.on("revertProject", onRevertProject.bind(null, emit, projectRootDir));
-  socket.on("stopProject", async()=>{
-    await onPauseProject(emit, projectRootDir);
-    await onCleanProject(emit, projectRootDir);
-  });
+  socket.on("stopProject", onCleanProject.bind(null, emit, projectRootDir, true));
   socket.on("updateProjectJson", onUpdateProjectJson.bind(null, emit, projectRootDir));
   socket.on("getProjectState", onGetProjectState.bind(null, emit, projectRootDir));
   socket.on("getProjectJson", onGetProjectJson.bind(null, emit, projectRootDir));
   socket.on("getTaskStateList", onTaskStateListRequest.bind(null, emit, projectRootDir));
+  socket.on("getWorkflow", onWorkflowRequest.bind(null, emit, projectRootDir));
+  socket.on("createNode", onCreateNode.bind(null, emit, projectRootDir));
+  socket.on("updateNode", onUpdateNode.bind(null, emit, projectRootDir));
+  socket.on("removeNode", onRemoveNode.bind(null, emit, projectRootDir));
+  socket.on("addInputFile", onAddInputFile.bind(null, emit, projectRootDir));
+  socket.on("addOutputFile", onAddOutputFile.bind(null, emit, projectRootDir));
+  socket.on("removeInputFile", onRemoveInputFile.bind(null, emit, projectRootDir));
+  socket.on("removeOutputFile", onRemoveOutputFile.bind(null, emit, projectRootDir));
+  socket.on("renameInputFile", onRenameInputFile.bind(null, emit, projectRootDir));
+  socket.on("renameOutputFile", onRenameOutputFile.bind(null, emit, projectRootDir));
+  socket.on("addLink", onAddLink.bind(null, emit, projectRootDir));
+  socket.on("removeLink", onRemoveLink.bind(null, emit, projectRootDir));
+  socket.on("addFileLink", onAddFileLink.bind(null, emit, projectRootDir));
+  socket.on("removeFileLink", onRemoveFileLink.bind(null, emit, projectRootDir));
+  socket.on("cleanComponent", onCleanComponent.bind(null, emit, projectRootDir));
 }
 
 module.exports = registerListeners;

@@ -23,13 +23,115 @@ function calcFileBasePosY() {
 }
 
 /**
+ * check if droped Frame hit any other counterpart
+ * @param svg instance of svg.js
+ * @param counterpart selector of counterpart (e.g. '.titleFrame')
+ * @param x x coordinate of the point which will be checked
+ * @param y y coordinate of the point which will be checked
+ */
+function collisionDetectionFrame(svg, counterpart, x, y, hitScale) {
+  let minDistance2 = Number.MAX_VALUE;
+  let nearestNodeIndex = -1;
+  let nearestFramePoints = null;
+  let nearestFrame = null;
+  let nearestFrameBox = null;
+  // dropしたFrameと対応する種類のFrameのうち最も距離が近いものを探す
+  svg.select(counterpart).each(function (i, v) {
+    let index = v[i].parent().node.instance.data('ID');
+    const box = v[i].parent();
+    const points = v[i].node.points;
+    const boxX = box.x();
+    const boxY = box.y();
+
+    // can not use length for Edge browse 
+    if (points.numberOfItems > 1) {
+
+      // getItem() method for Edge browse 
+      let minX = points.getItem(0).x;
+      let maxX = points.getItem(0).x;
+      let minY = points.getItem(0).y;
+      let maxY = points.getItem(0).y;
+      // can not use length for Edge browse 
+      for (var pointsIndex = 1; pointsIndex < points.numberOfItems; pointsIndex++) {
+        if (minX > points.getItem(pointsIndex).x) minX = points.getItem(pointsIndex).x;
+        if (maxX < points.getItem(pointsIndex).x) maxX = points.getItem(pointsIndex).x;
+        if (minY > points.getItem(pointsIndex).y) minY = points.getItem(pointsIndex).y;
+        if (maxY < points.getItem(pointsIndex).y) maxY = points.getItem(pointsIndex).y;
+      }
+
+      minX += boxX;
+      maxX += boxX;
+      minY += boxY;
+      maxY += boxY;
+
+      const connectorWidth = maxX - minX;
+      const connectorHeight = maxY - minY;
+      let connectorCenterXpos = x + connectorWidth * 0.5;
+      let connectorCenterYpos = y + connectorHeight * 0.5;
+      // replace points[0] -> .getItem() method for Edge browse 
+      // let targetX = (points[0].x + points[1].x) * 0.5;
+      // let targetY = (points[0].y + points[3].y) * 0.5;
+      let targetX = boxX + (points.getItem(0).x + points.getItem(1).x) * 0.5;
+      let targetY = boxY + (points.getItem(0).y + points.getItem(3).y) * 0.5;
+      let distance2 = (targetX - connectorCenterXpos) * (targetX - connectorCenterXpos) + (targetY - connectorCenterYpos) * (targetY - connectorCenterYpos);
+
+      if (minDistance2 > distance2) {
+        minDistance2 = distance2;
+        nearestNodeIndex = index;
+        //child -> parentのとき
+        //親のindexは定義されていないためhit対象にundefinedが来たらindex=parent
+        if (index === undefined) {
+          nearestNodeIndex = "parent";
+        }
+        nearestFramePoints = points;
+        nearestFrame = v[i];
+        nearestFrameBox = box;
+      }
+    }
+  });
+  if (nearestFramePoints === null) return [-1, -1];
+  // object SVGPointList(nearestFramePoints)-> object array(arrangeSVGPointList) for Edge browse.
+  let arrangeSVGPointList = [];
+  for (var svgPointListIndex = 0; svgPointListIndex < 4; svgPointListIndex++) {
+    arrangeSVGPointList.push(nearestFramePoints.getItem(svgPointListIndex));
+  }
+
+  let xPoints = Array.from(arrangeSVGPointList).map((p) => {
+    return p.x;
+  });
+  let yPoints = Array.from(arrangeSVGPointList).map((p) => {
+    return p.y;
+  });
+  let minX = Math.min(...xPoints);
+  let maxX = Math.max(...xPoints);
+  let minY = Math.min(...yPoints);
+  let maxY = Math.max(...yPoints);
+  let extendX = (maxX - minX) * (hitScale - 1.0) / 2;
+  let extendY = (maxY - minY) * (hitScale - 1.0) / 2;
+  minX -= extendX;
+  maxX += extendX;
+  minY -= extendY;
+  maxY += extendY;
+  minX += nearestFrameBox.x();
+  maxX += nearestFrameBox.x();
+  minY += nearestFrameBox.y();
+  maxY += nearestFrameBox.y();
+  // 最近傍Frameが範囲内に入っていれば indexとそのFrameを返す
+  if (minX < x && x < maxX && minY < y && y < maxY) {
+    return [nearestNodeIndex, nearestFrame];
+  }
+  // 外れの時は -1を二つ(indexとFrame)返す
+  return [-1, -1];
+}
+
+/**
  * check if droped plug hit any other counterpart
  * @param svg instance of svg.js
  * @param counterpart selector of counterpart (e.g. '.upperPlut', '.receptorPlug')
  * @param x x coordinate of the point which will be checked
  * @param y y coordinate of the point which will be checked
  */
-function collisionDetection(svg, counterpart, x, y) {
+function collisionDetection(svg, counterpart, x, y, hitScale) {
   let minDistance2 = Number.MAX_VALUE;
   let nearestNodeIndex = -1;
   let nearestPlugPoints = null;
@@ -38,29 +140,49 @@ function collisionDetection(svg, counterpart, x, y) {
   svg.select(counterpart).each(function (i, v) {
     let index = v[i].parent().node.instance.data('ID');
     let points = v[i].node.points;
-    const connectorWidth = 16;
-    const connectorHeight = 32;
-    let connectorCenterXpos = x + connectorWidth * 0.5;
-    let connectorCenterYpos = y + connectorHeight * 0.5;
-    // replace points[0] -> .getItem() method for Edge browse 
-    // let targetX = (points[0].x + points[1].x) * 0.5;
-    // let targetY = (points[0].y + points[3].y) * 0.5;
-    let targetX = (points.getItem(0).x + points.getItem(1).x) * 0.5;
-    let targetY = (points.getItem(0).y + points.getItem(3).y) * 0.5;
-    let distance2 = (targetX - connectorCenterXpos) * (targetX - connectorCenterXpos) + (targetY - connectorCenterYpos) * (targetY - connectorCenterYpos);
 
-    if (minDistance2 > distance2) {
-      minDistance2 = distance2;
-      nearestNodeIndex = index;
-      //child -> parentのとき
-      //親のindexは定義されていないためhit対象にundefinedが来たらindex=parent
-      if (index === undefined) {
-        nearestNodeIndex = "parent";
+    // can not use length for Edge browse 
+    if (points.numberOfItems > 1) {
+
+      // getItem() method for Edge browse 
+      let minX = points.getItem(0).x;
+      let maxX = points.getItem(0).x;
+      let minY = points.getItem(0).y;
+      let maxY = points.getItem(0).y;
+      // can not use length for Edge browse 
+      for (var pointsIndex = 1; pointsIndex < points.numberOfItems; pointsIndex++) {
+        if (minX > points.getItem(pointsIndex).x) minX = points.getItem(pointsIndex).x;
+        if (maxX < points.getItem(pointsIndex).x) maxX = points.getItem(pointsIndex).x;
+        if (minY > points.getItem(pointsIndex).y) minY = points.getItem(pointsIndex).y;
+        if (maxY < points.getItem(pointsIndex).y) maxY = points.getItem(pointsIndex).y;
       }
-      nearestPlugPoints = points;
-      nearestPlug = v[i];
+
+      const connectorWidth = maxX - minX;
+      const connectorHeight = maxY - minY;
+      let connectorCenterXpos = x + connectorWidth * 0.5;
+      let connectorCenterYpos = y + connectorHeight * 0.5;
+      // replace points[0] -> .getItem() method for Edge browse 
+      // let targetX = (points[0].x + points[1].x) * 0.5;
+      // let targetY = (points[0].y + points[3].y) * 0.5;
+      let targetX = (points.getItem(0).x + points.getItem(1).x) * 0.5;
+      let targetY = (points.getItem(0).y + points.getItem(3).y) * 0.5;
+      let distance2 = (targetX - connectorCenterXpos) * (targetX - connectorCenterXpos) + (targetY - connectorCenterYpos) * (targetY - connectorCenterYpos);
+
+      if (minDistance2 > distance2) {
+        minDistance2 = distance2;
+        nearestNodeIndex = index;
+        //child -> parentのとき
+        //親のindexは定義されていないためhit対象にundefinedが来たらindex=parent
+        if (index === undefined) {
+          nearestNodeIndex = "parent";
+        }
+        nearestPlugPoints = points;
+        nearestPlug = v[i];
+      }
     }
   });
+  if (nearestPlugPoints === null) return [-1, -1];
+
   // object SVGPointList(nearestPlugPoints)-> object array(arrangeSVGPointList) for Edge browse.
   let arrangeSVGPointList = [];
   for (var svgPointListIndex = 0; svgPointListIndex < 4; svgPointListIndex++) {
@@ -77,8 +199,8 @@ function collisionDetection(svg, counterpart, x, y) {
   let maxX = Math.max(...xPoints);
   let minY = Math.min(...yPoints);
   let maxY = Math.max(...yPoints);
-  let extendX = (maxX - minX) * (config.box_appearance.plug_drop_area_scale - 1.0) / 2;
-  let extendY = (maxY - minY) * (config.box_appearance.plug_drop_area_scale - 1.0) / 2;
+  let extendX = (maxX - minX) * (hitScale - 1.0) / 2;
+  let extendY = (maxY - minY) * (hitScale - 1.0) / 2;
   minX -= extendX;
   maxX += extendX;
   minY -= extendY;
@@ -89,6 +211,81 @@ function collisionDetection(svg, counterpart, x, y) {
   }
   // 外れの時は -1を二つ(indexとplug)返す
   return [-1, -1];
+}
+/**
+ * add inputfilename when droped Frame hit any other counterpart
+ * @param plug instance of outputfile
+ * @param svg instance of svg.js
+ * @param plug selector of output plug
+ * @param hitIndex selector of frame node index
+ * @param hitPlug selector of frame 
+ * @param plug selector of output plug (e.g. '.receptorFrame')
+ */
+function autoAddFilePreCheck(svg, hitPlug, taskNodeID, taskBoxNode, filename) {
+  // hitPlug check
+  if (hitPlug == undefined || hitPlug.parent() == undefined) return [-1, -1];
+  // task type check (expect "source" task)
+  if (taskBoxNode.data('type') === "source") return [-1, -1];
+  // deplicate check
+  let addInputPlug = null;
+  let receptorPlugs = svg.select(".receptorPlug");
+  receptorPlugs.each(function (i, v) {
+    let index = v[i].parent().node.instance.data('ID');
+    if (index === taskNodeID && v[i].data('name') === filename) {
+      addInputPlug = v[i];
+      return true;  // 処理中断
+    }
+  });
+  // exist same file name -> addInputPlug : task ID || else -> addInputPlug : null 
+  return [taskNodeID, addInputPlug];
+}
+
+function addInputFile(svg, plug, hitIndex, hitPlug, sio) {
+  if (hitPlug == undefined || hitPlug.parent() == undefined) return [-1, -1];
+
+  // add Input file
+  const taskBoxNode = hitPlug.parent().parent();
+  const taskNodeID = taskBoxNode.data('ID');
+  const filename = plug.data('name');
+  const box = hitPlug.parent();
+  let addInputPlug = null;
+
+  // sio.emit('addInputFile', taskNodeID, filename, (result) => {
+  //   console.log(result);
+  //   if (result !== true) return;
+  //   if (result) {
+  //   addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
+  //   addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
+  //   plug.parent().add(addInputPlug);
+  //     console.log(taskNodeID);
+  //     console.log(addInputPlug);
+
+  //     if (addInputPlug !== null) {
+  //       return [taskNodeID, addInputPlug];
+  //     }
+  //   } else {
+  //     // 外れの時は -1を二つ(indexとplug)返す
+  //     return [-1, -1];
+  //   }
+  // });
+  // 接続を生成するにはreceptorPlugが必要
+  // あとで再作成されるため、ここで任意の位置に一度生成して返答する。
+  console.log("after callback");
+  addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
+  addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
+  plug.parent().add(addInputPlug);
+
+  if (addInputPlug !== null) {
+    return [taskNodeID, addInputPlug];
+  }
+  // 外れの時は -1を二つ(indexとplug)返す
+  return [-1, -1];
+}
+
+function initializeCableInfo(cable, plug, clone) {
+  cable.remove();
+  plug.remove();
+  return clone;
 }
 
 export class SvgCable {
@@ -204,7 +401,7 @@ export class SvgCable {
 }
 
 class SvgBox {
-  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler) {
+  constructor(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand, disable) {
     this.draw = svg;
     this.box = this.draw.group();
     this.type = type.toLowerCase();
@@ -217,24 +414,31 @@ class SvgBox {
 
     // create inner parts
     this.width = 256; //画面デザイン上256pxとする
-    const innerFrame = this.createInnerFrame();
     const outerFrame = this.createOuterFrame(type);
-    const input = this.createInputText(inputFiles);
+    const innerFrame = this.createInnerFrame();
+
     const output = this.createOutputText(outputFiles);
-    const inputBBox = input.bbox();
+    const input = this.createInputText(inputFiles);
+
     const outputBBox = output.bbox();
-    const title = this.createTitle(name);
+    const inputBBox = input.bbox();
+    const title = this.createTitle(name, disable);
     const iconImage = this.createIconImage(type, host, useJobScheduler);
+    if (type === 'source') {
+      inputBBox.height = 22;
+    }
     const bodyHeight = titleHeight + Math.ceil(Math.max(inputBBox.height, outputBBox.height));
     this.height = bodyHeight + titleHeight;
 
     let taskState;
-    let psState, psState2;
-    if (type !== "parameterStudy") {
-      taskState = this.createState(state);
+    let repeatState;
+    let whileState;
+    if (type === "parameterStudy" || type === "for" || type === "foreach") {
+      repeatState = this.createStateForRepeat(state, numTotal, numFinished, numFailed);
+    } else if (type === "while") {
+      whileState = this.createStateForWhile(state, numFinished, numFailed);
     } else {
-      psState = this.createStateForPS(state, numTotal, numFinished);
-      psState2 = this.createStateForPS2(state, numTotal, numFinished, numFailed);
+      taskState = this.createState(state);
     }
 
     //子コンポーネントの表示
@@ -257,16 +461,21 @@ class SvgBox {
       .move(x, y)
       .style('cursor', 'default')
       .opacity(opacity)
-      .addClass(`${name}_box`);
+      .addClass(`svg_${name}_box`);
 
-    if (type !== "parameterStudy") {
-      this.box
-        .add(taskState)
+    // add state info
+    if (type === "parameterStudy" || type === "for" || type === "foreach") {
+      for (var i = 0; i < repeatState.length; i++) {
+        this.box.add(repeatState[i]);
+      }
+    } else if (type === "while") {
+      for (var i = 0; i < whileState.length; i++) {
+        this.box.add(whileState[i]);
+      }
     } else {
-      this.box
-        .add(psState)
-        .add(psState2);
+      this.box.add(taskState);
     }
+
     // adjust size
     output.x(titleWidth);
 
@@ -312,12 +521,14 @@ class SvgBox {
    * create title
    * @return title element
    */
-  createTitle(name) {
+  createTitle(name, disable) {
     const titlePosY = 6;
     const titlePosX = 48;
+    let fillColor = '#FFFFFF';
+    if (disable === true) fillColor = '#FF0000';
     return this.draw
       .text(name)
-      .fill('#FFFFFF')
+      .fill(fillColor)
       .x(titlePosX)
       .y(titlePosY)
       .addClass('componentTitle');
@@ -329,17 +540,27 @@ class SvgBox {
    */
   createOutputText(outputFiles) {
     this.outputGroup = this.draw.group();
-    outputFiles.forEach((output, index) => {
+    if (outputFiles === undefined) {
       const text = this.draw
-        .text(output.name || "")
+        .text("")
         .fill('#FFFFFF');
       this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
-
       const x = -text.bbox().width - config.box_appearance.outputTextOffset;
-      const y = calcFileBasePosY() + this.textHeight * index;
+      const y = calcFileBasePosY() + this.textHeight;
       text.move(x, y);
       this.outputGroup.add(text);
-    });
+    } else {
+      outputFiles.forEach((output, index) => {
+        const text = this.draw
+          .text(output.name || "")
+          .fill('#FFFFFF');
+        this.textHeight = text.bbox().height * config.box_appearance.textHeightScale;
+        const x = -text.bbox().width - config.box_appearance.outputTextOffset;
+        const y = calcFileBasePosY() + this.textHeight * index;
+        text.move(x, y);
+        this.outputGroup.add(text);
+      });
+    }
     return this.outputGroup;
   }
   /**
@@ -348,16 +569,27 @@ class SvgBox {
    */
   createInputText(inputFiles) {
     this.inputGroup = this.draw.group();
-    inputFiles.forEach((input, index) => {
+    if (inputFiles === undefined) {
       const text = this.draw
-        .text(input.name || "")
+        .text("")
         .fill('#FFFFFF');
       this.textHeight = 24;
       const x = config.box_appearance.inputTextNamePosX;
-      const y = 32 + this.textHeight * index;
+      const y = 32;// + this.textHeight;
       text.move(x, y);
       this.inputGroup.add(text);
-    });
+    } else {
+      inputFiles.forEach((input, index) => {
+        const text = this.draw
+          .text(input.name || "")
+          .fill('#FFFFFF');
+        this.textHeight = 24;
+        const x = config.box_appearance.inputTextNamePosX;
+        const y = 32 + this.textHeight * index;
+        text.move(x, y);
+        this.inputGroup.add(text);
+      });
+    }
     return this.inputGroup;
   }
 
@@ -380,46 +612,15 @@ class SvgBox {
       .y(statePosY);
   }
 
-  createStateForPS(state, numTotal, numFinished) {
+  // 'PS, for, foreach' component
+  createStateForRepeat(state, numTotal, numFinished, numFailed) {
     const statePosX = 220;
     const statePosY = 0;
     if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
       state = 'running'
     }
     const nodeStatePath = config.state_icon[state];
-    //const paraStuState = "Fin:" + numFinished + "Fail:" + numFailed + "(" + numTotal + ")";
-    if (state === 'running' && numTotal !== null) {
-      const calcProgress = numFinished / numTotal * 100;
-      const radius = 7;
-      const diameter = radius * 2;
-      const circumference = 2.0 * radius * Math.PI;
-      const startPosition = circumference * 0.25;
-      const convertedPercentage = circumference * 0.01;
-      let progress = convertedPercentage * calcProgress;
-      return this.draw
-        .circle(`${diameter}`)
-        .fill('rgba(0,0,0,0)')
-        .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
-        .x(statePosX + 11)
-        .y(statePosY + 9)
-        .addClass('psProgress');
-    } else {
-      return this.draw
-        .image(nodeStatePath)
-        .fill('#FFFFFF')
-        .x(statePosX)
-        .y(statePosY);
-    }
-  }
-
-  createStateForPS2(state, numTotal, numFinished, numFailed) {
-    const statePosX = 220;
-    const statePosY = 0;
-    if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
-      state = 'running'
-    }
-    const nodeStatePath = config.state_icon[state];
-    if (state === 'running' && numTotal !== null) {
+    if (state === 'running' && !isNaN(numTotal)) {
       const calcProgress = numFinished / numTotal * 100;
       const calcProgress2 = numFailed / numTotal * 100;
       const radius = 7;
@@ -429,19 +630,106 @@ class SvgBox {
       const convertedPercentage = circumference * 0.01;
       let progress = convertedPercentage * calcProgress;
       let progress2 = convertedPercentage * calcProgress2;
-      return this.draw
-        .circle(`${diameter}`)
-        .fill('rgba(0,0,0,0)')
-        .stroke({ color: '#E60000', width: `${diameter}`, dashoffset: `${startPosition + 1 - progress}`, dasharray: `${progress2},${circumference - progress2}` })
-        .x(statePosX + 11)
-        .y(statePosY + 9)
-        .addClass('psProgress2');
+      let progressTotal = progress + progress2;
+      if (!isNaN(numFailed)) {
+        return [
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9),
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#E60000', width: `${diameter}`, dashoffset: `${startPosition + 1 - progress}`, dasharray: `${progress2},${circumference - progress2}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9),
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#2F2F33', width: `${diameter}`, dashoffset: `${startPosition - progressTotal}`, dasharray: `${circumference - progressTotal},${progressTotal}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9)
+        ]
+      } else {
+        return [
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#88BB00', width: `${diameter}`, dashoffset: `${startPosition}`, dasharray: `${progress},${circumference - progress}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9),
+          this.draw
+            .circle(`${diameter}`)
+            .fill('rgba(0,0,0,0)')
+            .stroke({ color: '#2F2F33', width: `${diameter}`, dashoffset: `${startPosition - progress}`, dasharray: `${circumference - progress},${progress}` })
+            .x(statePosX + 11)
+            .y(statePosY + 9)
+        ]
+      }
     } else {
-      return this.draw
-        .image(nodeStatePath)
+      return [
+        this.draw
+          .image(nodeStatePath)
+          .fill('#FFFFFF')
+          .x(statePosX)
+          .y(statePosY)
+      ]
+    }
+  }
+
+  // 'while' component
+  createStateForWhile(state, numFinished, numFailed) {
+    const statePosX = 220;
+    const statePosY = 0;
+    if (state === 'stage-in' || state === 'waiting' || state === 'queued' || state === 'stage-out') {
+      state = 'running'
+    }
+    const nodeStatePath = config.state_icon[state];
+    if (state === 'running' && !isNaN(numFinished)) {
+      if (isNaN(numFailed)) {
+        numFailed = 0;
+      }
+      let strFinishedNum = numFinished + "";
+      let strFailedNum = numFailed + "";
+      this.whileGroup = this.draw.group();
+
+      const finishedText = this.draw
+        .text(strFinishedNum)
         .fill('#FFFFFF')
-        .x(statePosX)
-        .y(statePosY);
+        .addClass('whileProgress');
+      let finishedTextWidth = finishedText.bbox().width;
+      let finishedDx = 18 - finishedTextWidth / 2;
+      finishedText.move(statePosX + finishedDx, statePosY - 1.8);
+      this.whileGroup.add(finishedText);
+
+      const failedText = this.draw
+        .text(strFailedNum)
+        .fill('red')
+        .addClass('whileFailedProgress');
+      let failedTextWidth = failedText.bbox().width;
+      let failedDx = 18 - failedTextWidth / 2;
+      failedText.move(statePosX + failedDx, statePosY + 14.3);
+      this.whileGroup.add(failedText);
+
+      return [
+        this.draw
+          .circle(14)
+          .fill('rgba(0,0,0,0)')
+          .stroke({ color: '#2F2F33', width: 14 })
+          .x(statePosX + 11)
+          .y(statePosY + 9),
+        this.whileGroup
+      ]
+    } else {
+      return [
+        this.draw
+          .image(nodeStatePath)
+          .fill('#FFFFFF')
+          .x(statePosX)
+          .y(statePosY)
+      ]
     }
   }
 
@@ -483,7 +771,12 @@ class SvgBox {
   getNodePosY(type, nodes) {
     let nodePosYArray = [];
     let nodePosYInfo = [];
-    if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
+    if (type === 'workflow' ||
+      type === 'parameterStudy' ||
+      type === 'for' ||
+      type === 'while' ||
+      type === 'foreach'
+    ) {
 
       if (nodes.length > 0) {
         nodes.forEach((node, index) => {
@@ -508,7 +801,12 @@ class SvgBox {
  */
   createNodesViewField(type, bodyHeight, nodes, nodesPosInfo) {
     this.fieldGroup = this.draw.group();
-    if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
+    if (type === 'workflow' ||
+      type === 'parameterStudy' ||
+      type === 'for' ||
+      type === 'while' ||
+      type === 'foreach'
+    ) {
       if (nodes.length > 0) {
         let viewFlag = false;
         nodes.forEach((node, index) => {
@@ -551,7 +849,12 @@ class SvgBox {
    */
   createNodes(type, bodyHeight, nodes) {
     this.nodeGroup = this.draw.group();
-    if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
+    if (type === 'workflow' ||
+      type === 'parameterStudy' ||
+      type === 'for' ||
+      type === 'while' ||
+      type === 'foreach'
+    ) {
       let nodePosYArray = [];
       nodes.forEach((node, index) => {
         if (node === null) return;
@@ -607,7 +910,12 @@ class SvgBox {
    */
   createNodesIconField(type, bodyHeight, nodes) {
     this.iconFieldGroup = this.draw.group();
-    if (type === 'workflow' || type === 'parameterStudy' || type === 'for' || type === 'while' || type === 'foreach') {
+    if (type === 'workflow' ||
+      type === 'parameterStudy' ||
+      type === 'for' ||
+      type === 'while' ||
+      type === 'foreach'
+    ) {
       nodes.forEach((node, index) => {
         if (node === null) return;
 
@@ -732,9 +1040,9 @@ class SvgParentFilesBox {
 }
 
 //plug
-function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, name, callback) {
+function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, name, sio, callback) {
   //plugの位置（originX,originY）を決める
-  let plug = svg.polygon(plugShape).fill(color);
+  let plug = svg.polygon(plugShape).fill(color).addClass('connectorPlug');
   const bbox = plug.bbox();
   //originX -= bbox.width / 2; RPlugは影響なし 
   if (moveY) originX -= bbox.width / 2;//lowerのとき
@@ -747,41 +1055,109 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
   let dragStartPointY = null;
   plug
     .on('dragstart', (e) => {
-      if (firstTime) {
-        clone = plug.clone();
-        firstTime = false;
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        if (firstTime) {
+          clone = plug.clone();
+          firstTime = false;
+        }
+        dragStartPointX = e.detail.p.x;
+        dragStartPointY = e.detail.p.y;
+      } else {
+        e.preventDefault();
       }
-      dragStartPointX = e.detail.p.x;
-      dragStartPointY = e.detail.p.y;
     })
     .on('dragmove', (e) => {
-      let dx = e.detail.p.x - dragStartPointX;
-      let dy = e.detail.p.y - dragStartPointY;
-      cable.dragEndPoint(dx, dy);
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        let dx = e.detail.p.x - dragStartPointX;
+        let dy = e.detail.p.y - dragStartPointY;
+        cable.dragEndPoint(dx, dy);
+      } else {
+        e.preventDefault();
+      }
     })
     .on('dragend', (e) => {
-      cable.endX = e.target.instance.x();
-      cable.endY = e.target.instance.y();
-      const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
-      if (hitIndex === -1) {
-        cable.remove();
-        plug.remove();
-        plug = clone
-        console.log("not connect");
-        return;
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        cable.endX = e.target.instance.x();
+        cable.endY = e.target.instance.y();
+        const dragEndPosX = cable.endX;
+        const dragEndPosY = cable.endY;
+        let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, dragEndPosX, dragEndPosY, config.box_appearance.plug_drop_area_scale);
+        // recepter, upperとの衝突なし
+        if (hitIndex === -1) {
+          // recepterの場合、titleFrameとの衝突を確認し、自動追加対象かチェックする
+          if (counterpart === ".receptorPlug") {
+            [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
+            // titleFrameとの衝突あり
+            if (hitIndex !== -1) {
+              const box = hitPlug.parent();
+              const taskBoxNode = box.parent();
+              const taskNodeID = taskBoxNode.data('ID');
+              const filename = plug.data('name');
+              [hitIndex, hitPlug] = autoAddFilePreCheck(svg, hitPlug, taskNodeID, taskBoxNode, filename);
+              // 同名ファイルが存在しないため、recepterを作成する
+              if (hitPlug === null) {
+                sio.emit('addInputFile', taskNodeID, filename, (result) => {
+                  if (result) {
+                    let addInputPlug = null;
+                    addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
+                    addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
+                    plug.parent().add(addInputPlug);
+                    if (addInputPlug !== null) {
+                      [hitIndex, hitPlug] = [taskNodeID, addInputPlug];
+                    }
+                    const myIndex = plug.parent().node.instance.data('ID');
+                    if (hitIndex !== myIndex) {
+                      callback(myIndex, hitIndex, plug, hitPlug);
+                    }
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("connect:auto add inputfile");
+                  } else {
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("not connect:addInputFileAPI false");
+                    return;
+                  }
+                });
+              } else {
+                //同名ファイルが存在する場合、線をつなぐ
+                const myIndex = plug.parent().node.instance.data('ID');
+                if (hitIndex !== myIndex) {
+                  callback(myIndex, hitIndex, plug, hitPlug);
+                }
+                plug = initializeCableInfo(cable, plug, clone);
+                console.log("connect:exsit same name");
+              }
+            } else {
+              // titleFrameにhitしない場合
+              plug = initializeCableInfo(cable, plug, clone);
+              console.log("not connect:doesn't hit titleFrame");
+              return;
+            }
+          } else {
+            // 接続対象がupper
+            plug = initializeCableInfo(cable, plug, clone);
+            console.log("not connect:connect target 'upper'");
+            return;
+          }
+        } else {
+          // 通常のファイル接続の場合
+          const myIndex = plug.parent().node.instance.data('ID');
+          if (hitIndex !== myIndex) {
+            callback(myIndex, hitIndex, plug, hitPlug);
+          }
+          plug = initializeCableInfo(cable, plug, clone);
+          console.log("normal connect");
+        }
+      } else {
+        e.preventDefault();
       }
-      const myIndex = plug.parent().node.instance.data('ID');
-      if (hitIndex !== myIndex) {
-        callback(myIndex, hitIndex, plug, hitPlug);
-      }
-      cable.remove();
-      plug.remove();
-      plug = clone
     });
   return [plug, cable.cable];
 }
 
-function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, callback) {
+function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShape, cableDirection, counterpart, sio, callback) {
   //plugの位置（originX,originY）を決める
   let plug = svg.polygon(plugShape).fill(color);
   const bbox = plug.bbox();
@@ -794,50 +1170,118 @@ function createParentCPlugAndCable(svg, originX, originY, moveY, color, plugShap
   let dragStartPointY = null;
   plug
     .on('dragstart', (e) => {
-      if (firstTime) {
-        clone = plug.clone();
-        firstTime = false;
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        if (firstTime) {
+          clone = plug.clone();
+          firstTime = false;
+        }
+        dragStartPointX = e.detail.p.x;
+        dragStartPointY = e.detail.p.y;
+      } else {
+        e.preventDefault();
       }
-      dragStartPointX = e.detail.p.x;
-      dragStartPointY = e.detail.p.y;
     })
     .on('dragmove', (e) => {
-      let dx = e.detail.p.x - dragStartPointX;
-      let dy = e.detail.p.y - dragStartPointY;
-      cable.dragEndPoint(dx, dy);
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        let dx = e.detail.p.x - dragStartPointX;
+        let dy = e.detail.p.y - dragStartPointY;
+        cable.dragEndPoint(dx, dy);
+      } else {
+        e.preventDefault();
+      }
     })
     .on('dragend', (e) => {
-      cable.endX = e.target.instance.x();
-      cable.endY = e.target.instance.y();
-      const [hitIndex, hitPlug] = collisionDetection(svg, counterpart, cable.endX, cable.endY);
-
-      if (hitIndex === -1) {
-        cable.remove();
-        plug.remove();
-        plug = clone
-        return;
+      var editDisable = plug.node.instance.data('edit_disable');
+      if (editDisable === undefined || editDisable === false) {
+        cable.endX = e.target.instance.x();
+        cable.endY = e.target.instance.y();
+        const dragEndPosX = cable.endX;
+        const dragEndPosY = cable.endY;
+        let [hitIndex, hitPlug] = collisionDetection(svg, counterpart, dragEndPosX, dragEndPosY, config.box_appearance.plug_drop_area_scale);
+        // recepter, upperとの衝突なし
+        if (hitIndex === -1) {
+          // recepterの場合、titleFrameとの衝突を確認し、自動追加対象かチェックする
+          if (counterpart === ".receptorPlug") {
+            [hitIndex, hitPlug] = collisionDetectionFrame(svg, '.titleFrame', dragEndPosX, dragEndPosY, 1.0);
+            // titleFrameとの衝突あり
+            if (hitIndex !== -1) {
+              const box = hitPlug.parent();
+              const taskBoxNode = box.parent();
+              const taskNodeID = taskBoxNode.data('ID');
+              const filename = plug.data('name');
+              [hitIndex, hitPlug] = autoAddFilePreCheck(svg, hitPlug, taskNodeID, taskBoxNode, filename);
+              // 同名ファイルが存在しないため、recepterを作成する
+              if (hitPlug === null) {
+                sio.emit('addInputFile', taskNodeID, filename, (result) => {
+                  if (result) {
+                    let addInputPlug = null;
+                    addInputPlug = createReceptor(svg, box.x(), box.y(), 0, 10);
+                    addInputPlug.data({ "ID": taskBoxNode.data('ID'), "name": filename }).attr('id', `${taskBoxNode.name}_${filename}_receptor`);
+                    plug.parent().add(addInputPlug);
+                    if (addInputPlug !== null) {
+                      [hitIndex, hitPlug] = [taskNodeID, addInputPlug];
+                    }
+                    const myIndex = plug.parent().node.instance.data('ID');
+                    if (hitIndex !== myIndex) {
+                      callback(myIndex, hitIndex, plug, hitPlug);
+                    }
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("connect:auto add inputfile");
+                  } else {
+                    plug = initializeCableInfo(cable, plug, clone);
+                    console.log("not connect:addInputFileAPI false");
+                    return;
+                  }
+                });
+              } else {
+                //同名ファイルが存在する場合、線をつなぐ
+                const myIndex = "parent";
+                if (hitIndex !== myIndex) {
+                  callback(myIndex, hitIndex, plug, hitPlug);
+                }
+                plug = initializeCableInfo(cable, plug, clone);
+                console.log("connect:exsit same name");
+              }
+            } else {
+              // titleFrameにhitしない場合
+              plug = initializeCableInfo(cable, plug, clone);
+              console.log("not connect:doesn't hit titleFrame");
+              return;
+            }
+          } else {
+            // 接続対象がupper
+            plug = initializeCableInfo(cable, plug, clone);
+            console.log("not connect:connect target 'upper'");
+            return;
+          }
+        } else {
+          // 通常のファイル接続の場合
+          const myIndex = plug.parent().node.instance.data('ID');
+          if (hitIndex !== myIndex) {
+            callback(myIndex, hitIndex, plug, hitPlug);
+          }
+          plug = initializeCableInfo(cable, plug, clone);
+          console.log("normal connect");
+        }
+      } else {
+        e.preventDefault();
       }
-      const myIndex = "parent";
-      if (hitIndex !== myIndex) {
-        callback(myIndex, hitIndex, plug, hitPlug);
-      }
-      cable.remove();
-      plug.remove();
-      plug = clone
     });
   return [plug, cable.cable];
 }
 
 
 export function createLower(svg, originX, originY, offsetX, offsetY, color, sio, name) {
-  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, true, color, DPlug, 'DU', '.upperPlug', name, function (myIndex, hitIndex, plug) {
+  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, true, color, DPlug, 'DU', '.upperPlug', name, sio, function (myIndex, hitIndex, plug) {
     sio.emit('addLink', { src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug') });
   });
 }
 
 export function createConnector(svg, originX, originY, offsetX, offsetY, sio, name) {
   offsetY += calcFileBasePosY();
-  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, RPlug, 'RL', '.receptorPlug', name, function (myIndex, hitIndex, plug, hitPlug) {
+  return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, RPlug, 'RL', '.receptorPlug', name, sio, function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
     sio.emit('addFileLink', myIndex, srcName, hitIndex, dstName);
@@ -858,8 +1302,9 @@ export function createUpper(svg, originX, originY, offsetX, offsetY, name) {
   return plug;
 }
 
-export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler) {
-  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler);
+export function createBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand, disable) {
+  // class titleFrame
+  const box = new SvgBox(svg, x, y, type, name, inputFiles, outputFiles, state, nodes, numTotal, numFinished, numFailed, host, useJobScheduler, updateOnDemand, disable);
   return [box.box, box.textHeight];
 }
 
@@ -872,7 +1317,7 @@ export function createFilesNameBox(svg, x, y, type, name, inputFiles, outputFile
 //parent -> children connector
 export function createParentConnector(svg, originX, originY, offsetX, offsetY, sio) {
   // offsetY += calcFileBasePosY();
-  return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', function (myIndex, hitIndex, plug, hitPlug) {
+  return createParentCPlugAndCable(svg, originX + offsetX, originY + offsetY, false, config.plug_color.file, parentLPlug, 'RL', '.receptorPlug', sio, function (myIndex, hitIndex, plug, hitPlug) {
     let srcName = plug.data('name');
     let dstName = hitPlug.data('name');
     sio.emit('addFileLink', myIndex, srcName, hitIndex, dstName);

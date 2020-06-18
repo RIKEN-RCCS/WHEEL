@@ -8,12 +8,14 @@ const uuidv1 = require("uuid/v1");
 const glob = require("glob");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("home");
-const fileBrowser = require("./fileBrowser");
-const { gitAdd, gitRm, gitCommit, gitInit, gitResetHEAD } = require("./gitOperator");
-const { hasChild } = require("./workflowUtil");
-const ComponentFactory = require("./workflowComponent");
-const { projectList, defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
-const { getDateString, escapeRegExp, isValidName, readJsonGreedy, convertPathSep } = require("./utility");
+const fileBrowser = require("../core/fileBrowser");
+const { createNewProject } = require("../core/projectFilesOperator");
+const { gitAdd, gitRm, gitCommit, gitInit, gitResetHEAD } = require("../core/gitOperator");
+const { hasChild } = require("../core/workflowComponent");
+const { projectList, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
+const { convertPathSep } = require("../core/pathUtils");
+const { readJsonGreedy } = require("../core/fileUtils");
+const { escapeRegExp, isValidName, getDateString } = require("../lib/utility");
 //eslint-disable-next-line no-useless-escape
 const noDotFiles = /^[^\.].*$/;
 
@@ -41,43 +43,6 @@ function avoidDuplicatedProjectName(basename, argSuffix) {
   return basename + suffixNumber;
 }
 
-/**
- * create new project dir, initial files and new git repository
- * @param {string} root - project root's absolute path
- * @param {string} projectName - project name without suffix
- * @param {string} description - project description text
- */
-async function createNewProject(root, name, description) {
-  description = description != null ? description : "This is new project.";
-  await fs.ensureDir(root);
-
-  //write root workflow
-  const rootWorkflowFileFullpath = path.join(root, componentJsonFilename);
-  const rootWorkflow = new ComponentFactory("workflow");
-  rootWorkflow.name = name;
-  rootWorkflow.cleanupFlag = defaultCleanupRemoteRoot === 0 ? 0 : 1;
-  logger.debug(rootWorkflow);
-  await fs.writeJson(rootWorkflowFileFullpath, rootWorkflow, { spaces: 4 });
-
-  //write project JSON
-  const timestamp = getDateString(true);
-  const projectJson = {
-    version: 2,
-    name,
-    description,
-    state: "not-started",
-    root,
-    ctime: timestamp,
-    mtime: timestamp,
-    componentPath: {}
-  };
-  projectJson.componentPath[rootWorkflow.ID] = "./";
-  const projectJsonFileFullpath = path.resolve(root, projectJsonFilename);
-  logger.debug(projectJson);
-  await fs.writeJson(projectJsonFileFullpath, projectJson, { spaces: 4 });
-  return gitInit(root, "wheel", "wheel@example.com"); //TODO replace by user info
-}
-
 async function getAllProject() {
   const pj = await Promise.all(projectList.getAll().map(async(v)=>{
     let rt;
@@ -99,7 +64,7 @@ async function getAllProject() {
 }
 
 async function adaptorSendFiles(withFile, emit, msg, cb) {
-  const target = msg ? path.normalize(convertPathSep(msg)) : rootDir || os.homedir() || "/";
+  const target = msg ? path.normalize(convertPathSep(msg)) : rootDir;
   const request = msg || target;
 
   try {
@@ -171,7 +136,8 @@ async function onAddProject(emit, projectDir, description, cb) {
   }
 
   try {
-    await createNewProject(projectRootDir, projectName, description);
+    //TODO replace by user info
+    await createNewProject(projectRootDir, projectName, description, "wheel", "wheel@example.com", logger);
   } catch (e) {
     logger.error("create project failed.", e);
     cb(false);
@@ -341,7 +307,7 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   try {
     projectJson = await readJsonGreedy(projectJsonFilepath);
   } catch (e) {
-    logger.error("root workflow JSON file read error\n", e);
+    logger.error("project JSON file read error\n", e);
     cb(false);
     return;
   }

@@ -1,7 +1,7 @@
 "use strict";
 const path = require("path");
 const log4js = require("log4js");
-const   { logFilename, numLogFiles, maxLogSize, compressLogFile } = require("./db/db");
+const { logFilename, numLogFiles, maxLogSize, compressLogFile } = require("./db/db");
 log4js.addLayout("errorlog", ()=>{
   return function(logEvent) {
     const tmp = logEvent.data.reduce((a, p)=>{
@@ -31,7 +31,7 @@ const defaultSettings = {
     file: {
       type: "file",
       filename: path.resolve(__dirname, logFilename),
-      maxLogSize: maxLogSize,
+      maxLogSize,
       backups: numLogFiles,
       compress: compressLogFile
     },
@@ -40,7 +40,7 @@ const defaultSettings = {
       property: "logFilename",
       base: "",
       extension: "",
-      maxLogSize: maxLogSize,
+      maxLogSize,
       backups: numLogFiles,
       compress: compressLogFile
     },
@@ -58,7 +58,7 @@ const defaultSettings = {
         "console",
         "file"
       ],
-      level: "debug"
+      level: "trace"
     },
     workflow: {
       appenders: [
@@ -84,30 +84,6 @@ const defaultSettings = {
         "errorlog"
       ],
       level: "debug"
-    },
-    login: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
-    },
-    admin: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
-    },
-    rapid: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
     }
   },
   levels: {
@@ -117,7 +93,7 @@ const defaultSettings = {
     },
     stderr: {
       value: 20000,
-      colour: "green"
+      colour: "yellow"
     },
     sshout: {
       value: 20000,
@@ -125,7 +101,7 @@ const defaultSettings = {
     },
     ssherr: {
       value: 20000,
-      colour: "green"
+      colour: "yellow"
     }
   }
 };
@@ -164,7 +140,7 @@ function shutdown() {
 }
 
 function setFilename(filename) {
-  // this function will not affect project log filename to keep file
+  //this function will not affect project log filename to keep file
   logSettings.appenders.file.filename = filename;
 }
 
@@ -204,9 +180,9 @@ function getCurrentSettings() {
 function getLogger(cat, verbose) {
   if (firstCall) {
     if (process.env.hasOwnProperty("WHEEL_CONSOLE_LOG_ONLY")) {
-      for(const category of (Object.keys(logSettings.categories))){
-        logSettings.categories[category].appenders=logSettings.categories[category].appenders.filter((e)=>{
-          return e === "console" || e === "flexConsole"
+      for (const category of (Object.keys(logSettings.categories))) {
+        logSettings.categories[category].appenders = logSettings.categories[category].appenders.filter((e)=>{
+          return e === "console" || e === "flexConsole";
         });
       }
     }

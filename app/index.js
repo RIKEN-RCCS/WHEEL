@@ -1,75 +1,70 @@
 "use strict";
+
+//this line must be placed before require express, socket.io and any other depending library
+if (process.env.WHEEL_DEBUG_VERBOSE) {
+  const debugLib = require("debug");
+  const orgNamespaces = debugLib.load();
+  const newNamespaces = "socket.io:*,express:*,abc4*,arssh2*,sbs*";
+  const namespaces = orgNamespaces ? `${orgNamespaces},${newNamespaces}` : newNamespaces;
+  debugLib.enable(namespaces);
+}
+
 const path = require("path");
+const fs = require("fs");
 const { spawn } = require("child_process");
+const cors = require("cors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
-const session = require("express-session");
 const siofu = require("socketio-file-upload");
-const passport = require("passport");
-const { port, jupyter, jupyterPort, setJupyterToken, getJupyterToken, setJupyterPort}  = require("./db/db");
-const { getLogger, setup } = require("./logSettings");
+const { port, jupyter, jupyterPort, notebookRoot, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename } = require("./db/db");
+const { getLogger } = require("./logSettings");
 
 /*
  * set up express, http and socket.io
  */
 const app = express();
-//TODO if certification setting is available, use https instead
-const server = require("http").createServer(app);
+const opt = {
+  key: fs.readFileSync(keyFilename),
+  cert: fs.readFileSync(certFilename)
+};
+const server = require("https").createServer(opt, app);
 const sio = require("socket.io")(server);
 
 //setup logger
 const logger = getLogger();
-//eslint-disable-next-line no-console
-process.on("unhandledRejection", console.dir);
 
-//template engine
-app.set("views", path.resolve(__dirname, "views"));
-app.set("view engine", "ejs");
+process.on("unhandledRejection", logger.debug.bind(logger));
+process.on("uncaughtException", logger.debug.bind(logger));
 
 //middlewares
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(session({
-  secret: "wheel",
-  resave: true,
-  saveUninitialized: false,
-  cookie: {
-    secure: "auto"
-  }
-}));
+app.use(express.static(path.resolve(__dirname, "viewer"), { index: false }));
 app.use(express.static(path.resolve(__dirname, "public"), { index: false }));
 app.use(siofu.router);
-app.use(passport.initialize());
-app.use(passport.session());
 
 //routing
 const routes = {
   home: require(path.resolve(__dirname, "routes/home"))(sio),
   workflow: require(path.resolve(__dirname, "routes/workflow"))(sio),
-  remotehost: require(path.resolve(__dirname, "routes/remotehost"))(sio),
-  login: require(path.resolve(__dirname, "routes/login")),
-  admin: require(path.resolve(__dirname, "routes/admin"))(sio),
-  rapid: require(path.resolve(__dirname, "routes/rapid"))(sio)
+  remotehost: require(path.resolve(__dirname, "routes/remotehost"))(sio)
 };
-//TODO 起動時のオプションに応じて/に対するroutingをhomeとloginで切り替える
+
 app.use("/", routes.home);
 app.use("/home", routes.home);
-app.use("/login", routes.login);
-app.use("/admin", routes.admin);
 app.use("/workflow", routes.workflow);
-app.use("/editor", routes.rapid);
 app.use("/remotehost", routes.remotehost);
 
 //port number
 const defaultPort = 443;
-let portNumber = parseInt(process.env.PORT, 10) || port || defaultPort;
+let portNumber = parseInt(process.env.WHEEL_PORT, 10) || port || defaultPort;
 
 if (portNumber < 0) {
   portNumber = defaultPort;
 }
-app.set("port", port);
 
 //error handler
 app.use((err, req, res, next)=>{
@@ -83,21 +78,21 @@ app.use((req, res, next)=>{
 });
 
 //Listen on provided port, on all network interfaces.
-server.listen(port);
+server.listen(portNumber);
 server.on("error", onError);
 server.on("listening", onListening);
 
 //boot jupyter
 if (jupyter) {
-  const cmd = typeof jupyter === "string" ? jupyter : "jupyter";
+  const cmd = typeof jupyter === "string" ? jupyter : "jupyter-notebook";
   const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
   const opts = [
-    "notebook",
     "--no-browser",
+    "--allow-root",
     `--port ${jupyterPortNumber}`,
     "--port-retries=0",
     "--ip=*",
-    "--notebook-dir=/"
+    `--notebook-dir=${notebookRoot}`
   ];
   setJupyterPort(jupyterPortNumber);
 
@@ -124,27 +119,28 @@ if (jupyter) {
     logger.debug(`get error from jupyter process: ${err}`);
   });
   process.on("exit", ()=>{
-    if(logger){
+    if (logger) {
       logger.debug(`kill jupyter process(${cp.pid}) before exit`);
-    }else{
+    } else {
       //eslint-disable-next-line no-console
       console.log(`kill jupyter process(${cp.pid}) before exit`);
     }
     cp.kill();
   });
   process.on("SIGINT", ()=>{
-    if(logger){
+    if (logger) {
       logger.info("WHEEL will shut down because Control-C pressed");
-    }else{
+    } else {
       //eslint-disable-next-line no-console
       console.log("WHEEL will shut down because Control-C pressed");
     }
-    process.exit();
+    process.exit(); //eslint-disable-line no-process-exit
   });
 }
 
 /**
  * Event listener for HTTP server "error" event.
+ * @param error
  */
 function onError(error) {
   if (error.syscall !== "listen") {

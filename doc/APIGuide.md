@@ -6,70 +6,72 @@
 * [全般的な注意事項](#全般的注意事項)
 * [home画面で発生する通信(server -> client)](#home画面発生通信server-client)
     * [projectList(project[])](#projectlistproject)
-    * [fileList(file[]) [変更あり]](#filelistfile-変更)
+    * [fileList(file[])](#filelistfile)
     * [showMessage(message)](#showmessagemessage)
 * [home画面で発生する通信(client -> server)](#home画面発生通信client-server)
     * [getProjectList(cb)](#getprojectlistcb)
     * [getDirList(path, cb)](#getdirlistpath-cb)
     * [getDirListAndProjectJson(path, cb)](#getdirlistandprojectjsonpath-cb)
-    * [addProject(name, description, cb) [変更あり]](#addprojectname-description-cb-変更)
-    * [importProject(jsonFilename, newName, description, cb) [変更あり]](#importprojectjsonfilename-newname-description-cb-変更)
-    * [removeProject(name, cb)](#removeprojectname-cb)
+    * [addProject(projectDir, description, cb)](#addprojectprojectdir-description-cb)
+    * [importProject(jsonFilename, cb)](#importprojectjsonfilename-cb)
+    * [removeProject(id, cb)](#removeprojectid-cb)
     * [renameProject(renameProject, cb)](#renameprojectrenameproject-cb)
-    * [reorderProject(newOrder, cb) [変更あり]](#reorderprojectneworder-cb-変更)
+    * [reorderProject(newOrder, cb)](#reorderprojectneworder-cb)
 * [workflow画面で発生する通信一覧(server -> client)](#workflow画面発生通信一覧server-client)
     * [fileList](#filelist)
-    * [workflow(component[])](#workflowcomponent)
+    * [results(result[])](#resultsresult)
+    * [workflow(Component)](#workflowcomponent)
     * [projectState(status)](#projectstatestatus)
-    * [taskStateList(taskState[]) [変更予定、未実施]](#taskstatelisttaskstate-変更予定未実施)
+    * [projectJson(projectJson)](#projectjsonprojectjson)
+    * [taskStateList(taskState[])](#taskstatelisttaskstate)
     * [logXXXX(message)](#logxxxxmessage)
     * [askPassword(remoteHost)](#askpasswordremotehost)
+    * [askSourceFilename(id, name, description, filelist)](#asksourcefilenameid-name-description-filelist)
+    * [requestSourceFile(id, name, description)](#requestsourcefileid-name-description)
     * [hostList(hostInfo[])](#hostlisthostinfo)
-    * [projectJson(projectJson)](#projectjsonprojectjson)
 * [workflow画面で発生する通信一覧(client -> server)](#workflow画面発生通信一覧client-server)
-  * [File操作関連API](#file操作関連api)
+* [File操作関連API](#file操作関連api)
     * [getFileList(path, cb)](#getfilelistpath-cb)
-    * [getSNDContents(path, name, idDir, cb) [新規作成]](#getsndcontentspath-name-iddir-cb-新規作成)
+    * [getSNDContents(path, name, idDir, cb)](#getsndcontentspath-name-iddir-cb)
     * [removeFile(path, cb)](#removefilepath-cb)
-    * [renameFile(renameFile, cb) [検討中 引数を増やしてrenameFileの中身をバラバラに渡す]](#renamefilerenamefile-cb-検討中-引数増renamefile中身渡)
-    * [downloadFile(path, cb) [新規作成]](#downloadfilepath-cb-新規作成)
+    * [renameFile(renameFile, cb)](#renamefilerenamefile-cb)
+    * [downloadFile(downloadFile, cb)](#downloadfiledownloadfile-cb)
     * [createNewFile(filename, cb)](#createnewfilefilename-cb)
     * [createNewDir(dirname, cb)](#createnewdirdirname-cb)
-  * [workflow編集API](#workflow編集api)
-    * [getWorkflow(path,cb)](#getworkflowpathcb)
-    * [createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]](#createnodenode-cb-検討中-引数増node渡)
-    * [updateNode(index, property, value, cb) [変更あり]](#updatenodeindex-property-value-cb-変更)
-    * [addValueToArrayProperty(index, property, value, cb) [新規作成、未実装]](#addvaluetoarraypropertyindex-property-value-cb-新規作成未実装)
-    * [delValueFromArrayProperty(index, property, value, cb) [新規作成、未実装]](#delvaluefromarraypropertyindex-property-value-cb-新規作成未実装)
-    * [removeNode(index, cb)](#removenodeindex-cb)
-    * [addLink(link, cb) [検討中 引数を増やしてlinkをバラバラに渡す]](#addlinklink-cb-検討中-引数増link渡)
-    * [removeLink(link, cb) [検討中 引数を増やしてlinkをバラバラに渡す]](#removelinklink-cb-検討中-引数増link渡)
-    * [addInputFile(index, name, cb) [新規作成]](#addinputfileindex-name-cb-新規作成)
-    * [addOutputFile(index, name, cb) [新規作成]](#addoutputfileindex-name-cb-新規作成)
-    * [removeInputFile(index, name, cb) [新規作成、 未実装]](#removeinputfileindex-name-cb-新規作成-未実装)
-    * [removeOutputFile(index, name, cb) [新規作成、 未実装]](#removeoutputfileindex-name-cb-新規作成-未実装)
-    * [renameInputFile(index, newName, cb) [新規作成]](#renameinputfileindex-newname-cb-新規作成)
-    * [renameOutputFile(index, newName, cb) [新規作成]](#renameoutputfileindex-newname-cb-新規作成)
-    * [addFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]](#addfilelinksrcnode-srcname-dstnode-dstname-cb-変更)
-    * [removeFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]](#removefilelinksrcnode-srcname-dstnode-dstname-cb-変更)
+* [workflow編集API](#workflow編集api)
+    * [getWorkflow(ID, cb)](#getworkflowid-cb)
+    * [createNode(node, cb) [検討中 引数に親コンポーネントのIDを含める]](#createnodenode-cb-検討中-引数親id含)
+    * [updateNode(ID, property, value, cb)](#updatenodeid-property-value-cb)
+    * [removeNode(ID, cb)](#removenodeid-cb)
+    * [addLink(link, cb)](#addlinklink-cb)
+    * [removeLink(link, cb)](#removelinklink-cb)
+    * [addInputFile(ID, name, cb)](#addinputfileid-name-cb)
+    * [addOutputFile(ID, name, cb)](#addoutputfileid-name-cb)
+    * [removeInputFile(ID, name, cb)](#removeinputfileid-name-cb)
+    * [removeOutputFile(ID, name, cb)](#removeoutputfileid-name-cb)
+    * [renameInputFile(ID, newName, cb)](#renameinputfileid-newname-cb)
+    * [renameOutputFile(ID, newName, cb)](#renameoutputfileid-newname-cb)
+    * [addFileLink(srcNode, srcName, dstNode, dstName, cb)](#addfilelinksrcnode-srcname-dstnode-dstname-cb)
+    * [removeFileLink(srcNode, srcName, dstNode, dstName, cb)](#removefilelinksrcnode-srcname-dstnode-dstname-cb)
     * [getHostList(cb)](#gethostlistcb)
-  * [Project実行、編集関連API](#project実行編集関連api)
-    * [runProject(path, cb)](#runprojectpath-cb)
+* [Project実行、編集関連API](#project実行編集関連api)
+    * [runProject(cb)](#runprojectcb)
     * [pauseProject(cb)](#pauseprojectcb)
     * [cleanProject(cb)](#cleanprojectcb)
     * [stopProject(cb)](#stopprojectcb)
-    * [cleanComponent(id, cb) [新規作成、未実装]](#cleancomponentid-cb-新規作成未実装)
+    * [cleanComponent(id, cb)](#cleancomponentid-cb)
     * [password(pw, cb)](#passwordpw-cb)
-    * [getTaskStateList(rootWorkflow, cb) [検討中] 引数のrootWorkflowは不要な気がする](#gettaskstatelistrootworkflow-cb-検討中-引数rootworkflow不要気)
-    * [getProjectState(projectJsonFile, cb)](#getprojectstateprojectjsonfile-cb)
-    * [getProjectJson(projectJsonFile, cb)](#getprojectjsonprojectjsonfile-cb)
-    * [updateProjectJson(property, value, cb) [変更あり]](#updateprojectjsonproperty-value-cb-変更)
+    * [sourceFile(id, filename, cb)](#sourcefileid-filename-cb)
+    * [getTaskStateList(cb) [変更あり 引数はcbのみになりました]](#gettaskstatelistcb-変更-引数cb)
+    * [getProjectState(cb) [変更あり 引数はcbのみになりました]](#getprojectstatecb-変更-引数cb)
+    * [getProjectJson( cb) [変更あり 引数はcbのみになりました]](#getprojectjson-cb-変更-引数cb)
+    * [updateProjectJson(property, value, cb)](#updateprojectjsonproperty-value-cb)
     * [saveProject(null, cb)](#saveprojectnull-cb)
     * [revertProject(null, cb)](#revertprojectnull-cb)
 * [remotehost画面で発生する通信一覧(server -> client)](#remotehost画面発生通信一覧server-client)
     * [hostList(hostInfo[])](#hostlisthostinfo-1)
     * [fileList](#filelist-1)
-    * [JobSchedulerList(JobSchduler[]) [新規作成、未実装]](#jobschedulerlistjobschduler-新規作成未実装)
+    * [JobSchedulerList(JobSchduler[])](#jobschedulerlistjobschduler)
 * [remotehost画面で発生する通信一覧(client -> server)](#remotehost画面発生通信一覧client-server)
     * [getHostList(cb)](#gethostlistcb-1)
     * [addHost(hostInfo, cb)](#addhosthostinfo-cb)
@@ -77,7 +79,7 @@
     * [removeHost(id, cb)](#removehostid-cb)
     * [getFileList(path, cb)](#getfilelistpath-cb-1)
     * [tryConnectHostById(id, passwrod, cb)](#tryconnecthostbyidid-passwrod-cb)
-    * [tryConnectHost(sshTeset, passwod, cb) [検討中、sshTestの各プロパティを複数の引数に分けて渡す]](#tryconnecthostsshteset-passwod-cb-検討中sshtest各複数引数分渡)
+    * [tryConnectHost(sshTeset, passwod, cb)](#tryconnecthostsshteset-passwod-cb)
 * [admin画面で発生する通信一覧(server -> client)](#admin画面発生通信一覧server-client)
     * [accountList(account[])](#accountlistaccount)
 * [admin画面で発生する通信一覧(client -> server)](#admin画面発生通信一覧client-server)
@@ -110,22 +112,23 @@ projectデータの形式は以下のとおり。
 
 | property       | data type |  description
 |----------------|:---------:|------------------------------------------------------
+| version        | number    | 2固定
 | name           | string    |
 | description    | string    |
 | state          | string    |
-| path           | string    | メタデータファイル(swf.prj.json)の絶対パス
-| path\_workflow | string    | ルートワークフロー(define.wf.json)の絶対パス
+| root           | string    | プロジェクトのrootディレクトリの絶対パス
 | ctime          | string    | 作成時刻
 | mtime          | string    | 最終更新時刻
+| componentPath  | Object    | コンポーネントIDをkey,各コンポーネントのディレクトリをvalueとしたmap
 | id             | string    | プロジェクト毎に振られた一意なID文字列
 
-#### fileList(file[]) [変更あり]
 
+#### fileList(file[])
 getDirList APIで要求されたディレクトリ内のコンテンツを返します。
 
 fileデータの形式は以下のとおり。
 
-| property | data type |  description                                         
+| property | data type |  description
 |----------|:---------:|------------------------------------------------------
 | path     | string    | 要求された時のディレクトリパス
 | name     | string    | ファイル又はディレクトリ名
@@ -134,11 +137,11 @@ fileデータの形式は以下のとおり。
 
 typeの値の意味は次のとおり
 
-dir: ディレクトリ
-file: ファイル
-snd: 連番ファイル
-sndd: 連番ディレクトリ
-deadlink: リンク先の実体が無いシンボリックリンク
+- dir: ディレクトリ
+- file: ファイル
+- snd: 連番ファイル
+- sndd: 連番ディレクトリ
+- deadlink: リンク先の実体が無いシンボリックリンク
 
 
 #### showMessage(message)
@@ -152,49 +155,54 @@ deadlink: リンク先の実体が無いシンボリックリンク
 プロジェクト一覧の送信を要求します。
 データは、projectList APIを介して送信されてきます。
 
+
 #### getDirList(path, cb)
 - @param { string } path - ディレクトリ一覧を要求するディレクトリ
 
 引数で渡されたディレクトリ内に存在するディレクトリの一覧がfileList APIを介して送信されてきます。
 
-#### getDirListAndProjectJson(path, cb) 
+
+#### getDirListAndProjectJson(path, cb)
 - @param { string } path - ディレクトリ一覧を要求するディレクトリ
 
 getDirListと同様ですが、ディレクトリ一覧に加えて、もし存在すればprojectJsonファイルも送られます。
 
-#### addProject(name, description, cb) [変更あり]
-- @param { string } name - {親ディレクトリの絶対パス}/{プロジェクト名}
+
+#### addProject(projectDir, description, cb)
+- @param { string } projectDir - プロジェクトrootディレクトリの絶対パス
 - @param { string } description - プロジェクトの説明文
 
 新規プロジェクトを作成します。
-実際に作成されるディレクトリ名はnameの後にsuffix(.wheel)が付けられます。
-descriptionを省略(デフォルト値を使う)場合は、nullを指定してください。
 
-#### importProject(jsonFilename, newName, description, cb) [変更あり]
-- @param {string} jsonFilename - {親ディレクトリの絶対パス}/{プロジェクトJsonファイル名}
-- @param {string} newName - インポート後のプロジェクト名
+projectDirのデリミタは、'/'でも'\'でも受け付けます。
+projectDirの末尾にsuffix(.wheel)が無い場合は付与されたディレクトリが作成されます。
+
+descriptionにnullが指定された場合は、デフォルト値が使われます。
+
+
+#### importProject(jsonFilename, cb)
+- @param {string} jsonFilename - projectJsonファイルの絶対パス
 - @param {string} description - インポート後のプロジェクト説明文
 
 既存プロジェクトをインポートします。
-newName, descriptionともにnullを指定すると、インポート前のJsonファイルに書かれた値が使われます。
+インポート時に旧バージョンのプロジェクト(versionプロパティが存在しないもの)であればversion2の形式に変換します。
 
-#### removeProject(name, cb)
-- @param {string} name - プロジェクトID 又はProject Jsonファイルの絶対パス
+#### removeProject(id, cb)
+- @param {string} name - プロジェクトID
 
 既存プロジェクトを削除します。
 
+
 #### renameProject(renameProject, cb)
+- @param {Object} renameProject
+- @param {string} renameProject.id      - プロジェクトID
+- @param {string} renameProject.path    - プロジェクトディレクトリのパス
+- @param {string} renameProject.newName - 変更後の名前
+
 既存プロジェクトのnameを変更し、プロジェクトルートディレクトリをnameに合わせて変更します。
 
-renameProjectデータの形式は以下のとおり
 
-| property | data type |  description                                         
-|----------|:---------:|------------------------------------------------------
-| id       | string    | プロジェクトID
-| path     | string    | プロジェクトディレクトリのパス
-| newName  | string    | 変更後の名前
-
-#### reorderProject(newOrder, cb) [変更あり]
+#### reorderProject(newOrder, cb)
 - @param {number []} newOrder - 旧並び順でのindex(0 origin)のリスト
 
 プロジェクトリストを引数に指定された順に並べ変えます。
@@ -204,40 +212,78 @@ renameProjectデータの形式は以下のとおり
 #### fileList
 home画面の同名のAPIと同じ
 
-#### workflow(component[])
-編集対象ワークフローと、その子および孫コンポーネントを送ります。
+#### results(result[])
+viewer コンポーネントに送られてきたファイルの情報を送ります。
 
-componentのデータ形式は本ドキュメントには記載しないので、workflowComponent.jsを参照のこと。
+resultのデータ形式は以下のとおり
+| property       | data type |  description
+|----------------|:---------:|------------------------------------------------------
+| componentID    | string    | viewerコンポーネントのID
+| filename       | string    | ファイル名
+| url            | string    | 公開ファイルのURL
+
+
+#### workflow(Component)
+要求されたコンポーネントと、その子および孫コンポーネントを送ります。
+
+要求されたコンポーネントが子コンポーネントを持つ時は、Componentオブジェクトに、descendantsプロパティが追加されており
+同プロパティは子コンポーネントの配列を持ちます。
+
+descendantsに含まれる各子コンポーネントがさらに子コンポーネント(要求されたコンポーネントの孫)を持つ時は、
+grandsonプロパティが追加されており、同プロパティは孫コンポーネントの配列を持ちます。
+ただし、孫コンポーネントのプロパティは、taskの時は、type, pos, host, useJobSchedulerのみ、それ以外はtype, posのみが保持されています。
+
+その他のプロパティはapp/core/workflowComponent.jsを参照してください。
+
 
 #### projectState(status)
 実行中のprojectの状態を送ります。
 
-#### taskStateList(taskState[]) [変更予定、未実施]
+statusが取り得る値は以下のとおりです。
+- not-started
+- running
+- finished
+- pause
+- failed
+- unknown
+
+#### projectJson(projectJson)
+project全体のメタデータを記述したJSONを送信
+
+projectJsonデータは、home画面のprojectListAPIで送られる、projectデータからidを除いたものです。
+
+
+#### taskStateList(taskState[])
 実行中のtaskの状態を送ります。
 送られてくる配列には全てのtaskは含まれておらず、
 前回の送信時以降で、更新があった(もしくは新規に作成された)taskのみのデータが入っています。
 
 taskStateのデータ形式は以下のとおり。
 
-| property   | data type |  description                                         
-|------------|:---------:|------------------------------------------------------
-| index      | string    | task毎に固有のID文字列
-| parent     | string    | 親コンポーネントのディレクトリパス
-| parentType | string    | 親コンポーネントの種類
-| name       | string    | taskの名前
-| startTime  | string    | 実行開始日時(未実行のものはnull)
-| endTime    | string    | 実行完了日時(未完了のものはnull)
-| state      | string    | taskの状態
+| property       | data type |  description
+|----------------|:---------:|------------------------------------------------------
+| name           | string    | taskの名前
+| ID             | string    | task毎に固有のID文字列 (ループ,PSコンポーネント内のtaskは重複する可能性あり)
+| subID          | string    | task毎に固有のID文字列 (一意だが、コンポーネントJSONファイルに書かれたIDとの紐付けなし)
+| description    | string    |
+| state          | string    |
+| parentName     | string    | 親コンポーネントの名前
+| parentType     | string    | 親コンポーネントの種類
+| ancestorsName  | string    | root以降の親コンポーネントの名前を/区切りで結合したもの
+| ancestorsType  | string    | root以降の親コンポーネントの種類を/区切りで結合したもの
+| dispatchedTime | string    | dispatchされた時刻
+| startTime      | string    | 実行開始日時(未実行のものはnull)
+| endTime        | string    | 実行完了日時(未完了のものはnull)
+
 
 #### logXXXX(message)
 - @param {string} message - ログ出力
 
 サーバサイドの処理中に発生したログ出力を送信します。
 
-実際のイベント名はログのカテゴリ毎に異なる名前になっており、以下の8種類が使われます。
+実際のイベント名はログのカテゴリ毎に異なる名前になっており、以下の7種類が使われます。
 | event name | description
 |------------|------------------------------------------------------------
-| logDBG     | デバッグメッセージ
 | logINFO    | メッセージ
 | logWARN    | ワーニング
 | logERR     | エラーメッセージ
@@ -246,17 +292,36 @@ taskStateのデータ形式は以下のとおり。
 | logSSHout  | リモートホストで実行されたtaskの標準出力
 | logSSHerr  | リモートホストで実行されたtaskの標準エラー出力
 
+
 #### askPassword(remoteHost)
 - @param {string} remoteHost - パスワードを要求するホスト名
 
 リモートホストへアクセスする時に使うパスワード(またはパスフレーズ)の入力を要求します。
 
+
+#### askSourceFilename(id, name, description, filelist)
+- @param {string} id - ファイルの選択を要求しているsourceコンポーネントのid文字列
+- @param {string} name - ファイルの選択を要求しているsourceコンポーネントの名前
+- @param {string} description - ファイルの選択を要求しているsourceコンポーネントのdescription
+- @param {string[]} filelist - ソースコンポーネント内のファイル候補のリスト
+
+複数ファイルが用意されているソースコンポーネントで実際に使うファイルの選択を要求します。
+
+
+#### requestSourceFile(id, name, description)
+- @param {string} name - ファイルのアップロードを要求しているsourceコンポーネントの名前
+- @param {string} description - ファイルのアップロードを要求しているsourceコンポーネントのdescription
+
+uploadOnDemandプロパティがtruethyなソースコンポーネントへのファイルのアップロードを要求します。
+
+
 #### hostList(hostInfo[])
 remotehost設定の一覧を送ります。
 
-hostInfoデータの形式は以下のとおり
+hostInfoのデータ形式は以下の2形式が存在します。
 
-| property              | data type      |  description                                         
+通常ホスト
+| property              | data type      |  description
 |-----------------------|:--------------:|------------------------------------------------------
 | name                  | string         | 設定情報の表示名
 | id                    | string         | 設定情報につける一意な識別子(サーバ側で新規作成時に付与)
@@ -274,21 +339,38 @@ hostInfoデータの形式は以下のとおり
 | [statusCheckInterval] | number         | ジョブ投入後のステータス確認を行う間隔(単位は秒)
 | [maxStatusCheckError] | number         | statusCheckに失敗した時に、ジョブ自体をfailedとするしきい値
 
-#### projectJson(projectJson)
-project全体のメタデータを記述したJSONを送信
+AWS
 
-projectJsonデータは、home画面のprojectListAPIで送られる、projectデータからidを除いたもの。
+username, keyFileを除く通常版の全プロパティに加えて、以下のデータが追加されています。
+
+各プロパティの意味などは、Cloud.mdを参照のこと
+```
+{
+  "type": "aws",
+  "os": "ubuntu16",
+  "region": "ap-northeast-1",
+  "numNodes": 2,
+  "InstanceType": "t2.micro",
+  "rootVolume": 30,
+  "shareStorage": true,
+  "playbook": "not used for now",
+  "mpi": "not used for now",
+  "compoiler": "not used for now",
+  "additionalParams": {},
+  "additionalParamsForHead": {},
+}
+```
 
 
 ## workflow画面で発生する通信一覧(client -> server)
-### File操作関連API
+## File操作関連API
 #### getFileList(path, cb)
 - @param {string} path - ファイル一覧の送信を要求するディレクトリの絶対パス
 
 指定されたディレクトリ内に存在するファイル、ディレクトリ等の送信を要求します。
 データはfileListAPIで送られてきます。
 
-#### getSNDContents(path, name, idDir, cb) [新規作成]
+#### getSNDContents(path, name, idDir, cb)
 - @param {string} path - 対象となるSerialNumberDataの親ディレクトリ
 - @param {string} name - SNDの名前 (= globパターン)
 - @param {boolean} isDir - SNDを連番ディレクトリとみなす(true)か連番ファイルとみなす(false)かのフラグ
@@ -302,22 +384,29 @@ fileList APIで送られてきたSND(SerialNumberData)に含まれるファイ�
 
 ファイルまたはディレクトリの削除を要求します。
 
-#### renameFile(renameFile, cb) [検討中 引数を増やしてrenameFileの中身をバラバラに渡す]
+#### renameFile(renameFile, cb)
 ファイル又はディレクトリ名の変更を要求します。
 
 renameFileデータの形式は以下のとおり
 
-| property | data type |  description                                         
+| property | data type |  description
 |----------|:---------:|------------------------------------------------------
 | path     | string    |  変更対象の親ディレクトリの絶対パス
 | oldName  | string    |  変更前の名前
 | newName  | string    |  変更後の名前
 
 
-#### downloadFile(path, cb) [新規作成]
+#### downloadFile(downloadFile, cb)
 - @param {string} path - ダウンロードするファイルの絶対パス
 
 ファイルの送信を要求します。
+
+downloadFile オブジェクトのデータ形式は以下のとおり
+
+| property | data type |  description
+|----------|:---------:|------------------------------------------------------
+| path     | string    |  要求するファイルが存在するディレクトリのパス
+| name     | string    |  ファイル名
 
 #### createNewFile(filename, cb)
 - @param {string} filename - 新規に作成するファイルの絶対パス
@@ -330,109 +419,92 @@ renameFileデータの形式は以下のとおり
 空ディレクトリを作成する
 
 
-### workflow編集API
-#### getWorkflow(path,cb)
-- @param {string} path - ワークフロー(又はPS, for等)のJSONファイルの絶対パス
+## workflow編集API
+#### getWorkflow(ID, cb)
+- @param {string} ID - 要求するコンポーネントのID
 
 指定されたワークフローデータおよびその子、孫コンポーネントの送信を要求します。
 データはworkflowコンポーネントで送られてきます。
 
-#### createNode(node, cb) [検討中 引数を増やしてnodeデータをバラバラに渡す]
+#### createNode(node, cb) [検討中 引数に親コンポーネントのIDを含める]
 新規ノードを作成します。
 
 nodeデータの形式は以下のとおり
 
-| property | data type |  description                                         
+| property | data type |  description
 |----------|-----------|------------------------------------------------------
 | type     | string    | ノードの種類
 | pos      | object    | ノードの表示位置を示すオブジェクト。propertyは次の2つ
 | pos.x    | number    | ノードのx座標
 | pos.y    | number    | ノードのy座標
 
-#### updateNode(index, property, value, cb) [変更あり]
-- @param {string} index - 変更対象ノードのindex
+#### updateNode(ID, property, value, cb)
+- @param {string} ID - 変更するコンポーネントのID
 - @param {string} property - 変更するプロパティ
 - @param {string} value -    変更後の値
 
 既存ノードのプロパティを更新する汎用APIです。
 
-#### addValueToArrayProperty(index, property, value, cb) [新規作成、未実装]
-- @param {string} index - 変更対象ノードのindex
-- @param {string} property - 変更するプロパティ
-- @param {string} value -    追加する値
-
-既存ノードの配列型プロパティに新規のエントリを追加します。
-なお、inputFiles, outputFilesは専用APIがあるので、現状ではforEachコンポーネントのindexListプロパティのみに使われます。
-
-TODO indexListの更新はupdateNodeでも可能なので、特に問題が無ければ本APIとdelValueFrom... APIは削除する
-
-#### delValueFromArrayProperty(index, property, value, cb) [新規作成、未実装]
-- @param {string} index - 変更対象ノードのindex
-- @param {string} property - 変更するプロパティ
-- @param {string} value -    削除する値
-
-既存ノードの配列型プロパティからエントリを削除します。
-
-#### removeNode(index, cb)
-- @param {string} index - 削除するノードのindex
+#### removeNode(ID, cb)
+- @param {string} ID - 削除するコンポーネントのID
 
 既存のノードを削除します。
 
-#### addLink(link, cb) [検討中 引数を増やしてlinkをバラバラに渡す]
+#### addLink(link, cb)
 ノード間の依存関係を追加します。
 
 linkデータの形式は以下のとおり
 なお、src, dstのインデックスは形式が変更される予定
 
-| property | data type |  description                                         
+| property | data type |  description
 |----------|-----------|------------------------------------------------------
-| src      | number    | link元ノードのindex番号
-| dst      | number    | link先ノードのindex番号
+| src      | string    | link元ノードのID
+| dst      | string    | link先ノードのID
 | isElse   | boolean   | (ifノードの)else側のリンクを示すフラグ
 
-#### removeLink(link, cb) [検討中 引数を増やしてlinkをバラバラに渡す]
+#### removeLink(link, cb)
 ノード間の依存関係削除
 
 linkデータの形式はaddLink APIと同じ
 
-#### addInputFile(index, name, cb) [新規作成]
-- @param {string} index - inputFileエントリを追加するノードのインデックス
+#### addInputFile(ID, name, cb)
+- @param {string} ID - inputFileエントリを追加するノードのインデックス
 - @param {string} name - inputFileの名前
 
 未接続のinputFileを指定されたノードに追加します。
 
-#### addOutputFile(index, name, cb) [新規作成]
-- @param {string} index - outputFileエントリを追加するノードのインデックス
+#### addOutputFile(ID, name, cb)
+- @param {string} ID - outputFileエントリを追加するノードのインデックス
 - @param {string} name - outputFileの名前
 
 未接続のoutputFileを指定されたノードに追加します。
 
-#### removeInputFile(index, name, cb) [新規作成、 未実装]
-- @param {string} index - inputFileエントリを削除するノードのインデックス
+#### removeInputFile(ID, name, cb)
+- @param {string} ID - inputFileエントリを削除するノードのインデックス
 - @param {string} name - inputFileの名前
 
 指定された名前のinputFileを削除します。同時にそのinputFileに接続されていたfileLinkも全て削除します。
 
-#### removeOutputFile(index, name, cb) [新規作成、 未実装]
-- @param {string} index - outputFileエントリを削除するノードのインデックス
+#### removeOutputFile(ID, name, cb)
+- @param {string} ID - outputFileエントリを削除するノードのインデックス
 - @param {string} name - outputFileの名前
 
 指定された名前のoutputFileを削除します。同時にそのoutputFileに接続されていたfileLinkも全て削除します。
 
-#### renameInputFile(index, newName, cb) [新規作成]
-- @param {string} index - inputFileの名前を変更するノードのインデックス
+#### renameInputFile(ID, newName, cb)
+- @param {string} ID - inputFileの名前を変更するノードのインデックス
 - @param {string} newName - 変更後のの名前
 
 指定されたinputFileエントリの名前を変更します。
 
-#### renameOutputFile(index, newName, cb) [新規作成]
-- @param {string} index - outputFileの名前を変更するノードのインデックス
+#### renameOutputFile(ID, newName, cb)
+- @param {string} ID - outputFileの名前を変更するノードのインデックス
 - @param {string} newName - 変更後の名前
 
 指定されたoutputFileエントリの名前を変更します。
 
 
-#### addFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]
+#### addFileLink(srcNode, srcName, dstNode, dstName, cb)
 - @param {string} srcNode - 送信ノードのID
 - @param {string} srcName - 送信ノードでの名前
 - @param {string} dstNode - 受取ノードのID
@@ -442,7 +514,7 @@ linkデータの形式はaddLink APIと同じ
 親階層とのファイル依存関係であれば、srcNode, dstNodeにはIDの代わりに"parent"という文字列を指定することもできます。
 
 
-#### removeFileLink(srcNode, srcName, dstNode, dstName, cb) [変更あり]
+#### removeFileLink(srcNode, srcName, dstNode, dstName, cb)
 - @param {string} srcNode - 送信ノードのID
 - @param {string} srcName - 送信ノードでの名前
 - @param {string} dstNode - 受取ノードのID
@@ -454,10 +526,8 @@ linkデータの形式はaddLink APIと同じ
 #### getHostList(cb)
 ホスト情報一覧をリクエストします。
 
-### Project実行、編集関連API
-#### runProject(path, cb)
-- @param {string} path - 実行するプロジェクトのrootディレクトリの絶対パス
-
+## Project実行、編集関連API
+#### runProject(cb)
 プロジェクトの実行を開始します。
 
 #### pauseProject(cb)
@@ -469,34 +539,44 @@ linkデータの形式はaddLink APIと同じ
 #### stopProject(cb)
 実行中のプロジェクトを停止し、実行開始前の状態に戻します。
 
-#### cleanComponent(id, cb) [新規作成、未実装]
-@param {string} id - コンポーネントのID
+#### cleanComponent(id, cb)
+@param {string} id - cleanするコンポーネントのID
 
 指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
 statusをnot-startedにします。
 
 #### password(pw, cb)
-- @param {string} pw - パスワード
+- @param {string | null} pw - パスワード
 
 askPassword APIで要求されたパスワードを送信します。
+ユーザがパスワード入力をキャンセルした時はnullを送信します。
 
-#### getTaskStateList(rootWorkflow, cb) [検討中] 引数のrootWorkflowは不要な気がする
+#### sourceFile(id, filename, cb)
+- @param {string} id - ファイルの選択を要求しているsourceコンポーネントのid文字列
+- @param {string} filename - 使用するファイル名
+
+askSourceFilename および requestSourceFile APIで要求されたファイルのファイル名を送信します。
+
+requestSourceFile APIに対して応答する場合は、本APIを呼び出す前に実際にファイルをアップロードする必要があります。
+
+
+#### getTaskStateList(cb) [変更あり 引数はcbのみになりました]
 - @param {string} rootWorkflow - rootWorkflowのファイル名
 
 taskStateListの送信を要求します。
 
-#### getProjectState(projectJsonFile, cb)
+#### getProjectState(cb) [変更あり 引数はcbのみになりました]
 - @param {string} projectJsonFile - projectJsonファイルのファイル名(cookieのprojectの値)
 
 projectStateの送信を要求
 
 
-#### getProjectJson(projectJsonFile, cb)
+#### getProjectJson( cb) [変更あり 引数はcbのみになりました]
 - @param {string} projectJsonFile - projectJsonファイルのファイル名(cookieのprojectの値)
 
 projectJsonの送信を要求
 
-#### updateProjectJson(property, value, cb) [変更あり]
+#### updateProjectJson(property, value, cb)
 - @param {string} property - projectJsonのうち更新するデータのプロパティ
 - @param {string} value    - projectJsonのうち更新するデータの値
 
@@ -518,12 +598,12 @@ workflow画面の同名のAPIと同じ
 #### fileList
 home画面の同名のAPIと同じ
 
-#### JobSchedulerList(JobSchduler[]) [新規作成、未実装]
+#### JobSchedulerList(JobSchduler[])
 wheelが対応しているジョブスケジューラのリストを送る
 
 JobSchdulerのデータ形式は以下のとおり
 
-| property | data type |  description                                         
+| property | data type |  description
 |----------|-----------|------------------------------------------------------
 | name     | string    | ジョブスケジューラの設定名
 | queues   | string[]  | 対応しているキューの一覧
@@ -552,7 +632,7 @@ workflow画面の同名のAPIと同じ
 
 ssh接続のテストを行います。
 
-#### tryConnectHost(sshTeset, passwod, cb) [検討中、sshTestの各プロパティを複数の引数に分けて渡す]
+#### tryConnectHost(sshTeset, passwod, cb)
 @param {sshTest} sshTest - テスト対象ホストの情報
 
 @param {string} passwod - パスワードまたは公開鍵のパスフレーズ
@@ -561,7 +641,7 @@ ssh接続のテストを行います。
 
 sshTestのデータ形式は以下のとおり
 
-| property | data type |  description                                         
+| property | data type |  description
 |----------|-----------|------------------------------------------------------
 | host     | string    | ホスト名 or IPアドレス
 | [port]   | number    | ssh接続に使うポート番号 (default 22)
@@ -574,7 +654,7 @@ sshTestのデータ形式は以下のとおり
 
 accoutデータの形式は以下のとおり
 
-| property      | data type |  description                                         
+| property      | data type |  description
 |---------------|-----------|------------------------------------------------------
 | name          | string    | ユーザ名
 | password      | string    | パスワード
@@ -605,4 +685,3 @@ id引数はアカウントのユーザ名ではなく、識別用に新規作成
 @param {object} dirTree - js-treeが解釈できるJson形式のディレクトリツリー
 
 ファイルベースのパラスタ用にディレクトリツリーを表示するための情報を送ります。
-

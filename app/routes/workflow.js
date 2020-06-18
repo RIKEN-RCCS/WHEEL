@@ -2,11 +2,12 @@
 const path = require("path");
 const express = require("express");
 const fileManager = require("./fileManager");
-const workflowEditor = require("./workflowEditor2");
+const rapid2 = require("./rapid2");
 const projectController = require("./projectController");
-const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort } = require("../db/db");
-const { getComponent } = require("./workflowUtil");
-const { openProject, setSio, getLogger } = require("./projectResource");
+const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay } = require("../db/db");
+const { getComponent } = require("../core/workflowUtil");
+const { openProject, setSio, getLogger } = require("../core/projectResource");
+const { getProjectState } = require("../core/projectFilesOperator");
 
 module.exports = function(io) {
   let projectRootDir = null;
@@ -24,15 +25,34 @@ module.exports = function(io) {
     //event listeners for project operation
     projectController(socket, projectRootDir);
 
-    //event listeners for workflow editing
-    workflowEditor(socket, projectRootDir);
-
     //event listeners for file operation
     fileManager(socket, projectRootDir);
 
+    //event listeners for file editor
+    rapid2(socket, projectRootDir);
+
     //redirect error to logger
     socket.on("error", (err)=>{
-      getLogger(projectRootDir).debug("socketIO errror occurred:\n",err);
+      getLogger(projectRootDir).debug("socketIO errror occurred:\n", err);
+    });
+    //kill itself 10 minuets later after when the last client disconnected
+    socket.on("disconnect", ()=>{
+      if (io.engine.clientsCount === 0 && shutdownDelay > 0) {
+        getLogger(projectRootDir).debug(`the last client disconnected wheel will be shutdown after ${shutdownDelay / 1000} sec`);
+        const timeout = setTimeout(async()=>{
+          const projectStatus = await getProjectState(projectRootDir);
+          if (io.engine.clientsCount > 0) {
+            getLogger(projectRootDir).debug(`shutdown canceled because we have ${io.engine.clientsCount} client now`);
+            clearTimeout(timeout);
+          } else if (["running", "prepareing"].includes(projectStatus)) {
+            getLogger(projectRootDir).debug(`shutdown canceled because project status is ${projectStatus}`);
+            clearTimeout(timeout);
+          } else {
+            getLogger(projectRootDir).info("this process will be shutdown");
+            process.exit(0); //eslint-disable-line no-process-exit
+          }
+        }, shutdownDelay);
+      }
     });
   });
 
@@ -45,7 +65,7 @@ module.exports = function(io) {
     res.cookie("root", ID);
     res.cookie("rootDir", projectRootDir);
     res.cookie("project", path.resolve(projectRootDir, projectJsonFilename));
-    const hostname = req.headers.host.slice(0,req.headers.host.indexOf(':'));
+    const hostname = req.headers.host.slice(0, req.headers.host.indexOf(":"));
     res.cookie("jupyterURL", `http://${hostname}:${getJupyterPort()}/`); //TODO http must be replaced https if SSL enabled
     res.cookie("jupyterToken", getJupyterToken());
     res.sendFile(path.resolve(__dirname, "../views/workflow.html"));

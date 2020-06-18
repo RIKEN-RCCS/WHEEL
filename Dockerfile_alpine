@@ -1,0 +1,23 @@
+FROM node:erbium-alpine
+
+# Create app directory
+WORKDIR /usr/src/app
+
+# copy necessary files
+COPY package*.json webpack.config.js ./
+COPY app ./app
+
+#install necessary packages for wheel-core
+#build-base is for building bcrypt module
+RUN apk add bash build-base git
+
+#install jupyter
+RUN apk add python3 python3-dev libzmq zeromq-dev
+RUN python3 -m pip install -U pip
+RUN python3 -m pip install -U jupyter
+
+# install dependent packages
+RUN npm install --production
+RUN npm run prepare
+
+CMD [ "npm", "start" ]

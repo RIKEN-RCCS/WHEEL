@@ -82,6 +82,7 @@ export default function (socket) {
 
     $("#logClearButton").click(function () {
         $(".logText").empty();
+        $('.logButton').css('color', "#FFFFFF");
     });
 }
 

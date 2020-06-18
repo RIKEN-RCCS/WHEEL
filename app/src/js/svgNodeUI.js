@@ -20,6 +20,7 @@ export class SvgNodeUI {
     /** svg.js's instance*/
     this.svg = svg;
     this.sio = sio;
+    this.editDisable = false;
 
     /** cable instance container */
     this.nextLinks = [];
@@ -30,10 +31,10 @@ export class SvgNodeUI {
 
     /** svg representation of this node */
     this.group = svg.group();
-    this.group.data({ "ID": node.ID, "type": node.type, "name": node.name }).draggable().addClass('node');
+    this.group.data({ "ID": node.ID, "type": node.type, "name": node.name, "disable": node.disable }).draggable().addClass('node');
 
     // draw node
-    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host, node.useJobScheduler);
+    const [box, textHeight] = parts.createBox(svg, node.pos.x, node.pos.y, node.type, node.name, node.inputFiles, node.outputFiles, node.state, node.descendants, node.numTotal, node.numFinished, node.numFailed, node.host, node.useJobScheduler, node.updateOnDemand, node.disable);
     const boxBbox = box.bbox();
     const boxX = box.x();
     const boxY = box.y();
@@ -41,34 +42,45 @@ export class SvgNodeUI {
     this.group.data({ "boxBbox": boxBbox });
 
     //draw plugs
-    const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0, node.name);
-    upper.data({ "type": 'upperPlug', "ID": node.ID }).attr('id', `${node.name}_upper`);
-    this.group.add(upper);
-
-    const numLower = node.type === 'if' ? 3 : 2;
-    let tmp = null;
-    if (numLower === 2) {
-      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio, node.name);
-    } else {
-      [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio, node.name);
+    if (node.type !== 'source' && node.type !== 'viewer') {
+      const upper = parts.createUpper(svg, boxX, boxY, boxBbox.width / 2, 0, node.name);
+      upper.data({ "type": 'upperPlug', "ID": node.ID }).attr('id', `${node.name}_upper`);
+      this.group.add(upper);
     }
-    this.lowerPlug.addClass('lowerPlug').data({ "next": node.next }).attr('id', `${node.name}_lower`);
-    this.group.add(this.lowerPlug).add(tmp);
+
+    let numLower = 0;
+    let tmp = null;
+    if (node.type !== 'source' && node.type !== 'viewer') {
+      numLower = node.type === 'if' ? 3 : 2;
+      if (numLower === 2) {
+        [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.flow, sio, node.name);
+      } else {
+        [this.lowerPlug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower * 2, boxBbox.height, config.plug_color.flow, sio, node.name);
+      }
+      this.lowerPlug.addClass('lowerPlug').data({ "next": node.next }).attr('id', `${node.name}_lower`);
+      this.group.add(this.lowerPlug).add(tmp);
+    }
 
     this.connectors = [];
-    node.outputFiles.forEach((output, fileIndex) => {
-      let [plug, cable] = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight * fileIndex, sio, node.name);
-      plug.data({ "name": output.name, "dst": output.dst }).attr('id', `${node.name}_${output.name}_connector`);
-      this.group.add(plug);
-      this.group.add(cable);
-      this.connectors.push(plug);
-    });
+    if (node.type !== 'viewer') {
+      this.group.data({ "outputFiles": node.outputFiles });
+      node.outputFiles.forEach((output, fileIndex) => {
+        let [plug, cable] = parts.createConnector(svg, boxX, boxY, boxBbox.width, textHeight * fileIndex, sio, node.name);
+        plug.data({ "name": output.name, "dst": output.dst }).attr('id', `${node.name}_${output.name}_connector`);
+        this.group.add(plug);
+        this.group.add(cable);
+        this.connectors.push(plug);
+      });
+    }
 
-    node.inputFiles.forEach((input, fileIndex) => {
-      const receptor = parts.createReceptor(svg, boxX, boxY, 0, textHeight * fileIndex);
-      receptor.data({ "ID": node.ID, "name": input.name }).attr('id', `${node.name}_${input.name}_receptor`);
-      this.group.add(receptor);
-    });
+    if (node.type !== 'source') {
+      this.group.data({ "inputFiles": node.inputFiles });
+      node.inputFiles.forEach((input, fileIndex) => {
+        const receptor = parts.createReceptor(svg, boxX, boxY, 0, textHeight * fileIndex);
+        receptor.data({ "ID": node.ID, "name": input.name }).attr('id', `${node.name}_${input.name}_receptor`);
+        this.group.add(receptor);
+      });
+    }
 
     if (numLower === 3) {
       [this.lower2Plug, tmp] = parts.createLower(svg, boxX, boxY, boxBbox.width / numLower, boxBbox.height, config.plug_color.elseFlow, sio, node.name)
@@ -89,21 +101,33 @@ export class SvgNodeUI {
     // register drag and drop behavior
     this.group
       .on('dragstart', (e) => {
-        diffX = e.detail.p.x - e.target.instance.select(`.${node.name}_box`).first().x();
-        diffY = e.detail.p.y - e.target.instance.select(`.${node.name}_box`).first().y()
-        startX = e.detail.p.x;
-        startY = e.detail.p.y;
+        if (!this.editDisable) {
+          diffX = e.detail.p.x - e.target.instance.select(`.svg_${node.name}_box`).first().x();
+          diffY = e.detail.p.y - e.target.instance.select(`.svg_${node.name}_box`).first().y()
+          startX = e.detail.p.x;
+          startY = e.detail.p.y;
+        } else {
+          e.preventDefault();
+        }
       })
       .on('dragmove', (e) => {
-        let dx = e.detail.p.x - startX;
-        let dy = e.detail.p.y - startY;
-        this.reDrawLinks(dx, dy);
+        if (!this.editDisable) {
+          let dx = e.detail.p.x - startX;
+          let dy = e.detail.p.y - startY;
+          this.reDrawLinks(dx, dy);
+        } else {
+          e.preventDefault();
+        }
       })
       .on('dragend', (e) => {
-        let x = e.detail.p.x;
-        let y = e.detail.p.y;
-        if (x !== startX || y !== startY) {
-          sio.emit('updateNode', node.ID, 'pos', { 'x': x - diffX, 'y': y - diffY });
+        if (!this.editDisable) {
+          let x = e.detail.p.x;
+          let y = e.detail.p.y;
+          if (x !== startX || y !== startY) {
+            sio.emit('updateNode', node.ID, 'pos', { 'x': x - diffX, 'y': y - diffY });
+          }
+        } else {
+          e.preventDefault();
         }
       });
   }
@@ -114,19 +138,25 @@ export class SvgNodeUI {
   drawLinks() {
     let boxBbox = this.group.data('boxBbox');
     let upperPlugs = this.svg.select('.upperPlug');
-    let srcPlug = this.lowerPlug;
-    srcPlug.data('next').forEach((dstIndex) => {
-      let dstPlug = upperPlugs.members.find((plug) => {
-        return plug.data('ID') === dstIndex;
+    if (this.hasOwnProperty('lowerPlug')) {
+      let srcPlug = this.lowerPlug;
+      srcPlug.data('next').forEach((dstIndex) => {
+        let dstPlug = upperPlugs.members.find((plug) => {
+          return plug.data('ID') === dstIndex;
+        });
+        const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
+        cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
+        cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
+        this.nextLinks.push(cable);
+        dstPlug.on('click', (e) => {
+          if (!this.editDisable) {
+            this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: false });
+          } else {
+            e.preventDefault();
+          }
+        });
       });
-      const cable = new parts.SvgCable(this.svg, config.plug_color.flow, 'DU', srcPlug.cx(), srcPlug.cy(), dstPlug.cx(), dstPlug.cy());
-      cable._draw(cable.startX, cable.startY, cable.endX, cable.endY, boxBbox);
-      cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
-      this.nextLinks.push(cable);
-      dstPlug.on('click', (e) => {
-        this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: false });
-      });
-    });
+    }
     if (this.hasOwnProperty('lower2Plug')) {
       let srcPlug = this.lower2Plug;
       srcPlug.data('else').forEach((dstIndex) => {
@@ -138,7 +168,11 @@ export class SvgNodeUI {
         cable.cable.data('dst', dstIndex).attr('id', `${srcPlug.node.id}_${dstPlug.node.id}_cable`);
         this.elseLinks.push(cable);
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: true });
+          if (!this.editDisable) {
+            this.sio.emit('removeLink', { src: this.group.data('ID'), dst: dstIndex, isElse: true });
+          } else {
+            e.preventDefault();
+          }
         });
       });
     }
@@ -156,7 +190,11 @@ export class SvgNodeUI {
         this.outputFileLinks.push(cable);
 
         dstPlug.on('click', (e) => {
-          this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
+          if (!this.editDisable) {
+            this.sio.emit('removeFileLink', this.group.data('ID'), srcPlug.data('name'), dst.dstNode, dst.dstName);
+          } else {
+            e.preventDefault();
+          }
         });
       });
     });
@@ -227,8 +265,30 @@ export class SvgNodeUI {
     this.group.on('click', callback);
     return this;
   }
+
+  setEditDisable(editDisable) {
+    this.editDisable = editDisable;
+    return;
+  }
 }
 
+export function setEditDisable(svg, nodes, editDisable) {
+  let plugNames = ['.upperPlug', '.receptorPlug', '.lowerPlug', '.lower2Plug', '.connectorPlug'];
+  plugNames.forEach(function (plugName) {
+    let plugs = svg.select(plugName);
+    if (plugs !== undefined) {
+      plugs.each(function (i, p) {
+        p[i].data({ "edit_disable": editDisable });
+      });
+    }
+  });
+  nodes.forEach(function (node) {
+    if (node != null) {
+      node.setEditDisable(editDisable);
+    }
+  });
+  return;
+}
 /**
  * svg parent node
  */

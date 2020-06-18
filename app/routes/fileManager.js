@@ -4,13 +4,32 @@ const os = require("os");
 const fs = require("fs-extra");
 const Siofu = require("socketio-file-upload");
 const minimatch = require("minimatch");
-const fileBrowser = require("./fileBrowser");
-const { gitAdd, gitRm } = require("./gitOperator");
-const { getSystemFiles, convertPathSep } = require("./utility");
-const { getLogger } = require("./projectResource");
+const fileBrowser = require("../core/fileBrowser");
+const { gitAdd, gitRm } = require("../core/gitOperator");
+const { getSystemFiles } = require("./utility");
+const { convertPathSep } = require("../core/pathUtils");
+const { getLogger } = require("../core/projectResource");
+const { isComponentDir } = require("../core/componentFilesOperator");
+
+/**
+ * return component dir names under target directory
+ * @param {string} target
+ * @returns {string[]} - array of component dir names
+ */
+async function getComponentDirs(target) {
+  const contents = await fs.readdir(target);
+  const flags = await Promise.all(contents.map((e)=>{
+    return isComponentDir(path.resolve(target, e));
+  }));
+  return contents.filter((e, i)=>{
+    return flags[i];
+  });
+}
 
 async function sendDirectoryContents(emit, target, request, withSND = true, sendDir = true, sendFile = true, allFilter = /.*/) {
-  request = request || target;
+  const modifiedRequestDir = request ? path.normalize(convertPathSep(request)) : target;
+  const componentDirs = await getComponentDirs(modifiedRequestDir);
+  const regexComponentDirs = componentDirs.length > 0 ? new RegExp(`^(?!.*(${componentDirs.join("|")})).+$`) : null;
   const result = await fileBrowser(target, {
     request,
     SND: withSND,
@@ -18,25 +37,26 @@ async function sendDirectoryContents(emit, target, request, withSND = true, send
     sendFilename: sendFile,
     filter: {
       all: allFilter,
-      file: getSystemFiles()
+      file: getSystemFiles(),
+      dir: regexComponentDirs
     }
   });
   emit("fileList", result);
 }
 
 async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
-  requestDir = convertPathSep(requestDir);
-  getLogger(projectRootDir).debug(`current dir = ${requestDir}`);
+  const modifiedRequestDir = path.normalize(convertPathSep(requestDir));
+  getLogger(projectRootDir).debug(`current dir = ${modifiedRequestDir}`);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
 
   try {
-    const stats = await fs.stat(requestDir);
-    const targetDir = stats.isDirectory() ? requestDir : path.dirname(requestDir);
+    const stats = await fs.stat(modifiedRequestDir);
+    const targetDir = stats.isDirectory() ? modifiedRequestDir : path.dirname(modifiedRequestDir);
 
-    if (targetDir !== requestDir) {
+    if (targetDir !== modifiedRequestDir) {
       getLogger(projectRootDir).debug("requested directory is not directory, show parent of reqested:", targetDir);
     }
     await sendDirectoryContents(emit, targetDir, requestDir);
@@ -50,8 +70,8 @@ async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
 }
 
 async function onGetSNDContents(emit, projectRootDir, requestDir, glob, isDir, cb) {
-  requestDir = convertPathSep(requestDir);
-  getLogger(projectRootDir).debug("getSNDContents event recieved:", requestDir, glob, isDir);
+  const modifiedRequestDir = path.normalize(convertPathSep(requestDir));
+  getLogger(projectRootDir).debug("getSNDContents event recieved:", modifiedRequestDir, glob, isDir);
 
   if (typeof cb !== "function") {
     cb = ()=>{};
@@ -60,7 +80,7 @@ async function onGetSNDContents(emit, projectRootDir, requestDir, glob, isDir, c
   const sendFile = !isDir;
 
   try {
-    await sendDirectoryContents(emit, requestDir, requestDir, false, sendDir, sendFile, minimatch.makeRe(glob));
+    await sendDirectoryContents(emit, modifiedRequestDir, requestDir, false, sendDir, sendFile, minimatch.makeRe(glob));
   } catch (e) {
     getLogger(projectRootDir).error(requestDir, "read failed", e);
     cb(false);
@@ -212,7 +232,10 @@ function registerListeners(socket, projectRootDir) {
     getLogger(projectRootDir).debug("upload request recieved", event.file);
   });
   uploader.on("saved", async(event)=>{
-    const absFilename = event.file.pathName;
+    const absFilename = event.file.meta.componentDir ? path.resolve(convertPathSep(event.file.meta.componentDir), path.basename(event.file.pathName)) : event.file.pathName;
+    if (event.file.pathName !== absFilename) {
+      await fs.move(event.file.pathName, absFilename);
+    }
     getLogger(projectRootDir).info(`upload completed ${absFilename} [${event.file.size} Byte]`);
     await gitAdd(projectRootDir, absFilename);
     await sendDirectoryContents(socket.emit.bind(socket), path.dirname(absFilename));
@@ -220,6 +243,7 @@ function registerListeners(socket, projectRootDir) {
   uploader.on("error", (event)=>{
     getLogger(projectRootDir).error("file upload failed", event.file, event.error);
   });
+
   socket.on("getFileList", onGetFileList.bind(null, uploader, socket.emit.bind(socket), projectRootDir));
   socket.on("getSNDContents", onGetSNDContents.bind(null, socket.emit.bind(socket), projectRootDir));
   socket.on("removeFile", onRemoveFile.bind(null, socket.emit.bind(socket), projectRootDir));

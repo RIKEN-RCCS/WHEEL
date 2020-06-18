@@ -48,7 +48,7 @@ workflowComponentの詳細は後のクラス構造の章で述べます。
 保存されます。なお、projectRootディレクトリ自体は必ずworkflowコンポーネントとなっており、
 プロジェクト内の全てのコンポーネントはrootのワークフローの子孫コンポーネントとなります。
 
-コンポーネントの種類には、次の7種類があります。
+コンポーネントの種類には、次の9種類があります。
 
 - Task
 - If
@@ -57,27 +57,33 @@ workflowComponentの詳細は後のクラス構造の章で述べます。
 - For
 - While
 - Foreach
+- Viewer
+- Source
 
-個々のworkflowComponentの説明は、クラス構造の章を参照してください。
+個々のworkflowComponentの説明は、クラス構成の章を参照してください。
 taskコンポーネント内で実行するスクリプトなど、処理に必要なファイルは全て
 各コンポーネントのディレクトリ内に含める必要があります。
-(実装としては、../を使って自身のディレクトリ外のファイルを参照することも
+
+実装としては、../を使って自身のディレクトリ外のファイルを直接参照することも
 禁じていませんが、リモートホストでtaskを実行する時には、コンポーネント単位での
-ファイル転送を行うため、正常に動作しません。)
+ファイル転送を行うため、正常に動作しない可能性が高いです。
+自身のコンポーネント外のファイルを使用する場合は後述のinputFile/outputFile機能を使って
+ファイルを受け取ってから使うようにしてください。
 
 ## クラス構成
 workflowおよびその実行に関連するクラスのクラス図は次のとおりです。
 
-![クラス図](./classDiagram.png)
+![クラス図](./classDiagram.svg)
 
 BaseWorkflowComponentの各派生クラスのプロパティのうち、エンドユーザが設定することのできる項目は次のとおりです。
+なお、parentコンポーネントは現時点では別のコンポーネント配下へ移動するAPIが用意されていないので
+ユーザ操作によって変更されることはありません。
 
 ### Task
 property        | type         | description
 ----------------|--------------|--------------
 name            | string       | コンポーネンのディレクトリ名
 parent          | string       | 親コンポーネントのID
-ID              | string       | コンポーネントを識別する一意な文字列
 description     | string       | ユーザが指定するコンポーネントの説明文
 previous        | number[]     | 先行コンポーネントのID
 next            | number[]     | 後続コンポーネントのID
@@ -93,9 +99,9 @@ exclude         | string       | リモート環境から回収しないファ�
 
 *1 0,1,2のいずれかの値を指定することができる。
 0は削除、1は削除しない、2は親ノードと同じ挙動を意味する。
-初期値は2だが、rootワークフローは作成時にserver.jsonに定義された"defaultCleanupRemoteRoot"の値に変更されます
+初期値は2だが、rootワークフローは作成時にserver.jsonに定義された"defaultCleanupRemoteRoot"の値に変更される。
 
-*2 include, excludeともにglobパターンを指定することができる。
+*2 include, excludeともにglobパターンまたはカンマ区切りで複数のglobを指定することができる。
 includeにマッチしなおかつexcludeにマッチしないファイルを回収してくる。
 ただし、outputFilesに指定されたファイルは、include/excludeの指定に関わらず全て回収される。
 
@@ -104,7 +110,6 @@ property    | type         | description
 ------------|--------------|--------------
 name        | string       | コンポーネンのディレクトリ名
 parent      | string       | 親コンポーネントのID
-ID          | string       | コンポーネントを識別する一意な文字列
 description | string       | ノードの説明文
 previous    | number[]     | 先行ノードのID
 next        | number[]     | 後続ノードのID
@@ -114,14 +119,14 @@ condition   | string       | 条件判定を行うスクリプトのファイル
 else        | number[]     | 条件判定が偽だった時の後続ノードのID
 
 *1 conditionに指定されたスクリプトの終了コードが0の時は真それ以外の時は偽と判定して後続のノードへ遷移する。
-conditionに指定された文字列と一致するファイルが存在しなかった時は、Javascriptの式とみなしてそのコードを実行します。
+conditionに指定された文字列と一致するファイルが存在しなかった時は、Javascriptの式とみなしてそのコードを実行し
+評価結果がtruthyな値であれば真、falsyな値であれば偽として後続のノードへ遷移します。
 
 ### Workflow
 property    | type         | description
 ------------|--------------|--------------
 name        | string       | コンポーネンのディレクトリ名
 parent      | string       | 親コンポーネントのID(ルートワークフローではundefined)
-ID          | string       | コンポーネントを識別する一意な文字列
 description | string       | ノードの説明文
 previous    | number[]     | 先行ノードのID
 next        | number[]     | 後続ノードのID
@@ -133,7 +138,6 @@ property      | type         | description
 --------------|--------------|--------------
 name          | string       | コンポーネンのディレクトリ名
 parent        | string       | 親コンポーネントのID
-ID            | string       | コンポーネントを識別する一意な文字列
 description   | string       | ノードの説明文
 previous      | number[]     | 先行ノードのID
 next          | number[]     | 後続ノードのID
@@ -146,7 +150,6 @@ property     | type         | description
 -------------| -------------| --------------
 name         | string       | コンポーネンのディレクトリ名
 parent       | string       | 親コンポーネントのID
-ID           | string       | コンポーネントを識別する一意な文字列
 description  | string       | ノードの説明文
 previous     | number[]     | 先行ノードのID
 next         | number[]     | 後続ノードのID
@@ -161,7 +164,6 @@ property    | type         | description
 ------------| -------------| --------------
 name        | string       | コンポーネンのディレクトリ名
 parent      | string       | 親コンポーネントのID
-ID          | string       | コンポーネントを識別する一意な文字列
 description | string       | ノードの説明文
 previous    | number[]     | 先行ノードのID
 next        | number[]     | 後続ノードのID
@@ -176,13 +178,30 @@ property    | type         | description
 ------------| -------------| --------------
 name        | string       | コンポーネンのディレクトリ名
 parent      | string       | 親コンポーネントのID
-ID          | string       | コンポーネントを識別する一意な文字列
 description | string       | ノードの説明文
 previous    | number[]     | 先行ノードのID
 next        | number[]     | 後続ノードのID
 inputFiles  | inputFile[]  | 先行ノードから受け取るファイル
 outputFiles | outputFile[] | 後続ノードへ渡すファイル
 indexList   | string[]     | ループインデックスに指定される値のリスト
+
+### Viewer
+property    | type         | description
+------------| -------------| --------------
+name        | string       | コンポーネンのディレクトリ名
+parent      | string       | 親コンポーネントのID
+description | string       | ノードの説明文
+inputFiles  | inputFile[]  | 先行ノードから受け取るファイル
+
+### Source
+property       | type         | description
+---------------| -------------| --------------
+name           | string       | コンポーネンのディレクトリ名
+parent         | string       | 親コンポーネントのID
+description    | string       | ノードの説明文
+uploadOnDemand | boolean      | プロジェクト実行開始時にクライアントからアップロードさせるかどうかのフラグ
+outputFiles    | outputFile[] | 後続ノードへ渡すファイル
+
 
 ## inputFileおよびoutputFile
 前章に示したworkflow componentのinputFilesおよびoutputFilesプロパティに格納する
@@ -192,7 +211,7 @@ inputFileおよびoutputFileオブジェクトは次のプロパティを持つ
 property    | type     | description
 ------------|----------|--------------------------------------------
 name        | string   | ファイルまたはディレクトリ名
-src         | string[] |
+src         | string[] | 
 src.srcNode | string   | 送信元ノードのID
 src.srcName | string   | 送信元ノードでのファイルまたはディレクトリ名
 src.transit | string   | 他階層からファイルを受け取る時に経由するコンポーネント(画面表示用)
@@ -201,7 +220,7 @@ src.transit | string   | 他階層からファイルを受け取る時に経由�
 property    | type     | description
 ------------|----------| --------------------------------------------
 name        | string   | ファイル,ディレクトリ名またはglobパターン
-dst         | string[] |
+dst         | string[] | 
 dst.dstNode | string   | 送信先ノードのID
 dst.dstName | string   | 送信先ノードでのファイルまたはディレクトリ名
 dst.transit | string   | 他階層からファイルを受け取る時に経由するコンポーネント(画面表示用)
@@ -241,25 +260,123 @@ outputの指定に応じた取り扱いを行ないます。
 
 
 ## プロジェクト実行時の挙動
-TODO 書き直し
-プロジェクトの実行を開始すると、まずroot workflowがDispatcherクラスに渡されDispatcherクラスは
-workflowの子ノードを順次探索して、実行可能な子ノードから順に処理していきます。
+runProject APIが呼ばれると次の順に処理が行なわれます。
 
-子ノードのうちTaskは、hostおよびjobSchedulerの設定に応じて、対応するExecuterクラスに渡され
-プログラムの実行、ジョブ投入などの処理が行なわれます。
+1. プロジェクトファイルの読込み
+2. validataion check
+3. git commit
+4. Sourceコンポーネントのファイル確認およびonDemanndUploadが指定された場合のアップロード要求
+5. クラウドインスタンスの起動およびsshパスワード(orパスフレーズ)の要求とssh接続の作成
+6. プロジェクトの実行
 
-直接実行されるTaskについては実行後のcall backでstateプロパティが書き換えられます。
-また、ジョブとしてバッチシステムに投入されたTaskはsetIntervalを使ったポーリングにより
-実行状況が監視され、stateプロパティに反映されます。
+## validation checkの処理内容
+validation checkでは以下の内容を確認し、全ての条件を満たしていない時はプロジェクトの実行を行なわず
+error終了します。
+- 全てのTaskコンポーネントにscriptプロパティが指定されており、実際にscriptファイルが存在するか?
+- リモートジョブのTaskでTaskコンポーネントに指定されたjobSchdulerがremoteHostで指定された値に含まれているか?
+- 全てのIfおよびWhileコンポーネントにconditionプロパティが指定されているか?
+- 全てのForコンポーネントに、start/end/stepの値が設定されており、無限ループになっていないか?
+- 全てのForeachコンポーネントのindexListプロパティに1以上の要素を含む配列が指定されているか?
+- 全てのParameterStudyコンポーネントにparameterFileプロパティが指定されており、実際にファイルが存在するか?
+- 1つ以上の初期コンポーネントが含まれているか
 
-dispatcherがWorkflow, ParamterStudy, For, While, Foreachを見つけた時は、
-新規にDispatcherクラスを生成し以降の処理をそちらへ移譲します。
+## Sourceコンポーネントの処理内容
+Sourceコンポーネントは、実際のプロジェクト実行に先立って
+outputFileプロパティに指定されたファイルの実体を用意する処理を行ないます。
+uploadOnDemandフラグが指定されている場合は、"requestSourceFile"APIを通じて
+クライアントにファイルのアップロードを要求します。
+コンポーネントディレクトリ内に、cmp.wheel.json以外のファイルが1つしか存在しない時は
+そのファイルを同コンポーネントのファイルとして扱います。
+cmp.wheel.json以外に複数のファイルが存在した場合は、"askSourceFile"APIを通じて
+どのファイルを使うかをクライアントに指定させます。
+また、cmp.wheel.json以外にファイルが存在しなかった時は、"requestSourceFile"APIを通じて
+クライアントにファイルのアップロードを要求します。
+                                      
+
+## プロジェクト実行処理の概要
+プロジェクトの実行が始まると、まずroot workflowコンポーネントが読み込まれて
+Dispatcherクラスのインスタンスが作成されます。
+
+Dispatcherクラスは対応するコンポーネントの直接の子コンポーネントのcmp.wheel.jsonファイルを読込んで
+初期コンポーネントをcurrentSearchListに入れ、順に処理していきます。
+初期コンポーネントとは次の2つの条件を満たすコンポーネントのことです。
+
+- previousに指定された先行コンポーネントが存在しない
+- inputFilesに指定されたファイルのうち同階層のコンポーネントから受け取るものが存在しない
+
+ただし、sourceおよびviewerコンポーネントは自動的に初期コンポーネントとして扱われます。
+
+子コンポーネントのtype毎の処理内容は次のとおりです。
+### task
+hostおよびjobScheduler(使うか使わないか)の設定に応じて対応するExecuterクラスヘ渡され
+設定に応じてスクリプトの実行、ジョブ投入などの処理が行なわれます。
+
+### If
+conditionプロパティに設定された値を評価し、真であればnextに指定されたコンポーネントを
+偽の場合はelseに指定されたコンポーネントを、後続タスクとしてnextSearchListに登録して終了します。
+conditionプロパティの値は、まずファイル名として解釈され、ファイルが存在した場合にはそのファイルを
+スクリプトと見做して実行し、戻り値が0の場合を真、非0の場合を偽とします。
+ファイルが存在しなかった時は、戻り値をJavascriptの式として評価し、
+truthyな値であれば真、falsyな値であれば偽とします。
+
+### Workflow
+workflowコンポーネントのcmp.wheel.jsonを読み込んで新しいDispatcherクラスのインスタンスを作成し
+そちらに処理を移譲します。
+
+### ループ系(For, While, Foreach)
+自身と同じ階層に、ループインデックスの値に応じたsuffixをつけてディレクトリ全体のコピーを作成し
+コピーされたディレクトリのcmp.wheel.jsonファイルを読み込んでWorkflow同様に移譲します。
+生成されたDispatcher側の処理が完了したら、ループインデックスを進めて終了判定を行ない
+ループが終了してなければ前のtrip countで使われたディレクトリのコピーを作成して再度移譲します。
+ループが終了条件を満たした時点で、これらのコンポーネントは終了となります。
+
+これらのコンポーネントが作成したコピー内のcmp.wheel.jsonでは
+parentやprevious/next等の値に使われているIDがコピー元とコピー先で重複しています。
+したがって、IDからディレクトリ名を解決する時には相対パスを使う必要があることに留意してください。
+
+なお、コピー後のコンポーネントは、プロジェクト再実行時の重複を避けるため、"subComponent"フラグがTrueに設定されます。
+
+
+### ParameterStudy
+parmeterFileプロパティに設定されたファイルを読み込んで、そのファイルに指定されたパラメータ展開を行ない
+ループ系コンポーネントと同様にディレクトリのコピーを作成して移譲します。
+ループ系コンポーネントとは異なり、移譲された各ディレクトリの処理は並行して行なわれます。
+
+コピー処理はparameterFile内の指定に応じて次のように行なわれます。
+targetFilesプロパティに指定されたファイル:
+  nunjucksによりファイル内に記述されたplace holderの置換が行なわれた上で、対応するパラメータのディレクトリへ
+  コピーされます。
+  
+scatterプロパティに指定されたファイル:
+  scatterに指定された値に対して、nunjucksによるplace holderの置換を行ない、対応するパスへファイルのコピーを行ないます。
+  
+parameterFile自身:
+  どのディレクトリにもコピーされません。
+
+移譲した全てのDispatcherの処理が完了した時点で、parameterStudyコンポーネント終了となります。
+
+### Viewer
+ViewerクラスはinputFilesに指定されたファイルを全て元のコンポーネントから受け取った後、
+一時ディレクトリを作成してそこにコピーをファイルを配置し、URL,ファイル名、自身のIDをまとめたオブジェクトの
+配列を"resultFilesReady"イベント経由でクライアントへ送ります。
+
+### Source
+SourceコンポーネントはDispatcherクラス内では処理されません。
+
+
+
+Dispatcherクラスは各コンポーネントの処理が終わる毎に、後続コンポーネントをnextSearchListに入れ
+currentSearchList内のコンポーネントの処理が終わった時点で、nextSearchListを
+次のcurrentSearchListとして再実行します。
+currentSearchListとnextSearchListの両方が空になり、処理した全てのTaskコンポーネントの実行が終了した時点で
+dispatcherクラスの処理は完了します。
 
 ### プロジェクトおよび各コンポーネントのstatus表示について
-プロジェクトの状態は以下5つのうちいずれかの状態を取ります。
+プロジェクトの状態は以下6つのうちいずれかの状態を取ります。
 
-- not-started
+- not-started 
 - running
+- paused
 - finished
 - unknown
 - failed
@@ -267,6 +384,7 @@ dispatcherがWorkflow, ParamterStudy, For, While, Foreachを見つけた時は�
 初期状態は"not-started"で実行を開始すると"running"に遷移し、実行終了時にはfailed/unknown/finishedのいずれかの状態になります。
 終了時の状態は、プロジェクトに含まれるコンポーネントのうち1つ以上failedのものがあればfailed, failedが1つも無いが
 1つ以上のunknownがあればunknown、全てfinishedであればfinishedとなります。
+また、実行中にpause操作が行なわれるとpausedに遷移します。
 
 各コンポーネントのstatusは以下の8種類の状態を取ります。
 
@@ -380,5 +498,5 @@ cleanボタンの押下         | rm -fr && git reset HEAD --hard
 
 
 ## 画面遷移
-![画面遷移図](./screen_transition.png)
+![画面遷移図](./screen_transition.svg)
 

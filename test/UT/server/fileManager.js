@@ -188,7 +188,7 @@ describe("fileManager UT", ()=>{
   });
   describe("#downloadFile", ()=>{
     it("should send file", async()=>{
-      await onDownloadFile(emit,"dummy",  { path: testDirRoot, name: "foo_1" }, cb);
+      await onDownloadFile(emit, "dummy", { path: testDirRoot, name: "foo_1" }, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(emit).to.have.been.calledOnce;

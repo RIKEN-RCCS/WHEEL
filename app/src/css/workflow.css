@@ -1,13 +1,13 @@
 html,
 body {
-    background-color: #000000;
-    color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     height: 100%;
-    margin: 0;
-    white-space: nowrap;
     width: 100%;
+    margin: 0;
+    background-color: #000000;
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 0;
+    color: #FFFFFF;
+    white-space: nowrap;
 }
 
 li {
@@ -16,16 +16,19 @@ li {
 
 /* ヘッダー*/
 header {
-    padding: 12px 16px 10px 16px;
+    padding: 12px 16px 0px 16px;
     position: relative;
     background: #000000;
     font-size: 24px;
     text-decoration: none;
+    /* temporary change for rapid2
     height: 24px;
+    padding: 12px 16px 10px 16px;
+    height: 42px;*/
 }
 
 #title {
-    color: #FFFFFF;    
+    color: #FFFFFF;
     text-decoration: none;
     position: relative;
     top: -4px;
@@ -50,7 +53,7 @@ header {
     padding-top: 2px;
 }
 
-#drawer_button{
+#drawerButton{
     position:absolute;
 	right:16px;
     cursor: pointer;
@@ -62,9 +65,13 @@ header {
     background-color: #000000;
 }
 
+#drawerIcon{
+    margin-bottom: 5px;
+}
+
 #img_btn_menu_n{
     right:16px;
-    
+
 }
 
 img.btn_menu_n{
@@ -80,7 +87,7 @@ img.btn_menu_n{
 #drawerMenu {
     width:192px;
     height:100%;
-    -webkit-transform:translateX(192px);    
+    -webkit-transform:translateX(192px);
     transform:translateX(192px);
     transition:ease .5s;
     position:fixed;
@@ -194,7 +201,7 @@ img.btn_menu_n{
 }
 
 /* コントローラバー*/
-.controler_bar_area {
+.projectInfoArea {
     display: inline-flex;
     flex-direction: row;
     margin: 0 0 6px 16px;
@@ -218,7 +225,7 @@ img.btn_menu_n{
 }
 
 #project_state{
-    margin: 0 0 0 0;    
+    margin: 0 0 0 0;
     width: 100px;
     border-radius: 12px;
     border: 1px solid #FFFFFF
@@ -249,13 +256,16 @@ img.btn_menu_n{
     cursor: pointer;
 }
 
+#save_button:hover{
+    color: #CCFF00;
+}
+
 #revert_button{
-    display: inline-flex;    
+    display: inline-flex;
     margin: 0 4px 0 8px;
     cursor: pointer;
 }
 
-/* 'save' css -> js */
 #revert_button:hover{
     color: #CCFF00;
 }
@@ -264,7 +274,7 @@ img.btn_menu_n{
     margin-left: 8px;
 }
 
-.controler_bar_right_area {
+.projectInfoRightArea {
     text-align: center;
     display: flex;
     padding-top: 2px;
@@ -273,7 +283,7 @@ img.btn_menu_n{
 }
 
 /*ビューコントローラー*/
-#view_controler_area{
+#viewControlArea{
     padding: 4px 0 4px 16px;
     background-color: #222226;
 }
@@ -298,7 +308,9 @@ img.btn_menu_n{
     background-color: white;
     border: none;
     border-radius: 3px;
-    cursor: pointer;        
+    cursor: pointer;
+    /* temporary change for rapid2*/
+    padding-right: 6px;
 }
 
 .img_breadcrumbButton_icon{
@@ -316,7 +328,7 @@ img.btn_menu_n{
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     color: #FFFFFF;
     font-size: 14px;
-    position: relative;    
+    position: relative;
     top: -8px;
 }
 
@@ -345,6 +357,8 @@ img.btn_menu_n{
 #taskLibraryButton{
     position: absolute;
     height: 48px;
+    /* temporary change for rapid2*/
+    width: 24px;
     margin-top: 6px;
     left: 0;
     z-index: 40;
@@ -353,13 +367,17 @@ img.btn_menu_n{
     color: white;
     border: 0;
 	cursor: pointer;
-    border-collapse: collapse; 
+    border-collapse: collapse;
+}
+
+#workflowComponents ul{
+    margin: 12px 0 12px 0;
 }
 
 #taskLibraryButton img{
     width: 10px;
 }
-    
+
 #taskLibraryMenu{
     position: absolute;
     margin-top: 6px;
@@ -367,7 +385,7 @@ img.btn_menu_n{
     background-color: #222226;
     opacity: 0.9;
     display: none;
-    z-index: 40;    
+    z-index: 40;
     border-collapse: collapse;
 }
 
@@ -376,104 +394,132 @@ img.btn_menu_n{
     margin: 16px 0 0 16px;
 }
 
-#workflow li, #task li, #PS li, #if li, #for li, #while li, #foreach li{
+#workflow li, #task li, #PS li, #if li, #for li, #while li, #foreach li, #source li, #viewer li{
     display: inline-block;
 }
 
 #img_workflow{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #803DB3;
     height: 32px;
     width: 32px;
 }
 
 #img_task{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #3B55B3;
     height: 32px;
     width: 32px;
 }
 
 #img_parameterStudy{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #666622;
     height: 32px;
     width: 32px;
 }
 
 #img_if{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5B5B5F;
     height: 32px;
     width: 32px;
 }
 
 #img_for{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
 #img_while{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
 #img_foreach{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 32px;
     width: 32px;
 }
 
+#img_source{
+    border-radius: 2px;
+    background-color: #00bff0;
+    height: 32px;
+    width: 32px;
+}
+
+#img_viewer{
+    border-radius: 2px;
+    background-color: #00b050;
+    height: 32px;
+    width: 32px;
+}
+
 .img_workflow_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #803DB3;
     height: 24px;
     width: 24px;
 }
 
 .img_task_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #3B55B3 !important;
     height: 24px;
     width: 24px;
 }
 
 .img_parameterStudy_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #666622;
     height: 24px;
     width: 24px;
 }
 
 .img_if_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #5B5B5F;
     height: 24px;
     width: 24px;
 }
 
 .img_for_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 24px;
     width: 24px;
 }
 
 .img_while_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
     height: 24px;
     width: 24px;
 }
 
 .img_foreach_p{
-    border-radius: 2px;    
+    border-radius: 2px;
     background-color: #247780;
+    height: 24px;
+    width: 24px;
+}
+
+.img_source_p{
+    border-radius: 2px;
+    background-color: #00bff0;
+    height: 24px;
+    width: 24px;
+}
+
+.img_viewer_p{
+    border-radius: 2px;
+    background-color: #00b050;
     height: 24px;
     width: 24px;
 }
@@ -494,7 +540,7 @@ img.btn_menu_n{
 
 #img_workflow_name, #img_task_name, #img_parameterStudy_name,
 #img_if_name, #img_for_name, #img_while_name,
-#img_foreach_name{
+#img_foreach_name, #img_source_name, #img_viewer_name{
     font-size: 14px;
     position: absolute;
     margin: 6px 0 0 8px;
@@ -511,6 +557,10 @@ img.btn_menu_n{
     display: none;
     z-index: 40;
     border-collapse: collapse;
+}
+
+select::-ms-expand {
+    display: block;
 }
 
 #propertyArea{
@@ -532,7 +582,7 @@ img.btn_menu_n{
     color: white;
     border: 0;
 	cursor: pointer;
-    border-collapse: collapse; 
+    border-collapse: collapse;
 }
 
 #propertyTitle{
@@ -556,9 +606,21 @@ img.btn_menu_n{
     margin: 0;
 }
 
+.propertyDisable:checked+label{
+    margin: 0;
+    color: #FF0000;
+}
+
+.propertyDisable{
+    margin: 0;
+}
+
+#propertyDisableArea{
+    text-align: right;
+}
+
 .cleanStateButton{
-    right: 32px;
-    top: 67px;
+    right: 28px;
 }
 
 #propertyDescription{
@@ -568,23 +630,23 @@ img.btn_menu_n{
 
 #propertyInputFiles, #propertyScript, #propertyState{
     margin: 2px 0 0 0;
-    display: inline-block;    
+    display: inline-block;
 }
 
-#propertyOutputFiles, #propertyParameterSettingFile, #propertyCondition,
+#propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
 #propertyIndexList, #propertyStart, #propertyStep,
-#propertyRemotehost, #propertyQueue, #propertyuseJobScheduler{
+#propertyRemotehost, #propertyQueue, #propertyuseJobScheduler, #propertyuploadOnDemand, #propertyRetry{
     margin: 8px 0 0 0;
-    display: inline-block;    
+    display: inline-block;
 }
 
 #propertyEnd{
-    display: inline-block;    
+    display: inline-block;
 }
 
 #nameInputField, .newInputFileNameInputField, .newOutputFileNameInputField,
-.newOutputFileNameInputField, #parameterFileInputField, #conditionInputField, 
-.newIndexListField{
+.newOutputFileNameInputField, #parameterFileInputField, #conditionInputField,
+.newIndexListField, #retryTimesInputField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -592,7 +654,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #stateField{
@@ -603,7 +665,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color:#6F6F77;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;  
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #scriptInputField{
@@ -614,7 +676,7 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #includeInputField, #excludeInputField{
@@ -625,18 +687,26 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#remotehostSelectField{
+#scriptSelectField, #remotehostSelectField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
+#retryConditionInputField, #fileForCondition{
     margin: 2px 0 0 8px;
     padding-left: 5px;
-    height: 20px;
+    height: 22px;
+    margin: 2px 0 0 8px;
+    padding-left: 5px;
+    height: 22px;
     width: 198px;
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+}
+
+#conditionTypeFlags{
+    margin: 2px 0 2px 4px;
 }
 
 #queueSelectField{
@@ -647,7 +717,7 @@ img.btn_menu_n{
     background-color: #333333;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 .queueSelectFieldColor{
@@ -661,12 +731,25 @@ img.btn_menu_n{
     background-color: #000000 !important;
 }
 
-#checkboxArea{
-    margin: 0;    
-    padding: 0px;    
+#propertyRetryArea{
+    margin-left: 8px;
+}
+
+#propertyRetryCondition{
+    display: inline-block;
+    margin-top: 4px;
+}
+
+.checkboxArea{
+    margin: 0;
+    padding: 0px;
 }
 
 #useJobSchedulerFlagField{
+    margin: 0 0 0 8px;
+}
+
+#updateOnDamandFlagField{
     margin: 0 0 0 8px;
 }
 
@@ -678,13 +761,13 @@ img.btn_menu_n{
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #startInputField, #endInputField{
     margin: 2px 0 0 2px;
     padding-left: 5px;
-    height: 15px;
+    height: 20px;
     width: 73px;
     background-color: #000000;
     border: 0;
@@ -694,7 +777,7 @@ img.btn_menu_n{
 #stepInputField{
     margin: 2px 0 0 5px;
     padding-left: 5px;
-    height: 15px;
+    height: 20px;
     width: 73px;
     background-color: #000000;
     border: 0;
@@ -741,7 +824,7 @@ img.btn_menu_n{
 
 #propertyCleanUpFlag, #propertyInclude, #propertyExclude{
     margin: 8px 0 0 8px;
-    display: inline-block;    
+    display: inline-block;
 }
 
 #flags{
@@ -776,16 +859,6 @@ img.btn_menu_n{
     background-color: #222226;
 }
 
-.createFileDirButton, .editButtons{
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
-    margin: 8px 0 0 8px;
-    padding: 0px;
-    border: 0;
-    background-color: #222226;
-}
-
 #dirBackButton{
     cursor: pointer;
     width: 24px;
@@ -802,7 +875,7 @@ img.btn_menu_n{
 }
 
 #editButtonsArea{
-    margin: 8px 0 0 154px;
+    margin: 8px 0 0 180px;
 }
 
 #jupyterBootButton{
@@ -818,6 +891,22 @@ img.btn_menu_n{
 #jupyterImg{
     width: 24px;
     height: 29px;
+}
+
+#fileListLoadButton{
+    margin: 0 0 2px 162px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    font-size: 0px;
+    border: 0;
+    background-color: #222226;
+    vertical-align: middle;
+}
+
+#loadFileListImg{
+    width: 18px;
+    height: 18px;
 }
 
 #startInputField, #endInputField, #stepInputField{
@@ -855,7 +944,7 @@ img.btn_menu_n{
     overflow:hidden;
     white-space:nowrap;
     word-wrap: break-word;
-    font-size: 12px; 
+    font-size: 12px;
 }
 
 #componentPath{
@@ -865,7 +954,7 @@ img.btn_menu_n{
     overflow:hidden;
     white-space:nowrap;
     word-wrap: break-word;
-    font-size: 12px; 
+    font-size: 12px;
     background-color: #000000;
 }
 
@@ -895,7 +984,7 @@ img.btn_menu_n{
     height: 40px;
 }
 
-.view_controler_right_area {
+.viewControlRightArea {
     position: relative;
     right: 48px;
     flex-direction: row;
@@ -987,7 +1076,7 @@ img.btn_menu_n{
     height: calc(100% - 360px);
     width: 98%;
     margin: auto;
-    overflow: auto;
+    /* overflow: auto; */
     font-size: 90%;
     user-select: none;
 }
@@ -1010,63 +1099,6 @@ img.btn_menu_n{
     position: relative;
 }
 
-.file_dialog {
-    height: calc(100% - 115px);
-}
-
-.register_list_area {
-    height: calc(100% - 300px);
-    width: 700px;
-    min-height: 100px;
-}
-
-.select_workflow_area {
-    height: calc(100% - 160px);
-}
-
-.project_manage_area {
-    display: flex;
-    flex-direction: row;
-    position: relative;
-}
-
-#project_table_container{
-  width: 40%;
-}
-
-.workflow_manage_area {
-    display: flex;
-    flex-direction: row;
-    color: #FFFFFF;
-    background-color: #2F2F33;
-    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
-    height: calc(100% - 108px);    
-    overflow: auto;
-    font-size: 14px;
-    user-select: none;
-}
-
-#workflow_name_container{
-  width: 180px;
-}
-
-#workflow_name{
-  width: 165px;
-}
-
-#workflow_desc{
- width: calc(100% - 10px);
-}
-
-.buttons_container{
-  width: 90px;
-}
-
-.register_host_area {
-    height: calc(100% - 120px);
-    text-align: center;
-}
-
 .select_dir_container,
 .select_file_container {
     display: flex;
@@ -1078,11 +1110,6 @@ img.btn_menu_n{
     margin: 0 5px;
 }
 
-.selected_workflow {
-    width: 95%;
-    margin: 5px auto;
-}
-
 .file_icon,
 .dir_icon,
 .icon {
@@ -1092,51 +1119,6 @@ img.btn_menu_n{
 .project_icon {
     height: 20px;
     margin: 0 3px;
-}
-
-.button,
-.dialog_button {
-    width: 90px;
-    height: 25px;
-    box-shadow: 1px -1px 0px 0px rgba(105, 175, 45, 0.1);
-    border: solid 1px;
-    cursor: pointer;
-    margin: auto;
-    background-color: rgb(105, 175, 45);
-    color: black;
-}
-
-.disable_button {
-    cursor: auto;
-}
-
-.button:hover {
-    background-color: rgb(125, 195, 65);
-}
-
-.button:active {
-    background-color: rgb(105, 175, 45);
-}
-
-.button:disabled {
-    background-color: rgb(105, 175, 45);
-    opacity: 0.6;
-    cursor: default;
-}
-
-.ok_test_button,
-.ok_test_button:disabled {
-    background-color: rgb(20, 105, 250);
-    color: black;
-    cursor: auto;
-}
-
-.ng_test_button {
-    background-color: rgb(230, 55, 20);
-}
-
-.ng_test_button:hover {
-    background-color: rgb(250, 75, 40);
 }
 
 .hostlabel {
@@ -1155,54 +1137,6 @@ img.btn_menu_n{
     left: 0;
     display: none;
     z-index: 50;
-}
-
-.dialog_area {
-    width: 1000px;
-    position: fixed;
-    border: solid 1px #111;
-    background-color: rgb(70, 70, 65);
-    box-shadow: 0px 0px 1px 1px rgba(250, 250, 250, 0.1);
-    margin: auto;
-    height: calc(100% - 120px);
-    top: 60px;
-    left: calc(50% - 500px);
-    z-index: 100;
-    display: none;
-    padding: 10px;
-}
-
-.dialog_title {
-    color: rgb(240, 240, 240);
-    font-size: larger;
-    padding-left: 20px;
-}
-
-.text_dialog_area {
-    width: 600px;
-    height: 140px;
-    top: calc(50% - 70px);
-    left: calc(50% - 300px);
-}
-
-.yesno_dialog_area {
-    width: 500px;
-    height: 100px;
-    top: calc(50% - 50px);
-    left: calc(50% - 250px);
-}
-
-.dialog_button_container {
-    float: right;
-    margin-right: 25px;
-}
-
-.workflow_tree_svg {
-    height: 100%;
-    width: 180px;
-    border-right: solid 1px #111;
-    box-shadow: -1px 0 0 0 rgba(250, 250, 250, 0.1) inset;
-    float: left;
 }
 
 #node_svg {
@@ -1260,7 +1194,7 @@ img.btn_menu_n{
     width: 100%;
     height: 320px;
     z-index: 80;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
 #logButtonArea{
@@ -1270,7 +1204,7 @@ img.btn_menu_n{
 }
 
 .logButton{
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     background-color: rgba(28,28,32,0.0);
     font-size: 14px;
     padding: 0 20px 0 20px;
@@ -1281,7 +1215,7 @@ img.btn_menu_n{
 }
 
 .logButton:hover{
-    border-bottom-color:#CCFF00 !important;    
+    border-bottom-color:#CCFF00 !important;
 }
 
 .logText{
@@ -1291,7 +1225,7 @@ img.btn_menu_n{
     overflow: auto;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     margin: 12px 0 0 12px;
-    display: none;        
+    display: none;
 }
 
 .logContent{
@@ -1302,7 +1236,7 @@ img.btn_menu_n{
 }
 
 #logClearButton{
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;        
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     background-color: #5B5B5F;
     font-size: 14px;
     padding: 0 20px 0 20px;
@@ -1322,61 +1256,106 @@ img.btn_menu_n{
     margin :0;
     position: absolute;
 }
-  
-#project_manage_area{
+
+#workflow_graphview_area {
     display: flex;
     flex-direction: row;
     color: #FFFFFF;
     background-color: #2F2F33;
     box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    height: calc(100% - 62px);
+    overflow: auto;
+    font-size: 14px;
+    user-select: none;
+}
+
+#workflow_listview_area{
+    display: flex;
+    flex-direction: row;
+    color: #FFFFFF;
+    background-color: #2F2F33;
+    box-shadow: -1px 1px 0px 0px rgba(250, 250, 250, 0.1);
+    /* temporary change for rapid2
     height: calc(100% - 108px);
+    */
+    /*62 = projectInfoArea(30px) + viewControlArea(32px)*/
+    height: calc(100% - 62px);
     width: 100%;
     border: none;
-    overflow: auto;
+    /* overflow: auto; */
     font-size: 0;
     user-select: none;
     margin: 0;
 }
 
-#project_table_body{
-    height: calc(100% - 163px);
-    width: calc(100% - 16px);
-    position: fixed;
-    overflow: auto;
-    border: solid 1px #2F2F33;
-    border-top-color: #222226;
-}
-
-#tableBody{
-    margin: 0px;
-}
-
 #project_tree_svg{
-    margin: 24px 16px 16px 16px;
-    width: 100%;
+    box-sizing: border-box;
+    margin-top: 24px;
+    margin-left: 16px;
+    width: calc(100% - 16px);
+    height: calc(100% - 24px)
+}
+
+#tableHeadArea{
+    left: 0;
+    overflow: hidden;
+}
+
+#projectHeadTable{
+    margin :0;
+    width: calc(100% - 16px);
+    word-wrap: break-word;
+    border-collapse: collapse;
+    border: solid 1px #2F2F33;
+    border-bottom-color: #222226;
 }
 
 #project_table_head{
-    margin: 0 0 4px 0;
+    position: sticky;
+    top: 0;
+    width: 100%;
     text-align: left;
 }
 
 #project_table_tr{
     margin: 0 0 4px 0;
     text-align: left;
-    
 }
 
-#project_table_tr th{
+#tableDataArea{
+    box-sizing: border-box;
+    left:0;
+    overflow: auto;
+    height: calc(100% - 31px);
+    width: 100%;
+    padding-right: 16px;
+    padding-bottom: 16px;
+}
+
+#projectBodyTable{
+    left:0;
+    width: 100%;
+    word-wrap: break-word;
+    border-collapse: collapse;
+}
+
+#project_table_body{
+    height: 100%;
+    width: 100%;
+    border: solid 1px #2F2F33;
+    border-top-color: #222226;
+}
+
+#project_table_tr th:not([id="showMoreButtonArea"]){
     padding: 0 0 4px 0;
     text-align: left;
     font-weight: inherit;
-    /* padding-right:42px;  */
 }
 
 .project_table_component{
     border: solid 1px #2F2F33;
     border-bottom-color: #222226;
+    box-sizing: content-box;
 }
 
 .componentNameLabel{
@@ -1388,31 +1367,61 @@ img.btn_menu_n{
 }
 
 th.componentStateLabel{
-    display: inline-block;    
+    display: inline-block;
     width: 90px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
     border-collapse: separate;
 }
 
 .componentStartTimeLabel{
-    display: inline-block;        
+    display: inline-block;
     width: 150px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
+    border-collapse: separate;
+}
+
+#showMoreButtonArea{
+    display: inline-block;
+    position: relative;
+    box-sizing: border-box;
+    width: 20px;
+    height: 25px;
+    cursor: pointer;
+    text-align: center;
+    border-collapse: separate;
+    margin-bottom: 4px;
+}
+
+#showMoreButton{
+    position: absolute;
+    margin: auto;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width:10px;
+}
+
+.componentLabel{
+    display:none;
+    width: 150px;
+    font-size: 14px;
+    margin-right:44px;
     border-collapse: separate;
 }
 
 .componentEndTimeLabel{
-    display: inline-block;        
+    display: inline-block;
     width: 150px;
     font-size: 14px;
-    margin-right:44px; 
+    margin-right:44px;
     border-collapse: separate;
 }
 
 .componentDescriptionLabel{
-    display: inline-block;            
+    display: inline-block;
     width: 256px;
     font-size: 14px;
 }
@@ -1427,8 +1436,8 @@ th.componentStateLabel{
 }
 
 .componentState{
-    display: inline-block;    
-    padding-right: 44px;
+    display: inline-block;
+    padding-right: 50px;
     font-size: 14px;
     width: 90px;
 }
@@ -1439,21 +1448,20 @@ th.componentStateLabel{
 
 .componentStartTime{
     display: inline-block;
-    padding-right: 44px;
+    padding-right: 64px;
     width: 150px;
     font-size: 14px;
 }
 
 .componentEndTime{
-    display: inline-block;        
+    display: inline-block;
     padding-right: 44px;
     width: 150px;
     font-size: 14px;
 }
 
 .componentDescription{
-    display: inline-block;            
-    padding-right: 44px;
+    display: inline-block;
     width: 256px;
     font-size: 14px;
 }
@@ -1493,7 +1501,7 @@ svg g{
 } */
 
 tspan{
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;            
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
     font-size: 14px;
 }
 
@@ -1530,102 +1538,45 @@ tspan{
     background-color: #222226;
 }
 
-/* file rename/delete dialog*/
-/* #fileRenameLabel{
-    margin: 10px 0 10px 10px;
-    color: #FFFFFF;
-    padding: 0;
-    font-size: 16px;
-} */
+/*dialog setting*/
+.ui-button.cancelButton{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    font-size: 14px;
+  }
 
-#newName{
-    background-color: #000000;
-    color: #FFFFFF;
-    border: none;
-    width: 282px;
-    margin-top: 4px;
-    height: 20px;
-    padding-left: 5px;
-}
+.ui-button.okButton{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    font-size: 14px;
+    margin: 9px 9px 9px 2px!important;
+  }
 
-#newFileName.dialogTextbox, #newFolderName.dialogTextbox, #newName.dialogTextbox, #password.dialogTextbox{
+#newfileName.dialogTextbox, #newfolderName.dialogTextbox, #newName.dialogTextbox,
+#password.dialogTextbox, #sourceFilename.dialogTextbox{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    font-size: 14px;
+    color: #FFFFFF;
     background-color: #000000;
+    border: 0;
     width: 300px;
     height: 20px;
-    font-size: 14px;
-    margin: 8px 8px 8px 8px;
+    margin: 8px 10px 8px 10px;
     padding-left: 5px;
-    border: 0;
-    color: #FFFFFF;
-    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;    
 }
 
-#fileDeleteLabel{
-    margin: 10px 0 10px 10px;
-    color: #FFFFFF;    
-    padding: 0;
-    font-size: 16px;
-}
-
-#deleteMessage, #cleanMessage{
+#deleteMessage{
     margin-top: 6px;
-    color: #FFFFFF;    
+    color: #FFFFFF;
     padding: 0 16px 0 16px;
     font-size: 16px;
 }
 
-.dialogTitle{
-    margin: 12px 10px 8px 10px;
+.dialogMessage{
+    font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+    font-weight: initial;
     color: #FFFFFF;
-    font-size: 16px;
-}
-
-.dialogTextbox{
-    color: #FFFFFF;
-    border: none;
-    width: 300px;
-    margin: 4px 12px 4px 12px;
     font-size: 14px;
+    margin: 0px 10px 4px 10px;
 }
-
-.ui-dialog {
-    z-index: 200;
-    background-color: #222226;
-    border: none !important;
-}
-
-.ui-dialog-buttonpane{
-    background-color: #222226;
-    border: none;
-    margin: 0px !important;
-    padding: 0px !important; 
-}
-
-.ui-dialog-buttonset{
-    padding: 0;
-    position: relative;
-    left: -5px;
-    top: 12px;
-}
-
-.ui-button{
-    background-color: #5B5B5F;
-    font-size: 14px !important;
-    width: 71px;
-    height: 24px;
-    color: #FFFFFF;
-    line-height: 0px;
-    border-radius: 0px;
-    border: none;
-    top: -15px;
-}
-
-.ui-button:hover{
-    text-decoration: none;
-    background-color: #6F6F77;
-    color: #FFFFFF;    
-    border: 0;
-  }
 
 .viewNodesField{
     border: solid 1px rgba(68, 68, 73, 0.5);
@@ -1633,16 +1584,56 @@ tspan{
 
 #sshConnectionLabel{
   margin: 8px;
-  color: #FFFFFF;  
-}
-
-#password{
-  background-color: #000000;
   color: #FFFFFF;
-  border: none;
-  width: 256px;
-  margin: 4pz;
-  height: 20px;
-  padding-left: 5px;
 }
 
+/* rapid2 css*/
+#editorTitle{
+    background: #222226;
+    padding: 4px 0 4px 16px;
+    height: 32px;
+}
+
+#backToGraphView{
+    position: absolute;
+    right: 16px;
+}
+
+#rapid2Title{
+    font-size: 16px;
+    position: relative;
+}
+
+.gutter {
+    background-color: gray;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+#app {
+/*body size - header size*/
+  height: calc(100% - 48px);
+}
+
+#normalArea {
+  height: 100%;
+}
+
+.ui-tooltip {
+	font-size: 12px;
+}
+body .ui-tooltip {
+	border-width: 2px;
+}
+
+.application--wrap{
+    min-height: calc(100vh - 48px) !important;
+}
+
+.container{
+    padding: 0px !important;
+}
+
+.ace-idle-fingers .ace_print-margin{
+    width: 0px !important;
+}

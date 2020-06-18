@@ -3,6 +3,8 @@ import dialogWrapper from './dialogWrapper';
 
 import 'font-awesome/css/font-awesome.css';
 import '../css/fileBrowser.css';
+import config from './config';
+
 
 export default class {
   // public methods
@@ -12,6 +14,7 @@ export default class {
     this.selectedItemColor = 'lightblue';
     this.idFileList = null;
     this.lastClicked = null;
+    this.lastDblClickedInfo = { dataType: '', dataPath: '', dataName: '' };
     this.sendEventName = null;
     this.recvEventName = null;
     this.socket = null;
@@ -48,6 +51,9 @@ export default class {
   }
   getSelectedFile() {
     return this.getLastClicked();
+  }
+  getDirsInfo() {
+    return this.lastDblClickedInfo;
   }
   getLastClicked() {
     return this.lastClicked;
@@ -110,8 +116,11 @@ export default class {
         callback: function () {
           var path = $(this).data('path');
           var oldName = $(this).data('name');
-          var html = '<p class="dialogTitle">Rename file</p><input type="text" id="newName" class="dialogTextbox">';
-          dialogWrapper('#dialog', html).done(function () {
+          const dialogOptions = {
+            title: "Rename file"
+          };
+          const html = '<p class="dialogMessage">Input new file name.</p><input type="text" id="newName" class="dialogTextbox">';
+          dialogWrapper('#dialog', html, dialogOptions).done(function () {
             var newName = $('#newName').val();
             var obj = { 'path': path, 'oldName': oldName, 'newName': newName };
             $(fileList).remove(`:contains(${oldName})`);
@@ -124,8 +133,11 @@ export default class {
         callback: function () {
           var filename = $(this).data('name');
           var target = $(this).data('path') + '/' + filename;
-          var html = '<p class="dialogTitle">Delete file</p><div id="deleteMessage">Are you sure to delete this file?</div>';
-          dialogWrapper('#dialog', html).done(function () {
+          const dialogOptions = {
+            title: "Delete file"
+          };
+          const html = '<p class="dialogMessage">Are you sure to delete this file?</p>';
+          dialogWrapper('#dialog', html, dialogOptions).done(function () {
             $(fileList).remove(`:contains(${filename})`);
             socket.emit('removeFile', target);
           });
@@ -192,34 +204,10 @@ export default class {
     this.socket.on(this.recvEventName, (fileList) => {
       fileList.forEach((data) => {
         if (!this.isValidData(data)) return;
-        let iconImg;
-        if (data.type === 'dir') {
-          if (data.islink === false) {
-            iconImg = `<img src="/image/img_folder.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
-          } else {
-            iconImg = `<img src="/image/img_folderlink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" alt="graph">`;
-          }
-        }
-        if (data.type === 'file') {
-          if (data.islink === false) {
-            iconImg = `<img src="/image/img_file.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-          } else {
-            iconImg = `<img src="/image/img_filelink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-          }
-        }
-        if (data.type === 'snd') {
-          iconImg = `<img src="/image/img_SND.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-        }
-        if (data.type === 'sndd') {
-          iconImg = `<img src="/image/img_SNDD.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-        }
-        if (data.type === 'deadlink') {
-          iconImg = `<img src="/image/img_deadlink.png" class="filebrowseList" aria-hidden="true" data-type="${data.type}" data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}"  alt="graph">`;
-        }
-        let icon = iconImg;
-        var dataName = data.name;
+        var icon = this.drawIconImage(data.type, data.path, data.name, data.isdir, data.islink);
+        var dataName = data.name.trim();
         var idName = dataName.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
-        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class=${data.type} id=${idName}>${icon}${data.name}</li>`);
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class="${data.type}" id="${idName}_data">${icon}${data.name}</li>`);
         var compare = this.compare;
         var lengthBefore = $(`${this.idFileList} li`).length;
         var counter = 0;
@@ -243,44 +231,75 @@ export default class {
   }
   onClickDefault() {
     $(this.idFileList).on("click", 'li,i', (event) => {
+      var dataType = $(event.target).data('type');
       this.changeColorsWhenSelected(event);
-      this.lastClicked = $(event.target).data('name').trim();
+      this.lastClicked = $(event.target).data('name');
+      this.changeFileEditButtonWhenSelected(dataType);
     });
   }
   onDirDblClickDefault() {
-    let dirStack = [];
+    let dirPathStack = [];
     let rootDirPath = "";
+    let target = "";
     $(this.idFileList).on("dblclick", 'li,i', (event) => {
-      if ($(event.target).data('type') === 'dir') {
-        if (dirStack.length === 0) {
-          dirStack.push($(event.target).data('path'));
-          rootDirPath = $(event.target).data('path');
+      const dataType = $(event.target).data('type');
+      const dataPath = $(event.target).data('path').trim();
+      const dataName = $(event.target).data('name');
+      if (dataType === 'dir') {
+        if (dirPathStack.length === 0) {
+          dirPathStack.push(this.requestedPath);
+          rootDirPath = this.requestedPath;
         }
         //dblclicked at rootDir -> display rootDir
-        if (dirStack.length === 1 && $(event.target).data('name') === "../") {
-          dirStack.push($(event.target).data('path'));
-          var target = rootDirPath;
+        if (dirPathStack.length === 1 && dataName === "../") {
+          dirPathStack.push(dataPath);
+          target = rootDirPath;
         }
-        if ($(event.target).data('name') === "../") {
-          dirStack.pop();
-          var target = dirStack[dirStack.length - 1];
+
+        if (dataName === "../") {
+          dirPathStack.pop();
+          target = dirPathStack[dirPathStack.length - 1];
         } else {
-          const originalPath = $(event.target).data('path').trim();
-          const pathSep = originalPath[0] === '/' ? '/' : '\\';
-          var target = originalPath + pathSep + $(event.target).data('name').trim();
-          dirStack.push(target);
+          const pathSep = dataPath[0] === '/' ? '/' : '\\';
+          target = dataPath + pathSep + dataName;
+          dirPathStack.push(target);
         }
+
         this.request(this.sendEventName, target, null);
         $(this.idFileList).empty();
       }
-      if ($(event.target).data('type') === 'snd' || $(event.target).data('type') === 'sndd') {
-        var target = $(event.target).data('path').trim();
-        this.request('getSNDContents', target, $(event.target).data('name'), $(event.target).data('type'));
+      if (dataType === 'snd' || dataType === 'sndd') {
+        target = dataPath;
+        this.request('getSNDContents', target, dataName, dataType);
       }
+      this.lastDblClickedInfo.dataType = dataType;
+      this.lastDblClickedInfo.dataPath = dataPath;
+      this.lastDblClickedInfo.dataName = dataName;
     });
+  }
+  drawIconImage(dataTypeTemp, dataPath, dataName, isDir, isLink) {
+    var dataType;
+    if (dataTypeTemp === "file") {
+      dataType = isLink === true ? 'filelink' : 'file';
+    }
+    if (dataTypeTemp === "dir") {
+      dataType = isLink === true ? 'folderlink' : 'dir';
+    } else {
+      dataType = dataTypeTemp;
+    }
+    var iconImg = `<img src="${config.fileType_icon[dataType]}" class="filebrowseList" aria-hidden="true" data-type="${dataType}" data-path="${dataPath}" data-name="${dataName}" data-isdir="${isDir}" data-islink="${isLink}" alt="graph">`;
+    return iconImg
+  }
+  changeFileEditButtonWhenSelected(dataType) {
+    if (dataType === 'file') {
+      $('#editPSFileButton').css('visibility', 'visible');
+    } else {
+      $('#editPSFileButton').css('visibility', 'hidden');
+    }
   }
   changeColorsWhenSelected(e) {
     $(`${this.idFileList} li`).css('background-color', this.defaultColor);
+    $(`${this.idFileList} li img`).css('background-color', this.defaultColor);
     $(e.target).css('background-color', this.selectedItemColor);
   }
   isValidPath(path1, path2) {
@@ -302,5 +321,10 @@ export default class {
     if (!this.isValidPath(this.requestedPath, data.path))
       return false;
     return true;
+  }
+  setDisable(disable) {
+    this.disable = disable;
+    $(this.idFileList).data({ "disable": disable });
+    return;
   }
 }

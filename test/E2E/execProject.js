@@ -5,15 +5,26 @@ const chaiWebdriver = require('chai-webdriverio').default;
 const fs = require("fs");
 chai.use(chaiWebdriver(browser));
 
-describe("component property check:", function () {
+describe("project result check", function () {
     const url = '/';
     const E2ETestDir = "E2ETestDir";
-    const ececPrjDir = "execPrjDir";
-    const testProjectJson = "prj_wheel_json";
+    const execPrjDir = "execPrjDir";
+    const id_targetProjectJson = "prj_wheel_json_data";
+    // id/class 
+    const id_pageName = 'pageNameLabel';
+    const id_prjName = 'project_name';
+    const id_createDate = 'project_create_date';
+    const id_updateDate = 'project_update_date';
+    const id_listview = 'listView';
+    const id_runButton = 'run_button';
+    const id_prjState = 'project_state';
+    const id_cleanButton = "clean_button";
+    const id_nodeSvg = "node_svg";
+
     // Xpath for "import"
     const importMenu = '//*[@id="importButton"]';
     const dialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
-    // issue project list
+    // target project list
     const homeDirPath = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
     const execDirPath = homeDirPath + '/E2ETestDir/execPrjDir';
     const targetPrjDir = fs.readdirSync(execDirPath);
@@ -21,52 +32,57 @@ describe("component property check:", function () {
     targetPrjDir.forEach(function (target) {
         // set test project
         let testProject = target.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
-        let testProjectName = testProject.slice(0, -6);
+        let projectName= testProject.slice(0, -6); // remove '.wheel'
         it("Home screen is drawn", function () {
             browser.url(url);
-            browser.windowHandleSize({ width: 1920, height: 1080 });
+            browser.setWindowSize(1920, 1080);
             expect(browser.getTitle()).to.equal("WHEEL home");
-            expect('#pageNameLabel').to.have.text("Home");
+            expect(`#${id_pageName}`).to.have.text("Home");
         });
         it(`project ${target} : import`, function () {
-            browser.click(importMenu)
-                .waitForVisible('.dir');
-            browser.doubleClick(`#${E2ETestDir}`)
-                .waitForVisible('.dir');
-            browser.doubleClick(`#${ececPrjDir}`)
-                .waitForVisible('.dir');
-            browser.doubleClick(`#${testProject}`)
-                .waitForVisible('.file');
-            browser.click(`#${testProjectJson}`)
-                .click(dialogOKButton)
-                .waitForExist(`#prj_${testProjectName}`, 10000, false);
+            $(importMenu).click();
+            $('.dir').waitForDisplayed();
+            $(`#${E2ETestDir}_data`).doubleClick();
+            $('.dir').waitForDisplayed();
+            $(`#${execPrjDir}_data`).doubleClick();
+            $('.dir').waitForDisplayed();
+            $(`#${testProject}_data`).doubleClick();
+            $('.file').waitForDisplayed();
+            $(`#${id_targetProjectJson}`).click();
+            $(dialogOKButton).click();
+            $(`#prj_${projectName}`).waitForDisplayed();
+            let elem = $(`#prj_${projectName}`).isDisplayed();
+            expect(elem).to.be.true;
         });
         it(`project ${target} : open`, function () {
-            browser.doubleClick(`#prj_${testProjectName}`)
-                .waitForVisible('#project_name');
+            $(`#prj_${projectName}`).doubleClick();
+            $(`#${id_prjName}`).waitForDisplayed();
+            let elem = $(`#${id_prjName}`).isDisplayed();
+            expect(elem).to.be.true;
         });
         it(`project ${target} : execute`, function () {
-            const updateTimeBeforeElement = $('#project_create_date');
-            const updateTimeAfterElement = $('#project_update_date');
-            const updateTimeBeforeRun = updateTimeBeforeElement.getText();
-            let updateTimeCheckFlag = false;
+            const createDate = $(`#${id_createDate}`).getText();
+            let execFlag = false;
+            $(`#${id_listview}`).click();
+            $(`#${id_runButton}`).click();
+            browser.waitUntil(function () {
+                return $(`#${id_prjState}`).getText() === 'finished'
+            }, 60000, 'expected text to be different after 60s');
 
-            browser.pause(2000);
-            browser.click('#listView')
-            browser.click('#run_button')
-                .waitUntil(function () {
-                    return browser.getText('#project_state') === 'finished'
-                }, 60000, 'expected text to be different after 60s');
-
-            const updateTimeAftereRun = updateTimeAfterElement.getText();
-
-            if (updateTimeBeforeRun !== updateTimeAftereRun) {
-                updateTimeCheckFlag = true;
+            const updateDate = $(`#${id_updateDate}`).getText();
+            if (`${createDate}` !== `${updateDate}`) {
+                execFlag = true;
             }
-            expect(updateTimeCheckFlag).to.equal(true);
-            browser.click('graphView')
-
+            $('#graphView').click();
+            expect(execFlag).to.be.true;
+        });
+        it("post process for retry", function () {
+            $(`#${id_nodeSvg}`).click();
+            $(`#${id_cleanButton}`).click();
+            browser.waitUntil(function(){
+                return $(`#${id_prjState}`).getText() === 'not-started'
+            }, 1000, 'expected text to be different after 1s');
+            expect(`#${id_prjState}`).to.have.text("not-started");
         });
     });
-
 });

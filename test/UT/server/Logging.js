@@ -16,11 +16,8 @@ chai.use((_chai, _)=>{
 });
 const rewire = require("rewire");
 
-//display detailed information of unhandled rejection
-process.on("unhandledRejection", console.dir);
-
 //testee
-const {setup, getLogger, setFilename, setMaxLogSize, setNumBackup, setCompress, shutdown, getCurrentSettings}= require("../../../app/logSettings.js");
+const { setup, getLogger, setFilename, setMaxLogSize, setNumBackup, setCompress, shutdown, getCurrentSettings } = require("../../../app/logSettings.js");
 
 //stubs
 const sio = {
@@ -77,7 +74,7 @@ describe("Unit test for log4js's helper functions", ()=>{
   describe("#log", ()=>{
     const logFilename = "./loggingTest.log";
     beforeEach(async()=>{
-      setup(logFilename, 4096)
+      setup(logFilename, 4096);
       sio.emit.resetHistory();
       delete process.env.WHEEL_DISABLE_LOG;
     });
@@ -94,7 +91,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to workflow logger", ()=>{
       const logger = getLogger("workflow");
-      logger.addContext("sio", sio)
+      logger.addContext("sio", sio);
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledThrice;
@@ -107,7 +104,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to home logger", ()=>{
       const logger = getLogger("home");
-      logger.addContext("sio", sio)
+      logger.addContext("sio", sio);
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledOnce;
@@ -117,37 +114,7 @@ describe("Unit test for log4js's helper functions", ()=>{
     });
     it("should output to remotehost logger", ()=>{
       const logger = getLogger("remotehost");
-      logger.addContext("sio", sio)
-      logger.info("foo");
-      logger.error("bar");
-      expect(sio.emit).to.have.been.calledOnce;
-      expect(sio.emit).to.always.have.been.calledWith("showMessage");
-      const log = sio.emit.getCall(0).args[1];
-      expect(log).to.match(/bar$/);
-    });
-    it("should output to login logger", ()=>{
-      const logger = getLogger("login");
-      logger.addContext("sio", sio)
-      logger.info("foo");
-      logger.error("bar");
-      expect(sio.emit).to.have.been.calledOnce;
-      expect(sio.emit).to.always.have.been.calledWith("showMessage");
-      const log = sio.emit.getCall(0).args[1];
-      expect(log).to.match(/bar$/);
-    });
-    it("should output to admin logger", ()=>{
-      const logger = getLogger("admin");
-      logger.addContext("sio", sio)
-      logger.info("foo");
-      logger.error("bar");
-      expect(sio.emit).to.have.been.calledOnce;
-      expect(sio.emit).to.always.have.been.calledWith("showMessage");
-      const log = sio.emit.getCall(0).args[1];
-      expect(log).to.match(/bar$/);
-    });
-    it("should output to rapid logger", ()=>{
-      const logger = getLogger("rapid");
-      logger.addContext("sio", sio)
+      logger.addContext("sio", sio);
       logger.info("foo");
       logger.error("bar");
       expect(sio.emit).to.have.been.calledOnce;

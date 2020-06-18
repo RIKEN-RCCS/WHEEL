@@ -5,9 +5,10 @@ const os = require("os");
 const ARsshClient = require("arssh2-client");
 const { getLogger } = require("../logSettings");
 const logger = getLogger("remotehost");
-const fileBrowser = require("./fileBrowser");
+const fileBrowser = require("../core/fileBrowser");
 const { remoteHost, rootDir } = require("../db/db");
-const { createSshConfig, convertPathSep } = require("./utility");
+const { createSshConfig } = require("./utility");
+const { convertPathSep } = require("../core/pathUtils");
 
 async function sendFileList(sio, request) {
   logger.debug(`current dir = ${request}`);
