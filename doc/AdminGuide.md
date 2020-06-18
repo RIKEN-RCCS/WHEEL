@@ -3,6 +3,7 @@
 WHEELの実行にあたって、必須のソフトウェアは以下のとおりです。
 - node.js (12以降)
 - git
+- git lfs
 - python3
 - jupyter
 
@@ -28,7 +29,7 @@ dockerを利用して、WHEELを起動する場合、以下の手順でdocker im
 > docker build -t wheel .
 ```
 
-### dockerを使わずにWHEELを起動する場合(非推奨)
+### dockerを使わずにWHEELを直接起動する場合(非推奨)
 dockerを使わずにホストOSでWHEELを起動する場合は以下の手順でインストールを行ないます。
 ```
 > git clone https://gitlab.com/aicshud/WHEEL.git
@@ -48,6 +49,7 @@ dockerを使わずにホストOSでWHEELを起動する場合は以下の手順�
 ### 証明書
 WHEELはhttpsおよびwssにて通信を行なうため、起動する前にサーバ証明書等の設定が必要です。
 秘密鍵ファイルを `app/config/server.key`、証明書ファイルを `app/config/server.crt`という名前で配置してください。
+
 __BUG__ 正しい鍵および証明書ファイルを配置せずにWHEELを起動すると、後述の`remotehost.json`および`projectList.json`ファイルが破壊されるという既知の問題があります(2020/1/20時点)
 
 ### server設定
@@ -70,8 +72,9 @@ server.jsonの既定値
     "compressLogFile": true,
     "numJobOnLocal": 2,
     "defaultTaskRetryCount": 1,
-    "shutdownDelay": 0
-    "rootDir": undefined
+    "shutdownDelay": 0,
+    "rootDir": undefined,
+    "gitLFSSize": 200
 ```
 
 #### port (整数)
@@ -127,7 +130,11 @@ workflow画面に接続するクライアントが0になってからWHEEL自身
 プロジェクトファイル等のユーザが作成/使用するファイルを格納するディレクトリのパスを指定します。
 デフォルト値は未指定ですが、指定が無い場合は環境変数HOMEが使われ、さらにHOMEが未設定の場合は/が使われます。
 
-### jobScheduler設定
+### gitLFSSize(整数)
+グラフビューでアップロードされたファイルをgit LFSによる管理対象とするかどうかを判断するしきい値をMB単位で指定します。
+この値より大きいサイズのファイルはアップロード完了時に`git lfs track`コマンドによってgit LFSの対象として指定されます。
+
+## jobScheduler設定
 WHEELが利用するジョブスケジューラシステムに関する設定は `app/config/jobScheduler.json`ファイルにjson形式で記述します。
 本設定ファイルは通常の運用の範囲内では変更する必要はありませんが、
 ジョブ投入/ステータスチェック/キャンセル時に想定していないオプションが必要になった時や、

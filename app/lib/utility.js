@@ -21,23 +21,11 @@ const metaCharactors = "*?[]{}()!?+@.";
  * @param {string} target - target string which will be escaped
  * @returns {string} escaped regex string
  */
-/**
- *
- *
- * @param {*} target
- * @returns
- */
 function escapeRegExp(target) {
   //eslint-disable-next-line no-useless-escape
   return target.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
-/**
- *
- *
- * @param {*} name
- * @returns
- */
 function isSane(name) {
   if (typeof name !== "string") {
     return false;
@@ -56,12 +44,6 @@ function isSane(name) {
  * @param {strint} name - name to be checked
  * @returns {boolean} - return true if it is ok
  */
-/**
- *
- *
- * @param {*} name
- * @returns
- */
 function isValidName(name) {
   if (!isSane(name)) {
     return false;
@@ -78,12 +60,6 @@ function isValidName(name) {
  * determin specified name is valid for inputFilename
  * @param {strint} name - name to be checked
  * @returns {boolean} - return true if it is ok
- */
-/**
- *
- *
- * @param {*} name
- * @returns
  */
 function isValidInputFilename(name) {
   if (!isSane(name)) {
@@ -102,12 +78,6 @@ function isValidInputFilename(name) {
  * @param {string} name - name to be checked
  * @returns {boolean} - return true if it is ok
  */
-/**
- *
- *
- * @param {*} name
- * @returns
- */
 function isValidOutputFilename(name) {
   if (!isSane(name)) {
     return false;
@@ -125,13 +95,6 @@ function isValidOutputFilename(name) {
  * @param {boolean} humanReadable - option flag for using delimiters(/and:) or not
  * @param {boolean} withMiliseconds - option flag for time resolution
  * return {string}
- */
-/**
- *
- *
- * @param {boolean} [humanReadable=false]
- * @param {boolean} [withMilliseconds=false]
- * @returns
  */
 function getDateString(humanReadable = false, withMilliseconds = false) {
   const now = new Date();
@@ -158,6 +121,5 @@ module.exports = {
   reWin32ReservedNames,
   pathseps,
   metaCharactors,
-  getDateString,
-  escapeRegExp
+  getDateString
 };

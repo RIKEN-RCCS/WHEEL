@@ -1,43 +1,7 @@
 "use strict";
-const path = require("path");
-const fs = require("fs-extra");
 const { EventEmitter } = require("events");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { escapeRegExp, isValidName, isValidInputFilename, isValidOutputFilename } = require("../lib/utility");
-const { convertPathSep } = require("../core/pathUtils");
-
-/**
- * check if ssh connection can be established
- * @param {hostinfo} hotsInfo - remote host setting
- * @param {string} password - password or passphrase for private key
- */
-async function createSshConfig(hostInfo, password) {
-  const config = {
-    host: hostInfo.host,
-    port: hostInfo.port,
-    keepaliveInterval: hostInfo.keepaliveInterval || 30000,
-    username: hostInfo.username
-  };
-
-  if (hostInfo.keyFile) {
-    const tmp = await fs.readFile(path.normalize(convertPathSep(hostInfo.keyFile)));
-    config.privateKey = tmp.toString();
-
-    if (password) {
-      config.passphrase = password;
-      config.password = null;
-    }
-  } else {
-    config.privateKey = null;
-
-    if (password) {
-      config.passphrase = null;
-      config.password = password;
-    }
-  }
-  return config;
-}
-
+const { escapeRegExp } = require("../lib/utility");
 
 /**
  * determine do cleanup or not
@@ -64,9 +28,10 @@ function getSystemFiles() {
 }
 
 
-class EmitArbitrator extends EventEmitter {
+class EmitArbitrator_old extends EventEmitter {
   constructor(send, event, array, chunksize) {
     super();
+
     this.start = 0;
     this.end = chunksize;
     this.array = Array.from(array);
@@ -129,17 +94,13 @@ class EmitArbitrator extends EventEmitter {
  * @param {number} chunksize - number of array length to be send at one time
  */
 async function emitLongArray(emit, event, array, chunksize) {
-  const arbitrator = new EmitArbitrator(emit, event, array, chunksize);
+  const arbitrator = new EmitArbitrator_old(emit, event, array, chunksize);
   return arbitrator.go();
 }
+
 
 module.exports = {
   doCleanup,
   getSystemFiles,
-  createSshConfig,
-  escapeRegExp,
-  isValidName,
-  isValidInputFilename,
-  isValidOutputFilename,
   emitLongArray
 };

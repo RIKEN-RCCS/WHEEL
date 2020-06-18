@@ -13,6 +13,7 @@ let jupyterToken;
 let actualJupyterPortNumber;
 
 /**
+ * store jupyter's token string
  * @param token
  */
 function setJupyterToken(token) {
@@ -20,21 +21,22 @@ function setJupyterToken(token) {
 }
 
 /**
- *
+ * get jupyter's token string
  */
 function getJupyterToken() {
   return jupyterToken;
 }
 
 /**
- * @param port
+ * store jupyter's port number
+ * @param {Number} port - jupyter's port number
  */
 function setJupyterPort(port) {
   actualJupyterPortNumber = port;
 }
 
 /**
- *
+ * get jupyter's port number
  */
 function getJupyterPort() {
   return actualJupyterPortNumber;
@@ -44,6 +46,7 @@ module.exports.suffix = ".wheel";
 module.exports.projectJsonFilename = "prj.wheel.json";
 module.exports.componentJsonFilename = "cmp.wheel.json";
 module.exports.statusFilename = "status.wheel.txt";
+module.exports.jobManagerJsonFilename= "jm.wheel.json";
 module.exports.keyFilename = path.resolve(configDir, "server.key");
 module.exports.certFilename = path.resolve(configDir, "server.crt");
 
@@ -68,6 +71,7 @@ module.exports.compressLogFile = config.compressLogFile;
 module.exports.numJobOnLocal = config.numJobOnLocal;
 module.exports.defaultTaskRetryCount = config.defaultTaskRetryCount;
 module.exports.shutdownDelay = config.shutdownDelay;
+module.exports.gitLFSSize = config.gitLFSSize;
 
 
 module.exports.jobScheduler = jobScheduler;

@@ -7,7 +7,7 @@ const { getLogger } = require("../logSettings");
 const logger = getLogger("remotehost");
 const fileBrowser = require("../core/fileBrowser");
 const { remoteHost, rootDir } = require("../db/db");
-const { createSshConfig } = require("./utility");
+const { createSshConfig } = require("../core/sshManager");
 const { convertPathSep } = require("../core/pathUtils");
 
 async function sendFileList(sio, request) {
@@ -22,7 +22,6 @@ async function sendFileList(sio, request) {
 
 async function trySshConnectionWrapper(hostInfo, password, cb) {
   const config = await createSshConfig(hostInfo, password);
-  config.readyTimeout = 1000;//TODO remotehost画面でホスト毎に別の値を入力できるようにする
   const arssh = new ARsshClient(config, { connectionRetry: 1, connectionRetryDelay: 2000 });
   logger.debug("try to connect", config.host, ":", config.port);
   arssh.canConnect()

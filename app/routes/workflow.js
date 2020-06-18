@@ -7,7 +7,9 @@ const projectController = require("./projectController");
 const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay, jobScript } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
-const { getProjectState } = require("../core/projectFilesOperator");
+const { setProjectState, getProjectState, checkRunningJobs } = require("../core/projectFilesOperator");
+const { createSsh } = require("../core/sshManager");
+const { registerJob } = require("../core/jobManager");
 
 module.exports = function(io) {
   let projectRootDir = null;
@@ -56,6 +58,29 @@ module.exports = function(io) {
           }
         }, shutdownDelay);
       }
+    });
+
+    //remaining job detected
+    (async()=>{
+      const projectState = await getProjectState(projectRootDir);
+      if (projectState !== "running" && projectState !== "holding") {
+        return;
+      }
+      const { tasks } = await checkRunningJobs(projectRootDir);
+      if (tasks.length > 0) {
+        getLogger(projectRootDir).info(`${tasks.length} jobs remaining. job check restarted`);
+      }
+      const p = [];
+      for (const task of tasks) {
+        const { remotehostID, name } = task;
+        const hostinfo = remoteHost.get(remotehostID);
+        await createSsh(projectRootDir, name, hostinfo, socket);
+        p.push(registerJob(hostinfo, task));
+      }
+      await Promise.all(p);
+      setProjectState(projectRootDir, "unknown");
+    })().catch((e)=>{
+      getLogger(projectRootDir).error("restart job check process failed", e);
     });
   });
 

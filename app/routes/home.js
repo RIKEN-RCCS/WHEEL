@@ -10,7 +10,7 @@ const { getLogger } = require("../logSettings");
 const logger = getLogger("home");
 const fileBrowser = require("../core/fileBrowser");
 const { createNewProject } = require("../core/projectFilesOperator");
-const { gitAdd, gitRm, gitCommit, gitInit, gitResetHEAD } = require("../core/gitOperator");
+const { gitAdd, gitRm, gitCommit, gitInit, gitResetHEAD, gitClean } = require("../core/gitOperator2");
 const { hasChild } = require("../core/workflowComponent");
 const { projectList, projectJsonFilename, componentJsonFilename, suffix, rootDir } = require("../db/db");
 const { convertPathSep } = require("../core/pathUtils");
@@ -264,6 +264,7 @@ async function convertProjectFormat(projectJsonFilepath) {
       return fs.remove(path.resolve(projectRootDir, file));
     }));
     await gitResetHEAD(projectRootDir);
+    await gitClean(projectRootDir);
     throw (e);
   }
 
@@ -370,6 +371,8 @@ async function onImportProject(emit, projectJsonFilepath, cb) {
   if (!await fs.pathExists(path.resolve(newProjectRootDir, ".git"))) {
     try {
       await gitInit(newProjectRootDir, "wheel", "wheel@example.com"); //TODO replace by user info
+      await gitAdd(newProjectRootDir, "./");
+      await gitCommit(newProjectRootDir, "import project");
     } catch (e) {
       logger.error("can not access to git repository", e);
       cb(false);

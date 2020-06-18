@@ -50,7 +50,7 @@ const grandsonSchema = {
 };
 
 describe("workflow editor UT", function() {
-  this.timeout(20000);
+  this.timeout(0);
   let components;
   let wf1Schema;
   let wf2Schema;
@@ -103,7 +103,12 @@ describe("workflow editor UT", function() {
      *  - wf1(hoge) -> foreach0(hoge)
      */
 
-    await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
+    try {
+      await createNewProject(projectRootDir, "test project", null, "test", "test@example.com");
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
     const rootWf = await fs.readJson(path.join(projectRootDir, componentJsonFilename));
 
     const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 0, y: 0 });

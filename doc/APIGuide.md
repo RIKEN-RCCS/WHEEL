@@ -80,16 +80,6 @@
     * [getFileList(path, cb)](#getfilelistpath-cb-1)
     * [tryConnectHostById(id, passwrod, cb)](#tryconnecthostbyidid-passwrod-cb)
     * [tryConnectHost(sshTeset, passwod, cb)](#tryconnecthostsshteset-passwod-cb)
-* [admin画面で発生する通信一覧(server -> client)](#admin画面発生通信一覧server-client)
-    * [accountList(account[])](#accountlistaccount)
-* [admin画面で発生する通信一覧(client -> server)](#admin画面発生通信一覧client-server)
-    * [getAccountList(cb)](#getaccountlistcb)
-    * [addAccount(account, cb)](#addaccountaccount-cb)
-    * [updateAccount(account, cb)](#updateaccountaccount-cb)
-    * [removeAccount(id, cb)](#removeaccountid-cb)
-* [rapid画面で発生する通信一覧(server -> client)](#rapid画面発生通信一覧server-client)
-    * [tree(dirTree)](#treedirtree)
-
 <!-- vim-markdown-toc -->
 
 ## 全般的な注意事項
@@ -293,10 +283,11 @@ taskStateのデータ形式は以下のとおり。
 | logSSHerr  | リモートホストで実行されたtaskの標準エラー出力
 
 
-#### askPassword(remoteHost)
+#### askPassword(remoteHost, cb)
 - @param {string} remoteHost - パスワードを要求するホスト名
 
 リモートホストへアクセスする時に使うパスワード(またはパスフレーズ)の入力を要求します。
+ユーザが入力したパスワードはcb関数の第一引数としてサーバに渡します。
 
 
 #### askSourceFilename(id, name, description, filelist)
@@ -545,12 +536,6 @@ linkデータの形式はaddLink APIと同じ
 指定されたコンポーネントおよびその子孫コンポーネントの状態をgitリポジトリ内のHEADの状態に戻し
 statusをnot-startedにします。
 
-#### password(pw, cb)
-- @param {string | null} pw - パスワード
-
-askPassword APIで要求されたパスワードを送信します。
-ユーザがパスワード入力をキャンセルした時はnullを送信します。
-
 #### sourceFile(id, filename, cb)
 - @param {string} id - ファイルの選択を要求しているsourceコンポーネントのid文字列
 - @param {string} filename - 使用するファイル名
@@ -648,40 +633,3 @@ sshTestのデータ形式は以下のとおり
 | username | string    | ユーザ名
 | keyFile  | string    | 秘密鍵のファイル名、パスワード認証時はfalsyな値を設定すること
 
-## admin画面で発生する通信一覧(server -> client)
-#### accountList(account[])
-ユーザアカウントの一覧を送信します。
-
-accoutデータの形式は以下のとおり
-
-| property      | data type |  description
-|---------------|-----------|------------------------------------------------------
-| name          | string    | ユーザ名
-| password      | string    | パスワード
-| workDirectory | string    | 当該ユーザの初期ディレクトリ
-| uid           | number    | 当該ユーザのuid
-| gid           | number    | 当該ユーザのgid
-
-## admin画面で発生する通信一覧(client -> server)
-#### getAccountList(cb)
-accountListの送信を要求します
-
-#### addAccount(account, cb)
-新規アカウントを作成します。
-accountデータの形式はaccountList APIを参照のこと
-
-#### updateAccount(account, cb)
-既存のアカウント情報を上書きします。
-accountデータの形式はaccountList APIを参照のこと
-
-#### removeAccount(id, cb)
-@param {string} id - 削除するアカウントのid文字列
-
-既存のアカウントを削除します。
-id引数はアカウントのユーザ名ではなく、識別用に新規作成時にサーバ側で割り当てるID文字列
-
-## rapid画面で発生する通信一覧(server -> client)
-#### tree(dirTree)
-@param {object} dirTree - js-treeが解釈できるJson形式のディレクトリツリー
-
-ファイルベースのパラスタ用にディレクトリツリーを表示するための情報を送ります。

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -21,6 +21,7 @@
 
 <body>
   <div id="app">
+    <v-app>
     <!-- header始まり -->
     <header>
       <a href="home" id="title">WHEEL</a>
@@ -607,6 +608,13 @@
       </div>
       <new-rapid></new-rapid>
     </div>
+    <unsaved-files-dialog
+    :unsaved-files="unsavedFiles"
+    :cb="cb"
+    :dialog="dialog"
+    @close-dialog="closeDialog"
+    ></unsaved-files-dialog>
+  </v-app>
   </div>
 </body>
 

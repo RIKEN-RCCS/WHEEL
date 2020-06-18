@@ -3,7 +3,7 @@ const promiseRetry = require("promise-retry");
 const fs = require("fs-extra");
 const path = require("path");
 const Mode = require("stat-mode");
-const { gitAdd } = require("./gitOperator");
+const { gitAdd } = require("./gitOperator2");
 const { projectJsonFilename } = require("../db/db");
 
 

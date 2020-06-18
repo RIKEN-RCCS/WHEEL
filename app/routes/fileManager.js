@@ -4,14 +4,16 @@ const os = require("os");
 const fs = require("fs-extra");
 const Siofu = require("socketio-file-upload");
 const minimatch = require("minimatch");
+const klaw = require("klaw");
 const fileBrowser = require("../core/fileBrowser");
-const { gitAdd, gitRm } = require("../core/gitOperator");
+const { gitAdd, gitRm, gitLFSTrack, gitLFSUntrack, isLFS } = require("../core/gitOperator2");
 const { getSystemFiles } = require("./utility");
 const { jobScript } = require("../db/db");
 const { convertPathSep } = require("../core/pathUtils");
 const { getLogger } = require("../core/projectResource");
 const { saveFile } = require("../core/fileUtils");
 const { isComponentDir } = require("../core/componentFilesOperator");
+const { gitLFSSize } = require("../db/db");
 
 /**
  * return component dir names under target directory
@@ -146,16 +148,32 @@ async function onRenameFile(emit, projectRootDir, msg, cb) {
     return;
   }
 
+
   try {
     await gitRm(projectRootDir, oldName);
+    const stats = await fs.stat(oldName);
+
+    if (stats.isFile() && await isLFS(projectRootDir, oldName)) {
+      await gitLFSUntrack(projectRootDir, oldName);
+      await gitLFSTrack(projectRootDir, newName);
+    } else {
+      for await (const file of klaw(oldName)) {
+        if (file.stats.isFile() && await isLFS(projectRootDir, file.path)) {
+          await gitLFSUntrack(projectRootDir, file.path);
+          const newAbsFilename = file.path.replace(oldName, newName);
+          await gitLFSTrack(projectRootDir, newAbsFilename);
+        }
+      }
+    }
     await fs.move(oldName, newName);
     await gitAdd(projectRootDir, newName);
     await sendDirectoryContents(emit, msg.path);
   } catch (e) {
-    e.path = msg.path;
-    e.oldName = msg.oldName;
-    e.newName = msg.newName;
-    getLogger(projectRootDir).error("rename failed", e);
+    const err = typeof e === "string" ? new Error(e) : e;
+    err.path = msg.path;
+    err.oldName = msg.oldName;
+    err.newName = msg.newName;
+    getLogger(projectRootDir).error("rename failed", err);
     cb(false);
     return;
   }
@@ -226,6 +244,7 @@ async function onCreateNewDir(emit, projectRootDir, dirname, cb) {
   cb(true);
 }
 
+
 function registerListeners(socket, projectRootDir) {
   const uploader = new Siofu();
   uploader.listen(socket);
@@ -238,7 +257,12 @@ function registerListeners(socket, projectRootDir) {
     if (event.file.pathName !== absFilename) {
       await fs.move(event.file.pathName, absFilename);
     }
-    getLogger(projectRootDir).info(`upload completed ${absFilename} [${event.file.size} Byte]`);
+    const fileSizeMB = parseInt(event.file.size / 1024 / 1024);
+    getLogger(projectRootDir).info(`upload completed ${absFilename} [${fileSizeMB > 1 ? `${fileSizeMB} MB` : `${event.file.size} Byte`}]`);
+
+    if (fileSizeMB > gitLFSSize) {
+      await gitLFSTrack(projectRootDir, absFilename);
+    }
     await gitAdd(projectRootDir, absFilename);
     await sendDirectoryContents(socket.emit.bind(socket), path.dirname(absFilename));
   });

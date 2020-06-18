@@ -1,4 +1,6 @@
 "use strict";
+const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
+const { projectList } = require("./db/db");
 
 //this line must be placed before require express, socket.io and any other depending library
 if (process.env.WHEEL_DEBUG_VERBOSE) {
@@ -10,7 +12,7 @@ if (process.env.WHEEL_DEBUG_VERBOSE) {
 }
 
 const path = require("path");
-const fs = require("fs");
+const fs = require("fs-extra");
 const { spawn } = require("child_process");
 const cors = require("cors");
 const express = require("express");
@@ -78,66 +80,80 @@ app.use((req, res, next)=>{
   res.status(404).send("reqested page is not found");
 });
 
-//Listen on provided port, on all network interfaces.
-server.listen(portNumber);
-server.on("error", onError);
-server.on("listening", onListening);
+//check each project has running job or not
+Promise.all(
+  projectList.getAll().map(async(pj)=>{
+    const { jmFiles } = await checkRunningJobs(pj.path);
+    if (jmFiles.length > 0) {
+      setProjectState(pj.path, "holding");
+    }
+  })
+)
+  .then(()=>{
+    //Listen on provided port, on all network interfaces.
+    server.listen(portNumber);
+    server.on("error", onError);
+    server.on("listening", onListening);
 
-//boot jupyter
-if (jupyter) {
-  const cmd = typeof jupyter === "string" ? jupyter : "jupyter-notebook";
-  const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
-  const opts = [
-    "--no-browser",
-    "--allow-root",
-    `--port ${jupyterPortNumber}`,
-    "--port-retries=0",
-    "--ip=*",
-    `--notebook-dir=${notebookRoot}`
-  ];
-  setJupyterPort(jupyterPortNumber);
+    //boot jupyter
+    if (jupyter) {
+      const cmd = typeof jupyter === "string" ? jupyter : "jupyter-notebook";
+      const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
+      const opts = [
+        "--no-browser",
+        "--allow-root",
+        `--port ${jupyterPortNumber}`,
+        "--port-retries=0",
+        "--ip=*",
+        `--notebook-dir=${notebookRoot}`
+      ];
+      setJupyterPort(jupyterPortNumber);
 
-  logger.info("booting jupyter");
-  const cp = spawn(cmd, opts, { shell: true });
-  cp.stdout.on("data", (data)=>{
-    logger.debug(data.toString());
-  });
-  cp.stderr.on("data", (data)=>{
-    const output = data.toString();
-    const currentToken = getJupyterToken();
-    if (typeof currentToken === "undefined") {
-      const rt = /http.*\?token=(.*)/.exec(output);
-      if (rt !== null && typeof rt[1] === "string") {
-        setJupyterToken(rt[1]);
-      }
+      logger.info("booting jupyter");
+      const cp = spawn(cmd, opts, { shell: true });
+      cp.stdout.on("data", (data)=>{
+        logger.debug(data.toString());
+      });
+      cp.stderr.on("data", (data)=>{
+        const output = data.toString();
+        const currentToken = getJupyterToken();
+        if (typeof currentToken === "undefined") {
+          const rt = /http.*\?token=(.*)/.exec(output);
+          if (rt !== null && typeof rt[1] === "string") {
+            setJupyterToken(rt[1]);
+          }
+        }
+        logger.debug(output);
+      });
+      cp.on("close", (code)=>{
+        logger.debug(`jupyter is closed with ${code}`);
+      });
+      cp.on("error", (err)=>{
+        logger.debug(`get error from jupyter process: ${err}`);
+      });
+      process.on("exit", ()=>{
+        if (logger) {
+          logger.debug(`kill jupyter process(${cp.pid}) before exit`);
+        } else {
+          //eslint-disable-next-line no-console
+          console.log(`kill jupyter process(${cp.pid}) before exit`);
+        }
+        cp.kill();
+      });
+      process.on("SIGINT", ()=>{
+        if (logger) {
+          logger.info("WHEEL will shut down because Control-C pressed");
+        } else {
+          //eslint-disable-next-line no-console
+          console.log("WHEEL will shut down because Control-C pressed");
+        }
+        process.exit(); //eslint-disable-line no-process-exit
+      });
     }
-    logger.debug(output);
+  })
+  .catch((e)=>{
+    logger.error("server boot up failed", e);
   });
-  cp.on("close", (code)=>{
-    logger.debug(`jupyter is closed with ${code}`);
-  });
-  cp.on("error", (err)=>{
-    logger.debug(`get error from jupyter process: ${err}`);
-  });
-  process.on("exit", ()=>{
-    if (logger) {
-      logger.debug(`kill jupyter process(${cp.pid}) before exit`);
-    } else {
-      //eslint-disable-next-line no-console
-      console.log(`kill jupyter process(${cp.pid}) before exit`);
-    }
-    cp.kill();
-  });
-  process.on("SIGINT", ()=>{
-    if (logger) {
-      logger.info("WHEEL will shut down because Control-C pressed");
-    } else {
-      //eslint-disable-next-line no-console
-      console.log("WHEEL will shut down because Control-C pressed");
-    }
-    process.exit(); //eslint-disable-line no-process-exit
-  });
-}
 
 /**
  * Event listener for HTTP server "error" event.

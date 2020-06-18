@@ -12,7 +12,6 @@ const rewire = require("rewire");
 
 //testee
 const fileManager = rewire("../../../app/routes/fileManager");
-const gitInit = require("../../../app/core/gitOperator");
 const onGetFileList = fileManager.__get__("onGetFileList");
 const onGetSNDContents = fileManager.__get__("onGetSNDContents");
 const onRemoveFile = fileManager.__get__("onRemoveFile");
@@ -27,6 +26,10 @@ const cb = sinon.stub();
 fileManager.__set__("gitAdd", sinon.stub());
 fileManager.__set__("gitRm", sinon.stub());
 
+//fileManager.__set__("getLogger", ()=>{
+//return { debug: console.log, error: console.log, warn: console.log };
+//});
+
 const testDirRoot = "WHEEL_TEST_TMP";
 
 describe("fileManager UT", ()=>{
@@ -34,7 +37,6 @@ describe("fileManager UT", ()=>{
     await fs.remove(testDirRoot);
     cb.reset();
     emit.reset();
-    await gitInit(testDirRoot, "foo", "foo@example.com");
     await Promise.all([
       fs.ensureDir(path.join(testDirRoot, "foo")),
       fs.ensureDir(path.join(testDirRoot, "bar")),
@@ -161,28 +163,28 @@ describe("fileManager UT", ()=>{
   });
   describe("#renameFile", ()=>{
     it("should rename directory", async()=>{
-      await onRenameFile(emit, "dummy", { path: testDirRoot, oldName: "baz", newName: "hoge" }, cb);
+      await onRenameFile(emit, testDirRoot, { path: testDirRoot, oldName: "baz", newName: "hoge" }, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(path.join(testDirRoot, "baz")).not.to.be.a.path();
       expect(path.join(testDirRoot, "hoge")).to.be.a.directory();
     });
     it("should rename reguler file", async()=>{
-      await onRenameFile(emit, "dummy", { path: testDirRoot, oldName: "foo_1", newName: "hoge" }, cb);
+      await onRenameFile(emit, testDirRoot, { path: testDirRoot, oldName: "foo_1", newName: "hoge" }, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(path.join(testDirRoot, "foo_1")).not.to.be.a.path();
       expect(path.join(testDirRoot, "hoge")).to.be.a.file();
     });
     it("should rename symlink to directory", async()=>{
-      await onRenameFile(emit, "dummy", { path: testDirRoot, oldName: "linkbar", newName: "hoge" }, cb);
+      await onRenameFile(emit, testDirRoot, { path: testDirRoot, oldName: "linkbar", newName: "hoge" }, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(path.join(testDirRoot, "linkbar")).not.to.be.a.path();
       expect(path.join(testDirRoot, "hoge")).to.be.a.directory();
     });
     it("should rename symlink to file", async()=>{
-      await onRenameFile(emit, "dummy", { path: testDirRoot, oldName: "linkpiyo", newName: "hoge" }, cb);
+      await onRenameFile(emit, testDirRoot, { path: testDirRoot, oldName: "linkpiyo", newName: "hoge" }, cb);
       expect(cb).to.have.been.calledOnce;
       expect(cb).to.have.been.calledWith(true);
       expect(path.join(testDirRoot, "linkpiyo")).not.to.be.a.path();

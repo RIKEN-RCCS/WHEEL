@@ -22,7 +22,7 @@ const testDirRoot = "WHEEL_TEST_TMP";
 const projectRootDir = path.resolve(testDirRoot, "testProject.wheel");
 
 //helper functions
-const { projectJsonFilename, componentJsonFilename, statusFilename } = require("../../../app/db/db");
+const { projectJsonFilename, componentJsonFilename, statusFilename, jobManagerJsonFilename } = require("../../../app/db/db");
 const { createNewProject } = require("../../../app/core/projectFilesOperator");
 const { updateComponent, createNewComponent, addInputFile, addOutputFile, addLink, addFileLink } = require("../../../app/core/componentFilesOperator");
 const { sanitizePath, convertPathSep, replacePathsep } = require("../../../app/core/pathUtils");
@@ -32,8 +32,7 @@ const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
 
 const { escapeRegExp } = require("../../../app/lib/utility");
 const { remoteHost } = require("../../../app/db/db");
-const { createSshConfig } = require("../../../app/routes/utility");
-const { addSsh } = require("../../../app/core/sshManager");
+const { addSsh, createSshConfig } = require("../../../app/core/sshManager");
 
 
 const dummyLogger = {
@@ -47,6 +46,11 @@ const dummyLogger = {
   sshout: sinon.stub(),
   ssherr: sinon.stub()
 };
+//dummyLogger.error = sinon.spy(console.log);
+//dummyLogger.warn = sinon.spy(console.log);
+//dummyLogger.info = sinon.spy(console.log);
+//dummyLogger.debug = sinon.spy(console.log);
+//dummyLogger.trace = sinon.spy(console.log);
 executer.__set__("logger", dummyLogger);
 
 describe("UT for executer class", function() {
@@ -246,7 +250,7 @@ describe("UT for executer class", function() {
         expect(path.join(task0.workingDir, "hoge")).not.to.be.a.path();
       });
     });
-    describe.skip("#remote job", ()=>{
+    describe("#remote job", ()=>{
       beforeEach(()=>{
         task0.useJobScheduler = true;
       });
@@ -258,6 +262,11 @@ describe("UT for executer class", function() {
         expect(dummyLogger.stderr).not.to.be.called;
         expect(dummyLogger.sshout).not.to.be.called;
         expect(dummyLogger.ssherr).not.to.be.called;
+        const remotehostID = process.env.WHEEL_TEST_REMOTEHOST;
+        const hostInfo = remoteHost.query("name", remotehostID);
+        const hostname = hostInfo.host;
+        const JS = hostInfo.jobScheduler;
+        expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).to.be.a.file().with.content("[]\n");
       });
       it("run shell script which returns 1 and status should be failed", async()=>{
         await fs.outputFile(path.join(projectRootDir, task0.name, scriptName), `${scriptPwd}\n${exit(1)}`);
@@ -268,6 +277,11 @@ describe("UT for executer class", function() {
         expect(dummyLogger.stderr).not.to.be.called;
         expect(dummyLogger.sshout).not.to.be.called;
         expect(dummyLogger.ssherr).not.to.be.called;
+        const remotehostID = process.env.WHEEL_TEST_REMOTEHOST;
+        const hostInfo = remoteHost.query("name", remotehostID);
+        const hostname = hostInfo.host;
+        const JS = hostInfo.jobScheduler;
+        expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).to.be.a.file().with.content("[]\n");
       });
     });
   });

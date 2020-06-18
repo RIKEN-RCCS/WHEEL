@@ -8,7 +8,8 @@ import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/workflow.css';
 import '../css/dialog.css';
-import './rapid2.js'
+import './rapid2.js';
+import './unsavedFilesDialog.js';
 
 import Cookies from 'js-cookie';
 import SVG from 'svgjs/dist/svg.js';
@@ -90,8 +91,25 @@ $(() => {
       logAreaFlag: false,
       defaultDisplay: true,
       parentNodeType: "",
+      unsavedFiles: [],
+      cb: null,
+      dialog: null
+    },
+    mounted (){
+      const that=this;
+      this.sio.on("unsavedFiles", (unsavedFiles, cb)=>{
+        if(unsavedFiles.length>0){
+          that.cb=cb;
+          that.unsavedFiles = unsavedFiles;
+          that.unsavedFiles.splice();//force update DOM
+          that.dialog='unsavedFiles'
+        }
+      })
     },
     methods: {
+      closeDialog(){
+        this.dialog=null;
+      },
       closeRapid() {
         let targetPath =  this.componentPath[this.node.ID].slice(2) 
         fb.request('getFileList', projectRootDir + '/' + targetPath, null);
@@ -611,7 +629,7 @@ $(() => {
           sio.emit('execRevertProject', true);
         });
     });
-    sio.on('askPassword', (hostname) => {
+    sio.on('askPassword', (hostname, cb) => {
       const html = `<p class="dialogMessage">Enter password/phrase to connect ${hostname}</p><input type=password id="password" class="dialogTextbox">`;
       const dialogOptions = {
         title: `SSH connection`
@@ -619,10 +637,10 @@ $(() => {
       dialogWrapper('#dialog', html, dialogOptions)
         .done(() => {
           const password = $('#password').val();
-          sio.emit('password', password);
+          cb(password);
         })
         .fail(() => {
-          sio.emit('password', null);
+          cb(null);
         });
     });
     sio.on('askSourceFilename', (id, name, description, filelist) => {

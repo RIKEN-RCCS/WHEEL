@@ -5,7 +5,7 @@ const { promisify } = require("util");
 const glob = require("glob");
 const { readJsonGreedy } = require("./fileUtils");
 const { projectJsonFilename, componentJsonFilename } = require("../db/db");
-const { gitAdd } = require("./gitOperator");
+const { gitAdd } = require("./gitOperator2");
 const { componentJsonReplacer } = require("./componentFilesOperator");
 
 async function getComponentDir(projectRootDir, targetID) {
