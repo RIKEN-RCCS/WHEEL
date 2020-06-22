@@ -13,3 +13,9 @@ test:
   stage: test
   script: 
     - ./test/release_test.sh
+doc:
+  stage: doc
+  script:
+    - npm run createDoc
+    - rm -fr doc
+    - mv docsrc/_user_guide doc
