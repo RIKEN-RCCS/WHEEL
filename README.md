@@ -9,7 +9,6 @@ latest version of [docker](https://www.docker.com/)
 ```
 > git clone https://gitlab.com/aicshud/WHEEL.git
 > cd WHEEL
-> git checkout -b dev2018-2
 > docker build -t wheel .
 > docker run -d -v ${HOME}:/root -v ${PWD}/app/config:/usr/src/app/config -p 8089:8089 -p 8090:8090 wheel
 ```
@@ -20,8 +19,6 @@ please note that you have to place your certification files for https under ./ap
 ```
 > git clone https://gitlab.com/aicshud/WHEEL.git
 > cd WHEEL
-> git checkout -b dev2018-2
-> git pull origin dev2018-2 -Xtheirs
 > npm install
 ```
 
