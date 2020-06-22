@@ -7,11 +7,9 @@ variables:
 services:
   - docker:19.03.11-dind
 before_script:
+  - apk add bash
   - docker info
 test:
   stage: test
   script: 
-    - pwd
-    - ls /builds/aicshud/WHEEL/test/release_test.sh
-    - ls /bin/bash
-    - /builds/aicshud/WHEEL/test/release_test.sh
+    - ./test/release_test.sh
