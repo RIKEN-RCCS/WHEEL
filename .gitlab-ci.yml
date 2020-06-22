@@ -1,5 +1,13 @@
 workflow: 
   rules: 
       - if: $CI_COMMIT_BRANCH
+image: docker:19.03.11
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+services:
+  - docker:19.03.11-dind
+before_script:
+  - docker info
 test:
+  stage: test
   script: test/release_test.sh
