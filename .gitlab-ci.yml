@@ -1,0 +1,5 @@
+workflow: 
+  rules: 
+      - if: $CI_COMMIT_BRANCH
+test:
+  script: test/release_test.sh
