@@ -248,8 +248,8 @@ describe("git operator UT", ()=>{
         expect(stdout).to.match(/^A {2}bar$/m);
         expect(stdout).to.match(/^\?{2} baz$/m);
       });
-      it("should be rejected if untracked file is specified", ()=>{
-        return expect(gitRm(testDirRoot, "baz")).to.be.rejected;
+      it("should just fulfilled if untracked file is specified", ()=>{
+        return expect(gitRm(testDirRoot, "baz")).to.be.fulfilled;
       });
     });
     describe("#gitStatus", ()=>{

@@ -99,7 +99,12 @@ async function gitAdd(rootDir, filename) {
  * filename should be absolute path or relative path from rootDir.
  */
 async function gitRm(rootDir, filename) {
-  return gitPromise(rootDir, ["rm", "-r", "--cached", filename]);
+  return gitPromise(rootDir, ["rm", "-r", "--cached", filename])
+    .catch((e)=>{
+      if (!/fatal: pathspec '.*' did not match any files/.test(e)) {
+        throw e;
+      }
+    });
 }
 
 /**
