@@ -35,7 +35,7 @@
     "node-dev": "node-dev --inspect app/index",
     "dev": "run-p watch node-dev",
     "license-report": "license-report",
-    "convertDoc": "markdown-folder-to-html docsrc/user_guide"
+    "convertDoc": "markdown-folder-to-html documentMD/user_guide"
   },
   "dependencies": {
     "abc4": "^0.11.5",

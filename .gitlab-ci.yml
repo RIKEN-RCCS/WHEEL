@@ -17,4 +17,4 @@ doc:
     - npm install
     - npm run convertDoc
     - rm -fr docs
-    - mv docsrc/_user_guide docs
+    - mv documentMD/_user_guide docs
