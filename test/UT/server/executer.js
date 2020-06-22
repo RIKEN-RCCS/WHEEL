@@ -266,7 +266,7 @@ describe("UT for executer class", function() {
         const hostInfo = remoteHost.query("name", remotehostID);
         const hostname = hostInfo.host;
         const JS = hostInfo.jobScheduler;
-        expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).to.be.a.file().with.content("[]\n");
+        expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).not.to.be.a.path();
       });
       it("run shell script which returns 1 and status should be failed", async()=>{
         await fs.outputFile(path.join(projectRootDir, task0.name, scriptName), `${scriptPwd}\n${exit(1)}`);
@@ -281,7 +281,7 @@ describe("UT for executer class", function() {
         const hostInfo = remoteHost.query("name", remotehostID);
         const hostname = hostInfo.host;
         const JS = hostInfo.jobScheduler;
-        expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).to.be.a.file().with.content("[]\n");
+        expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).not.to.be.a.path();
       });
     });
   });

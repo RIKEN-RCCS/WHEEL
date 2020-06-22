@@ -59,19 +59,30 @@ function makeEnvForPath(task) {
   return `env WHEEL_REMOTE_PRJDIR=${task.remoteRootWorkingDir} `;
 }
 
+/**
+ * make part of submit command line about queue argument
+ * @param {Object} Task - task component instance
+ * @param {Object} JS - Jobscheduler.json's entry
+ * @param {string|undefined} queues - comma separated queue name list or undefined
+ */
 function makeQueueOpt(task, JS, queues) {
-  let queue = "";
+  if (typeof queues === "undefined") {
+    return "";
+  }
   const queueList = queues.split(",");
 
-  queue = queueList.find((e)=>{
+  let queue = queueList.find((e)=>{
     return task.queue === e;
   });
 
   if (typeof queue === "undefined") {
-    queue = queueList.length > 0 ? queueList[0] : "";
+    if (queueList.length === 0) {
+      return "";
+    }
+    queue = queueList[0];
   }
 
-  return queue !== "" ? ` ${JS.queueOpt}${queue}` : "";
+  return ` ${JS.queueOpt}${queue}`;
 }
 
 /**
@@ -223,6 +234,10 @@ class RemoteJobExecuter extends Executer {
 
   setQueues(v) {
     this.queues = v;
+  }
+
+  setGrpName(v) {
+    this.grpName = v;
   }
 
   async exec(task) {
