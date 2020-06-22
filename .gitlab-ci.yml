@@ -12,4 +12,6 @@ test:
   stage: test
   script: 
     - pwd
+    - ls /builds/aicshud/WHEEL/test/release_test.sh
+    - ls /bin/bash
     - /builds/aicshud/WHEEL/test/release_test.sh
