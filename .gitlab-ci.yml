@@ -14,6 +14,6 @@ test:
     - ./test/release_test.sh
 doc:
   script:
-    - npm run createDoc
+    - npm run convertDoc
     - rm -fr docs
     - mv docsrc/_user_guide docs
