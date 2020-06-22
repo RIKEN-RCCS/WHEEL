@@ -10,4 +10,6 @@ before_script:
   - docker info
 test:
   stage: test
-  script: test/release_test.sh
+  script: 
+    - pwd
+    - /builds/aicshud/WHEEL/test/release_test.sh
