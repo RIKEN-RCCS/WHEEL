@@ -15,5 +15,5 @@ test:
 doc:
   script:
     - npm run createDoc
-    - rm -fr doc
-    - mv docsrc/_user_guide doc
+    - rm -fr docs
+    - mv docsrc/_user_guide docs
