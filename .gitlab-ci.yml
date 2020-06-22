@@ -7,7 +7,7 @@ variables:
 services:
   - docker:19.03.11-dind
 before_script:
-  - apk add bash openssl node
+  - apk add bash openssl nodejs
   - docker info
 test:
   script: 
