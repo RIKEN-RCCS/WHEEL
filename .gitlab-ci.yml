@@ -12,7 +12,6 @@ before_script:
 test:
   script: 
     - ./test/release_test.sh
-  allow_failure: true
 makedoc:
   script:
     - npm install
@@ -27,6 +26,7 @@ storedoc:
   stage: "deploy"
   script:
     - eval `ssh-agent -s`
+    - echo ${SSH_PRIVATE_KEY}
     - echo "${SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add - > /dev/null # add ssh key
     - git config --global user.email "${CI_EMAIL}"
     - git config --global user.name "${CI_USERNAME}"
