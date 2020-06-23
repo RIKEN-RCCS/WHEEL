@@ -41,7 +41,7 @@ const {
 } = require("../../../app/core/gitOperator2.js");
 
 //test data
-const testDirRoot = "WHEEL_TEST_TMP";
+const testDirRoot = path.resolve("./", "WHEEL_TEST_TMP");
 
 describe("git operator UT", ()=>{
   after(async()=>{
