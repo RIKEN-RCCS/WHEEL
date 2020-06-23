@@ -54,19 +54,19 @@ describe("git operator UT", ()=>{
     });
     it("should re-initialize repo and return undefined when attempting to init again", async()=>{
       expect(await gitInit(testDirRoot, "testUser", "testUser@example.com")).to.be.undefined;
-      checkLFSenabled(testDirRoot);
+      await checkLFSenabled(testDirRoot);
     });
     it("should initialize git repo on nonExisting directory", async()=>{
       const newRepoDir = path.resolve(testDirRoot, "hoge");
       await gitInit(newRepoDir, "testUser", "testUser@example.com");
       expect(newRepoDir).to.be.a.directory().with.contents([".git"]);
-      checkLFSenabled(newRepoDir);
+      await checkLFSenabled(newRepoDir);
     });
     it("should initialize git repo on nonExisting directory in nonExisting directory", async()=>{
       const newRepoDir = path.resolve(testDirRoot, "hoge", "huga");
       await gitInit(newRepoDir, "testUser", "testUser@example.com");
       expect(newRepoDir).to.be.a.directory().with.contents([".git"]);
-      checkLFSenabled(newRepoDir);
+      await checkLFSenabled(newRepoDir);
     });
     it("should initialize git repo on existing directory", async()=>{
       const newRepoDir = path.resolve(testDirRoot, "hoge");
@@ -74,7 +74,7 @@ describe("git operator UT", ()=>{
       expect(newRepoDir).to.be.a.directory().and.empty;
       await gitInit(newRepoDir, "testUser", "testUser@example.com");
       expect(newRepoDir).to.be.a.directory().with.contents([".git"]);
-      checkLFSenabled(newRepoDir);
+      await checkLFSenabled(newRepoDir);
     });
     it("should reject while attempting to initialize on existing file", async()=>{
       const newRepoDir = path.resolve(testDirRoot, "hoge");
