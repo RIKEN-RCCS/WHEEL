@@ -1,3 +1,4 @@
+"use strict";
 const fs = require("fs-extra");
 const path = require("path");
 const { promisify } = require("util");
@@ -49,8 +50,7 @@ describe("git operator UT", ()=>{
   describe("#gitInit", ()=>{
     beforeEach(async()=>{
       await fs.remove(testDirRoot);
-      const { dir, name } = path.parse(testDirRoot);
-      await asyncExecFile("git", ["init", name], { cwd: dir });
+      await asyncExecFile("git", ["init", testDirRoot]);
     });
     it("should re-initialize repo and return undefined when attempting to init again", async()=>{
       expect(await gitInit(testDirRoot, "testUser", "testUser@example.com")).to.be.undefined;
