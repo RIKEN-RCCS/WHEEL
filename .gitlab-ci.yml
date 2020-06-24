@@ -18,6 +18,7 @@ makedoc:
     - npm run convertDoc
     - rm -fr docs
     - mv documentMD/_user_guide docs
+    - mv docs/readme.html docs/index.html
   artifacts:
     paths:
       - docs/
@@ -27,8 +28,6 @@ storedoc:
   script:
     - eval `ssh-agent -s`
     - echo "${SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add - > /dev/null # add ssh key
-    - ls -l 
-    - ls -l docs
     - git config --global user.email "${GITLAB_USER_EMAIL}"
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global core.sshCommand "ssh -oStrictHostKeyChecking=no"
