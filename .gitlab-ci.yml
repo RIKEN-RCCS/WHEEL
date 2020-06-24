@@ -25,9 +25,9 @@ makedoc:
 storedoc:
   stage: "deploy"
   script:
-    - git config user.email "${CI_EMAIL}"
-    - git config user.name "${CI_USERNAME}"
-    - git config core.sshCommand "\"ssh -oStrictHostKeyChecking=no -i${SSH_PRIVATE_KEY}\""
+    - git config --global user.email "${CI_EMAIL}"
+    - git config --global user.name "${CI_USERNAME}"
+    - git config --global core.sshCommand "ssh -oStrictHostKeyChecking=no -i${SSH_PRIVATE_KEY}"
     - git add docs
     - git commit -m "generated html docs from $CI_COMMIT_SHORT_SHA [skip ci]" || echo "No changes, nothing to commit!"
     - git remote rm origin && git remote add origin git@gitlab.com:$CI_PROJECT_PATH.git
