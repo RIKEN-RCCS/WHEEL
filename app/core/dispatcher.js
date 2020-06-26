@@ -14,7 +14,7 @@ const { getDateString } = require("../lib/utility");
 const { sanitizePath, convertPathSep, replacePathsep } = require("./pathUtils");
 const { readJsonGreedy, deliverFile } = require("./fileUtils");
 const { paramVecGenerator, getParamSize, getFilenames, getParamSpacev2, removeInvalidv1 } = require("./parameterParser");
-const { componentJsonReplacer } = require("./componentFilesOperator");
+const { componentJsonReplacer, getComponent } = require("./componentFilesOperator");
 const { isInitialComponent } = require("./workflowComponent");
 const { evalCondition } = require("./dispatchUtils");
 
@@ -46,11 +46,11 @@ const silentLogger = {
 /**
  * check state is finished or not
  * @param {string} state - state string
+ * @returns {boolean} is finished or not?
  */
 function isFinishedState(state) {
   return state === "finished" || state === "failed" || state === "unknown";
 }
-
 
 /**
  * set component and its descendant's state
@@ -330,6 +330,14 @@ class Dispatcher extends EventEmitter {
 
 
       await this._setComponentState(target, "running");
+
+      if (target.type === "stepjobTask") {
+        const parentComponent = await getComponent(this.projectRootDir, target.parent);
+        target.host = parentComponent.host;
+        target.queue = parentComponent.queue;
+        target.parentName = parentComponent.name;
+      }
+
       promises.push(
         this._cmdFactory(target.type).call(this, target)
           .then(()=>{
@@ -537,7 +545,7 @@ class Dispatcher extends EventEmitter {
 
       //if component type is not workflow, it must be copied component of PS, for, while or foreach
       //so, it is no need to emit "componentStateChanged" here.
-      if (component.type === "workflow") {
+      if (component.type === "workflow" || component.type === "stepjob") {
         this.emitEvent("componentStateChanged");
       }
     } finally {
@@ -712,7 +720,7 @@ class Dispatcher extends EventEmitter {
         return e.value;
       })
         .map((e)=>{
-        //TODO files should be deliverd under specific component
+          //TODO files should be deliverd under specific component
           const src = path.resolve(templateRoot, e);
           const dst = path.resolve(instanceRoot, e);
           this.logger.debug("parameter: copy from", src, "to ", dst);
@@ -800,9 +808,10 @@ class Dispatcher extends EventEmitter {
     if (component.previous) {
       for (const ID of component.previous) {
         const previous = await this._getComponent(ID);
+        this.logger.debug(`previous component name = ${previous.type}(state:${previous.state})`);
 
-        if (!isFinishedState(previous.state)) {
-          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
+        if (!isFinishedState(previous.state) && previous.type !== "stepjobTask") {
+          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
           return false;
         }
       }
@@ -815,8 +824,8 @@ class Dispatcher extends EventEmitter {
         }
         const previous = await this._getComponent(src.srcNode);
 
-        if (!isFinishedState(previous.state)) {
-          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
+        if (!isFinishedState(previous.state) && previous.type !== "stepjobTask") {
+          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
           return false;
         }
       }
@@ -943,6 +952,9 @@ class Dispatcher extends EventEmitter {
       case "task":
         cmd = this._dispatchTask;
         break;
+      case "stepjobtask":
+        cmd = this._dispatchTask;
+        break;
       case "if":
         cmd = this._checkIf;
         break;
@@ -956,6 +968,9 @@ class Dispatcher extends EventEmitter {
         cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished, foreachTripCount);
         break;
       case "workflow":
+        cmd = this._delegate;
+        break;
+      case "stepjob":
         cmd = this._delegate;
         break;
       case "parameterstudy":

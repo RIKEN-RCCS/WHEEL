@@ -2,6 +2,7 @@ import $ from 'jquery';
 import dialogWrapper from './dialogWrapper';
 
 import 'font-awesome/css/font-awesome.css';
+import minimatch from 'minimatch';
 import '../css/fileBrowser.css';
 import config from './config';
 
@@ -190,33 +191,52 @@ export default class {
   compare(l, r) {
     if ($(l).attr('data-name') === $(r).attr('data-name'))
       return 0;
-    if ($(l).attr('data-isdir') !== 'true' && $(r).attr('data-isdir') === 'true') {
+    if ($(l).attr('data-type') !== 'dir' && $(r).attr('data-type') === 'dir') {
       return 1;
     }
-    else if ($(l).attr('data-isdir') === 'true' && $(r).attr('data-isdir') !== 'true') {
+    else if ($(l).attr('data-type') === 'dir' && $(r).attr('data-type') !== 'dir') {
       return -1;
     }
     else {
       return $(l).attr('data-name') > $(r).attr('data-name') ? 1 : -1;
     }
   }
+    /**
+   * check data-type two li which created in onRecvDefault()
+   * @param l,r li element
+   * return  true : l contains r (snd or sndd)
+   * return  false: does not
+   */
+  checkSnd(l, r, flag) {
+    if (($(l).attr('data-type') === 'file' && $(r).attr('data-type') === 'snd') || ($(l).attr('data-type') === 'dir' && $(r).attr('data-type')=== 'sndd')) {
+      if(minimatch($(l).attr('data-name'),$(r).attr('data-name')) && flag === 1) return true;
+      if(minimatch($(l).attr('data-name'),$(r).attr('data-name')) && flag === -1) {
+        $(l).remove();
+        return false;
+      }
+    }
+    return false;
+  }
   onRecvDefault() {
     this.socket.on(this.recvEventName, (fileList) => {
       fileList.forEach((data) => {
         if (!this.isValidData(data)) return;
-        var icon = this.drawIconImage(data.type, data.path, data.name, data.isdir, data.islink);
+        var icon = this.drawIconImage(data.type, data.path, data.name, data.islink, data.isDir);
         var dataName = data.name.trim();
         var idName = dataName.replace(/([.*+?^=!:$@%&#,"'~;<>{}()|[\]\/\\])/g, "_");
-        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-isdir="${data.isdir}" data-islink="${data.islink}" data-type="${data.type}" class="${data.type}" id="${idName}_data">${icon}${data.name}</li>`);
+        var item = $(`<li data-path="${data.path}" data-name="${data.name}" data-islink="${data.islink}" data-type="${data.type}" data-isDir="${data.isDir}" class="${data.type}" id="${idName}_data">${icon}${data.name}</li>`);
         var compare = this.compare;
+        var checkSnd = this.checkSnd;
         var lengthBefore = $(`${this.idFileList} li`).length;
         var counter = 0;
         $(`${this.idFileList} li`).each(function (i, v) {
           var result = compare(v, item);
+          var result2 = checkSnd(v, item, result);
           if (result === 0)
             return false;
           if (result === 1) {
             item.insertBefore(v);
+            if(result2) $(v).remove();
             return false;
           }
           counter++;

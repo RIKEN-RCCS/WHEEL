@@ -17,8 +17,8 @@ describe("script field test :#issue313, 348", function () {
     const id_targetProjectJson = "prj_wheel_json_data";
     const id_pageName = "pageNameLabel";
     const id_dialog = "dialog";
-    const id_prjName = "project_name";
-    const id_prjState = "project_state";
+    const id_prjName = "projectName";
+    const id_prjState = "projectState";
     const id_nodeSvg = "node_svg";
     const id_property = "property";
     const id_runButton = "run_button";

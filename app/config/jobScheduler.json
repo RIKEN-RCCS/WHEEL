@@ -8,7 +8,8 @@
     "reFinishedState": "^ST *EC *\\ nEXT *0",
     "reReturnCode": "^ST *EC *\\nEXT *(\\d+)",
     "reFailedState": "^ST *EC *\\n(CCL|ERR|EXT|RJT)",
-    "reJobStatus": "^ST *EC *\\n(\\S+)"
+    "reJobStatus": "^ST *EC *\\n(\\S+)",
+    "grpName":""
   },
   "PBSPro":{
     "submit": "qsub",
@@ -19,7 +20,8 @@
     "reFinishedState": "substate \\= 92$",
     "reReturnCode": "Exit_status \\= (\\d+)$",
     "reFailedState": "substate \\= (91|93)$",
-    "reJobStatus": "substate \\= (\\d+)$"
+    "reJobStatus": "substate \\= (\\d+)$",
+    "grpName":""
   },
   "SLURM":{
     "submit": "sbatch",
@@ -30,6 +32,33 @@
     "reFinishedState": "^COMPLETED,0",
     "reReturnCode": "^COMPLETED,(\\d+):\\d+$",
     "reFailedState": "^(COMPLETED|FAILED|CANCELLED|DEADLINE|NODE_FAIL|TIMEOUT)",
-    "reJobStatus": "^(\\S+)"
+    "reJobStatus": "^(\\S+)",
+    "grpName":""
+  },
+  "TCS": {
+    "submit": "pjsub -X",
+    "queueOpt": "-L rscgrp=",
+    "stat": "pjstat -v -H day=3 --choose st,ec,pc",
+    "del": "pjdel",
+    "reJobID": "pjsub Job (\\d+_*\\d*) submitted.",
+    "reFinishedState": "^ST *EC *PC *\\nEXT *0",
+    "reFinishedStateStep": "^ST *EC *PC *\\nCCL *(\\d+) *6",
+    "reReturnCode": "^ST *EC *PC *\\n(EXT|CCL) *(\\d+) *(\\d+)",
+    "reFailedState": "^ST *EC *PC *\\n(CCL|ERR|EXT|RJT)",
+    "reJobStatus": "^ST *EC *PC *\\n(\\S+)",
+    "grpName":""
+  },
+  "UGE": {
+    "submit": "qsub",
+    "queueOpt": "-l ",
+    "runStat": "qstat -j",
+    "finishStat": "qacct -j",
+    "del": "qdel",
+    "reJobID": "(\\d+).*",
+    "reFinishedState": "failed *0",
+    "reReturnCode": "exit_status *(\\d+)",
+    "reFailedState": "failed *(\\d+)",
+    "reJobStatus": "exit_status *(\\d+)",
+    "grpName":"-g"
   }
 }

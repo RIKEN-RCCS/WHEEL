@@ -35,7 +35,7 @@ describe("#workflow screen:", function () {
   const queue = "queueA,queueB";
   // id/class
   const id_pageName = "pageNameLabel";
-  const id_projectName = "project_name";
+  const id_projectName = "projectName";
   const id_title = "title";
   const id_property = "property";
   const id_cleanButton = "clean_button";
@@ -64,8 +64,10 @@ describe("#workflow screen:", function () {
   const id_startInputField = "startInputField";
   const id_endInputField = "endInputField";
   const id_stepInputField = "stepInputField";
-  const id_newIndexListField = "newIndexListField";
+  const class_newIndexListField = "newIndexListField";
   const id_outputFileSelectField ="outputFileSelectField";
+  const cleanCheckDialog = '/html/body/div[2]';
+  const cleanCheckDialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
   // Xpath home screen
   const importMenu = '//*[@id="importButton"]';
   const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
@@ -249,6 +251,7 @@ describe("#workflow screen:", function () {
     expect($(`#${id_valCheck}`).getText()).to.equal('true');
   });
   it("component property 'queue' check", function () {
+    $(`#${id_property}`).scrollIntoView(0, 300);
     $(`.svg_${testName}_box`).click();
     $(`#${id_queueSelectField}`).selectByVisibleText(testQueue);
     browser.keys("Tab");
@@ -258,6 +261,7 @@ describe("#workflow screen:", function () {
     expect($(`#${id_queueSelectField}`).getValue()).to.equal(testQueue);
   });
   it("component property 'clean up flag' check", function () {
+    $(`#${id_property}`).scrollIntoView(0, 200);
     $(`.svg_${testName}_box`).click();
     $(`#${id_cleanUpFlag1}`).click();
     browser.keys("Tab");
@@ -267,8 +271,8 @@ describe("#workflow screen:", function () {
     expect($(`#${id_cleanUpFlag1}`).getAttribute('value')).to.equal('1');
   });
   it("component property 'include' check", function () {
-    $(`#${id_property}`).scrollIntoView(0, 500);
     $(`.svg_${testName}_box`).click();
+    $(`#${id_cleanUpFlag1}`).waitForDisplayed();
     $(`#${id_includeInputField}`).setValue(testInclude);
     browser.keys("Tab");
     $(`.svg_${testName}_box`).click();
@@ -340,7 +344,7 @@ describe("#workflow screen:", function () {
   });
   it("component property 'indexlist' check", function () {
     $('.svg_foreach0_box').click();
-    $(`#${id_newIndexListField}`).click();
+    $(`.${class_newIndexListField}`).click();
     browser.keys('Backspace');
     browser.keys(testIndexList);
     $('.indexListButton').click();
@@ -368,7 +372,9 @@ describe("#workflow screen:", function () {
   });
   it("processing order connector check", function () {
     $(`.svg_workflow0_box`).click();
-    $(`.${class_newInputFileNameInputField}`).setValue(testInputFiles);
+    $(`.${class_newInputFileNameInputField}`).click();
+    browser.keys('Backspace');
+    browser.keys(testInputFiles);
     $(`.${class_inputAddDelButton}`).click();
     browser.keys("Tab");
     $(`#workflow0_${testInputFiles}_receptor`).waitForDisplayed(10000);
@@ -394,5 +400,7 @@ describe("#workflow screen:", function () {
   });
   it("initialize project", function () {
     $(`#${id_cleanButton}`).click();
+    $(cleanCheckDialog).waitForDisplayed();
+    $(cleanCheckDialogOkButton).click();
   });
 });

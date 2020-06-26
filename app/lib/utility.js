@@ -121,6 +121,5 @@ module.exports = {
   reWin32ReservedNames,
   pathseps,
   metaCharactors,
-  getDateString,
-  escapeRegExp
+  getDateString
 };

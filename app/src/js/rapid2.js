@@ -35,121 +35,114 @@ Vue.component("new-rapid", {
     parameter
   },
   template: `
-    <v-app>
-      <v-container fill-height fluid>
-      <v-dialog v-model="filterEditor" persistent>
-       <v-card>
-       <v-card-title>
-           <v-text-field
+  <v-container fill-height fluid>
+    <v-dialog v-model="filterEditor" persistent>
+      <v-card>
+        <v-card-title>
+          <v-text-field
            v-model="newFilter"
            label="filter"
-           ></v-text-field>
-           <v-btn @click=applyFilter class="text-capitalize"> <v-icon>add</v-icon> apply </v-btn>
-           <v-spacer></v-spacer>
-           <v-text-field
+          ></v-text-field>
+          <v-btn @click=applyFilter class="text-capitalize"> <v-icon>add</v-icon> apply </v-btn>
+          <v-spacer></v-spacer>
+          <v-text-field
            v-model="search"
            append-icon="mdi-magnify"
            label="Search"
            single-line
           ></v-text-field>
-           <v-btn @click=closeFilterEditor class="text-capitalize"> <v-icon>close</v-icon> close </v-btn>
-       </v-card-title>
-       <v-card-text>
+          <v-btn @click=closeFilterEditor class="text-capitalize"> <v-icon>close</v-icon> close </v-btn>
+        </v-card-title>
+        <v-card-text>
           <v-data-table
-             dense
-             show-select
-             :single-select=false
-             v-model="selected"
-             :search="search"
-             :headers="[{ value: 'text',     text: 'placeholder',  sortable: true },
-                        { value: 'filename', text: 'filename', sortable: true, filterable: false },
-                        { value: 'row',      text: 'row', sortable: true, filterable: false}, 
-                        { value: 'column',   text: 'column',  sortable: true, filterable: false} ]"
-             :items="placeholders"
-             :items-per-page="5"
-             :footer-props="tableFooterProps"
+            dense
+            show-select
+            :single-select=false
+            v-model="selected"
+            :search="search"
+            :headers="[{ value: 'text',     text: 'placeholder',  sortable: true },
+                       { value: 'filename', text: 'filename', sortable: true, filterable: false },
+                       { value: 'row',      text: 'row', sortable: true, filterable: false}, 
+                       { value: 'column',   text: 'column',  sortable: true, filterable: false} ]"
+            :items="placeholders"
+            :items-per-page="5"
+            :footer-props="tableFooterProps"
           ></v-data-table>
-       </v-card-text>
-    </v-card>
-      </v-dialog>
-      <v-dialog v-model="dialog" persistent>
-        <v-card>
-          <v-card-title>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="dialog" persistent>
+      <v-card>
+        <v-card-title>
           unsaved file
-          </v-card-title>
-          <v-card-text>
-            {{ closingFilename }} is not saved
-          </v-card-text>
-          <v-card-actions>
+        </v-card-title>
+        <v-card-text>
+          {{ closingFilename }} is not saved
+        </v-card-text>
+        <v-card-actions>
           <v-btn text @click.stop=saveAndCloseTab ><v-icon>save</v-icon> save </v-btn>
           <v-btn text @click.stop=closeTab><v-icon>delete</v-icon> discard changes </v-btn>
           <v-btn text @click.stop=closeDialog><v-icon>cancel</v-icon> cancel </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-        <v-layout split column id="text">
-          <v-flex shrink>
-            <v-tabs v-model="activeTab" @change="changeTab">
-              <v-tab class="text-none" v-for="(file,index) of files" :key="file.order">
-                {{ file.filename }}
-                <v-btn small icon @click.stop="openDialog(index)" v-if="! isTargetFile(file)">
-                  <v-icon small>close</v-icon>
-                </v-btn>
-              </v-tab>
-              <v-tab @click.stop>
-                <v-dialog v-model="newFilePrompt">
-                  <template v-slot:activator="{ on }">
-                    <v-btn icon v-on="on"><v-icon>add</v-icon></v-btn>
-                  </template>
-                  <v-card>
-                    <v-card-text>
-                      <v-text-field v-model="newFilename" label="new file name"></v-text-field>
-                    </v-card-text>
-                    <v-card-actions>
-                      <v-btn @click="openNewTab(newFilename)"><v-icon>create</v-icon>open</v-btn>
-                      <v-btn @click="newFilename=null;newFilePrompt=false"><v-icon>cancel</v-icon>cancel</v-btn>
-                    </v-card-actions>
-                  </v-card>
-                </v-dialog>
-              </v-tab>
-            </v-tabs>
-          </v-flex>
-          <v-flex grow id="editor">
-          </v-flex>
-        </v-layout>
-
-        <v-layout split id="parameter" column>
-        <v-btn @click="saveAllFiles"><v-icon>save</v-icon>save all files</v-btn>
-          <target-files
-            :files="files"
-            :targetFiles="parameterSetting.targetFiles"
-            :lowerLevelComponents="lowerLevelComponents"
-            @open-new-tab="openNewTab"
-          ></target-files>
-          <parameter
-          :keyword="selectedText"
-          :params="parameterSetting.params"
-          @newParamAdded="insertBraces"
-          @openFilterEditor="openFilterEditor"
-          ></parameter>
-
-          <gather-scatter
-          :container="parameterSetting.scatter"
-          :lowerLevelComponents="lowerLevelComponents"
-          :title="'scatter'"
-          :counterpartProp="'dstNode'"
-          ></gather-scatter>
-
-          <gather-scatter
-          :container="parameterSetting.gather"
-          :lowerLevelComponents="lowerLevelComponents"
-          :title="'gather'"
-          :counterpartProp="'srcNode'"
-          ></gather-scatter>
-
-        </v-layout>
-      </v-container>
-    </v-app>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
+    <v-container align-start fill-height grow split id="text">
+      <v-tabs v-model="activeTab" @change="changeTab">
+        <v-tab class="text-none" v-for="(file,index) of files" :key="file.order">
+          {{ file.filename }}
+          <v-btn small icon @click.stop="openDialog(index)" v-if="! isTargetFile(file)">
+            <v-icon small>close</v-icon>
+          </v-btn>
+        </v-tab>
+        <v-tab @click.stop>
+          <v-dialog v-model="newFilePrompt">
+            <template v-slot:activator="{ on }">
+              <v-btn icon v-on="on"><v-icon>add</v-icon></v-btn>
+            </template>
+            <v-card>
+              <v-card-text>
+                <v-text-field v-model="newFilename" label="new file name"></v-text-field>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn @click="openNewTab(newFilename)"><v-icon>create</v-icon>open</v-btn>
+                <v-btn @click="newFilename=null;newFilePrompt=false"><v-icon>cancel</v-icon>cancel</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-tab>
+      </v-tabs>
+      <v-card grow id="editor">
+      </v-card>
+    </v-container>
+    <div split id="parameter" column>
+      <v-btn @click="saveAllFiles"><v-icon>save</v-icon>save all files</v-btn>
+      <target-files
+        :files="files"
+        :targetFiles="parameterSetting.targetFiles"
+        :lowerLevelComponents="lowerLevelComponents"
+        @open-new-tab="openNewTab"
+      ></target-files>
+      <parameter
+        :keyword="selectedText"
+        :params="parameterSetting.params"
+        @newParamAdded="insertBraces"
+        @openFilterEditor="openFilterEditor"
+      ></parameter>
+      <gather-scatter
+        :container="parameterSetting.scatter"
+        :lowerLevelComponents="lowerLevelComponents"
+        :title="'scatter'"
+        :counterpartProp="'dstNode'"
+      ></gather-scatter>
+      <gather-scatter
+        :container="parameterSetting.gather"
+        :lowerLevelComponents="lowerLevelComponents"
+        :title="'gather'"
+        :counterpartProp="'srcNode'"
+      ></gather-scatter>
+    </div>
+  </v-container>
 `,
   data() {
     return {

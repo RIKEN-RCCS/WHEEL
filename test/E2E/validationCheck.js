@@ -15,15 +15,13 @@ describe("#validation Check", function () {
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog";
     const id_pageName = "pageNameLabel";
-    const id_prjName = "project_name";
+    const id_prjName = "projectName";
     const id_property = "property";
     // Xpath home screen
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
     // Xpath workflow screen
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
-    const x_inputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[9]/input';
-    const x_outputField = '/html/body/div/div/div[3]/div[4]/div[1]/div/div[12]/input';
     
     it("Home screen is drawn", function () {
         browser.url(url);
@@ -56,7 +54,7 @@ describe("#validation Check", function () {
         expect(elem).to.be.true;
     })
     it("rename input file bad example", function(){
-        $(x_inputField).setValue(inputRename);
+        $('.newInputFileNameInputField').setValue(inputRename);
         browser.keys('Tab')        
         $(`#${id_dialog}`).waitForDisplayed();
         $(dialogOkButton).click();
@@ -65,7 +63,7 @@ describe("#validation Check", function () {
         expect(elem).to.not.be.true;
     })
     it("rename output fille bad example", function(){
-        $(x_outputField).setValue(outputRename);
+        $('.newOutputFileNameInputField').setValue(outputRename);
         browser.keys('Tab')    
         $(`#${id_dialog}`).waitForDisplayed();
         $(dialogOkButton).click();

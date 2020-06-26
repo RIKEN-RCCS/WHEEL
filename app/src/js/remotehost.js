@@ -24,6 +24,7 @@ $(() => {
     keyFile: '',
     numJob: 5,
     queue: '',
+    grpName: '',
     port: 22,
     id: '',
     jobScheduler: '',

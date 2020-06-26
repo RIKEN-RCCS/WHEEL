@@ -5,3 +5,4 @@ src
 TestLogFile.txt
 remotehost.json
 projectList.json
+jobScript.json

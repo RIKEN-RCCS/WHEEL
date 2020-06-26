@@ -6,16 +6,29 @@ const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
 const { create } = require("abc4");
-const { createNewComponent, updateComponent } = require("../core/componentFilesOperator");
-const { createSshConfig, emitLongArray } = require("./utility");
+const { createNewComponent, updateComponent, updateStepNumber } = require("../core/componentFilesOperator");
+const { emitLongArray } = require("./utility");
+const { convertPathSep } = require("../core/pathUtils");
 const { readJsonGreedy, deliverFile } = require("../core/fileUtils");
 const { getDateString, isValidOutputFilename } = require("../lib/utility");
 const { interval, remoteHost, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { getChildren, getComponentDir, getComponent } = require("../core/workflowUtil");
 const { hasChild } = require("../core/workflowComponent");
-const { setCwd, getCwd, getNumberOfUpdatedTasks, emitEvent, on, addCluster, removeCluster, runProject, pauseProject, getUpdatedTaskStateList, cleanProject, once, off, getLogger, updateProjectState } = require("../core/projectResource");
-const { gitAdd, gitCommit, gitResetHEAD } = require("../core/gitOperator");
-const { addSsh, removeSsh } = require("../core/sshManager");
+const { on, once, off } = require("../core/projectEventManager");
+const {
+  setCwd,
+  getCwd,
+  addCluster,
+  removeCluster,
+  runProject,
+  pauseProject,
+  getUpdatedTaskStateList,
+  cleanProject,
+  getLogger,
+  updateProjectState
+} = require("../core/projectResource");
+const { gitAdd, gitCommit, gitResetHEAD, gitStatus } = require("../core/gitOperator2");
+const { addSsh, removeSsh, createSsh, askPassword } = require("../core/sshManager");
 const {
   getHosts,
   getSourceComponents,
@@ -35,7 +48,19 @@ const {
 } = require("../core/componentFilesOperator");
 const { getProjectState, setProjectState } = require("../core/projectFilesOperator");
 const { taskStateFilter } = require("../core/taskUtil");
+const { bufferdEmit } = require("../core/emitArbitorator");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
+
+/**
+ * promised version of socketIO.emit()
+ * @param {Function} emit - socketIO's emit()
+ * this function is resolved when ack is called on opposite side
+ */
+async function emitWithPromise(emit, ...args) {
+  return new Promise((resolve)=>{
+    emit(...args, resolve);
+  });
+}
 
 //read and send current workflow and its child and grandson
 async function sendWorkflow(emit, projectRootDir, cwd) {
@@ -141,95 +166,6 @@ async function getSourceFilename(projectRootDir, component, sio) {
   });
 }
 
-/**
- * ask password to client
- * @param {Object} sio - instance of SocketIO.socket
- * @param {string} hostname - name or kind of label for the host
- */
-function askPassword(sio, hostname) {
-  return new Promise((resolve, reject)=>{
-    sio.on("password", (data)=>{
-      if (data === null) {
-        const err = new Error("user canceled ssh password prompt");
-        err.reason = "CANCELED";
-        reject(err);
-      }
-      resolve(data);
-    });
-    sio.emit("askPassword", hostname);
-  });
-}
-
-
-/**
- * create necessary ssh instance
- * @param {Object} sio - instance of SocketIO.socket
- */
-async function createSsh(projectRootDir, remoteHostName, hostInfo, sio) {
-  const password = await askPassword(sio, remoteHostName);
-  const config = await createSshConfig(hostInfo, password);
-  const arssh = new ARsshClient(config, { connectionRetryDelay: 1000, verbose: true });
-
-  if (hostInfo.renewInterval) {
-    arssh.renewInterval = hostInfo.renewInterval * 60 * 1000;
-  }
-
-  if (hostInfo.renewDelay) {
-    arssh.renewDelay = hostInfo.renewDelay * 1000;
-  }
-
-  //remoteHostName is name property of remote host entry
-  //hostInfo.host is hostname or IP address of remote host
-  addSsh(projectRootDir, hostInfo, arssh);
-
-  try {
-    //1st try
-    await arssh.canConnect();
-  } catch (e) {
-    if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
-      return Promise.reject(e);
-    }
-    let newPassword = await askPassword(sio, remoteHostName);
-
-    if (config.passphrase) {
-      config.passphrase = newPassword;
-    }
-
-    if (config.password) {
-      config.password = newPassword;
-    }
-    arssh.overwriteConfig(config);
-
-    try {
-      //2nd try
-      await arssh.canConnect();
-    } catch (e2) {
-      if (e2.reason !== "invalid passphrase" && e2.reason !== "authentication failure") {
-        return Promise.reject(e2);
-      }
-      newPassword = await askPassword(sio, remoteHostName);
-
-      if (config.passphrase) {
-        config.passphrase = newPassword;
-      }
-
-      if (config.password) {
-        config.password = newPassword;
-      }
-      arssh.overwriteConfig(config);
-
-      try {
-        //3rd try
-        await arssh.canConnect();
-      } catch (e3) {
-        if (e3.reason !== "invalid passphrase" && e3.reason !== "authentication failure") {
-          return Promise.reject(e3);
-        }
-        return Promise.reject(new Error("wrong password for 3 times"));
-      }
-    }
-  }
-}
 
 async function createCloudInstance(projectRootDir, hostInfo, sio) {
   const order = hostInfo.additionalParams || {};
@@ -324,7 +260,6 @@ async function onRunProject(sio, projectRootDir, cb) {
       }
     }
 
-    //TODO askPasswordの部分以外はcoreへ移動
     const hosts = await getHosts(projectRootDir, null);
     for (const remoteHostName of hosts) {
       const id = remoteHost.getID("name", remoteHostName);
@@ -398,11 +333,38 @@ async function onPauseProject(emit, projectRootDir, cb) {
   cb(true);
 }
 
+async function askUnsavedFiles(emit, projectRootDir) {
+  const { added, modified, deleted, renamed } = await gitStatus(projectRootDir);
+  const unsavedFiles = [];
+  for (const e of added) {
+    unsavedFiles.push({ status: "new", name: e });
+  }
+  for (const e of modified) {
+    unsavedFiles.push({ status: "modified", name: e });
+  }
+  for (const e of deleted) {
+    unsavedFiles.push({ status: "deleted", name: e });
+  }
+  for (const e of renamed) {
+    unsavedFiles.push({ status: "renamed", name: e });
+  }
+  if (unsavedFiles.length > 0) {
+    const toBeSaved = await emitWithPromise(emit, "unsavedFiles", unsavedFiles);
+    if (toBeSaved) {
+      await Promise.all(unsavedFiles.map((unsaved)=>{
+        return gitAdd(projectRootDir, unsaved.name);
+      }));
+      await gitCommit(projectRootDir);
+    }
+  }
+}
+
 async function onCleanProject(emit, projectRootDir, withPause, cb) {
   if (typeof cb !== "function") {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("clean event recieved");
+  await askUnsavedFiles(emit, projectRootDir);
 
   try {
     if (withPause) {
@@ -443,6 +405,7 @@ async function onRevertProject(emit, projectRootDir, cb) {
     cb = ()=>{};
   }
   getLogger(projectRootDir).debug("revertProject event recieved");
+  await askUnsavedFiles(emit, projectRootDir);
   await gitResetHEAD(projectRootDir);
   await sendProjectJson(emit, projectRootDir, "not-started");
   await sendWorkflow(emit, projectRootDir);
@@ -550,9 +513,9 @@ async function onCreateNode(emit, projectRootDir, request, cb) {
   let rt = null;
 
   try {
-    const parentDir = getCwd(projectRootDir);
+    const parentDir = convertPathSep(request.path);
     rt = await createNewComponent(projectRootDir, parentDir, request.type, request.pos);
-    await sendWorkflow(emit, projectRootDir);
+    await sendWorkflow(emit, projectRootDir, parentDir);
   } catch (e) {
     e.projectRootDir = projectRootDir;
     e.request = request;
@@ -578,6 +541,31 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
     e.ID = ID;
     e.prop = prop;
     e.value = value;
+    getLogger(projectRootDir).error("update node failed", e);
+    cb(false);
+    return;
+  }
+  cb(true);
+}
+
+/**
+ * @param {*} emit - instance of SocketIO.socket emit
+ * @param {*} projectRootDir - project root directory
+ * @param {*} rootID - project root component ID
+ * @param {*} cb - callback function
+ * @returns {*} -
+ */
+async function onUpdateStepNumber(emit, projectRootDir, cb) {
+  if (typeof cb !== "function") {
+    cb = ()=>{};
+  }
+  getLogger(projectRootDir).debug("updateStepNumber event recieved:", projectRootDir);
+
+  try {
+    await updateStepNumber(projectRootDir);
+    await sendWorkflow(emit, projectRootDir);
+  } catch (e) {
+    e.projectRootDir = projectRootDir;
     getLogger(projectRootDir).error("update node failed", e);
     cb(false);
     return;
@@ -808,26 +796,12 @@ function registerListeners(socket, projectRootDir) {
   }
 
   //event listener for task state changed
-  async function onTaskStateChanged() {
-    const numTasksToBeSent = getNumberOfUpdatedTasks(projectRootDir);
-    getLogger(projectRootDir).trace("TaskStateList: taskStateChanged event fired", numTasksToBeSent);
-    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
-    getLogger(projectRootDir).trace("TaskStateList: emit taskStateList done");
-    setTimeout(()=>{
-      getLogger(projectRootDir).trace("TaskStateList: event lister registerd");
-      const remaining = getNumberOfUpdatedTasks(projectRootDir);
-      once(projectRootDir, "taskStateChanged", onTaskStateChanged);
-
-      if (remaining.length > 0) {
-        setImmediate(()=>{
-          emitEvent(projectRootDir, "taskStateChanged");
-        });
-      }
-    }, interval);
+  async function onTaskStateChanged(task) {
+    bufferdEmit(socket, "taskStateList", task, interval, blockSize);
   }
 
   //event listener for component state changed
-  function onComponentStateChanged() {
+  function onComponentStateChanged(component) {
     sendWorkflow(emit, projectRootDir)
       .then(()=>{
         setTimeout(()=>{
@@ -847,6 +821,7 @@ function registerListeners(socket, projectRootDir) {
   on(projectRootDir, "resultFilesReady", onResultFilesReady);
 
   socket.on("disconnecting", ()=>{
+    off(projectRootDir, "projectStateChanged", onProjectStateChange);
     off(projectRootDir, "taskStateChanged", onTaskStateChanged);
     off(projectRootDir, "componentStateChanged", onComponentStateChanged);
     off(projectRootDir, "resultFilesReady", onResultFilesReady);

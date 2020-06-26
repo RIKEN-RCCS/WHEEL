@@ -12,15 +12,16 @@ describe("project result check", function () {
     const id_targetProjectJson = "prj_wheel_json_data";
     // id/class 
     const id_pageName = 'pageNameLabel';
-    const id_prjName = 'project_name';
+    const id_prjName = 'projectName';
     const id_createDate = 'project_create_date';
     const id_updateDate = 'project_update_date';
     const id_listview = 'listView';
     const id_runButton = 'run_button';
-    const id_prjState = 'project_state';
+    const id_prjState = 'projectState';
     const id_cleanButton = "clean_button";
     const id_nodeSvg = "node_svg";
-
+    const cleanCheckDialog = '/html/body/div[2]';
+    const cleanCheckDialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
     // Xpath for "import"
     const importMenu = '//*[@id="importButton"]';
     const dialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
@@ -79,6 +80,8 @@ describe("project result check", function () {
         it("post process for retry", function () {
             $(`#${id_nodeSvg}`).click();
             $(`#${id_cleanButton}`).click();
+            $(cleanCheckDialog).waitForDisplayed();
+            $(cleanCheckDialogOkButton).click();
             browser.waitUntil(function(){
                 return $(`#${id_prjState}`).getText() === 'not-started'
             }, 1000, 'expected text to be different after 1s');

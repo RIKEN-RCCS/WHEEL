@@ -8,7 +8,8 @@ import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 
 import '../css/workflow.css';
 import '../css/dialog.css';
-import './rapid2.js'
+import './rapid2.js';
+import './unsavedFilesDialog.js';
 
 import Cookies from 'js-cookie';
 import SVG from 'svgjs/dist/svg.js';
@@ -49,10 +50,12 @@ $(() => {
   let nodeTypeStack = [''];
   let nodePath = '';
   let dirStack = [rootDir];
-  let wfStack = [rootWorkflow];
+  let parentIdStack = [rootWorkflow];
   let currentWf = {};
   //for 'save' button control
   let presentState = '';
+  let lastSaveTime = '';
+  //taskStateList
   let projectRootDir = currentWorkDir;
   let componentPath;
   let viewerWindow;
@@ -73,21 +76,44 @@ $(() => {
       hostList: [],
       queueList: [],
       fileList: [],
+      jobScriptList: [],
       nodeScript: null,
       names: [],
       conditionInputType: '1',
       retryConditionInputType: '1',
+      projectInfoFlag: false,
       fb: null,
       sio,
       componentPath,
       rootDir,
-      pathSep
+      pathSep,
+      componentLibraryFlag: false,
+      logAreaFlag: false,
+      defaultDisplay: true,
+      parentNodeType: "",
+      unsavedFiles: [],
+      cb: null,
+      dialog: null
+    },
+    mounted (){
+      const that=this;
+      this.sio.on("unsavedFiles", (unsavedFiles, cb)=>{
+        if(unsavedFiles.length>0){
+          that.cb=cb;
+          that.unsavedFiles = unsavedFiles;
+          that.unsavedFiles.splice();//force update DOM
+          that.dialog='unsavedFiles'
+        }
+      })
     },
     methods: {
+      closeDialog(){
+        this.dialog=null;
+      },
       closeRapid() {
-        let targetPath = this.componentPath[this.node.ID].slice(2)
+        let targetPath =  this.componentPath[this.node.ID].slice(2) 
         fb.request('getFileList', projectRootDir + '/' + targetPath, null);
-        this.normal = true
+        this.normal=true
       },
       addInputFile: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
@@ -175,7 +201,10 @@ $(() => {
       },
       renameInputFile: function (newName, index) {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-          sio.emit("renameInputFile", this.node.ID, index, newName);
+          sio.emit("renameInputFile", this.node.ID, index, newName,(result) => {
+            if (result !== true) return;
+            $('#cbMessageArea').text(newName);
+          });
         }
       },
       renameOutputFile: function (newName, index) {
@@ -190,11 +219,12 @@ $(() => {
         if (!isEditDisable()) {
           if (property === "disable" || vm.node === null || !vm.node.disable) {
             let val = this.node[property];
-            // temporary. refactoring target.
-            if ((property === "host") || (property === "useJobScheduler" && val === false)) {
-              sio.emit('updateNode', this.node.ID, "queue", null, (result) => {
-                if (result !== true) return;
-              });
+            if (this.node.type !== "stepjob") {
+              if ((property === "host") || (property === "useJobScheduler" && val === false)) {
+                sio.emit('updateNode', this.node.ID, "queue", null, (result) => {
+                  if (result !== true) return;
+                });
+              }
             }
             sio.emit('updateNode', this.node.ID, property, val, (result) => {
               if (result !== true) return;
@@ -248,6 +278,7 @@ $(() => {
           }
         }
       },
+      // File Area Button method
       createFileFolder: function (isFileOrFolder) {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
           const html = `<p class="dialogMessage">Input new ${isFileOrFolder} name (ex. aaa.txt)</p><input type=text id="new${isFileOrFolder}Name" class="dialogTextbox">`
@@ -269,16 +300,245 @@ $(() => {
             });
         }
       },
-      editFile: function (isPS) {
+      createJobScript: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-          const path = fb.getRequestedPath();
-          const name = fb.getSelectedFile();
-          const params = $.param({
-            "path": path,
-            "filename": name,
-            "pm": isPS
+          const html = `<p class="dialogMessage"> Select jobscript template and Input jobscript file name</p>
+          <div><div><p id="jobScriptTemplateLabel" class="dialogMessage"> jobscript template</p></div>
+          <select id="jobScriptSelectBox" class="jobScriptDialog">
+            ${this.jobScriptList.map((e) => {
+            return `<option class="jobScriptDialog" value="${e.templateName}">${e.templateName}</option>`
+          }).join(" ")}
+          </select></div>
+          <div><div><p id="jobScriptNameLabel" class="dialogMessage"> jobscript name</p></div>
+          <input type=text id="jobScriptName" class="jobScriptDialog"></div>`;
+          const dialogOptions = {
+            title: "Create jobScript file"
+          };
+          dialogWrapper('#dialog', html, dialogOptions)
+            .done(() => {
+              const index = $('#jobScriptSelectBox').prop("selectedIndex");
+              let selectedTemplate = this.jobScriptList[index];
+              let templateId = selectedTemplate["id"]
+              const filename = $('#jobScriptName').val();
+              sio.emit("createJobScript", filename, nodePath, templateId);
+            });
+        }
+      },
+      // file upload button
+      clickFileUploadButton: function () {
+        if (!isEditDisable() && (this.node === null || !this.node.disable)) {
+          $('#fileSelector').click();
+        }
+      },
+      // create component by drag and drop
+      createComponent: function (componentName) {
+        var objectDrag = document.getElementById(componentName);
+        var objectDrop = document.getElementById("node_svg");
+        objectDrag.ondragstart = function (event) {
+          event.dataTransfer.setData("text", componentName);
+        };
+        objectDrop.ondragover = function (event) {
+          event.preventDefault();
+        };
+        objectDrop.ondrop = function (event) {
+          let objectName = event.dataTransfer.getData("text");
+          let xCoordinate = event.offsetX;
+          let yCoordinate = event.offsetY;
+          const pos = { x: xCoordinate, y: yCoordinate };
+          const parentPath = dirStack[dirStack.length - 1];
+          sio.emit('createNode', { "type": objectName, "pos": pos, "path": parentPath }, (result) => {
+            if (result !== true) return;
+            sio.emit('getProjectJson', rootWorkflow);
           });
-          window.open(`/editor?${params}`);
+        };
+      },
+      clickEditPSFileButton: function () {
+        this.normal = false;
+      },
+      //open project info drawer
+      showProjectInfo: function () {
+        if (!isEditDisable()) {
+          this.projectInfoFlag = !this.projectInfoFlag;
+          //change project description
+          if (!this.projectInfoFlag) {
+            var prjDesc = document.getElementById('projectDescription').value;
+            sio.emit('updateProjectJson', 'description', prjDesc);
+          }
+        }
+      },
+      // run button
+      clickRunButton: function () {
+        if (presentState === 'not-started' || 'paused') {
+          sio.emit('runProject', rootWorkflow);
+        }
+      },
+      mouseoverRunButton: function () {
+        if (presentState === 'not-started' || 'paused') {
+          document.getElementById("run_button").setAttribute("src", "/image/btn_play_h.png");
+        }
+      },
+      mouseleaveRunButton: function () {
+        document.getElementById("run_button").setAttribute("src", "/image/btn_play_n.png");
+      },
+      // pause button
+      clickPauseButton: function () {
+        if (presentState === 'running') {
+          sio.emit('pauseProject', true);
+        }
+      },
+      mouseoverPauseButton: function () {
+        if (presentState === 'running') {
+          document.getElementById("pause_button").setAttribute("src", "/image/btn_pause_h.png");
+        }
+      },
+      mouseleavePauseButton: function () {
+        if (presentState === 'running') {
+          document.getElementById("pause_button").setAttribute("src", "/image/btn_pause_n.png");
+        }
+      },
+      // stop button
+      clickStopButton: function () {
+        if (presentState === 'running') {
+          document.querySelector('#project_table_body').innerHTML = '';
+          sio.emit('stopProject', true);
+        }
+      },
+      mouseoverStopButton: function () {
+        if (presentState === 'running') {
+          document.getElementById("stop_button").setAttribute("src", "/image/btn_stop_h.png");
+        }
+      },
+      mouseleaveStopButton: function () {
+        document.getElementById("stop_button").setAttribute("src", "/image/btn_stop_n.png");
+      },
+      // clean button
+      clickCleanButton: function () {
+        if (presentState !== 'running') {
+          document.getElementById('property').style.display = 'none';
+          document.querySelector('#project_table_body').innerHTML = '';
+          // update Breadcrumb
+          let rootNodeStack = nodeStack[0];
+          let rootDirStack = dirStack[0];
+          let rootIdStack = parentIdStack[0];
+          nodeStack = [];
+          dirStack = [];
+          parentIdStack = [];
+          nodeStack.push(rootNodeStack);
+          dirStack.push(rootDirStack);
+          parentIdStack.push(rootIdStack);
+          currentWorkDir = dirStack[nodeStack.length - 1];
+          sio.emit('cleanProject', true);
+        }
+      },
+      mouseoverCleanButton: function () {
+        if (presentState !== 'running') {
+          document.getElementById("clean_button").setAttribute("src", "/image/btn_replay_h.png");
+        }
+      },
+      mouseleaveCleanButton: function () {
+        if (presentState !== 'running') {
+          document.getElementById("clean_button").setAttribute("src", "/image/btn_replay_n.png");
+        }
+      },
+      // save button
+      clickSaveButton: function () {
+        if (!isEditDisable()) {
+          sio.emit('saveProject', null, (result) => {
+          });
+        }
+      },
+      mouseoverSaveButton: function () {
+        if (!isEditDisable()) {
+          document.getElementById("save_button_img").setAttribute("src", "/image/btn_save_h.png");
+          document.getElementById('save_button').style.color = "#CCFF00";
+        }
+      },
+      mouseleaveSaveButton: function () {
+        if (!isEditDisable()) {
+          document.getElementById("save_button_img").setAttribute("src", "/image/btn_save_n.png");
+          document.getElementById('save_button').style.color = "#FFFFFF";
+        }
+      },
+      // revert button
+      clickRevertButton: function () {
+        if (!isEditDisable()) {
+          sio.emit('revertProject', null, (result) => {
+          });
+        }
+      },
+      mouseoverRevertButton: function () {
+        if (!isEditDisable()) {
+          document.getElementById("revert_button_img").setAttribute("src", "/image/btn_reset_h.png");
+          document.getElementById('revert_button').style.color = "#CCFF00";
+        }
+      },
+      mouseleaveRevertButton: function () {
+        if (!isEditDisable()) {
+          document.getElementById("revert_button_img").setAttribute("src", "/image/btn_reset_n.png");
+          document.getElementById('revert_button').style.color = "#FFFFFF";
+        }
+      },
+      // change view mode
+      changeGraphViewArea: function () {
+        document.getElementById("workflow_listview_area").style.display = "none";
+        document.getElementById("workflow_graphview_area").style.display = "flex";
+        drawComponents();
+      },
+      changeListViewArea: function () {
+        document.getElementById("workflow_graphview_area").style.display = "none";
+        document.getElementById("workflow_listview_area").style.display = "flex";
+      },
+      // show Component Library Area
+      showComponentLibrary: function () {
+        if (isEditDisable()) {
+          return;
+        }
+        this.componentLibraryFlag = !this.componentLibraryFlag;
+        document.getElementById("componentLibraryButton").classList.toggle("componentLibraryActive");
+        document.getElementById("componentLibrary").classList.toggle("componentLibraryActive");
+        if (this.componentLibraryFlag) {
+          document.getElementById('libraryButton').setAttribute("src", "/image/btn_openCloseL_n.png");
+        }
+        if (!this.componentLibraryFlag) {
+          document.getElementById('libraryButton').setAttribute("src", "/image/btn_openCloseR_n.png");
+        }
+      },
+      // show Log Area
+      showLogArea: function () {
+        this.logAreaFlag = !this.logAreaFlag;
+        document.getElementById("logAreaButton").classList.toggle("logAreaActive");
+        document.getElementById("logArea").classList.toggle("logAreaActive");
+        if (this.logAreaFlag) {
+          if (this.defaultDisplay === true) {
+            document.getElementById('logInfoLog').style.display = 'block';
+            document.getElementById('enableINFO').style.borderBottomColor = '#88BB00';
+          }
+          this.defaultDisplay = false;
+          document.getElementById('logAreaButtonImg').setAttribute("src", "/image/btn_openCloseD_n.png");
+        }
+        if (!this.logAreaFlag) {
+          document.getElementById('logAreaButtonImg').setAttribute("src", "/image/btn_openCloseU_n.png");
+        }
+      },
+      // hide property and select parent WF if background is clicked
+      clickBackground: function () {
+        document.getElementById("property").style.display = "none";
+        // property Files Area initialize.
+        dirPathStack = [];
+        document.getElementById("editPSFileButton").style.visibility = "hidden";
+        if (document.getElementById("dirBackButton") !== null) {
+          document.getElementById("dirBackButton").style.display = "none";
+        }
+      },
+      // remotehost screen transition
+      clickDrawerButton: function () {
+        if (!isEditDisable()) {
+          document.getElementById("drawerMenu").classList.toggle("action", true);
+        }
+      },
+      mouseleaveDrawerButton: function () {
+        if (!isEditDisable()) {
+          document.getElementById("drawerMenu").classList.toggle("action", false);
         }
       }
     }
@@ -286,7 +546,7 @@ $(() => {
   // setup FileBrowser
   const fb = new FileBrowser(sio, '#fileList', 'fileList', true);
   vm.fb = fb;
-
+  
   // property subscreen 'Files' area buttons.
   let dirPathStack = [];
   $(document).on('dblclick', '.dir, .snd, .sndd', function () {
@@ -294,7 +554,7 @@ $(() => {
     dirPathStack.push(targetInfo.dataPath);
     let replacePath = projectRootDir + pathSep;
     let currentDirPath = targetInfo.dataPath.replace(replacePath, "") + pathSep + targetInfo.dataName;
-    $('#componentPath').html("." + pathSep + currentDirPath);
+    document.getElementById('componentPath').innerHTML = "." + pathSep + currentDirPath;
     let backDirHtml;
     if (targetInfo.dataType === "snd") {
       backDirHtml = `<button id="dirBackButton" data-path="${targetInfo.dataPath}" data-name="${targetInfo.dataName}"><img src="/image/img_filesToSND.png" alt="config" class="backButton"></button>`;
@@ -303,7 +563,7 @@ $(() => {
     } else {
       backDirHtml = `<button id="dirBackButton" data-path="${targetInfo.dataPath}" data-name="${targetInfo.dataNam}">../</button>`;
     }
-    $('#dirBackButtonArea').html(backDirHtml);
+    document.getElementById('dirBackButtonArea').innerHTML = backDirHtml;
   });
 
   $(document).on('click', '#dirBackButton', function () {
@@ -312,14 +572,14 @@ $(() => {
       let replacePath = projectRootDir + pathSep;
       let fileListDirPath = "." + pathSep + filePath.replace(replacePath, "");
       fb.request('getFileList', filePath, null);
-      $('#componentPath').html(fileListDirPath);
+      document.getElementById('componentPath').innerHTML = fileListDirPath;
       dirPathStack.pop();
     }
     if (vm.node.type === 'task') {
       vm.nodeScript = vm.node.script;
     }
     if (dirPathStack.length === 0) {
-      $('#dirBackButton').css("display", "none");
+      document.getElementById('dirBackButton').style.display = "none";
     }
   });
 
@@ -334,18 +594,8 @@ $(() => {
   uploader.listenOnDrop(document.getElementById('fileBrowser'));
   uploader.listenOnInput(document.getElementById('fileSelector'));
 
-  $('#fileUploadButton').click(function () {
-    if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
-      $('#fileSelector').click();
-    }
-  });
-
   // set default view
   $('#workflow_listview_area').hide();
-  $('#graphView').prop('checked', true);
-  $('#log_area').hide();
-  $('#property').hide();
-  $('#taskLibraryMenu').hide();
 
   // container of svg elements
   let nodes = [];
@@ -356,17 +606,30 @@ $(() => {
   let selectedParent = 0;
 
   const svg = SVG('node_svg');
-  sio.on('connect', function () {
+  sio.on('connect', function () { 
     console.log('connect');
+    //sio.emit('getWheelCommitId', currentWorkFlow);
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
     sio.emit('getHostList', true);
+    sio.emit('getJobScriptList', true);
     sio.emit('getTaskStateList', rootWorkflow);
     fb.request('getFileList', currentWorkDir, null);
 
     sio.on('showMessage', showMessage);
-    sio.on('askPassword', (hostname) => {
+    sio.on('askRevertProject', (revertOrClean) => {
+      const html = `<p class="dialogMessage">After ${lastSaveTime} changes are not saved.<br>Are you sure to ${revertOrClean.toLowerCase()} this project?</p>`;
+      const title = `${revertOrClean} Project`;
+      const dialogOptions = {
+        title: `${title}`
+      };
+      dialogWrapper('#dialog', html, dialogOptions)
+        .done(() => {
+          sio.emit('execRevertProject', true);
+        });
+    });
+    sio.on('askPassword', (hostname, cb) => {
       const html = `<p class="dialogMessage">Enter password/phrase to connect ${hostname}</p><input type=password id="password" class="dialogTextbox">`;
       const dialogOptions = {
         title: `SSH connection`
@@ -374,10 +637,10 @@ $(() => {
       dialogWrapper('#dialog', html, dialogOptions)
         .done(() => {
           const password = $('#password').val();
-          sio.emit('password', password);
+          cb(password);
         })
         .fail(() => {
-          sio.emit('password', null);
+          cb(null);
         });
     });
     sio.on('askSourceFilename', (id, name, description, filelist) => {
@@ -464,7 +727,8 @@ $(() => {
 
     sio.on('workflow', function (wf) {
       nodeStack[nodeStack.length - 1] = wf.name;
-      nodeTypeStack[nodeStack.length - 1] = wf.type;
+      nodeTypeStack[nodeTypeStack.length - 1] = wf.type;
+      vm.parentNodeType = wf.type;
       currentWf = wf;
       updateBreadrumb();
       drawComponents();
@@ -494,55 +758,58 @@ $(() => {
         return projectJson.componentPath[key] === './'
       });
       componentPath = projectJson.componentPath;
+      let tabTitle = projectJson.name + ' ' + "(" + projectJson.state + ")";
+      document.title = tabTitle;
       vm.componentPath = componentPath;
-      $('title').html(projectJson.name);
-      $('#project_name').text(projectJson.name);
-      $('#project_state').text(projectJson.state);
+      document.getElementById("projectName").textContent = projectJson.name;
+      document.getElementById("projectState").textContent = projectJson.state;
       presentState = projectJson.state;
+      lastSaveTime = projectJson.mtime;
 
       if (projectJson.state === 'running') {
-        $('#project_state').css('background-color', '#88BB00');
-        $('#run_button').attr("src", "/image/btn_play_d.png");
-        $('#pause_button').attr("src", "/image/btn_pause_n.png");
-      } else if (projectJson.state === 'failed') {
-        $('#project_state').css('background-color', '#E60000');
-        $('#pause_button').attr("src", "/image/btn_pause_n.png");
-        $('#run_button').attr("src", "/image/btn_play_n.png");
-      } else if (projectJson.state === 'unknown') {
-        $('#project_state').css('background-color', '#E60000');
-        $('#pause_button').attr("src", "/image/btn_pause_n.png");
-        $('#run_button').attr("src", "/image/btn_play_n.png");
+        document.getElementById("projectState").style.backgroundColor = "#88BB00";
+        document.getElementById("run_button").setAttribute("src", "/image/btn_play_d.png");
+        document.getElementById("pause_button").setAttribute("src", "/image/btn_pause_n.png");
+      } else if (projectJson.state === 'failed' || projectJson.state === 'unknown') {
+        document.getElementById("projectState").style.backgroundColor = "#E60000";
+        document.getElementById("pause_button").setAttribute("src", "/image/btn_pause_n.png");
+        document.getElementById("run_button").setAttribute("src", "/image/btn_play_n.png");
       } else if (projectJson.state === 'paused') {
-        $('#project_state').css('background-color', '#444480');
-        $('#pause_button').attr("src", "/image/btn_pause_d.png");
-        $('#run_button').attr("src", "/image/btn_play_n.png");
+        document.getElementById("projectState").style.backgroundColor = "#444480";
+        document.getElementById("pause_button").setAttribute("src", "/image/btn_pause_d.png");
+        document.getElementById("run_button").setAttribute("src", "/image/btn_play_n.png");
       } else if (projectJson.state === 'finished') {
         if (nodePath !== '') {
           fb.request('getFileList', nodePath, null);
         }
-        $('#project_state').css('background-color', '#000000');
-        $('#pause_button').attr("src", "/image/btn_pause_n.png");
-        $('#run_button').attr("src", "/image/btn_play_n.png");
+        document.getElementById("projectState").style.backgroundColor = "#000000";
+        document.getElementById("pause_button").setAttribute("src", "/image/btn_pause_n.png");
+        document.getElementById("run_button").setAttribute("src", "/image/btn_play_n.png");
       } else {
-        $('#project_state').css('background-color', '#000000');
-        $('#pause_button').attr("src", "/image/btn_pause_n.png");
-        $('#run_button').attr("src", "/image/btn_play_n.png");
+        document.getElementById("projectState").style.backgroundColor = "#000000";
+        document.getElementById("pause_button").setAttribute("src", "/image/btn_pause_n.png");
+        document.getElementById("run_button").setAttribute("src", "/image/btn_play_n.png");
       }
 
       let now = new Date();
       let date = '' + now.getFullYear() + '/' + now.getMonth() + '/' + now.getDate() + ' ' + now.getHours() + ':' + ('0' + now.getMinutes()).slice(-2);
-      $('#project_create_date').text(projectJson.ctime);
-      $('#project_update_date').text(projectJson.mtime);
-      $('#projectDirectoryPath').text(projectJson.root);
-      $('#projectDescription').attr("value", projectJson.description);
+      document.getElementById("project_create_date").textContent = projectJson.ctime;
+      document.getElementById("project_update_date").textContent = projectJson.mtime;
+      document.getElementById("projectDirectoryPath").textContent = projectJson.root;
+      document.getElementById("projectDescription").setAttribute("value", projectJson.description);
 
       changeViewState();
-
     });
 
     /*create host, queue selectbox*/
     sio.on('hostList', function (hostlist) {
       vm.hostList = hostlist;
+      vm.updateQueueList();
+    });
+
+    /*create jobscript selectbox*/
+    sio.on('jobScriptList', (jobScriptList) => {
+      vm.jobScriptList = jobScriptList;
     });
 
     /*create fileList selectbox ex.task script*/
@@ -561,162 +828,6 @@ $(() => {
   var pos = $("#titleUserName").offset();
   $("#img_user").css('right', window.innerWidth - pos.left + "px");
 
-  // remotehost screen transition
-  $('#drawerButton').click(function () {
-    if (!isEditDisable()) {
-      $('#drawerMenu').toggleClass('action', true);
-    }
-  });
-
-  $('#drawerMenu').mouseleave(function () {
-    if (!isEditDisable()) {
-      $('#drawerMenu').toggleClass('action', false);
-    }
-  });
-
-  //open project info drawer
-  $('#projectInfo').click(function () {
-    if (!isEditDisable()) {
-      $('#projectInfoDrawer').toggleClass('action', true);
-    }
-  });
-
-  $('#projectInfoDrawer').mouseleave(function () {
-    $('#projectInfoDrawer').toggleClass('action', false);
-  });
-
-  //change project description
-  $('#projectDescription').blur(function () {
-    if (!isEditDisable()) {
-      var prjDesc = document.getElementById('projectDescription').value;
-      sio.emit('updateProjectJson', 'description', prjDesc);
-    }
-  });
-
-  // run
-  $('#run_menu').on('click', function () {
-    sio.emit('runProject', rootWorkflow);
-  });
-  $('#run_button').mouseover(function () {
-    if (presentState !== 'running') {
-      $('#run_button').attr("src", "/image/btn_play_h.png");
-    }
-  });
-  $('#run_button').mouseleave(function () {
-    if (presentState !== 'running') {
-      $('#run_button').attr("src", "/image/btn_play_n.png");
-    }
-  });
-
-  // pause
-  $('#pause_menu').on('click', function () {
-    sio.emit('pauseProject', true);
-  });
-  $('#pause_button').mouseover(function () {
-    if (presentState !== 'paused') {
-      $('#pause_button').attr("src", "/image/btn_pause_h.png");
-    }
-  });
-  $('#pause_button').mouseleave(function () {
-    if (presentState !== 'paused') {
-      $('#pause_button').attr("src", "/image/btn_pause_n.png");
-    }
-  });
-
-  // stop
-  $('#stop_menu').on('click', function () {
-    $('#project_table_body').empty();
-    sio.emit('stopProject', true);
-  });
-  $('#stop_button').mouseover(function () {
-    $('#stop_button').attr("src", "/image/btn_stop_h.png");
-  });
-  $('#stop_button').mouseleave(function () {
-    $('#stop_button').attr("src", "/image/btn_stop_n.png");
-  });
-
-  // clean
-  $('#clean_menu').on('click', function () {
-    if (presentState !== 'running') {
-      $('#property').hide();
-      $('#project_table_body').empty();
-      // update pankuzu
-      let rootNodeStack = nodeStack[0];
-      let rootDirStack = dirStack[0];
-      let rootWfStack = wfStack[0];
-      nodeStack = [];
-      dirStack = [];
-      wfStack = [];
-      nodeStack.push(rootNodeStack);
-      dirStack.push(rootDirStack);
-      wfStack.push(rootWfStack);
-      currentWorkDir = dirStack[nodeStack.length - 1];
-      sio.emit('cleanProject', true);
-    }
-  });
-  $('#clean_button').mouseover(function () {
-    if (presentState !== 'running') {
-      $('#clean_button').attr("src", "/image/btn_replay_h.png");
-    }
-  });
-  $('#clean_button').mouseleave(function () {
-    if (presentState !== 'running') {
-      $('#clean_button').attr("src", "/image/btn_replay_n.png");
-    }
-  });
-
-  //save
-  $('#save_button').on('click', function () {
-    if (!isEditDisable()) {
-      sio.emit('saveProject', null, (result) => {
-      });
-    }
-  });
-  $('#save_button').mouseover(function () {
-    if (!isEditDisable()) {
-      $('#save_button_img').attr("src", "/image/btn_save_h.png");
-      $('#save_button').css("color", "#CCFF00");
-    }
-  });
-  $('#save_button').mouseleave(function () {
-    if (!isEditDisable()) {
-      $('#save_button_img').attr("src", "/image/btn_save_n.png");
-      $('#save_button').css("color", "#FFFFFF");
-    }
-  });
-
-  //revert
-  $('#revert_button').on('click', function () {
-    if (!isEditDisable()) {
-      sio.emit('revertProject', null, (result) => {
-      });
-    }
-  });
-  $('#revert_button').mouseover(function () {
-    if (!isEditDisable()) {
-      $('#revert_button_img').attr("src", "/image/btn_reset_h.png");
-      $('#revert_button').css("color", "#CCFF00");
-    }
-  });
-  $('#revert_button').mouseleave(function () {
-    if (!isEditDisable()) {
-      $('#revert_button_img').attr("src", "/image/btn_reset_n.png");
-      $('#revert_button').css("color", "#FFFFFF");
-    }
-  });
-
-  // change view mode
-  $('#listView').click(function () {
-    $('#workflow_graphview_area').hide();
-    $('#workflow_listview_area').show();
-  });
-
-  $('#graphView').click(function () {
-    $('#workflow_listview_area').hide();
-    $('#workflow_graphview_area').show();
-    drawComponents();
-  });
-
   // create pankuzu list
   function updateBreadrumb() {
     let breadcrumb = $('#breadcrumb');
@@ -730,16 +841,22 @@ $(() => {
       let correctNodeIconPath = nodeIconPath.replace(".png", "_p.png");
       let nodeColor = config.node_color[nodeTypeStack[index]];
       breadcrumb.append(`<button type="button" id=${id} class="breadcrumbButton" value=${nodeStack[index]}>
-        <img src=${correctNodeIconPath} class="img_breadcrumbButton_icon" /><span class="breadcrunbName">${nodeStack[index]}</span></button>`)
+      <img src=${correctNodeIconPath} class="img_breadcrumbButton_icon" /><span class="breadcrunbName" id=${id}_name>${nodeStack[index]}</span></button>`)
+      let idElement = document.getElementById(`${id}_name`);
+      let idElementWidth = idElement.clientWidth;
+      let displayComponentNameWidth = 170;
+      if (idElementWidth > displayComponentNameWidth) {
+        $(`#${id}_name`).css("width", displayComponentNameWidth);
+      }
       $(`#${id}`).css("background-color", nodeColor);
 
       $(`#${id}`).click(function () {
         while (index + 1 < nodeStack.length) {
           currentNode = nodeStack.pop();
           dirStack.pop();
-          wfStack.pop();
+          parentIdStack.pop();
           currentWorkDir = dirStack[nodeStack.length - 1];
-          currentWorkFlow = wfStack[nodeStack.length - 1];
+          currentWorkFlow = parentIdStack[nodeStack.length - 1];
           $('#property').hide();
         }
         updateBreadrumb();
@@ -748,16 +865,6 @@ $(() => {
       });
     }
   }
-
-  /* workflow edit area [#node_svg] */
-  // hide property and select parent WF if background is clicked
-  $('#node_svg').on('mousedown', function () {
-    $('#property').hide();
-    // property Files Area initialize
-    dirPathStack = [];
-    $('#editPSFileButton').css('visibility', 'hidden');
-    $('#dirBackButton').css("display", "none");
-  });
 
   // setup context menu
   $.contextMenu({
@@ -800,89 +907,6 @@ $(() => {
     };
     return position;
   }
-
-  // create component by drag and drop
-  $('#workflowComponents ul').mouseover(function () {
-    var target = $(this).attr("id");
-    var objectDrag = document.getElementById(target);
-    var objectDrop = document.getElementById("node_svg");
-    objectDrag.ondragstart = function (event) {
-      event.dataTransfer.setData("text", target);
-    };
-    objectDrop.ondragover = function (event) {
-      event.preventDefault();
-    };
-    objectDrop.ondrop = function (event) {
-      event.preventDefault();
-      var objectName = event.dataTransfer.getData("text");
-      var xCoordinate = event.offsetX;
-      var yCoordinate = event.offsetY;
-      const pos = { x: xCoordinate, y: yCoordinate };
-      sio.emit('createNode', { "type": objectName, "pos": pos }, (result) => {
-        if (result !== true) return;
-        sio.emit('getProjectJson', rootWorkflow);
-      });
-    };
-  });
-
-  // show or hide task(Component) Library area
-  var isTaskLibrary = false;
-
-  // library open/close
-  function showTaskLibrary() {
-    $('#taskLibraryButton').show().animate({ left: '256px' }, 50);
-    $('#taskLibraryMenu').show().animate({ width: '256px', 'min-width': '256px' }, 50);
-    $('#libraryButton').attr("src", "/image/btn_openCloseL_n.png");
-  }
-
-  function hideTaskLibrary() {
-    $('#taskLibraryButton').show().animate({ left: '-=256px' }, 100);
-    $('#taskLibraryMenu').hide();
-    $('#libraryButton').attr("src", "/image/btn_openCloseR_n.png");
-  }
-
-  $('#taskLibraryButton').click(function () {
-    if (isEditDisable()) {
-      return;
-    }
-
-    isTaskLibrary = !isTaskLibrary;
-    if (isTaskLibrary) {
-      showTaskLibrary();
-    } else {
-      hideTaskLibrary();
-    }
-  });
-
-  // function definition
-  var defaultDisplay = true;
-  function showLog() {
-    $('#logArea').show();
-    if (defaultDisplay === true) {
-      $('#logInfoLog').show();
-      $('#enableINFO').css('border-bottom-color', "#88BB00");
-    }
-    defaultDisplay = false;
-    $('#displayLogButton').toggleClass('display', true);
-    $('#displayLogButtonImg').attr("src", "/image/btn_openCloseD_n.png");
-  }
-
-  function hideLog() {
-    $('#logArea').hide();
-    $('#displayLogButton').toggleClass('display', false);
-    $('#displayLogButtonImg').attr("src", "/image/btn_openCloseU_n.png");
-  }
-
-  // show or hide log area
-  var isDisplayLog = false;
-  $('#displayLogButton').click(function () {
-    isDisplayLog = !isDisplayLog;
-    if (isDisplayLog) {
-      showLog();
-    } else {
-      hideLog();
-    }
-  });
 
   /**
    * check if filename is already in inputFiles or outputFiles
@@ -969,8 +993,9 @@ $(() => {
         let nodeIconPath = config.node_icon[nodeType];
         $('#img_node_type').attr("src", nodeIconPath);
         vm.nodeScript = target.script;
-        if (nodeType === 'task') {
+        if (nodeType === 'task' || nodeType === 'stepjob') {
           sio.emit('getHostList', true);
+          sio.emit('getJobScriptList', true);//temporary
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
@@ -985,13 +1010,13 @@ $(() => {
         .onDblclick(function (e) {
           $('#property').hide();
           let nodeType = e.target.instance.parent('.node').data('type');
-          if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach') {
+          if (nodeType === 'workflow' || nodeType === 'parameterStudy' || nodeType === 'for' || nodeType === 'while' || nodeType === 'foreach' || nodeType === 'stepjob') {
             let nodeIndex = e.target.instance.parent('.node').data('index');
             let name = e.target.instance.parent('.node').data('name');
             currentWorkDir = currentWorkDir + pathSep + name;
             currentWorkFlow = e.target.instance.parent('.node').data('ID');
             dirStack.push(currentWorkDir);
-            wfStack.push(currentWorkFlow);
+            parentIdStack.push(currentWorkFlow);
             nodeStack.push(name);
             nodeTypeStack.push(nodeType);
             process.nextTick(function () {
@@ -1102,16 +1127,22 @@ $(() => {
   // draw taskStateList
   function insertSubComponetStateHTML(target, insertPosition, id, iconPath, name) {
     target.insertAdjacentHTML(insertPosition, `<tr class="project_table_component" id="line_${id}">
-    <td id="${id}" class="componentName"><img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td></tr>`);
+    <td id="${id}" class="componentName"><img src=${iconPath}></td>
+    <td class="nameLabelArea" id="${id}_nameLabel"><div class="nameLabel">${name}</div></td></tr>
+    `);
   }
+  /* <td id="${id}" class="componentName"><img src=${iconPath}><label class="nameLabel">${name}</label></td></tr> */
 
   function insertTaskStateHTML(target, insertPosition, id, iconPath, name, componentState, state, started, prepared, jobSubmited, jobRan, jobFinished, finished, desc) {
     if (prepared === null) prepared = "-";
     if (jobSubmited === null) jobSubmited = "-";
     if (jobRan === null) jobRan = "-";
     if (jobFinished === null) jobFinished = "-";
+
+    // <td id="${id}" class="componentName"><img src=${iconPath}><label class="nameLabel">${name}</label></td>
     target.insertAdjacentHTML(insertPosition, `<tr class="project_table_component" id="line_${id}">
-    <td id="${id}" class="componentName"><img src=${iconPath} class="workflow_component_icon"><label class="nameLabel">${name}</label></td>
+    <td id="${id}" class="componentName"><img src=${iconPath}></td>
+    <td class="nameLabelArea" id="${id}_nameLabel"><div class="nameLabel">${name}</div></td>  
     <td class="componentState"><img src=${componentState} class="stateIcon" id="${id}_stateIcon"><label class="stateLabel" id="${id}_state">${state}</label></td>
     <td class="componentStartTime" id="${id}_startTime">${started}</td>
     <td class="componentLabel" id="${id}_prepared">${prepared}</td>
@@ -1212,7 +1243,9 @@ $(() => {
             taskStateList[i].startTime, taskStateList[i].preparedTime, taskStateList[i].jobSubmittedTime, taskStateList[i].jobStartTime, taskStateList[i].jobEndTime, taskStateList[i].endTime, taskStateList[i].description)
           changeComponentDisplayMode(jobInfoViewFlag);
           $(`#${taskId}`).css("background-color", nodeColor);
-          $(`#${taskId}`).css("margin-right", maxancestorsLength * 32 + "px");
+          // $(`#${taskId}`).css("margin-right", maxancestorsLength * 32 + "px");
+          $(`#${taskId}_nameLabel`).css("background-color", nodeColor);
+          $(`#${taskId}_nameLabel`).css("margin-right", maxancestorsLength * 32 + "px");
         } else {
           //arrange list info position by maxancestorsLength.
           ancestorsNameList = taskStateList[i].ancestorsName.split('/');
@@ -1240,6 +1273,7 @@ $(() => {
                 insertSubComponetStateHTML(targetElement, insertPosition, ancestorsId, ancestorsIconPath, ancestorsNameList[j]);
               }
               $(`#${ancestorsId}`).css("background-color", config.node_color[ancestorsTypeList[j]]);
+              $(`#${ancestorsId}_nameLabel`).css("background-color", config.node_color[ancestorsTypeList[j]]);
               let loopMarginArea = 32 * j;
               $(`#${ancestorsId}`).css("margin-left", loopMarginArea + "px");
             } else {
@@ -1259,8 +1293,9 @@ $(() => {
           let marginArea = 32 * ancestorsNameList.length;
           let marginRight = (maxancestorsLength - ancestorsNameList.length) * 32;
           $(`#${taskId}`).css("margin-left", marginArea + "px");
-          $(`#${taskId}`).css("margin-right", marginRight + "px");
+          $(`#${taskId}_nameLabel`).css("margin-right", marginRight + "px");
           $(`#${taskId}`).css("background-color", nodeColor);
+          $(`#${taskId}_nameLabel`).css("background-color", nodeColor);
           $(`.componentDescriptionLabel`).css("margin-right", marginArea + "px");
           $(`.componentNameLabel`).css("margin-right", maxancestorsLength * 32 + "px");
         }
@@ -1294,9 +1329,11 @@ $(() => {
 
   function changeViewState() {
     if (isEditDisable()) {
-      if (isTaskLibrary) {
-        isTaskLibrary = !isTaskLibrary;
-        hideTaskLibrary();
+      if (vm.componentLibraryFlag) {
+        vm.componentLibraryFlag = !vm.componentLibraryFlag;
+        document.getElementById("componentLibraryButton").classList.toggle("componentLibraryActive");
+        document.getElementById("componentLibrary").classList.toggle("componentLibraryActive");
+        document.getElementById('libraryButton').setAttribute("src", "/image/btn_openCloseR_n.png");
       }
     }
 
@@ -1317,16 +1354,15 @@ $(() => {
       { id: "nameInputField", readonly: true, disable: false },
       { id: "descriptionInputField", readonly: true, disable: false },
       { id: "scriptSelectField", readonly: true, disable: true },
-      { id: "newInputFileNameInputField", readonly: true, disable: false },
-      { id: "newOutputFileNameInputField", readonly: true, disable: false },
-      { id: "inputAddDelButton", readonly: true, disable: true },
-      { id: "outputAddDelButton", readonly: true, disable: true },
       { id: "parameterFileSelectField", readonly: true, disable: true },
       { id: "conditionFlag1", readonly: true, disable: true },
       { id: "conditionFlag2", readonly: true, disable: true },
       { id: "conditionSelectField", readonly: true, disable: true },
       { id: "conditionInputField", readonly: true, disable: false },
-      { id: "newIndexListField", readonly: true, disable: false },
+      { id: "retryTimesInputField", readonly: true, disable: false },
+      { id: "retryConditionFlag1", readonly: true, disable: true },
+      { id: "retryConditionFlag2", readonly: true, disable: true },
+      { id: "retryConditionSelectField", readonly: true, disable: true },
       { id: "startInputField", readonly: true, disable: false },
       { id: "endInputField", readonly: true, disable: false },
       { id: "stepInputField", readonly: true, disable: false },
@@ -1342,9 +1378,20 @@ $(() => {
       { id: "jupyterBootButton", readonly: true, disable: true },
       { id: "createFolderButton", readonly: true, disable: true },
       { id: "createFileButton", readonly: true, disable: true },
+      { id: "createJobScriptButton", readonly: true, disable: true },
       { id: "fileUploadButton", readonly: true, disable: true },
-      { id: "editPSFileButton", readonly: true, disable: true },
-      { id: "uploadOnDemandFlagField", readonly: true, disable: true }
+      { id: "uploadOnDemandFlagField", readonly: true, disable: true },
+      { id: "useDependencyFlagField", readonly: true, disable: true },
+      { id: "dependencyInputField", readonly: true, disable: false }
+    ];
+
+    var classes = [
+      { class: "newInputFileNameInputField", readonly: true, disable: false },
+      { class: "newOutputFileNameInputField", readonly: true, disable: false },
+      { class: "newIndexListField", readonly: true, disable: false },
+      { class: "inputAddDelButton", readonly: true, disable: true },
+      { class: "outputAddDelButton", readonly: true, disable: true },
+      { class: "newIndexListField", readonly: true, disable: false }
     ];
 
     ids.forEach((v) => {
@@ -1360,9 +1407,23 @@ $(() => {
       } catch (e) { }
     });
 
+    classes.forEach((v) => {
+      try {
+        if (v.readonly === true) {
+          $("[class=" + v.class + "]").attr('readonly', propertyEditableFlag);
+        }
+      } catch (e) { }
+      try {
+        if (v.disable === true) {
+          $("[class=" + v.class + "]").prop('disabled', propertyEditableFlag);
+        }
+      } catch (e) { }
+    });
+
     $("[id=fileSelector]").prop('disabled', fileSelectorFlag);
     $("[id=disableInputField]").attr('readonly', editDisable);
     $("[id=disableInputField]").prop('disabled', editDisable);
+    $("[id=editPSFileButton]").prop('disabled', editDisable);
 
     svgNode.setEditDisable(svg, nodes, editDisable);
     fb.setDisable(propertyEditableFlag);

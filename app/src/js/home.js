@@ -98,7 +98,8 @@ $(() => {
         const html = '<p id="path"></p><ul id="fileList"></ul>'
             + '<div id="nameTextbox"><label id="projectNameLabel">New project name</label><input type="text" id="newProjectName"></div >'
             + '<div id="descriptionTextbox"><label id="projectDescriptionLabel">Description</label><input type="text" id="description" placeholder="This is new project." ></div>';
-        const dialogOptions = {
+        //title
+            const dialogOptions = {
             title: "Create new project",
             height: $(window).height() * 0.9,
             width: $(window).width() * 0.6

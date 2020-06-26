@@ -97,6 +97,18 @@
             "jpn": "JavaScriptの判定式の入力フォームにします"
         },
         {
+            "key": "propertyRetry",
+            "jpn": "Conditionを満たす限りtimesを上限に繰り返し実行します"
+        },
+        {
+            "key": "retryConditionFlag1",
+            "jpn": "スクリプトファイルの選択フォームにします"
+        },
+        {
+            "key": "retryConditionFlag2",
+            "jpn": "JavaScriptの判定式の入力フォームにします"
+        },
+        {
             "key": "propertyStart",
             "jpn": "ループの開始値を設定します"
         },
@@ -165,6 +177,10 @@
             "jpn": "新規ファイルを作成します"
         },
         {
+            "key": "createJobScriptButton",
+            "jpn": "新規ジョブスクリプトファイルを作成します"
+        },
+        {
             "key": "fileUploadButton",
             "jpn": "ファイルをアップロードします"
         },
@@ -173,11 +189,11 @@
             "jpn": "ファイル編集画面を起動します"
         },
         {
-            "key": "taskLibraryButton",
+            "key": "componentLibraryButton",
             "jpn": "コンポーネントライブラリを表示します"
         },
         {
-            "key": "displayLogButton",
+            "key": "logAreaButton",
             "jpn": "ログエリアを表示します"
         },
         {
@@ -223,6 +239,10 @@
         {
             "key": "hostQueue",
             "jpn": "キュー名を設定します"
+        },
+        {
+            "key": "hostGrpName",
+            "jpn": "利用グループ名を設定します"
         },
         {
             "key": "hostConnectionRenewalInterval",

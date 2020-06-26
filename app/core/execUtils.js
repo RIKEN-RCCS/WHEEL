@@ -1,0 +1,110 @@
+"use strict";
+const path = require("path");
+const fs = require("fs-extra");
+const { componentJsonFilename, statusFilename } = require("../db/db");
+const { replacePathsep } = require("./pathUtils");
+const { componentJsonReplacer } = require("./componentFilesOperator");
+const { getSsh } = require("./sshManager");
+const { getLogger } = require("../logSettings");
+const {emitProjectEvent} = require("./projectEventManager");
+const logger = getLogger();
+
+/**
+ * parse filter string from client and return validate glob pattern
+ */
+function parseFilter(pattern) {
+  if ((pattern.startsWith("{") && pattern.endsWith("}")) || !pattern.includes(",")) {
+    return pattern;
+  }
+  return `{${pattern}}`;
+}
+
+
+/**
+ * set task component's status and notice it's changed
+ */
+async function setTaskState(task, state) {
+  task.state = state;
+  logger.trace(`TaskStateList: ${task.ID}'s state is changed to ${state}`);
+  //to avoid git add when task state is changed, we do NOT use updateComponentJson(in workflowUtil) here
+  await fs.writeJson(path.resolve(task.workingDir, componentJsonFilename), task, { spaces: 4, replacer: componentJsonReplacer });
+  emitProjectEvent(task.projectRootDir,"taskStateChanged", task);
+  emitProjectEvent(task.projectRootDir,"componentStateChanged", task);
+}
+
+async function gatherFiles(task) {
+  await setTaskState(task, "stage-out");
+  logger.debug("start to get files from remote server if specified");
+  const ssh = getSsh(task.projectRootDir, task.remotehostID);
+
+  //get outputFiles from remote server
+  const outputFiles = task.outputFiles
+    .map((e)=>{
+      if (e.name.endsWith("/") || e.name.endsWith("\\")) {
+        const dirname = replacePathsep(e.name);
+        return `${dirname}/*`;
+      }
+      return `${e.name}`;
+    });
+
+  for (const outputFile of outputFiles) {
+    const dst = `${path.join(task.workingDir, path.dirname(outputFile))}/`;
+    logger.debug("try to get outputFiles", outputFile, "\n  from:", task.remoteWorkingDir, "\n  to:", dst);
+
+    try {
+      console.log(path.dirname(outputFile));
+      await ssh.recv(path.posix.join(task.remoteWorkingDir, outputFile), dst, null, null);
+    } catch (e) {
+      //ignore if src file is not exists
+      if (e.message !== "src must be existing file or directory") {
+        throw e;
+      } else {
+        logger.debug("src file not found but ignored", outputFile);
+      }
+    }
+  }
+
+
+  //get files which match include filter
+  if (typeof task.include === "undefined") {
+    const include = `${task.remoteWorkingDir}/${parseFilter(task.include)}`;
+    const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
+    logger.debug("try to get ", include, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir, "\n  exclude filter:", exclude);
+
+    try {
+      await ssh.recv(include, task.workingDir, null, exclude);
+    } catch (e) {
+      //ignore if src file is not exists
+      if (e.message !== "src must be existing file or directory") {
+        throw e;
+      } else {
+        logger.debug("file not found but ignored", e);
+      }
+    }
+  }
+
+  //clean up remote working directory
+  if (task.doCleanup) {
+    logger.debug("(remote) rm -fr", task.remoteWorkingDir);
+
+    try {
+      await ssh.exec(`rm -fr ${task.remoteWorkingDir}`);
+    } catch (e) {
+      //just log and ignore error
+      logger.warn("remote cleanup failed but ignored", e);
+    }
+  }
+}
+
+async function createStatusFile(task) {
+  const filename = path.resolve(task.workingDir, statusFilename);
+  const statusFile = `${task.state}\n${task.rt}\n${task.jobStatus}`;
+  return fs.writeFile(filename, statusFile);
+}
+
+
+module.exports = {
+  setTaskState,
+  gatherFiles,
+  createStatusFile
+};

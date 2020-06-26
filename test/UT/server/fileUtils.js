@@ -12,7 +12,7 @@ chai.use(require("chai-fs"));
 chai.use(require("chai-as-promised"));
 
 //helper functions
-const { gitInit, gitAdd, gitCommit, gitStatus } = require("../../../app/core/gitOperator");
+const { gitInit, gitAdd, gitCommit, gitStatus } = require("../../../app/core/gitOperator2");
 
 //testee
 const {
@@ -64,13 +64,8 @@ describe("file utility functions", ()=>{
       expect(notExisting).to.be.a.file().and.empty;
       expect(rt).to.be.an("array").that.have.lengthOf(1);
       expect(rt[0]).to.deep.equal({ content: "", filename: path.basename(notExisting), dirname: path.dirname(notExisting) });
-      const tmp = await gitStatus(testDirRoot);
-      expect(tmp).to.be.an("array").that.have.lengthOf(1);
-      const stat = tmp[0];
-      expect(stat.path()).to.equal("notExisting");
-      expect(stat.inIndex()).to.equal(0);
-      expect(stat.inWorkingTree()).not.to.equal(0);
-      expect(stat.isNew()).not.to.equal(0);
+      const { untracked } = await gitStatus(testDirRoot);
+      expect(untracked).to.have.members([path.basename(notExisting)]);
     });
     it("should return existing file", async()=>{
       const rt = await openFile(testDirRoot, path.resolve(testDirRoot, "foo"));
@@ -104,20 +99,14 @@ describe("file utility functions", ()=>{
     it("should overwrite existing file", async()=>{
       await saveFile(path.resolve(testDirRoot, "foo"), "bar");
       expect(path.resolve(testDirRoot, "foo")).to.be.a.file().with.content("bar");
-      const tmp = await gitStatus(testDirRoot);
-      expect(tmp).to.be.an("array").that.have.lengthOf(1);
-      const stat = tmp[0];
-      expect(stat.path()).to.equal("foo");
-      expect(stat.status()).to.deep.equal(["INDEX_MODIFIED"]);
+      const { modified } = await gitStatus(testDirRoot);
+      expect(modified).to.have.members(["foo"]);
     });
     it("should write new file", async()=>{
       await saveFile(path.resolve(testDirRoot, "huga"), "huga");
       expect(path.resolve(testDirRoot, "huga")).to.be.a.file().with.content("huga");
-      const tmp = await gitStatus(testDirRoot);
-      expect(tmp).to.be.an("array").that.have.lengthOf(1);
-      const stat = tmp[0];
-      expect(stat.path()).to.equal("huga");
-      expect(stat.status()).to.deep.equal(["INDEX_NEW"]);
+      const { added } = await gitStatus(testDirRoot);
+      expect(added).to.have.members(["huga"]);
     });
     it("should throw error while attempting to write directory", async()=>{
       return expect(saveFile(path.resolve(testDirRoot, "hoge"))).to.be.rejectedWith("EISDIR");

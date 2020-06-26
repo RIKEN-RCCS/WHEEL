@@ -1,33 +1,18 @@
 "use strict";
 const path = require("path");
-const { promisify } = require("util");
 const EventEmitter = require("events");
 const fs = require("fs-extra");
-const glob = require("glob");
 const { destroy } = require("abc4");
-const { gitCommit, gitResetHEAD } = require("./gitOperator");
+const { gitClean, gitResetHEAD } = require("./gitOperator2");
 const { taskStateFilter, cancelDispatchedTasks } = require("./taskUtil");
 const orgGetLogger = require("../logSettings").getLogger;
 const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
 const { readJsonGreedy } = require("./fileUtils");
 const { getDateString } = require("../lib/utility");
-const { validateComponents, componentJsonReplacer } = require("./componentFilesOperator");
+const { componentJsonReplacer } = require("./componentFilesOperator");
 const Dispatcher = require("./dispatcher");
 const { removeSsh } = require("./sshManager");
 
-
-async function rmfr(rootDir) {
-  const srces = await promisify(glob)("*", { cwd: rootDir, ignore: "wheel.log" });
-
-  //TODO should be optimized stride value(100);
-  for (let i = 0; i < srces.length; i += 100) {
-    const end = i + 100 < srces.length ? i + 100 : srces.length;
-    const p = srces.slice(i, end).map((e)=>{
-      return fs.remove(path.resolve(rootDir, e));
-    });
-    await Promise.all(p);
-  }
-}
 
 class Project extends EventEmitter {
   constructor(projectRootDir) {
@@ -109,8 +94,8 @@ class Project extends EventEmitter {
     await cancelDispatchedTasks(this.tasks, this.logger);
     this.tasks.clear();
     removeSsh(this.projectRootDir);
-    await rmfr(this.projectRootDir);
     await gitResetHEAD(this.projectRootDir);
+    await gitClean(this.projectRootDir);
     const projectJson = await readJsonGreedy(this.projectJsonFilename);
     this.emit("projectStateChanged", projectJson);
   }

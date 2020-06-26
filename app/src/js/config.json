@@ -16,7 +16,9 @@
     "foreach": "#247780",
     "parameterStudy": "#666622",
     "source": "#00bff0",
-    "viewer": "#00b050"
+    "viewer": "#00b050",
+    "stepjob": "#803DB3",
+    "stepjobTask": "#3B55B3"
   },
   "box_appearance": {
     "titleHeight": 32,
@@ -25,9 +27,29 @@
     "strokeWidth": 2,
     "marginHeight": 12,
     "outputTextOffset": 12,
+    "inputTextOffset": 8,
     "textHeightScale": 1.2,
+    "textHeightSize": 28,
+    "textLengthLimit": 100,
+    "titleLengthLimit": 172,
     "plug_drop_area_scale": 4,
-    "inputTextNamePosX": 8
+    "epllisisSpace": 2,
+    "titleEpllisisPosX": 208,
+    "titleEpllisisPosY": 2.3,
+    "filenameHeightOffset": 4,
+    "bodyHeightOffset": 6
+  },
+  "parentChildfileConnect": {
+    "textLengthLimit": 172,
+    "connectorHeight": 32,
+    "defaltConnectorPosX": 240,
+    "connectorMiddlePosY": 5.6,
+    "recepterHeight": 32,
+    "defaltRecepterPosY": 358,
+    "propertyAreaWidth": 248,
+    "recepterEpllisisOffsetPosX": 84,
+    "recepterEpllisisPosX": 84,
+    "connectorEpllisisPosX": 24
   },
   "state_color": {
     "planning": "white",
@@ -57,7 +79,9 @@
     "foreach": "/image/img_foreach.png",
     "parameterStudy": "/image/img_parameterStudy.png",
     "source": "/image/img_source.png",
-    "viewer": "/image/img_viewer.png"
+    "viewer": "/image/img_viewer.png",
+    "stepjob": "/image/img_stepjob.png",
+    "stepjobTask": "/image/img_stepjobTask.png"
   },
   "state_icon": {
     "not-started": "/image/img_stateQue.png",

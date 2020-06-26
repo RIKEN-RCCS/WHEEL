@@ -25,7 +25,7 @@ const { createNewProject } = require("../../../app/core/projectFilesOperator");
 const { createNewComponent, updateComponent } = require("../../../app/core/componentFilesOperator");
 const { openProject, runProject } = require("../../../app/core/projectResource");
 const { scriptName, pwdCmd } = require("./testScript");
-const { gitAdd, gitCommit } = require("../../../app/core/gitOperator");
+const { gitAdd, gitCommit } = require("../../../app/core/gitOperator2");
 
 
 describe("test about cleaning functionality", function() {

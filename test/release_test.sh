@@ -11,8 +11,10 @@ function cleanup()
     rm -fr ${CONFIG_DIR}
     echo "remaining container"
     docker ps -a
+    popd
 }
 
+pushd $(dirname $0)
 
 # stop container if already running
 docker stop ${TAG} >& /dev/null
@@ -127,7 +129,3 @@ if [ ${rt} -ne 0 ];then
   echo "ERROR: unit test failed ${rt}"
   exit 7
 fi
-
-#run E2E test from host
-#TODO
-# please note that wheel and jupyter is already running at port 8089, 8090 respectively

@@ -2,13 +2,17 @@
 const fs = require("fs-extra");
 const path = require("path");
 const pathIsInside = require("path-is-inside");
-
+const { promisify } = require("util");
+const glob = require("glob");
 const { componentFactory } = require("./workflowComponent");
-const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename } = require("../db/db");
+const { defaultCleanupRemoteRoot, projectJsonFilename, componentJsonFilename, jobManagerJsonFilename } = require("../db/db");
 const { getDateString } = require("../lib/utility");
 const { replacePathsep, convertPathSep } = require("./pathUtils");
 const { readJsonGreedy } = require("./fileUtils");
-const { gitInit, gitAdd } = require("./gitOperator");
+const { gitInit, gitAdd, gitCommit } = require("./gitOperator2");
+const { emitProjectEvent } = require("./projectEventManager");
+const { getLogger } = require("../logSettings");
+const logger = getLogger();
 
 /**
  * read component JSON file and return children's ID
@@ -31,13 +35,30 @@ async function getDescendantsIDs(projectRootDir, ID) {
 }
 
 /**
+ * read project JSON file and return all component ID in project
+ * @param {string} projectRootDir - project projectRootDir's absolute path
+ * @returns {string[]} - array of id string
+ */
+async function getAllComponentIDs(projectRootDir) {
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await readJsonGreedy(filename);
+  const rt = [];
+
+  for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
+    rt.push(id);
+  }
+  return rt;
+}
+
+/**
  * create new project dir, initial files and new git repository
  * @param {string} projectRootDir - project projectRootDir's absolute path
- * @param {string} projectName - project name without suffix
+ * @param {string} name - project name without suffix
  * @param {string} description - project description text
  * @param {string} user - username of project owner
  * @param {string} mail - mail address of project owner
  * @param {Object} logger - log4js instance
+ * @returns {*} -
  */
 async function createNewProject(projectRootDir, name, description, user, mail, logger) {
   description = description != null ? description : "This is new project.";
@@ -72,7 +93,9 @@ async function createNewProject(projectRootDir, name, description, user, mail, l
     logger.debug(projectJson);
   }
   await fs.writeJson(projectJsonFileFullpath, projectJson, { spaces: 4 });
-  return gitInit(projectRootDir, user, mail);
+  await gitInit(projectRootDir, user, mail);
+  await gitAdd(projectRootDir, "./");
+  await gitCommit(projectRootDir, "create new project");
 }
 
 async function removeComponentPath(projectRootDir, IDs, force = false) {
@@ -117,7 +140,8 @@ async function updateComponentPath(projectRootDir, ID, absPath) {
 
   //write project Json file
   await fs.writeJson(filename, projectJson, { spaces: 4 });
-  return gitAdd(projectRootDir, filename);
+  await gitAdd(projectRootDir, filename);
+  emitProjectEvent(projectRootDir, "componentPathChanged", projectJson.componentPath);
 }
 
 async function setProjectState(projectRootDir, state, force) {
@@ -130,7 +154,8 @@ async function setProjectState(projectRootDir, state, force) {
   const timestamp = getDateString(true);
   projectJson.mtime = timestamp;
   await fs.writeJson(filename, projectJson, { spaces: 4 });
-  return gitAdd(projectRootDir, filename);
+  await gitAdd(projectRootDir, filename);
+  emitProjectEvent(projectRootDir, "projectStateChanged", projectJson);
 }
 
 async function getComponentDir(projectRootDir, ID, isAbsolute) {
@@ -147,12 +172,33 @@ async function getProjectState(projectRootDir) {
   return projectJson.state;
 }
 
+async function checkRunningJobs(projectRootDir) {
+  const tasks = [];
+  const jmFiles = [];
+
+  const candidates = await promisify(glob)(`*.${jobManagerJsonFilename}`, { cwd: projectRootDir });
+  for (const jmFile of candidates) {
+    try {
+      const taskInJmFile = await fs.readJson(path.resolve(projectRootDir, jmFile));
+      if (Array.isArray(taskInJmFile) && taskInJmFile.length > 0) {
+        jmFiles.push(jmFile);
+        tasks.push(...taskInJmFile);
+      }
+    } catch (e) {
+      logger.warn("read job manager file failed", e);
+    }
+  }
+  return { tasks, jmFiles };
+}
+
 module.exports = {
   createNewProject,
   updateComponentPath,
   removeComponentPath,
   getComponentDir,
   getDescendantsIDs,
+  getAllComponentIDs,
   setProjectState,
-  getProjectState
+  getProjectState,
+  checkRunningJobs
 };

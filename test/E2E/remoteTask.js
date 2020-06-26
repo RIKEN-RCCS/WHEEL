@@ -6,7 +6,7 @@ chai.use(chaiWebdriver(browser));
 
 describe("#remote task component execute check", function () {
     const url = '/';
-    const targetProjectName = "remoteTask_test";
+    const targetProjectName = "remoteTask";
     const targetComponent ="svg_remoteTask_box";
     const SSHConnectionPW = "hoge";
     const testFileName = "test___txt_data";
@@ -15,20 +15,22 @@ describe("#remote task component execute check", function () {
     const id_testProjectJson = "prj_wheel_json_data";
     const id_dialog = "dialog";
     const id_title = "title";
-    const id_prjName = "project_name";
-    const id_prjState = "project_state";
+    const id_prjName = "projectName";
+    const id_prjState = "projectState";
     const id_property = "property";
     const id_drawerButton = "drawerButton";
     const id_runButton = "run_button";
     const id_password = "password";
     const id_cleanButton = "clean_button";
-    const id_remotehostButton = "remotehostButton";
+    const id_remotehostButton = "remotehostEditorButton";
     // Xpath for 'home screen'
     const importMenu = '//*[@id="importButton"]';
     const importDialogOKButton = '/html/body/div[5]/div[3]/div/button[2]';
     // Xpath for 'workflow screen'
     const dialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
     const dialogCancelButton = '/html/body/div[2]/div[3]/div/button[1]';
+    const cleanCheckDialog = '/html/body/div[2]';
+    const cleanCheckDialogOkButton = '/html/body/div[2]/div[3]/div/button[2]';
     // for remotehost screen
     const labelName = 'pbs';
     const hostName = 'localhost';
@@ -120,7 +122,7 @@ describe("#remote task component execute check", function () {
         $(dialogOkButton).click();
         browser.waitUntil(function(){
             return $(`#${id_prjState}`).getText() === 'running'
-        }, 1000, 'expected text to be different after 1s');
+        }, 5000, 'expected text to be different after 5s');
         browser.waitUntil(function(){
             return $(`#${id_prjState}`).getText() === 'finished'
         }, 5000, 'expected text to be different after 5s');
@@ -136,8 +138,8 @@ describe("#remote task component execute check", function () {
     })
     it("rerun project check #issue286, 312", function(){
         $(`#${id_cleanButton}`).click();
-        // $(`#${id_dialog}`).waitForDisplayed();   // dev2019から実装される機能
-        // $(dialogOkButton).click();
+        $(cleanCheckDialog).waitForDisplayed();
+        $(cleanCheckDialogOkButton).click();
         browser.waitUntil(function(){
             return $(`#${id_prjState}`).getText() === 'not-started'
         }, 5000, 'expected text to be different after 5s');
