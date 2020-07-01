@@ -5,14 +5,22 @@ __W__ orkflow in __H__ ierarchical distribut __E__ d parall __EL__.
 latest version of [docker](https://www.docker.com/)
 
 ## How to use
+1. create new directory (hereafter referrd to as `CONFIG_DIR`)
+2. download following 2 files to the `CONFIG_DIR`
+  [jobScheduler.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScheduler.json)
+  [server.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/server.json)
+3. create or server certification and key file for https, and put them into `CONFIG_DIR`
+4. type following command
+
 ```
-> docker run -d -v ${HOME}:/root -v ${PWD}/app/config:/usr/src/app/config -p 8089:8089 -p 8090:8090 tmkawanabe/wheel:latest
+> docker run -d -v ${HOME}:/root -v CONFIG_DIR:/usr/src/app/config -p 8089:8089 -p 8090:8090 tmkawanabe/wheel:latest
 ```
 
-above command line means:
+`CONFIG_DIR` must be absolute path in host machine.
+
+in above commandline we specify following options
 
 - project files will be create under ${HOME}
-- all configuration files (including server certification and key) will be read from ${PWD}/app/config
 - port 8089 and 8090 is used for WHEEL itself and jupyter notebook respectively
 
 for detailed information about configuration, see [administrator's guide](./documentMD/AdminGuide.md)
