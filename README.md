@@ -7,8 +7,8 @@ latest version of [docker](https://www.docker.com/)
 ## How to use
 1. create new directory (hereafter referrd to as `CONFIG_DIR`)
 2. download following 2 files to the `CONFIG_DIR`
-  [jobScheduler.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScheduler.json)
-  [server.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/server.json)
+    - [jobScheduler.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScheduler.json)
+    - [server.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/server.json)
 3. create or server certification and key file for https, and put them into `CONFIG_DIR`
 4. type following command
 
@@ -18,7 +18,7 @@ latest version of [docker](https://www.docker.com/)
 
 `CONFIG_DIR` must be absolute path in host machine.
 
-in above commandline we specify following options
+above command line, we specify following options
 
 - project files will be create under ${HOME}
 - port 8089 and 8090 is used for WHEEL itself and jupyter notebook respectively
@@ -30,6 +30,7 @@ for user's guide, see [user's guide](https://riken-rccs.github.io/WHEEL/)
 
 ## history
 WHEEL was originaly developed by Research Institute for Information Technology(RITT), Kyushu University in 2016
+
 It is still hosted at https://github.com/RIIT-KyushuUniv/WHEEL
 
 RIKEN R-CCS forks it and continues the development
@@ -48,6 +49,10 @@ please note that:
 All html documents under docs directory is converted from documentMD/user\_guide in CI process.
 so, plese do NOT change any files under docs directory.
 
+#### about CI process
+if you push new commit which includes user guide update,
+CI runner will commit new version of html user guide.
+so, you have to git pull for master branch after push and CI process is finished.
 
 ### scripts
 - `npm start` launch wheel
