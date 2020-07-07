@@ -220,8 +220,8 @@ describe("create jobscript", function () {
     });
     it("initialize project", function(){
         $(`#${id_cleanButton}`).click();
-        $(xpath_cleanCheckDlg).waitForDisplayed();
-        $(xpath_cleanCheckDlgOk).click();
+        $(".v-card__title=unsaved files").waitForDisplayed();
+        $(".v-btn__content=discard all changes").click();
         let elem = $(`#${targetFile}`).isDisplayed();
         expect(elem).to.not.be.true;
     });

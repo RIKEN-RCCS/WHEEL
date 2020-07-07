@@ -66,8 +66,6 @@ describe("stepjob : compoent property", function () {
   const xpath_fileConnectErrDlg = '/html/body/div[2]';
   const xpath_fileConnectErrDlgOk = '/html/body/div[2]/div[3]/div/button[2]';
   const id_cleanButton = "clean_button";
-  const xpath_cleanCheckDlg = '/html/body/div[2]';
-  const xpath_cleanCheckDlgOk = '/html/body/div[2]/div[3]/div/button[2]';
 
   it("compoent library in workflow", function () {
     $(`#${id_componentLibraryButton}`).click();
@@ -187,8 +185,8 @@ describe("stepjob : compoent property", function () {
   });
   it("initialize project", function(){
     $(`#${id_cleanButton}`).click();
-    $(xpath_cleanCheckDlg).waitForDisplayed();
-    $(xpath_cleanCheckDlgOk).click();
+    $(".v-card__title=unsaved files").waitForDisplayed();
+    $(".v-btn__content=discard all changes").click();
     $(`.${stepjobCompoentName}`).waitForDisplayed();
     let elem = $(`.${stepjobCompoentName}`).isDisplayed();
     expect(elem).to.be.true;

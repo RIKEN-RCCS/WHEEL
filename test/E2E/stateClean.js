@@ -66,8 +66,8 @@ describe("#state clean test :issue #288", function () {
     })
     it("initialize project", function(){
         $(`#${id_cleanButton}`).click();
-        $(cleanCheckDialog).waitForDisplayed();
-        $(cleanCheckDialogOkButton).click();
+        $(".v-card__title=unsaved files").waitForDisplayed();
+        $(".v-btn__content=discard all changes").click();
         browser.waitUntil(function(){
             return $(`#${id_prjState}`).getText() === 'not-started'
         }, 1000, 'expected text to be different after 1s');
