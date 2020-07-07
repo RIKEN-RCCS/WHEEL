@@ -100,6 +100,42 @@ describe("fileManager UT", ()=>{
         { path: path.resolve(testDirRoot), name: "linkpuyo", type: "file", islink: true }
       ]);
     });
+    describe("reproduction of #518", ()=>{
+      beforeEach(async()=>{
+        await fs.remove(testDirRoot);
+        await Promise.all([
+          fs.outputFile(path.join(testDirRoot, "t_1"), "t_1"),
+          fs.outputFile(path.join(testDirRoot, "t_aa.sh"), "t_aa.sh"),
+          fs.outputFile(path.join(testDirRoot, "t_bb.txt"), "t_bb.txt")
+        ]);
+      });
+      it("should send all files", async()=>{
+        await onGetFileList({}, emit, "dummy", path.resolve(testDirRoot), cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(emit).to.have.been.calledOnce;
+        expect(emit).to.have.been.calledWith("fileList");
+        expect(emit.args[0][1]).to.deep.equal([
+          { path: path.resolve(testDirRoot), name: "t_1", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_aa.sh", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_bb.txt", type: "file", islink: false }
+        ]);
+      });
+      it("should also send all files", async()=>{
+        await fs.outputFile(path.join(testDirRoot, "t_2"), "t_2"),
+        await onGetFileList({}, emit, "dummy", path.resolve(testDirRoot), cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(emit).to.have.been.calledOnce;
+        expect(emit).to.have.been.calledWith("fileList");
+        expect(emit.args[0][1]).to.deep.equal([
+          { path: path.resolve(testDirRoot), name: "t_1", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_2", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_aa.sh", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_bb.txt", type: "file", islink: false }
+        ]);
+      });
+    });
   });
   describe("#getSNDContents", ()=>{
     it("should send contens of SND", async()=>{
