@@ -81,7 +81,7 @@ async function gitInit(rootDir, user, mail) {
 async function gitCommit(rootDir, message = "save project") {
   return gitPromise(rootDir, ["commit", "-m", `"${message}"`])
     .catch((err)=>{
-      if (!/nothing( added | )to commit/m.test(err)) {
+      if (!/(no changes|nothing)( added | )to commit/m.test(err)) {
         throw err;
       }
     });
