@@ -42,6 +42,12 @@
 
 ![img](./img/graphview/failed.png "failed") 
 
+5. holding     : 投入済ジョブ確認中
+![img](./img/graphview/holding.png "holding"))
+
+6. unknonw     : 状態取得異常発生時
+![img](./img/graphview/holding.png "holding"))
+
 ### プロジェクトの操作ボタンエリア
 プロジェクト実行、停止などを操作するボタンとその詳細は以下です。  
 
