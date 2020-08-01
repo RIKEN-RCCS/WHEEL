@@ -130,12 +130,12 @@ describe("file Browser UT", ()=>{
         { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
         { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
         { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "foo_*", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_*_100", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_*_200", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_*_300", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_1_*", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_2_*", type: "snd", islink: false },
+        { path: path.resolve(testDirRoot), name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
+        { path: path.resolve(testDirRoot), name: "huga_*_100", type: "snd", islink: false, pattern: "huga_\\d+_100" },
+        { path: path.resolve(testDirRoot), name: "huga_*_200", type: "snd", islink: false, pattern: "huga_\\d+_200" },
+        { path: path.resolve(testDirRoot), name: "huga_*_300", type: "snd", islink: false, pattern: "huga_\\d+_300" },
+        { path: path.resolve(testDirRoot), name: "huga_1_*", type: "snd", islink: false, pattern: "huga_1_\\d+" },
+        { path: path.resolve(testDirRoot), name: "huga_2_*", type: "snd", islink: false, pattern: "huga_2_\\d+" },
         { path: path.resolve(testDirRoot), name: "linkpiyo", type: "file", islink: true },
         { path: path.resolve(testDirRoot), name: "linkpoyo", type: "file", islink: true },
         { path: path.resolve(testDirRoot), name: "linkpuyo", type: "file", islink: true }
@@ -198,13 +198,13 @@ describe("file Browser UT", ()=>{
   describe("#getSNDs", ()=>{
     it("should return glob patterns", ()=>{
       const expected = [
-        { path: testDirRoot, name: "foo_*", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_1_*", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_2_*", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_*_10", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_*_15", type: "snd", islink: false },
-        { path: testDirRoot, name: "*_baz", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_*_100", type: "snd", islink: false }
+        { path: testDirRoot, name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
+        { path: testDirRoot, name: "foo_1_*", type: "snd", islink: false, pattern: "foo_1_\\d+" },
+        { path: testDirRoot, name: "foo_*_10", type: "snd", islink: false, pattern: "foo_\\d+_10" },
+        { path: testDirRoot, name: "foo_*_15", type: "snd", islink: false, pattern: "foo_\\d+_15" },
+        { path: testDirRoot, name: "foo_2_*", type: "snd", islink: false, pattern: "foo_2_\\d+" },
+        { path: testDirRoot, name: "foo_*_100", type: "snd", islink: false, pattern: "foo_\\d+_100" },
+        { path: testDirRoot, name: "*_baz", type: "snd", islink: false, pattern: "\\d+_baz" }
       ];
       expect(getSNDs(input)).to.have.deep.members(expected);
     });
@@ -212,17 +212,17 @@ describe("file Browser UT", ()=>{
   describe("#bundleSNDFiles", ()=>{
     it("should return files and SND", ()=>{
       const expected = [
-        { path: testDirRoot, name: "*_baz", type: "snd", islink: false },
+        { path: testDirRoot, name: "*_baz", type: "snd", islink: false, pattern: "\\d+_baz" },
         { path: testDirRoot, name: "bar", type: "file", islink: false },
         { path: testDirRoot, name: "bar_1_10", type: "file", islink: false },
         { path: testDirRoot, name: "baz", type: "file", islink: false },
         { path: testDirRoot, name: "foo", type: "file", islink: false },
-        { path: testDirRoot, name: "foo_*", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_*_10", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_*_100", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_*_15", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_1_*", type: "snd", islink: false },
-        { path: testDirRoot, name: "foo_2_*", type: "snd", islink: false }
+        { path: testDirRoot, name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
+        { path: testDirRoot, name: "foo_*_10", type: "snd", islink: false, pattern: "foo_\\d+_10" },
+        { path: testDirRoot, name: "foo_*_100", type: "snd", islink: false, pattern: "foo_\\d+_100" },
+        { path: testDirRoot, name: "foo_*_15", type: "snd", islink: false, pattern: "foo_\\d+_15" },
+        { path: testDirRoot, name: "foo_1_*", type: "snd", islink: false, pattern: "foo_1_\\d+" },
+        { path: testDirRoot, name: "foo_2_*", type: "snd", islink: false, pattern: "foo_2_\\d+" }
       ];
       expect(bundleSNDFiles(input)).to.have.deep.members(expected);
     });
