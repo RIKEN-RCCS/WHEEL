@@ -85,9 +85,9 @@ function makeQueueOpt(task, JS, queues) {
   if (typeof queue === "undefined") {
     queue = queueList[0];
   }
-  
-  //queue can be empty string "", we do not use queue opt in such case 
-  return queue.length === 0 ? "":` ${JS.queueOpt}${queue}`;
+
+  //queue can be empty string "", we do not use queue opt in such case
+  return queue.length === 0 ? "" : ` ${JS.queueOpt}${queue}`;
 }
 
 /**

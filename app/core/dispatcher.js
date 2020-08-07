@@ -28,11 +28,11 @@ const viewerSupportedTypes = ["png", "jpg", "gif", "bmp"];
 
 async function getFiletype(filename) {
   let rt;
-  try{
-   rt = await FileType.fromFile(filename);
-  }catch(e){
-    if(typeof(e) === "EndOfStreamError"){
-      return rt
+  try {
+    rt = await FileType.fromFile(filename);
+  } catch (e) {
+    if (typeof (e) === "EndOfStreamError") {
+      return rt;
     }
   }
   if (rt) {

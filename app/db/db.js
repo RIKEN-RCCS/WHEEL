@@ -34,7 +34,7 @@ function getJupyterToken() {
 
 /**
  * store jupyter's port number
- * @param {Number} port - jupyter's port number
+ * @param {number} port - jupyter's port number
  */
 function setJupyterPort(port) {
   actualJupyterPortNumber = port;
@@ -51,7 +51,7 @@ module.exports.suffix = ".wheel";
 module.exports.projectJsonFilename = "prj.wheel.json";
 module.exports.componentJsonFilename = "cmp.wheel.json";
 module.exports.statusFilename = "status.wheel.txt";
-module.exports.jobManagerJsonFilename= "jm.wheel.json";
+module.exports.jobManagerJsonFilename = "jm.wheel.json";
 module.exports.keyFilename = path.resolve(configDir, "server.key");
 module.exports.certFilename = path.resolve(configDir, "server.crt");
 

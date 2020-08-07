@@ -204,7 +204,7 @@ class Foreach extends GeneralComponent {
 
 /**
  * Creates an instance of Stepjob.
- * @class StepJob
+ * @constructor StepJob
  * @param {*} args -
  * @extends {GeneralComponent}
  */
@@ -224,7 +224,7 @@ class Stepjob extends GeneralComponent {
 
 /**
  * Creates an instance of StepjobTask.
- * @class StepjobTask
+ * @constructor StepjobTask
  * @param {*} args -
  * @extends {Task}
  */
