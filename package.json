@@ -1,6 +1,6 @@
 {
   "name": "WHEEL",
-  "version": "1.2.3",
+  "version": "2.0.0",
   "description": "Scientific Workflow system",
   "main": "app/index.js",
   "bin": {
