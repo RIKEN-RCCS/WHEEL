@@ -10,7 +10,7 @@ const { promisify } = require("util");
 const { EventEmitter } = require("events");
 const glob = require("glob");
 const readChunk = require("read-chunk");
-const fileType = require("file-type");
+const FileType = require("file-type");
 const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
@@ -27,9 +27,14 @@ const { evalCondition } = require("./dispatchUtils");
 const viewerSupportedTypes = ["png", "jpg", "gif", "bmp"];
 
 async function getFiletype(filename) {
-  const realFilename = await fs.realpath(filename);
-  const buffer = await readChunk(realFilename, 0, fileType.minimumBytes);
-  const rt = fileType(buffer);
+  let rt;
+  try{
+   rt = await FileType.fromFile(filename);
+  }catch(e){
+    if(typeof(e) === "EndOfStreamError"){
+      return rt
+    }
+  }
   if (rt) {
     rt.name = filename;
   }
