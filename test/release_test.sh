@@ -10,8 +10,12 @@ function cleanup()
     sleep 3
     rm -fr ${CONFIG_DIR}
     rm ${SSL_CONFIG}
-    echo "remaining container"
+    docker rmi ${TAG}
+    docker rmi ${TAG_TEST_SERVER}
+    echo "remaining containers"
     docker ps -a
+    echo "remaining images"
+    docker images
     popd
 }
 
