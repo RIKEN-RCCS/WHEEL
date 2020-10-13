@@ -81,7 +81,7 @@ async function gitInit(rootDir, user, mail) {
 async function gitCommit(rootDir, message = "save project") {
   return gitPromise(rootDir, ["commit", "-m", `"${message}"`])
     .catch((err)=>{
-      if (!/nothing( added | )to commit/m.test(err)) {
+      if (!/(no changes|nothing)( added | )to commit/m.test(err)) {
         throw err;
       }
     });
@@ -94,7 +94,12 @@ async function gitCommit(rootDir, message = "save project") {
  * filename should be absolute path or relative path from rootDir.
  */
 async function gitAdd(rootDir, filename) {
-  return gitPromise(rootDir, ["add", filename]);
+  return gitPromise(rootDir, ["add", filename])
+    .catch((err)=>{
+      if (!/fatal: Unable to create '.*index.lock': File exists/.test(err)) {
+        throw err;
+      }
+    });
 }
 
 /**
@@ -105,9 +110,9 @@ async function gitAdd(rootDir, filename) {
  */
 async function gitRm(rootDir, filename) {
   return gitPromise(rootDir, ["rm", "-r", "--cached", filename])
-    .catch((e)=>{
-      if (!/fatal: pathspec '.*' did not match any files/.test(e)) {
-        throw e;
+    .catch((err)=>{
+      if (!/fatal: pathspec '.*' did not match any files/.test(err)) {
+        throw err;
       }
     });
 }

@@ -20,11 +20,14 @@ function getSNDs(fileList, isDir) {
 
     while ((result = reNumber.exec(filename)) !== null) {
       const glob = `${filename.slice(0, result.index)}*${filename.slice(reNumber.lastIndex)}`;
+      const pattern = String.raw`${filename.slice(0, result.index)}\d+${filename.slice(reNumber.lastIndex)}`;
+
       if (candidates.has(glob) && !globs.has(glob)) {
         const type = isDir ? "sndd" : "snd";
         snds.push({
           path: e.path,
           name: glob,
+          pattern,
           type,
           islink: false
         });
@@ -53,7 +56,8 @@ function bundleSNDFiles(fileList, isDir) {
 
   const files = fileList.filter((e)=>{
     for (const g of globs) {
-      if (minimatch(e.name, g.name)) {
+      const re = new RegExp(g.pattern);
+      if (re.test(e.name)) {
         return false;
       }
     }

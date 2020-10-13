@@ -18,7 +18,7 @@ const { addX } = require("./fileUtils");
  * @returns {Promise} *
  */
 async function evalCondition(condition, cwd, currentIndex, logger) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async(resolve, reject)=>{
     //condition is always string for now. but keep following just in case
     if (typeof condition === "boolean") {
       resolve(condition);
@@ -44,19 +44,19 @@ async function evalCondition(condition, cwd, currentIndex, logger) {
       if (typeof currentIndex === "number") {
         options.env.WHEEL_CURRENT_INDEX = currentIndex.toString();
       }
-      const cp = childProcess.spawn(script, options, (err) => {
+      const cp = childProcess.spawn(script, options, (err)=>{
         if (err) {
           reject(err);
         }
       });
-      cp.on("close", (code) => {
+      cp.on("close", (code)=>{
         logger.debug("return value of conditional expression = ", code);
         resolve(code === 0);
       });
-      cp.stdout.on("data", (data) => {
+      cp.stdout.on("data", (data)=>{
         logger.trace(data.toString());
       });
-      cp.stderr.on("data", (data) => {
+      cp.stderr.on("data", (data)=>{
         logger.trace(data.toString());
       });
     } else {

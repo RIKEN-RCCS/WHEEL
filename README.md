@@ -56,6 +56,7 @@ so, you have to git pull for master branch after push and CI process is finished
 
 ### scripts
 - `npm start` launch wheel
+- `npm run buildImage` build docker image with tag "wheel"
 - `npm run lint` call eslint and fix JS files
 - `npm run UT:server` unit test for server side code
 - `npm run UT:client` unit test for client side code

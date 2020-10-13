@@ -9,8 +9,13 @@ function cleanup()
     docker stop ${TAG} ${TAG_TEST_SERVER}
     sleep 3
     rm -fr ${CONFIG_DIR}
-    echo "remaining container"
+    rm ${SSL_CONFIG}
+    docker rmi ${TAG}
+    docker rmi ${TAG_TEST_SERVER}
+    echo "remaining containers"
     docker ps -a
+    echo "remaining images"
+    docker images
     popd
 }
 
@@ -53,6 +58,7 @@ fi
 
 # crate config files
 CONFIG_DIR=$(mktemp -d tmp.XXXXXXXXXX)
+SSL_CONFIG=$(mktemp tmp_config.XXXXXXXXXX)
 
 
 # create self-signed-certification files
@@ -64,8 +70,9 @@ distinguished_name = dn
 subjectAltName=DNS:localhost
 keyUsage=digitalSignature
 extendedKeyUsage=serverAuth
-' |  openssl req -x509 -out ${CONFIG_DIR}/server.crt -keyout ${CONFIG_DIR}/server.key  -newkey rsa:2048 \
--nodes -sha256  -subj '/CN=localhost' -extensions EXT -config -
+' > ${SSL_CONFIG}
+openssl req -x509 -out ${CONFIG_DIR}/server.crt -keyout ${CONFIG_DIR}/server.key  -newkey rsa:2048 \
+-nodes -sha256  -subj '/CN=localhost' -extensions EXT -config ${SSL_CONFIG}
 
 #copy default setting files
 cp ../app/config/{server,jobScheduler}.json ${CONFIG_DIR}
@@ -93,7 +100,7 @@ echo '}]'
 docker run --env "WHEEL_TEST_REMOTEHOST=testServer" \
            --env "WHEEL_TEST_REMOTE_PASSWORD=hoge"  \
            --rm -d\
-           -v $(readlink -f ${CONFIG_DIR}):/usr/src/app/config  \
+           -v ${PWD}/${CONFIG_DIR}:/usr/src/app/config  \
            -p 8089:8089  \
            -p 8090:8090  \
            --name ${TAG} ${TAG}

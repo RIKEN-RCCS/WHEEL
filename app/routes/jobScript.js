@@ -73,7 +73,7 @@ async function avoidDuplicateFileName(id) {
  * @param {*} projectRootDir - project root directory
  * @returns {*} router
  */
-module.exports = function (io) {
+module.exports = function(io) {
   const sio = io.of("/jobScript");
   const doAndEmit = (func, msg)=>{
     func(msg).then(()=>{
@@ -101,10 +101,10 @@ module.exports = function (io) {
 
 
 //TODO : テストのときにこのコメントをはずしてmochaでテストします。
-// module.exports = {
-//   onCreateScript,
-//   createTCSScript,
-//   createUGEScript,
-//   isDuplicateFileName,
-//   avoidDuplicateFileName
-// };
+//module.exports = {
+//onCreateScript,
+//createTCSScript,
+//createUGEScript,
+//isDuplicateFileName,
+//avoidDuplicateFileName
+//};

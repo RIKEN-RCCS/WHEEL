@@ -75,19 +75,19 @@ function makeQueueOpt(task, JS, queues) {
     return "";
   }
   const queueList = queues.split(",");
+  if (queueList.length === 0) {
+    return "";
+  }
 
   let queue = queueList.find((e)=>{
     return task.queue === e;
   });
-
   if (typeof queue === "undefined") {
-    if (queueList.length === 0) {
-      return "";
-    }
     queue = queueList[0];
   }
 
-  return ` ${JS.queueOpt}${queue}`;
+  //queue can be empty string "", we do not use queue opt in such case
+  return queue.length === 0 ? "" : ` ${JS.queueOpt}${queue}`;
 }
 
 /**

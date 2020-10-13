@@ -400,7 +400,7 @@ describe("#workflow screen:", function () {
   });
   it("initialize project", function () {
     $(`#${id_cleanButton}`).click();
-    $(cleanCheckDialog).waitForDisplayed();
-    $(cleanCheckDialogOkButton).click();
+    $(".v-card__title=unsaved files").waitForDisplayed();
+    $(".v-btn__content=discard all changes").click();
   });
 });

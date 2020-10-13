@@ -45,6 +45,7 @@ $(() => {
   let rootId = [''];
   let rootWorkflow = Cookies.get('root');
   let rootDir = Cookies.get('rootDir');
+  const notebookRoot= Cookies.get('jupyterRootDir');
   let pathSep = rootDir[0] === '/' ? '/' : '\\';
   const jupyterURL = Cookies.get('jupyterURL');
   const jupyterToken = Cookies.get('jupyterToken');
@@ -264,8 +265,8 @@ $(() => {
       openJupyterNotebook: function () {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
           const parentDirPath = `${currentWorkDir[1] === ":" ? currentWorkDir.slice(2) : currentWorkDir}`;
-          // jupyterURL ends with "/"
-          const url = `${jupyterURL}tree${parentDirPath}/${this.node.name}?token=${jupyterToken}`;
+          // jupyterURL ends with "/" and parentDirPath starts with "/"
+          const url = `${jupyterURL}tree${parentDirPath.replace(notebookRoot,"")}/${this.node.name}?token=${jupyterToken}`;
           window.open(url);
         }
       },

@@ -84,21 +84,56 @@ describe("fileManager UT", ()=>{
         { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
         { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
         { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo_*", type: "sndd", islink: false },
+        { path: path.resolve(testDirRoot), name: "foo_*", type: "sndd", islink: false, pattern: "foo_\\d+" },
         { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
         { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
         { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "foo_*", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_*_100", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_*_200", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_*_300", type: "snd", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_1_*", type: "snd", islink: false },
+        { path: path.resolve(testDirRoot), name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
+        { path: path.resolve(testDirRoot), name: "huga_*_100", type: "snd", islink: false, pattern: "huga_\\d+_100" },
+        { path: path.resolve(testDirRoot), name: "huga_*_200", type: "snd", islink: false, pattern: "huga_\\d+_200" },
+        { path: path.resolve(testDirRoot), name: "huga_*_300", type: "snd", islink: false, pattern: "huga_\\d+_300" },
+        { path: path.resolve(testDirRoot), name: "huga_1_*", type: "snd", islink: false, pattern: "huga_1_\\d+" },
         { path: path.resolve(testDirRoot), name: "huga_2_99", type: "file", islink: false },
-        { path: path.resolve(testDirRoot), name: "huga_4_*", type: "snd", islink: false },
+        { path: path.resolve(testDirRoot), name: "huga_4_*", type: "snd", islink: false, pattern: "huga_4_\\d+" },
         { path: path.resolve(testDirRoot), name: "linkpiyo", type: "file", islink: true },
         { path: path.resolve(testDirRoot), name: "linkpoyo", type: "file", islink: true },
         { path: path.resolve(testDirRoot), name: "linkpuyo", type: "file", islink: true }
       ]);
+    });
+    describe("reproduction of #518", ()=>{
+      beforeEach(async()=>{
+        await fs.remove(testDirRoot);
+        await Promise.all([
+          fs.outputFile(path.join(testDirRoot, "t_1"), "t_1"),
+          fs.outputFile(path.join(testDirRoot, "t_aa.sh"), "t_aa.sh"),
+          fs.outputFile(path.join(testDirRoot, "t_bb.txt"), "t_bb.txt")
+        ]);
+      });
+      it("should send all files", async()=>{
+        await onGetFileList({}, emit, "dummy", path.resolve(testDirRoot), cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(emit).to.have.been.calledOnce;
+        expect(emit).to.have.been.calledWith("fileList");
+        expect(emit.args[0][1]).to.deep.equal([
+          { path: path.resolve(testDirRoot), name: "t_1", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_aa.sh", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_bb.txt", type: "file", islink: false }
+        ]);
+      });
+      it("just bundle t_1 and t_2", async()=>{
+        await fs.outputFile(path.join(testDirRoot, "t_2"), "t_2"),
+        await onGetFileList({}, emit, "dummy", path.resolve(testDirRoot), cb);
+        expect(cb).to.have.been.calledOnce;
+        expect(cb).to.have.been.calledWith(true);
+        expect(emit).to.have.been.calledOnce;
+        expect(emit).to.have.been.calledWith("fileList");
+        expect(emit.args[0][1]).to.deep.equal([
+          { path: path.resolve(testDirRoot), name: "t_*", type: "snd", islink: false, pattern: "t_\\d+" },
+          { path: path.resolve(testDirRoot), name: "t_aa.sh", type: "file", islink: false },
+          { path: path.resolve(testDirRoot), name: "t_bb.txt", type: "file", islink: false }
+        ]);
+      });
     });
   });
   describe("#getSNDContents", ()=>{

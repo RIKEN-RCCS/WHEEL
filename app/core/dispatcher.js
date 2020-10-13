@@ -10,7 +10,7 @@ const { promisify } = require("util");
 const { EventEmitter } = require("events");
 const glob = require("glob");
 const readChunk = require("read-chunk");
-const fileType = require("file-type");
+const FileType = require("file-type");
 const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
 const { interval, componentJsonFilename } = require("../db/db");
@@ -27,9 +27,14 @@ const { evalCondition } = require("./dispatchUtils");
 const viewerSupportedTypes = ["png", "jpg", "gif", "bmp"];
 
 async function getFiletype(filename) {
-  const realFilename = await fs.realpath(filename);
-  const buffer = await readChunk(realFilename, 0, fileType.minimumBytes);
-  const rt = fileType(buffer);
+  let rt;
+  try {
+    rt = await FileType.fromFile(filename);
+  } catch (e) {
+    if (typeof (e) === "EndOfStreamError") {
+      return rt;
+    }
+  }
   if (rt) {
     rt.name = filename;
   }
@@ -615,7 +620,7 @@ class Dispatcher extends EventEmitter {
 
     try {
       this.logger.debug("copy from", srcDir, "to ", dstDir);
-      await fs.copy(srcDir, dstDir);
+      await fs.copy(srcDir, dstDir, { dereference: true });
       await setStateR(dstDir, "not-started");
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
       await this._delegate(newComponent);
