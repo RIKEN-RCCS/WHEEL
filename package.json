@@ -36,17 +36,14 @@
     "license-report": "license-report --output=csv --csvHeaders |awk  'BEGIN{FS=\",\";OFS=\",\"}{print $3,$6,$7,$8}'",
     "convertDoc": "markdown-folder-to-html documentMD/user_guide"
   },
-  "huskey": {
+  "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
       "pre-push": "npm run UT:server"
     }
   },
   "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "git add"
-    ]
+    "*.js": "eslint --fix"
   },
   "dependencies": {
     "abc4": "^0.11.5",
@@ -56,6 +53,7 @@
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
     "cross-env": "^6.0.3",
+    "debug": "^4.2.0",
     "express": "^4.17.1",
     "file-type": "^13.1.0",
     "fs-extra": "=5.0.0",
