@@ -6,8 +6,29 @@
 "use strict";
 const os = require("os");
 const path = require("path");
+const fs = require("fs-extra");
+
+function getConfigDir() {
+  let configDir = path.resolve(__dirname, "../config");
+  if (process.env.WHEEL_CONFIG_DIR && typeof process.env.WHEEL_CONFIG_DIR === "string") {
+    try {
+      const resolvedConfigDir = path.resolve(process.env.WHEEL_CONFIG_DIR);
+      const stats = fs.statSync(resolvedConfigDir);
+      if (stats.isDirectory()) {
+        configDir = resolvedConfigDir;
+      }
+    } catch (e) {
+      if (e.code !== "ENOENT") {
+        throw e;
+      }
+    }
+  }
+  return configDir;
+}
+
 const JsonArrayManager = require("./jsonArrayManager");
-const configDir = path.resolve(__dirname, "../config");
+const configDir = getConfigDir();
+
 const config = require(path.resolve(configDir, "server.json"));
 const jobScheduler = require(path.resolve(configDir, "jobScheduler.json"));
 const remotehostFilename = path.resolve(configDir, config.remotehostJsonFile);
@@ -19,7 +40,7 @@ let actualJupyterPortNumber;
 
 /**
  * store jupyter's token string
- * @param token
+ * @param {string} token - access token string for jupyter notebook
  */
 function setJupyterToken(token) {
   jupyterToken = token;
@@ -46,6 +67,7 @@ function setJupyterPort(port) {
 function getJupyterPort() {
   return actualJupyterPortNumber;
 }
+
 //export constants
 module.exports.suffix = ".wheel";
 module.exports.projectJsonFilename = "prj.wheel.json";
