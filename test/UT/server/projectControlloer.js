@@ -1,3 +1,4 @@
+"use strict";
 const path = require("path");
 const fs = require("fs-extra");
 const os = require("os");
@@ -24,7 +25,6 @@ const { updateComponent, createNewComponent, addInputFile, addOutputFile, addLin
 
 const { scriptName, pwdCmd, scriptHeader, referenceEnv, exit } = require("./testScript");
 const scriptPwd = `${scriptHeader}\n${pwdCmd}`;
-const { escapeRegExp } = require("../../../app/lib/utility");
 
 //stubs
 const dummyLogger = {
@@ -45,7 +45,7 @@ const dummyLogger = {
 
 
 describe("project Controller UT", function() {
-  this.timeout(0);
+  this.timeout(0); //eslint-disable-line no-invalid-this
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
     dummyLogger.stdout.reset();
@@ -1006,9 +1006,10 @@ describe("project Controller UT", function() {
       it("should run project and successfully finish", async()=>{
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
-        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0"));
-        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0"));
-        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0"));
+        const reStdout = new RegExp(path.resolve(projectRootDir, "PS0_KEYWORD1_[123]", "task0"));
+        expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(reStdout);
+        expect(dummyLogger.stdout.getCall(1)).to.have.been.calledWithMatch(reStdout);
+        expect(dummyLogger.stdout.getCall(2)).to.have.been.calledWithMatch(reStdout);
         expect(dummyLogger.stderr).not.to.have.been.called;
         expect(dummyLogger.sshout).not.to.have.been.called;
         expect(dummyLogger.ssherr).not.to.have.been.called;
@@ -1367,9 +1368,7 @@ describe("project Controller UT", function() {
 
         const while0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0"), "while", { x: 10, y: 10 });
         await updateComponent(projectRootDir, while0.ID, "condition", "WHEEL_CURRENT_INDEX < 2");
-
-        const wf0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "while0"), "workflow", { x: 10, y: 10 });
-
+        await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "while0"), "workflow", { x: 10, y: 10 });
         const ps0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "for0", "while0", "workflow0"), "PS", { x: 10, y: 10 });
         await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
         await fs.outputFile(path.join(projectRootDir, "for0", "while0", "workflow0", "PS0", "input.txt"), "%%KEYWORD1%%");
