@@ -21,7 +21,7 @@
   },
   "scripts": {
     "start": "node app/index",
-    "buildImage": "docker build -t wheel .",
+    "buildImage": "cross-env DOCKER_BUILDKIT=1 docker build --target=exec -t wheel .",
     "mocha": "mocha",
     "lint": "eslint --fix app/**/*.js test/UT/**/*.js",
     "UT:server": "cross-env WHEEL_DISABLE_LOG=1  WHEEL_DISABLE_CONSOLE_LOG=1 mocha --recursive test/UT/server/ --unhandled-rejections=strict",

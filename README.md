@@ -6,8 +6,9 @@ latest version of [docker](https://www.docker.com/)
 
 ## How to use
 1. create new directory (hereafter referrd to as `CONFIG_DIR`)
-2. download following 2 files to the `CONFIG_DIR`
+2. download following 3 files to the `CONFIG_DIR`
     - [jobScheduler.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScheduler.json)
+    - [jobScript.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScript.json)
     - [server.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/server.json)
 3. create or server certification and key file for https, and put them into `CONFIG_DIR`
 4. type following command
@@ -28,7 +29,7 @@ for detailed information about configuration, see [administrator's guide](./docu
 for user's guide, see [user's guide](https://riken-rccs.github.io/WHEEL/)
 
 
-## history
+## History
 WHEEL was originaly developed by Research Institute for Information Technology(RITT), Kyushu University in 2016
 
 It is still hosted at https://github.com/RIIT-KyushuUniv/WHEEL
@@ -46,7 +47,7 @@ please note that:
  - you have to run `npm run prepare` after you change something in 'src'
 
 #### about user document
-All html documents under docs directory is converted from documentMD/user\_guide in CI process.
+All html documents under docs directory is converted from documentMD/user\_guide during CI process.
 so, plese do NOT change any files under docs directory.
 
 #### about CI process

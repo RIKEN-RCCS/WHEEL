@@ -28,7 +28,7 @@ COPY test test
 CMD ["npm", "run", "coverage:server"]
 
 # run WHEEL
-FROM runner
+FROM runner as exec
 WORKDIR /usr/src/
 
 COPY --from=builder /usr/src/ .
