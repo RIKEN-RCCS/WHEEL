@@ -40,7 +40,7 @@ if [ ${rt} -ne 0 ];then
 fi
 
 # start test server
-docker run --rm -d -p 4000:22 --name ${TAG_TEST_SERVER} ${TAG_TEST_SERVER}
+docker run -d -p 4000:22 --name ${TAG_TEST_SERVER} ${TAG_TEST_SERVER}
 if [ $? -ne 0 ];then
   echo "ERROR: run test server failed $?"
   exit 2
