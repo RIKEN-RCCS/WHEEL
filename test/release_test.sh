@@ -6,14 +6,12 @@ function cleanup()
 {
     echo "============================================="
     echo "start cleanup process"
-    docker stop ${TAG}
+    docker stop ${TAG} ${TAG_TEST_SERVER}
     sleep 3
-    docker rm ${TAG}
-    docker stop ${TAG_TEST_SERVER}
+    docker rm ${TAG} ${TAG_TEST_SERVER}
     rm -fr ${CONFIG_DIR}
     rm ${SSL_CONFIG}
-    docker rmi ${TAG}
-    docker rmi ${TAG_TEST_SERVER}
+    docker rmi ${TAG} ${TAG_TEST_SERVER}
     echo "remaining containers"
     docker ps -a
     echo "remaining images"
