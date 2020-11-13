@@ -6,9 +6,8 @@ latest version of [docker](https://www.docker.com/)
 
 ## How to use
 1. create new directory (hereafter referrd to as `CONFIG_DIR`)
-2. download following 3 files to the `CONFIG_DIR`
+2. download following 2 files to the `CONFIG_DIR`
     - [jobScheduler.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScheduler.json)
-    - [jobScript.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScript.json)
     - [server.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/server.json)
 3. create or server certification and key file for https, and put them into `CONFIG_DIR`
 4. type following command
