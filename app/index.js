@@ -4,8 +4,6 @@
  * See License.txt in the project root for the license information.
  */
 "use strict";
-const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
-const { projectList } = require("./db/db");
 
 //this line must be placed before require express, socket.io and any other depending library
 if (process.env.WHEEL_DEBUG_VERBOSE) {
@@ -24,7 +22,9 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const siofu = require("socketio-file-upload");
-const { port, jupyter, jupyterPort, notebookRoot, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename } = require("./db/db");
+const { port, jupyter, jupyterPort, notebookRoot, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename, projectList } = require("./db/db");
+const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
+
 const { getLogger } = require("./logSettings");
 
 /*
@@ -79,10 +79,12 @@ app.use((err, req, res, next)=>{
   //render the error page
   res.status(err.status || 500);
   res.send("something broken!");
+  next();
 });
 //handle 404 not found
 app.use((req, res, next)=>{
   res.status(404).send("reqested page is not found");
+  next();
 });
 
 //check each project has running job or not

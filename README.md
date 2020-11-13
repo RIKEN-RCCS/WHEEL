@@ -28,7 +28,7 @@ for detailed information about configuration, see [administrator's guide](./docu
 for user's guide, see [user's guide](https://riken-rccs.github.io/WHEEL/)
 
 
-## history
+## History
 WHEEL was originaly developed by Research Institute for Information Technology(RITT), Kyushu University in 2016
 
 It is still hosted at https://github.com/RIIT-KyushuUniv/WHEEL
@@ -46,7 +46,7 @@ please note that:
  - you have to run `npm run prepare` after you change something in 'src'
 
 #### about user document
-All html documents under docs directory is converted from documentMD/user\_guide in CI process.
+All html documents under docs directory is converted from documentMD/user\_guide during CI process.
 so, plese do NOT change any files under docs directory.
 
 #### about CI process

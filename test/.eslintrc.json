@@ -5,5 +5,18 @@
   "plugins": [
     "chai-expect",
     "chai-friendly"
-  ]
+  ],
+  "rules": {
+    "no-unused-expressions": 0,
+    "chai-friendly/no-unused-expressions": 2,
+    "node/no-unpublished-require": ["error", {
+            "allowModules": [
+              "chai",
+              "sinon",
+              "sinon-chai",
+              "chai-fs",
+              "chai-json-schema"
+            ]
+    }]
+  }
 }
