@@ -9,7 +9,7 @@ const path = require("path");
 const os = require("os");
 const ARsshClient = require("arssh2-client");
 const { getLogger } = require("../logSettings");
-const logger = getLogger("remotehost");
+const logger = getLogger();
 const fileBrowser = require("../core/fileBrowser");
 const { remoteHost, rootDir } = require("../db/db");
 const { createSshConfig } = require("../core/sshManager");
@@ -36,15 +36,15 @@ async function trySshConnectionWrapper(hostInfo, password, cb) {
     .catch((err)=>{
       err.config = Object.assign({}, config);
 
-      if (err.config.hasOwnProperty("privateKey")) {
+      if (Object.prototype.hasOwnProperty.call(err.config, "privateKey")) {
         err.config.privateKey = "privateKey was defined but omitted";
       }
 
-      if (err.config.hasOwnProperty("password")) {
+      if (Object.prototype.hasOwnProperty.call(err.config, "password")) {
         err.config.password = "password  was defined but omitted";
       }
 
-      if (err.config.hasOwnProperty("passphrase")) {
+      if (Object.prototype.hasOwnProperty.call(err.config, "passphrase")) {
         err.config.passphrase = "passphrase  was defined but omitted";
       }
       logger.error(err);

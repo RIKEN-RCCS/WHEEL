@@ -101,6 +101,7 @@ module.exports.shutdownDelay = config.shutdownDelay;
 module.exports.gitLFSSize = config.gitLFSSize;
 
 
+module.exports.configDir = configDir;
 module.exports.jobScheduler = jobScheduler;
 module.exports.remoteHost = new JsonArrayManager(remotehostFilename);
 module.exports.jobScript = new JsonArrayManager(jobScriptFilename);

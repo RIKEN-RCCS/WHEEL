@@ -5,8 +5,11 @@
  */
 "use strict";
 const path = require("path");
+const debugLib = require("debug");
+const debug = debugLib("wheel:logger");
+const { promisify } = require("util");
 const log4js = require("log4js");
-const { logFilename, numLogFiles, maxLogSize, compressLogFile } = require("./db/db");
+const { configDir, logFilename, numLogFiles, maxLogSize, compressLogFile } = require("./db/db");
 log4js.addLayout("errorlog", ()=>{
   return function(logEvent) {
     const tmp = logEvent.data.reduce((a, p)=>{
@@ -23,19 +26,68 @@ log4js.addLayout("errorlog", ()=>{
   };
 });
 
+const eventNameTable = {
+  DEBUG: "logDBG",
+  INFO: "logINFO",
+  WARN: "logWARN",
+  ERROR: "logERR",
+  STDOUT: "logStdout",
+  STDERR: "logStderr",
+  SSHOUT: "logSSHout",
+  SSHERR: "logSSHerr"
+};
+
+function socketIOAppender(layout, timezoneOffset, ignoreLevel, argEventName) {
+  return (loggingEvent)=>{
+    if (loggingEvent.level.level < ignoreLevel) {
+      return;
+    }
+    const eventName = argEventName || eventNameTable[loggingEvent.level.levelStr];
+    const socket = loggingEvent.context.sio;
+
+    if (eventName) {
+      socket.emit(eventName, layout(loggingEvent, timezoneOffset));
+    }
+  };
+}
+
+const log2client = {
+  configure: (config, layouts)=>{
+    let layout = layouts.basicLayout;
+
+    if (config.layout) {
+      layout = layouts.layout(config.layout.type, config.layout);
+    }
+    return socketIOAppender(layout, config.timezoneOffset, 20000);
+  }
+};
+
+const errorlog = {
+  configure: (config, layouts)=>{
+    let layout = layouts.messagePassThroughLayout;
+
+    if (config.layout) {
+      layout = layouts.layout(config.layout.type, config.layout);
+    }
+    const eventName = config.eventName || "showMessage";
+    return socketIOAppender(layout, config.timezoneOffset, 40000, eventName);
+  }
+};
+
+
 const defaultSettings = {
   appenders: {
-    flexConsole: {
-      type: path.resolve(__dirname, "flexibleConsoleLog")
-    },
     console: {
+      type: "console"
+    },
+    filterdConsole: {
       type: "logLevelFilter",
-      appender: "flexConsole",
+      appender: "console",
       level: "debug"
     },
     file: {
       type: "file",
-      filename: path.resolve(__dirname, logFilename),
+      filename: path.resolve(configDir, logFilename),
       maxLogSize,
       backups: numLogFiles,
       compress: compressLogFile
@@ -50,45 +102,29 @@ const defaultSettings = {
       compress: compressLogFile
     },
     socketIO: {
-      type: path.resolve(__dirname, "log2client")
+      type: log2client
     },
     errorlog: {
-      type: path.resolve(__dirname, "errorlog"),
+      type: errorlog,
       layout: { type: "errorlog" }
     }
   },
   categories: {
     default: {
       appenders: [
-        "console",
+        "filterdConsole",
         "file"
       ],
       level: "trace"
     },
     workflow: {
       appenders: [
-        "console",
+        "filterdConsole",
         "multi",
         "socketIO",
         "errorlog"
       ],
       level: "trace"
-    },
-    home: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
-    },
-    remotehost: {
-      appenders: [
-        "console",
-        "file",
-        "errorlog"
-      ],
-      level: "debug"
     }
   },
   levels: {
@@ -112,57 +148,8 @@ const defaultSettings = {
 };
 
 let firstCall = true;
-let logSettings = Object.assign({}, defaultSettings);
+const logSettings = Object.assign({}, defaultSettings);
 
-function reset() {
-  return new Promise((resolve, reject)=>{
-    logSettings = Object.assign({}, defaultSettings);
-
-    if (firstCall) {
-      resolve();
-      return;
-    }
-    log4js.shutdown((err)=>{
-      if (err) {
-        reject(err);
-      }
-      firstCall = true;
-      resolve();
-    });
-  });
-}
-
-function shutdown() {
-  return new Promise((resolve, reject)=>{
-    log4js.shutdown((err)=>{
-      if (err) {
-        reject(err);
-      }
-      firstCall = true;
-      resolve();
-    });
-  });
-}
-
-function setFilename(filename) {
-  //this function will not affect project log filename to keep file
-  logSettings.appenders.file.filename = filename;
-}
-
-function setMaxLogSize(size) {
-  logSettings.appenders.file.maxLogSize = size;
-  logSettings.appenders.multi.maxLogSize = size;
-}
-
-function setNumBackup(num) {
-  logSettings.appenders.file.backups = num;
-  logSettings.appenders.multi.backups = num;
-}
-
-function setCompress(TF) {
-  logSettings.appenders.file.compress = TF === true;
-  logSettings.appenders.multi.compress = TF === true;
-}
 
 /**
  * setup log4js
@@ -171,54 +158,48 @@ function setCompress(TF) {
  * @param {number} num - max back up files to keep
  * @param {boolean} compress - backup files to be compressed or not
  */
-function setup(filename, size, num, compress) {
-  setFilename(filename);
-  setMaxLogSize(size);
-  setNumBackup(num);
-  setCompress(compress);
+async function setup(filename, size, num, compress) {
+  //this function will not affect project log filename to keep file
+  logSettings.appenders.file.filename = filename;
+  logSettings.appenders.file.maxLogSize = size;
+  logSettings.appenders.multi.maxLogSize = size;
+  logSettings.appenders.file.backups = num;
+  logSettings.appenders.multi.backups = num;
+  logSettings.appenders.file.compress = compress === true;
+  logSettings.appenders.multi.compress = compress === true;
+
+  if (!firstCall) {
+    await promisify(log4js.shutdown);
+    firstCall = true;
+  }
 }
 
-function getCurrentSettings() {
-  return logSettings;
-}
-
-function getLogger(cat, verbose) {
+function getLogger(cat) {
   if (firstCall) {
-    if (process.env.hasOwnProperty("WHEEL_CONSOLE_LOG_ONLY")) {
-      for (const category of (Object.keys(logSettings.categories))) {
-        logSettings.categories[category].appenders = logSettings.categories[category].appenders.filter((e)=>{
-          return e === "console" || e === "flexConsole";
-        });
-      }
+    if (process.env.WHEEL_DISABLE_CONSOLE_LOG) {
+      logSettings.categories.default.appenders = logSettings.categories.default.appenders.filter((e)=>{
+        return e !== "filterdConsole";
+      });
+      logSettings.categories.workflow.appenders = logSettings.categories.workflow.appenders.filter((e)=>{
+        return e !== "filterdConsole";
+      });
     }
-    if (verbose) {
-      //eslint-disable-next-line no-console
-      console.log("getLogger called. current setting is as follows\n", logSettings);
-    }
+    debug("getLogger called. current setting is as follows\n", logSettings);
     log4js.configure(logSettings);
     firstCall = false;
   }
   const logger = log4js.getLogger(cat);
-  if (process.env.hasOwnProperty("WHEEL_DISABLE_LOG")) {
-    if (verbose) {
-      //eslint-disable-next-line no-console
-      console.log("logging is disabled because WHEEL_DISABLE_LOG is set to ", process.env.WHEEL_DISABLE_LOG);
-    }
+  if (process.env.WHEEL_DISABLE_LOG) {
+    debug("logging is disabled because WHEEL_DISABLE_LOG is set to ", process.env.WHEEL_DISABLE_LOG);
     logger.level = "off";
   } else {
+    debug("logging level is trace");
     logger.level = "trace";
   }
   return logger;
 }
 
 module.exports = {
-  getCurrentSettings,
   getLogger,
-  setFilename,
-  setMaxLogSize,
-  setNumBackup,
-  setCompress,
-  setup,
-  shutdown,
-  reset
+  setup
 };
