@@ -25,7 +25,7 @@ const sio = {
 };
 sio.emit = sinon.stub();
 
-describe.only("Unit test for log4js's helper functions", ()=>{
+describe("Unit test for log4js's helper functions", ()=>{
   describe("#log", ()=>{
     const logFilename = "./loggingTest.log";
     beforeEach(async()=>{
