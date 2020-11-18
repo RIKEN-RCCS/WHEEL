@@ -5,14 +5,13 @@
  */
 "use strict";
 const fs = require("fs-extra");
-const os = require("os");
 const path = require("path");
 const { promisify } = require("util");
 const express = require("express");
 const uuidv1 = require("uuid/v1");
 const glob = require("glob");
 const { getLogger } = require("../logSettings");
-const logger = getLogger("home");
+const logger = getLogger();
 const fileBrowser = require("../core/fileBrowser");
 const { createNewProject } = require("../core/projectFilesOperator");
 const { gitAdd, gitRm, gitCommit, gitInit, gitResetHEAD, gitClean } = require("../core/gitOperator2");
@@ -416,7 +415,9 @@ async function onRenameProject(emit, msg, cb) {
     cb = ()=>{};
   }
 
-  if (!(msg.hasOwnProperty("id") && msg.hasOwnProperty("newName") && msg.hasOwnProperty("path"))) {
+  if (!(Object.prototype.hasOwnProperty.call(msg, "id") &&
+    Object.prototype.hasOwnProperty.call(msg, "newName") &&
+    Object.prototype.hasOwnProperty.call(msg, "path"))) {
     logger.warn("illegal request ", msg);
     cb(false);
     return;

@@ -79,7 +79,7 @@
     "jsdoc/require-param-type": "warn",
     "jsdoc/require-jsdoc": "off",
     "jsdoc/require-param": "off",
-    "jsdoc/require-returns": "warn"
+    "jsdoc/require-returns": "off"
   },
   "parserOptions": {
     "ecmaVersion": 2018
