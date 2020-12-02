@@ -48,6 +48,19 @@
     "reJobStatus": "^ST *EC *PC *\\n(\\S+)",
     "grpName":""
   },
+  "Fugaku": {
+    "submit": "pjsub -X",
+    "queueOpt": "-L rscgrp=",
+    "stat": "pjstat -v -H day=3 --choose st,ec,pc",
+    "del": "pjdel",
+    "reJobID": "pjsub Job (\\d+_*\\d*) submitted.",
+    "reFinishedState": "^ST *EC *PC *\\nEXT *0",
+    "reFinishedStateStep": "^ST *EC *PC *\\nCCL *(\\d+) *6",
+    "reReturnCode": "^ST *EC *PC *\\n(?:EXT|CCL) *(\\d+) *(\\d+)",
+    "reFailedState": "^ST *EC *PC *\\n(CCL|ERR|EXT|RJT)",
+    "reJobStatus": "^ST *EC *PC *\\n(\\S+)",
+    "grpName":""
+  },
   "UGE": {
     "submit": "qsub",
     "queueOpt": "-l ",
