@@ -31,7 +31,7 @@ function getReturnCode(outputText, reReturnCode, jobStatus = false) {
     logger.warn(`get ${kind} code failed, rt is overwrited by -1`);
     return -1;
   }
-  return result[1];
+  return jobStatus ? result[0] : result[1];
 }
 
 /**
@@ -90,23 +90,28 @@ async function isFinishedGeneral(JS, task) {
     return Promise.reject(error);
   }
   const outputText = output.join("");
-  const reFinishedState = new RegExp(JS.reFinishedState, "m");
-  let finished = reFinishedState.test(outputText);
-  if (!finished && task.type === "stepjobTask") {
-    const reFinishedStateStep = new RegExp(JS.reFinishedStateStep, "m");
-    finished = reFinishedStateStep.test(outputText);
-  }
+  const reFinishedState = task.type !== "stepjobTask" ? new RegExp(JS.reFinishedState, "m") : new RegExp(JS.reFinishedStateStep, "m");
+  const reFailedState = new RegExp(JS.reFailedState, "m");
+  const finished = reFinishedState.test(outputText);
+  const failed = reFailedState.test(outputText);
 
-  if (!finished) {
-    const reFailedState = new RegExp(JS.reFailedState, "m");
-    finished = reFailedState.test(outputText);
+  let statusWord = "not yet completed";
+  if (finished) {
+    statusWord = "finished";
   }
-  logger.trace(`JobStatusCheck: ${task.jobID} is ${finished ? "finished" : "not yet completed"}\n${outputText}`);
+  if (failed) {
+    statusWord = "failed";
+  }
+  logger.trace(`JobStatusCheck: ${task.jobID} is ${statusWord}\n${outputText}`);
 
   if (finished) {
     const strRt = getReturnCode(outputText, JS.reReturnCode);
-    task.jobStatus = getReturnCode(outputText, JS.reJobStatus, true);
+    task.jobStatus = getReturnCode(outputText, JS.reReturnCode, true);
     return parseInt(strRt, 10);
+  }
+  if (failed) {
+    task.jobStatus = "failed";
+    return -2;
   }
   return null;
 }
