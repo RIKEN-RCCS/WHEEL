@@ -70,7 +70,7 @@ async function gitInit(rootDir, user, mail) {
   await gitPromise(dir, ["init", base]);
   await gitPromise(rootDir, ["config", "user.name", user]);
   await gitPromise(rootDir, ["config", "user.email", mail]);
-  await gitPromise(rootDir, ["lfs", "install"]);
+  return gitPromise(rootDir, ["lfs", "install"]);
 }
 
 /**
@@ -142,6 +142,9 @@ async function gitStatus(rootDir) {
   for (const token of output.split(/\n/)) {
     const splitedToken = token.split(" ");
     const filename = splitedToken[splitedToken.length - 1];
+    if (typeof splitedToken[0][0] === "undefined") {
+      continue;
+    }
     switch (splitedToken[0][0]) {
       case "A":
         rt.added.push(filename);
@@ -158,6 +161,8 @@ async function gitStatus(rootDir) {
       case "?":
         rt.untracked.push(filename);
         break;
+      default:
+        throw new Error("unkonw output from git status --short");
     }
   }
   return rt;
@@ -169,7 +174,7 @@ async function gitStatus(rootDir) {
  * @param filePatterns - files to be reset
  */
 async function gitClean(rootDir, filePatterns = "") {
-  return gitPromise(rootDir, ["clean", "-df", filePatterns]);
+  return gitPromise(rootDir, ["clean", "-df", "-e wheel.log", filePatterns]);
 }
 
 function getRelativeFilename(rootDir, filename) {
