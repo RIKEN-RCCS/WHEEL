@@ -10,6 +10,7 @@
     "no-unused-expressions": 0,
     "chai-friendly/no-unused-expressions": 2,
     "no-invalid-this": "off",
+    "no-console": "off",
     "node/no-unpublished-require": ["error", {
             "allowModules": [
               "chai",
