@@ -9,7 +9,6 @@ const path = require("path");
 const { promisify } = require("util");
 const { EventEmitter } = require("events");
 const glob = require("glob");
-const readChunk = require("read-chunk");
 const FileType = require("file-type");
 const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
@@ -31,6 +30,7 @@ async function getFiletype(filename) {
   try {
     rt = await FileType.fromFile(filename);
   } catch (e) {
+    //eslint-disable-next-line valid-typeof
     if (typeof (e) === "EndOfStreamError") {
       return rt;
     }
@@ -79,8 +79,8 @@ async function setStateR(dir, state) {
 }
 
 //private functions
-async function getScatterFiles(templateRoot, paramSettings) {
-  if (!(paramSettings.hasOwnProperty("scatter") && Array.isArray(paramSettings.scatter))) {
+async function getScatterFilesV2(templateRoot, paramSettings) {
+  if (!(Object.prototype.hasOwnProperty.call(paramSettings, "scatter") && Array.isArray(paramSettings.scatter))) {
     return [];
   }
   const srcNames = await Promise.all(
@@ -102,12 +102,12 @@ async function replaceByNunjucks(templateRoot, instanceRoot, targetFiles, params
   );
 }
 
-async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
+async function scatterFilesV2(templateRoot, instanceRoot, scatterRecipe, params) {
   const p = [];
   for (const recipe of scatterRecipe) {
     const srcName = nunjucks.renderString(recipe.srcName, params);
     const srces = await promisify(glob)(srcName, { cwd: templateRoot });
-    const dstDir = recipe.hasOwnProperty("dstNode") ? path.join(instanceRoot, recipe.dstNode) : instanceRoot;
+    const dstDir = Object.prototype.hasOwnProperty.call(recipe, "dstNode") ? path.join(instanceRoot, recipe.dstNode) : instanceRoot;
     const dstName = nunjucks.renderString(recipe.dstName, params);
     for (const src of srces) {
       const dst = recipe.dstName.endsWith("/") || recipe.dstName.endsWith("\\") ? path.join(dstDir, dstName.slice(0, -1), src) : path.join(dstDir, dstName);
@@ -117,6 +117,7 @@ async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
             if (err.code !== "ENOEXISTS") {
               return Promise.reject(err);
             }
+            return true;
           })
           .then(()=>{
             return fs.copy(path.join(templateRoot, src), dst);
@@ -132,10 +133,10 @@ async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
   });
 }
 
-async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
+async function gatherFilesV2(templateRoot, instanceRoot, gatherRecipe, params) {
   const p = [];
   for (const recipe of gatherRecipe) {
-    const srcDir = recipe.hasOwnProperty("srcNode") ? path.join(instanceRoot, recipe.srcNode) : instanceRoot;
+    const srcDir = Object.prototype.hasOwnProperty.call(recipe, "srcNode") ? path.join(instanceRoot, recipe.srcNode) : instanceRoot;
     const srcName = nunjucks.renderString(recipe.srcName, params);
     const srces = await promisify(glob)(srcName, { cwd: srcDir });
     const dstName = nunjucks.renderString(recipe.dstName, params);
@@ -147,6 +148,7 @@ async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
             if (err.code !== "ENOEXISTS") {
               return Promise.reject(err);
             }
+            return true;
           })
           .then(()=>{
             return fs.copy(path.join(srcDir, src), dst);
@@ -166,9 +168,9 @@ async function doNothing() {
 }
 
 function makeCmd(paramSettings) {
-  const params = paramSettings.hasOwnProperty("params") ? paramSettings.params : paramSettings.target_param;
+  const params = Object.prototype.hasOwnProperty.call(paramSettings, "params") ? paramSettings.params : paramSettings.target_param;
   if (paramSettings.version === 2) {
-    return [getParamSpacev2.bind(null, params), getScatterFiles, scatterFiles, gatherFiles, replaceByNunjucks];
+    return [getParamSpacev2.bind(null, params), getScatterFilesV2, scatterFilesV2, gatherFilesV2, replaceByNunjucks];
   }
   //version 1 (=unversioned)
   return [removeInvalidv1.bind(null, params), ()=>{
@@ -472,10 +474,10 @@ class Dispatcher extends EventEmitter {
     if (component.type !== "source" && component.type !== "viewer") {
       nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
     }
-    if (component.hasOwnProperty("outputFiles")) {
+    if (Object.prototype.hasOwnProperty.call(component, "outputFiles")) {
       component.outputFiles.forEach((outputFile)=>{
         const tmp = outputFile.dst.map((e)=>{
-          if (e.hasOwnProperty("origin")) {
+          if (Object.prototype.hasOwnProperty.call(e, "origin")) {
             return null;
           }
           if (e.dstNode !== component.parent) {
@@ -518,7 +520,7 @@ class Dispatcher extends EventEmitter {
       task.doCleanup = task.cleanupFlag === "0";
     }
 
-    if (this.cwfJson.hasOwnProperty("currentIndex")) {
+    if (Object.prototype.hasOwnProperty.call(this.cwfJson, "currentIndex")) {
       task.currentIndex = this.cwfJson.currentIndex;
     }
     task.parentType = this.cwfJson.type;
@@ -535,7 +537,7 @@ class Dispatcher extends EventEmitter {
   async _checkIf(component) {
     this.logger.debug("_checkIf called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
-    const currentIndex = this.cwfJson.hasOwnProperty("currentIndex") ? this.cwfJson.currentIndex : null;
+    const currentIndex = Object.prototype.hasOwnProperty.call(this.cwfJson, "currentIndex") ? this.cwfJson.currentIndex : null;
     const condition = await evalCondition(component.condition, childDir, currentIndex, this.logger);
     await this._addNextComponent(component, !condition);
     await this._setComponentState(component, "finished");
@@ -545,7 +547,8 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("_delegate called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
     const ancestorsType = typeof this.ancestorsType === "string" ? `${this.ancestorsType}/${component.type}` : component.type;
-    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath, this.emitEvent, ancestorsType);
+    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime,
+      this.logger, this.componentPath, this.emitEvent, ancestorsType);
     this.children.add(child);
 
     //exception should be catched in caller
@@ -651,32 +654,32 @@ class Dispatcher extends EventEmitter {
     this.logger.debug(`read prameter setting done. version = ${paramSettings.version}`);
 
     //treat single value as array contains single element
-    if (paramSettings.hasOwnProperty("targetFiles") && typeof paramSettings.targetFiles === "string") {
+    if (Object.prototype.hasOwnProperty.call(paramSettings, "targetFiles") && typeof paramSettings.targetFiles === "string") {
       paramSettings.targetFiles = [paramSettings.targetFiles];
     }
-    if (paramSettings.hasOwnProperty("target_file") && typeof paramSettings.target_file === "string") {
+    if (Object.prototype.hasOwnProperty.call(paramSettings, "target_file") && typeof paramSettings.target_file === "string") {
       paramSettings.target_file = [paramSettings.target_file];
     }
-    if (!paramSettings.hasOwnProperty("targetFiles") && paramSettings.hasOwnProperty("target_file")) {
+    if (!Object.prototype.hasOwnProperty.call(paramSettings, "targetFiles") && Object.prototype.hasOwnProperty.call(paramSettings, "target_file")) {
       paramSettings.targetFiles = paramSettings.target_file;
     }
 
     //convert id to relative path from PS component
-    const targetFiles = paramSettings.hasOwnProperty("targetFiles") ? paramSettings.targetFiles.map((e)=>{
-      if (e.hasOwnProperty("targetName")) {
-        const targetDir = e.hasOwnProperty("targetNode") ? path.relative(templateRoot, this._getComponentDir(e.targetNode)) : "";
+    const targetFiles = Object.prototype.hasOwnProperty.call(paramSettings, "targetFiles") ? paramSettings.targetFiles.map((e)=>{
+      if (Object.prototype.hasOwnProperty.call(e, "targetName")) {
+        const targetDir = Object.prototype.hasOwnProperty.call(e, "targetNode") ? path.relative(templateRoot, this._getComponentDir(e.targetNode)) : "";
         return path.join(targetDir, e.targetName);
       }
       return e;
     }) : [];
-    const scatterRecipe = paramSettings.hasOwnProperty("scatter") ? paramSettings.scatter.map((e)=>{
+    const scatterRecipe = Object.prototype.hasOwnProperty.call(paramSettings, "scatter") ? paramSettings.scatter.map((e)=>{
       return {
         srcName: e.srcName,
         dstNode: path.relative(templateRoot, this._getComponentDir(e.dstNode)),
         dstName: e.dstName
       };
     }) : [];
-    const gatherRecipe = paramSettings.hasOwnProperty("gather") ? paramSettings.gather.map((e)=>{
+    const gatherRecipe = Object.prototype.hasOwnProperty.call(paramSettings, "gather") ? paramSettings.gather.map((e)=>{
       return {
         srcName: e.srcName,
         srcNode: path.relative(templateRoot, this._getComponentDir(e.srcNode)),
@@ -818,10 +821,10 @@ class Dispatcher extends EventEmitter {
     if (component.previous) {
       for (const ID of component.previous) {
         const previous = await this._getComponent(ID);
-        this.logger.debug(`previous component name = ${previous.type}(state:${previous.state})`);
+        this.logger.trace(`previous component name = ${previous.type}(state:${previous.state})`);
 
         if (!isFinishedState(previous.state) && previous.type !== "stepjobTask") {
-          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
+          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
           return false;
         }
       }
@@ -835,7 +838,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state) && previous.type !== "stepjobTask") {
-          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
+          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
           return false;
         }
       }
@@ -886,7 +889,7 @@ class Dispatcher extends EventEmitter {
             this._getComponent(src.srcNode)
               .then((srcComponent)=>{
                 const srcEntry = srcComponent.inputFiles.find((i)=>{
-                  if (!(i.name === src.srcName && i.hasOwnProperty("forwardTo"))) {
+                  if (!(i.name === src.srcName && Object.prototype.hasOwnProperty.call(i, "forwardTo"))) {
                     return false;
                   }
                   const result = i.forwardTo.findIndex((e)=>{
@@ -915,7 +918,7 @@ class Dispatcher extends EventEmitter {
                   return;
                 }
                 //get files from lower level component
-                if (srcEntry.hasOwnProperty("origin")) {
+                if (Object.prototype.hasOwnProperty.call(srcEntry, "origin")) {
                   for (const e of srcEntry.origin) {
                     const originalSrcRoot = this._getComponentDir(e.srcNode);
                     deliverRecipes.add({ dstName, srcRoot: originalSrcRoot, srcName: e.srcName });
