@@ -66,7 +66,7 @@
     "promise-retry": "^1.1.1",
     "read-chunk": "^3.2.0",
     "simple-batch-system": "^1.8.2",
-    "socket.io": "^2.3.0",
+    "socket.io": "^3.0.4",
     "socketio-file-upload": "^0.7.0",
     "ssh2": "^0.8.7",
     "stat-mode": "^1.0.0",
