@@ -231,6 +231,14 @@ class JobManager extends EventEmitter {
 
   async register(task) {
     logger.trace("register task", task);
+
+    if (this.tasks.some((e)=>{
+      //task.sbsID is set by executer class
+      return e.sbsID === task.sbsID;
+    })) {
+      logger.trace("this task is already registerd", task);
+      return null;
+    }
     this.addTaskList(task);
     const rt = await this.batch.qsubAndWait(task);
     this.dropFromTaskList(task);
@@ -238,7 +246,6 @@ class JobManager extends EventEmitter {
     return rt;
   }
 }
-
 
 /**
  * register job status check and resolve when the job is finished
