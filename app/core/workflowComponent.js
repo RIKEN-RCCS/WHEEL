@@ -161,6 +161,11 @@ class Workflow extends GeneralComponent {
   }
 }
 
+/*
+ * ParameterStudy,For,While,Foreach component will be copied duaring project run.
+ * copied component must have subComponent property
+ */
+
 class ParameterStudy extends GeneralComponent {
   constructor(...args) {
     super(...args);
@@ -192,7 +197,7 @@ class While extends GeneralComponent {
 }
 
 /*
- * loop over kind of array
+ * loop over array elements
  */
 class Foreach extends GeneralComponent {
   constructor(...args) {
@@ -205,7 +210,6 @@ class Foreach extends GeneralComponent {
 /**
  * Creates an instance of Stepjob.
  * @constructor StepJob
- * @param {*} args -
  * @extends {GeneralComponent}
  */
 class Stepjob extends GeneralComponent {
@@ -225,7 +229,6 @@ class Stepjob extends GeneralComponent {
 /**
  * Creates an instance of StepjobTask.
  * @constructor StepjobTask
- * @param {*} args -
  * @extends {Task}
  */
 class StepjobTask extends Task {
@@ -243,9 +246,8 @@ class StepjobTask extends Task {
 
 /**
  * factory method for workflow component class
- * @param {*} type -
- * @param {*} args -
- * @returns{*} - component instance
+ * @param {string} type -  component type
+ * @returns {*} - component object
  */
 function componentFactory(type, ...args) {
   let component;
