@@ -1271,9 +1271,6 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
           }
           const myIndex = plug.parent().node.instance.data('ID');
           if (hitIndex !== myIndex) {
-            if (type === 'stepjobTask') {
-              sio.emit('updateStepNumber');
-            }
             callback(myIndex, hitIndex, plug, hitPlug);
           }
           initializeCableInfo(cable, plug, clone, originX, originY);
@@ -1288,7 +1285,11 @@ function createLCPlugAndCable(svg, originX, originY, moveY, color, plugShape, ca
 
 export function createLower(svg, originX, originY, offsetX, offsetY, color, sio, type) {
   return createLCPlugAndCable(svg, originX + offsetX, originY + offsetY, true, color, DPlug, 'DU', '.upperPlug', type, false, sio, function (myIndex, hitIndex, plug) {
-    sio.emit('addLink', { src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug') });
+    sio.emit('addLink', { src: myIndex, dst: hitIndex, isElse: plug.hasClass('elsePlug') }, (result) => {
+      if (type === "stepjobTask" && result === true) {
+        sio.emit('updateStepNumber');
+      }
+    });
   });
 }
 

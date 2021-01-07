@@ -857,6 +857,7 @@ function registerListeners(socket, projectRootDir) {
   socket.on("addFileLink", onAddFileLink.bind(null, emit, projectRootDir));
   socket.on("removeFileLink", onRemoveFileLink.bind(null, emit, projectRootDir));
   socket.on("cleanComponent", onCleanComponent.bind(null, emit, projectRootDir));
+  socket.on("updateStepNumber", onUpdateStepNumber.bind(null, emit, projectRootDir));
 }
 
 module.exports = registerListeners;
