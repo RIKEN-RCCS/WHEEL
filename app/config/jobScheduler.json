@@ -47,7 +47,8 @@
     "reFailedState": "^ST *EC *PC *\\n(?:CCL|ERR|EXT|RJT) *(\\d+) *([1-9])",
     "reFailedStateStep": "^ST *EC *PC *\\n(?:CCL|ERR|EXT|RJT) *(\\d+) *([1-5]|[7-9])",
     "reJobStatus": "^ST *EC *PC *\\n(\\S+)",
-    "grpName":""
+    "grpName":"",
+    "stepjob": true
   },
   "Fugaku": {
     "submit": "pjsub -X",

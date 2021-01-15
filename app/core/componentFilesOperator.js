@@ -370,16 +370,6 @@ async function validateStepjobTask(projectRootDir, component) {
     return Promise.reject(new Error(`illegal path ${component.name}`));
   }
 
-  if (component.useJobScheduler) {
-    const hostinfo = remoteHost.query("name", component.host);
-    if (typeof hostinfo === "undefined") {
-      //assume local job
-      //TODO add jobScheduler setting to server.json and read it
-    } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
-      return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
-    }
-  }
-
   if (component.useDependency && isInitial) {
     return Promise.reject(new Error("initial stepjobTask cannot specified the Dependency form"));
   }
@@ -391,6 +381,23 @@ async function validateStepjobTask(projectRootDir, component) {
   const filename = path.resolve(componentDir, component.script);
   if (!(await fs.stat(filename)).isFile()) {
     return Promise.reject(new Error(`script is not existing file ${filename}`));
+  }
+  return true;
+}
+
+async function validateStepjob(projectRootDir, component) {
+  if (component.useJobScheduler) {
+    const hostinfo = remoteHost.query("name", component.host);
+    if (typeof hostinfo === "undefined") {
+      //assume local job
+      //TODO add jobScheduler setting to server.json and read it
+    } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
+      return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
+    }
+    const setJobScheduler = jobScheduler[hostinfo.jobScheduler];
+    if (!(setJobScheduler.hasOwnProperty("stepjob") && setJobScheduler.stepjob === true)) {
+      return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler do not support stepjob`));
+    }
   }
   return true;
 }
@@ -508,6 +515,8 @@ async function validateComponents(projectRootDir, parentID) {
       promises.push(validateTask(projectRootDir, component));
     } else if (component.type === "stepjobTask") {
       promises.push(validateStepjobTask(projectRootDir, component));
+    } else if (component.type === "stepjob") {
+      promises.push(validateStepjob(projectRootDir, component));
     } else if (component.type === "if" || component.type === "while") {
       promises.push(validateConditionalCheck(component));
     } else if (component.type === "for") {
