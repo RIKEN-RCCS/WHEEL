@@ -91,7 +91,7 @@ async function isFinishedGeneral(JS, task) {
   }
   const outputText = output.join("");
   const reFinishedState = task.type !== "stepjobTask" ? new RegExp(JS.reFinishedState, "m") : new RegExp(JS.reFinishedStateStep, "m");
-  const reFailedState = new RegExp(JS.reFailedState, "m");
+  const reFailedState = task.type !== "stepjobTask" ? new RegExp(JS.reFailedState, "m") : new RegExp(JS.reFailedStateStep, "m");
   const finished = reFinishedState.test(outputText);
   const failed = reFailedState.test(outputText);
 

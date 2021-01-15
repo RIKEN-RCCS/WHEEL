@@ -248,13 +248,13 @@ class RemoteJobExecuter extends Executer {
   async exec(task) {
     await prepareRemoteExecDir(task);
     const hostinfo = getSshHostinfo(task.projectRootDir, task.remotehostID);
-    let submitCmd;
+    let submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} `;
     if (task.type === "stepjobTask") {
-      submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ${makeStepOpt(task)} ./${task.script}`;
+      submitCmd += `${makeStepOpt(task)} ./${task.script}`;
     } else if (hostinfo.jobScheduler === "UGE") {
-      submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeGrpNameOpt(task, this.JS, this.grpName)} ${makeQueueOpt(task, this.JS, this.queues)} ./${task.script}`;
+      submitCmd += `${makeGrpNameOpt(task, this.JS, this.grpName)} ./${task.script}`;
     } else {
-      submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ./${task.script}`;
+      submitCmd += `./${task.script}`;
     }
     logger.debug("submitting job (remote):", submitCmd);
     await setTaskState(task, "running");

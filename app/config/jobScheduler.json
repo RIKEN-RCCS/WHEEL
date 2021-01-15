@@ -36,15 +36,16 @@
     "grpName":""
   },
   "TCS": {
-    "submit": "pjsub -X",
+    "submit": "pjsub -X -g gr170305",
     "queueOpt": "-L rscgrp=",
     "stat": "pjstat -v -H day=3 --choose st,ec,pc",
     "del": "pjdel",
     "reJobID": "pjsub Job (\\d+_*\\d*) submitted.",
-    "reFinishedState": "^ST *EC *PC *\\nEXT *0",
-    "reFinishedStateStep": "^ST *EC *PC *\\nCCL *(\\d+) *6",
-    "reReturnCode": "^ST *EC *PC *\\n(EXT|CCL) *(\\d+) *(\\d+)",
-    "reFailedState": "^ST *EC *PC *\\n(CCL|ERR|EXT|RJT)",
+    "reFinishedState": "^ST *EC *PC *\\nEXT *\\d+ *0",
+    "reFinishedStateStep": "^ST *EC *PC *\\n(?:EXT|CCL) *(\\d+) *(0|6)",
+    "reReturnCode": "^ST *EC *PC *\\n(?:EXT|CCL) *(\\d+) *(\\d+)",
+    "reFailedState": "^ST *EC *PC *\\n(?:CCL|ERR|EXT|RJT) *(\\d+) *([1-9])",
+    "reFailedStateStep": "^ST *EC *PC *\\n(?:CCL|ERR|EXT|RJT) *(\\d+) *([1-5]|[7-9])",
     "reJobStatus": "^ST *EC *PC *\\n(\\S+)",
     "grpName":""
   },
