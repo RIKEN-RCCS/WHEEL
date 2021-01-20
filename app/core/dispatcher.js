@@ -968,6 +968,10 @@ class Dispatcher extends EventEmitter {
       case "stepjobtask":
         cmd = this._dispatchTask;
         break;
+      /* TODO usePSSettingFile case */
+      case "bulkjobtask":
+        cmd = this._dispatchTask;
+        break;
       case "if":
         cmd = this._checkIf;
         break;

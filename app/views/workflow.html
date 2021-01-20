@@ -173,6 +173,13 @@
               </li>
               <li class="workflowComponents-name">StepJobTask</li>
             </ul>
+            <ul id="bulkjobTask" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('bulkjobTask')"
+            draggable="true">
+            <li>
+              <img src="/image/img_stepjobTask.png" class="imgSize" id="img_stepjobTask" draggable="false" />
+            </li>
+            <li class="workflowComponents-name">BulkJobTask</li>
+            </ul>
           </div>
         </div>
         <!-- ライブラリーボタン -->
@@ -283,7 +290,7 @@
                 </div>
               </div>
               <div
-                v-if="node.hasOwnProperty('useJobScheduler') && !(node.type === 'stepjobTask' || node.type === 'stepjob')"
+                v-if="node.hasOwnProperty('useJobScheduler') && !(node.type === 'stepjobTask' || node.type === 'stepjob' || node.type === 'bulkjobTask')"
                 class="checkboxArea">
                 <input type="checkbox" v-model.lazy.trim="node.useJobScheduler"
                   v-on:change="updateQueueList();updateProperty('useJobScheduler');" name="check"
@@ -308,7 +315,7 @@
                   value="true">
                 <label class="propertyCheckboxLabel" id="propertyuploadOnDemand">uploadOnDemand</label>
               </div>
-              <div v-if="node.hasOwnProperty('parameterFile')">
+              <div v-if="node.hasOwnProperty('parameterFile') && node.type !== 'bulkjobTask'">
                 <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>
                 <div>
                   <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectField"
@@ -419,6 +426,32 @@
                   <input type="text" v-model.lazy.trim="node.dependencyForm" spellcheck="false"
                     id="dependencyInputField" v-bind:disabled="node.useDependency !== true" v-bind:class="{dependencyInputFieldColor: node.useDependency}"
                     v-on:blur="updateProperty('dependencyForm')">
+                </div>
+              </div>
+              <div v-if="node.type === 'bulkjobTask'">
+                <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
+                <div>
+                  <label for="startBulkNumberInputField" id="propertyStartBulkNumber">start</label>
+                  <input type="number" v-model.number.lazy.trim="node.startBulkNumber" id="startBulkNumberInputField" v-bind:disabled="node.usePSSettingFile === true"
+                  v-bind:class="{bulkNumberInputFieldColor: node.usePSSettingFile}" v-on:blur="updateProperty('startBulkNumber')">
+                  <label for="endBulkNumberInputField" id="propertyEndBulkNumber">end</label>
+                  <input type="number" v-model.number.lazy.trim="node.endBulkNumber" id="endBulkNumberInputField" v-bind:disabled="node.usePSSettingFile === true"
+                  v-bind:class="{bulkNumberInputFieldColor: node.usePSSettingFile}" v-on:blur="updateProperty('endBulkNumber')"> 
+                </div>
+                <div>
+                  <input type="checkbox" v-model.lazy.trim="node.usePSSettingFile" name="check" id="usePSSettingFile" v-on:change="updateProperty('usePSSettingFile');"
+                    value="true">
+                  <label class="propertyCheckboxLabel">use Parameter SettingFile</label>
+                </div>
+                <div v-if="node.hasOwnProperty('parameterFile')">
+                  <label for="parameterFileInputField" id="propertyParameterSettingFileForBulkjob">Parameter setting file</label>
+                  <div>
+                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectFieldForBulkjob" v-bind:disabled="node.usePSSettingFile !== true"
+                    v-bind:class="{usePSSettingFileInputFieldColor: node.usePSSettingFile}" v-on:change="updateProperty('parameterFile')">
+                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'" v-bind:value="paramFile.name"
+                        v-bind:key="paramFile.name">{{ paramFile.name }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
