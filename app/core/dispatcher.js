@@ -475,8 +475,12 @@ class Dispatcher extends EventEmitter {
       nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
     }
     if (Object.prototype.hasOwnProperty.call(component, "outputFiles")) {
+      const outputTypeList = await this._getOutputTypeList(component);
       component.outputFiles.forEach((outputFile)=>{
         const tmp = outputFile.dst.map((e)=>{
+          if (outputTypeList[e.dstNode] === "if") {
+            return null;
+          }
           if (Object.prototype.hasOwnProperty.call(e, "origin")) {
             return null;
           }
@@ -495,6 +499,24 @@ class Dispatcher extends EventEmitter {
     }));
 
     Array.prototype.push.apply(this.nextSearchList, nextComponents);
+  }
+
+  async _getOutputTypeList(component) {
+    const outputTypeList = {};
+    for await (const outputFile of component.outputFiles) {
+      for await (const e of outputFile.dst) {
+        const outputCmp = await this._getComponent(e.dstNode);
+        const prviousCmp = await Promise.all(outputCmp.previous.map((id)=>{
+          return this._getComponent(id);
+        }));
+        prviousCmp.forEach((cmp)=>{
+          if (cmp.type === "if") {
+            outputTypeList[e.dstNode] = cmp.type;
+          }
+        });
+      }
+    }
+    return outputTypeList;
   }
 
   async _dispatchTask(task) {
