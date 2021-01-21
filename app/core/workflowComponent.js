@@ -185,6 +185,7 @@ class For extends GeneralComponent {
     this.start = null;
     this.end = null;
     this.step = null;
+    this.keep = null;
   }
 }
 

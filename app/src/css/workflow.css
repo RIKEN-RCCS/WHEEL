@@ -625,7 +625,7 @@ select::-ms-expand {
 }
 
 #propertyInputFiles, #propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
-#propertyIndexList, #propertyStart, #propertyStep,
+#propertyIndexList, #propertyStart, #propertyStep, #propertyKeep,
 #propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency
 {
     margin: 8px 0 0 0;
@@ -778,6 +778,16 @@ select::-ms-expand {
     color: #FFFFFF;
 }
 
+#keepInputField{
+    margin: 2px 0 0 5px;
+    padding-left: 5px;
+    height: 20px;
+    width: 73px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+}
+
 #dependencyStepnum{
     margin: 2px 0 0 8px;
     padding-left: 5px;
@@ -898,6 +908,10 @@ select::-ms-expand {
 
 #startInputField, #endInputField, #stepInputField{
     width: 75px;
+}
+
+#keepInputField{
+    width: 192px;
 }
 
 #fileList{

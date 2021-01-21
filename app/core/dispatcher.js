@@ -237,6 +237,17 @@ function loopInitialize(component, getTripCount) {
   }
 }
 
+function deleteLoopIndex(component, cwfDir) {
+  if (typeof component.keep === "number" && component.keep >= 0) {
+    const deleteComponentIndex = component.currentIndex - component.keep - 1;
+    if (deleteComponentIndex > 0) {
+      const deleteComponentName = `${component.originalName}_${sanitizePath(deleteComponentIndex)}`;
+      const delDir = path.resolve(cwfDir, deleteComponentName);
+      fs.remove(delDir);
+    }
+  }
+}
+
 async function replaceTargetFile(srcDir, dstDir, targetFiles, params) {
   const promises = [];
   for (const targetFile of targetFiles) {
@@ -596,6 +607,9 @@ class Dispatcher extends EventEmitter {
       await fs.copy(lastDir, dstDir, { overwrite: true, dereference: true }); //dst will be overwrite always
     }
 
+    //delete Keep Index
+    deleteLoopIndex(component, this.cwfDir);
+
     this.logger.debug("loop finished", component.name);
     delete component.initialized;
     delete component.currentIndex;
@@ -649,6 +663,9 @@ class Dispatcher extends EventEmitter {
       await setStateR(dstDir, "not-started");
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
       await this._delegate(newComponent);
+
+      //delete Keep Index
+      deleteLoopIndex(component, this.cwfDir);
 
       if (newComponent.state === "failed") {
         component.hasFaild = true;

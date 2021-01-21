@@ -1372,6 +1372,7 @@ $(() => {
       { id: "startInputField", readonly: true, disable: false },
       { id: "endInputField", readonly: true, disable: false },
       { id: "stepInputField", readonly: true, disable: false },
+      { id: "keepInputField", readonly: true, disable: false },
       { id: "cleanUpFlag0", readonly: true, disable: true },
       { id: "cleanUpFlag1", readonly: true, disable: true },
       { id: "cleanUpFlag2", readonly: true, disable: true },

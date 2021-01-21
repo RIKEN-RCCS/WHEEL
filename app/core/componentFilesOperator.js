@@ -422,6 +422,12 @@ async function validateForLoop(component) {
     return Promise.reject(new Error(`end is not specified ${component.name}`));
   }
 
+  if (!(typeof component.keep === "number" && component.keep >= 0)) {
+    if (!(component.keep.length === 0)) {
+      return Promise.reject(new Error(`keep is not specified ${component.name}`));
+    }
+  }
+
   if (component.step === 0 || (component.end - component.start) * component.step < 0) {
     return Promise.reject(new Error(`inifinite loop ${component.name}`));
   }

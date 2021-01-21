@@ -402,6 +402,13 @@
                   <input type="number" v-model.number.lazy.trim="node.step" id="stepInputField"
                     v-on:blur="updateProperty('step')">
                 </div>
+                <div v-if="node.hasOwnProperty('keep')">
+                  <label for="keepInputField" id="propertykeep">number to keep last loop index</label>
+                  <div>
+                    <input type="number" v-model.number.lazy.trim="node.keep" id="keepInputField"
+                      v-on:blur="updateProperty('keep')" min="0" pattern="^[0-9]+$">
+                  </div>
+                </div>
               </div>
               <div v-if="node.type === 'stepjobTask'">
                 <label for="dependencyInputField" id="propertyUseDependency">Dependency</label>
