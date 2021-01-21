@@ -815,6 +815,16 @@ class Dispatcher extends EventEmitter {
     await this._addNextComponent(component);
     const state = component.numFailed > 0 ? "failed" : "finished";
     await this._setComponentState(component, state);
+
+    if (component.delelteLoopIndex) {
+      for (const paramVec of paramVecGenerator(paramSpace)) {
+        const deleteComponentName = sanitizePath(paramVec.reduce((p, e)=>{
+          return `${p}_${e.key}_${e.value}`;
+        }, component.name));
+        const deleteDir = path.resolve(this.cwfDir, deleteComponentName);
+        fs.remove(deleteDir);
+      }
+    }
   }
 
   async _viewerHandler(component) {

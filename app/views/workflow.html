@@ -505,6 +505,11 @@
                 v-on:change="updateProperty('forceOverwrite')">
               <label class="propertyCheckboxLabel">force overwrite</label>
             </div>
+            <div v-if="node.hasOwnProperty('delelteLoopIndex')">
+              <input type="checkbox" v-model="node.delelteLoopIndex" id="delelteLoopIndexCheckbox"
+                v-on:change="updateProperty('delelteLoopIndex')">
+              <label class="propertyCheckboxLabel">delete loop index</label>
+            </div>
           </div>
           <!--ファイル編集 -->
           <div id="filesEdit">

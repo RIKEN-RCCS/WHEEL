@@ -175,6 +175,7 @@ class ParameterStudy extends GeneralComponent {
     this.numFinished = null;
     this.numFailed = null;
     this.forceOverwrite = false;
+    this.delelteLoopIndex = false;
   }
 }
 
