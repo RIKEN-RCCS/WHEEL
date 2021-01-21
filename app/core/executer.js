@@ -100,7 +100,6 @@ function makeQueueOpt(task, JS, queues) {
 function makeGrpNameOpt(task, JS, grpNames) {
   let grpName = "";
   const grpNameList = grpNames.split(",");
-
   grpName = grpNameList.find((e)=>{
     return task.queue === e;
   });
@@ -108,24 +107,32 @@ function makeGrpNameOpt(task, JS, grpNames) {
   if (typeof grpName === "undefined") {
     grpName = grpNameList.length > 0 ? grpNameList[0] : "";
   }
-
   return grpName !== "" ? ` ${JS.grpName} ${grpName}` : "";
 }
 
 /**
  * make stepjob option
  * @param {Task} task - task instance
- * @param {*} JS - task instance
- * @param {*} queues - task instance
- * @returns {*} *
+ * @returns {*} - stepjob option
  */
 function makeStepOpt(task) {
   const stepjob = "--step --sparam";
   const jobName = `jnam=${task.parentName}`;
   const stepNum = `sn=${task.stepnum}`;
   const dependencyForm = `${task.dependencyForm}`;
-
   return task.useDependency ? `${stepjob} "${jobName}, ${stepNum}, ${dependencyForm}"` : `${stepjob} "${jobName}, ${stepNum}"`;
+}
+
+/**
+ * make bulkjob option
+ * @param {Task} task - task instance
+ * @returns {*} - bulkjob option
+ */
+function makeBulkOpt(task) {
+  const bulkjob = "--bulk --sparam";
+  const startBulkNumber = task.startBulkNumber;
+  const endBulkNumber = task.endBulkNumber;
+  return `${bulkjob} "${startBulkNumber}-${endBulkNumber}"`;
 }
 
 class Executer {
@@ -251,6 +258,8 @@ class RemoteJobExecuter extends Executer {
     let submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} `;
     if (task.type === "stepjobTask") {
       submitCmd += `${makeStepOpt(task)} ./${task.script}`;
+    } else if (task.type === "bulkjobTask") {
+      submitCmd += `${makeBulkOpt(task)} ./${task.script}`;
     } else if (hostinfo.jobScheduler === "UGE") {
       submitCmd += `${makeGrpNameOpt(task, this.JS, this.grpName)} ./${task.script}`;
     } else {

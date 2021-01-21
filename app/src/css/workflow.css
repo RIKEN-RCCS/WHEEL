@@ -625,8 +625,11 @@ select::-ms-expand {
 }
 
 #propertyInputFiles, #propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
+<<<<<<< HEAD
 #propertyIndexList, #propertyStart, #propertyStep, #propertyKeep,
 #propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency
+#propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency, #propertyBulkNumber
+>>>>>>> 3917eea25eaf48a204957f424fc99ea9980aae05
 {
     margin: 8px 0 0 0;
     display: inline-block;
@@ -638,12 +641,12 @@ select::-ms-expand {
     display: inline-block;
 }
 
-#propertyEnd{
+#propertyEnd, #propertyEndBulkNumber{
     display: inline-block;
 }
 
 #nameInputField, .newInputFileNameInputField, .newOutputFileNameInputField,
-.newOutputFileNameInputField, #parameterFileInputField, #retryConditionInputField, #conditionInputField,
+.newOutputFileNameInputField, #retryConditionInputField, #conditionInputField,
 .newIndexListField, #retryTimesInputField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
@@ -655,7 +658,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#dependencyInputField{
+#dependencyInputField,#parameterFileSelectFieldForBulkjob{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -703,9 +706,6 @@ select::-ms-expand {
 #retryConditionSelectField, #fileForCondition{
     margin: 2px 0 0 8px;
     padding-left: 5px;
-    height: 22px;
-    margin: 2px 0 0 8px;
-    padding-left: 5px;
     height: 20px;
     width: 192px;
     background-color: #000000;
@@ -729,8 +729,12 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-.queueSelectFieldColor, .dependencyInputFieldColor{
+.queueSelectFieldColor, .dependencyInputFieldColor, .usePSSettingFileInputFieldColor{
     background-color: #000000 !important;
+}
+
+.bulkNumberInputFieldColor{
+    background-color: #333333 !important;
 }
 
 #propertyRetryArea{
@@ -758,7 +762,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#startInputField, #endInputField{
+#startInputField, #endInputField, #startBulkNumberInputField, #endBulkNumberInputField{
     margin: 2px 0 0 2px;
     padding-left: 5px;
     height: 20px;
@@ -815,7 +819,7 @@ select::-ms-expand {
     border-top: solid 1px #000000;
 }
 
-#propertyCleanUpFlag, #propertyInclude, #propertyExclude{
+#propertyCleanUpFlag, #propertyInclude, #propertyExclude, #propertyParameterSettingFileForBulkjob, #propertyStartBulkNumber{
     margin: 8px 0 0 8px;
     display: inline-block;
 }
@@ -906,7 +910,7 @@ select::-ms-expand {
     height: 18px;
 }
 
-#startInputField, #endInputField, #stepInputField{
+#stepInputField{
     width: 75px;
 }
 

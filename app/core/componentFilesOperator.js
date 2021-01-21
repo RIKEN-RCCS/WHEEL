@@ -402,6 +402,36 @@ async function validateStepjob(projectRootDir, component) {
   return true;
 }
 
+async function validateBulkjobTask(projectRootDir, component) {
+  if (component.name === null) {
+    return Promise.reject(new Error(`illegal path ${component.name}`));
+  }
+
+  if (component.useJobScheduler) {
+    const hostinfo = remoteHost.query("name", component.host);
+    if (typeof hostinfo === "undefined") {
+      //assume local job
+      //TODO add jobScheduler setting to server.json and read it
+    } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
+      return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
+    }
+    const setJobScheduler = jobScheduler[hostinfo.jobScheduler];
+    if (!(setJobScheduler.hasOwnProperty("bulkjob") && setJobScheduler.bulkjob === true)) {
+      return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler do not support bulkjob`));
+    }
+  }
+
+  if (!(component.hasOwnProperty("script") && typeof component.script === "string")) {
+    return Promise.reject(new Error(`script is not specified ${component.name}`));
+  }
+  const componentDir = await getComponentDir(projectRootDir, component.ID, true);
+  const filename = path.resolve(componentDir, component.script);
+  if (!(await fs.stat(filename)).isFile()) {
+    return Promise.reject(new Error(`script is not existing file ${filename}`));
+  }
+  return true;
+}
+
 async function validateConditionalCheck(component) {
   if (!(component.hasOwnProperty("condition") && typeof component.condition === "string")) {
     return Promise.reject(new Error(`condition is not specified ${component.name}`));
@@ -523,6 +553,8 @@ async function validateComponents(projectRootDir, parentID) {
       promises.push(validateStepjobTask(projectRootDir, component));
     } else if (component.type === "stepjob") {
       promises.push(validateStepjob(projectRootDir, component));
+    } else if (component.type === "bulkjobTask") {
+      promises.push(validateBulkjobTask(projectRootDir, component));
     } else if (component.type === "if" || component.type === "while") {
       promises.push(validateConditionalCheck(component));
     } else if (component.type === "for") {

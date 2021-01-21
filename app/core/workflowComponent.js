@@ -246,6 +246,25 @@ class StepjobTask extends Task {
 }
 
 /**
+ * Creates an instance of BulkjobTask.
+ * @constructor BulkjobTask
+ * @extends {Task}
+ */
+class BulkjobTask extends Task {
+  constructor(pos, parent, stepnum, ...args) {
+    super(pos, parent, stepnum, ...args);
+    this.type = "bulkjobTask";
+    this.useJobScheduler = true;
+  
+  /*bulkjob parameter */
+    this.usePSSettingFile = false;
+    this.parameterFile = null;
+    this.startBulkNumber = null;
+    this.endBulkNumber = null;
+  }
+}
+
+/**
  * factory method for workflow component class
  * @param {string} type -  component type
  * @returns {*} - component object
@@ -286,6 +305,9 @@ function componentFactory(type, ...args) {
       break;
     case "stepjobTask":
       component = new StepjobTask(...args);
+      break;
+    case "bulkjobTask":
+      component = new BulkjobTask(...args);
       break;
     default:
       component = null;

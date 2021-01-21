@@ -1389,7 +1389,9 @@ $(() => {
       { id: "fileUploadButton", readonly: true, disable: true },
       { id: "uploadOnDemandFlagField", readonly: true, disable: true },
       { id: "useDependencyFlagField", readonly: true, disable: true },
-      { id: "dependencyInputField", readonly: true, disable: false }
+      { id: "dependencyInputField", readonly: true, disable: false },
+      { id: "usePSSettingFile", readonly: true, disable: true },
+      { id: "parameterFileSelectFieldForBulkjob", readonly: true, disable: true }
     ];
 
     var classes = [
