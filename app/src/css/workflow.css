@@ -625,11 +625,8 @@ select::-ms-expand {
 }
 
 #propertyInputFiles, #propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
-<<<<<<< HEAD
 #propertyIndexList, #propertyStart, #propertyStep, #propertyKeep,
-#propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency
 #propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency, #propertyBulkNumber
->>>>>>> 3917eea25eaf48a204957f424fc99ea9980aae05
 {
     margin: 8px 0 0 0;
     display: inline-block;
