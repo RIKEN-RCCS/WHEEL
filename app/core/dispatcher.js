@@ -239,7 +239,7 @@ function loopInitialize(component, getTripCount) {
 
 function deleteLoopIndex(component, cwfDir) {
   if (typeof component.keep === "number" && component.keep >= 0) {
-    const deleteComponentIndex = component.currentIndex - component.keep - 1;
+    const deleteComponentIndex = component.keep === 0 ? component.currentIndex - component.step : component.currentIndex - (component.keep * component.step);
     if (deleteComponentIndex > 0) {
       const deleteComponentName = `${component.originalName}_${sanitizePath(deleteComponentIndex)}`;
       const delDir = path.resolve(cwfDir, deleteComponentName);
@@ -608,7 +608,9 @@ class Dispatcher extends EventEmitter {
     }
 
     //delete Keep Index
-    deleteLoopIndex(component, this.cwfDir);
+    if (component.keep === 0) {
+      deleteLoopIndex(component, this.cwfDir);
+    }
 
     this.logger.debug("loop finished", component.name);
     delete component.initialized;
