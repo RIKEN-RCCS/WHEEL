@@ -677,12 +677,14 @@ async function updateStepNumber(projectRootDir) {
   const arrangedComponents = await arrangeComponent(stepjobGroup);
   let stepnum = 0;
   const prop = "stepnum";
+  const p = [];
   for (const componentJson of arrangedComponents) {
     componentJson[prop] = stepnum;
     const componentDir = await getComponentDir(projectRootDir, componentJson.ID, true);
-    await writeComponentJson(projectRootDir, componentDir, componentJson);
+    p.push(writeComponentJson(projectRootDir, componentDir, componentJson));
     stepnum++;
   }
+  await Promise.all(p);
 }
 
 async function arrangeComponent(stepjobGroupArray) {
