@@ -97,7 +97,10 @@ function makeQueueOpt(task, JS, queues) {
  * @param {*} grpNames - UGE group name
  * @returns {*} *
  */
-function makeGrpNameOpt(task, JS, grpNames) {
+function makeGrpNameOpt(task, JS, grpNames, JSName) {
+  if (JSName !== "UGE") {
+    return "";
+  }
   let grpName = "";
   const grpNameList = grpNames.split(",");
   grpName = grpNameList.find((e)=>{
@@ -116,6 +119,9 @@ function makeGrpNameOpt(task, JS, grpNames) {
  * @returns {*} - stepjob option
  */
 function makeStepOpt(task) {
+  if (task.type !== "stepjobTask") {
+    return "";
+  }
   const stepjob = "--step --sparam";
   const jobName = `jnam=${task.parentName}`;
   const stepNum = `sn=${task.stepnum}`;
@@ -129,6 +135,9 @@ function makeStepOpt(task) {
  * @returns {*} - bulkjob option
  */
 function makeBulkOpt(task) {
+  if (task.type !== "bulkjobTask") {
+    return "";
+  }
   const bulkjob = "--bulk --sparam";
   const startBulkNumber = task.startBulkNumber;
   const endBulkNumber = task.endBulkNumber;
@@ -255,16 +264,7 @@ class RemoteJobExecuter extends Executer {
   async exec(task) {
     await prepareRemoteExecDir(task);
     const hostinfo = getSshHostinfo(task.projectRootDir, task.remotehostID);
-    let submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} `;
-    if (task.type === "stepjobTask") {
-      submitCmd += `${makeStepOpt(task)} ./${task.script}`;
-    } else if (task.type === "bulkjobTask") {
-      submitCmd += `${makeBulkOpt(task)} ./${task.script}`;
-    } else if (hostinfo.jobScheduler === "UGE") {
-      submitCmd += `${makeGrpNameOpt(task, this.JS, this.grpName)} ./${task.script}`;
-    } else {
-      submitCmd += `./${task.script}`;
-    }
+    const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ${makeStepOpt(task)}${makeBulkOpt(task)}${makeGrpNameOpt(task, this.JS, this.grpName, hostinfo.jobScheduler)} ./${task.script}`;
     logger.debug("submitting job (remote):", submitCmd);
     await setTaskState(task, "running");
     const ssh = getSsh(task.projectRootDir, task.remotehostID);
