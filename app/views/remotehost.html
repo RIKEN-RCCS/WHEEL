@@ -53,8 +53,9 @@
       <div id="hostPropertyAreaForHPC">
         <table id="propertyTable">
           <template v-for="(host, index) in hostList">
-            <tr v-if="!host.hasOwnProperty('type') || host.type === ''" v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }"
-              v-on:click="toggleSelected(index)" v-bind:id="host.name" class="hostListInfo">
+            <tr v-if="!host.hasOwnProperty('type') || host.type === ''" v-bind:key="host.id"
+              v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)"
+              v-bind:id="host.name" class="hostListInfo">
               <td class="label">
                 {{ host.name }}</td>
               <td class="connectionCheck">
@@ -102,8 +103,8 @@
       <div id="hostPropertyAreaForCloud">
         <table id="propertyTable">
           <template v-if="host.hasOwnProperty('type') && host.type !== ''" v-for="(host, index) in hostList">
-            <tr v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }" v-on:click="toggleSelected(index)" v-bind:id="host.name"
-              class="hostListInfo">
+            <tr v-bind:key="host.id" v-bind:class="{ 'ui-state-highlight': isSelected(index) }"
+              v-on:click="toggleSelected(index)" v-bind:id="host.name" class="hostListInfo">
               <td class="label">
                 {{ host.name }}</td>
               <td class="cloudServiceProvider">
@@ -155,7 +156,8 @@
           <span>
             <label id="hostLabel">Label</label>
           </span>
-          <input id="hostLabelInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
+          <input id="hostLabelInputArea" type="text" placeholder="empty is not allowed."
+            v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
           <p v-if="isDuplicate" class="decoupleError">duplicated label</p>
         </div>
         <div>
@@ -168,7 +170,8 @@
           <span>
             <label id="hostName">Host Name</label>
           </span>
-          <input id="hostNameInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.host" v-bind:class="{'ui-state-error': !validation.host}">
+          <input id="hostNameInputArea" type="text" placeholder="empty is not allowed."
+            v-model.lazy.trim="newHostInfo.host" v-bind:class="{'ui-state-error': !validation.host}">
         </div>
         <div>
           <span>
@@ -180,14 +183,15 @@
           <span>
             <label id="hostUserID">User ID</label>
           </span>
-          <input id="hostUserIDInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.username"
-            v-bind:class="{'ui-state-error': !validation.username}">
+          <input id="hostUserIDInputArea" type="text" placeholder="empty is not allowed."
+            v-model.lazy.trim="newHostInfo.username" v-bind:class="{'ui-state-error': !validation.username}">
         </div>
         <div>
           <span>
             <label id="hostWorkDir">Host Work Dir</label>
           </span>
-          <input id="hostWorkDirInputArea" type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.path">
+          <input id="hostWorkDirInputArea" type="text" placeholder="empty is not allowed."
+            v-model.lazy.trim="newHostInfo.path">
         </div>
       </div>
       <div id="centerFormArea">
@@ -229,6 +233,13 @@
           </span>
           <input id="hostQueueInputArea" type="text" v-model.lazy="newHostInfo.queue">
         </div>
+        <div>
+          <span>
+            <label id="useJobOption">Use Step/Bulkjob</label>
+          </span>
+          <input id="useStepjob" name="useJobType" type="checkbox" v-model="newHostInfo.useStepjob">stepjob
+          <input id="useBlukjob" name="useJobType" type="checkbox" v-model="newHostInfo.useBulkjob">bulkjob
+        </div>
       </div>
       <div id="rightFormArea">
         <div>
@@ -264,7 +275,8 @@
           <span>
             <label id="cloudLabel">Label</label>
           </span>
-          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name" v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
+          <input type="text" placeholder="empty is not allowed." v-model.lazy.trim="newHostInfo.name"
+            v-bind:class="{'ui-state-error': !validation.name || isDuplicate}">
           <p v-if="isDuplicate" class="decoupleError">duplicated label</p>
         </div>
         <div>

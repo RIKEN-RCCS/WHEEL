@@ -33,6 +33,8 @@ $(() => {
     port: 22,
     id: '',
     jobScheduler: '',
+    useStepjob: false,
+    useBulkjob: false,
     renewInterval: 0,
     renewDelay: 0,
     statusCheckInterval: 10,
@@ -76,6 +78,10 @@ $(() => {
           this.selectedHost = i;
           Object.assign(this.newHostInfo, this.hostList[this.selectedHost]);
           vm.authType = (!this.newHostInfo.keyFile || this.newHostInfo.keyFile.length === 0) ? '1' : '2';
+          if (this.hostList[this.selectedHost].hasOwnProperty('useStepjob') === false || this.hostList[this.selectedHost].hasOwnProperty('useBulkjob') === false) {
+            this.newHostInfo.useStepjob = false;
+            this.newHostInfo.useBulkjob = false;
+          }
         }
         let index = this.OK.indexOf(-1);
         if (index !== -1) {

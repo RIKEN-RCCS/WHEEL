@@ -373,7 +373,7 @@ input::-webkit-input-placeholder {
   width: 100px;
 }
 
-.hostRegFormAreaForHPC input:not([type="radio"]){
+.hostRegFormAreaForHPC input:not([type="radio"]):not([type="checkbox"]){
   width: 300px;
   height: 24px;
   padding: 0 0 0 8px;

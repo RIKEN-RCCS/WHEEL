@@ -396,7 +396,10 @@ async function validateStepjob(projectRootDir, component) {
     }
     const setJobScheduler = jobScheduler[hostinfo.jobScheduler];
     if (!(setJobScheduler.hasOwnProperty("stepjob") && setJobScheduler.stepjob === true)) {
-      return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler do not support stepjob`));
+      return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler does not support stepjob`));
+    }
+    if (!(hostinfo.hasOwnProperty("useStepjob") && hostinfo.useStepjob === true)) {
+      return Promise.reject(new Error(`${hostinfo.name} does not support stepjob`));
     }
   }
   return true;
@@ -417,7 +420,10 @@ async function validateBulkjobTask(projectRootDir, component) {
     }
     const setJobScheduler = jobScheduler[hostinfo.jobScheduler];
     if (!(setJobScheduler.hasOwnProperty("bulkjob") && setJobScheduler.bulkjob === true)) {
-      return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler do not support bulkjob`));
+      return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler does not support bulkjob`));
+    }
+    if (!(hostinfo.hasOwnProperty("useBulkjob") && hostinfo.useBulkjob === true)) {
+      return Promise.reject(new Error(`${hostinfo.name} does not support bulkjob`));
     }
   }
 
