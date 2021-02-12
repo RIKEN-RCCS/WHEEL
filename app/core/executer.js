@@ -5,6 +5,7 @@
  */
 "use strict";
 /*eslint-disable no-useless-constructor*/
+/*eslint-disable class-methods-use-this*/
 const path = require("path");
 const childProcess = require("child_process");
 const fs = require("fs-extra");
@@ -292,7 +293,7 @@ class RemoteTaskExecuter extends Executer {
     super(hostinfo);
   }
 
-  static async exec(task) {
+  async exec(task) {
     await prepareRemoteExecDir(task);
     logger.debug("prepare done");
     await setTaskState(task, "running");
@@ -341,7 +342,7 @@ class LocalTaskExecuter extends Executer {
     super(hostinfo);
   }
 
-  static async exec(task) {
+  async exec(task) {
     await setTaskState(task, "running");
     const script = path.resolve(task.workingDir, task.script);
     await addX(script);
