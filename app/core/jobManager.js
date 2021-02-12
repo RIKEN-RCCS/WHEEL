@@ -20,100 +20,34 @@ const { emitProjectEvent } = require("./projectEventManager");
 const jobManagers = new Map();
 
 /**
- * parse output text from batch server and get return code from it
+ * parse output text from batch server and get return code or jobstatus code from it
  */
-function getReturnCode(outputText, reReturnCode, jobStatus = false) {
-  const re = new RegExp(reReturnCode, "m");
+function getFirstCapture(outputText, reCode) {
+  const re = new RegExp(reCode, "m");
   const result = re.exec(outputText);
-
-  if (result === null || result[1] === null) {
-    const kind = jobStatus ? "job status" : "return";
-    logger.warn(`get ${kind} code failed, rt is overwrited by -1`);
-    return -1;
-  }
-  return jobStatus ? result[0] : result[1];
+  return result === null || typeof (result[1]) === "undefined" ? null : result[1];
 }
 
-/**
- * check if job is finished or not on remote server
- * @param {Object} JS - jobScheduler.json info
- * @param {Task} task - task instance
- * @returns {number | null} - return code
- */
-async function isFinishedAbci(JS, task) {
-  const ssh = getSsh(task.projectRootDir, task.remotehostID);
-  const statCmd = `${JS.runStat} ${task.jobID} || ${JS.finishStat} ${task.jobID}`;
-  const output = [];
-  const rt = await ssh.exec(statCmd, {}, output, output);
-
-  if (rt !== 0) {
-    const error = new Error("job stat command failed!");
-    error.cmd = statCmd;
-    error.rt = rt;
-    return Promise.reject(error);
+function getStatCommand(JS, jobID) {
+  let rt = "";
+  if (typeof (JS.stat) === "string") {
+    rt = `${JS.stat} ${jobID}`;
+  } else if (Array.isArray(JS.stat)) {
+    rt = JS.stat.reduce((a, cmd)=>{
+      return `${a} ; ${cmd} ${jobID}`;
+    }, "");
+    rt = rt.replace(/^ +; +/, "");
   }
-  const outputText = output.join("");
-  const reFinishedState = new RegExp(JS.reFinishedState, "m");
-  let finished = reFinishedState.test(outputText);
-
-  if (!finished) {
-    const reFailedState = new RegExp(JS.reFailedState, "m");
-    finished = reFailedState.test(outputText);
-  }
-  logger.trace(`JobStatusCheck: ${task.jobID} is ${finished ? "finished" : "not yet completed"}\n${outputText}`);
-
-  if (finished) {
-    const strRt = getReturnCode(outputText, JS.reReturnCode);
-    task.jobStatus = getReturnCode(outputText, JS.reJobStatus, true);
-    return parseInt(strRt, 10);
-  }
-  return null;
+  return rt;
 }
 
-/**
- * check if job is finished or not on remote server
- * @param {Object} JS - jobScheduler.json info
- * @param {Task} task - task instance
- * @returns {number | null} - return code
- */
-async function isFinishedGeneral(JS, task) {
-  //TODO check task.host and use child_process if the task is local job
+async function issueStatCmd(statCmd, task, output) {
+  if (task.remotehostID === "localhost") {
+    logger.error("local submit is not supported yet!!");
+    return Promise.reject(new Error("local submit is not supported"));
+  }
   const ssh = getSsh(task.projectRootDir, task.remotehostID);
-  const statCmd = `${JS.stat} ${task.jobID}`;
-  const output = [];
-  const rt = await ssh.exec(statCmd, {}, output, output);
-
-  if (rt !== 0) {
-    const error = new Error("job stat command failed!");
-    error.cmd = statCmd;
-    error.rt = rt;
-    return Promise.reject(error);
-  }
-  const outputText = output.join("");
-  const reFinishedState = task.type !== "stepjobTask" ? new RegExp(JS.reFinishedState, "m") : new RegExp(JS.reFinishedStateStep, "m");
-  const reFailedState = new RegExp(JS.reFailedState, "m");
-  const finished = reFinishedState.test(outputText);
-  const failed = reFailedState.test(outputText);
-
-  let statusWord = "not yet completed";
-  if (finished) {
-    statusWord = "finished";
-  }
-  if (failed) {
-    statusWord = "failed";
-  }
-  logger.trace(`JobStatusCheck: ${task.jobID} is ${statusWord}\n${outputText}`);
-
-  if (finished) {
-    const strRt = getReturnCode(outputText, JS.reReturnCode);
-    task.jobStatus = getReturnCode(outputText, JS.reReturnCode, true);
-    return parseInt(strRt, 10);
-  }
-  if (failed) {
-    task.jobStatus = "failed";
-    return -2;
-  }
-  return null;
+  return ssh.exec(statCmd, {}, output, output);
 }
 
 /**
@@ -123,7 +57,49 @@ async function isFinishedGeneral(JS, task) {
  * @returns {number | null} - return code
  */
 async function isFinished(JS, task) {
-  return JS.jobSchedule === "UGE" ? isFinishedAbci(JS, task) : isFinishedGeneral(JS, task);
+  const statCmd = getStatCommand(JS, task.jobID);
+
+  const output = [];
+  const statCmdRt = await issueStatCmd(statCmd, task, output);
+  const outputText = output.join("");
+
+  const rtList = Array.isArray(JS.acceptableRt) ? [0, ...JS.acceptableRt] : [0, JS.acceptableRt];
+  if (!rtList.includes(statCmdRt)) {
+    const error = new Error("job stat command failed!");
+    error.cmd = statCmd;
+    error.rt = statCmdRt;
+    return Promise.reject(error);
+  }
+
+  const reFinishedState = task.type !== "stepjobTask" ? new RegExp(JS.reFinishedState, "m") : new RegExp(JS.reFinishedStateStep, "m");
+
+  const finished = reFinishedState.test(outputText);
+  if (!finished) {
+    logger.debug(`JobStatusCheck: ${task.jobID} is not yet completed\n${outputText}`);
+    return null;
+  }
+
+  logger.debug(`JobStatusCheck: ${task.jobID} is finished\n${outputText}`);
+
+  //for backward compatibility use reJobStatus if JS does not have reJobStatusCode
+  const reJobStatusCode = JS.reJobStatusCode || JS.reJobStatus;
+  task.jobStatus = getFirstCapture(outputText, reJobStatusCode);
+
+  if (task.jobStatus === null) {
+    logger.warn("get job status code failed, code is overwrited by -2");
+    task.jobStatus = -2;
+  }
+  if (statCmdRt !== 0) {
+    logger.warn(`status check command returns ${statCmdRt} and it is in acceptableRt: ${JS.acceptableRt}`);
+    logger.warn("it may fail to get job script's return code. so it is overwirted by 0");
+    return 0;
+  }
+  const strRt = getFirstCapture(outputText, JS.reReturnCode);
+  if (strRt === null) {
+    logger.warn("get return code failed, code is overwrited by -2");
+    return -2;
+  }
+  return parseInt(strRt, 10);
 }
 
 class JobManager extends EventEmitter {
@@ -236,7 +212,7 @@ class JobManager extends EventEmitter {
       //task.sbsID is set by executer class
       return e.sbsID === task.sbsID;
     })) {
-      logger.trace("this task is already registerd", task);
+      logger.debug("this task is already registerd", task);
       return null;
     }
     this.addTaskList(task);
