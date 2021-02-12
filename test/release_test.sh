@@ -11,7 +11,6 @@ function cleanup()
     docker rm ${TAG} ${TAG_TEST_SERVER}
     rm -fr ${CONFIG_DIR}
     rm ${SSL_CONFIG}
-    docker rmi ${TAG} ${TAG_TEST_SERVER}
     echo "remaining containers"
     docker ps -a
     echo "remaining images"
