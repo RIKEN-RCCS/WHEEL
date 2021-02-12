@@ -10,7 +10,6 @@ const rewire = require("rewire"); //eslint-disable-line node/no-unpublished-requ
 const jobManager = rewire("../../../app/core/jobManager");
 const getStatCommand = jobManager.__get__("getStatCommand");
 const getFirstCapture = jobManager.__get__("getFirstCapture");
-const getStatusWord = jobManager.__get__("getStatusWord");
 
 describe("UT for jobManager class", ()=>{
   describe("#getStatCommand", ()=>{
@@ -18,21 +17,7 @@ describe("UT for jobManager class", ()=>{
       expect(getStatCommand({ stat: "stat" }, "jobID")).to.equal("stat jobID");
     });
     it("should return multi commands are connected by OR pipe and has same jobID", ()=>{
-      expect(getStatCommand({ stat: ["stat", "stat -b", "stat -a -b -c"] }, "jobID")).to.equal("stat jobID || stat -b jobID || stat -a -b -c jobID");
-    });
-  });
-  describe("#getStatusWord", ()=>{
-    it("should return not yet completed", ()=>{
-      expect(getStatusWord(false, false)).to.equal("not yet completed");
-    });
-    it("should return failed", ()=>{
-      expect(getStatusWord(false, true)).to.equal("failed");
-    });
-    it("should return failed too", ()=>{
-      expect(getStatusWord(true, true)).to.equal("failed");
-    });
-    it("should return finished", ()=>{
-      expect(getStatusWord(true, false)).to.equal("finished");
+      expect(getStatCommand({ stat: ["stat", "stat -b", "stat -a -b -c"] }, "jobID")).to.equal("stat jobID ; stat -b jobID ; stat -a -b -c jobID");
     });
   });
   describe("#getFirstCapture", ()=>{
