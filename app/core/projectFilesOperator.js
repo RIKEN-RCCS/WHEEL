@@ -29,7 +29,7 @@ async function getDescendantsIDs(projectRootDir, ID) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
   const poi = await getComponentDir(projectRootDir, ID, true);
-  const rt = [];
+  const rt = [ID];
 
   for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
     if (isPathInside(path.resolve(projectRootDir, componentPath), poi)) {
@@ -128,7 +128,7 @@ async function updateComponentPath(projectRootDir, ID, absPath) {
   const oldRelativePath = projectJson.componentPath[ID];
   if (typeof oldRelativePath !== "undefined") {
     for (const [k, v] of Object.entries(projectJson.componentPath)) {
-      if (isPathInside(convertPathSep(v), convertPathSep(oldRelativePath))) {
+      if (isPathInside(convertPathSep(v), convertPathSep(oldRelativePath)) || v === oldRelativePath) {
         projectJson.componentPath[k] = v.replace(oldRelativePath, newRelativePath);
       }
     }

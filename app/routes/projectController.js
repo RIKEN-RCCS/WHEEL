@@ -11,7 +11,6 @@ const klaw = require("klaw");
 const ARsshClient = require("arssh2-client");
 const glob = require("glob");
 const { create } = require("abc4");
-const { createNewComponent, updateComponent, updateStepNumber } = require("../core/componentFilesOperator");
 const { emitLongArray } = require("./utility");
 const { convertPathSep } = require("../core/pathUtils");
 const { readJsonGreedy, deliverFile } = require("../core/fileUtils");
@@ -49,7 +48,11 @@ const {
   removeFileLink,
   cleanComponent,
   removeComponent,
-  validateComponents
+  validateComponents,
+  createNewComponent,
+  updateComponent,
+  updateStepNumber,
+  getComponentTree
 } = require("../core/componentFilesOperator");
 const { getProjectState, setProjectState } = require("../core/projectFilesOperator");
 const { taskStateFilter } = require("../core/taskUtil");
@@ -790,6 +793,21 @@ async function onCleanComponent(emit, projectRootDir, targetID, cb) {
   cb(true);
 }
 
+async function onGetComponentTree(projectRootDir, rootDir, cb) {
+  if (typeof cb !== "function") {
+    getLogger(projectRootDir).error("getComponentTree must be called with call back function");
+  }
+  getLogger(projectRootDir).debug("getComponentTree event recieved:", rootDir);
+  const targetDir = path.isAbsolute(rootDir) ? rootDir : path.resolve(projectRootDir, rootDir);
+  try {
+    const rt = await getComponentTree(targetDir);
+    return cb(rt);
+  } catch (e) {
+    getLogger(projectRootDir).error("getComponentTree failed:", e);
+    return cb(false);
+  }
+}
+
 
 function registerListeners(socket, projectRootDir) {
   const emit = socket.emit.bind(socket);
@@ -857,6 +875,7 @@ function registerListeners(socket, projectRootDir) {
   socket.on("addFileLink", onAddFileLink.bind(null, emit, projectRootDir));
   socket.on("removeFileLink", onRemoveFileLink.bind(null, emit, projectRootDir));
   socket.on("cleanComponent", onCleanComponent.bind(null, emit, projectRootDir));
+  socket.on("getComponentTree", onGetComponentTree.bind(null, projectRootDir));
 }
 
 module.exports = registerListeners;

@@ -8,11 +8,9 @@ const getSchema = require("../../../app/db/jsonSchemas");
 //setup test framework
 const chai = require("chai");
 const expect = chai.expect;
-const sinon = require("sinon");
 chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
-chai.use(require("chai-as-promised"));
 
 //testee
 const {
@@ -37,17 +35,6 @@ const testDirRoot = "WHEEL_TEST_TMP";
 
 //helper functions
 const { createNewProject } = require("../../../app/core/projectFilesOperator");
-
-const grandsonSchema = {
-  type: "array",
-  items: {
-    required: ["pos", "type"],
-    properties: {
-      type: { enum: ["task", "if", "workflow", "parameterStudy", "for", "while", "foreach"] },
-      pos: getSchema("pos")
-    }
-  }
-};
 
 describe("workflow editor UT", function() {
   this.timeout(0);
