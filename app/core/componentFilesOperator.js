@@ -975,10 +975,10 @@ async function isComponentDir(target) {
  */
 async function getComponentTree(projectRootDir, rootDir) {
   const projectJson = await readJsonGreedy(path.resolve(projectRootDir, projectJsonFilename));
-  const start = path.isAbsolute(rootDir) ? path.relative(projectRootDir, rootDir) : rootDir;
+  const start = path.isAbsolute(rootDir) ? path.relative(projectRootDir, rootDir) || "./" : rootDir;
   const componentJsonFileList = Object.values(projectJson.componentPath)
     .filter((dirname)=>{
-      return isPathInside(dirname, start) || dirname === start;
+      return isPathInside(dirname, start) || path.normalize(dirname) === path.normalize(start);
     })
     .map((dirname)=>{
       return path.join(dirname, componentJsonFilename);
@@ -987,26 +987,22 @@ async function getComponentTree(projectRootDir, rootDir) {
     return readJsonGreedy(path.resolve(projectRootDir, target));
   }));
 
-
   //Naive implementation
   const rootIndex = componentJsonFileList.find((e)=>{
     return path.basename(e) === start;
   });
   if (rootIndex === -1) {
-    return Promise.reject(new Error("root component not found"));
+    throw Promise.reject(new Error("root component not found"));
   }
 
   const root = componentJsonList.splice(rootIndex, 1)[0];
-  root.children = [];
 
   while (componentJsonList.length > 0) {
     const target = componentJsonList.pop();
     const parentComponent = componentJsonList.find((e)=>{
       return e.ID === target.parent;
-    });
-    if (typeof parentComponent === "undefined") {
-      root.children.push(target);
-    } else if (Array.isArray(parentComponent.children)) {
+    }) || root;
+    if (Array.isArray(parentComponent.children)) {
       parentComponent.children.push(target);
     } else {
       parentComponent.children = [target];

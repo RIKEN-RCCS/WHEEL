@@ -11,6 +11,7 @@ const expect = chai.expect;
 chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-json-schema"));
+chai.use(require("deep-equal-in-any-order"));
 
 //testee
 const {
@@ -26,7 +27,8 @@ const {
   addFileLink,
   removeLink,
   removeFileLink,
-  removeComponent
+  removeComponent,
+  getComponentTree
 } = require("../../../app/core/componentFilesOperator");
 
 
@@ -108,31 +110,58 @@ describe("workflow editor UT", function() {
     const source0 = await createNewComponent(projectRootDir, path.join(projectRootDir), "source", { x: 6, y: 6 });
 
     await updateComponent(projectRootDir, task0.ID, "name", "task0");
+    task0.name = "task0";
     await updateComponent(projectRootDir, wf1.ID, "name", "wf1");
+    wf1.name = "wf1";
     await updateComponent(projectRootDir, task1.ID, "name", "task1");
+    task1.name = "task1";
     await updateComponent(projectRootDir, wf2.ID, "name", "wf2");
+    wf2.name = "wf2";
     await updateComponent(projectRootDir, task2.ID, "name", "task2");
+    task2.name = "task2";
     await updateComponent(projectRootDir, foreach0.ID, "name", "foreach0");
+    foreach0.name = "foreach0";
 
     await addLink(projectRootDir, task0.ID, wf1.ID, false);
+    task0.next.push(wf1.ID);
+    wf1.previous.push(task0.ID);
     await addLink(projectRootDir, wf1.ID, foreach0.ID, false);
+    wf1.next.push(foreach0.ID);
+    foreach0.previous.push(wf1.ID);
 
     await addOutputFile(projectRootDir, task0.ID, "foo");
+    task0.outputFiles.push({ name: "foo", dst: [] });
     await addOutputFile(projectRootDir, wf1.ID, "hoge");
+    wf1.outputFiles.push({ name: "hoge", dst: [] });
     await addOutputFile(projectRootDir, task1.ID, "a");
+    task1.outputFiles.push({ name: "a", dst: [] });
     await addOutputFile(projectRootDir, wf2.ID, "e");
+    wf2.outputFiles.push({ name: "e", dst: [] });
     await addOutputFile(projectRootDir, task2.ID, "d");
+    task2.outputFiles.push({ name: "d", dst: [] });
     await renameOutputFile(projectRootDir, source0.ID, 0, "source");
+    source0.outputFiles[0].name = "source";
 
     await addInputFile(projectRootDir, wf1.ID, "bar");
+    wf1.inputFiles.push({ name: "bar", src: [] });
     await addInputFile(projectRootDir, foreach0.ID, "hoge");
+    foreach0.inputFiles.push({ name: "hoge", src: [] });
     await addInputFile(projectRootDir, task1.ID, "f");
+    task1.inputFiles.push({ name: "f", src: [] });
     await addInputFile(projectRootDir, wf2.ID, "b");
+    wf2.inputFiles.push({ name: "b", src: [] });
     await addInputFile(projectRootDir, task2.ID, "c");
+    task2.inputFiles.push({ name: "c", src: [] });
     await addInputFile(projectRootDir, viewer0.ID, "viewer");
+    viewer0.inputFiles.push({ name: "viewer", src: [] });
 
     await addFileLink(projectRootDir, task0.ID, "foo", wf1.ID, "bar");
+    task0.outputFiles[0].dst.push({ dstName: "bar", dstNode: wf1.ID });
+    wf1.inputFiles[0].src.push({ srcName: "foo", srcNode: task0.ID });
     await addFileLink(projectRootDir, wf1.ID, "hoge", foreach0.ID, "hoge");
+    wf1.outputFiles[0].dst.push({ dstName: "hoge", dstNode: foreach0.ID });
+    foreach0.inputFiles[0].src.push({ srcName: "hoge", srcNode: wf1.ID });
+
 
     components = {
       root: rootWf,
@@ -204,50 +233,6 @@ describe("workflow editor UT", function() {
     await fs.remove(testDirRoot);
   });
 
-  /*
-   * TODO move to socketIO handler's test
-  describe("#onWorkflowRequest", ()=>{
-    it("should send root, child, and grandson json data", async()=>{
-      await onWorkflowRequest(emit, projectRootDir, components.root.ID, cb);
-      expect(cb).to.have.been.calledOnce;
-      expect(cb).to.have.been.calledWith(true);
-      expect(emit).to.have.been.calledOnce;
-      expect(emit).to.have.been.calledWith("workflow");
-      grandsonSchema.minLength = 2;
-      grandsonSchema.maxLength = 2;
-      expect(emit.args[0][1]).to.jsonSchema(rootSchema);
-    });
-    it("should send wf1, child, and grandson json data", async()=>{
-      setCwd(projectRootDir, path.join(projectRootDir, "wf1"));
-      await onWorkflowRequest(emit, projectRootDir, components.wf1.ID, cb);
-      expect(cb).to.have.been.calledOnce;
-      expect(cb).to.have.been.calledWith(true);
-      expect(emit).to.have.been.calledOnce;
-      expect(emit).to.have.been.calledWith("workflow");
-      grandsonSchema.minLength = 1;
-      grandsonSchema.maxLength = 1;
-      expect(emit.args[0][1]).to.jsonSchema({
-        properties: {
-          ID: { enum: [components.wf1.ID] },
-          descendants: {
-            type: "array",
-            items: {
-              properties: {
-                parent: { enum: [components.wf1.ID] },
-                ID: { enum: [components.task1.ID, components.wf2.ID] },
-                descendants: grandsonSchema
-              },
-              required: ["parent", "ID"]
-            },
-            minLength: 2,
-            maxLength: 2
-          }
-        },
-        required: ["ID", "descendants"]
-      });
-    });
-  });
-  */
   describe("#createNewComponent", ()=>{
     it("should create new task wf1", async()=>{
       const newTask0 = await createNewComponent(projectRootDir, path.join(projectRootDir, "wf1"), "task", { x: 10, y: 10 });
@@ -647,6 +632,22 @@ describe("workflow editor UT", function() {
       task2Schema.properties.inputFiles.items[0].properties.src.items = getSchema("emptyArray");
       expect(path.join(projectRootDir, "wf1", "wf2", componentJsonFilename)).to.be.a.file().with.json.using.schema(wf2Schema);
       expect(path.join(projectRootDir, "wf1", "wf2", "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema(task2Schema);
+    });
+  });
+  describe("#getComponentTree", ()=>{
+    beforeEach(()=>{
+      components.root.children = [components.task0, components.wf1, components.foreach0, components.viewer0, components.source0];
+      components.wf1.children = [components.task1, components.wf2];
+      components.wf2.children = [components.task2];
+    });
+    it("should get all componentJson from root", async()=>{
+      expect(await getComponentTree(projectRootDir, projectRootDir)).to.equalInAnyOrder(components.root);
+    });
+    it("should get all componentJson from specified component", async()=>{
+      expect(await getComponentTree(projectRootDir, path.join(projectRootDir, "wf1"))).to.equalInAnyOrder(components.wf1);
+    });
+    it("should get just leaf component", async()=>{
+      expect(await getComponentTree(projectRootDir, path.join(projectRootDir, "foreach0"))).to.eql(components.foreach0);
     });
   });
 });
