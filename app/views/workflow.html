@@ -22,647 +22,693 @@
 <body>
   <div id="app">
     <v-app>
-    <!-- header始まり -->
-    <header>
-      <a href="home" id="title">WHEEL</a>
-      <span id="titleUser">
-        <img src="/image/img_user.png" class="icon" id="img_user" align="middle">
-        <span id="titleUserName" class="titleUserName">user01</span>
-      </span>
-      <button type="button" id="drawerButton" v-on:click="clickDrawerButton">
-        <img src="/image/btn_menu_n.png" alt="config" id="drawerIcon" class="btn_menu_n">
-      </button>
-    </header>
-    <!-- header終わり -->
+      <!-- header始まり -->
+      <header>
+        <a href="home" id="title">WHEEL</a>
+        <span id="titleUser">
+          <img src="/image/img_user.png" class="icon" id="img_user" align="middle">
+          <span id="titleUserName" class="titleUserName">user01</span>
+        </span>
+        <button type="button" id="drawerButton" v-on:click="clickDrawerButton">
+          <img src="/image/btn_menu_n.png" alt="config" id="drawerIcon" class="btn_menu_n">
+        </button>
+      </header>
+      <!-- header終わり -->
 
-    <div id="normalArea" v-show="normal">
-      <!-- コントローラバー -->
-      <div class="projectInfoArea">
-        <div id="projectInfo" v-on:click='showProjectInfo'>
-          <img src="/image/img_folder.png" id="img_project" class="icon" />
-          <div id="projectName"></div>
-        </div>
-        <div id="projectState"></div>
-        <figure class="controler_button">
-          <img src="/image/btn_play_n.png" id="run_button" class="img_btn_contoroler" title="Run"
-            v-on:click='clickRunButton' v-on:mouseover='mouseoverRunButton' v-on:mouseleave='mouseleaveRunButton'>
-        </figure>
-        <figure id="pause_menu" class="controler_button" v-on:click='clickPauseButton'>
-          <img src="/image/btn_pause_n.png" class="img_btn_contoroler" id="pause_button" title="Pause"
-            v-on:mouseover='mouseoverPauseButton' v-on:mouseleave='mouseleavePauseButton' />
-        </figure>
-        <figure id="stop_menu" class="controler_button" v-on:click='clickStopButton'>
-          <img src="/image/btn_stop_n.png" class="img_btn_contoroler" id="stop_button" title="Stop"
-            v-on:mouseover='mouseoverStopButton' v-on:mouseleave='mouseleaveStopButton' />
-        </figure>
-        <figure id="clean_menu" class="controler_button" v-on:click='clickCleanButton'>
-          <img src="/image/btn_replay_n.png" class="img_btn_contoroler" id="clean_button" title="Clean"
-            v-on:mouseover='mouseoverCleanButton' v-on:mouseleave='mouseleaveCleanButton' />
-        </figure>
-        <div class="projectInfoRightArea">
-          <div class="date_title">Create :</div>
-          <div id="project_create_date" class="date_time"></div>
-          <div class="date_title">Update :</div>
-          <div id="project_update_date" class="date_time"></div>
-          <figure id="save_button" class="figure_button" v-on:click='clickSaveButton'
-            v-on:mouseover='mouseoverSaveButton' v-on:mouseleave='mouseleaveSaveButton'>
-            <img src="/image/btn_save_n.png" class="img_btn_contoroler" id="save_button_img" />
-            <figcaption class="figure_caption">Save</figcaption>
+      <div id="normalArea" v-show="normal">
+        <!-- コントローラバー -->
+        <div class="projectInfoArea">
+          <div id="projectInfo" v-on:click="showProjectInfo">
+            <img src="/image/img_folder.png" id="img_project" class="icon" />
+            <div id="projectName"></div>
+          </div>
+          <div id="projectState"></div>
+          <figure class="controler_button">
+            <img src="/image/btn_play_n.png" id="run_button" class="img_btn_contoroler" title="Run"
+              v-on:click="clickRunButton" v-on:mouseover="mouseoverRunButton" v-on:mouseleave="mouseleaveRunButton">
           </figure>
-          <figure id="revert_button" class="figure_button" v-on:click='clickRevertButton'
-            v-on:mouseover='mouseoverRevertButton' v-on:mouseleave='mouseleaveRevertButton'>
-            <img src="/image/btn_reset_n.png" class="img_btn_contoroler" id="revert_button_img" />
-            <figcaption class="figure_caption">Revert</figcaption>
+          <figure id="pause_menu" class="controler_button" v-on:click="clickPauseButton">
+            <img src="/image/btn_pause_n.png" class="img_btn_contoroler" id="pause_button" title="Pause"
+              v-on:mouseover="mouseoverPauseButton" v-on:mouseleave="mouseleavePauseButton" />
           </figure>
-        </div>
-      </div>
-      <!-- ビューコントローラ -->
-      <div id="viewControlArea">
-        <button type="button" name="view" value="graph" id="graphView" class="btn_view_change"
-          v-on:click='changeGraphViewArea'>
-          <img src="/image/btn_flow_n.png" alt="graph">
-        </button>
-        <button type="button" name="view" value="list" id="listView" class="btn_view_change"
-          v-on:click='changeListViewArea'>
-          <img src="/image/btn_list_n.png" alt="List">
-        </button>
-        <span id="breadcrumb"></span>
-        <span id="cbMessageArea"></span>
-        <div class="viewControlRightArea"></div>
-      </div>
-      <!-- グラフビュー -->
-      <div id="workflow_graphview_area">
-        <!-- タスクライブラリメニュー -->
-        <div id="componentLibrary">
-          <p id="componentLibraryTitle">Component Library</p>
-          <div id="workflowComponents">
-            <ul id="task" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('task')"
-              draggable="true">
-              <li>
-                <img src="/image/img_task.png" class="imgSize" id="img_task" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">Task</li>
-            </ul>
-            <ul id="if" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('if')"
-              draggable="true">
-              <li>
-                <img src="/image/img_if.png" class="imgSize" id="img_if" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">If</li>
-            </ul>
-            <ul id="for" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('for')"
-              draggable="true">
-              <li>
-                <img src="/image/img_for.png" class="imgSize" id="img_for" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">For</li>
-            </ul>
-            <ul id="while" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('while')"
-              draggable="true">
-              <li>
-                <img src="/image/img_while.png" class="imgSize" id="img_while" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">While</li>
-            </ul>
-            <ul id="foreach" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('foreach')"
-              draggable="true">
-              <li>
-                <img src="/image/img_foreach.png" class="imgSize" id="img_foreach" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">Foreach</li>
-            </ul>
-            <ul id="source" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('source')"
-              draggable="true">
-              <li>
-                <img src="/image/img_source.png" class="imgSize" id="img_source" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">Source</li>
-            </ul>
-            <ul id="viewer" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('viewer')"
-              draggable="true">
-              <li>
-                <img src="/image/img_viewer.png" class="imgSize" id="img_viewer" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">Viewer</li>
-            </ul>
-            <ul id="PS" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('PS')"
-              draggable="true">
-              <li>
-                <img src="/image/img_parameterStudy.png" class="imgSize" id="img_parameterStudy" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">Parameter Study</li>
-            </ul>
-            <ul id="workflow" class="type" v-if="parentNodeType!=='stepjob'"
-              v-on:mouseover="createComponent('workflow')" draggable="true">
-              <li>
-                <img src="/image/img_workflow.png" class="imgSize" id="img_workflow" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">Workflow</li>
-            </ul>
-            <ul id="stepjob" class="type" v-if="parentNodeType==='workflow'" v-on:mouseover="createComponent('stepjob')"
-              draggable="true">
-              <li>
-                <img src="/image/img_stepjob.png" class="imgSize" id="img_stepjob" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">StepJob</li>
-            </ul>
-            <ul id="stepjobTask" class="type" v-if="parentNodeType==='stepjob'"
-              v-on:mouseover="createComponent('stepjobTask')" draggable="true">
-              <li>
-                <img src="/image/img_stepjobTask.png" class="imgSize" id="img_stepjobTask" draggable="false" />
-              </li>
-              <li class="workflowComponents-name">StepJobTask</li>
-            </ul>
-            <ul id="bulkjobTask" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('bulkjobTask')"
-            draggable="true">
-            <li>
-              <img src="/image/img_stepjobTask.png" class="imgSize" id="img_stepjobTask" draggable="false" />
-            </li>
-            <li class="workflowComponents-name">BulkJobTask</li>
-            </ul>
+          <figure id="stop_menu" class="controler_button" v-on:click="clickStopButton">
+            <img src="/image/btn_stop_n.png" class="img_btn_contoroler" id="stop_button" title="Stop"
+              v-on:mouseover="mouseoverStopButton" v-on:mouseleave="mouseleaveStopButton" />
+          </figure>
+          <figure id="clean_menu" class="controler_button" v-on:click="clickCleanButton">
+            <img src="/image/btn_replay_n.png" class="img_btn_contoroler" id="clean_button" title="Clean"
+              v-on:mouseover="mouseoverCleanButton" v-on:mouseleave="mouseleaveCleanButton" />
+          </figure>
+          <div class="projectInfoRightArea">
+            <div class="date_title">Create :</div>
+            <div id="project_create_date" class="date_time"></div>
+            <div class="date_title">Update :</div>
+            <div id="project_update_date" class="date_time"></div>
+            <figure id="save_button" class="figure_button" v-on:click="clickSaveButton"
+              v-on:mouseover="mouseoverSaveButton" v-on:mouseleave="mouseleaveSaveButton">
+              <img src="/image/btn_save_n.png" class="img_btn_contoroler" id="save_button_img" />
+              <figcaption class="figure_caption">Save</figcaption>
+            </figure>
+            <figure id="revert_button" class="figure_button" v-on:click="clickRevertButton"
+              v-on:mouseover="mouseoverRevertButton" v-on:mouseleave="mouseleaveRevertButton">
+              <img src="/image/btn_reset_n.png" class="img_btn_contoroler" id="revert_button_img" />
+              <figcaption class="figure_caption">Revert</figcaption>
+            </figure>
           </div>
         </div>
-        <!-- ライブラリーボタン -->
-        <div>
-          <button type="button" id="componentLibraryButton" class="componentLibraryButton"
-            v-on:click="showComponentLibrary">
-            <img src="/image/btn_openCloseR_n.png" alt="libraryButton" id="libraryButton">
+        <!-- ビューコントローラ -->
+        <div id="viewControlArea">
+          <button type="button" name="view" value="graph" id="graphView" class="btn_view_change"
+            v-on:click="changeGraphViewArea">
+            <img src="/image/btn_flow_n.png" alt="graph">
           </button>
+          <button type="button" name="view" value="list" id="listView" class="btn_view_change"
+            v-on:click="changeListViewArea">
+            <img src="/image/btn_list_n.png" alt="List">
+          </button>
+          <span id="breadcrumb"></span>
+          <span id="cbMessageArea"></span>
+          <div class="viewControlRightArea"></div>
         </div>
-        <!-- SVG描画領域 -->
-        <div id="node_svg" v-on:mousedown="clickBackground"></div>
-        <!-- プロパティ -->
-        <div id="property" class="property">
-          <div id="propertyArea">
-            <p id="propertyTitle">Property</p>
-            <div id="propertyComponents">
-              <div id="propertyDisableArea">
-                <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');"
-                  name="check" id="disableInputField" class="propertyDisable" value="true">
-                <label class="propertyCheckboxLabel" id="propertyDisable" for="propertyDisable">disable</label>
-              </div>
-              <span id="propertyType">
-                <img src="/image/img_workflow_p.png" id="img_node_type" />
-                <p id="propertyTypeName"></p>
-                <div v-if="node.state ==='finished' || node.state ==='failed'" id="stateButton">
-                  <button v-on:click="cleanComponentState" class="cleanStateButton" id="cleanStateButton">
-                    <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
-                  </button>
+        <!-- グラフビュー -->
+        <div id="workflow_graphview_area">
+          <!-- タスクライブラリメニュー -->
+          <div id="componentLibrary">
+            <p id="componentLibraryTitle">Component Library</p>
+            <div id="workflowComponents">
+              <ul id="task" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('task')"
+                draggable="true">
+                <li>
+                  <img src="/image/img_task.png" class="imgSize" id="img_task" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">Task</li>
+              </ul>
+              <ul id="if" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('if')"
+                draggable="true">
+                <li>
+                  <img src="/image/img_if.png" class="imgSize" id="img_if" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">If</li>
+              </ul>
+              <ul id="for" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('for')"
+                draggable="true">
+                <li>
+                  <img src="/image/img_for.png" class="imgSize" id="img_for" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">For</li>
+              </ul>
+              <ul id="while" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('while')"
+                draggable="true">
+                <li>
+                  <img src="/image/img_while.png" class="imgSize" id="img_while" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">While</li>
+              </ul>
+              <ul id="foreach" class="type" v-if="parentNodeType!=='stepjob'"
+                v-on:mouseover="createComponent('foreach')" draggable="true">
+                <li>
+                  <img src="/image/img_foreach.png" class="imgSize" id="img_foreach" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">Foreach</li>
+              </ul>
+              <ul id="source" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('source')"
+                draggable="true">
+                <li>
+                  <img src="/image/img_source.png" class="imgSize" id="img_source" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">Source</li>
+              </ul>
+              <ul id="viewer" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('viewer')"
+                draggable="true">
+                <li>
+                  <img src="/image/img_viewer.png" class="imgSize" id="img_viewer" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">Viewer</li>
+              </ul>
+              <ul id="PS" class="type" v-if="parentNodeType!=='stepjob'" v-on:mouseover="createComponent('PS')"
+                draggable="true">
+                <li>
+                  <img src="/image/img_parameterStudy.png" class="imgSize" id="img_parameterStudy" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">Parameter Study</li>
+              </ul>
+              <ul id="workflow" class="type" v-if="parentNodeType!=='stepjob'"
+                v-on:mouseover="createComponent('workflow')" draggable="true">
+                <li>
+                  <img src="/image/img_workflow.png" class="imgSize" id="img_workflow" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">Workflow</li>
+              </ul>
+              <ul id="stepjob" class="type" v-if="parentNodeType==='workflow'"
+                v-on:mouseover="createComponent('stepjob')" draggable="true">
+                <li>
+                  <img src="/image/img_stepjob.png" class="imgSize" id="img_stepjob" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">StepJob</li>
+              </ul>
+              <ul id="stepjobTask" class="type" v-if="parentNodeType==='stepjob'"
+                v-on:mouseover="createComponent('stepjobTask')" draggable="true">
+                <li>
+                  <img src="/image/img_stepjobTask.png" class="imgSize" id="img_stepjobTask" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">StepJobTask</li>
+              </ul>
+              <ul id="bulkjobTask" class="type" v-if="parentNodeType!=='stepjob'"
+                v-on:mouseover="createComponent('bulkjobTask')" draggable="true">
+                <li>
+                  <img src="/image/img_stepjobTask.png" class="imgSize" id="img_stepjobTask" draggable="false" />
+                </li>
+                <li class="workflowComponents-name">BulkJobTask</li>
+              </ul>
+            </div>
+          </div>
+          <!-- ライブラリーボタン -->
+          <div>
+            <button type="button" id="componentLibraryButton" class="componentLibraryButton"
+              v-on:click="showComponentLibrary">
+              <img src="/image/btn_openCloseR_n.png" alt="libraryButton" id="libraryButton">
+            </button>
+          </div>
+          <!-- SVG描画領域 -->
+          <div id="node_svg" v-on:mousedown="clickBackground"></div>
+          <!-- プロパティ -->
+          <div id="property" class="property">
+            <div id="propertyArea">
+              <p id="propertyTitle">Property</p>
+              <div id="propertyComponents">
+                <div id="propertyDisableArea">
+                  <input type="checkbox" v-model.lazy.trim="node.disable" v-on:change="updateProperty('disable');"
+                    name="check" id="disableInputField" class="propertyDisable" value="true">
+                  <label class="propertyCheckboxLabel" id="propertyDisable" for="propertyDisable">disable</label>
                 </div>
-              </span>
-              <div>
-                <label for="nameInputField" id="propertyName">Name</label>
+                <span id="propertyType">
+                  <img src="/image/img_workflow_p.png" id="img_node_type" />
+                  <p id="propertyTypeName"></p>
+                  <div v-if="node.state ==='finished' || node.state ==='failed'" id="stateButton">
+                    <button v-on:click="cleanComponentState" class="cleanStateButton" id="cleanStateButton">
+                      <img src="/image/btn_replay_n.png" alt="config" class="btn_menu_n">
+                    </button>
+                  </div>
+                </span>
                 <div>
-                  <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField"
-                    v-on:blur="updateNodeName">
-                </div>
-              </div>
-              <div>
-                <label for="descriptionInputField" id="propertyDescription">Description</label>
-                <div>
-                  <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField"
-                    v-on:blur="updateProperty('description')"></textarea>
-                </div>
-              </div>
-              <div v-if="node.hasOwnProperty('script')">
-                <label for="scriptInputField" id="propertyScript">Script</label>
-                <div>
-                  <select name="script" v-model="node.script" id="scriptSelectField"
-                    v-on:change="updateProperty('script')">
-                    <option v-if="nodeScript !== null">{{ nodeScript }}</option>
-                    <option v-for="file in fileList" v-if="file.type === 'file' && file.name !== nodeScript"
-                      v-bind:value="file.name" v-bind:key="file.name">{{ file.name }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-              <div v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
-                <label id="propertyInputFiles">InputFiles</label>
-                <div v-for="(inputFile, index) in node.inputFiles">
-                  <input type="text" v-model.lazy.trim="inputFile.name"
-                    v-on:blur="renameInputFile(inputFile.name, index)" class="newInputFileNameInputField">
-                  <button v-on:click="delInputFile(index)" class="inputAddDelButton">
-                    <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
-                  </button>
-                </div>
-                <div>
-                  <input type="text" v-model.lazy.trim="newInputFilename" class="newInputFileNameInputField">
-                  <button v-on:click="addInputFile" class="inputAddDelButton">
-                    <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
-                  </button>
-                </div>
-              </div>
-              <div v-if="node.type !=='viewer' && node.type !=='source' && node.hasOwnProperty('outputFiles')">
-                <label id="propertyOutputFiles">OutputFiles</label>
-                <div v-for="(outputFile, index) in node.outputFiles">
-                  <input type="text" v-model.lazy.trim="outputFile.name"
-                    v-on:blur="renameOutputFile(outputFile.name, index)" class="newOutputFileNameInputField">
-                  <button v-on:click="delOutputFile(index)" class="outputAddDelButton">
-                    <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
-                  </button>
-                </div>
-                <div>
-                  <input type="text" v-model.lazy.trim="newOutputFilename" class="newOutputFileNameInputField">
-                  <button v-on:click="addOutputFile" class="outputAddDelButton">
-                    <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
-                  </button>
-                </div>
-              </div>
-              <template v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')">
-                <label id="propertyOutputFile">OutputFile</label>
-                <div>
-                  <select name="outputFile" id="outputFileSelectField" v-model="node.outputFiles[0].name"
-                    v-on:change="renameOutputFile(node.outputFiles[0].name, 0)">
-                    <option v-for="outputFile in fileList"
-                      v-if="outputFile.type === 'file' || outputFile.type === 'dir'" v-bind:value="outputFile.name"
-                      v-bind:key="outputFile.name">{{ outputFile.name }}</option>
-                  </select>
-                </div>
-              </template>
-              <div v-if="node.hasOwnProperty('host') && node.type !== 'stepjobTask'">
-                <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
-                <div>
-                  <select name="remotehost" v-model="node.host" id="remotehostSelectField"
-                    v-on:change="updateQueueList(); updateProperty('host');">
-                    <option value="localhost">localhost</option>
-                    <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
-                  </select>
-                </div>
-              </div>
-              <div
-                v-if="node.hasOwnProperty('useJobScheduler') && !(node.type === 'stepjobTask' || node.type === 'stepjob' || node.type === 'bulkjobTask')"
-                class="checkboxArea">
-                <input type="checkbox" v-model.lazy.trim="node.useJobScheduler"
-                  v-on:change="updateQueueList();updateProperty('useJobScheduler');" name="check"
-                  id="useJobSchedulerFlagField" value="true">
-                <label class="propertyCheckboxLabel" id="propertyuseJobScheduler" for="parameterRemotehost">use
-                  JobScheduler</label>
-              </div>
-              <div v-if="node.hasOwnProperty('queue') && node.type !== 'stepjobTask'">
-                <label for="parameterRemotehost" id="propertyQueue">Queue</label>
-                <div>
-                  <select name="queue" v-model="node.queue" id="queueSelectField" v-on:change="updateProperty('queue')"
-                    v-bind:disabled="node.useJobScheduler !== true"
-                    v-bind:class="{queueSelectFieldColor: node.useJobScheduler}">
-                    <option v-if="node.useJobScheduler === true" v-for="v in queueList" v-bind:value="v" v-bind:key="v">
-                      {{ v}}</option>
-                  </select>
-                </div>
-              </div>
-              <div v-if="node.hasOwnProperty('uploadOnDemand')" class="checkboxArea">
-                <input type="checkbox" v-model.lazy.trim="node.uploadOnDemand"
-                  v-on:change="updateProperty('uploadOnDemand');" name="check" id="uploadOnDemandFlagField"
-                  value="true">
-                <label class="propertyCheckboxLabel" id="propertyuploadOnDemand">uploadOnDemand</label>
-              </div>
-              <div v-if="node.hasOwnProperty('parameterFile') && node.type !== 'bulkjobTask'">
-                <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>
-                <div>
-                  <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectField"
-                    v-on:change="updateProperty('parameterFile')">
-                    <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'" v-bind:value="paramFile.name"
-                      v-bind:key="paramFile.name">{{ paramFile.name }}</option>
-                  </select>
-                </div>
-              </div>
-              <div v-if="node.type === 'task'">
-                <label for="retry" id="propertyRetry">Retry</label>
-                <div id="propertyRetryArea">
+                  <label for="nameInputField" id="propertyName">Name</label>
                   <div>
-                    <label for="retryTimesInputField" id="propertyRetryTimes">times</label>
+                    <input type="text" v-model.lazy.trim="node.name" spellcheck="false" id="nameInputField"
+                      v-on:blur="updateNodeName">
+                  </div>
+                </div>
+                <div>
+                  <label for="descriptionInputField" id="propertyDescription">Description</label>
+                  <div>
+                    <textarea v-model.lazy.trim="node.description" spellcheck="false" id="descriptionInputField"
+                      v-on:blur="updateProperty('description')"></textarea>
+                  </div>
+                </div>
+                <div v-if="node.hasOwnProperty('script')">
+                  <label for="scriptInputField" id="propertyScript">Script</label>
+                  <div>
+                    <select name="script" v-model="node.script" id="scriptSelectField"
+                      v-on:change="updateProperty('script')">
+                      <option v-if="nodeScript !== null">{{ nodeScript }}</option>
+                      <option v-for="file in fileList" v-if="file.type === 'file' && file.name !== nodeScript"
+                        v-bind:value="file.name" v-bind:key="file.name">{{ file.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div v-if="node.type !=='source' && node.hasOwnProperty('inputFiles')">
+                  <label id="propertyInputFiles">InputFiles</label>
+                  <div v-for="(inputFile, index) in node.inputFiles">
+                    <input type="text" v-model.lazy.trim="inputFile.name"
+                      v-on:blur="renameInputFile(inputFile.name, index)" class="newInputFileNameInputField">
+                    <button v-on:click="delInputFile(index)" class="inputAddDelButton">
+                      <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
+                    </button>
                   </div>
                   <div>
-                    <input type="number" v-model.number.lazy.trim="node.retryTimes" id="retryTimesInputField"
-                      v-on:blur="updateProperty('retryTimes')">
+                    <input type="text" v-model.lazy.trim="newInputFilename" class="newInputFileNameInputField">
+                    <button v-on:click="addInputFile" class="inputAddDelButton">
+                      <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
+                    </button>
                   </div>
-                  <label for="retryConditionInputField" id="propertyRetryCondition">Condition</label>
-                  <div id="retryConditionTypeFlags">
-                    <div>
-                      <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType"
-                        id="retryConditionFlag1" value="1">file</div>
-                    <div>
-                      <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType"
-                        id="retryConditionFlag2" value="2">JavaScript</div>
+                </div>
+                <div v-if="node.type !=='viewer' && node.type !=='source' && node.hasOwnProperty('outputFiles')">
+                  <label id="propertyOutputFiles">OutputFiles</label>
+                  <div v-for="(outputFile, index) in node.outputFiles">
+                    <input type="text" v-model.lazy.trim="outputFile.name"
+                      v-on:blur="renameOutputFile(outputFile.name, index)" class="newOutputFileNameInputField">
+                    <button v-on:click="delOutputFile(index)" class="outputAddDelButton">
+                      <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
+                    </button>
                   </div>
-                  <div v-if="retryConditionInputType === '1'">
-                    <select name="retryCondition" class="conditionFormat" id="retryConditionSelectField"
-                      v-model="node.retryCondition" v-on:change="updateProperty('retryCondition')">
+                  <div>
+                    <input type="text" v-model.lazy.trim="newOutputFilename" class="newOutputFileNameInputField">
+                    <button v-on:click="addOutputFile" class="outputAddDelButton">
+                      <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
+                    </button>
+                  </div>
+                </div>
+                <template v-if="node.type ==='source' && node.hasOwnProperty('outputFiles')">
+                  <label id="propertyOutputFile">OutputFile</label>
+                  <div>
+                    <select name="outputFile" id="outputFileSelectField" v-model="node.outputFiles[0].name"
+                      v-on:change="renameOutputFile(node.outputFiles[0].name, 0)">
+                      <option v-for="outputFile in fileList"
+                        v-if="outputFile.type === 'file' || outputFile.type === 'dir'" v-bind:value="outputFile.name"
+                        v-bind:key="outputFile.name">{{ outputFile.name }}</option>
+                    </select>
+                  </div>
+                </template>
+                <div v-if="node.hasOwnProperty('host') && node.type !== 'stepjobTask'">
+                  <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
+                  <div>
+                    <select name="remotehost" v-model="node.host" id="remotehostSelectField"
+                      v-on:change="updateQueueList(); updateProperty('host');">
+                      <option value="localhost">localhost</option>
+                      <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div v-if="node.hasOwnProperty('useJobScheduler') && !(node.type === 'stepjobTask')"
+                  class="checkboxArea">
+                  <input v-if="node.type === 'task'" type="checkbox" v-bind:disabled="node.type === 'bulkjobTask'"
+                    v-model.lazy.trim="node.useJobScheduler"
+                    v-on:change="updateQueueList();updateProperty('useJobScheduler');" name="check"
+                    id="useJobSchedulerFlagField" value="true">
+                  <input v-if="node.type === 'stepjob' || node.type === 'bulkjobTask'" type="checkbox"
+                    v-model.lazy.trim="node.useJobScheduler" disabled>
+                  <label class="propertyCheckboxLabel" id="propertyuseJobScheduler" for="parameterRemotehost">use
+                    JobScheduler</label>
+                </div>
+                <div v-if="node.hasOwnProperty('queue') && node.type !== 'stepjobTask'">
+                  <label for="parameterRemotehost" id="propertyQueue">Queue</label>
+                  <div>
+                    <select name="queue" v-model="node.queue" id="queueSelectField"
+                      v-on:change="updateProperty('queue')" v-bind:disabled="node.useJobScheduler !== true"
+                      v-bind:class="{queueSelectFieldColor: node.useJobScheduler}">
+                      <option v-if="node.useJobScheduler === true" v-for="v in queueList" v-bind:value="v"
+                        v-bind:key="v">
+                        {{ v}}</option>
+                    </select>
+                  </div>
+                </div>
+                <div v-if="node.hasOwnProperty('uploadOnDemand')" class="checkboxArea">
+                  <input type="checkbox" v-model.lazy.trim="node.uploadOnDemand"
+                    v-on:change="updateProperty('uploadOnDemand');" name="check" id="uploadOnDemandFlagField"
+                    value="true">
+                  <label class="propertyCheckboxLabel" id="propertyuploadOnDemand">uploadOnDemand</label>
+                </div>
+                <div v-if="node.hasOwnProperty('parameterFile') && node.type !== 'bulkjobTask'">
+                  <label for="parameterFileInputField" id="propertyParameterSettingFile">Parameter setting file</label>
+                  <div>
+                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectField"
+                      v-on:change="updateProperty('parameterFile')">
+                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'"
+                        v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div v-if="node.type === 'task'">
+                  <label for="retry" id="propertyRetry">Retry</label>
+                  <div id="propertyRetryArea">
+                    <div>
+                      <label for="retryTimesInputField" id="propertyRetryTimes">times</label>
+                    </div>
+                    <div>
+                      <input type="number" v-model.number.lazy.trim="node.retryTimes" id="retryTimesInputField"
+                        v-on:blur="updateProperty('retryTimes')">
+                    </div>
+                    <label for="retryConditionInputField" id="propertyRetryCondition">Condition</label>
+                    <div id="retryConditionTypeFlags">
+                      <div>
+                        <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType"
+                          id="retryConditionFlag1" value="1">file</div>
+                      <div>
+                        <input type="radio" v-model="retryConditionInputType" name="retryConditionInputType"
+                          id="retryConditionFlag2" value="2">JavaScript</div>
+                    </div>
+                    <div v-if="retryConditionInputType === '1'">
+                      <select name="retryCondition" class="conditionFormat" id="retryConditionSelectField"
+                        v-model="node.retryCondition" v-on:change="updateProperty('retryCondition')">
+                        <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'"
+                          v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}
+                        </option>
+                      </select>
+                    </div>
+                    <div v-if="retryConditionInputType === '2'">
+                      <input type="text" v-model.lazy.trim="node.retryCondition" spellcheck="false"
+                        id="retryConditionInputField" v-on:blur="updateProperty('retryCondition')">
+                    </div>
+                  </div>
+                </div>
+                <div v-if="node.hasOwnProperty('condition')">
+                  <label for="conditionInputField" id="propertyCondition">Condition</label>
+                  <div id="conditionTypeFlags">
+                    <div>
+                      <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag1"
+                        value="1">file</div>
+                    <div>
+                      <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag2"
+                        value="2">JavaScript</div>
+                  </div>
+                  <div v-if="conditionInputType === '1'">
+                    <select name="condition" class="conditionFormat" id="conditionSelectField" v-model="node.condition"
+                      v-on:change="updateProperty('condition')">
                       <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'"
                         v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}
                       </option>
                     </select>
                   </div>
-                  <div v-if="retryConditionInputType === '2'">
-                    <input type="text" v-model.lazy.trim="node.retryCondition" spellcheck="false"
-                      id="retryConditionInputField" v-on:blur="updateProperty('retryCondition')">
+                  <div v-if="conditionInputType === '2'">
+                    <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField"
+                      v-on:blur="updateProperty('condition')">
                   </div>
                 </div>
-              </div>
-              <div v-if="node.hasOwnProperty('condition')">
-                <label for="conditionInputField" id="propertyCondition">Condition</label>
-                <div id="conditionTypeFlags">
+                <div v-if="node.hasOwnProperty('indexList')">
+                  <label id="propertyIndexList">index list</label>
+                  <div v-for="(v, i) in node.indexList">
+                    <input type="text" v-model.lazy.trim="node.indexList[i]" v-on:blur="updateProperty('indexList')"
+                      class="newIndexListField">
+                    <button v-on:click="delIndexOfForeach(i)" class="indexListButton">
+                      <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
+                    </button>
+                  </div>
                   <div>
-                    <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag1"
-                      value="1">file</div>
-                  <div>
-                    <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag2"
-                      value="2">JavaScript</div>
-                </div>
-                <div v-if="conditionInputType === '1'">
-                  <select name="condition" class="conditionFormat" id="conditionSelectField" v-model="node.condition"
-                    v-on:change="updateProperty('condition')">
-                    <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'"
-                      v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}
-                    </option>
-                  </select>
-                </div>
-                <div v-if="conditionInputType === '2'">
-                  <input type="text" v-model.lazy.trim="node.condition" spellcheck="false" id="conditionInputField"
-                    v-on:blur="updateProperty('condition')">
-                </div>
-              </div>
-              <div v-if="node.hasOwnProperty('indexList')">
-                <label id="propertyIndexList">index list</label>
-                <div v-for="(v, i) in node.indexList">
-                  <input type="text" v-model.lazy.trim="node.indexList[i]" v-on:blur="updateProperty('indexList')"
-                    class="newIndexListField">
-                  <button v-on:click="delIndexOfForeach(i)" class="indexListButton">
-                    <img src="/image/btn_hostDelete_n.png" alt="config" class="btn_menu_n">
-                  </button>
-                </div>
-                <div>
-                  <input type="text" v-model.lazy.trim="newIndexOfForeach" class="newIndexListField">
-                  <button v-on:click="addIndexOfForeach" class="indexListButton">
-                    <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
-                  </button>
-                </div>
-              </div>
-              <div v-if="node.hasOwnProperty('start')">
-                <label for="startInputField" id="propertyStart">start</label>
-                <input type="number" v-model.number.lazy.trim="node.start" id="startInputField"
-                  v-on:blur="updateProperty('start')">
-                <label for="endInputField" id="propertyEnd">end</label>
-                <input type="number" v-model.number.lazy.trim="node.end" id="endInputField"
-                  v-on:blur="updateProperty('end')">
-                <div v-if="node.hasOwnProperty('step')">
-                  <label for="stepInputField" id="propertyStep">step</label>
-                  <input type="number" v-model.number.lazy.trim="node.step" id="stepInputField"
-                    v-on:blur="updateProperty('step')">
-                </div>
-                <div v-if="node.hasOwnProperty('keep')">
-                  <label for="keepInputField" id="propertykeep">number to keep last loop index</label>
-                  <div>
-                    <input type="number" v-model.number.lazy.trim="node.keep" id="keepInputField"
-                      v-on:blur="updateProperty('keep')" min="0" pattern="^[0-9]+$">
+                    <input type="text" v-model.lazy.trim="newIndexOfForeach" class="newIndexListField">
+                    <button v-on:click="addIndexOfForeach" class="indexListButton">
+                      <img src="/image/btn_addHost_n.png" alt="config" class="btn_menu_n">
+                    </button>
                   </div>
                 </div>
-              </div>
-              <div v-if="node.type === 'stepjobTask'">
-                <label for="dependencyInputField" id="propertyUseDependency">Dependency</label>
-                <div>
-                  <input type="checkbox" v-model.lazy.trim="node.useDependency"
-                    v-on:change="updateProperty('useDependency');" name="check" id="useDependencyFlagField"
-                    value="true">
-                  <label class="propertyCheckboxLabel">use dependency</label>
+                <div v-if="node.hasOwnProperty('start')">
+                  <label for="startInputField" id="propertyStart">start</label>
+                  <input type="number" v-model.number.lazy.trim="node.start" id="startInputField"
+                    v-on:blur="updateProperty('start')">
+                  <label for="endInputField" id="propertyEnd">end</label>
+                  <input type="number" v-model.number.lazy.trim="node.end" id="endInputField"
+                    v-on:blur="updateProperty('end')">
+                  <div v-if="node.hasOwnProperty('step')">
+                    <label for="stepInputField" id="propertyStep">step</label>
+                    <input type="number" v-model.number.lazy.trim="node.step" id="stepInputField"
+                      v-on:blur="updateProperty('step')">
+                  </div>
+                  <div v-if="node.hasOwnProperty('keep')">
+                    <label for="keepInputField" id="propertykeep">number to keep last loop index</label>
+                    <div>
+                      <input type="number" v-model.number.lazy.trim="node.keep" id="keepInputField"
+                        v-on:blur="updateProperty('keep')" min="0" pattern="^[0-9]+$">
+                    </div>
+                  </div>
                 </div>
-                <label for="dependencyInputField" id="propertyStepNumber">step number : {{node.stepnum}}</label>
-                <div>
-                  <label for="dependencyInputField" id="propertyDependencyForm">form</label>
-                </div>
-                <div>
-                  <input type="text" v-model.lazy.trim="node.dependencyForm" spellcheck="false"
-                    id="dependencyInputField" v-bind:disabled="node.useDependency !== true" v-bind:class="{dependencyInputFieldColor: node.useDependency}"
-                    v-on:blur="updateProperty('dependencyForm')">
-                </div>
-              </div>
-              <div v-if="node.type === 'bulkjobTask'">
-                <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
-                <div>
-                  <label for="startBulkNumberInputField" id="propertyStartBulkNumber">start</label>
-                  <input type="number" v-model.number.lazy.trim="node.startBulkNumber" id="startBulkNumberInputField" v-bind:disabled="node.usePSSettingFile === true"
-                  v-bind:class="{bulkNumberInputFieldColor: node.usePSSettingFile}" v-on:blur="updateProperty('startBulkNumber')">
-                  <label for="endBulkNumberInputField" id="propertyEndBulkNumber">end</label>
-                  <input type="number" v-model.number.lazy.trim="node.endBulkNumber" id="endBulkNumberInputField" v-bind:disabled="node.usePSSettingFile === true"
-                  v-bind:class="{bulkNumberInputFieldColor: node.usePSSettingFile}" v-on:blur="updateProperty('endBulkNumber')"> 
-                </div>
-                <div>
-                  <input type="checkbox" v-model.lazy.trim="node.usePSSettingFile" name="check" id="usePSSettingFile" v-on:change="updateProperty('usePSSettingFile');"
-                    value="true">
-                  <label class="propertyCheckboxLabel">use Parameter SettingFile</label>
-                </div>
-                <div v-if="node.hasOwnProperty('parameterFile')">
-                  <label for="parameterFileInputField" id="propertyParameterSettingFileForBulkjob">Parameter setting file</label>
+                <div v-if="node.type === 'stepjobTask'">
+                  <label for="dependencyInputField" id="propertyUseDependency">Dependency</label>
                   <div>
-                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectFieldForBulkjob" v-bind:disabled="node.usePSSettingFile !== true"
-                    v-bind:class="{usePSSettingFileInputFieldColor: node.usePSSettingFile}" v-on:change="updateProperty('parameterFile')">
-                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'" v-bind:value="paramFile.name"
-                        v-bind:key="paramFile.name">{{ paramFile.name }}</option>
+                    <input type="checkbox" v-model.lazy.trim="node.useDependency"
+                      v-on:change="updateProperty('useDependency');" name="check" id="useDependencyFlagField"
+                      value="true">
+                    <label class="propertyCheckboxLabel">use dependency</label>
+                  </div>
+                  <label for="dependencyInputField" id="propertyStepNumber">step number : {{node.stepnum}}</label>
+                  <div>
+                    <label for="dependencyInputField" id="propertyDependencyForm">form</label>
+                  </div>
+                  <div>
+                    <input type="text" v-model.lazy.trim="node.dependencyForm" spellcheck="false"
+                      id="dependencyInputField" v-bind:disabled="node.useDependency !== true"
+                      v-bind:class="{dependencyInputFieldColor: node.useDependency}"
+                      v-on:blur="updateProperty('dependencyForm')">
+                  </div>
+                </div>
+                <!-- <div v-if="node.type === 'bulkjobTask'">
+                  <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
+                  <div>
+                    <label for="propertyBulkNumber" style="margin-left:8px">Setting Type</label>
+                  </div>
+                  <div>
+                    <select id="bulkNumberSelectField" class="bulkNumberSelectFieldColor"
+                      v-model="bulkNumberSettingType" v-on:change="setBulkNumberInputFieldColor()">
+                      <option value="manual">manual</option>
+                      <option value="auto">use paremeterSettingFile</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="startBulkNumberInputField" id="propertyStartBulkNumber">start</label>
+                    <input type="number" v-model.number.lazy.trim="node.startBulkNumber" id="startBulkNumberInputField"
+                      v-bind:disabled="bulkNumberSettingType === 'auto'"
+                      v-bind:class="{bulkNumberInputFieldColor: !bulkNumberManualSet}"
+                      v-on:blur="updateProperty('startBulkNumber')">
+                    <label for="endBulkNumberInputField" id="propertyEndBulkNumber">end</label>
+                    <input type="number" v-model.number.lazy.trim="node.endBulkNumber" id="endBulkNumberInputField"
+                      v-bind:disabled="bulkNumberSettingType === 'auto'"
+                      v-bind:class="{bulkNumberInputFieldColor: !bulkNumberManualSet}"
+                      v-on:blur="updateProperty('endBulkNumber')">
+                  </div>
+                  <div v-if="node.hasOwnProperty('parameterFile')">
+                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectFieldForBulkjob"
+                      v-bind:disabled="bulkNumberSettingType === 'manual'"
+                      v-bind:class="{usePSSettingFileInputFieldColor: bulkNumberManualSet}"
+                      v-on:change="updateProperty('parameterFile')">
+                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'"
+                        v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
+                    </select>
+                  </div>
+                </div> -->
+                <div v-if="node.type === 'bulkjobTask'">
+                  <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
+                  <div>
+                    <input type="radio" v-model.lazy.trim="node.usePSSettingFile"
+                      v-on:change="updateProperty('usePSSettingFile')" name="useBulkNumberSettingFlag" value="0"
+                      id="useBulkNumberManual" checked>manual
+                  </div>
+                  <div>
+                    <label for="startBulkNumberInputField" id="propertyStartBulkNumber">start</label>
+                    <input type="number" v-model.number.lazy.trim="node.startBulkNumber" id="startBulkNumberInputField"
+                      v-bind:disabled="node.usePSSettingFile !== '0'"
+                      v-bind:class="{bulkNumberInputFieldColor: bulkNumberAutoSet}"
+                      v-on:blur="updateProperty('startBulkNumber')">
+                    <label for="endBulkNumberInputField" id="propertyEndBulkNumber">end</label>
+                    <input type="number" v-model.number.lazy.trim="node.endBulkNumber" id="endBulkNumberInputField"
+                      v-bind:disabled="node.usePSSettingFile !== '0'"
+                      v-bind:class="{bulkNumberInputFieldColor: bulkNumberAutoSet}"
+                      v-on:blur="updateProperty('endBulkNumber')">
+                  </div>
+                  <div>
+                    <input type="radio" v-model.lazy.trim="node.usePSSettingFile"
+                      v-on:change="updateProperty('usePSSettingFile')" name="useBulkNumberSettingFlag" value="1"
+                      id="useBulkNumberAuto">use ParameterSettingFile
+                  </div>
+                  <div>
+                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectFieldForBulkjob"
+                      v-bind:disabled="node.usePSSettingFile !== '1'"
+                      v-bind:class="{usePSSettingFileInputFieldColor: bulkNumberAutoSet}"
+                      v-on:change="updateProperty('parameterFile')">
+                      <option val=""></option>
+                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'"
+                        v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
                     </select>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div
-            v-if="node.hasOwnProperty('cleanupFlag') || node.hasOwnProperty('include') || node.hasOwnProperty('exclude')"
-            id="remoteFileTransferSetthing">
-            Remote file transfer setting
-            <div v-if="node.hasOwnProperty('cleanupFlag')">
-              <div>
-                <label id="propertyCleanUpFlag">Clean up flag</label>
-              </div>
-              <div id="flags">
+            <div
+              v-if="node.hasOwnProperty('cleanupFlag') || node.hasOwnProperty('include') || node.hasOwnProperty('exclude')"
+              id="remoteFileTransferSetthing">
+              Remote file transfer setting
+              <div v-if="node.hasOwnProperty('cleanupFlag')">
                 <div>
-                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
-                    name="cleanupFlag" value="0" id="cleanUpFlag0">clean up
+                  <label id="propertyCleanUpFlag">Clean up flag</label>
                 </div>
+                <div id="flags">
+                  <div>
+                    <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
+                      name="cleanupFlag" value="0" id="cleanUpFlag0">clean
+                    up
+                  </div>
+                  <div>
+                    <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
+                      name="cleanupFlag" value="1" id="cleanUpFlag1">keep
+                    files
+                  </div>
+                  <div>
+                    <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
+                      name="cleanupFlag" value="2" id="cleanUpFlag2" checked>Follow parent setting
+                  </div>
+                </div>
+              </div>
+              <div v-if="node.hasOwnProperty('include')">
+                <label for="includeInputField" id="propertyInclude"> include</label>
                 <div>
-                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
-                    name="cleanupFlag" value="1" id="cleanUpFlag1">keep files
+                  <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField"
+                    v-on:blur="updateProperty('include')">
                 </div>
+              </div>
+              <div v-if="node.hasOwnProperty('exclude')">
+                <label for="excludeInputField" id="propertyExclude"> exclude</label>
                 <div>
-                  <input type="radio" v-model.lazy.trim="node.cleanupFlag" v-on:change="updateProperty('cleanupFlag')"
-                    name="cleanupFlag" value="2" id="cleanUpFlag2" checked>Follow parent setting
+                  <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField"
+                    v-on:blur="updateProperty('exclude')">
                 </div>
               </div>
-            </div>
-            <div v-if="node.hasOwnProperty('include')">
-              <label for="includeInputField" id="propertyInclude"> include</label>
-              <div>
-                <input type="text" v-model.lazy.trim="node.include" spellcheck="false" id="includeInputField"
-                  v-on:blur="updateProperty('include')">
+              <div v-if="node.hasOwnProperty('forceOverwrite')">
+                <input type="checkbox" v-model="node.forceOverwrite" id="forceOverwriteCheckbox"
+                  v-on:change="updateProperty('forceOverwrite')">
+                <label class="propertyCheckboxLabel">force overwrite</label>
+              </div>
+              <div v-if="node.hasOwnProperty('delelteLoopIndex')">
+                <input type="checkbox" v-model="node.delelteLoopIndex" id="delelteLoopIndexCheckbox"
+                  v-on:change="updateProperty('delelteLoopIndex')">
+                <label class="propertyCheckboxLabel">delete loop index</label>
               </div>
             </div>
-            <div v-if="node.hasOwnProperty('exclude')">
-              <label for="excludeInputField" id="propertyExclude"> exclude</label>
-              <div>
-                <input type="text" v-model.lazy.trim="node.exclude" spellcheck="false" id="excludeInputField"
-                  v-on:blur="updateProperty('exclude')">
-              </div>
-            </div>
-            <div v-if="node.hasOwnProperty('forceOverwrite')">
-              <input type="checkbox" v-model="node.forceOverwrite" id="forceOverwriteCheckbox"
-                v-on:change="updateProperty('forceOverwrite')">
-              <label class="propertyCheckboxLabel">force overwrite</label>
-            </div>
-            <div v-if="node.hasOwnProperty('delelteLoopIndex')">
-              <input type="checkbox" v-model="node.delelteLoopIndex" id="delelteLoopIndexCheckbox"
-                v-on:change="updateProperty('delelteLoopIndex')">
-              <label class="propertyCheckboxLabel">delete loop index</label>
-            </div>
-          </div>
-          <!--ファイル編集 -->
-          <div id="filesEdit">
-            <label id="filesTitle">Files</label>
-            <!-- <button type="button" id="fileListLoadButton" v-on:click="loadFileList">
-              <img src="/image/fileLoad_icon.png" id="loadFileListImg" alt="graph">
-            </button> -->
-            <p id="componentPath"></p>
-            <input type="file" id="fileSelector" name="uploadFiles" multiple />
-            <div id="fileEditButton">
-              <button type="button" id="jupyterBootButton" v-on:click.stop="openJupyterNotebook">
-                <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" id="jupyterImg" alt="graph">
-              </button>
-              <button type="button" id="createFolderButton" class="createFileDirButton"
-                v-on:click="createFileFolder('folder')">
-                <img src="/image/btn_addFolder_n.png" alt="graph">
-              </button>
-              <button type="button" id="createFileButton" class="createFileDirButton"
-                v-on:click="createFileFolder('file')">
-                <img src="/image/btn_addFile_n.png" alt="graph">
-              </button>
-              <button type="button" id="createJobScriptButton" class="createFileDirButton" v-on:click="createJobScript">
-                <img src="/image/btn_addFile_n_job.png" alt="graph">
-              </button>
-              <button type="button" id="fileUploadButton" class="createFileDirButton"
-                v-on:click="clickFileUploadButton">
-                <img src="/image/btn_upload_n.png" alt="graph">
-              </button>
-            </div>
-            <div id="dialog"></div>
-            <div id="fileBrowser" class="fileBrowser">
-              <p id="fileDropArea">File List</p>
-              <div id="dirBackButtonArea"></div>
-              <ul id="fileList"></ul>
-              <div id="editButtonsArea">
-                <button type="button" id="editPSFileButton" class="editButtons" v-on:click="clickEditPSFileButton">
-                  <img src="/image/img_edit.png" alt="graph">
+            <!--ファイル編集 -->
+            <div id="filesEdit">
+              <label id="filesTitle">Files</label>
+              <p id="componentPath"></p>
+              <input type="file" id="fileSelector" name="uploadFiles" multiple />
+              <div id="fileEditButton">
+                <button type="button" id="jupyterBootButton" v-on:click.stop="openJupyterNotebook">
+                  <img src="/image/squarelogo-whitetext-orangebody-whitemoons.png" id="jupyterImg" alt="graph">
+                </button>
+                <button type="button" id="createFolderButton" class="createFileDirButton"
+                  v-on:click="createFileFolder('folder')">
+                  <img src="/image/btn_addFolder_n.png" alt="graph">
+                </button>
+                <button type="button" id="createFileButton" class="createFileDirButton"
+                  v-on:click="createFileFolder('file')">
+                  <img src="/image/btn_addFile_n.png" alt="graph">
+                </button>
+                <button type="button" id="createJobScriptButton" class="createFileDirButton"
+                  v-on:click="createJobScript">
+                  <img src="/image/btn_addFile_n_job.png" alt="graph">
+                </button>
+                <button type="button" id="fileUploadButton" class="createFileDirButton"
+                  v-on:click="clickFileUploadButton">
+                  <img src="/image/btn_upload_n.png" alt="graph">
                 </button>
               </div>
+              <div id="dialog"></div>
+              <div id="fileBrowser" class="fileBrowser">
+                <p id="fileDropArea">File List</p>
+                <div id="dirBackButtonArea"></div>
+                <ul id="fileList"></ul>
+                <div id="editButtonsArea">
+                  <button type="button" id="editPSFileButton" class="editButtons" v-on:click="clickEditPSFileButton">
+                    <img src="/image/img_edit.png" alt="graph">
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <!-- リストビュー -->
-      <div id="workflow_listview_area" class="sub_content_area" onmousedown="return false;">
-        <div id="project_tree_svg">
-          <div id="tableHeadArea">
-            <table id="projectHeadTable">
-              <thead id="project_table_head">
-                <tr id="project_table_tr">
-                  <th class="componentNameLabel">Name</th>
-                  <th class="componentStateLabel">State</th>
-                  <th class="componentStartTimeLabel">Started</th>
-                  <th id="showMoreButtonArea">
-                    <input type="image" src="/image/btn_openCloseR_n.png" alt="showMoreButton" id="showMoreButton"
-                      class="showMoreButton">
-                  </th>
-                  <th class="componentLabel">Prepared</th>
-                  <th class="componentLabel">Job Submitted</th>
-                  <th class="componentLabel">Job Ran</th>
-                  <th class="componentLabel">Job Finished</th>
-                  <th class="componentEndTimeLabel">Finished</th>
-                  <th class="componentDescriptionLabel">Description</th>
-                </tr>
-              </thead>
-            </table>
-          </div>
-          <div id="tableDataArea">
-            <table id="projectBodyTable">
-              <tbody id="project_table_body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!-- 下ドロアーメニュー -->
-      <div id="projectInfoDrawer" v-on:mouseleave='showProjectInfo' v-bind:class='{ action: projectInfoFlag}'
-        data-position="top">
-        <!-- <div id="projectInfoDrawer" data-position="top"> -->
-        <div id="drawerMargin"></div>
-        <div id="drawerInfo">
-          <div id="projectDirectoryPathField">
-            <label>Project Directory Path</label>
-            <div id="projectDirectoryPath"></div>
-          </div>
-          <div id="projectDescriptionField">
-            <label>Description</label>
-            <input type="text" id="projectDescription">
+        <!-- リストビュー -->
+        <div id="workflow_listview_area" class="sub_content_area" onmousedown="return false;">
+          <div id="project_tree_svg">
+            <div id="tableHeadArea">
+              <table id="projectHeadTable">
+                <thead id="project_table_head">
+                  <tr id="project_table_tr">
+                    <th class="componentNameLabel">Name</th>
+                    <th class="componentStateLabel">State</th>
+                    <th class="componentStartTimeLabel">Started</th>
+                    <th id="showMoreButtonArea">
+                      <input type="image" src="/image/btn_openCloseR_n.png" alt="showMoreButton" id="showMoreButton"
+                        class="showMoreButton">
+                    </th>
+                    <th class="componentLabel">Prepared</th>
+                    <th class="componentLabel">Job Submitted</th>
+                    <th class="componentLabel">Job Ran</th>
+                    <th class="componentLabel">Job Finished</th>
+                    <th class="componentEndTimeLabel">Finished</th>
+                    <th class="componentDescriptionLabel">Description</th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+            <div id="tableDataArea">
+              <table id="projectBodyTable">
+                <tbody id="project_table_body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
-      <!-- 右ドロアーメニュー -->
-      <div id="drawerMenu" v-on:mouseleave="mouseleaveDrawerButton" data-position="right">
-        <div id="drawerMenuContents">
-          <p id="menuTitle">Menu</p>
-          <ul id="drawerMenuList">
-            <li>
-              <a id="remotehostEditorButton" class="drawerMenuItem" href="/remotehost" target="_blank">Remotehost Editor</a>
-            </li>
-            <li>
-              <a id="jobScriptEditorButton" class="drawerMenuItem" href="/jobScript" target="_blank">JobScript Editor</a>
-            </li>
-            <li>
-              <a id="documentButton" class="drawerMenuItem" href="https://riken-rccs.github.io/WHEEL/" target="_blank">User guide</a>
-            </li>
-          </ul>
+        <!-- 下ドロアーメニュー -->
+        <div id="projectInfoDrawer" v-on:mouseleave="showProjectInfo" v-bind:class="{ action: projectInfoFlag}"
+          data-position="top">
+          <!-- <div id="projectInfoDrawer" data-position="top"> -->
+          <div id="drawerMargin"></div>
+          <div id="drawerInfo">
+            <div id="projectDirectoryPathField">
+              <label>Project Directory Path</label>
+              <div id="projectDirectoryPath"></div>
+            </div>
+            <div id="projectDescriptionField">
+              <label>Description</label>
+              <input type="text" id="projectDescription">
+            </div>
+          </div>
         </div>
-      </div>
-      <!-- ログボタン -->
-      <div>
-        <button type="button" id="logAreaButton" class="logAreaButton" value="Log" v-on:click="showLogArea">
-          <img src="/image/btn_openCloseU_n.png" alt="config" id="logAreaButtonImg">
-        </button>
-      </div>
-      <div id="logArea">
-        <div id="logButtonArea">
-          <button type="button" id="enableDBG" class="logButton" value="node">Debug</button>
-          <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
-          <button type="button" id="enableStdout" class="logButton" value="node">Stdout</button>
-          <button type="button" id="enableStderr" class="logButton" value="node">Stderr</button>
-          <button type="button" id="enableSSHout" class="logButton" value="node">Stdout(SSH)</button>
-          <button type="button" id="enableSSHerr" class="logButton" value="node">Stderr(SSH)</button>
+        <!-- 右ドロアーメニュー -->
+        <div id="drawerMenu" v-on:mouseleave="mouseleaveDrawerButton" data-position="right">
+          <div id="drawerMenuContents">
+            <p id="menuTitle">Menu</p>
+            <ul id="drawerMenuList">
+              <li>
+                <a id="remotehostEditorButton" class="drawerMenuItem" href="/remotehost" target="_blank">Remotehost
+                  Editor</a>
+              </li>
+              <li>
+                <a id="jobScriptEditorButton" class="drawerMenuItem" href="/jobScript" target="_blank">JobScript
+                  Editor</a>
+              </li>
+              <li>
+                <a id="documentButton" class="drawerMenuItem" href="https://riken-rccs.github.io/WHEEL/"
+                  target="_blank">User guide</a>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div id="buttonPartition">
-          <button id="logClearButton">All log clear</button>
-        </div>
+        <!-- ログボタン -->
         <div>
-          <div id="logDebugLog" class="logText"></div>
-          <div id="logInfoLog" class="logText"></div>
-          <div id="logStdoutLog" class="logText"></div>
-          <div id="logStderrLog" class="logText"></div>
-          <div id="logSSHoutLog" class="logText"></div>
-          <div id="logSSHerrLog" class="logText"></div>
+          <button type="button" id="logAreaButton" class="logAreaButton" value="Log" v-on:click="showLogArea">
+            <img src="/image/btn_openCloseU_n.png" alt="config" id="logAreaButtonImg">
+          </button>
+        </div>
+        <div id="logArea">
+          <div id="logButtonArea">
+            <button type="button" id="enableDBG" class="logButton" value="node">Debug</button>
+            <button type="button" id="enableINFO" class="logButton" value="node">Info</button>
+            <button type="button" id="enableStdout" class="logButton" value="node">Stdout</button>
+            <button type="button" id="enableStderr" class="logButton" value="node">Stderr</button>
+            <button type="button" id="enableSSHout" class="logButton" value="node">Stdout(SSH)</button>
+            <button type="button" id="enableSSHerr" class="logButton" value="node">Stderr(SSH)</button>
+          </div>
+          <div id="buttonPartition">
+            <button id="logClearButton">All log clear</button>
+          </div>
+          <div>
+            <div id="logDebugLog" class="logText"></div>
+            <div id="logInfoLog" class="logText"></div>
+            <div id="logStdoutLog" class="logText"></div>
+            <div id="logStderrLog" class="logText"></div>
+            <div id="logSSHoutLog" class="logText"></div>
+            <div id="logSSHerrLog" class="logText"></div>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- rapid -->
-    <div id="rapid" v-if="!normal">
-      <div id="editorTitle">
-        <label id="rapid2Title">File Editor</label>
-        <button type="button" name="view" value="graph" id="backToGraphView" class="btn_view_change"
-          @click="closeRapid">
-          <img src="/image/btn_flow_n.png" alt="graph">
-        </button>
+      <!-- rapid -->
+      <div id="rapid" v-if="!normal">
+        <div id="editorTitle">
+          <label id="rapid2Title">File Editor</label>
+          <button type="button" name="view" value="graph" id="backToGraphView" class="btn_view_change"
+            @click="closeRapid">
+            <img src="/image/btn_flow_n.png" alt="graph">
+          </button>
+        </div>
+        <new-rapid></new-rapid>
       </div>
-      <new-rapid></new-rapid>
-    </div>
-    <unsaved-files-dialog
-    :unsaved-files="unsavedFiles"
-    :cb="cb"
-    :dialog="dialog"
-    @close-dialog="closeDialog"
-    ></unsaved-files-dialog>
-  </v-app>
+      <unsaved-files-dialog :unsaved-files="unsavedFiles" :cb="cb" :dialog="dialog" @close-dialog="closeDialog">
+      </unsaved-files-dialog>
+    </v-app>
   </div>
 </body>
 
