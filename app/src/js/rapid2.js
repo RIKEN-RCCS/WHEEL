@@ -9,6 +9,7 @@ import targetFiles from "./targetFiles.js";
 import gatherScatter from "./gatherScatter.js";
 import parameter from "./parameter.js";
 import {tableFooterProps,isTargetFile} from "./rapid2Util.js";
+import { NIL } from "uuid";
 
 /**
  * check if given PS setting is differ from original one
@@ -139,13 +140,13 @@ Vue.component("new-rapid", {
         :lowerLevelComponents="lowerLevelComponents"
         :title="'scatter'"
         :counterpartProp="'dstNode'"
-      ></gather-scatter>
+      v-if="componentType!=='bulkjobTask'"></gather-scatter>
       <gather-scatter
         :container="parameterSetting.gather"
         :lowerLevelComponents="lowerLevelComponents"
         :title="'gather'"
         :counterpartProp="'srcNode'"
-      ></gather-scatter>
+      v-if="componentType!=='bulkjobTask'"></gather-scatter>
     </div>
   </v-container>
 `,
@@ -153,7 +154,7 @@ Vue.component("new-rapid", {
     return {
       dialog: false,
       placeholders: [],
-      selected:[],
+      selected: [],
       newFilter: "",
       search: "",
       filterEditor: false,
@@ -167,14 +168,15 @@ Vue.component("new-rapid", {
       editor: null,
       parameterSetting: {
         version: 2,
-        targetFiles:[],
-        params:[],
-        scatter:[],
-        gather:[]
+        targetFiles: [],
+        params: [],
+        scatter: [],
+        gather: []
       },
       parameterSettingFilename: "parameterSetting.json", //default new param setting filename
       parameterSettingDirname: null,
-      tableFooterProps
+      tableFooterProps,
+      componentType: "",
     };
   },
   computed:{
@@ -462,6 +464,7 @@ Vue.component("new-rapid", {
          });
       });
     });
+    this.componentType = this.$root.$data.node.type;
     const currentDir = this.$root.$data.fb.getRequestedPath();
     this.parameterSettingDirname=currentDir;
     const selectedFile = this.$root.$data.fb.getSelectedFile();

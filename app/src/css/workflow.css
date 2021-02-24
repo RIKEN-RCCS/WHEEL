@@ -655,7 +655,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#dependencyInputField,#parameterFileSelectFieldForBulkjob{
+#dependencyInputField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -664,6 +664,17 @@ select::-ms-expand {
     border: 0;
     color: #FFFFFF;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+}
+
+#parameterFileSelectFieldForBulkjob{
+    margin: 2px 0 10px 16px;
+    padding-left: 5px;
+    height: 20px;
+    width: 190px;
+    background-color: #333333;
+    color: #FFFFFF;
+    border: 0;
+    font-family: Meiryo,ヒラギノ角ゴ Pro,IPA Pゴシック,sans-serif;
 }
 
 #stateField{
@@ -715,7 +726,7 @@ select::-ms-expand {
     margin: 2px 0 2px 4px;
 }
 
-#queueSelectField{
+#queueSelectField, #bulkNumberSelectField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -726,7 +737,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-.queueSelectFieldColor, .dependencyInputFieldColor, .usePSSettingFileInputFieldColor{
+.queueSelectFieldColor, .dependencyInputFieldColor, .usePSSettingFileInputFieldColor, .bulkNumberSelectFieldColor{
     background-color: #000000 !important;
 }
 
@@ -759,11 +770,21 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#startInputField, #endInputField, #startBulkNumberInputField, #endBulkNumberInputField{
+#startInputField, #endInputField{
     margin: 2px 0 0 2px;
     padding-left: 5px;
     height: 20px;
     width: 73px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+}
+
+#startBulkNumberInputField, #endBulkNumberInputField{
+    margin: 2px 0 0 2px;
+    padding-left: 5px;
+    height: 20px;
+    width: 56px;
     background-color: #000000;
     border: 0;
     color: #FFFFFF;
@@ -818,6 +839,16 @@ select::-ms-expand {
 
 #propertyCleanUpFlag, #propertyInclude, #propertyExclude, #propertyParameterSettingFileForBulkjob, #propertyStartBulkNumber{
     margin: 8px 0 0 8px;
+    display: inline-block;
+}
+
+#useBulkNumberManual, #useBulkNumberAuto{
+    margin: 4px 0 0 8px;
+    display: inline-block;
+}
+
+#propertyStartBulkNumber{
+    margin: 2px 0 0 16px;
     display: inline-block;
 }
 
@@ -1705,10 +1736,6 @@ tspan{
   height: 100%;
 }
 
-#rapid {
-  /* height: 100%; */
-}
-
 .ui-tooltip {
 	font-size: 12px;
 }
@@ -1722,18 +1749,9 @@ body .ui-tooltip {
 
 .container{
     padding: 0px !important;
+    align-items: normal!important;
 }
 
 .ace-idle-fingers .ace_print-margin{
     width: 0px !important;
 }
-
-/* viewer html css*/
-/* 
-#viewerImages {
-    list-style-type: none;
- }
-
-#viewerImages li {
-    display: inline-block;
-} */

@@ -99,7 +99,8 @@ $(() => {
       parentNodeType: "",
       unsavedFiles: [],
       cb: null,
-      dialog: null
+      dialog: null,
+      bulkNumberAutoSet: null
     },
     mounted (){
       const that=this;
@@ -545,6 +546,16 @@ $(() => {
       mouseleaveDrawerButton: function () {
         if (!isEditDisable()) {
           document.getElementById("drawerMenu").classList.toggle("action", false);
+        }
+      }
+    },
+    watch: {
+      'node.usePSSettingFile'() {
+        if (this.node.usePSSettingFile === '0') {
+          this.bulkNumberAutoSet = false;
+        }
+        if (this.node.usePSSettingFile === '1') {
+          this.bulkNumberAutoSet = true;
         }
       }
     }
@@ -1001,7 +1012,7 @@ $(() => {
         vm.nodeScript = target.script;
         if (nodeType === 'task' || nodeType === 'stepjob') {
           sio.emit('getHostList', true);
-          sio.emit('getJobScriptList', true);//temporary
+          sio.emit('getJobScriptList', true);
         }
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
@@ -1392,6 +1403,9 @@ $(() => {
       { id: "useDependencyFlagField", readonly: true, disable: true },
       { id: "dependencyInputField", readonly: true, disable: false },
       { id: "usePSSettingFile", readonly: true, disable: true },
+      { id: "usePSSettingFile", readonly: true, disable: true },
+      { id: "endBulkNumberInputField", readonly: true, disable: true },
+      { id: "startBulkNumberInputField", readonly: true, disable: true },
       { id: "parameterFileSelectFieldForBulkjob", readonly: true, disable: true }
     ];
 
@@ -1404,6 +1418,14 @@ $(() => {
       { class: "newIndexListField", readonly: true, disable: false }
     ];
 
+    let throughIds=[];
+    if (vm.node.usePSSettingFile === "0") {
+      throughIds = ["parameterFileSelectFieldForBulkjob"];
+    }
+    if (vm.node.usePSSettingFile === "1") {
+      throughIds = ["endBulkNumberInputField", "startBulkNumberInputField"];
+    }
+
     ids.forEach((v) => {
       try {
         if (v.readonly === true) {
@@ -1412,6 +1434,10 @@ $(() => {
       } catch (e) { }
       try {
         if (v.disable === true) {
+          const checkFlag = throughIds.includes(v.id);
+          if (propertyEditableFlag === false && checkFlag) {
+            return;
+          }
           $("[id=" + v.id + "]").prop('disabled', propertyEditableFlag);
         }
       } catch (e) { }
