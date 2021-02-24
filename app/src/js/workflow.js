@@ -1379,7 +1379,7 @@ $(() => {
       { id: "includeInputField", readonly: true, disable: false },
       { id: "excludeInputField", readonly: true, disable: false },
       { id: "forceOverwriteCheckbox", readonly: true, disable: true },
-      { id: "delelteLoopIndexCheckbox", readonly: true, disable: true },
+      { id: "deleteLoopInstanceCheckbox", readonly: true, disable: true },
       { id: "useJobSchedulerFlagField", readonly: true, disable: true },
       { id: "remotehostSelectField", readonly: true, disable: true },
       { id: "queueSelectField", readonly: true, disable: true },

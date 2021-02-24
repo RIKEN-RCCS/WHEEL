@@ -192,6 +192,35 @@ function forTripCount(component) {
   return Math.ceil((component.end - component.start) / component.step) + 1;
 }
 
+function forKeepLoopInstance(component, cwfDir) {
+  if (Number.isInteger(component.keep) && component.keep >= 0) {
+    const deleteComponentInstance = component.keep === 0 ? component.currentIndex - component.step : component.currentIndex - (component.keep * component.step);
+    if (deleteComponentInstance >= 0) {
+      fs.remove(path.resolve(cwfDir, `${component.originalName}_${sanitizePath(deleteComponentInstance)}`));
+    }
+  }
+}
+
+function whileKeepLoopInstance(component, cwfDir) {
+  if (Number.isInteger(component.keep) && component.keep >= 0) {
+    const deleteComponentInstance = component.currentIndex - 1;
+    if (deleteComponentInstance >= 0) {
+      fs.remove(path.resolve(cwfDir, `${component.originalName}_${sanitizePath(deleteComponentInstance)}`));
+    }
+  }
+}
+
+function foreachKeepLoopInstance(component, cwfDir) {
+  if (Number.isInteger(component.keep) && component.keep >= 0) {
+    const currentIndexNumber = component.currentIndex !== null ? component.indexList.indexOf(component.currentIndex) : component.indexList.length;
+    const deleteComponentNumber = currentIndexNumber - component.keep - 1;
+    const deleteComponentName = deleteComponentNumber >= 0 ? `${component.originalName}_${sanitizePath(component.indexList[deleteComponentNumber])}` : "";
+    if (deleteComponentName) {
+      fs.remove(path.resolve(cwfDir, deleteComponentName));
+    }
+  }
+}
+
 function whileGetNextIndex(component) {
   ++component.numFinished;
   return component.currentIndex !== null ? ++(component.currentIndex) : 0;
@@ -234,17 +263,6 @@ function loopInitialize(component, getTripCount) {
 
   if (typeof getTripCount === "function") {
     component.numTotal = getTripCount(component);
-  }
-}
-
-function deleteLoopIndex(component, cwfDir) {
-  if (typeof component.keep === "number" && component.keep >= 0) {
-    const deleteComponentIndex = component.keep === 0 ? component.currentIndex - component.step : component.currentIndex - (component.keep * component.step);
-    if (deleteComponentIndex > 0) {
-      const deleteComponentName = `${component.originalName}_${sanitizePath(deleteComponentIndex)}`;
-      const delDir = path.resolve(cwfDir, deleteComponentName);
-      fs.remove(delDir);
-    }
   }
 }
 
@@ -486,10 +504,10 @@ class Dispatcher extends EventEmitter {
       nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
     }
     if (Object.prototype.hasOwnProperty.call(component, "outputFiles")) {
-      const outputTypeList = await this._getOutputTypeList(component);
+      const behindIfComponentList = await this._getBehindIfComponentList(component);
       component.outputFiles.forEach((outputFile)=>{
         const tmp = outputFile.dst.map((e)=>{
-          if (outputTypeList[e.dstNode] === "if") {
+          if (behindIfComponentList.indexOf(e.dstNode) >= 0) {
             return null;
           }
           if (Object.prototype.hasOwnProperty.call(e, "origin")) {
@@ -512,22 +530,22 @@ class Dispatcher extends EventEmitter {
     Array.prototype.push.apply(this.nextSearchList, nextComponents);
   }
 
-  async _getOutputTypeList(component) {
-    const outputTypeList = {};
-    for await (const outputFile of component.outputFiles) {
-      for await (const e of outputFile.dst) {
+  async _getBehindIfComponentList(component) {
+    const behindIfComponetList = [];
+    for (const outputFile of component.outputFiles) {
+      for (const e of outputFile.dst) {
         const outputCmp = await this._getComponent(e.dstNode);
         const prviousCmp = await Promise.all(outputCmp.previous.map((id)=>{
           return this._getComponent(id);
         }));
         prviousCmp.forEach((cmp)=>{
           if (cmp.type === "if") {
-            outputTypeList[e.dstNode] = cmp.type;
+            behindIfComponetList.push(e.dstNode);
           }
         });
       }
     }
-    return outputTypeList;
+    return behindIfComponetList;
   }
 
   async _dispatchTask(task) {
@@ -599,7 +617,7 @@ class Dispatcher extends EventEmitter {
     }
   }
 
-  async _loopFinalize(component, lastDir) {
+  async _loopFinalize(component, lastDir, keepLoopInstance) {
     const dstDir = path.resolve(this.cwfDir, component.originalName);
 
     if (lastDir !== dstDir) {
@@ -607,9 +625,8 @@ class Dispatcher extends EventEmitter {
       await fs.copy(lastDir, dstDir, { overwrite: true, dereference: true }); //dst will be overwrite always
     }
 
-    //delete Keep Index
     if (component.keep === 0) {
-      deleteLoopIndex(component, this.cwfDir);
+      keepLoopInstance(component, this.cwfDir);
     }
 
     this.logger.debug("loop finished", component.name);
@@ -625,7 +642,7 @@ class Dispatcher extends EventEmitter {
     await fs.writeJson(path.join(componentDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
   }
 
-  async _loopHandler(getNextIndex, isFinished, getTripCount, component) {
+  async _loopHandler(getNextIndex, isFinished, getTripCount, keepLoopInstance, component) {
     if (component.childLoopRunning) {
       //send back itself to searchList for next loop trip
       this.nextSearchList.push(component);
@@ -647,7 +664,7 @@ class Dispatcher extends EventEmitter {
 
     //end determination
     if (await isFinished(component)) {
-      await this._loopFinalize(component, srcDir);
+      await this._loopFinalize(component, srcDir, keepLoopInstance);
       return Promise.resolve();
     }
 
@@ -666,8 +683,7 @@ class Dispatcher extends EventEmitter {
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
       await this._delegate(newComponent);
 
-      //delete Keep Index
-      deleteLoopIndex(component, this.cwfDir);
+      keepLoopInstance(component, this.cwfDir);
 
       if (newComponent.state === "failed") {
         component.hasFaild = true;
@@ -818,14 +834,16 @@ class Dispatcher extends EventEmitter {
     const state = component.numFailed > 0 ? "failed" : "finished";
     await this._setComponentState(component, state);
 
-    if (component.delelteLoopIndex) {
+    if (component.deleteLoopInstance) {
+      const pm = [];
       for (const paramVec of paramVecGenerator(paramSpace)) {
         const deleteComponentName = sanitizePath(paramVec.reduce((p, e)=>{
           return `${p}_${e.key}_${e.value}`;
         }, component.name));
         const deleteDir = path.resolve(this.cwfDir, deleteComponentName);
-        fs.remove(deleteDir);
+        pm.push(fs.remove(deleteDir));
       }
+      await Promise.all(pm);
     }
   }
 
@@ -1027,13 +1045,13 @@ class Dispatcher extends EventEmitter {
         cmd = this._checkIf;
         break;
       case "for":
-        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished, forTripCount);
+        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished, forTripCount, forKeepLoopInstance);
         break;
       case "while":
-        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger), null);
+        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger), null, whileKeepLoopInstance);
         break;
       case "foreach":
-        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished, foreachTripCount);
+        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished, foreachTripCount, foreachKeepLoopInstance);
         break;
       case "workflow":
         cmd = this._delegate;

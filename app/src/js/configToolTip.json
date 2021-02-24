@@ -165,6 +165,10 @@
             "jpn": "リモート環境に作成した一時ファイルを上書きするかを選択します"
         },
         {
+            "key": "deleteLoopInstanceCheckbox",
+            "jpn": "作成したループインスタンス削除するかどうかを選択します"
+        },
+        {
             "key": "propertyuploadOnDemand",
             "jpn": "ファイルをアップロードします"
         },
