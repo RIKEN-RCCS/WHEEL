@@ -102,6 +102,37 @@ async function replaceByNunjucks(templateRoot, instanceRoot, targetFiles, params
   );
 }
 
+async function replaceByNunjucksForBulkjob(templateRoot, targetFiles, params, bulkNumber) {
+  return Promise.all(
+    targetFiles.map(async(targetFile)=>{
+      const template = (await fs.readFile(path.resolve(templateRoot, targetFile))).toString();
+      const temp = replacePathsep(targetFile);
+      const arrTargetPath = temp.split(path.posix.sep);
+      const targetFileNewname = `${bulkNumber}.${arrTargetPath[arrTargetPath.length - 1]}`;
+      arrTargetPath.splice(-1, 1, targetFileNewname);
+      const targetFilePath = arrTargetPath.join(path.posix.sep);
+      const result = nunjucks.renderString(template, params);
+      return fs.outputFile(path.resolve(templateRoot, targetFilePath), result);
+    })
+  );
+}
+
+async function writeParameterSetFile(templateRoot, targetFiles, params, bulkNumber) {
+  const paramsKeys = Object.keys(params);
+  let targetNum = 0;
+  return Promise.all(
+    targetFiles.map(async(targetFile, index)=>{
+      const label = `BULKNUM_${bulkNumber}`;
+      const target = replacePathsep(targetFile);
+      const targetKey = paramsKeys[index];
+      const targetVal = params[targetKey];
+      const data = `${label}_TARGETNUM_${targetNum}_FILE="${target}"\n${label}_TARGETNUM_${targetNum}_KEY="${targetKey}"\n${label}_TARGETNUM_${targetNum}_VALUE="${targetVal}"\n`;
+      targetNum++;
+      return fs.appendFile(path.resolve(templateRoot, "parameterSet.wheel.txt"), data);
+    })
+  );
+}
+
 async function scatterFilesV2(templateRoot, instanceRoot, scatterRecipe, params) {
   const p = [];
   for (const recipe of scatterRecipe) {
@@ -177,7 +208,6 @@ function makeCmd(paramSettings) {
     return [];
   }, doNothing, doNothing, replaceTargetFile];
 }
-
 
 function forGetNextIndex(component) {
   ++component.numFinished;
@@ -553,6 +583,10 @@ class Dispatcher extends EventEmitter {
       task.doCleanup = task.cleanupFlag === "0";
     }
 
+    if (task.usePSSettingFile === "1") {
+      await this._bulkjobHandler(task);
+    }
+
     if (Object.prototype.hasOwnProperty.call(this.cwfJson, "currentIndex")) {
       task.currentIndex = this.cwfJson.currentIndex;
     }
@@ -684,8 +718,7 @@ class Dispatcher extends EventEmitter {
     return Promise.resolve();
   }
 
-  async _PSHandler(component) {
-    this.logger.debug("_PSHandler called", component.name);
+  async _getTargetFile(component) {
     const templateRoot = path.resolve(this.cwfDir, component.name);
     const paramSettingsFilename = path.resolve(templateRoot, component.parameterFile);
     const paramSettings = await readJsonGreedy(paramSettingsFilename).catch((err)=>{
@@ -713,6 +746,14 @@ class Dispatcher extends EventEmitter {
       }
       return e;
     }) : [];
+
+    return [templateRoot, paramSettingsFilename, paramSettings, targetFiles];
+  }
+
+  async _PSHandler(component) {
+    this.logger.debug("_PSHandler called", component.name);
+    const [templateRoot, paramSettingsFilename, paramSettings, targetFiles] = await this._getTargetFile(component);
+
     const scatterRecipe = Object.prototype.hasOwnProperty.call(paramSettings, "scatter") ? paramSettings.scatter.map((e)=>{
       return {
         srcName: e.srcName,
@@ -863,6 +904,44 @@ class Dispatcher extends EventEmitter {
       return { componentID: component.ID, filename: path.relative(componentRoot, e.src), url: path.relative(viewerURLRoot, e.dst) };
     }));
     await this._setComponentState(component, "finished");
+  }
+
+  async _bulkjobHandler(component) {
+    this.logger.debug("_bulkjobHandler called", component.name);
+    const [templateRoot, paramSettingsFilename, paramSettings, targetFiles] = await this._getTargetFile(component);
+    const paramSpace = await getParamSpacev2(paramSettings.params, templateRoot);
+
+    const bulkNumTotal = getParamSize(paramSpace);
+    component.endBulkNumber = bulkNumTotal - 1;
+    component.startBulkNumber = 0;
+    let countBulkNum = 0;
+
+    this.logger.debug("start paramSpace loop");
+
+    for (const paramVec of paramVecGenerator(paramSpace)) {
+      const params = paramVec.reduce((p, c)=>{
+        p[c.key] = c.value;
+        return p;
+      }, {});
+
+      await Promise.all(paramVec.filter((e)=>{
+        return e.type === "file";
+      }).map((e)=>{
+        return e.value;
+      })
+        .map((e)=>{
+          const src = path.resolve(templateRoot, e);
+          const dst = path.resolve(templateRoot, `${countBulkNum}.${e}`);
+          this.logger.debug("parameter: copy from", src, "to ", dst);
+          return fs.copy(src, dst);
+        }));
+
+      this.logger.debug("rewrite target files");
+      await replaceByNunjucksForBulkjob(templateRoot, targetFiles, params, countBulkNum);
+      await writeParameterSetFile(templateRoot, targetFiles, params, countBulkNum);
+      countBulkNum++;
+    }
+    fs.writeJson(path.join(templateRoot, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
   }
 
   async _isReady(component) {
@@ -1019,7 +1098,6 @@ class Dispatcher extends EventEmitter {
       case "stepjobtask":
         cmd = this._dispatchTask;
         break;
-      /* TODO usePSSettingFile case */
       case "bulkjobtask":
         cmd = this._dispatchTask;
         break;
