@@ -175,7 +175,7 @@ class ParameterStudy extends GeneralComponent {
     this.numFinished = null;
     this.numFailed = null;
     this.forceOverwrite = false;
-    this.delelteLoopIndex = false;
+    this.deleteLoopInstance = false;
   }
 }
 
@@ -195,6 +195,7 @@ class While extends GeneralComponent {
     super(...args);
     this.type = "while";
     this.condition = null;
+    this.keep = null;
   }
 }
 
@@ -206,6 +207,7 @@ class Foreach extends GeneralComponent {
     super(...args);
     this.type = "foreach";
     this.indexList = [];
+    this.keep = null;
   }
 }
 

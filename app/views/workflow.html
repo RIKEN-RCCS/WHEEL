@@ -420,6 +420,14 @@
                     </div>
                   </div>
                 </div>
+<<<<<<< HEAD
+              </div>
+              <div v-if="node.hasOwnProperty('keep')">
+                <label for="keepInputField" id="propertyKeep">number of last loop instance to keep</label>
+                <div>
+                  <input type="number" v-model.number.lazy.trim="node.keep" id="keepInputField"
+                    v-on:blur="updateProperty('keep')" min="0" pattern="^[0-9]+$">
+=======
                 <div v-if="node.type === 'stepjobTask'">
                   <label for="dependencyInputField" id="propertyUseDependency">Dependency</label>
                   <div>
@@ -438,6 +446,7 @@
                       v-bind:class="{dependencyInputFieldColor: node.useDependency}"
                       v-on:blur="updateProperty('dependencyForm')">
                   </div>
+>>>>>>> 531e321b004a29d3f3bcdb1fd23ca93d8603977d
                 </div>
                 <!-- <div v-if="node.type === 'bulkjobTask'">
                   <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
@@ -624,10 +633,17 @@
                 </thead>
               </table>
             </div>
+<<<<<<< HEAD
+            <div v-if="node.hasOwnProperty('deleteLoopInstance')">
+              <input type="checkbox" v-model="node.deleteLoopInstance" id="deleteLoopInstanceCheckbox"
+                v-on:change="updateProperty('deleteLoopInstance')">
+              <label class="propertyCheckboxLabel">delete all loop instance</label>
+=======
             <div id="tableDataArea">
               <table id="projectBodyTable">
                 <tbody id="project_table_body"></tbody>
               </table>
+>>>>>>> 531e321b004a29d3f3bcdb1fd23ca93d8603977d
             </div>
           </div>
         </div>
