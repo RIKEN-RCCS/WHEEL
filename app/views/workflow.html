@@ -554,10 +554,10 @@
                   v-on:change="updateProperty('forceOverwrite')">
                 <label class="propertyCheckboxLabel">force overwrite</label>
               </div>
-              <div v-if="node.hasOwnProperty('delelteLoopIndex')">
-                <input type="checkbox" v-model="node.delelteLoopIndex" id="delelteLoopIndexCheckbox"
-                  v-on:change="updateProperty('delelteLoopIndex')">
-                <label class="propertyCheckboxLabel">delete loop index</label>
+              <div v-if="node.hasOwnProperty('deleteLoopInstance')">
+                <input type="checkbox" v-model="node.deleteLoopInstance" id="deleteLoopInstanceCheckbox"
+                  v-on:change="updateProperty('deleteLoopInstance')">
+                <label class="propertyCheckboxLabel">delete all loop instance</label>
               </div>
             </div>
             <!--ファイル編集 -->
@@ -624,16 +624,11 @@
                 </thead>
               </table>
             </div>
-            <div v-if="node.hasOwnProperty('deleteLoopInstance')">
-              <input type="checkbox" v-model="node.deleteLoopInstance" id="deleteLoopInstanceCheckbox"
-                v-on:change="updateProperty('deleteLoopInstance')">
-              <label class="propertyCheckboxLabel">delete all loop instance</label>
-            </div>
-            <div id="tableDataArea">
-              <table id="projectBodyTable">
-                <tbody id="project_table_body"></tbody>
-              </table>
-            </div>
+          </div>
+          <div id="tableDataArea">
+            <table id="projectBodyTable">
+              <tbody id="project_table_body"></tbody>
+            </table>
           </div>
         </div>
         <!-- 下ドロアーメニュー -->
