@@ -11,6 +11,7 @@
     "chai-friendly/no-unused-expressions": 2,
     "no-invalid-this": "off",
     "no-console": "off",
+    "no-underscore-dangle": "off",
     "node/no-unpublished-require": ["error", {
             "allowModules": [
               "chai",
