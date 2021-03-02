@@ -355,6 +355,14 @@ async function validateTask(projectRootDir, component) {
     } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
       return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
     }
+    const optList = String(jobScheduler[hostinfo.jobScheduler].queueOpt).split(" ");
+    if (optList.map((opt)=>{
+      return component.submitOption.indexOf(opt);
+    }).every((i)=>{
+      return i >= 0;
+    })) {
+      return Promise.reject(new Error(`submit option duplicate queue option : ${jobScheduler[hostinfo.jobScheduler].queueOpt}`));
+    }
   }
 
   if (!(Object.prototype.hasOwnProperty.call(component, "script") && typeof component.script === "string")) {

@@ -285,6 +285,10 @@ $(() => {
           }
         }
       },
+      getSelectedJobScheduler: function () {
+        const selectHost = document.getElementById("remotehostSelectField").value;
+        sio.emit('getSelectedJobScheduler', selectHost);
+      },
       // File Area Button method
       createFileFolder: function (isFileOrFolder) {
         if (!isEditDisable() && (vm.node === null || !vm.node.disable)) {
@@ -816,6 +820,11 @@ $(() => {
       document.getElementById("projectDescription").setAttribute("value", projectJson.description);
 
       changeViewState();
+    });
+
+    /*get submit command jobSchedular, submit option text*/
+    sio.on('selectedJobScheduler', function (jobScheduler) {
+      document.getElementById("submitCommandInputField").textContent = jobScheduler.submit;
     });
 
     /*create host, queue selectbox*/
@@ -1394,6 +1403,7 @@ $(() => {
       { id: "useJobSchedulerFlagField", readonly: true, disable: true },
       { id: "remotehostSelectField", readonly: true, disable: true },
       { id: "queueSelectField", readonly: true, disable: true },
+      { id: "submitOptionInputField", readonly: true, disable: true },
       { id: "jupyterBootButton", readonly: true, disable: true },
       { id: "createFolderButton", readonly: true, disable: true },
       { id: "createFileButton", readonly: true, disable: true },

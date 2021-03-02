@@ -122,6 +122,9 @@ class Task extends GeneralComponent {
     /**queue name */
     this.queue = null;
 
+    /**submit option */
+    this.submitOption = null;
+
     //note on filters
     //if include filter is set, matched files are transferd if it does not match exclude filter
     /**include filter for recieve files from remote host */

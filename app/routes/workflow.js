@@ -9,7 +9,7 @@ const express = require("express");
 const fileManager = require("./fileManager");
 const rapid2 = require("./rapid2");
 const projectController = require("./projectController");
-const { remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay, jobScript, notebookRoot } = require("../db/db");
+const { jobScheduler, remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay, jobScript, notebookRoot } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
 const { setProjectState, getProjectState, checkRunningJobs } = require("../core/projectFilesOperator");
@@ -30,6 +30,17 @@ module.exports = function(io) {
     });
     socket.on("getJobScriptList", ()=>{
       socket.emit("jobScriptList", jobScript.getAll());
+    });
+    socket.on("getSelectedJobScheduler", (selectHost)=>{
+      for (const host of remoteHost.getAll()) {
+        if (host.name === selectHost) {
+          socket.emit("selectedJobScheduler", jobScheduler[host.jobScheduler]);
+        }
+      }
+      if (selectHost === "localhost") {
+        const localhost = { submit: "" };
+        socket.emit("selectedJobScheduler", localhost);
+      }
     });
 
     //event listeners for project operation

@@ -283,7 +283,7 @@
                   <label for="parameterRemotehost" id="propertyRemotehost">Remotehost</label>
                   <div>
                     <select name="remotehost" v-model="node.host" id="remotehostSelectField"
-                      v-on:change="updateQueueList(); updateProperty('host');">
+                      v-on:change="updateQueueList(); updateProperty('host'); getSelectedJobScheduler();">
                       <option value="localhost">localhost</option>
                       <option v-for="v in hostList" v-bind:value="v.name" v-bind:key="v.name">{{ v.name }}</option>
                     </select>
@@ -310,6 +310,19 @@
                         v-bind:key="v">
                         {{ v}}</option>
                     </select>
+                  </div>
+                </div>
+                <div v-if="node.hasOwnProperty('submitOption')">
+                  <div>
+                    <label for="submitCommandField" id="propertySubmitCommand">submit command</label>
+                  </div>
+                  <div id="submitCommandInputField" disabled></div>
+                  <div>
+                    <label for="submitOptionInputField" id="propertySubmitOption">submit option</label>
+                  </div>
+                  <div>
+                    <input type="string" v-model.number.lazy.trim="node.submitOption" id="submitOptionInputField"
+                    v-on:blur="updateProperty('submitOption')">
                   </div>
                 </div>
                 <div v-if="node.hasOwnProperty('uploadOnDemand')" class="checkboxArea">
