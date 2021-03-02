@@ -463,7 +463,7 @@ async function validateForLoop(component) {
   }
 
   if (!(typeof component.keep === "number" && component.keep >= 0)) {
-    if (!(component.keep.length === 0)) {
+    if (component.keep != null) {
       return Promise.reject(new Error(`keep is not specified ${component.name}`));
     }
   }
