@@ -267,7 +267,8 @@ class RemoteJobExecuter extends Executer {
   async exec(task) {
     await prepareRemoteExecDir(task);
     const hostinfo = getSshHostinfo(task.projectRootDir, task.remotehostID);
-    const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ${makeStepOpt(task)}${makeBulkOpt(task)}${makeGrpNameOpt(task, this.JS, this.grpName, hostinfo.jobScheduler)}${task.submitOption} ./${task.script}`;
+    const submitOpt = task.submitOption ? task.submitOption : "";
+    const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ${makeStepOpt(task)}${makeBulkOpt(task)}${makeGrpNameOpt(task, this.JS, this.grpName, hostinfo.jobScheduler)}${submitOpt} ./${task.script}`;
     logger.debug("submitting job (remote):", submitCmd);
     await setTaskState(task, "running");
     const ssh = getSsh(task.projectRootDir, task.remotehostID);
