@@ -456,6 +456,11 @@ async function validateConditionalCheck(component) {
   if (!(Object.prototype.hasOwnProperty.call(component, "condition") && typeof component.condition === "string")) {
     return Promise.reject(new Error(`condition is not specified ${component.name}`));
   }
+  if (!(Object.prototype.hasOwnProperty.call(component, "keep") && typeof component.keep === "number" && component.keep >= 0)) {
+    if (component.keep != null) {
+      return Promise.reject(new Error(`keep is not specified ${component.name}`));
+    }
+  }
   return Promise.resolve();
 }
 
@@ -472,7 +477,7 @@ async function validateForLoop(component) {
     return Promise.reject(new Error(`end is not specified ${component.name}`));
   }
 
-  if (!(typeof component.keep === "number" && component.keep >= 0)) {
+  if (!(Object.prototype.hasOwnProperty.call(component, "keep") && typeof component.keep === "number" && component.keep >= 0)) {
     if (component.keep != null) {
       return Promise.reject(new Error(`keep is not specified ${component.name}`));
     }
@@ -510,6 +515,11 @@ async function validateForeach(component) {
   }
   if (component.indexList.length <= 0) {
     return Promise.reject(new Error(`index list is empty ${component.name}`));
+  }
+  if (!(Object.prototype.hasOwnProperty.call(component, "keep") && typeof component.keep === "number" && component.keep >= 0)) {
+    if (component.keep != null) {
+      return Promise.reject(new Error(`keep is not specified ${component.name}`));
+    }
   }
   return Promise.resolve();
 }
