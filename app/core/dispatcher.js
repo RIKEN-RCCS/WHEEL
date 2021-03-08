@@ -233,7 +233,7 @@ function forKeepLoopInstance(component, cwfDir) {
 
 function whileKeepLoopInstance(component, cwfDir) {
   if (Number.isInteger(component.keep) && component.keep >= 0) {
-    const deleteComponentInstance = component.currentIndex - 1;
+    const deleteComponentInstance = component.keep === 0 ? component.currentIndex - 1 : component.currentIndex - component.keep;
     if (deleteComponentInstance >= 0) {
       fs.remove(path.resolve(cwfDir, `${component.originalName}_${sanitizePath(deleteComponentInstance)}`));
     }
