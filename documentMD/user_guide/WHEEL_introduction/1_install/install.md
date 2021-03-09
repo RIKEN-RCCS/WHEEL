@@ -5,21 +5,16 @@ WHEELの起動や終了に関しては、次章にて説明します。
 ## 事前準備
 WHEELのインストールと動作には、node.js(version 12以降)が必要になります。 
 node.jsは、 以下の方法にてインストールできます。
-1. 次サイト https://nodejs.org/en にて、配布されているアーカイブをダウンロードしてインストールする
+1. 次サイト https://nodejs.org/ja にて、配布されているアーカイブをダウンロードしてインストールする。
 1. お使いのOSのパッケージマネージャを利用してインストールする。
 
 ## WHEELのダウンロード、インストール方法
 ***
 ### WHEELのダウンロード
-インストールを実行する前に理化学研究所の公開gitLabサイトより、
-WHEELのモジュールを任意のディレクトリにダウンロードしておく必要があります。
-WHEELのダウンロード先は、次のURLです。
-> 理化学研究所公開 gitLab URL：https://gitlab.com/aicshud/WHEEL  
+WHEELモジュールは、理研RCCSのgithubにOSS(BSDライセンス)として公開されています。  
+github: https://github.com/RIKEN-RCCS/WHEEL  
 
-サイトへ遷移後、下図内の手順に従い、WHEELのモジュールをユーザマシンへダウンロードします。
-
-1. ![img](./img/WHEEL_download_cloud.PNG "download")ボタンをクリックします。
-1. 任意の拡張子を選択します。  
+WHEELを使用する場合は、上記URLの**Code**ボタンからダウンロード、または、git cloneしてください。
 
 ![img](./img/WHEEL_download.PNG "download")  
 
