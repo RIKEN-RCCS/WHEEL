@@ -17,6 +17,8 @@ Taskコンポーネントのプロパティは以下です。
 | host | 文字列 | Taskを実行するhost、localhostまたは登録済のremotehostのlabelを指定する *2|
 | useJobScheduler | チェックボックス | scriptをジョブスケジューラ経由で実行するか直接実行するかのフラグ *2|
 | queue | 文字列 | ジョブの投入先キューを指定する(useJobSchedulerを使用しない場合は設定不可) *2|
+| submit command | 選択したJobSchedulerに設定されているsubmit commandを表示する。(読み取り専用) |
+| submit option | 入力したoptionがジョブ投入時にsubmit commandに追加される。 |
 | clean up flag | ラジオボタン | リモート環境に作成した一時ファイルの取り扱い指定フラグ |
 |  | clean up | 削除する |
 |  | keep files | 削除しない |
@@ -142,6 +144,12 @@ Remotehostプロパティで設定した「hostA」のQueueがリストとして
 #### リモートホスト(hostA)の設定値
 
 ![img](./img/task/task_queue2.png "hostAの設定値")
+
+#### submit optionプロパティ
+
+![img](./img/task/task_submitOption.png "オプションの設定")  
+
+submit optionに設定したオプションが追加されたcommandがジョブスケジューラに投入される。
 
 # プロジェクトの実行方法
 

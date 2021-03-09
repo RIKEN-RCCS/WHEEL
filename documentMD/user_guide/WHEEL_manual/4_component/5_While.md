@@ -12,6 +12,7 @@ Whileコンポーネントのプロパティは以下です。
 | inputFiles | ファイルまたはディレクトリ名 | 先行コンポーネントから受け取るファイル |
 | outputFiles | ファイル, ディレクトリ名またはglobパターン | 後続コンポーネントへ渡すファイル |
 | condition | ファイル名,またはJavaScriptの式 | 条件判定を行うスクリプトのファイル名、またはJavaScriptの式 |
+| last loop instance to keep | 整数値 | 残しておくループインスタンスの数（デフォルトではすべて保存される。） |
 | state clean | ボタン | コンポーネントの進行状態を初期状態に戻す *1 |
 
 *1 コンポーネントの進行状態が"finished"もしくは"failed"の時のみ表示されます。  
@@ -109,6 +110,7 @@ Whileコンポーネントのサンプルを示します。
 | InputFiles | - |
 | OutputFiles | - |
 | Condition | condition.sh |
+| last loop instance to keep | - |
 | Files | condition.sh |
 
 #### ・condition.sh
@@ -187,3 +189,6 @@ exit 0
 ## ワークフロー実行結果
 
 ![img](./img/while/While_finished.png "While_finished")
+
+## ループインスタンスの削除
+(参考：[ループインスタンスの削除](../4_component/3_For.md))
