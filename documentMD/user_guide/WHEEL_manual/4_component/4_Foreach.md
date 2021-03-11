@@ -12,6 +12,7 @@ Foreachコンポーネントのプロパティは以下です。
 | inputFiles | ファイルまたはディレクトリ名 | 先行コンポーネントから受け取るファイル |
 | outputFiles | ファイル, ディレクトリ名またはglobパターン | 後続コンポーネントへ渡すファイル |
 | indexList | 文字列 | ループカウンタインデックスに指定される値のリスト *1|
+| last loop instance to keep | 整数値 | 残しておくループインスタンスの数（デフォルトではすべて保存される。） |
 | state clean | ボタン | コンポーネントの進行状態を初期状態に戻す *2 |
 
 *1 使用できる文字列は、半角英数字[0-9 a-Z]、ハイフン[ - ]、アンダースコア[ _ ]のみです。  
@@ -82,6 +83,7 @@ Foreachコンポーネントのサンプルを示します。
 | index list | 1 |
 |  | 3 |
 |  | 5 |
+| last loop instance to keep | - |
 | Files | - |
 
 ## Foreachワークフロー子階層　構成図
@@ -149,3 +151,6 @@ exit 0
 ## ワークフロー実行結果
 
 ![img](./img/foreach/Foreach_finished.png "Foreach_finished")
+
+## ループインスタンスの削除
+(参考：[ループインスタンスの削除](../4_component/3_For.md))

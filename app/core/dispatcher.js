@@ -233,7 +233,7 @@ function forKeepLoopInstance(component, cwfDir) {
 
 function whileKeepLoopInstance(component, cwfDir) {
   if (Number.isInteger(component.keep) && component.keep >= 0) {
-    const deleteComponentInstance = component.currentIndex - 1;
+    const deleteComponentInstance = component.keep === 0 ? component.currentIndex - 1 : component.currentIndex - component.keep;
     if (deleteComponentInstance >= 0) {
       fs.remove(path.resolve(cwfDir, `${component.originalName}_${sanitizePath(deleteComponentInstance)}`));
     }
@@ -243,7 +243,7 @@ function whileKeepLoopInstance(component, cwfDir) {
 function foreachKeepLoopInstance(component, cwfDir) {
   if (Number.isInteger(component.keep) && component.keep >= 0) {
     const currentIndexNumber = component.currentIndex !== null ? component.indexList.indexOf(component.currentIndex) : component.indexList.length;
-    const deleteComponentNumber = currentIndexNumber - component.keep - 1;
+    const deleteComponentNumber = component.keep === 0 ? currentIndexNumber - 1 : currentIndexNumber - component.keep;
     const deleteComponentName = deleteComponentNumber >= 0 ? `${component.originalName}_${sanitizePath(component.indexList[deleteComponentNumber])}` : "";
     if (deleteComponentName) {
       fs.remove(path.resolve(cwfDir, deleteComponentName));

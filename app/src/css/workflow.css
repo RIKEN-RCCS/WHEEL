@@ -626,7 +626,7 @@ select::-ms-expand {
 
 #propertyInputFiles, #propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
 #propertyIndexList, #propertyStart, #propertyStep, #propertyKeep,
-#propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency, #propertyBulkNumber
+#propertyRemotehost, #propertyQueue, #propertySubmitOption, #propertyRetry, #propertyUseDependency, #propertyBulkNumber
 {
     margin: 8px 0 0 0;
     display: inline-block;
@@ -655,7 +655,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#dependencyInputField{
+#dependencyInputField, #submitCommandInputField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -710,7 +710,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#scriptSelectField, #remotehostSelectField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
+#scriptSelectField, #remotehostSelectField, #submitOptionInputField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
 #retryConditionSelectField, #fileForCondition{
     margin: 2px 0 0 8px;
     padding-left: 5px;

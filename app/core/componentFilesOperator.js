@@ -355,6 +355,16 @@ async function validateTask(projectRootDir, component) {
     } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
       return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
     }
+    if (component.submitOption) {
+      const optList = String(jobScheduler[hostinfo.jobScheduler].queueOpt).split(" ");
+      if (optList.map((opt)=>{
+        return component.submitOption.indexOf(opt);
+      }).every((i)=>{
+        return i >= 0;
+      })) {
+        return Promise.reject(new Error(`submit option duplicate queue option : ${jobScheduler[hostinfo.jobScheduler].queueOpt}`));
+      }
+    }
   }
 
   if (!(Object.prototype.hasOwnProperty.call(component, "script") && typeof component.script === "string")) {
@@ -446,6 +456,11 @@ async function validateConditionalCheck(component) {
   if (!(Object.prototype.hasOwnProperty.call(component, "condition") && typeof component.condition === "string")) {
     return Promise.reject(new Error(`condition is not specified ${component.name}`));
   }
+  if (!(Object.prototype.hasOwnProperty.call(component, "keep") && typeof component.keep === "number" && component.keep >= 0)) {
+    if (component.keep != null) {
+      return Promise.reject(new Error(`keep is not specified ${component.name}`));
+    }
+  }
   return Promise.resolve();
 }
 
@@ -462,8 +477,8 @@ async function validateForLoop(component) {
     return Promise.reject(new Error(`end is not specified ${component.name}`));
   }
 
-  if (!(typeof component.keep === "number" && component.keep >= 0)) {
-    if (!(component.keep.length === 0)) {
+  if (!(Object.prototype.hasOwnProperty.call(component, "keep") && typeof component.keep === "number" && component.keep >= 0)) {
+    if (component.keep != null) {
       return Promise.reject(new Error(`keep is not specified ${component.name}`));
     }
   }
@@ -500,6 +515,11 @@ async function validateForeach(component) {
   }
   if (component.indexList.length <= 0) {
     return Promise.reject(new Error(`index list is empty ${component.name}`));
+  }
+  if (!(Object.prototype.hasOwnProperty.call(component, "keep") && typeof component.keep === "number" && component.keep >= 0)) {
+    if (component.keep != null) {
+      return Promise.reject(new Error(`keep is not specified ${component.name}`));
+    }
   }
   return Promise.resolve();
 }

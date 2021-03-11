@@ -81,6 +81,10 @@
             "jpn": "ジョブ投入先のキューを選択します"
         },
         {
+            "key": "propertySubmitOption",
+            "jpn": "任意のオプションを追加します。"
+        },
+        {
             "key": "propertyParameterSettingFile",
             "jpn": "パラメトリックスタディの設定を記述したファイルを選択します"
         },
