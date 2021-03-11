@@ -14,7 +14,7 @@ const logger = getLogger();
 const { getDateString } = require("../lib/utility");
 const { gatherFiles } = require("./execUtils");
 const { jobScheduler, jobManagerJsonFilename } = require("../db/db");
-const { createStatusFile } = require("./execUtils");
+const { createStatusFile, createBulkStatusFile } = require("./execUtils");
 const { emitProjectEvent } = require("./projectEventManager");
 
 const jobManagers = new Map();
@@ -28,12 +28,13 @@ function getFirstCapture(outputText, reCode) {
   return result === null || typeof (result[1]) === "undefined" ? null : result[1];
 }
 
-function getStatCommand(JS, jobID) {
+function getStatCommand(JS, jobID, type) {
   let rt = "";
-  if (typeof (JS.stat) === "string") {
-    rt = `${JS.stat} ${jobID}`;
-  } else if (Array.isArray(JS.stat)) {
-    rt = JS.stat.reduce((a, cmd)=>{
+  const stat = type !== "bulkjobTask" ? JS.stat : JS.bulkstat;
+  if (typeof (stat) === "string") {
+    rt = `${stat} ${jobID}`;
+  } else if (Array.isArray(stat)) {
+    rt = stat.reduce((a, cmd)=>{
       return `${a} ; ${cmd} ${jobID}`;
     }, "");
     rt = rt.replace(/^ +; +/, "");
@@ -50,6 +51,25 @@ async function issueStatCmd(statCmd, task, output) {
   return ssh.exec(statCmd, {}, output, output);
 }
 
+function getBulkFirstCapture(outputText, reSubCode) {
+  const outputs = outputText.split("\n");
+  const codeRegex = new RegExp(reSubCode, "m");
+  const subJobOutputs = outputs.filter((text)=>{
+    return codeRegex.test(text);
+  }).map((text)=>{
+    return codeRegex.exec(text);
+  });
+  const bulkjobFailed = subJobOutputs.every((arrText)=>{
+    return arrText[1] !== "0";
+  });
+  const result = bulkjobFailed ? 1 : 0;
+  const codeList = subJobOutputs.map((arrText)=>{
+    return arrText[1];
+  });
+
+  return [result, codeList];
+}
+
 /**
  * check if job is finished or not on remote server
  * @param {Object} JS - jobScheduler.json info
@@ -57,7 +77,7 @@ async function issueStatCmd(statCmd, task, output) {
  * @returns {number | null} - return code
  */
 async function isFinished(JS, task) {
-  const statCmd = getStatCommand(JS, task.jobID);
+  const statCmd = getStatCommand(JS, task.jobID, task.type);
 
   const output = [];
   const statCmdRt = await issueStatCmd(statCmd, task, output);
@@ -71,7 +91,7 @@ async function isFinished(JS, task) {
     return Promise.reject(error);
   }
 
-  const reFinishedState = task.type !== "stepjobTask" ? new RegExp(JS.reFinishedState, "m") : new RegExp(JS.reFinishedStateStep, "m");
+  const reFinishedState = new RegExp(JS.reFinishedState, "m");
 
   const finished = reFinishedState.test(outputText);
   if (!finished) {
@@ -83,8 +103,17 @@ async function isFinished(JS, task) {
 
   //for backward compatibility use reJobStatus if JS does not have reJobStatusCode
   const reJobStatusCode = JS.reJobStatusCode || JS.reJobStatus;
-  task.jobStatus = getFirstCapture(outputText, reJobStatusCode);
+  let [jobStatus, jobStatusList] = [0, []];
 
+  if (task.type !== "bulkjobTask") {
+    task.jobStatus = getFirstCapture(outputText, reJobStatusCode);
+  } else {
+    [jobStatus, jobStatusList] = getBulkFirstCapture(outputText, JS.reSubJobStatusCode);
+    logger.debug(`JobStatus: ${jobStatus} ,jobStatusList: ${jobStatusList}`);
+    task.jobStatus = jobStatus;
+  }
+
+  // status.wheel.txtの出力方法を検討する
   if (task.jobStatus === null) {
     logger.warn("get job status code failed, code is overwrited by -2");
     task.jobStatus = -2;
@@ -94,11 +123,26 @@ async function isFinished(JS, task) {
     logger.warn("it may fail to get job script's return code. so it is overwirted by 0");
     return 0;
   }
-  const strRt = getFirstCapture(outputText, JS.reReturnCode);
+  let strRt = 0;
+  let [rt, rtCodeList] = [0, []];
+
+  if (task.type !== "bulkjobTask") {
+    strRt = getFirstCapture(outputText, JS.reReturnCode);
+  } else {
+    [rt, rtCodeList] = getBulkFirstCapture(outputText, JS.reSubReturnCode);
+    logger.debug(`rt: ${rt} ,rtCodeList: ${rtCodeList}`);
+    strRt = rt;
+  }
+
   if (strRt === null) {
     logger.warn("get return code failed, code is overwrited by -2");
     return -2;
   }
+  if (strRt === "6") {
+    logger.warn("get return code 6, this job was canceled by stepjob dependency");
+    return 0;
+  }
+  await createBulkStatusFile(task, rtCodeList, jobStatusList);
   return parseInt(strRt, 10);
 }
 

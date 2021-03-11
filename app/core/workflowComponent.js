@@ -258,12 +258,14 @@ class BulkjobTask extends Task {
     super(pos, parent, stepnum, ...args);
     this.type = "bulkjobTask";
     this.useJobScheduler = true;
-  
-  /*bulkjob parameter */
+
+    /*bulkjob parameter */
     this.usePSSettingFile = "0";
     this.parameterFile = null;
     this.startBulkNumber = null;
     this.endBulkNumber = null;
+    this.manualFinishCondition = false;
+    this.condition = null;
   }
 }
 

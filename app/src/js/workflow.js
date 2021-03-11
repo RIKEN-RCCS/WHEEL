@@ -625,7 +625,6 @@ $(() => {
   const svg = SVG('node_svg');
   sio.on('connect', function () { 
     console.log('connect');
-    //sio.emit('getWheelCommitId', currentWorkFlow);
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
@@ -1010,10 +1009,11 @@ $(() => {
         let nodeIconPath = config.node_icon[nodeType];
         $('#img_node_type').attr("src", nodeIconPath);
         vm.nodeScript = target.script;
-        if (nodeType === 'task' || nodeType === 'stepjob') {
+        if (target.hasOwnProperty('host')) {
           sio.emit('getHostList', true);
           sio.emit('getJobScriptList', true);
-        }
+        } 
+        
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
         $('#editPSFileButton').css('visibility', 'hidden');

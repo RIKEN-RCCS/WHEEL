@@ -350,6 +350,7 @@
                     <div v-if="retryConditionInputType === '1'">
                       <select name="retryCondition" class="conditionFormat" id="retryConditionSelectField"
                         v-model="node.retryCondition" v-on:change="updateProperty('retryCondition')">
+                        <option value=""></option>
                         <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'"
                           v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}
                         </option>
@@ -360,6 +361,47 @@
                         id="retryConditionInputField" v-on:blur="updateProperty('retryCondition')">
                     </div>
                   </div>
+                </div>
+                <div v-if="node.type === 'bulkjobTask'">
+                  <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
+                  <div>
+                    <input type="radio" v-model.lazy.trim="node.usePSSettingFile"
+                      v-on:change="updateProperty('usePSSettingFile')" name="useBulkNumberSettingFlag" value="0"
+                      id="useBulkNumberManual" checked>manual
+                  </div>
+                  <div>
+                    <label for="startBulkNumberInputField" id="propertyStartBulkNumber">start</label>
+                    <input type="number" v-model.number.lazy.trim="node.startBulkNumber" id="startBulkNumberInputField"
+                      v-bind:disabled="node.usePSSettingFile !== '0'"
+                      v-bind:class="{bulkNumberInputFieldColor: bulkNumberAutoSet}"
+                      v-on:blur="updateProperty('startBulkNumber')">
+                    <label for="endBulkNumberInputField" id="propertyEndBulkNumber">end</label>
+                    <input type="number" v-model.number.lazy.trim="node.endBulkNumber" id="endBulkNumberInputField"
+                      v-bind:disabled="node.usePSSettingFile !== '0'"
+                      v-bind:class="{bulkNumberInputFieldColor: bulkNumberAutoSet}"
+                      v-on:blur="updateProperty('endBulkNumber')">
+                  </div>
+                  <div>
+                    <input type="radio" v-model.lazy.trim="node.usePSSettingFile"
+                      v-on:change="updateProperty('usePSSettingFile')" name="useBulkNumberSettingFlag" value="1"
+                      id="useBulkNumberAuto">use ParameterSettingFile
+                  </div>
+                  <div>
+                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectFieldForBulkjob"
+                      v-bind:disabled="node.usePSSettingFile !== '1'"
+                      v-bind:class="{usePSSettingFileInputFieldColor: bulkNumberAutoSet}"
+                      v-on:change="updateProperty('parameterFile')">
+                      <option value=""></option>
+                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'"
+                        v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div v-if="node.hasOwnProperty('manualFinishCondition') && !(node.type === 'stepjobTask')"
+                  class="checkboxArea">
+                  <input type="checkbox" v-model.lazy.trim="node.manualFinishCondition">
+                  <label class="propertyCheckboxLabel" id="propertyManualFinishCondition">Manual Finish
+                    Condition</label>
                 </div>
                 <div v-if="node.hasOwnProperty('condition')">
                   <label for="conditionInputField" id="propertyCondition">Condition</label>
@@ -374,6 +416,7 @@
                   <div v-if="conditionInputType === '1'">
                     <select name="condition" class="conditionFormat" id="conditionSelectField" v-model="node.condition"
                       v-on:change="updateProperty('condition')">
+                      <option disabled value=""></option>
                       <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'"
                         v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}
                       </option>
@@ -437,75 +480,6 @@
                       id="dependencyInputField" v-bind:disabled="node.useDependency !== true"
                       v-bind:class="{dependencyInputFieldColor: node.useDependency}"
                       v-on:blur="updateProperty('dependencyForm')">
-                  </div>
-                </div>
-                <!-- <div v-if="node.type === 'bulkjobTask'">
-                  <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
-                  <div>
-                    <label for="propertyBulkNumber" style="margin-left:8px">Setting Type</label>
-                  </div>
-                  <div>
-                    <select id="bulkNumberSelectField" class="bulkNumberSelectFieldColor"
-                      v-model="bulkNumberSettingType" v-on:change="setBulkNumberInputFieldColor()">
-                      <option value="manual">manual</option>
-                      <option value="auto">use paremeterSettingFile</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="startBulkNumberInputField" id="propertyStartBulkNumber">start</label>
-                    <input type="number" v-model.number.lazy.trim="node.startBulkNumber" id="startBulkNumberInputField"
-                      v-bind:disabled="bulkNumberSettingType === 'auto'"
-                      v-bind:class="{bulkNumberInputFieldColor: !bulkNumberManualSet}"
-                      v-on:blur="updateProperty('startBulkNumber')">
-                    <label for="endBulkNumberInputField" id="propertyEndBulkNumber">end</label>
-                    <input type="number" v-model.number.lazy.trim="node.endBulkNumber" id="endBulkNumberInputField"
-                      v-bind:disabled="bulkNumberSettingType === 'auto'"
-                      v-bind:class="{bulkNumberInputFieldColor: !bulkNumberManualSet}"
-                      v-on:blur="updateProperty('endBulkNumber')">
-                  </div>
-                  <div v-if="node.hasOwnProperty('parameterFile')">
-                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectFieldForBulkjob"
-                      v-bind:disabled="bulkNumberSettingType === 'manual'"
-                      v-bind:class="{usePSSettingFileInputFieldColor: bulkNumberManualSet}"
-                      v-on:change="updateProperty('parameterFile')">
-                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'"
-                        v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
-                    </select>
-                  </div>
-                </div> -->
-                <div v-if="node.type === 'bulkjobTask'">
-                  <label for="propertyBulkNumber" id="propertyBulkNumber">Bulk Number</label>
-                  <div>
-                    <input type="radio" v-model.lazy.trim="node.usePSSettingFile"
-                      v-on:change="updateProperty('usePSSettingFile')" name="useBulkNumberSettingFlag" value="0"
-                      id="useBulkNumberManual" checked>manual
-                  </div>
-                  <div>
-                    <label for="startBulkNumberInputField" id="propertyStartBulkNumber">start</label>
-                    <input type="number" v-model.number.lazy.trim="node.startBulkNumber" id="startBulkNumberInputField"
-                      v-bind:disabled="node.usePSSettingFile !== '0'"
-                      v-bind:class="{bulkNumberInputFieldColor: bulkNumberAutoSet}"
-                      v-on:blur="updateProperty('startBulkNumber')">
-                    <label for="endBulkNumberInputField" id="propertyEndBulkNumber">end</label>
-                    <input type="number" v-model.number.lazy.trim="node.endBulkNumber" id="endBulkNumberInputField"
-                      v-bind:disabled="node.usePSSettingFile !== '0'"
-                      v-bind:class="{bulkNumberInputFieldColor: bulkNumberAutoSet}"
-                      v-on:blur="updateProperty('endBulkNumber')">
-                  </div>
-                  <div>
-                    <input type="radio" v-model.lazy.trim="node.usePSSettingFile"
-                      v-on:change="updateProperty('usePSSettingFile')" name="useBulkNumberSettingFlag" value="1"
-                      id="useBulkNumberAuto">use ParameterSettingFile
-                  </div>
-                  <div>
-                    <select name="parameterFile" v-model="node.parameterFile" id="parameterFileSelectFieldForBulkjob"
-                      v-bind:disabled="node.usePSSettingFile !== '1'"
-                      v-bind:class="{usePSSettingFileInputFieldColor: bulkNumberAutoSet}"
-                      v-on:change="updateProperty('parameterFile')">
-                      <option val=""></option>
-                      <option v-for="paramFile in fileList" v-if="paramFile.type === 'file'"
-                        v-bind:value="paramFile.name" v-bind:key="paramFile.name">{{ paramFile.name }}</option>
-                    </select>
                   </div>
                 </div>
               </div>

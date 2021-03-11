@@ -126,7 +126,7 @@ async function writeParameterSetFile(templateRoot, targetFiles, params, bulkNumb
       const target = replacePathsep(targetFile);
       const targetKey = paramsKeys[index];
       const targetVal = params[targetKey];
-      const data = `${label}_TARGETNUM_${targetNum}_FILE="${target}"\n${label}_TARGETNUM_${targetNum}_KEY="${targetKey}"\n${label}_TARGETNUM_${targetNum}_VALUE="${targetVal}"\n`;
+      const data = `${label}_TARGETNUM_${targetNum}_FILE="./${target}"\n${label}_TARGETNUM_${targetNum}_KEY="${targetKey}"\n${label}_TARGETNUM_${targetNum}_VALUE="${targetVal}"\n`;
       targetNum++;
       return fs.appendFile(path.resolve(templateRoot, "parameterSet.wheel.txt"), data);
     })

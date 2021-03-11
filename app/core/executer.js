@@ -160,6 +160,17 @@ async function needsRetry(task) {
   return rt;
 }
 
+async function decideFinishState(task) {
+  let rt = false;
+  try {
+    rt = await evalCondition(task.condition, task.workingDir, task.currentIndex, logger);
+  } catch (err) {
+    logger.info(`manualFinishCondition of ${task.name}(${task.ID}) is set but exception occurred while evaluting it.`);
+    return false;
+  }
+  return rt;
+}
+
 class Executer {
   constructor(hostinfo) {
     this.hostinfo = hostinfo;
@@ -189,7 +200,12 @@ class Executer {
         task.endTime = getDateString(true, true);
 
         //update task status
-        const state = task.rt === 0 ? "finished" : "failed";
+        let state;
+        if (task.manualFinishCondition) {
+          state = await decideFinishState(task) ? "finished" : "failed";
+        } else {
+          state = task.rt === 0 ? "finished" : "failed";
+        }
         await setTaskState(task, state);
 
         //to use task in retry function, exec() will be rejected with task object if failed
