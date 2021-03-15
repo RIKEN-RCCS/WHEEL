@@ -312,7 +312,7 @@
                     </select>
                   </div>
                 </div>
-                <div v-if="node.hasOwnProperty('submitOption')">
+                <div v-if="node.hasOwnProperty('submitOption') && ( node.type !== 'stepjobTask' && node.type !== 'bulkjobTask' )">
                   <div>
                     <label for="submitCommandField" id="propertySubmitCommand">submit command</label>
                   </div>
@@ -412,7 +412,7 @@
                 </div>
                 <div v-if="node.hasOwnProperty('manualFinishCondition') && !(node.type === 'stepjobTask')"
                   class="checkboxArea">
-                  <input type="checkbox" id="manualFinishConditionFlagField" v-model.lazy.trim="node.manualFinishCondition">
+                  <input type="checkbox" id="manualFinishConditionFlagField" v-model.lazy.trim="node.manualFinishCondition" v-on:change="updateProperty('manualFinishCondition')">
                   <label class="propertyCheckboxLabel" id="propertyManualFinishCondition">Manual Finish
                     Condition</label>
                 </div>

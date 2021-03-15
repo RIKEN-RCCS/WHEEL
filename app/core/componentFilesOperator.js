@@ -424,6 +424,19 @@ async function validateBulkjobTask(projectRootDir, component) {
     return Promise.reject(new Error(`illegal path ${component.name}`));
   }
 
+  if (!(Object.prototype.hasOwnProperty.call(component, "script") && typeof component.script === "string")) {
+    return Promise.reject(new Error(`script is not specified ${component.name}`));
+  }
+  const componentDir = await getComponentDir(projectRootDir, component.ID, true);
+  const filename = path.resolve(componentDir, component.script);
+  if (!(await fs.stat(filename)).isFile()) {
+    return Promise.reject(new Error(`script is not existing file ${filename}`));
+  }
+
+  if (component.host === "localhost") {
+    return Promise.reject(new Error("localhost does not support bulkjob`"));
+  }
+
   if (component.useJobScheduler) {
     const hostinfo = remoteHost.query("name", component.host);
     if (typeof hostinfo === "undefined") {
@@ -441,13 +454,29 @@ async function validateBulkjobTask(projectRootDir, component) {
     }
   }
 
-  if (!(Object.prototype.hasOwnProperty.call(component, "script") && typeof component.script === "string")) {
-    return Promise.reject(new Error(`script is not specified ${component.name}`));
+  if (component.usePSSettingFile === "0") {
+    if (!(Object.prototype.hasOwnProperty.call(component, "startBulkNumber") && typeof component.startBulkNumber === "number")) {
+      return Promise.reject(new Error(`startBulkNumber is not specified ${component.name}`));
+    }
+    if (!(component.startBulkNumber >= 0)) {
+      return Promise.reject(new Error(`${component.name} startBulkNumber is integer of 0 or more`));
+    }
+    if (!(Object.prototype.hasOwnProperty.call(component, "endBulkNumber") && typeof component.endBulkNumber === "number" && component.startBulkNumber >= 0)) {
+      return Promise.reject(new Error(`endBulkNumber is not specified ${component.name}`));
+    }
+    if (!(component.endBulkNumber > component.startBulkNumber)) {
+      return Promise.reject(new Error(`${component.name} endBulkNumber is greater than startBulkNumber`));
+    }
+  } else {
+    if (!(Object.prototype.hasOwnProperty.call(component, "parameterFile") && typeof component.parameterFile === "string")) {
+      return Promise.reject(new Error(`parameter setting file is not specified ${component.name}`));
+    }
   }
-  const componentDir = await getComponentDir(projectRootDir, component.ID, true);
-  const filename = path.resolve(componentDir, component.script);
-  if (!(await fs.stat(filename)).isFile()) {
-    return Promise.reject(new Error(`script is not existing file ${filename}`));
+
+  if (component.manualFinishCondition) {
+    if (!(Object.prototype.hasOwnProperty.call(component, "condition") && typeof component.condition === "string")) {
+      return Promise.reject(new Error(`condition is not specified ${component.name}`));
+    }
   }
   return true;
 }
