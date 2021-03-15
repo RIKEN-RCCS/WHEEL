@@ -100,7 +100,8 @@ $(() => {
       unsavedFiles: [],
       cb: null,
       dialog: null,
-      bulkNumberAutoSet: null
+      bulkNumberAutoSet: null,
+      finishConditionManualSet:null
     },
     mounted (){
       const that=this;
@@ -555,12 +556,10 @@ $(() => {
     },
     watch: {
       'node.usePSSettingFile'() {
-        if (this.node.usePSSettingFile === '0') {
-          this.bulkNumberAutoSet = false;
-        }
-        if (this.node.usePSSettingFile === '1') {
-          this.bulkNumberAutoSet = true;
-        }
+        this.bulkNumberAutoSet = this.node.usePSSettingFile === '0' ? false : true;
+      },
+      'node.condition'() {
+        this.finishConditionManualSet = this.node.manualFinishCondition === false ? true : false; 
       }
     }
   });
@@ -1414,9 +1413,12 @@ $(() => {
       { id: "dependencyInputField", readonly: true, disable: false },
       { id: "usePSSettingFile", readonly: true, disable: true },
       { id: "usePSSettingFile", readonly: true, disable: true },
+      { id: "useBulkNumberManual", readonly: true, disable: true },
+      { id: "useBulkNumberAuto", readonly: true, disable: true },
       { id: "endBulkNumberInputField", readonly: true, disable: true },
       { id: "startBulkNumberInputField", readonly: true, disable: true },
-      { id: "parameterFileSelectFieldForBulkjob", readonly: true, disable: true }
+      { id: "parameterFileSelectFieldForBulkjob", readonly: true, disable: true },
+      { id: "manualFinishConditionFlagField", readonly: true, disable: true },
     ];
 
     var classes = [
@@ -1428,13 +1430,9 @@ $(() => {
       { class: "newIndexListField", readonly: true, disable: false }
     ];
 
-    let throughIds=[];
-    if (vm.node.usePSSettingFile === "0") {
-      throughIds = ["parameterFileSelectFieldForBulkjob"];
-    }
-    if (vm.node.usePSSettingFile === "1") {
-      throughIds = ["endBulkNumberInputField", "startBulkNumberInputField"];
-    }
+    let throughIds = vm.node.usePSSettingFile === "0" ? ["parameterFileSelectFieldForBulkjob"] : ["endBulkNumberInputField", "startBulkNumberInputField"];
+    throughIds = vm.node.manualFinishCondition === false ? throughIds.concat(["conditionFlag1", "conditionFlag2", "conditionSelectField"]) : throughIds;
+    console.log(throughIds);
 
     ids.forEach((v) => {
       try {
@@ -1446,6 +1444,7 @@ $(() => {
         if (v.disable === true) {
           const checkFlag = throughIds.includes(v.id);
           if (propertyEditableFlag === false && checkFlag) {
+            console.log(v.id);
             return;
           }
           $("[id=" + v.id + "]").prop('disabled', propertyEditableFlag);

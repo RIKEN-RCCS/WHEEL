@@ -412,7 +412,7 @@
                 </div>
                 <div v-if="node.hasOwnProperty('manualFinishCondition') && !(node.type === 'stepjobTask')"
                   class="checkboxArea">
-                  <input type="checkbox" v-model.lazy.trim="node.manualFinishCondition">
+                  <input type="checkbox" id="manualFinishConditionFlagField" v-model.lazy.trim="node.manualFinishCondition">
                   <label class="propertyCheckboxLabel" id="propertyManualFinishCondition">Manual Finish
                     Condition</label>
                 </div>
@@ -421,14 +421,15 @@
                   <div id="conditionTypeFlags">
                     <div>
                       <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag1"
-                        value="1">file</div>
+                        value="1" v-bind:disabled="node.manualFinishCondition !== true">file</div>
                     <div>
                       <input type="radio" v-model="conditionInputType" name="conditionInputType" id="conditionFlag2"
-                        value="2">JavaScript</div>
+                        value="2" v-bind:disabled="node.manualFinishCondition !== true">JavaScript</div>
                   </div>
                   <div v-if="conditionInputType === '1'">
                     <select name="condition" class="conditionFormat" id="conditionSelectField" v-model="node.condition"
-                      v-on:change="updateProperty('condition')">
+                      v-on:change="updateProperty('condition')" v-bind:disabled="node.manualFinishCondition !== true" 
+                      v-bind:class="{conditionSelectFieldColor: finishConditionManualSet}">
                       <option disabled value=""></option>
                       <option v-for="conditionFile in fileList" v-if="conditionFile.type === 'file'"
                         v-bind:value="conditionFile.name" v-bind:key="conditionFile.name">{{ conditionFile.name }}
