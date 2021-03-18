@@ -137,12 +137,14 @@ async function isFinished(JS, task) {
   if (strRt === null) {
     logger.warn("get return code failed, code is overwrited by -2");
     return -2;
-  }
-  if (strRt === "6") {
+  } else if (strRt === "6") {
     logger.warn("get return code 6, this job was canceled by stepjob dependency");
     return 0;
   }
-  await createBulkStatusFile(task, rtCodeList, jobStatusList);
+
+  if (task.type === "bulkjobTask") {
+    await createBulkStatusFile(task, rtCodeList, jobStatusList);
+  }
   return parseInt(strRt, 10);
 }
 

@@ -110,7 +110,7 @@ async function createBulkStatusFile(task, rtList, jobStatusList) {
   const filename = path.resolve(task.workingDir, `subjob_${statusFilename}`);
   let statusFile = "";
   for (let bulkNum = task.startBulkNumber; bulkNum <= task.endBulkNumber; bulkNum++) {
-    statusFile += `BULKNUM=${bulkNum}\n${bulkNum}_RT=${rtList[bulkNum]}\n${bulkNum}_JOBSTATUS=${jobStatusList[bulkNum]}\n`;
+    statusFile += `RT_${bulkNum}=${rtList[bulkNum]}\nJOBSTATUS_${bulkNum}=${jobStatusList[bulkNum]}\n`;
   }
   return fs.writeFile(filename, statusFile);
 }
