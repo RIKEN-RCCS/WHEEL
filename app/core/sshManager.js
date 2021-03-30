@@ -20,7 +20,7 @@ function hasEntry(projectRootDir, id) {
 
 /**
  * parse hostinfo and create config object of arssh2
- * @param {hostinfo} hotsInfo - one of remotehost.json's entry
+ * @param {Object} hostInfo - one of remotehost.json's entry
  * @param {string} password - password or passphrase for private key
  */
 async function createSshConfig(hostInfo, password) {
@@ -28,6 +28,7 @@ async function createSshConfig(hostInfo, password) {
     host: hostInfo.host,
     port: hostInfo.port,
     keepaliveInterval: hostInfo.keepaliveInterval || 30000,
+    readyTimeout: hostInfo.readyTimeout || 1000,
     username: hostInfo.username
   };
 
@@ -53,7 +54,7 @@ async function createSshConfig(hostInfo, password) {
 /**
  * keep ssh instance and its setting at the time the connection was wstablished
  * @param {string} projectRootDir -  full path of project root directory it is used as key index of each map
- * @param {Object} hostinfo - ssh connection setting from remotehost json
+ * @param {Object} hostinfo - one of the ssh connection setting in remotehost json
  * @param {Object} ssh -  ssh connection instance
  */
 function addSsh(projectRootDir, hostinfo, ssh) {
@@ -128,6 +129,9 @@ function askPassword(sio, hostname) {
 
 /**
  * create necessary ssh instance
+ * @param {string} projectRootDir -  full path of project root directory it is used as key index of each map
+ * @param {string} remoteHostName - name property in hostInfo object
+ * @param {Object} hostinfo - one of the ssh connection setting in remotehost json
  * @param {Object} sio - instance of SocketIO.socket
  */
 async function createSsh(projectRootDir, remoteHostName, hostinfo, sio) {
@@ -175,6 +179,7 @@ async function createSsh(projectRootDir, remoteHostName, hostinfo, sio) {
     }
   }
   addSsh(projectRootDir, hostinfo, arssh);
+  return arssh;
 }
 
 
