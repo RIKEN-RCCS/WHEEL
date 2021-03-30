@@ -283,14 +283,8 @@ describe("UT for executer class", function() {
         const JS = hostInfo.jobScheduler;
         expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).not.to.be.a.path();
       });
-    });
-    describe.only("#remote job add submit option", ()=>{
-      beforeEach(()=>{
-        task0.useJobScheduler = true;
+      it("add submit option at Fugaku2020", async()=>{
         task0.submitOption = "-N testjob";
-        task0.host = "PBSPro"; //testServer
-      });
-      it("add submit option", async()=>{
         await exec(task0, dummyLogger);
         //92 means job was successfully finished on PBS Pro
         expect(path.join(task0.workingDir, statusFilename)).to.be.a.file().with.content("finished\n0\n92");

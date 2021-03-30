@@ -978,7 +978,7 @@ describe("project Controller UT", function() {
         });
       });
     });
-    describe.only("task in PS", ()=>{
+    describe("task in PS", ()=>{
       beforeEach(async()=>{
         const ps0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
         await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
@@ -1557,9 +1557,8 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0")}${os.EOL}`);
       });
     });
-    
-    //Fugaku2021
-    describe.only("If component", ()=>{
+
+    describe("If component at Fugaku2020", ()=>{
       beforeEach(async()=>{
         const if0 = await createNewComponent(projectRootDir, projectRootDir, "if", { x: 10, y: 10 });
         const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
@@ -1569,6 +1568,12 @@ describe("project Controller UT", function() {
         await updateComponent(projectRootDir, task0.ID, "script", scriptName);
         await updateComponent(projectRootDir, task1.ID, "script", scriptName);
         await updateComponent(projectRootDir, task2.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "task0", "a"), "a");
+        await addOutputFile(projectRootDir, task0.ID, "a");
+        await addInputFile(projectRootDir, if0.ID, "b");
+        await addInputFile(projectRootDir, task2.ID, "c");
+        await addFileLink(projectRootDir, task0.ID, "a", if0.ID, "b");
+        await addFileLink(projectRootDir, task0.ID, "a", task2.ID, "c");
         await addLink(projectRootDir, if0.ID, task1.ID);
         await addLink(projectRootDir, if0.ID, task2.ID, true);
         await fs.outputFile(path.join(projectRootDir, "if0", scriptName), "#!/bin/bash\nexit 0\n");

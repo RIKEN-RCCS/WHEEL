@@ -36,10 +36,9 @@ const debugLogger = {
   trace: sinon.stub()
 };
 
-const wait = (sec)=>{
+const wait = ()=>{
   return new Promise((resolve)=>{
-    setTimeout(resolve, sec * 1000);
-    //setTimeout(() => {reject(new Error("エラー！"))}, sec*1000);
+    setTimeout(resolve, 10);
   });
 };
 
@@ -80,7 +79,6 @@ describe("UT for Dispatcher class", function() {
       await addFileLink(projectRootDir, previous.ID, "a*", next.ID, "b");
       const DP = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, "dummy start time", debugLogger, projectJson.componentPath, stub);
       expect(await DP.start()).to.be.equal("finished");
-      wait(10);
       expect(path.resolve(projectRootDir, next.name, "b")).not.to.be.a.path();
       expect(path.resolve(projectRootDir, next.name, "a*")).not.to.be.a.path();
     });
@@ -91,15 +89,14 @@ describe("UT for Dispatcher class", function() {
       for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
       projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
     });
-    //Fugaku2021
-    it.only("should copy 3 times and delete all component", async()=>{
+    it("should copy 3 times and delete all component at Fugaku2020", async()=>{
       await updateComponent(projectRootDir, for0.ID, "start", 0);
       await updateComponent(projectRootDir, for0.ID, "end", 2);
       await updateComponent(projectRootDir, for0.ID, "step", 1);
       await updateComponent(projectRootDir, for0.ID, "keep", 0);
       const DP = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, "dummy start time", debugLogger, projectJson.componentPath, stub);
       expect(await DP.start()).to.be.equal("finished");
-      await wait(5);
+      await wait();
       expect(path.resolve(projectRootDir, `${for0.name}_0`)).not.to.be.a.path();
       expect(path.resolve(projectRootDir, `${for0.name}_1`)).not.to.be.a.path();
       expect(path.resolve(projectRootDir, `${for0.name}_2`)).not.to.be.a.path();
@@ -228,8 +225,7 @@ describe("UT for Dispatcher class", function() {
     });
   });
 
-  //Fugaku2021
-  describe.only("#Parameter Study", ()=>{
+  describe("#Parameter Study at Fugaku2020", ()=>{
     let PS0;
     beforeEach(async()=>{
       PS0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
@@ -277,8 +273,7 @@ describe("UT for Dispatcher class", function() {
     });
   });
 
-  //Fugaku2021
-  describe.only("#Foreach component", ()=>{
+  describe("#Foreach component at Fugaku2020", ()=>{
     let foreach0;
     beforeEach(async()=>{
       foreach0 = await createNewComponent(projectRootDir, projectRootDir, "foreach", { x: 10, y: 10 });
@@ -289,7 +284,7 @@ describe("UT for Dispatcher class", function() {
     it("should copy 3 times and delete all component", async()=>{
       const DP = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, "dummy start time", debugLogger, projectJson.componentPath, stub);
       expect(await DP.start()).to.be.equal("finished");
-      await wait(5);
+      await wait();
       expect(path.resolve(projectRootDir, `${foreach0.name}_foo`)).not.to.be.a.path();
       expect(path.resolve(projectRootDir, `${foreach0.name}_bar`)).not.to.be.a.path();
       expect(path.resolve(projectRootDir, `${foreach0.name}_baz`)).not.to.be.a.path();
@@ -297,8 +292,7 @@ describe("UT for Dispatcher class", function() {
     });
   });
 
-  //Fugaku2021
-  describe.only("#While component", ()=>{
+  describe("#While component at Fugaku2020", ()=>{
     let while0;
     beforeEach(async()=>{
       while0 = await createNewComponent(projectRootDir, projectRootDir, "while", { x: 10, y: 10 });
@@ -309,7 +303,7 @@ describe("UT for Dispatcher class", function() {
     it("should copy 3 times and delete all component", async()=>{
       const DP = new Dispatcher(projectRootDir, rootWF.ID, projectRootDir, "dummy start time", debugLogger, projectJson.componentPath, stub);
       expect(await DP.start()).to.be.equal("finished");
-      await wait(5);
+      await wait();
       expect(path.resolve(projectRootDir, `${while0.name}_0`)).not.to.be.a.path();
       expect(path.resolve(projectRootDir, `${while0.name}_1`)).not.to.be.a.path();
       expect(path.resolve(projectRootDir, `${while0.name}_2`)).not.to.be.a.path();
