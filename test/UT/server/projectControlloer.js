@@ -982,7 +982,6 @@ describe("project Controller UT", function() {
       beforeEach(async()=>{
         const ps0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
         await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
-        await updateComponent(projectRootDir, ps0.ID, "deleteLoopInstance", true);
         await fs.outputFile(path.join(projectRootDir, "PS0", "input.txt"), "%%KEYWORD1%%");
         const parameterSetting = {
           target_file: "input.txt",
@@ -1156,7 +1155,7 @@ describe("project Controller UT", function() {
         });
       });
     });
-    describe("task in nested PS(does not work for now)", ()=>{
+    describe.skip("task in nested PS(does not work for now)", ()=>{
       beforeEach(async()=>{
         const ps0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
         await updateComponent(projectRootDir, ps0.ID, "parameterFile", "input.txt.json");
@@ -1507,7 +1506,6 @@ describe("project Controller UT", function() {
       it("should overwrite files and run project ", async()=>{
         const ps0 = await fs.readJson(path.join(projectRootDir, "PS0", componentJsonFilename));
         await updateComponent(projectRootDir, ps0.ID, "forceOverwrite", true);
-        await updateComponent(projectRootDir, ps0.ID, "deleteLoopInstance", true);
         await runProject(projectRootDir);
         expect(dummyLogger.stdout).to.have.been.calledThrice;
         expect(dummyLogger.stdout.getCall(0)).to.have.been.calledWithMatch(new RegExp(path.join(projectRootDir, "PS0_KEYWORD1_(1|2|3)", "task0")));
@@ -1558,7 +1556,7 @@ describe("project Controller UT", function() {
       });
     });
 
-    describe("If component at Fugaku2020", ()=>{
+    describe("If component", ()=>{
       beforeEach(async()=>{
         const if0 = await createNewComponent(projectRootDir, projectRootDir, "if", { x: 10, y: 10 });
         const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });

@@ -283,7 +283,7 @@ describe("UT for executer class", function() {
         const JS = hostInfo.jobScheduler;
         expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).not.to.be.a.path();
       });
-      it("add submit option at Fugaku2020", async()=>{
+      it("add submit option", async()=>{
         task0.submitOption = "-N testjob";
         await exec(task0, dummyLogger);
         //92 means job was successfully finished on PBS Pro

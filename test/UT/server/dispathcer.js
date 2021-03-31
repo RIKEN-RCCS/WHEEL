@@ -89,7 +89,7 @@ describe("UT for Dispatcher class", function() {
       for0 = await createNewComponent(projectRootDir, projectRootDir, "for", { x: 10, y: 10 });
       projectJson = await fs.readJson(path.resolve(projectRootDir, projectJsonFilename));
     });
-    it("should copy 3 times and delete all component at Fugaku2020", async()=>{
+    it("should copy 3 times and delete all component", async()=>{
       await updateComponent(projectRootDir, for0.ID, "start", 0);
       await updateComponent(projectRootDir, for0.ID, "end", 2);
       await updateComponent(projectRootDir, for0.ID, "step", 1);
@@ -225,7 +225,7 @@ describe("UT for Dispatcher class", function() {
     });
   });
 
-  describe("#Parameter Study at Fugaku2020", ()=>{
+  describe("#Parameter Study", ()=>{
     let PS0;
     beforeEach(async()=>{
       PS0 = await createNewComponent(projectRootDir, projectRootDir, "PS", { x: 10, y: 10 });
@@ -273,7 +273,7 @@ describe("UT for Dispatcher class", function() {
     });
   });
 
-  describe("#Foreach component at Fugaku2020", ()=>{
+  describe("#Foreach component", ()=>{
     let foreach0;
     beforeEach(async()=>{
       foreach0 = await createNewComponent(projectRootDir, projectRootDir, "foreach", { x: 10, y: 10 });
@@ -292,7 +292,7 @@ describe("UT for Dispatcher class", function() {
     });
   });
 
-  describe("#While component at Fugaku2020", ()=>{
+  describe("#While component", ()=>{
     let while0;
     beforeEach(async()=>{
       while0 = await createNewComponent(projectRootDir, projectRootDir, "while", { x: 10, y: 10 });
