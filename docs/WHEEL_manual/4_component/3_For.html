@@ -519,7 +519,7 @@
 <li class="heading"><span>4 component</span></li>
 <ul>
 <li><a class="" href="10_Stepjob.html">10 Stepjob</a></li>
-<li><a class="" href="11_component_design.html">11 component design</a></li>
+<li><a class="" href="11_BulkjobTask.html">11 BulkjobTask</a></li>
 <li><a class="" href="1_Task.html">1 Task</a></li>
 <li><a class="" href="2_If.html">2 If</a></li>
 <li><a class="active" href="3_For.html">3 For</a></li>
@@ -528,6 +528,7 @@
 <li><a class="" href="6_Source.html">6 Source</a></li>
 <li><a class="" href="7_Viewer.html">7 Viewer</a></li>
 <li><a class="" href="8_ParameterStudy.html">8 ParameterStudy</a></li>
+<li><a class="" href="99_component_design.html">99 component design</a></li>
 <li><a class="" href="9_Workflow.html">9 Workflow</a></li>
 </ul>
 <li class="heading"><span>5 execute workflow</span></li>
@@ -611,6 +612,11 @@ Forコンポーネントのプロパティは以下です。</p>
 <td>1回のループでのインデックスの増分（負値も可）</td>
 </tr>
 <tr>
+<td>last loop instance to keep</td>
+<td>整数値</td>
+<td>残しておくループインスタンスの数（デフォルトではすべて保存される。）</td>
+</tr>
+<tr>
 <td>state clean</td>
 <td>ボタン</td>
 <td>コンポーネントの進行状態を初期状態に戻す *1</td>
@@ -690,6 +696,10 @@ For_1 ←「1」増加したFor_1を生成します
 <tr>
 <td>step</td>
 <td>1</td>
+</tr>
+<tr>
+<td>last loop instance to keep</td>
+<td>-</td>
 </tr>
 <tr>
 <td>Files</td>
@@ -801,6 +811,57 @@ exit 0
 </code></pre>
 <h2 id="%E5%AE%9F%E8%A1%8C%E7%B5%90%E6%9E%9C">実行結果 <a class="heading-anchor-permalink" href="#%E5%AE%9F%E8%A1%8C%E7%B5%90%E6%9E%9C">#</a></h2>
 <p><img src="./img/for/For_finished.png" alt="img" title="For_finished"></p>
+<h2 id="%E3%83%AB%E3%83%BC%E3%83%97%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%B3%E3%82%B9%E3%81%AE%E5%89%8A%E9%99%A4">ループインスタンスの削除 <a class="heading-anchor-permalink" href="#%E3%83%AB%E3%83%BC%E3%83%97%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%B3%E3%82%B9%E3%81%AE%E5%89%8A%E9%99%A4">#</a></h2>
+<p>保持するループインスタンスを１つに設定
+<img src="./img/for/For_keep.png" alt="img" title="For_keep"></p>
+<blockquote>
+<p>sampleFor_keep（forコンポーネント）</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>プロパティ名</th>
+<th>設定値</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td>sampleFor</td>
+</tr>
+<tr>
+<td>InputFiles</td>
+<td>-</td>
+</tr>
+<tr>
+<td>OutputFiles</td>
+<td>-</td>
+</tr>
+<tr>
+<td>start</td>
+<td>1</td>
+</tr>
+<tr>
+<td>end</td>
+<td>3</td>
+</tr>
+<tr>
+<td>step</td>
+<td>1</td>
+</tr>
+<tr>
+<td>last loop instance to keep</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Files</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h2 id="%E5%AE%9F%E8%A1%8C%E7%B5%90%E6%9E%9C-2">実行結果 <a class="heading-anchor-permalink" href="#%E5%AE%9F%E8%A1%8C%E7%B5%90%E6%9E%9C-2">#</a></h2>
+<p>最新のループインスタンスが保持されている
+<img src="./img/for/For_keep_instance.png" alt="img" title="For_keep_instance"></p>
 
       </article>
     </div>

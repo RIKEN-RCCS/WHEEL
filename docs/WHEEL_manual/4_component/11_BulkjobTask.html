@@ -518,8 +518,8 @@
 </ul>
 <li class="heading"><span>4 component</span></li>
 <ul>
-<li><a class="active" href="10_Stepjob.html">10 Stepjob</a></li>
-<li><a class="" href="11_BulkjobTask.html">11 BulkjobTask</a></li>
+<li><a class="" href="10_Stepjob.html">10 Stepjob</a></li>
+<li><a class="active" href="11_BulkjobTask.html">11 BulkjobTask</a></li>
 <li><a class="" href="1_Task.html">1 Task</a></li>
 <li><a class="" href="2_If.html">2 If</a></li>
 <li><a class="" href="3_For.html">3 For</a></li>
@@ -563,91 +563,16 @@
 </ul>
       </nav>
       <article id="main" class="content">
-        <h1 id="stepjob">Stepjob <a class="heading-anchor-permalink" href="#stepjob">#</a></h1>
-<p><img src="./img/stepjob/stepjob.png" alt="img"></p>
-<p>stepjob/stepjobTaskコンポーネントは、ジョブスケジューラ「FUJITSU Software Technical Computing Suite（TCS）」のステップジョブ機能に基づいた機能です。<br>
-ユーザがステップジョブを使用できるリモートマシンのアカウントを持つ場合にのみ使用できます。<br>
-本機能は、stepjobコンポーネントとstepjobコンポーネント内でのみ使用できるstepjobTaskコンポーネントを組み合わせて使用します。<br>
-TCSのステップジョブ機能に基づきstepjobTaskコンポーネントに設定されたステップナンバー、及び、依存関係式に従い、ジョブ投入されます。<br>
-ステップジョブを使用することでジョブの投入時に設定した依存関係式によって実行条件や順序を指定することができ特定のジョブの実行結果に応じて自動的に処理させることができます。<br>
-ステップジョブ機能の詳細に関しては、ジョブスケジューラ「FUJITSU Software Technical Computing Suite（TCS）」のドキュメントをご確認ください。</p>
-<p>Stepjob/StepjobTaskコンポーネントのプロパティは以下です。</p>
-<h4 id="%E2%96%A0-stepjob">■ stepjob <a class="heading-anchor-permalink" href="#%E2%96%A0-stepjob">#</a></h4>
-<table>
-<thead>
-<tr>
-<th>プロパティ</th>
-<th>入力値</th>
-<th>プロパティ説明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>name</td>
-<td>文字列</td>
-<td>コンポーネント名</td>
-</tr>
-<tr>
-<td>description</td>
-<td>文字列</td>
-<td>コンポーネントの説明文</td>
-</tr>
-<tr>
-<td>inputFiles</td>
-<td>ファイルまたはディレクトリ名</td>
-<td>先行コンポーネントから受け取るファイル</td>
-</tr>
-<tr>
-<td>outputFiles</td>
-<td>ファイル, ディレクトリ名またはglobパターン</td>
-<td>後続コンポーネントへ渡すファイル</td>
-</tr>
-<tr>
-<td>host</td>
-<td>文字列</td>
-<td>Taskを実行するhost、localhostまたは登録済のremotehostのlabelを指定する *1</td>
-</tr>
-<tr>
-<td>useJobscheduler</td>
-<td>チェックボックス</td>
-<td>true、readonly</td>
-</tr>
-<tr>
-<td>queue</td>
-<td>文字列</td>
-<td>ジョブの投入先キューを指定する(useJobSchedulerを使用しない場合は設定不可) *2</td>
-</tr>
-<tr>
-<td>clean up flag</td>
-<td>ラジオボタン</td>
-<td>リモート環境に作成した一時ファイルの取り扱い指定フラグ</td>
-</tr>
-<tr>
-<td></td>
-<td>clean up</td>
-<td>削除する</td>
-</tr>
-<tr>
-<td></td>
-<td>keep files</td>
-<td>削除しない</td>
-</tr>
-<tr>
-<td></td>
-<td>follow parent setting</td>
-<td>親コンポーネントと同じ挙動をする</td>
-</tr>
-<tr>
-<td>state clean</td>
-<td>ボタン</td>
-<td>コンポーネントの進行状態を初期状態に戻す *3</td>
-</tr>
-</tbody>
-</table>
-<p>*1 stepjobコンポーネントで使用するホストはステップジョブ機能を使用できるリモートホストを設定する必要があります。<br>
-*2 設定したキューがstepjobコンポーネント内部のstepjobTaskコンポーネントのジョブ投入時に使用されます。<br>
-*3 コンポーネントの進行状態が&quot;finished&quot;もしくは&quot;failed&quot;の時のみ表示されます。</p>
-<h4 id="%E2%96%A0-stepjobtask">■ stepjobTask <a class="heading-anchor-permalink" href="#%E2%96%A0-stepjobtask">#</a></h4>
+        <h1 id="bulkjobtask">BulkjobTask <a class="heading-anchor-permalink" href="#bulkjobtask">#</a></h1>
+<p><img src="./img/bulkjobTask/bulkjobTask.png" alt="img"></p>
+<p>bulkjobTaskコンポーネントは、ジョブスケジューラ「FUJITSU Software Technical Computing Suite（TCS）」のバルクジョブ機能に基づいた機能です。<br>
+ユーザがバルクジョブを使用できるリモートマシンのアカウントを持つ場合にのみ使用できます。<br>
+本機能は、bulkjobTaskコンポーネントを使用します。<br>
+TCSのバルクジョブ機能に基づきbulkjobTaskコンポーネントに設定されたバルク番号、インプットファイルを用いてジョブ投入されます。<br>
+バルクジョブは、一度のジョブの投入時で複数のサブジョブを投入することができるため、ジョブの充填率を挙げることが可能です。
+バルクジョブ機能の詳細に関しては、ジョブスケジューラ「FUJITSU Software Technical Computing Suite（TCS）」のドキュメントをご確認ください。</p>
+<p>bulkjobTaskコンポーネントのプロパティは以下です。</p>
+<h4 id="%E2%96%A0-bulkjobtask">■ bulkjobTask <a class="heading-anchor-permalink" href="#%E2%96%A0-bulkjobtask">#</a></h4>
 <table>
 <thead>
 <tr>
@@ -675,27 +600,47 @@ TCSのステップジョブ機能に基づきstepjobTaskコンポーネントに
 <tr>
 <td>inputFiles</td>
 <td>ファイルまたはディレクトリ名</td>
-<td>先行コンポーネントから受け取るファイル *2</td>
+<td>先行コンポーネントから受け取るファイル</td>
 </tr>
 <tr>
 <td>outputFiles</td>
 <td>ファイル, ディレクトリ名またはglobパターン</td>
-<td>後続コンポーネントへ渡すファイル *2</td>
+<td>後続コンポーネントへ渡すファイル</td>
 </tr>
 <tr>
-<td>useDependency</td>
+<td>useJobscheduler</td>
 <td>チェックボックス</td>
 <td>依存関係式を使用する</td>
 </tr>
 <tr>
-<td>stepNumber</td>
-<td>入力不可</td>
-<td>ステップジョブの実行順を定める番号、結線によって自動採番する *3</td>
+<td>manual/usePSSettingFile</td>
+<td>ラジオボタン</td>
+<td>バルク番号を手動入力するかパラメータセッティングファイルを使用するか</td>
 </tr>
 <tr>
-<td>form</td>
-<td>文字列</td>
-<td>依存関係式入力ボックス *4</td>
+<td>start</td>
+<td>数値</td>
+<td>開始バルク番号、manualのときのみ設定可能</td>
+</tr>
+<tr>
+<td>end</td>
+<td>数値</td>
+<td>終了バルク番号、manualのときのみ設定可能</td>
+</tr>
+<tr>
+<td>parameterfile</td>
+<td>ファイル</td>
+<td>パラメータセッティングファイル、usePSSettingFileのときのみ設定可能</td>
+</tr>
+<tr>
+<td>manualFinishCondition</td>
+<td>チェックボックス</td>
+<td>コンポーネントの終了状態判定にスクリプト(または、javascriptの式)を使用するか *2</td>
+</tr>
+<tr>
+<td>condition</td>
+<td>ファイル名,またはJavascriptの式</td>
+<td>条件判定を行うスクリプトのファイル名、またはJavascriptの式 *3</td>
 </tr>
 <tr>
 <td>clean up flag</td>
@@ -720,130 +665,77 @@ TCSのステップジョブ機能に基づきstepjobTaskコンポーネントに
 <tr>
 <td>include</td>
 <td>ファイル</td>
-<td>リモート環境から回収してくるファイル *5</td>
+<td>リモート環境から回収してくるファイル *4</td>
 </tr>
 <tr>
 <td>exclude</td>
 <td>ファイル</td>
-<td>リモート環境から回収しないファイル *5</td>
+<td>リモート環境から回収しないファイル *4</td>
 </tr>
 <tr>
 <td>state clean</td>
 <td>ボタン</td>
-<td>コンポーネントの進行状態を初期状態に戻す *6</td>
+<td>コンポーネントの進行状態を初期状態に戻す *5</td>
 </tr>
 </tbody>
 </table>
 <p>*1 scriptに指定されたスクリプトの終了コードが0の場合は真、<br>
 　それ以外の場合は、偽と判定し(プロジェクトの判定はfailedとなります)後続のノードへ遷移します。<br>
-*2 stepjobTaskコンポーネントでは、親コンポーネント(stepjobコンポーネント)からのファイルの受け渡しは可能ですが、<br>
-　ステップジョブ機能の性質上、stepjobTaskコンポーネント間のファイルの受け渡しを設定することができません。<br>
-　実行するステップジョブ間でファイルの受け渡しが必要な場合は、ジョブスクリプトに処理を記述する必要があります。<br>
-*3 ステップナンバーが小さい数から順に実行されます。<br>
+*2 有効にしない場合、全サブジョブのジョブスクリプト終了コードが0以外の場合、偽、それ以外の場合、真と判定します。
+*3 conditionに指定されたスクリプトの終了コードが0の場合は真、それ以外の場合は、偽と判定してコンポーネントの終了状態を決定します。<br>
+　ただし、conditionに指定された文字列と一致するファイルが存在しなかった場合は、Javascriptの式とみなしてそのコードを実行します。<br>
+　この場合、実行結果がtruthyな値の場合を真、falseyな値の場合を偽とします。<br>
+　真のとき、コンポーネントの実行結果をfinish、偽のときfailedと判定します。<br>
 *4 include, excludeともにglobパターンを指定することができます。<br>
 　includeにマッチしなおかつexcludeにマッチしないファイルを回収してくることができます。<br>
 　ただし、outputFilesに指定されたファイルは、include/excludeの指定に関わらず全て回収されます。<br>
 *5 コンポーネントの進行状態が&quot;finished&quot;もしくは&quot;failed&quot;の時のみ表示されます。</p>
-<h2 id="%E4%BE%9D%E5%AD%98%E9%96%A2%E4%BF%82%E5%BC%8F%EF%BC%88form-%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3%EF%BC%89">依存関係式（form プロパティ） <a class="heading-anchor-permalink" href="#%E4%BE%9D%E5%AD%98%E9%96%A2%E4%BF%82%E5%BC%8F%EF%BC%88form-%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3%EF%BC%89">#</a></h2>
-<p>stepjobTaskコンポーネントにおいて、実行済みstepjobTaskコンポーネントのジョブスクリプトの終了ステータス（ec, もしくはジョブの終了コードpc）によって、<br>
-その後のstepjobTaskコンポーネントの実行可否を決定する場合、依存関係式をformプロパティに設定します。</p>
-<p>依存関係式の記述方法は以下になります。</p>
-<pre><code>sd=form[:[deletetype][:stepno[:stepno[...]]]]
-</code></pre>
-<table>
-<thead>
-<tr>
-<th>式要素</th>
-<th>説明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>sd=</td>
-<td>接頭辞、必須</td>
-</tr>
-<tr>
-<td>form</td>
-<td>投入するサブジョブを実行するかどうかを判断する条件を示す式</td>
-</tr>
-<tr>
-<td>deletetype</td>
-<td>サブジョブを実行しない場合の詳細動作の指定</td>
-</tr>
-<tr>
-<td>stepno</td>
-<td>どのサブジョブの実行結果に対して適用するかを示すステップナンバー</td>
-</tr>
-</tbody>
-</table>
-<h4 id="form">form <a class="heading-anchor-permalink" href="#form">#</a></h4>
-<p>formは、param(ec:依存するサブジョブのジョブスクリプトの終了コード, pc:依存するサブジョブのジョブ終了コード)と<br>
-値「==, !=, &lt;, &gt; , &lt;=, &gt;=」で指定します。</p>
-<pre><code>ex.
-ec==0
-</code></pre>
-<p>条件==や!=を指定する場合、値はコンマ(,)で区切ることで複数指定できます。</p>
-<h4 id="deletetype">deletetype <a class="heading-anchor-permalink" href="#deletetype">#</a></h4>
-<p>deletetypeは、以下の3種類指定できます。</p>
-<table>
-<thead>
-<tr>
-<th>deletetype</th>
-<th>説明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>one</td>
-<td>このサブジョブのみ削除する。このサブジョブの結果に依存する後続のサブジョブは削除されない</td>
-</tr>
-<tr>
-<td>after</td>
-<td>このサブジョブ、及びそれに依存する後続のサブジョブのみ削除する</td>
-</tr>
-<tr>
-<td>all</td>
-<td>このサブジョブ、及び後続のサブジョブを全て削除する</td>
-</tr>
-</tbody>
-</table>
-<p>以下にformプロパティに設定する依存関係式の例を示します。</p>
-<pre><code>ex.ステップナンバー0のサブジョブのジョブスクリプトの終了コードが0以外の場合、このサブジョブ以降は実行しない
-
-sd=ec!=0:all:0
-</code></pre>
 <h1 id="%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%2F%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">リモートホスト/ジョブスケジューラの設定 <a class="heading-anchor-permalink" href="#%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%2F%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">#</a></h1>
 <h2 id="%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%E3%81%AE%E8%A8%AD%E5%AE%9A">リモートホストの設定 <a class="heading-anchor-permalink" href="#%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%E3%81%AE%E8%A8%AD%E5%AE%9A">#</a></h2>
-<p>前述にもあるように、stepjob/stepjobTaskコンポーネントを使用する場合、<br>
-ユーザがリモートホストのステップジョブ機能を使用する権限を有している必要があります。<br>
-権限を有している場合、リモートホスト設定画面においてstepjob/stepjobTaskコンポーネントで使用するリモートホストのstepjobプロパティを<br>
+<p>前述にもあるように、bulkjobTaskコンポーネントを使用する場合、<br>
+ユーザがリモートホストのバルクジョブ機能を使用する権限を有している必要があります。<br>
+権限を有している場合、リモートホスト設定画面においてbulkjobTaskコンポーネントで使用するリモートホストのbulkjobプロパティを<br>
 有効にすることで使用可能になります。(加えてjobScheduler.jsonファイルにも設定が必要です。詳細後述。)</p>
 <blockquote>
 <p>リモートホスト画面<br>
-<img src="./img/stepjob/stepjob_remotehost.png" alt="img" title="remotehost"></p>
+<img src="./img/bulkjobTask/bulkjobTask_remotehost.png" alt="img" title="remotehost"></p>
 </blockquote>
 <h2 id="%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">ジョブスケジューラの設定 <a class="heading-anchor-permalink" href="#%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">#</a></h2>
-<p>stepjob/stepjobTaskコンポーネントを使用する場合、リモートホストの設定に加えて使用するジョブスケジューラの設定も必要です。<br>
+<p>bulkjobTaskコンポーネントを使用する場合、リモートホストの設定に加えて使用するジョブスケジューラの設定も必要です。<br>
 WHEELモジュール内のapp/config/jobscheduler.jsonファイルにステップジョブ機能を有効にする以下の記述を追記してください。</p>
 <blockquote>
 <p>app/config/jobscheduler.jsonへの追記例<br>
-<img src="./img/stepjob/stepjob_jobscheduler.png" alt="img" title="remotehost"></p>
+<img src="./img/bulkjobTask/bulkjobTask_jobscheduler.png" alt="img" title="remotehost"></p>
 </blockquote>
-<h1 id="stepjob%2Fstepjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">stepjob/stepjobTaskコンポーネントの使用例 <a class="heading-anchor-permalink" href="#stepjob%2Fstepjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">#</a></h1>
-<p>サンプルでは、3つのstepjobTaskコンポーネントを使用します。<br>
-1つ目のstepjobTaskコンポーネントは、ジョブスクリプトの終了コード1となるジョブスクリプトを設定し、<br>
-2つ目のstepjobTaskコンポーネントに依存関係式「sd=ec!=0:all:0」によって<br>
-2つめ,3つ目のstepjobTaskコンポーネントが実行されないことを確認します。*</p>
-<p>*3つ目のstepjobTaskコンポーネントで投入したサブジョブは実行されませんが、<br>
-コンポーネント自体の処理は実行されるためコンポーネントのステータスはfinished(✔)となります。</p>
-<h2 id="%E3%83%AF%E3%83%BC%E3%82%AF%E3%83%95%E3%83%AD%E3%83%BC%E6%A7%8B%E6%88%90%E5%9B%B3">ワークフロー構成図 <a class="heading-anchor-permalink" href="#%E3%83%AF%E3%83%BC%E3%82%AF%E3%83%95%E3%83%AD%E3%83%BC%E6%A7%8B%E6%88%90%E5%9B%B3">#</a></h2>
-<p><img src="./img/stepjob/stepjob_workflow.png" alt="img" title="stepjob_workflow"></p>
-<p>stepjobTaskコンポーネントに依存関係式が使用されている(useDependency=true)場合、<br>
-先行するコンポーネントの処理結果によって当該コンポーネント(また、それ以降のコンポーネント)<br>
-が実行される保証がないため先行コンポーネントからの結線を点線で表示します。</p>
-<h2 id="%E5%90%84%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3">各コンポーネントのプロパティ <a class="heading-anchor-permalink" href="#%E5%90%84%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3">#</a></h2>
+<h1 id="bulkjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E5%AE%9F%E8%A1%8C%E7%B5%82%E4%BA%86%E5%88%A4%E5%AE%9A">bulkjobTaskコンポーネントの実行終了判定 <a class="heading-anchor-permalink" href="#bulkjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E5%AE%9F%E8%A1%8C%E7%B5%82%E4%BA%86%E5%88%A4%E5%AE%9A">#</a></h1>
+<p>bulkjobTaskコンポーネントでは、manualFinishConditionプロパティ有効時、コンポーネントの終了判定(成功/失敗)にスクリプトファイル(または、Javascriptの式)を使用することができます。<br>
+manualFinishConditionプロパティが無効の場合は、<br>
+・bulkjobTaskコンポーネントで投入したサブジョブが一つ以上正常終了*している場合、finished<br>
+・bulkjobTaskコンポーネントで投入したサブジョブが全て異常終了している場合、failed
+と判定します。
+*ジョブスクリプトの終了ステータスで判定します。</p>
+<p>また、bulkjobTaskコンポーネントのサブジョブの終了状態は、bulkjobTaskコンポーネントのフォルダ内に生成される<br>
+<strong>subjob_status.wheel.txt</strong>から確認できます。</p>
 <blockquote>
-<p>stepjobTask0（stepjobTaskコンポーネント）</p>
+<p>subjob_status.wheel.txt例</p>
+</blockquote>
+<pre><code>RT_0=0　　　　 #ジョブスクリプトの終了ステータス(EC)
+JOBSTATUS_0=0 #ジョブの終了ステータス(PC)  
+RT_1=0  
+JOBSTATUS_1=0  
+RT_2=1  
+JOBSTATUS_2=0  
+</code></pre>
+<h1 id="bulkjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">bulkjobTaskコンポーネントの使用例 <a class="heading-anchor-permalink" href="#bulkjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">#</a></h1>
+<p>サンプルでは、3つの使用例を記します。<br>
+1つ目の例では、bulkjobTaskコンポーネントで使用するインプットファイルをユーザが用意(ファイルのアップロード等により)し実行します。<br>
+2つ目の例では、インプットファイルをWHEELのパラメータスタディ機能を用いて用意し実行します。
+3つ目の例では、bulkjobTaskコンポーネントの実行方法は例1と同じですが、コンポーネントの終了判定にスクリプトを用います。</p>
+<h2 id="%E4%BD%BF%E7%94%A8%E4%BE%8B-1">使用例-1 <a class="heading-anchor-permalink" href="#%E4%BD%BF%E7%94%A8%E4%BE%8B-1">#</a></h2>
+<p>例1では、bulkjobTaskコンポーネントプロパティに以下を設定します。<br>
+(デフォルト値から変更しているもののみ記載)</p>
+<blockquote>
+<p>bulkjobbTask</p>
 </blockquote>
 <table>
 <thead>
@@ -855,47 +747,69 @@ WHEELモジュール内のapp/config/jobscheduler.jsonファイルにステッ�
 <tbody>
 <tr>
 <td>Name</td>
-<td>stepjobTask0</td>
+<td>bulkjobTask</td>
 </tr>
 <tr>
 <td>Script</td>
-<td><a href="http://failed.sh">failed.sh</a></td>
+<td><a href="http://job.sh">job.sh</a></td>
 </tr>
 <tr>
-<td>InputFiles</td>
-<td>-</td>
+<td>Remotehost</td>
+<td>fugaku</td>
 </tr>
 <tr>
-<td>OutputFiles</td>
-<td>-</td>
+<td>Queue</td>
+<td>eap-small</td>
 </tr>
 <tr>
-<td>useDependency</td>
-<td>-</td>
+<td>BulkNumber</td>
+<td>manual</td>
 </tr>
 <tr>
-<td>stepNumber</td>
-<td>0(自動採番)</td>
+<td>start</td>
+<td>0</td>
 </tr>
 <tr>
-<td>form</td>
-<td>-</td>
+<td>end</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Files</td>
+<td><a href="http://job.sh">job.sh</a>, 0.input, 1.input, 2.input</td>
 </tr>
 </tbody>
 </table>
-<h4 id="%E3%83%BBfailed.sh">・<a href="http://failed.sh">failed.sh</a> <a class="heading-anchor-permalink" href="#%E3%83%BBfailed.sh">#</a></h4>
-<pre><code>#!/bin/bash
-#PJM -L &quot;node=1&quot;
-#PJM -L &quot;rscgrp=eap-small&quot;
-#PJM -L &quot;elapse=1:00:00&quot;
-#PJM -j -X -S
-
-echo stepjobTask0
-exit 1
+<h4 id="remotehost">Remotehost <a class="heading-anchor-permalink" href="#remotehost">#</a></h4>
+<p>リモートホスト設定画面で登録しているバルクジョブの実行権限をもつホスト名を指定します。</p>
+<h4 id="queue">Queue <a class="heading-anchor-permalink" href="#queue">#</a></h4>
+<p>Remotehostで設定したホストで使用できるQueue名を選択します。</p>
+<h4 id="bulknumber-(%E3%83%A9%E3%82%B8%E3%82%AA%E3%83%9C%E3%82%BF%E3%83%B3)">BulkNumber (ラジオボタン) <a class="heading-anchor-permalink" href="#bulknumber-(%E3%83%A9%E3%82%B8%E3%82%AA%E3%83%9C%E3%82%BF%E3%83%B3)">#</a></h4>
+<p>バルク番号を手動で設定するため<strong>manual</strong>を選択します。</p>
+<h4 id="start%2C-end">start, end <a class="heading-anchor-permalink" href="#start%2C-end">#</a></h4>
+<p>開始バルク番号(start)と終了バルク番号(end)を設定します。この値はバルクジョブ投入コマンドに使用されます。<br>
+下記コマンドは、開始バルク番号(0)、終了バルク番号(2)が設定されている例です。</p>
+<pre><code>$pjsub --bulk --sparam &quot;0-2&quot; ./job.sh  
 </code></pre>
-<p>(注)上記スクリプトのリソース指定は富岳の記述形式です。他のホストで使用する場合は、使用するホストの記述方式を使用して下さい。</p>
+<h4 id="files-job.sh">Files <a href="http://job.sh">job.sh</a> <a class="heading-anchor-permalink" href="#files-job.sh">#</a></h4>
+<p>標準出力した.inputファイルの中身を.outputファイルとして保存するスクリプトです。<br>
+(本来このような処理はジョブとして投入しません。あくまでもbulkjobTaskコンポーネントの使用例です。)</p>
+<pre><code>#!/bin/bash
+#PJM -L &quot;node=1&quot;               # ノード数
+#PJM -L &quot;rscgrp=eap-small&quot;     # リソースグループの指定
+#PJM -L &quot;elapse=60:00&quot;         # ジョブの経過時間制限値
+#PJM -S                        # 統計情報ファイル出力の指示
+
+cat ${PJM_BULKNUM}.input &gt; ${PJM_BULKNUM}.output
+exit 0
+</code></pre>
+<p>バルクジョブでは、環境変数<strong>PJM_BULKNUM</strong>によりバルク番号をジョブスクリプト内で利用することができます。<br>
+本例では、バルク番号0,1,2を持った3つのサブジョブが投入されます。<br>
+バルクジョブの詳細に関しては、ジョブスケジューラのドキュメントを確認してください。</p>
+<h2 id="%E4%BD%BF%E7%94%A8%E4%BE%8B-2">使用例-2 <a class="heading-anchor-permalink" href="#%E4%BD%BF%E7%94%A8%E4%BE%8B-2">#</a></h2>
+<p>例2では、bulkjobTaskコンポーネントプロパティに以下を設定します。<br>
+例1からの変更点は、BulkNumberのみです。</p>
 <blockquote>
-<p>stepjobTask1（stepjobTaskコンポーネント）</p>
+<p>bulkjobbTask</p>
 </blockquote>
 <table>
 <thead>
@@ -907,97 +821,133 @@ exit 1
 <tbody>
 <tr>
 <td>Name</td>
-<td>stepjobTask0</td>
+<td>bulkjobTask</td>
 </tr>
 <tr>
 <td>Script</td>
-<td><a href="http://failed.sh">failed.sh</a></td>
+<td><a href="http://job.sh">job.sh</a></td>
 </tr>
 <tr>
-<td>InputFiles</td>
-<td>-</td>
+<td>Remotehost</td>
+<td>fugaku</td>
 </tr>
 <tr>
-<td>OutputFiles</td>
-<td>-</td>
+<td>Queue</td>
+<td>eap-small</td>
 </tr>
 <tr>
-<td>useDependency</td>
+<td>BulkNumber</td>
+<td>use ParameterSettingFile</td>
+</tr>
+<tr>
+<td></td>
+<td>parameterSetting.json</td>
+</tr>
+<tr>
+<td>Files</td>
+<td><a href="http://job.sh">job.sh</a>, input, parameterSetting.json</td>
+</tr>
+</tbody>
+</table>
+<h4 id="bulknumber-(%E3%83%A9%E3%82%B8%E3%82%AA%E3%83%9C%E3%82%BF%E3%83%B3)-2">BulkNumber (ラジオボタン) <a class="heading-anchor-permalink" href="#bulknumber-(%E3%83%A9%E3%82%B8%E3%82%AA%E3%83%9C%E3%82%BF%E3%83%B3)-2">#</a></h4>
+<p>バルク番号の設定にパラメトリックスタディ機能を使用するため<strong>use PatameterSettingFile</strong>を選択します。<br>
+また、use ParameterSettingFile有効時に設定できるセレクトボックスにWHEELに搭載されているエディタから作成した
+<strong>parameterSetting.json</strong>を選択します。<br>
+parameterSetting.jsonの作成方法は、ドキュメント <a href="../3_workflow_screen/3_rapid.html">テキストエディタ画面</a> を参考にしてください。</p>
+<h3 id="%E3%83%91%E3%83%A9%E3%83%A1%E3%83%88%E3%83%AA%E3%83%83%E3%82%AF%E3%82%B9%E3%82%BF%E3%83%87%E3%82%A3%E6%A9%9F%E8%83%BD%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%9Fbukjobtask%E3%81%AE%E5%AE%9F%E8%A1%8C">パラメトリックスタディ機能を使用したbukjobTaskの実行 <a class="heading-anchor-permalink" href="#%E3%83%91%E3%83%A9%E3%83%A1%E3%83%88%E3%83%AA%E3%83%83%E3%82%AF%E3%82%B9%E3%82%BF%E3%83%87%E3%82%A3%E6%A9%9F%E8%83%BD%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%9Fbukjobtask%E3%81%AE%E5%AE%9F%E8%A1%8C">#</a></h3>
+<p>WHEELのテキストエディタによって、10ケース実行用のparaterSetting.jsonを作成した場合、WHEELが実行するバルクジョブは以下のように投入されます。</p>
+<pre><code>$pjsub --bulk --sparam &quot;0-9&quot; ./job.sh  
+</code></pre>
+<p>また、実行時には、パラメータセットとバルク番号の関係を記した<strong>parameterSet.whee.txt</strong>ファイルがbulkjobTaskコンポーネント直下に生成されます。</p>
+<h4 id="parameterset.wheel.txt">parameterSet.wheel.txt <a class="heading-anchor-permalink" href="#parameterset.wheel.txt">#</a></h4>
+<p>WHEELテキストエディタにおいて、inputファイルのhogeをプレースホルダに設定し、min:0, max:2, step:1を設定した場合</p>
+<pre><code>BULKNUM_0_TARGETNUM_0_FILE=&quot;./input&quot;
+BULKNUM_0_TARGETNUM_0_KEY=&quot;hoge&quot;
+BULKNUM_0_TARGETNUM_0_VALUE=&quot;0&quot;
+BULKNUM_1_TARGETNUM_0_FILE=&quot;./input&quot;
+BULKNUM_1_TARGETNUM_0_KEY=&quot;hoge&quot;
+BULKNUM_1_TARGETNUM_0_VALUE=&quot;1&quot;
+BULKNUM_2_TARGETNUM_0_FILE=&quot;./input&quot;
+BULKNUM_2_TARGETNUM_0_KEY=&quot;hoge&quot;
+BULKNUM_2_TARGETNUM_0_VALUE=&quot;2&quot;
+</code></pre>
+<h2 id="%E4%BD%BF%E7%94%A8%E4%BE%8B-3">使用例-3 <a class="heading-anchor-permalink" href="#%E4%BD%BF%E7%94%A8%E4%BE%8B-3">#</a></h2>
+<p>例3では、例1の設定に加えてスクリプトでコンポーネントの正常/異常終了条件を設定するために<strong>manualFinishCondition</strong>を有効にします。</p>
+<blockquote>
+<p>bulkjobbTask</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>プロパティ名</th>
+<th>設定値</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td>bulkjobTask</td>
+</tr>
+<tr>
+<td>Script</td>
+<td><a href="http://job.sh">job.sh</a></td>
+</tr>
+<tr>
+<td>Remotehost</td>
+<td>fugaku</td>
+</tr>
+<tr>
+<td>Queue</td>
+<td>eap-small</td>
+</tr>
+<tr>
+<td>BulkNumber</td>
+<td>manual</td>
+</tr>
+<tr>
+<td>start</td>
+<td>0</td>
+</tr>
+<tr>
+<td>end</td>
+<td>2</td>
+</tr>
+<tr>
+<td>manualFinishCondition</td>
 <td>true</td>
 </tr>
 <tr>
-<td>stepNumber</td>
-<td>1(自動採番)</td>
+<td>condition</td>
+<td><a href="http://condition.sh">condition.sh</a></td>
 </tr>
 <tr>
-<td>form</td>
-<td>sd=ec!=0:all:0</td>
+<td>Files</td>
+<td><a href="http://job.sh">job.sh</a>, <a href="http://condition.sh">condition.sh</a>, 0.input, 1.input, 2.input</td>
 </tr>
 </tbody>
 </table>
-<h4 id="%E3%83%BBscript1.sh">・<a href="http://script1.sh">script1.sh</a> <a class="heading-anchor-permalink" href="#%E3%83%BBscript1.sh">#</a></h4>
+<h3 id="condition%E3%81%AE%E8%A8%AD%E5%AE%9A">conditionの設定 <a class="heading-anchor-permalink" href="#condition%E3%81%AE%E8%A8%AD%E5%AE%9A">#</a></h3>
+<p>manualFinishConditionを有効にしconditionを設定することにより、ユーザは自身が用意したスクリプトの結果によって
+bulkjobTaskコンポーネントの終了ステータスを決定することができます。
+conditionには、前述しているバルクジョブのサブジョブの終了状態を記した<strong>subjob_status.wheel.txt</strong>を使用したスクリプトを設定することも可能です。<br>
+下記の例では、サブジョブのジョブスクリプトの終了ステータスが一つでも正常終了でない場合(EC=1)、コンポーネントの終了ステータスをfailedとします。</p>
+<h4 id="condition.sh"><a href="http://condition.sh">condition.sh</a> <a class="heading-anchor-permalink" href="#condition.sh">#</a></h4>
 <pre><code>#!/bin/bash
-#PJM -L &quot;node=1&quot;
-#PJM -L &quot;rscgrp=eap-small&quot;
-#PJM -L &quot;elapse=1:00:00&quot;
-#PJM -j -X -S
-
-echo stepjobTask1
-exit 0
-</code></pre>
-<blockquote>
-<p>stepjobTask2（stepjobTaskコンポーネント）</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>プロパティ名</th>
-<th>設定値</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Name</td>
-<td>stepjobTask0</td>
-</tr>
-<tr>
-<td>Script</td>
-<td><a href="http://failed.sh">failed.sh</a></td>
-</tr>
-<tr>
-<td>InputFiles</td>
-<td>-</td>
-</tr>
-<tr>
-<td>OutputFiles</td>
-<td>-</td>
-</tr>
-<tr>
-<td>useDependency</td>
-<td>-</td>
-</tr>
-<tr>
-<td>stepNumber</td>
-<td>2(自動採番)</td>
-</tr>
-<tr>
-<td>form</td>
-<td>-</td>
-</tr>
-</tbody>
-</table>
-<h4 id="%E3%83%BBscript2.sh">・<a href="http://script2.sh">script2.sh</a> <a class="heading-anchor-permalink" href="#%E3%83%BBscript2.sh">#</a></h4>
-<pre><code>#!/bin/bash
-#PJM -L &quot;node=1&quot;
-#PJM -L &quot;rscgrp=eap-small&quot;
-#PJM -L &quot;elapse=1:00:00&quot;
-#PJM -j -X -S
-
-echo stepjobTask2
+source ./subjob?status.wheel.txt
+i=0
+while [ $i -lt 3 ]
+do
+  RT=&quot;RT_${i}&quot;
+  if [ ${!RT} -eq 1 ]; then
+    echo bulknum:${i} jobscript status 1
+    exit 1
+  fi
+  i=`expr $i + 1`
+done
 exit 0
 </code></pre>
 <h2 id="%E5%AE%9F%E8%A1%8C%E7%B5%90%E6%9E%9C">実行結果 <a class="heading-anchor-permalink" href="#%E5%AE%9F%E8%A1%8C%E7%B5%90%E6%9E%9C">#</a></h2>
-<p><img src="./img/stepjob/stepjob_workflow_result.png" alt="img" title="stepjob_workflow_result"></p>
+<p><img src="./img/bulkjobTask/bulkjobTask_result.png" alt="img" title="bulkjob_result"></p>
 
       </article>
     </div>
