@@ -81,7 +81,7 @@ function makeQueueOpt(task, JS, queues) {
     return "";
   }
 
-  let queue = queueList.find((e)=>{
+  let queue = queueList.find((e) => {
     return task.queue === e;
   });
   if (typeof queue === "undefined") {
@@ -90,29 +90,6 @@ function makeQueueOpt(task, JS, queues) {
 
   //queue can be empty string "", we do not use queue opt in such case
   return queue.length === 0 ? "" : ` ${JS.queueOpt}${queue}`;
-}
-
-/**
- * make Group Name option
- * @param {Task} task - task instance
- * @param {*} JS - JobScheduler
- * @param {*} grpNames - UGE group name
- * @returns {*} *
- */
-function makeGrpNameOpt(task, JS, grpNames, JSName) {
-  if (JSName !== "UGE") {
-    return "";
-  }
-  let grpName = "";
-  const grpNameList = grpNames.split(",");
-  grpName = grpNameList.find((e)=>{
-    return task.queue === e;
-  });
-
-  if (typeof grpName === "undefined") {
-    grpName = grpNameList.length > 0 ? grpNameList[0] : "";
-  }
-  return grpName !== "" ? ` ${JS.grpName} ${grpName}` : "";
 }
 
 /**
@@ -178,7 +155,7 @@ class Executer {
     const hostname = hostinfo != null ? hostinfo.host : null;
     const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
     this.batch = new SBS({
-      exec: async(task)=>{
+      exec: async (task) => {
         task.startTime = getDateString(true, true);
 
         try {
@@ -284,7 +261,7 @@ class RemoteJobExecuter extends Executer {
     await prepareRemoteExecDir(task);
     const hostinfo = getSshHostinfo(task.projectRootDir, task.remotehostID);
     const submitOpt = task.submitOption ? task.submitOption : "";
-    const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ${makeStepOpt(task)}${makeBulkOpt(task)}${makeGrpNameOpt(task, this.JS, this.grpName, hostinfo.jobScheduler)}${submitOpt} ./${task.script}`;
+    const submitCmd = `cd ${task.remoteWorkingDir} && ${makeEnv(task)} ${makeEnvForPath(task)} ${this.JS.submit} ${makeQueueOpt(task, this.JS, this.queues)} ${makeStepOpt(task)}${makeBulkOpt(task)}${submitOpt} ./${task.script}`;
     logger.debug("submitting job (remote):", submitCmd);
     await setTaskState(task, "running");
     const ssh = getSsh(task.projectRootDir, task.remotehostID);
@@ -341,23 +318,23 @@ class RemoteTaskExecuter extends Executer {
 }
 
 function promisifiedSpawn(task, script, options) {
-  return new Promise((resolve, reject)=>{
-    const cp = childProcess.spawn(script, options, (err)=>{
+  return new Promise((resolve, reject) => {
+    const cp = childProcess.spawn(script, options, (err) => {
       if (err) {
         reject(err);
       }
     });
-    cp.stdout.on("data", (data)=>{
+    cp.stdout.on("data", (data) => {
       logger.stdout(data.toString());
     });
-    cp.stderr.on("data", (data)=>{
+    cp.stderr.on("data", (data) => {
       logger.stderr(data.toString());
     });
-    cp.on("error", (err)=>{
+    cp.on("error", (err) => {
       cp.removeAlllisteners("exit");
       reject(err);
     });
-    cp.on("exit", (rt)=>{
+    cp.on("exit", (rt) => {
       logger.debug(task.name, "done. rt =", rt);
       resolve(rt);
     });
@@ -380,7 +357,7 @@ class LocalTaskExecuter extends Executer {
       env: process.env,
       shell: true
     };
-      //add Environment variable
+    //add Environment variable
     options.env.WHEEL_LOCAL_PRJDIR = task.projectRootDir.toString();
 
     if (Object.prototype.hasOwnProperty.call(task, "currentIndex")) {
