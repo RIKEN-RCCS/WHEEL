@@ -1,0 +1,372 @@
+<template>
+  <v-app>
+    <v-navigation-drawer
+      v-model="drawer"
+      app
+      temporary
+      right
+      cliped
+    >
+      <v-list
+        nav
+        dense
+      >
+        <a
+          href="/remotehost"
+          target="_blank"
+        >
+          <v-list-item>
+            <v-list-item-icon>
+              <v-icon>mdi-cog-outline</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>
+              Remotehost editor
+            </v-list-item-title>
+          </v-list-item>
+        </a>
+        <a
+          href="/jobScript"
+          target="_blank"
+        >
+          <v-list-item>
+            <v-list-item-icon>
+              <v-icon>mdi-file-document-edit-outline</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>
+              Jobscript editor
+            </v-list-item-title>
+          </v-list-item>
+        </a>
+        <a
+          href="https://riken-rccs.github.io/WHEEL/"
+          target="_blank"
+        >
+          <v-list-item>
+            <v-list-item-icon>
+              <v-icon>mdi-help-circle-outline</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>User guide</v-list-item-title>
+          </v-list-item>
+        </a>
+      </v-list>
+    </v-navigation-drawer>
+    <v-app-bar
+      app
+      extended
+    >
+      <v-app-bar-title shrink-on-scroll>
+        <a
+          href="/home"
+          class="text-decoration-none text-h4 white--text"
+        > WHEEL </a>
+      </v-app-bar-title>
+      <v-spacer />
+      {{ projectJson !== null ? projectJson.name : "" }}
+      <v-spacer />
+      <v-btn
+        rounded
+        outlined
+        plain
+        :ripple="false"
+      >
+        status: {{ projectState }}
+      </v-btn>
+      <v-spacer />
+      <v-btn
+        shaped
+        outlined
+        plain
+        :ripple="false"
+      >
+        last updated: {{ projectJson !== null ? projectJson.mtime : "" }}
+      </v-btn>
+      <v-spacer />
+
+      <v-app-bar-nav-icon
+        app
+        @click="drawer = true"
+      />
+
+      <template v-slot:extension>
+        <v-btn-toggle
+          v-model="mode"
+          mandatory
+        >
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                :to="{name: 'graph' }"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon>mdi-sitemap</v-icon>
+              </v-btn>
+            </template>
+            <span>graph view</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                :to="{name: 'list' }"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon>mdi-format-list-bulleted</v-icon>
+              </v-btn>
+            </template>
+            <span>list view</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                :to="{name: 'editor' }"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon>mdi-file-document-edit-outline</v-icon>
+              </v-btn>
+            </template>
+            <span>text editor</span>
+          </v-tooltip>
+        </v-btn-toggle>
+
+        <v-spacer />
+        <v-card>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                icon
+                :disabled="isDisabled('runProject')"
+                v-bind="attrs"
+                v-on="on"
+                @click="emitProjectOperation('runProject')"
+              >
+                <v-icon>mdi-play</v-icon>
+              </v-btn>
+            </template>
+            <span>run project</span>
+          </v-tooltip>
+
+          <v-tooltip
+            v-if="false"
+            bottom
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                icon
+                :disabled="isDisabled('pauseProject')"
+                v-bind="attrs"
+                v-on="on"
+                @click="emitProjectOperation('pauseProject')"
+              >
+                <v-icon>mdi-pause</v-icon>
+              </v-btn>
+            </template>
+            <span>pause project</span>
+          </v-tooltip>
+
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                icon
+                :disabled="isDisabled('stopProject')"
+                v-bind="attrs"
+                v-on="on"
+                @click="emitProjectOperation('stopProject')"
+              >
+                <v-icon>mdi-stop</v-icon>
+              </v-btn>
+            </template>
+            <span>stop project</span>
+          </v-tooltip>
+
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                icon
+                :disabled="isDisabled('cleanProject')"
+                v-bind="attrs"
+                v-on="on"
+                @click="emitProjectOperation('cleanProject')"
+              >
+                <v-icon>mdi-restore</v-icon>
+              </v-btn>
+            </template>
+            <span>stop and cleanup project</span>
+          </v-tooltip>
+        </v-card>
+
+        <v-spacer />
+        <v-card>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                :disabled="isDisabled('saveProject')"
+                v-bind="attrs"
+                v-on="on"
+                @click="emitProjectOperation('saveProject')"
+              >
+                <v-icon>mdi-content-save</v-icon>
+              </v-btn>
+            </template>
+            <span>save project</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                outlined
+                :disabled="isDisabled('revertProject')"
+                v-bind="attrs"
+                v-on="on"
+                @click="emitProjectOperation('revertProject')"
+              >
+                <v-icon>mdi-folder-refresh-outline</v-icon>
+              </v-btn>
+            </template>
+            <span>revert project</span>
+          </v-tooltip>
+        </v-card>
+      </template>
+    </v-app-bar>
+    <v-main>
+      <v-container fluid>
+        <router-view />
+      </v-container>
+    </v-main>
+    <v-footer app>
+      <v-spacer />
+      <log-screen />
+      <v-spacer />
+    </v-footer>
+    <v-overlay :value="waiting">
+      <v-progress-circular
+        indeterminate
+        size="64"
+      />
+    </v-overlay>
+    <unsaved-files-dialog />
+  </v-app>
+</template>
+
+<script>
+  "use strict"
+  import { mapState, mapMutations, mapGetters } from "vuex"
+  import logScreen from "@/components/logScreen.vue"
+  import unsavedFilesDialog from "@/components/unsavedFilesDialog.vue"
+  import SIO from "@/lib/socketIOWrapper.js"
+  import Debug from "debug"
+  const debug = Debug("wheel:workflow:main")
+
+  function readCookie (key) {
+    const encodedValue = document.cookie
+      .split(";")
+      .find((row)=>{
+        return row.trim().startsWith(key)
+      })
+      .split("=")[1]
+    return decodeURIComponent(encodedValue)
+  }
+
+  export default {
+    name: "App",
+    components: {
+      logScreen,
+      unsavedFilesDialog,
+    },
+    data: ()=>{
+      return {
+        projectJson: null,
+        drawer: false,
+        mode: 0,
+      }
+    },
+    computed: {
+      ...mapState(["projectState", "rootComponentID", "pathSep"]),
+      ...mapGetters(["waiting"]),
+    },
+    mounted: function () {
+      const projectRootDir = readCookie("rootDir")
+      const ID = readCookie("root")
+      this.commitProjectRootDir(projectRootDir)
+      this.commitRootComponentID(ID)
+
+      if (typeof projectRootDir === "string" && projectRootDir[0] !== "/") {
+        this.commitPathSep("\\")
+      }
+
+      SIO.on("projectJson", (projectJson)=>{
+        this.projectJson = projectJson
+        this.commitProjectState(projectJson.state.toLowerCase())
+        this.commitComponentPath(projectJson.componentPath)
+        this.commitWaitingProjectJson(false)
+      })
+      SIO.on("hostList", (hostList)=>{
+        this.commitRemoteHost(hostList)
+      })
+      SIO.on("workflow", (wf)=>{
+        this.commitCurrentComponent(wf)
+        this.commitWaitingWorkflow(false)
+      })
+      SIO.emit("getHostList", (rt)=>{
+        debug("getHostList done", rt)
+      })
+      SIO.emit("getComponentTree", projectRootDir, (componentTree)=>{
+        this.commitComponentTree(componentTree)
+      })
+      this.commitWaitingProjectJson(true)
+      SIO.emit("getProjectJson", (rt)=>{
+        debug("getProjectJson done", rt)
+      })
+      this.commitWaitingWorkflow(true)
+      SIO.emit("getWorkflow", ID, (rt)=>{
+        debug("getWorkflow done", rt)
+      })
+      this.$router.push({ name: "graph" })
+    },
+    methods: {
+      ...mapMutations(
+        {
+          commitComponentTree: "componentTree",
+          commitProjectState: "projectState",
+          commitComponentPath: "componentPath",
+          commitCurrentComponent: "currentComponent",
+          commitProjectRootDir: "projectRootDir",
+          commitRootComponentID: "rootComponentID",
+          commitRemoteHost: "remoteHost",
+          commitWaitingProjectJson: "waitingProjectJson",
+          commitWaitingWorkflow: "waitingWorkflow",
+          commitPathSep: "pathSep",
+        },
+      ),
+      isDisabled (operation) {
+        if (operation === "runProject") {
+          return !["not-started", "paused"].includes(this.projectState)
+        } else if (operation === "pauseProject") {
+          return this.projectState !== "running"
+        } else if (operation === "stopProject") {
+          return ["not-started", "preparing"].includes(this.projectState)
+        } else if (operation === "cleanProject") {
+          return ["not-started", "preparing"].includes(this.projectState)
+        } else if (operation === "saveProject") {
+          return this.projectState !== "not-started"
+        } else if (operation === "revertProject") {
+          return this.projectState !== "not-started"
+        }
+        debug("upsupported operation", operation)
+      },
+      emitProjectOperation (operation) {
+        SIO.emit(operation, (rt)=>{
+          debug(operation, "done", rt)
+        })
+      },
+    },
+  }
+</script>

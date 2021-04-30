@@ -8,7 +8,12 @@ __W__ orkflow in __H__ ierarchical distribut __E__ d parall __EL__.
 ## Prerequirements
 latest version of [docker](https://www.docker.com/)
 
-## How to use
+## user guide
+user guild and tutorials are availbale here.
+
+https://riken-rccs.github.io/WHEEL/
+
+## How to use with docker
 1. create new directory (hereafter referrd to as `CONFIG_DIR`)
 2. download following 2 files to the `CONFIG_DIR`
     - [jobScheduler.json](https://raw.githubusercontent.com/RIKEN-RCCS/WHEEL/master/app/config/jobScheduler.json)
@@ -29,9 +34,6 @@ above command line, we specify following options
 
 for detailed information about configuration, see [administrator's guide](./documentMD/AdminGuide.md)
 
-for user's guide, see [user's guide](https://riken-rccs.github.io/WHEEL/)
-
-
 ## History
 WHEEL was originaly developed by Research Institute for Information Technology(RITT), Kyushu University in 2016
 
@@ -41,35 +43,53 @@ RIKEN R-CCS forks it and continues the development
 
 
 ## for developpers
-### important notice
-#### about client-code
-We are using webpack for client-side code(under the "src" directory).
-please note that:
+### directory structure
+we have 4 main directories at top level
 
- - do not change any files under public (it will be overwritten after you run build script)
- - you have to run `npm run prepare` after you change something in 'src'
+- docs
+- documentMD
+- client
+- server
 
-#### about user document
-All html documents under docs directory is converted from documentMD/user\_guide during CI process.
-so, plese do NOT change any files under docs directory.
+docs contains html documents it will generated from md documents in `documentMD/user_guide` by gitlab's CI/CD pipeline.
+and it is publishd by github.io pages. please do not change any files under this directory.
 
-#### about CI process
+documentMD contains document written in markdown. as mentioned above, files under `documentMD/user_guide`
+will be publishd at github.io pages. please put detaild information and/or documents for developers
+to outside of user\_guide directory
+
+client and server has client and server code respectively.
+
+### how to run without docker
+1. install dependent pacages
+```
+> for i in client server; do pushd ${i}; npm install; popd; done
+```
+2. build old client-code
+```
+> cd server
+> npm run prepare
+```
+some old version client-code (e.g. home, jobScript) is still in use for now. you have to build them in this step
+
+3. build client code and store into server-side package
+```
+> cd client
+> npm run build
+> mv dist/js/* ../server/app/public/js/
+> mv dist/css/* ../server/app/public/css
+> mv dist/*.html ../server/app/views/
+```
+
+4. start serever
+```
+> cd server
+> npm start
+```
+
+### tests
+
+### CI/CD process
 if you push new commit which includes user guide update,
 CI runner will commit new version of html user guide.
-so, you have to git pull for master branch after push and CI process is finished.
-
-### scripts
-- `npm start` launch wheel
-- `npm run buildImage` build docker image with tag "wheel"
-- `npm run lint` call eslint and fix JS files
-- `npm run UT:server` unit test for server side code
-- `npm run UT:client` unit test for client side code
-- `npm run coverage:server` make coverage report after server side UT
-- `npm run coverage:client` make coverage report after client side UT
-- `npm run E2E` run E2E test
-- `npm run dev` run node-dev and watch script in parallel
-- `npm run node-dev`   start server and keep watching to restart server if file change is detected
-- `npm run prepare` call webpack and build client-side code
-- `npm run watch` build and keep watching for changes in src files
-- `npm run license-report` make lincense report about dependent packages
-- `npm run convertDoc` make html version of user's guide under documentMD/_user_guide
+so, you have to git pull for master branch after CI process is finished.

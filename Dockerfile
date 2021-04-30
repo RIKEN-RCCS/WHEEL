@@ -2,14 +2,18 @@
 FROM node:erbium-slim as builder
 WORKDIR /usr/src/
 
-# copy necessary files
-COPY package.json webpack.config.js ./
-COPY app/ ./app/
 # to install phantomjs
 RUN apt-get update && apt -y install bzip2
 
-# build wheel
-RUN npm install && npm run prepare && rm -fr ./app/src
+# copy necessary files
+COPY client client
+COPY server server
+
+RUN cd server && npm install && npm run prepare &&\
+    cd ../client && npm install && npm run build &&\
+    mv dist/*.html ../server/app/views/  &&\
+    cp -r dist/* ../server/app/public/  &&\
+    cp -r src/oldImgTmp/* ../server/app/public/image/
 
 #build base image to run WHEEL
 FROM node:erbium-slim as runner
@@ -23,16 +27,14 @@ RUN apt-get update && apt -y install curl &&\
 # run UT
 FROM runner as test
 WORKDIR /usr/src/
-COPY --from=builder /usr/src .
-COPY test test
+COPY --from=builder /usr/src/server/ .
 CMD ["npm", "run", "coverage:server"]
 
 # run WHEEL
 FROM runner as exec
 WORKDIR /usr/src/
 
-COPY --from=builder /usr/src/ .
-COPY package.json webpack.config.js ./
+COPY --from=builder /usr/src/server/ .
 RUN npm prune --production && rm -fr ./app/config
 
 CMD [ "npm", "start" ]
