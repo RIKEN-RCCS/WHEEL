@@ -519,7 +519,7 @@
 <li class="heading"><span>4 component</span></li>
 <ul>
 <li><a class="" href="WHEEL_manual/4_component/10_Stepjob.html">10 Stepjob</a></li>
-<li><a class="" href="WHEEL_manual/4_component/11_component_design.html">11 component design</a></li>
+<li><a class="" href="WHEEL_manual/4_component/11_BulkjobTask.html">11 BulkjobTask</a></li>
 <li><a class="" href="WHEEL_manual/4_component/1_Task.html">1 Task</a></li>
 <li><a class="" href="WHEEL_manual/4_component/2_If.html">2 If</a></li>
 <li><a class="" href="WHEEL_manual/4_component/3_For.html">3 For</a></li>
@@ -528,6 +528,7 @@
 <li><a class="" href="WHEEL_manual/4_component/6_Source.html">6 Source</a></li>
 <li><a class="" href="WHEEL_manual/4_component/7_Viewer.html">7 Viewer</a></li>
 <li><a class="" href="WHEEL_manual/4_component/8_ParameterStudy.html">8 ParameterStudy</a></li>
+<li><a class="" href="WHEEL_manual/4_component/99_component_design.html">99 component design</a></li>
 <li><a class="" href="WHEEL_manual/4_component/9_Workflow.html">9 Workflow</a></li>
 </ul>
 <li class="heading"><span>5 execute workflow</span></li>
@@ -568,6 +569,7 @@
 以下の内容によって構成されています。</p>
 <ol>
 <li><a href="#%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%82%BF%E3%82%B9%E3%82%AF%E3%81%8C%E3%82%B7%E3%82%B0%E3%83%8A%E3%83%AB%E3%81%AB%E3%82%88%E3%81%A3%E3%81%A6%E7%B5%82%E4%BA%86%E3%81%97%E3%81%9F%E5%A0%B4%E5%90%88">リモートタスクがシグナルによって終了した場合</a></li>
+<li><a href="#%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%82%92%E5%81%9C%E6%AD%A2%E3%81%97%E3%81%9F%E5%A0%B4%E5%90%88%E3%81%AB%E3%81%8A%E3%81%91%E3%82%8B%E5%AE%9F%E8%A1%8C%E4%B8%AD%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%AE%E5%8F%96%E3%82%8A%E6%89%B1%E3%81%84">プロジェクトを停止した場合における実行中スクリプトの取り扱い</a></li>
 <li><a href="#%E5%B7%A8%E5%A4%A7%E3%81%AA%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%8F%96%E3%82%8A%E6%89%B1%E3%81%84%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">巨大なファイルの取り扱いについて</a></li>
 <li><a href="#input/output%E3%82%B3%E3%83%8D%E3%82%AF%E3%82%BF%E3%82%92%E6%8E%A5%E7%B6%9A%E3%81%97%E3%81%9F%E7%8A%B6%E6%85%8B%E3%81%A7%E3%81%AE%E3%82%B3%E3%83%8D%E3%82%AF%E3%82%BF%E5%90%8D%E7%A7%B0%E3%81%AE%E5%A4%89%E6%9B%B4%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">input/outputコネクタを接続した状態でのコネクタ名称の変更について</a></li>
 <li><a href="#Windows%E7%92%B0%E5%A2%83%E3%81%A7%E3%81%AE%E6%93%8D%E4%BD%9C">Windows環境での操作</a></li>
@@ -577,6 +579,10 @@
 <h2 id="%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%82%BF%E3%82%B9%E3%82%AF%E3%81%8C%E3%82%B7%E3%82%B0%E3%83%8A%E3%83%AB%E3%81%AB%E3%82%88%E3%81%A3%E3%81%A6%E7%B5%82%E4%BA%86%E3%81%97%E3%81%9F%E5%A0%B4%E5%90%88">リモートタスクがシグナルによって終了した場合 <a class="heading-anchor-permalink" href="#%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%82%BF%E3%82%B9%E3%82%AF%E3%81%8C%E3%82%B7%E3%82%B0%E3%83%8A%E3%83%AB%E3%81%AB%E3%82%88%E3%81%A3%E3%81%A6%E7%B5%82%E4%BA%86%E3%81%97%E3%81%9F%E5%A0%B4%E5%90%88">#</a></h2>
 <p>リモートホストで実行中のプロセスがシグナルによって終了した場合、<br>
 WHEELの仕様上、リモートのシグナル番号を補足できないため正常終了と判断されます。</p>
+<hr>
+<h2 id="%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%82%92%E5%81%9C%E6%AD%A2%E3%81%97%E3%81%9F%E5%A0%B4%E5%90%88%E3%81%AB%E3%81%8A%E3%81%91%E3%82%8B%E5%AE%9F%E8%A1%8C%E4%B8%AD%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%AE%E5%8F%96%E3%82%8A%E6%89%B1%E3%81%84">プロジェクトを停止した場合における実行中スクリプトの取り扱い <a class="heading-anchor-permalink" href="#%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%82%92%E5%81%9C%E6%AD%A2%E3%81%97%E3%81%9F%E5%A0%B4%E5%90%88%E3%81%AB%E3%81%8A%E3%81%91%E3%82%8B%E5%AE%9F%E8%A1%8C%E4%B8%AD%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%AE%E5%8F%96%E3%82%8A%E6%89%B1%E3%81%84">#</a></h2>
+<p>プロジェクトの停止ボタンによってプロジェクトを停止した場合、nodeが呼び出した子プロセスは停止されますが、
+子プロセスが実行するスクリプトは停止されません。</p>
 <hr>
 <h2 id="%E5%B7%A8%E5%A4%A7%E3%81%AA%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%8F%96%E3%82%8A%E6%89%B1%E3%81%84%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">巨大なファイルの取り扱いについて <a class="heading-anchor-permalink" href="#%E5%B7%A8%E5%A4%A7%E3%81%AA%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%8F%96%E3%82%8A%E6%89%B1%E3%81%84%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">#</a></h2>
 <p>WHEELではプロジェクトで取り扱うデータをgitで管理しているため大サイズのファイルをプロジェクトディレクトリ内に配置すると

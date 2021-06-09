@@ -57,7 +57,6 @@ async function gatherFiles(task) {
     logger.debug("try to get outputFiles", outputFile, "\n  from:", task.remoteWorkingDir, "\n  to:", dst);
 
     try {
-      console.log(path.dirname(outputFile));
       await ssh.recv(path.posix.join(task.remoteWorkingDir, outputFile), dst, null, null);
     } catch (e) {
       //ignore if src file is not exists
@@ -71,7 +70,7 @@ async function gatherFiles(task) {
 
 
   //get files which match include filter
-  if (typeof task.include === "undefined") {
+  if (typeof task.include === "string") {
     const include = `${task.remoteWorkingDir}/${parseFilter(task.include)}`;
     const exclude = task.exclude ? `${task.remoteWorkingDir}/${parseFilter(task.exclude)}` : null;
     logger.debug("try to get ", include, "\n  from:", task.remoteWorkingDir, "\n  to:", task.workingDir, "\n  exclude filter:", exclude);
@@ -107,9 +106,18 @@ async function createStatusFile(task) {
   return fs.writeFile(filename, statusFile);
 }
 
+async function createBulkStatusFile(task, rtList, jobStatusList) {
+  const filename = path.resolve(task.workingDir, `subjob_${statusFilename}`);
+  let statusFile = "";
+  for (let bulkNum = task.startBulkNumber; bulkNum <= task.endBulkNumber; bulkNum++) {
+    statusFile += `RT_${bulkNum}=${rtList[bulkNum]}\nJOBSTATUS_${bulkNum}=${jobStatusList[bulkNum]}\n`;
+  }
+  return fs.writeFile(filename, statusFile);
+}
 
 module.exports = {
   setTaskState,
   gatherFiles,
-  createStatusFile
+  createStatusFile,
+  createBulkStatusFile
 };

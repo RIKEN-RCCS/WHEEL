@@ -283,6 +283,21 @@ describe("UT for executer class", function() {
         const JS = hostInfo.jobScheduler;
         expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).not.to.be.a.path();
       });
+      it("add submit option", async()=>{
+        task0.submitOption = "-N testjob";
+        await exec(task0, dummyLogger);
+        //92 means job was successfully finished on PBS Pro
+        expect(path.join(task0.workingDir, statusFilename)).to.be.a.file().with.content("finished\n0\n92");
+        expect(dummyLogger.stdout).not.to.be.called;
+        expect(dummyLogger.stderr).not.to.be.called;
+        expect(dummyLogger.sshout).not.to.be.called;
+        expect(dummyLogger.ssherr).not.to.be.called;
+        const remotehostID = process.env.WHEEL_TEST_REMOTEHOST;
+        const hostInfo = remoteHost.query("name", remotehostID);
+        const hostname = hostInfo.host;
+        const JS = hostInfo.jobScheduler;
+        expect(path.resolve(projectRootDir, `${hostname}-${JS}.${jobManagerJsonFilename}`)).not.to.be.a.path();
+      });
     });
   });
 });

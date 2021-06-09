@@ -9,7 +9,6 @@ const path = require("path");
 const { promisify } = require("util");
 const { EventEmitter } = require("events");
 const glob = require("glob");
-const readChunk = require("read-chunk");
 const FileType = require("file-type");
 const nunjucks = require("nunjucks");
 nunjucks.configure({ autoescape: true });
@@ -31,6 +30,7 @@ async function getFiletype(filename) {
   try {
     rt = await FileType.fromFile(filename);
   } catch (e) {
+    //eslint-disable-next-line valid-typeof
     if (typeof (e) === "EndOfStreamError") {
       return rt;
     }
@@ -79,8 +79,8 @@ async function setStateR(dir, state) {
 }
 
 //private functions
-async function getScatterFiles(templateRoot, paramSettings) {
-  if (!(paramSettings.hasOwnProperty("scatter") && Array.isArray(paramSettings.scatter))) {
+async function getScatterFilesV2(templateRoot, paramSettings) {
+  if (!(Object.prototype.hasOwnProperty.call(paramSettings, "scatter") && Array.isArray(paramSettings.scatter))) {
     return [];
   }
   const srcNames = await Promise.all(
@@ -102,12 +102,43 @@ async function replaceByNunjucks(templateRoot, instanceRoot, targetFiles, params
   );
 }
 
-async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
+async function replaceByNunjucksForBulkjob(templateRoot, targetFiles, params, bulkNumber) {
+  return Promise.all(
+    targetFiles.map(async(targetFile)=>{
+      const template = (await fs.readFile(path.resolve(templateRoot, targetFile))).toString();
+      const temp = replacePathsep(targetFile);
+      const arrTargetPath = temp.split(path.posix.sep);
+      const targetFileNewname = `${bulkNumber}.${arrTargetPath[arrTargetPath.length - 1]}`;
+      arrTargetPath.splice(-1, 1, targetFileNewname);
+      const targetFilePath = arrTargetPath.join(path.posix.sep);
+      const result = nunjucks.renderString(template, params);
+      return fs.outputFile(path.resolve(templateRoot, targetFilePath), result);
+    })
+  );
+}
+
+async function writeParameterSetFile(templateRoot, targetFiles, params, bulkNumber) {
+  const paramsKeys = Object.keys(params);
+  let targetNum = 0;
+  return Promise.all(
+    targetFiles.map(async(targetFile, index)=>{
+      const label = `BULKNUM_${bulkNumber}`;
+      const target = replacePathsep(targetFile);
+      const targetKey = paramsKeys[index];
+      const targetVal = params[targetKey];
+      const data = `${label}_TARGETNUM_${targetNum}_FILE="./${target}"\n${label}_TARGETNUM_${targetNum}_KEY="${targetKey}"\n${label}_TARGETNUM_${targetNum}_VALUE="${targetVal}"\n`;
+      targetNum++;
+      return fs.appendFile(path.resolve(templateRoot, "parameterSet.wheel.txt"), data);
+    })
+  );
+}
+
+async function scatterFilesV2(templateRoot, instanceRoot, scatterRecipe, params) {
   const p = [];
   for (const recipe of scatterRecipe) {
     const srcName = nunjucks.renderString(recipe.srcName, params);
     const srces = await promisify(glob)(srcName, { cwd: templateRoot });
-    const dstDir = recipe.hasOwnProperty("dstNode") ? path.join(instanceRoot, recipe.dstNode) : instanceRoot;
+    const dstDir = Object.prototype.hasOwnProperty.call(recipe, "dstNode") ? path.join(instanceRoot, recipe.dstNode) : instanceRoot;
     const dstName = nunjucks.renderString(recipe.dstName, params);
     for (const src of srces) {
       const dst = recipe.dstName.endsWith("/") || recipe.dstName.endsWith("\\") ? path.join(dstDir, dstName.slice(0, -1), src) : path.join(dstDir, dstName);
@@ -117,6 +148,7 @@ async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
             if (err.code !== "ENOEXISTS") {
               return Promise.reject(err);
             }
+            return true;
           })
           .then(()=>{
             return fs.copy(path.join(templateRoot, src), dst);
@@ -132,10 +164,10 @@ async function scatterFiles(templateRoot, instanceRoot, scatterRecipe, params) {
   });
 }
 
-async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
+async function gatherFilesV2(templateRoot, instanceRoot, gatherRecipe, params) {
   const p = [];
   for (const recipe of gatherRecipe) {
-    const srcDir = recipe.hasOwnProperty("srcNode") ? path.join(instanceRoot, recipe.srcNode) : instanceRoot;
+    const srcDir = Object.prototype.hasOwnProperty.call(recipe, "srcNode") ? path.join(instanceRoot, recipe.srcNode) : instanceRoot;
     const srcName = nunjucks.renderString(recipe.srcName, params);
     const srces = await promisify(glob)(srcName, { cwd: srcDir });
     const dstName = nunjucks.renderString(recipe.dstName, params);
@@ -147,6 +179,7 @@ async function gatherFiles(templateRoot, instanceRoot, gatherRecipe, params) {
             if (err.code !== "ENOEXISTS") {
               return Promise.reject(err);
             }
+            return true;
           })
           .then(()=>{
             return fs.copy(path.join(srcDir, src), dst);
@@ -166,16 +199,15 @@ async function doNothing() {
 }
 
 function makeCmd(paramSettings) {
-  const params = paramSettings.hasOwnProperty("params") ? paramSettings.params : paramSettings.target_param;
+  const params = Object.prototype.hasOwnProperty.call(paramSettings, "params") ? paramSettings.params : paramSettings.target_param;
   if (paramSettings.version === 2) {
-    return [getParamSpacev2.bind(null, params), getScatterFiles, scatterFiles, gatherFiles, replaceByNunjucks];
+    return [getParamSpacev2.bind(null, params), getScatterFilesV2, scatterFilesV2, gatherFilesV2, replaceByNunjucks];
   }
   //version 1 (=unversioned)
   return [removeInvalidv1.bind(null, params), ()=>{
     return [];
   }, doNothing, doNothing, replaceTargetFile];
 }
-
 
 function forGetNextIndex(component) {
   ++component.numFinished;
@@ -188,6 +220,35 @@ function forIsFinished(component) {
 
 function forTripCount(component) {
   return Math.ceil((component.end - component.start) / component.step) + 1;
+}
+
+function forKeepLoopInstance(component, cwfDir) {
+  if (Number.isInteger(component.keep) && component.keep >= 0) {
+    const deleteComponentInstance = component.keep === 0 ? component.currentIndex - component.step : component.currentIndex - (component.keep * component.step);
+    if (deleteComponentInstance >= 0) {
+      fs.remove(path.resolve(cwfDir, `${component.originalName}_${sanitizePath(deleteComponentInstance)}`));
+    }
+  }
+}
+
+function whileKeepLoopInstance(component, cwfDir) {
+  if (Number.isInteger(component.keep) && component.keep >= 0) {
+    const deleteComponentInstance = component.keep === 0 ? component.currentIndex - 1 : component.currentIndex - component.keep;
+    if (deleteComponentInstance >= 0) {
+      fs.remove(path.resolve(cwfDir, `${component.originalName}_${sanitizePath(deleteComponentInstance)}`));
+    }
+  }
+}
+
+function foreachKeepLoopInstance(component, cwfDir) {
+  if (Number.isInteger(component.keep) && component.keep >= 0) {
+    const currentIndexNumber = component.currentIndex !== null ? component.indexList.indexOf(component.currentIndex) : component.indexList.length;
+    const deleteComponentNumber = component.keep === 0 ? currentIndexNumber - 1 : currentIndexNumber - component.keep;
+    const deleteComponentName = deleteComponentNumber >= 0 ? `${component.originalName}_${sanitizePath(component.indexList[deleteComponentNumber])}` : "";
+    if (deleteComponentName) {
+      fs.remove(path.resolve(cwfDir, deleteComponentName));
+    }
+  }
 }
 
 function whileGetNextIndex(component) {
@@ -472,10 +533,14 @@ class Dispatcher extends EventEmitter {
     if (component.type !== "source" && component.type !== "viewer") {
       nextComponentIDs = useElse ? Array.from(component.else) : Array.from(component.next);
     }
-    if (component.hasOwnProperty("outputFiles")) {
+    if (Object.prototype.hasOwnProperty.call(component, "outputFiles")) {
+      const behindIfComponentList = await this._getBehindIfComponentList(component);
       component.outputFiles.forEach((outputFile)=>{
         const tmp = outputFile.dst.map((e)=>{
-          if (e.hasOwnProperty("origin")) {
+          if (behindIfComponentList.indexOf(e.dstNode) >= 0) {
+            return null;
+          }
+          if (Object.prototype.hasOwnProperty.call(e, "origin")) {
             return null;
           }
           if (e.dstNode !== component.parent) {
@@ -493,6 +558,24 @@ class Dispatcher extends EventEmitter {
     }));
 
     Array.prototype.push.apply(this.nextSearchList, nextComponents);
+  }
+
+  async _getBehindIfComponentList(component) {
+    const behindIfComponetList = [];
+    for (const outputFile of component.outputFiles) {
+      for (const e of outputFile.dst) {
+        const outputCmp = await this._getComponent(e.dstNode);
+        const prviousCmp = await Promise.all(outputCmp.previous.map((id)=>{
+          return this._getComponent(id);
+        }));
+        prviousCmp.forEach((cmp)=>{
+          if (cmp.type === "if") {
+            behindIfComponetList.push(e.dstNode);
+          }
+        });
+      }
+    }
+    return behindIfComponetList;
   }
 
   async _dispatchTask(task) {
@@ -518,7 +601,11 @@ class Dispatcher extends EventEmitter {
       task.doCleanup = task.cleanupFlag === "0";
     }
 
-    if (this.cwfJson.hasOwnProperty("currentIndex")) {
+    if (task.usePSSettingFile === "1") {
+      await this._bulkjobHandler(task);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(this.cwfJson, "currentIndex")) {
       task.currentIndex = this.cwfJson.currentIndex;
     }
     task.parentType = this.cwfJson.type;
@@ -535,7 +622,7 @@ class Dispatcher extends EventEmitter {
   async _checkIf(component) {
     this.logger.debug("_checkIf called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
-    const currentIndex = this.cwfJson.hasOwnProperty("currentIndex") ? this.cwfJson.currentIndex : null;
+    const currentIndex = Object.prototype.hasOwnProperty.call(this.cwfJson, "currentIndex") ? this.cwfJson.currentIndex : null;
     const condition = await evalCondition(component.condition, childDir, currentIndex, this.logger);
     await this._addNextComponent(component, !condition);
     await this._setComponentState(component, "finished");
@@ -545,7 +632,8 @@ class Dispatcher extends EventEmitter {
     this.logger.debug("_delegate called", component.name);
     const childDir = path.resolve(this.cwfDir, component.name);
     const ancestorsType = typeof this.ancestorsType === "string" ? `${this.ancestorsType}/${component.type}` : component.type;
-    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime, this.logger, this.componentPath, this.emitEvent, ancestorsType);
+    const child = new Dispatcher(this.projectRootDir, component.ID, childDir, this.projectStartTime,
+      this.logger, this.componentPath, this.emitEvent, ancestorsType);
     this.children.add(child);
 
     //exception should be catched in caller
@@ -563,12 +651,16 @@ class Dispatcher extends EventEmitter {
     }
   }
 
-  async _loopFinalize(component, lastDir) {
+  async _loopFinalize(component, lastDir, keepLoopInstance) {
     const dstDir = path.resolve(this.cwfDir, component.originalName);
 
     if (lastDir !== dstDir) {
       this.logger.debug("copy ", lastDir, "to", dstDir);
       await fs.copy(lastDir, dstDir, { overwrite: true, dereference: true }); //dst will be overwrite always
+    }
+
+    if (component.keep === 0) {
+      keepLoopInstance(component, this.cwfDir);
     }
 
     this.logger.debug("loop finished", component.name);
@@ -584,7 +676,7 @@ class Dispatcher extends EventEmitter {
     await fs.writeJson(path.join(componentDir, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
   }
 
-  async _loopHandler(getNextIndex, isFinished, getTripCount, component) {
+  async _loopHandler(getNextIndex, isFinished, getTripCount, keepLoopInstance, component) {
     if (component.childLoopRunning) {
       //send back itself to searchList for next loop trip
       this.nextSearchList.push(component);
@@ -606,7 +698,7 @@ class Dispatcher extends EventEmitter {
 
     //end determination
     if (await isFinished(component)) {
-      await this._loopFinalize(component, srcDir);
+      await this._loopFinalize(component, srcDir, keepLoopInstance);
       return Promise.resolve();
     }
 
@@ -625,6 +717,8 @@ class Dispatcher extends EventEmitter {
       await fs.writeJson(path.resolve(dstDir, componentJsonFilename), newComponent, { spaces: 4, replacer: componentJsonReplacer });
       await this._delegate(newComponent);
 
+      keepLoopInstance(component, this.cwfDir);
+
       if (newComponent.state === "failed") {
         component.hasFaild = true;
       }
@@ -640,8 +734,7 @@ class Dispatcher extends EventEmitter {
     return Promise.resolve();
   }
 
-  async _PSHandler(component) {
-    this.logger.debug("_PSHandler called", component.name);
+  async _getTargetFile(component) {
     const templateRoot = path.resolve(this.cwfDir, component.name);
     const paramSettingsFilename = path.resolve(templateRoot, component.parameterFile);
     const paramSettings = await readJsonGreedy(paramSettingsFilename).catch((err)=>{
@@ -651,32 +744,40 @@ class Dispatcher extends EventEmitter {
     this.logger.debug(`read prameter setting done. version = ${paramSettings.version}`);
 
     //treat single value as array contains single element
-    if (paramSettings.hasOwnProperty("targetFiles") && typeof paramSettings.targetFiles === "string") {
+    if (Object.prototype.hasOwnProperty.call(paramSettings, "targetFiles") && typeof paramSettings.targetFiles === "string") {
       paramSettings.targetFiles = [paramSettings.targetFiles];
     }
-    if (paramSettings.hasOwnProperty("target_file") && typeof paramSettings.target_file === "string") {
+    if (Object.prototype.hasOwnProperty.call(paramSettings, "target_file") && typeof paramSettings.target_file === "string") {
       paramSettings.target_file = [paramSettings.target_file];
     }
-    if (!paramSettings.hasOwnProperty("targetFiles") && paramSettings.hasOwnProperty("target_file")) {
+    if (!Object.prototype.hasOwnProperty.call(paramSettings, "targetFiles") && Object.prototype.hasOwnProperty.call(paramSettings, "target_file")) {
       paramSettings.targetFiles = paramSettings.target_file;
     }
 
     //convert id to relative path from PS component
-    const targetFiles = paramSettings.hasOwnProperty("targetFiles") ? paramSettings.targetFiles.map((e)=>{
-      if (e.hasOwnProperty("targetName")) {
-        const targetDir = e.hasOwnProperty("targetNode") ? path.relative(templateRoot, this._getComponentDir(e.targetNode)) : "";
+    const targetFiles = Object.prototype.hasOwnProperty.call(paramSettings, "targetFiles") ? paramSettings.targetFiles.map((e)=>{
+      if (Object.prototype.hasOwnProperty.call(e, "targetName")) {
+        const targetDir = Object.prototype.hasOwnProperty.call(e, "targetNode") ? path.relative(templateRoot, this._getComponentDir(e.targetNode)) : "";
         return path.join(targetDir, e.targetName);
       }
       return e;
     }) : [];
-    const scatterRecipe = paramSettings.hasOwnProperty("scatter") ? paramSettings.scatter.map((e)=>{
+
+    return [templateRoot, paramSettingsFilename, paramSettings, targetFiles];
+  }
+
+  async _PSHandler(component) {
+    this.logger.debug("_PSHandler called", component.name);
+    const [templateRoot, paramSettingsFilename, paramSettings, targetFiles] = await this._getTargetFile(component);
+
+    const scatterRecipe = Object.prototype.hasOwnProperty.call(paramSettings, "scatter") ? paramSettings.scatter.map((e)=>{
       return {
         srcName: e.srcName,
         dstNode: path.relative(templateRoot, this._getComponentDir(e.dstNode)),
         dstName: e.dstName
       };
     }) : [];
-    const gatherRecipe = paramSettings.hasOwnProperty("gather") ? paramSettings.gather.map((e)=>{
+    const gatherRecipe = Object.prototype.hasOwnProperty.call(paramSettings, "gather") ? paramSettings.gather.map((e)=>{
       return {
         srcName: e.srcName,
         srcNode: path.relative(templateRoot, this._getComponentDir(e.srcNode)),
@@ -773,6 +874,18 @@ class Dispatcher extends EventEmitter {
     await this._addNextComponent(component);
     const state = component.numFailed > 0 ? "failed" : "finished";
     await this._setComponentState(component, state);
+
+    if (component.deleteLoopInstance) {
+      const pm = [];
+      for (const paramVec of paramVecGenerator(paramSpace)) {
+        const deleteComponentName = sanitizePath(paramVec.reduce((p, e)=>{
+          return `${p}_${e.key}_${e.value}`;
+        }, component.name));
+        const deleteDir = path.resolve(this.cwfDir, deleteComponentName);
+        pm.push(fs.remove(deleteDir));
+      }
+      await Promise.all(pm);
+    }
   }
 
   async _viewerHandler(component) {
@@ -811,6 +924,44 @@ class Dispatcher extends EventEmitter {
     await this._setComponentState(component, "finished");
   }
 
+  async _bulkjobHandler(component) {
+    this.logger.debug("_bulkjobHandler called", component.name);
+    const [templateRoot, paramSettingsFilename, paramSettings, targetFiles] = await this._getTargetFile(component);
+    const paramSpace = await getParamSpacev2(paramSettings.params, templateRoot);
+
+    const bulkNumTotal = getParamSize(paramSpace);
+    component.endBulkNumber = bulkNumTotal - 1;
+    component.startBulkNumber = 0;
+    let countBulkNum = 0;
+
+    this.logger.debug("start paramSpace loop");
+
+    for (const paramVec of paramVecGenerator(paramSpace)) {
+      const params = paramVec.reduce((p, c)=>{
+        p[c.key] = c.value;
+        return p;
+      }, {});
+
+      await Promise.all(paramVec.filter((e)=>{
+        return e.type === "file";
+      }).map((e)=>{
+        return e.value;
+      })
+        .map((e)=>{
+          const src = path.resolve(templateRoot, e);
+          const dst = path.resolve(templateRoot, `${countBulkNum}.${e}`);
+          this.logger.debug("parameter: copy from", src, "to ", dst);
+          return fs.copy(src, dst);
+        }));
+
+      this.logger.debug("rewrite target files");
+      await replaceByNunjucksForBulkjob(templateRoot, targetFiles, params, countBulkNum);
+      await writeParameterSetFile(templateRoot, targetFiles, params, countBulkNum);
+      countBulkNum++;
+    }
+    fs.writeJson(path.join(templateRoot, componentJsonFilename), component, { spaces: 4, replacer: componentJsonReplacer });
+  }
+
   async _isReady(component) {
     if (component.type === "source") {
       return true;
@@ -818,10 +969,10 @@ class Dispatcher extends EventEmitter {
     if (component.previous) {
       for (const ID of component.previous) {
         const previous = await this._getComponent(ID);
-        this.logger.debug(`previous component name = ${previous.type}(state:${previous.state})`);
+        this.logger.trace(`previous component name = ${previous.type}(state:${previous.state})`);
 
         if (!isFinishedState(previous.state) && previous.type !== "stepjobTask") {
-          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
+          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${previous.name}(${previous.ID}) is not finished`);
           return false;
         }
       }
@@ -835,7 +986,7 @@ class Dispatcher extends EventEmitter {
         const previous = await this._getComponent(src.srcNode);
 
         if (!isFinishedState(previous.state) && previous.type !== "stepjobTask") {
-          this.logger.debug(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
+          this.logger.trace(`${component.name}(${component.ID}) is not ready because ${inputFile} from ${previous.name}(${previous.ID}) is not arrived`);
           return false;
         }
       }
@@ -886,7 +1037,7 @@ class Dispatcher extends EventEmitter {
             this._getComponent(src.srcNode)
               .then((srcComponent)=>{
                 const srcEntry = srcComponent.inputFiles.find((i)=>{
-                  if (!(i.name === src.srcName && i.hasOwnProperty("forwardTo"))) {
+                  if (!(i.name === src.srcName && Object.prototype.hasOwnProperty.call(i, "forwardTo"))) {
                     return false;
                   }
                   const result = i.forwardTo.findIndex((e)=>{
@@ -915,7 +1066,7 @@ class Dispatcher extends EventEmitter {
                   return;
                 }
                 //get files from lower level component
-                if (srcEntry.hasOwnProperty("origin")) {
+                if (Object.prototype.hasOwnProperty.call(srcEntry, "origin")) {
                   for (const e of srcEntry.origin) {
                     const originalSrcRoot = this._getComponentDir(e.srcNode);
                     deliverRecipes.add({ dstName, srcRoot: originalSrcRoot, srcName: e.srcName });
@@ -965,17 +1116,20 @@ class Dispatcher extends EventEmitter {
       case "stepjobtask":
         cmd = this._dispatchTask;
         break;
+      case "bulkjobtask":
+        cmd = this._dispatchTask;
+        break;
       case "if":
         cmd = this._checkIf;
         break;
       case "for":
-        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished, forTripCount);
+        cmd = this._loopHandler.bind(this, forGetNextIndex, forIsFinished, forTripCount, forKeepLoopInstance);
         break;
       case "while":
-        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger), null);
+        cmd = this._loopHandler.bind(this, whileGetNextIndex, whileIsFinished.bind(null, this.cwfDir, this.logger), null, whileKeepLoopInstance);
         break;
       case "foreach":
-        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished, foreachTripCount);
+        cmd = this._loopHandler.bind(this, foreachGetNextIndex, foreachIsFinished, foreachTripCount, foreachKeepLoopInstance);
         break;
       case "workflow":
         cmd = this._delegate;

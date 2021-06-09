@@ -10,3 +10,4 @@
 
 - [詳細設計書](./design/design.md)
 - [API guilde](./APIGuide.md)
+- [JobScheduler.jsonファイル仕様](./JS.md)

@@ -99,7 +99,9 @@ $(() => {
       parentNodeType: "",
       unsavedFiles: [],
       cb: null,
-      dialog: null
+      dialog: null,
+      bulkNumberAutoSet: null,
+      finishConditionManualSet:null
     },
     mounted (){
       const that=this;
@@ -283,6 +285,10 @@ $(() => {
             this.queueList = hostInfo.queue.split(',');
           }
         }
+      },
+      getSelectedJobScheduler: function () {
+        const selectHost = document.getElementById("remotehostSelectField").value;
+        sio.emit('getSelectedJobScheduler', selectHost);
       },
       // File Area Button method
       createFileFolder: function (isFileOrFolder) {
@@ -547,6 +553,14 @@ $(() => {
           document.getElementById("drawerMenu").classList.toggle("action", false);
         }
       }
+    },
+    watch: {
+      'node.usePSSettingFile'() {
+        this.bulkNumberAutoSet = this.node.usePSSettingFile === '0' ? false : true;
+      },
+      'node.condition'() {
+        this.finishConditionManualSet = this.node.manualFinishCondition === false ? true : false; 
+      }
     }
   });
   // setup FileBrowser
@@ -614,7 +628,6 @@ $(() => {
   const svg = SVG('node_svg');
   sio.on('connect', function () { 
     console.log('connect');
-    //sio.emit('getWheelCommitId', currentWorkFlow);
     sio.emit('getWorkflow', currentWorkFlow);
     sio.emit('getProjectJson', rootWorkflow);
     sio.emit('getProjectState', rootWorkflow);
@@ -805,6 +818,11 @@ $(() => {
       document.getElementById("projectDescription").setAttribute("value", projectJson.description);
 
       changeViewState();
+    });
+
+    /*get submit command jobSchedular, submit option text*/
+    sio.on('selectedJobScheduler', function (jobScheduler) {
+      document.getElementById("submitCommandInputField").textContent = jobScheduler.submit;
     });
 
     /*create host, queue selectbox*/
@@ -999,10 +1017,11 @@ $(() => {
         let nodeIconPath = config.node_icon[nodeType];
         $('#img_node_type').attr("src", nodeIconPath);
         vm.nodeScript = target.script;
-        if (nodeType === 'task' || nodeType === 'stepjob') {
+        if (target.hasOwnProperty('host')) {
           sio.emit('getHostList', true);
-          sio.emit('getJobScriptList', true);//temporary
-        }
+          sio.emit('getJobScriptList', true);
+        } 
+        
         $('#propertyTypeName').html(target.type);
         $('#componentPath').html(currentPropertyDir);
         $('#editPSFileButton').css('visibility', 'hidden');
@@ -1372,15 +1391,18 @@ $(() => {
       { id: "startInputField", readonly: true, disable: false },
       { id: "endInputField", readonly: true, disable: false },
       { id: "stepInputField", readonly: true, disable: false },
+      { id: "keepInputField", readonly: true, disable: false },
       { id: "cleanUpFlag0", readonly: true, disable: true },
       { id: "cleanUpFlag1", readonly: true, disable: true },
       { id: "cleanUpFlag2", readonly: true, disable: true },
       { id: "includeInputField", readonly: true, disable: false },
       { id: "excludeInputField", readonly: true, disable: false },
       { id: "forceOverwriteCheckbox", readonly: true, disable: true },
+      { id: "deleteLoopInstanceCheckbox", readonly: true, disable: true },
       { id: "useJobSchedulerFlagField", readonly: true, disable: true },
       { id: "remotehostSelectField", readonly: true, disable: true },
       { id: "queueSelectField", readonly: true, disable: true },
+      { id: "submitOptionInputField", readonly: true, disable: true },
       { id: "jupyterBootButton", readonly: true, disable: true },
       { id: "createFolderButton", readonly: true, disable: true },
       { id: "createFileButton", readonly: true, disable: true },
@@ -1388,7 +1410,15 @@ $(() => {
       { id: "fileUploadButton", readonly: true, disable: true },
       { id: "uploadOnDemandFlagField", readonly: true, disable: true },
       { id: "useDependencyFlagField", readonly: true, disable: true },
-      { id: "dependencyInputField", readonly: true, disable: false }
+      { id: "dependencyInputField", readonly: true, disable: false },
+      { id: "usePSSettingFile", readonly: true, disable: true },
+      { id: "usePSSettingFile", readonly: true, disable: true },
+      { id: "useBulkNumberManual", readonly: true, disable: true },
+      { id: "useBulkNumberAuto", readonly: true, disable: true },
+      { id: "endBulkNumberInputField", readonly: true, disable: true },
+      { id: "startBulkNumberInputField", readonly: true, disable: true },
+      { id: "parameterFileSelectFieldForBulkjob", readonly: true, disable: true },
+      { id: "manualFinishConditionFlagField", readonly: true, disable: true },
     ];
 
     var classes = [
@@ -1400,6 +1430,10 @@ $(() => {
       { class: "newIndexListField", readonly: true, disable: false }
     ];
 
+    let throughIds = vm.node.usePSSettingFile === "0" ? ["parameterFileSelectFieldForBulkjob"] : ["endBulkNumberInputField", "startBulkNumberInputField"];
+    throughIds = vm.node.manualFinishCondition === false ? throughIds.concat(["conditionFlag1", "conditionFlag2", "conditionSelectField"]) : throughIds;
+    console.log(throughIds);
+
     ids.forEach((v) => {
       try {
         if (v.readonly === true) {
@@ -1408,6 +1442,11 @@ $(() => {
       } catch (e) { }
       try {
         if (v.disable === true) {
+          const checkFlag = throughIds.includes(v.id);
+          if (propertyEditableFlag === false && checkFlag) {
+            console.log(v.id);
+            return;
+          }
           $("[id=" + v.id + "]").prop('disabled', propertyEditableFlag);
         }
       } catch (e) { }

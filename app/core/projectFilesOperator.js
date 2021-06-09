@@ -6,7 +6,7 @@
 "use strict";
 const fs = require("fs-extra");
 const path = require("path");
-const pathIsInside = require("path-is-inside");
+const isPathInside = require("is-path-inside");
 const { promisify } = require("util");
 const glob = require("glob");
 const { componentFactory } = require("./workflowComponent");
@@ -29,10 +29,10 @@ async function getDescendantsIDs(projectRootDir, ID) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
   const poi = await getComponentDir(projectRootDir, ID, true);
-  const rt = [];
+  const rt = [ID];
 
   for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
-    if (pathIsInside(path.resolve(projectRootDir, componentPath), poi)) {
+    if (isPathInside(path.resolve(projectRootDir, componentPath), poi)) {
       rt.push(id);
     }
   }
@@ -47,26 +47,20 @@ async function getDescendantsIDs(projectRootDir, ID) {
 async function getAllComponentIDs(projectRootDir) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
-  const rt = [];
-
-  for (const [id, componentPath] of Object.entries(projectJson.componentPath)) {
-    rt.push(id);
-  }
-  return rt;
+  return Object.keys(projectJson.componentPath);
 }
 
 /**
  * create new project dir, initial files and new git repository
  * @param {string} projectRootDir - project projectRootDir's absolute path
  * @param {string} name - project name without suffix
- * @param {string} description - project description text
+ * @param {string} argDescription - project description text
  * @param {string} user - username of project owner
  * @param {string} mail - mail address of project owner
- * @param {Object} logger - log4js instance
  * @returns {*} -
  */
-async function createNewProject(projectRootDir, name, description, user, mail, logger) {
-  description = description != null ? description : "This is new project.";
+async function createNewProject(projectRootDir, name, argDescription, user, mail) {
+  const description = argDescription != null ? argDescription : "This is new project.";
   await fs.ensureDir(projectRootDir);
 
   //write root workflow
@@ -134,7 +128,7 @@ async function updateComponentPath(projectRootDir, ID, absPath) {
   const oldRelativePath = projectJson.componentPath[ID];
   if (typeof oldRelativePath !== "undefined") {
     for (const [k, v] of Object.entries(projectJson.componentPath)) {
-      if (pathIsInside(convertPathSep(v), convertPathSep(oldRelativePath))) {
+      if (isPathInside(convertPathSep(v), convertPathSep(oldRelativePath)) || v === oldRelativePath) {
         projectJson.componentPath[k] = v.replace(oldRelativePath, newRelativePath);
       }
     }
@@ -152,15 +146,14 @@ async function updateComponentPath(projectRootDir, ID, absPath) {
 async function setProjectState(projectRootDir, state, force) {
   const filename = path.resolve(projectRootDir, projectJsonFilename);
   const projectJson = await readJsonGreedy(filename);
-  if (!force && projectJson.state === state) {
-    return Promise.resolve();
+  if (force || projectJson.state !== state) {
+    projectJson.state = state;
+    const timestamp = getDateString(true);
+    projectJson.mtime = timestamp;
+    await fs.writeJson(filename, projectJson, { spaces: 4 });
+    await gitAdd(projectRootDir, filename);
+    emitProjectEvent(projectRootDir, "projectStateChanged", projectJson);
   }
-  projectJson.state = state;
-  const timestamp = getDateString(true);
-  projectJson.mtime = timestamp;
-  await fs.writeJson(filename, projectJson, { spaces: 4 });
-  await gitAdd(projectRootDir, filename);
-  emitProjectEvent(projectRootDir, "projectStateChanged", projectJson);
 }
 
 async function getComponentDir(projectRootDir, ID, isAbsolute) {

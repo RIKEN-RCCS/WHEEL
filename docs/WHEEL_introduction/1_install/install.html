@@ -519,7 +519,7 @@
 <li class="heading"><span>4 component</span></li>
 <ul>
 <li><a class="" href="../../WHEEL_manual/4_component/10_Stepjob.html">10 Stepjob</a></li>
-<li><a class="" href="../../WHEEL_manual/4_component/11_component_design.html">11 component design</a></li>
+<li><a class="" href="../../WHEEL_manual/4_component/11_BulkjobTask.html">11 BulkjobTask</a></li>
 <li><a class="" href="../../WHEEL_manual/4_component/1_Task.html">1 Task</a></li>
 <li><a class="" href="../../WHEEL_manual/4_component/2_If.html">2 If</a></li>
 <li><a class="" href="../../WHEEL_manual/4_component/3_For.html">3 For</a></li>
@@ -528,6 +528,7 @@
 <li><a class="" href="../../WHEEL_manual/4_component/6_Source.html">6 Source</a></li>
 <li><a class="" href="../../WHEEL_manual/4_component/7_Viewer.html">7 Viewer</a></li>
 <li><a class="" href="../../WHEEL_manual/4_component/8_ParameterStudy.html">8 ParameterStudy</a></li>
+<li><a class="" href="../../WHEEL_manual/4_component/99_component_design.html">99 component design</a></li>
 <li><a class="" href="../../WHEEL_manual/4_component/9_Workflow.html">9 Workflow</a></li>
 </ul>
 <li class="heading"><span>5 execute workflow</span></li>
@@ -569,23 +570,15 @@ WHEELの起動や終了に関しては、次章にて説明します。</p>
 <p>WHEELのインストールと動作には、node.js(version 12以降)が必要になります。
 node.jsは、 以下の方法にてインストールできます。</p>
 <ol>
-<li>次サイト <a href="https://nodejs.org/en">https://nodejs.org/en</a> にて、配布されているアーカイブをダウンロードしてインストールする</li>
+<li>次サイト <a href="https://nodejs.org/ja">https://nodejs.org/ja</a> にて、配布されているアーカイブをダウンロードしてインストールする。</li>
 <li>お使いのOSのパッケージマネージャを利用してインストールする。</li>
 </ol>
 <h2 id="wheel%E3%81%AE%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%80%81%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E6%96%B9%E6%B3%95">WHEELのダウンロード、インストール方法 <a class="heading-anchor-permalink" href="#wheel%E3%81%AE%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%80%81%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E6%96%B9%E6%B3%95">#</a></h2>
 <hr>
 <h3 id="wheel%E3%81%AE%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89">WHEELのダウンロード <a class="heading-anchor-permalink" href="#wheel%E3%81%AE%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89">#</a></h3>
-<p>インストールを実行する前に理化学研究所の公開gitLabサイトより、
-WHEELのモジュールを任意のディレクトリにダウンロードしておく必要があります。
-WHEELのダウンロード先は、次のURLです。</p>
-<blockquote>
-<p>理化学研究所公開 gitLab URL：<a href="https://gitlab.com/aicshud/WHEEL">https://gitlab.com/aicshud/WHEEL</a></p>
-</blockquote>
-<p>サイトへ遷移後、下図内の手順に従い、WHEELのモジュールをユーザマシンへダウンロードします。</p>
-<ol>
-<li><img src="./img/WHEEL_download_cloud.PNG" alt="img" title="download">ボタンをクリックします。</li>
-<li>任意の拡張子を選択します。</li>
-</ol>
+<p>WHEELモジュールは、理研RCCSのgithubにOSS(BSDライセンス)として公開されています。<br>
+github: <a href="https://github.com/RIKEN-RCCS/WHEEL">https://github.com/RIKEN-RCCS/WHEEL</a></p>
+<p>WHEELを使用する場合は、上記URLの<strong>Code</strong>ボタンからダウンロード、または、git cloneしてください。</p>
 <p><img src="./img/WHEEL_download.PNG" alt="img" title="download"></p>
 <h3 id="wheel%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB-2">WHEELのインストール <a class="heading-anchor-permalink" href="#wheel%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB-2">#</a></h3>
 <p>WHEELのダウンロード完了後、ターミナルアプリ、コマンドプロンプト等を起動し以下の手順に従い

@@ -519,7 +519,7 @@
 <li class="heading"><span>4 component</span></li>
 <ul>
 <li><a class="active" href="10_Stepjob.html">10 Stepjob</a></li>
-<li><a class="" href="11_component_design.html">11 component design</a></li>
+<li><a class="" href="11_BulkjobTask.html">11 BulkjobTask</a></li>
 <li><a class="" href="1_Task.html">1 Task</a></li>
 <li><a class="" href="2_If.html">2 If</a></li>
 <li><a class="" href="3_For.html">3 For</a></li>
@@ -528,6 +528,7 @@
 <li><a class="" href="6_Source.html">6 Source</a></li>
 <li><a class="" href="7_Viewer.html">7 Viewer</a></li>
 <li><a class="" href="8_ParameterStudy.html">8 ParameterStudy</a></li>
+<li><a class="" href="99_component_design.html">99 component design</a></li>
 <li><a class="" href="9_Workflow.html">9 Workflow</a></li>
 </ul>
 <li class="heading"><span>5 execute workflow</span></li>
@@ -564,10 +565,10 @@
       <article id="main" class="content">
         <h1 id="stepjob">Stepjob <a class="heading-anchor-permalink" href="#stepjob">#</a></h1>
 <p><img src="./img/stepjob/stepjob.png" alt="img"></p>
-<p>stepjobコンポーネントは、ジョブスケジューラ「FUJITSU Software Technical Computing Suite（TCS）」のステップジョブ機能に基づいた機能です。<br>
-ユーザがステップジョブを使用できるリモートマシンのアカウントを持つ（リモートホスト登録画面で登録している）場合にのみ使用できます。<br>
+<p>stepjob/stepjobTaskコンポーネントは、ジョブスケジューラ「FUJITSU Software Technical Computing Suite（TCS）」のステップジョブ機能に基づいた機能です。<br>
+ユーザがステップジョブを使用できるリモートマシンのアカウントを持つ場合にのみ使用できます。<br>
 本機能は、stepjobコンポーネントとstepjobコンポーネント内でのみ使用できるstepjobTaskコンポーネントを組み合わせて使用します。<br>
-ステップジョブ機能に基づきstepjobTaskコンポーネントに設定されたステップナンバー、及び、依存関係式に従い、ジョブ投入されます。<br>
+TCSのステップジョブ機能に基づきstepjobTaskコンポーネントに設定されたステップナンバー、及び、依存関係式に従い、ジョブ投入されます。<br>
 ステップジョブを使用することでジョブの投入時に設定した依存関係式によって実行条件や順序を指定することができ特定のジョブの実行結果に応じて自動的に処理させることができます。<br>
 ステップジョブ機能の詳細に関しては、ジョブスケジューラ「FUJITSU Software Technical Computing Suite（TCS）」のドキュメントをご確認ください。</p>
 <p>Stepjob/StepjobTaskコンポーネントのプロパティは以下です。</p>
@@ -605,6 +606,11 @@
 <td>host</td>
 <td>文字列</td>
 <td>Taskを実行するhost、localhostまたは登録済のremotehostのlabelを指定する *1</td>
+</tr>
+<tr>
+<td>useJobscheduler</td>
+<td>チェックボックス</td>
+<td>true、readonly</td>
 </tr>
 <tr>
 <td>queue</td>
@@ -730,8 +736,7 @@
 </table>
 <p>*1 scriptに指定されたスクリプトの終了コードが0の場合は真、<br>
 　それ以外の場合は、偽と判定し(プロジェクトの判定はfailedとなります)後続のノードへ遷移します。<br>
-*2 stepjobTaskコンポーネントでは、親コンポーネント（stepjobコンポーネント）
-からのファイルの受け渡しは可能ですが、<br>
+*2 stepjobTaskコンポーネントでは、親コンポーネント(stepjobコンポーネント)からのファイルの受け渡しは可能ですが、<br>
 　ステップジョブ機能の性質上、stepjobTaskコンポーネント間のファイルの受け渡しを設定することができません。<br>
 　実行するステップジョブ間でファイルの受け渡しが必要な場合は、ジョブスクリプトに処理を記述する必要があります。<br>
 *3 ステップナンバーが小さい数から順に実行されます。<br>
@@ -807,7 +812,24 @@ ec==0
 
 sd=ec!=0:all:0
 </code></pre>
-<h1 id="stepjob%2Fstepjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">Stepjob/StepjobTaskコンポーネントの使用例 <a class="heading-anchor-permalink" href="#stepjob%2Fstepjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">#</a></h1>
+<h1 id="%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%2F%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">リモートホスト/ジョブスケジューラの設定 <a class="heading-anchor-permalink" href="#%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%2F%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">#</a></h1>
+<h2 id="%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%E3%81%AE%E8%A8%AD%E5%AE%9A">リモートホストの設定 <a class="heading-anchor-permalink" href="#%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88%E3%83%9B%E3%82%B9%E3%83%88%E3%81%AE%E8%A8%AD%E5%AE%9A">#</a></h2>
+<p>前述にもあるように、stepjob/stepjobTaskコンポーネントを使用する場合、<br>
+ユーザがリモートホストのステップジョブ機能を使用する権限を有している必要があります。<br>
+権限を有している場合、リモートホスト設定画面においてstepjob/stepjobTaskコンポーネントで使用するリモートホストのstepjobプロパティを<br>
+有効にすることで使用可能になります。(加えてjobScheduler.jsonファイルにも設定が必要です。詳細後述。)</p>
+<blockquote>
+<p>リモートホスト画面<br>
+<img src="./img/stepjob/stepjob_remotehost.png" alt="img" title="remotehost"></p>
+</blockquote>
+<h2 id="%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">ジョブスケジューラの設定 <a class="heading-anchor-permalink" href="#%E3%82%B8%E3%83%A7%E3%83%96%E3%82%B9%E3%82%B1%E3%82%B8%E3%83%A5%E3%83%BC%E3%83%A9%E3%81%AE%E8%A8%AD%E5%AE%9A">#</a></h2>
+<p>stepjob/stepjobTaskコンポーネントを使用する場合、リモートホストの設定に加えて使用するジョブスケジューラの設定も必要です。<br>
+WHEELモジュール内のapp/config/jobscheduler.jsonファイルにステップジョブ機能を有効にする以下の記述を追記してください。</p>
+<blockquote>
+<p>app/config/jobscheduler.jsonへの追記例<br>
+<img src="./img/stepjob/stepjob_jobscheduler.png" alt="img" title="remotehost"></p>
+</blockquote>
+<h1 id="stepjob%2Fstepjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">stepjob/stepjobTaskコンポーネントの使用例 <a class="heading-anchor-permalink" href="#stepjob%2Fstepjobtask%E3%82%B3%E3%83%B3%E3%83%9D%E3%83%BC%E3%83%8D%E3%83%B3%E3%83%88%E3%81%AE%E4%BD%BF%E7%94%A8%E4%BE%8B">#</a></h1>
 <p>サンプルでは、3つのstepjobTaskコンポーネントを使用します。<br>
 1つ目のstepjobTaskコンポーネントは、ジョブスクリプトの終了コード1となるジョブスクリプトを設定し、<br>
 2つ目のstepjobTaskコンポーネントに依存関係式「sd=ec!=0:all:0」によって<br>
@@ -863,14 +885,15 @@ sd=ec!=0:all:0
 </table>
 <h4 id="%E3%83%BBfailed.sh">・<a href="http://failed.sh">failed.sh</a> <a class="heading-anchor-permalink" href="#%E3%83%BBfailed.sh">#</a></h4>
 <pre><code>#!/bin/bash
-#PJM -L &quot;rscgrp=ito-g-1-dbg&quot;
-#PJM -L &quot;rscunit=ito-b&quot;
+#PJM -L &quot;node=1&quot;
+#PJM -L &quot;rscgrp=eap-small&quot;
 #PJM -L &quot;elapse=1:00:00&quot;
 #PJM -j -X -S
 
 echo stepjobTask0
 exit 1
 </code></pre>
+<p>(注)上記スクリプトのリソース指定は富岳の記述形式です。他のホストで使用する場合は、使用するホストの記述方式を使用して下さい。</p>
 <blockquote>
 <p>stepjobTask1（stepjobTaskコンポーネント）</p>
 </blockquote>
@@ -914,8 +937,8 @@ exit 1
 </table>
 <h4 id="%E3%83%BBscript1.sh">・<a href="http://script1.sh">script1.sh</a> <a class="heading-anchor-permalink" href="#%E3%83%BBscript1.sh">#</a></h4>
 <pre><code>#!/bin/bash
-#PJM -L &quot;rscgrp=ito-g-1-dbg&quot;
-#PJM -L &quot;rscunit=ito-b&quot;
+#PJM -L &quot;node=1&quot;
+#PJM -L &quot;rscgrp=eap-small&quot;
 #PJM -L &quot;elapse=1:00:00&quot;
 #PJM -j -X -S
 
@@ -965,8 +988,8 @@ exit 0
 </table>
 <h4 id="%E3%83%BBscript2.sh">・<a href="http://script2.sh">script2.sh</a> <a class="heading-anchor-permalink" href="#%E3%83%BBscript2.sh">#</a></h4>
 <pre><code>#!/bin/bash
-#PJM -L &quot;rscgrp=ito-g-1-dbg&quot;
-#PJM -L &quot;rscunit=ito-b&quot;
+#PJM -L &quot;node=1&quot;
+#PJM -L &quot;rscgrp=eap-small&quot;
 #PJM -L &quot;elapse=1:00:00&quot;
 #PJM -j -X -S
 

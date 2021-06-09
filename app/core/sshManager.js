@@ -154,16 +154,16 @@ async function createSsh(projectRootDir, remoteHostName, hostinfo, sio) {
   //hostinfo.host is hostname or IP address of remote host
   let failCount = 0;
   let done = false;
-  while (!done && failCount) {
+  while (!done) {
     try {
       done = await arssh.canConnect();
     } catch (e) {
-      if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure") {
+      if (e.reason !== "invalid passphrase" && e.reason !== "authentication failure" && e.reason !== "invalid private key") {
         return Promise.reject(e);
       }
       ++failCount;
 
-      if (failCount > 3) {
+      if (failCount >= 3) {
         return Promise.reject(new Error(`wrong password for ${failCount} times`));
       }
       const newPassword = await askPassword(sio, remoteHostName);

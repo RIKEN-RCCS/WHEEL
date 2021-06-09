@@ -81,6 +81,10 @@
             "jpn": "ジョブ投入先のキューを選択します"
         },
         {
+            "key": "propertySubmitOption",
+            "jpn": "任意のオプションを追加します。"
+        },
+        {
             "key": "propertyParameterSettingFile",
             "jpn": "パラメトリックスタディの設定を記述したファイルを選択します"
         },
@@ -121,6 +125,10 @@
             "jpn": "1ループあたりのインデックス増分値を設定します"
         },
         {
+            "key": "propertyKeep",
+            "jpn": "保持する最新のループインデックスの個数を設定します"
+        },
+        {
             "key": "propertyIndexList",
             "jpn": "ループインデックスに指定する値のリストを設定します"
         },
@@ -159,6 +167,10 @@
         {
             "key": "forceOverwriteCheckbox",
             "jpn": "リモート環境に作成した一時ファイルを上書きするかを選択します"
+        },
+        {
+            "key": "deleteLoopInstanceCheckbox",
+            "jpn": "作成したループインスタンス削除するかどうかを選択します"
         },
         {
             "key": "propertyuploadOnDemand",

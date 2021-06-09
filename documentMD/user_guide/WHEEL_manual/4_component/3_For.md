@@ -14,6 +14,7 @@ Forコンポーネントのプロパティは以下です。
 | start | 整数値 | ループの始値 |
 | end | 整数値 | ループの終値 |
 | step | 整数値 | 1回のループでのインデックスの増分（負値も可）|
+| last loop instance to keep | 整数値 | 残しておくループインスタンスの数（デフォルトではすべて保存される。） |
 | state clean | ボタン | コンポーネントの進行状態を初期状態に戻す *1 |
 
 *1 コンポーネントの進行状態が"finished"もしくは"failed"の時のみ表示されます。  
@@ -84,6 +85,7 @@ Forコンポーネントのサンプルを示します。
 | start | 0 |
 | end | 4 |
 | step | 1 |
+| last loop instance to keep | - |
 | Files | - |
 
 ## Forワークフロー子階層 構成図
@@ -151,3 +153,26 @@ exit 0
 ## 実行結果
 
 ![img](./img/for/For_finished.png "For_finished")
+
+## ループインスタンスの削除
+
+保持するループインスタンスを１つに設定
+![img](./img/for/For_keep.png "For_keep")
+
+> sampleFor_keep（forコンポーネント）
+
+| プロパティ名 | 設定値 |
+| ---- | ---- |
+| Name | sampleFor |
+| InputFiles | - |
+| OutputFiles | - |
+| start | 1 |
+| end | 3 |
+| step | 1 |
+| last loop instance to keep | 1 |
+| Files | - |
+
+## 実行結果
+
+最新のループインスタンスが保持されている
+![img](./img/for/For_keep_instance.png "For_keep_instance")

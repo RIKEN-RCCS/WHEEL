@@ -322,13 +322,17 @@ hostInfoのデータ形式は以下の2形式が存在します。
 | keyFile               | string or null | 公開鍵接続に使う鍵のファイルパス(パスワード接続の時はnull)
 | [numJob]              | number         | 接続先ホストから同時に投入できる最大ジョブ数
 | [queue]               | string         | 接続先ホストからジョブを投入する時に使えるキューの一覧をカンマ区切りで並べたもの。
+| [stepjob]             | boolean        | 本ホストを用いたWHEELのステップジョブ機能の有効化 ＊
+| [bulkjob]             | boolean        | 本ホストを用いたWHEELのバルクジョブ機能の有効化 ＊
 | [port]                | number         | ssh接続に使うポート番号 (default 22)
 | [jobScheduler]        | string         | そのホストで使われているジョブスケジューラの名称
 | [renewInterval]       | number         | ssh接続を再接続する間隔(単位は分)
 | [renewDelay]          | number         | 再接続時に、切断後に挟む待ち時間(単位は秒)
 | [execInterval]        | number         | ジョブ投入、実行時に間に挟む待ち時間(単位は秒)
 | [statusCheckInterval] | number         | ジョブ投入後のステータス確認を行う間隔(単位は秒)
-| [maxStatusCheckError] | number         | statusCheckに失敗した時に、ジョブ自体をfailedとするしきい値
+| [maxStatusCheckError] | number         | statusCheckに失敗した時に、ジョブ自体をfailedとするしきい値 
+＊ WHEELのステップジョブ/バルクジョブ機能を使用する場合は、使用するホストがステップジョブ/バルクジョブ機能を持ち  
+　ユーザがステップジョブ/バルクジョブの利用権限を持っている必要があります。
 
 AWS
 

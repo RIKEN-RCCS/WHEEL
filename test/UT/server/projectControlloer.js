@@ -1049,6 +1049,9 @@ describe("project Controller UT", function() {
             state: { enum: ["finished"] }
           }
         });
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1")).to.be.a.directory();
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2")).to.be.a.directory();
+        expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3")).to.be.a.directory();
       });
     });
     describe("task in PS ver.2", ()=>{
@@ -1550,6 +1553,70 @@ describe("project Controller UT", function() {
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_1", "task0")}${os.EOL}`);
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_2", "task0")}${os.EOL}`);
         expect(path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0", "result.log")).to.be.a.file().with.content(`${path.resolve(projectRootDir, "PS0_KEYWORD1_3", "task0")}${os.EOL}`);
+      });
+    });
+
+    describe("If component", ()=>{
+      beforeEach(async()=>{
+        const if0 = await createNewComponent(projectRootDir, projectRootDir, "if", { x: 10, y: 10 });
+        const task0 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const task1 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        const task2 = await createNewComponent(projectRootDir, projectRootDir, "task", { x: 10, y: 10 });
+        await updateComponent(projectRootDir, if0.ID, "condition", scriptName);
+        await updateComponent(projectRootDir, task0.ID, "script", scriptName);
+        await updateComponent(projectRootDir, task1.ID, "script", scriptName);
+        await updateComponent(projectRootDir, task2.ID, "script", scriptName);
+        await fs.outputFile(path.join(projectRootDir, "task0", "a"), "a");
+        await addOutputFile(projectRootDir, task0.ID, "a");
+        await addInputFile(projectRootDir, if0.ID, "b");
+        await addInputFile(projectRootDir, task2.ID, "c");
+        await addFileLink(projectRootDir, task0.ID, "a", if0.ID, "b");
+        await addFileLink(projectRootDir, task0.ID, "a", task2.ID, "c");
+        await addLink(projectRootDir, if0.ID, task1.ID);
+        await addLink(projectRootDir, if0.ID, task2.ID, true);
+        await fs.outputFile(path.join(projectRootDir, "if0", scriptName), "#!/bin/bash\nexit 0\n");
+        await fs.outputFile(path.join(projectRootDir, "task0", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "task1", scriptName), scriptPwd);
+        await fs.outputFile(path.join(projectRootDir, "task2", scriptName), scriptPwd);
+      });
+      it("should not make link from outputFile to inputFile behind If Component", async()=>{
+        await runProject(projectRootDir);
+        expect(path.resolve(projectRootDir, projectJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task1", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "task2", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["not-started"] }
+          }
+        });
+        expect(path.resolve(projectRootDir, "if0", componentJsonFilename)).to.be.a.file().with.json.using.schema({
+          required: ["state"],
+          properties: {
+            state: { enum: ["finished"] }
+          }
+        });
       });
     });
   });

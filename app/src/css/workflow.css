@@ -625,8 +625,8 @@ select::-ms-expand {
 }
 
 #propertyInputFiles, #propertyOutputFiles, #propertyOutputFile, #propertyParameterSettingFile, #propertyCondition,
-#propertyIndexList, #propertyStart, #propertyStep,
-#propertyRemotehost, #propertyQueue, #propertyRetry, #propertyUseDependency
+#propertyIndexList, #propertyStart, #propertyStep, #propertyKeep,
+#propertyRemotehost, #propertyQueue, #propertySubmitOption, #propertyRetry, #propertyUseDependency, #propertyBulkNumber
 {
     margin: 8px 0 0 0;
     display: inline-block;
@@ -638,12 +638,12 @@ select::-ms-expand {
     display: inline-block;
 }
 
-#propertyEnd{
+#propertyEnd, #propertyEndBulkNumber{
     display: inline-block;
 }
 
 #nameInputField, .newInputFileNameInputField, .newOutputFileNameInputField,
-.newOutputFileNameInputField, #parameterFileInputField, #retryConditionInputField, #conditionInputField,
+.newOutputFileNameInputField, #retryConditionInputField, #conditionInputField,
 .newIndexListField, #retryTimesInputField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
@@ -655,7 +655,7 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#dependencyInputField{
+#dependencyInputField, #submitCommandInputField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -664,6 +664,17 @@ select::-ms-expand {
     border: 0;
     color: #FFFFFF;
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
+}
+
+#parameterFileSelectFieldForBulkjob{
+    margin: 2px 0 10px 16px;
+    padding-left: 5px;
+    height: 20px;
+    width: 190px;
+    background-color: #333333;
+    color: #FFFFFF;
+    border: 0;
+    font-family: Meiryo,ヒラギノ角ゴ Pro,IPA Pゴシック,sans-serif;
 }
 
 #stateField{
@@ -699,11 +710,8 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-#scriptSelectField, #remotehostSelectField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
+#scriptSelectField, #remotehostSelectField, #submitOptionInputField, #conditionSelectField, #parameterFileSelectField, #outputFileSelectField,
 #retryConditionSelectField, #fileForCondition{
-    margin: 2px 0 0 8px;
-    padding-left: 5px;
-    height: 22px;
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -718,7 +726,7 @@ select::-ms-expand {
     margin: 2px 0 2px 4px;
 }
 
-#queueSelectField{
+#queueSelectField, #bulkNumberSelectField{
     margin: 2px 0 0 8px;
     padding-left: 5px;
     height: 20px;
@@ -729,8 +737,12 @@ select::-ms-expand {
     font-family: "Meiryo", "ヒラギノ角ゴ Pro", "IPA Pゴシック", sans-serif;
 }
 
-.queueSelectFieldColor, .dependencyInputFieldColor{
+.queueSelectFieldColor, .dependencyInputFieldColor, .usePSSettingFileInputFieldColor, .bulkNumberSelectFieldColor{
     background-color: #000000 !important;
+}
+
+.bulkNumberInputFieldColor{
+    background-color: #333333 !important;
 }
 
 #propertyRetryArea{
@@ -768,7 +780,27 @@ select::-ms-expand {
     color: #FFFFFF;
 }
 
+#startBulkNumberInputField, #endBulkNumberInputField{
+    margin: 2px 0 0 2px;
+    padding-left: 5px;
+    height: 20px;
+    width: 56px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+}
+
 #stepInputField{
+    margin: 2px 0 0 5px;
+    padding-left: 5px;
+    height: 20px;
+    width: 73px;
+    background-color: #000000;
+    border: 0;
+    color: #FFFFFF;
+}
+
+#keepInputField{
     margin: 2px 0 0 5px;
     padding-left: 5px;
     height: 20px;
@@ -805,8 +837,18 @@ select::-ms-expand {
     border-top: solid 1px #000000;
 }
 
-#propertyCleanUpFlag, #propertyInclude, #propertyExclude{
+#propertyCleanUpFlag, #propertyInclude, #propertyExclude, #propertyParameterSettingFileForBulkjob, #propertyStartBulkNumber{
     margin: 8px 0 0 8px;
+    display: inline-block;
+}
+
+#useBulkNumberManual, #useBulkNumberAuto{
+    margin: 4px 0 0 8px;
+    display: inline-block;
+}
+
+#propertyStartBulkNumber{
+    margin: 2px 0 0 16px;
     display: inline-block;
 }
 
@@ -896,8 +938,12 @@ select::-ms-expand {
     height: 18px;
 }
 
-#startInputField, #endInputField, #stepInputField{
+#stepInputField{
     width: 75px;
+}
+
+#keepInputField{
+    width: 192px;
 }
 
 #fileList{
@@ -1690,10 +1736,6 @@ tspan{
   height: 100%;
 }
 
-#rapid {
-  /* height: 100%; */
-}
-
 .ui-tooltip {
 	font-size: 12px;
 }
@@ -1707,18 +1749,9 @@ body .ui-tooltip {
 
 .container{
     padding: 0px !important;
+    align-items: normal!important;
 }
 
 .ace-idle-fingers .ace_print-margin{
     width: 0px !important;
 }
-
-/* viewer html css*/
-/* 
-#viewerImages {
-    list-style-type: none;
- }
-
-#viewerImages li {
-    display: inline-block;
-} */

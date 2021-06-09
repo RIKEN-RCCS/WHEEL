@@ -122,6 +122,9 @@ class Task extends GeneralComponent {
     /**queue name */
     this.queue = null;
 
+    /**submit option */
+    this.submitOption = null;
+
     //note on filters
     //if include filter is set, matched files are transferd if it does not match exclude filter
     /**include filter for recieve files from remote host */
@@ -161,6 +164,11 @@ class Workflow extends GeneralComponent {
   }
 }
 
+/*
+ * ParameterStudy,For,While,Foreach component will be copied duaring project run.
+ * copied component must have subComponent property
+ */
+
 class ParameterStudy extends GeneralComponent {
   constructor(...args) {
     super(...args);
@@ -170,6 +178,7 @@ class ParameterStudy extends GeneralComponent {
     this.numFinished = null;
     this.numFailed = null;
     this.forceOverwrite = false;
+    this.deleteLoopInstance = false;
   }
 }
 
@@ -180,6 +189,7 @@ class For extends GeneralComponent {
     this.start = null;
     this.end = null;
     this.step = null;
+    this.keep = null;
   }
 }
 
@@ -188,24 +198,25 @@ class While extends GeneralComponent {
     super(...args);
     this.type = "while";
     this.condition = null;
+    this.keep = null;
   }
 }
 
 /*
- * loop over kind of array
+ * loop over array elements
  */
 class Foreach extends GeneralComponent {
   constructor(...args) {
     super(...args);
     this.type = "foreach";
     this.indexList = [];
+    this.keep = null;
   }
 }
 
 /**
  * Creates an instance of Stepjob.
  * @constructor StepJob
- * @param {*} args -
  * @extends {GeneralComponent}
  */
 class Stepjob extends GeneralComponent {
@@ -225,7 +236,6 @@ class Stepjob extends GeneralComponent {
 /**
  * Creates an instance of StepjobTask.
  * @constructor StepjobTask
- * @param {*} args -
  * @extends {Task}
  */
 class StepjobTask extends Task {
@@ -242,10 +252,30 @@ class StepjobTask extends Task {
 }
 
 /**
+ * Creates an instance of BulkjobTask.
+ * @constructor BulkjobTask
+ * @extends {Task}
+ */
+class BulkjobTask extends Task {
+  constructor(pos, parent, stepnum, ...args) {
+    super(pos, parent, stepnum, ...args);
+    this.type = "bulkjobTask";
+    this.useJobScheduler = true;
+
+    /*bulkjob parameter */
+    this.usePSSettingFile = "0";
+    this.parameterFile = null;
+    this.startBulkNumber = null;
+    this.endBulkNumber = null;
+    this.manualFinishCondition = false;
+    this.condition = null;
+  }
+}
+
+/**
  * factory method for workflow component class
- * @param {*} type -
- * @param {*} args -
- * @returns{*} - component instance
+ * @param {string} type -  component type
+ * @returns {*} - component object
  */
 function componentFactory(type, ...args) {
   let component;
@@ -283,6 +313,9 @@ function componentFactory(type, ...args) {
       break;
     case "stepjobTask":
       component = new StepjobTask(...args);
+      break;
+    case "bulkjobTask":
+      component = new BulkjobTask(...args);
       break;
     default:
       component = null;

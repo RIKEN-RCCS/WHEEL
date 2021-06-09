@@ -202,3 +202,9 @@ PSワークフローを実行すると生成されたワークフローが順に
 また、標準出力（Stdout）の結果は以下です。  
 
  ![img](./img/parameterstudy/PS_stdout.png "PS_stdout")
+
+#### ループインスタンスの削除
+
+![img](./img/parameterstudy/PS_delete.png "PS_delete")
+
+delete all loop instanceにチェックを入れると、計算の終了したループインスタンスをすべて削除します。
