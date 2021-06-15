@@ -320,12 +320,12 @@
         openPanels: [0],
         retryByJS: false,
         conditionCheckByJS: false,
+        scriptCandidates: [],
       }
     },
     computed: {
       ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent"]),
-      ...mapGetters(["scriptCandidates"]),
-
+      ...mapGetters(["selectedComponentAbsPath"]),
       disableRemoteSetting () {
         return this.copySelectedComponent.host === "localhost"
       },
@@ -387,6 +387,20 @@
           }
         },
       },
+    },
+    mounted () {
+      const setCandidateFiles = (files)=>{
+        this.scriptCandidates = files
+          .filter((file)=>{
+            console.log(file)
+            return file.path === this.selectedComponentAbsPath && file.type === "file"
+          })
+          .map((file)=>{
+            return file.name
+          })
+      }
+      SIO.emit("getFileList", this.selectedComponentAbsPath, setCandidateFiles)
+      SIO.on("filelist", setCandidateFiles)
     },
     methods: {
       deleteComponent () {

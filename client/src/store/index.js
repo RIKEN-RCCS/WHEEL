@@ -74,10 +74,6 @@ export default new Vuex.Store({
     },
   },
   getters: {
-    // get files directly under selectedComponent
-    scriptCandidates: (state, getters)=>{
-      return ["dummy1", "dummy2", "dummy3"]
-    },
     // get selected component's absolute path on server
     selectedComponentAbsPath: (state)=>{
       if (state.selectedComponent === null || typeof state.selectedComponent.ID === "undefined") {

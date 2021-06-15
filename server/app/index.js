@@ -64,6 +64,9 @@ const routes = {
 app.use("/", routes.home);
 app.use("/home", routes.home);
 app.use("/workflow", routes.workflow);
+app.use("/graph", routes.workflow);
+app.use("/list", routes.workflow);
+app.use("/editor", routes.workflow);
 app.use("/remotehost", routes.remotehost);
 app.use("/jobScript", routes.jobScript);
 

@@ -96,6 +96,7 @@
             <template v-slot:activator="{ on, attrs }">
               <v-btn
                 outlined
+                replace
                 :to="{name: 'graph' }"
                 v-bind="attrs"
                 v-on="on"
@@ -109,6 +110,7 @@
             <template v-slot:activator="{ on, attrs }">
               <v-btn
                 outlined
+                replace
                 :to="{name: 'list' }"
                 v-bind="attrs"
                 v-on="on"
@@ -122,6 +124,7 @@
             <template v-slot:activator="{ on, attrs }">
               <v-btn
                 outlined
+                replace
                 :to="{name: 'editor' }"
                 v-bind="attrs"
                 v-on="on"
@@ -329,7 +332,7 @@
       SIO.emit("getWorkflow", ID, (rt)=>{
         debug("getWorkflow done", rt)
       })
-      this.$router.push({ name: "graph" })
+      this.$router.replace({ name: "graph" })
     },
     methods: {
       ...mapMutations(

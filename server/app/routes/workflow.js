@@ -102,6 +102,14 @@ module.exports = function(io) {
 
   //eslint-disable-next-line new-cap
   const router = express.Router();
+  //accept GET method only for reload case
+  router.get("/", async(req, res)=>{
+    if (!req.cookies || !req.cookies.rootDir) {
+      return;
+    }
+    projectRootDir = req.cookies.rootDir;
+    res.sendFile(path.resolve(__dirname, "../public/workflow.html"));
+  });
   router.post("/", async(req, res)=>{
     projectRootDir = req.body.project;
     await openProject(projectRootDir);

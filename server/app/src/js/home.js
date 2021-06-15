@@ -25,7 +25,7 @@ $(() => {
     var openProject = function (key, opt) {
         var rootPath = $(this).data('path');
         //project manager画面を呼び出すURLへアクセス
-        $('<form/>', { action: '/workflow', method: 'post' })
+        $('<form/>', { action: '/workflow', method: 'POST' })
             .append($('<input/>', { type: 'hidden', name: 'project', value: rootPath }))
             .appendTo(document.body)
             .submit();
