@@ -5,8 +5,6 @@
     "jobScriptJsonFile": "jobScript.json",
     "interval": 1000,
     "defaultCleanupRemoteRoot": true,
-    "jupyter": true,
-    "jupyterPort": "auto",
     "logFilename": "wheel.log",
     "numLogFiles": 5,
     "maxLogSize": 8388608,

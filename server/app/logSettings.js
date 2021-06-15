@@ -9,7 +9,7 @@ const debugLib = require("debug");
 const debug = debugLib("wheel:logger");
 const { promisify } = require("util");
 const log4js = require("log4js");
-const { configDir, logFilename, numLogFiles, maxLogSize, compressLogFile } = require("./db/db");
+const { logFilename, numLogFiles, maxLogSize, compressLogFile } = require("./db/db");
 log4js.addLayout("errorlog", ()=>{
   return function(logEvent) {
     const tmp = logEvent.data.reduce((a, p)=>{
@@ -87,7 +87,7 @@ const defaultSettings = {
     },
     file: {
       type: "file",
-      filename: path.resolve(configDir, logFilename),
+      filename: path.resolve(logFilename),
       maxLogSize,
       backups: numLogFiles,
       compress: compressLogFile

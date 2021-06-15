@@ -16,25 +16,26 @@ if (process.env.WHEEL_DEBUG_VERBOSE) {
 
 const path = require("path");
 const fs = require("fs-extra");
-const { spawn } = require("child_process");
 const cors = require("cors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const siofu = require("socketio-file-upload");
-const { port, jupyter, jupyterPort, notebookRoot, setJupyterToken, getJupyterToken, setJupyterPort, keyFilename, certFilename, projectList } = require("./db/db");
+const { port, keyFilename, certFilename, projectList } = require("./db/db");
 const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
-
 const { getLogger } = require("./logSettings");
+
+/*
+ * read SSL related files
+ */
+const key = fs.readFileSync(keyFilename);
+const cert = fs.readFileSync(certFilename);
 
 /*
  * set up express, http and socket.io
  */
 const app = express();
-const opt = {
-  key: fs.readFileSync(keyFilename),
-  cert: fs.readFileSync(certFilename)
-};
+const opt = { key, cert };
 const server = require("https").createServer(opt, app);
 const sio = require("socket.io")(server);
 
@@ -69,10 +70,7 @@ app.use("/jobScript", routes.jobScript);
 //port number
 const defaultPort = 443;
 let portNumber = parseInt(process.env.WHEEL_PORT, 10) || port || defaultPort;
-
-if (portNumber < 0) {
-  portNumber = defaultPort;
-}
+portNumber = portNumber > 0 ? portNumber : defaultPort;
 
 //error handler
 app.use((err, req, res, next)=>{
@@ -88,92 +86,39 @@ app.use((req, res, next)=>{
 });
 
 //check each project has running job or not
-Promise.all(
-  projectList.getAll().map(async(pj)=>{
+Promise.all(projectList.getAll()
+  .map(async(pj)=>{
     const { jmFiles } = await checkRunningJobs(pj.path);
     if (jmFiles.length > 0) {
       setProjectState(pj.path, "holding");
     }
-  })
-)
+  }))
   .then(()=>{
     //Listen on provided port, on all network interfaces.
     server.listen(portNumber);
     server.on("error", onError);
     server.on("listening", onListening);
-
-    //boot jupyter
-    if (jupyter) {
-      const cmd = typeof jupyter === "string" ? jupyter : "jupyter-notebook";
-      const jupyterPortNumber = typeof jupyterPort === "number" && jupyterPort > 1024 && jupyterPort < 65535 ? jupyterPort : port + 1;
-      const opts = [
-        "--no-browser",
-        "--allow-root",
-        `--port ${jupyterPortNumber}`,
-        "--port-retries=0",
-        "--ip=*",
-        `--notebook-dir=${notebookRoot}`
-      ];
-      setJupyterPort(jupyterPortNumber);
-
-      logger.info("booting jupyter");
-      const cp = spawn(cmd, opts, { shell: true });
-      cp.stdout.on("data", (data)=>{
-        logger.debug(data.toString());
-      });
-      cp.stderr.on("data", (data)=>{
-        const output = data.toString();
-        const currentToken = getJupyterToken();
-        if (typeof currentToken === "undefined") {
-          const rt = /http.*\?token=(.*)/.exec(output);
-          if (rt !== null && typeof rt[1] === "string") {
-            setJupyterToken(rt[1]);
-          }
-        }
-        logger.debug(output);
-      });
-      cp.on("close", (code)=>{
-        logger.debug(`jupyter is closed with ${code}`);
-      });
-      cp.on("error", (err)=>{
-        logger.debug(`get error from jupyter process: ${err}`);
-      });
-      process.on("exit", ()=>{
-        if (logger) {
-          logger.debug(`kill jupyter process(${cp.pid}) before exit`);
-        } else {
-          //eslint-disable-next-line no-console
-          console.log(`kill jupyter process(${cp.pid}) before exit`);
-        }
-        cp.kill();
-      });
-      process.on("SIGINT", ()=>{
-        if (logger) {
-          logger.info("WHEEL will shut down because Control-C pressed");
-        } else {
-          //eslint-disable-next-line no-console
-          console.log("WHEEL will shut down because Control-C pressed");
-        }
-        process.exit(); //eslint-disable-line no-process-exit
-      });
-    }
-  })
-  .catch((e)=>{
-    logger.error("server boot up failed", e);
+    process.on("SIGINT", ()=>{
+      if (logger) {
+        logger.info("WHEEL will shut down because Control-C pressed");
+      } else {
+        //eslint-disable-next-line no-console
+        console.log("WHEEL will shut down because Control-C pressed");
+      }
+      process.exit(); //eslint-disable-line no-process-exit
+    });
   });
+
 
 /**
  * Event listener for HTTP server "error" event.
- * @param error
+ * @param {Error} error - exception raised from http(s) server
  */
 function onError(error) {
   if (error.syscall !== "listen") {
     throw error;
   }
-  const bind = typeof port === "string"
-    ? `Pipe ${port}`
-    : `Port ${port}`;
-
+  const bind = typeof port === "string" ? `Pipe ${port}` : `Port ${port}`;
 
   //handle specific listen errors with friendly messages
   switch (error.code) {

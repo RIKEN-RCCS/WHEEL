@@ -9,7 +9,7 @@ const express = require("express");
 const fileManager = require("./fileManager");
 const rapid2 = require("./rapid2");
 const projectController = require("./projectController");
-const { jobScheduler, remoteHost, projectJsonFilename, componentJsonFilename, getJupyterToken, getJupyterPort, shutdownDelay, jobScript, notebookRoot } = require("../db/db");
+const { jobScheduler, remoteHost, projectJsonFilename, componentJsonFilename, shutdownDelay, jobScript } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
 const { setProjectState, getProjectState, checkRunningJobs } = require("../core/projectFilesOperator");
@@ -109,10 +109,6 @@ module.exports = function(io) {
     res.cookie("root", ID);
     res.cookie("rootDir", projectRootDir);
     res.cookie("project", path.resolve(projectRootDir, projectJsonFilename));
-    const hostname = req.headers.host.slice(0, req.headers.host.indexOf(":"));
-    res.cookie("jupyterURL", `http://${hostname}:${getJupyterPort()}/`); //TODO http must be replaced https if SSL enabled
-    res.cookie("jupyterToken", getJupyterToken());
-    res.cookie("jupyterRootDir", notebookRoot);
     res.sendFile(path.resolve(__dirname, "../public/workflow.html"));
   });
   return router;
