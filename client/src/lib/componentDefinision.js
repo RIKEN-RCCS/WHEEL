@@ -14,7 +14,8 @@ export default function () {
     viewer: { color: "#00b050", img: require("@/assets/img_viewer.png") },
     parameterStudy: { color: "#666622", img: require("@/assets/img_parameterStudy.png") },
     workflow: { color: "#803DB3", img: require("@/assets/img_workflow.png") },
-    stepjob: { color: "#00b050", img: require("@/assets/img_stepjob.png") },
+    stepjob: { color: "#803DB3", img: require("@/assets/img_stepjob.png") },
     stepjobTask: { color: "#3B55B3", img: require("@/assets/img_stepjobTask.png") },
+    bulkjobTask: { color: "#3B55B3", img: require("@/assets/img_stepjobTask.png") },
   }
 }

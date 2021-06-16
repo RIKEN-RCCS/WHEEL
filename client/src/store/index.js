@@ -1,6 +1,7 @@
 import Vue from "vue"
 import Vuex from "vuex"
 import Debug from "debug"
+import SIO from "@/lib/socketIOWrapper.js"
 const debug = Debug("wheel:vuex")
 
 Vue.use(Vuex)
@@ -39,7 +40,10 @@ const mutationFactory = (types)=>{
  * @property { Boolean } waitingWorkflow - flag for loading Worgflow data for graph component
  * @property { Boolean } waitingFile - flag for loading file data for rapid
  * @property { Boolean } waitingSave - flag for waiting save (=commit)
- * @property {string} pathSep - path separator
+ * @property { string } pathSep - path separator
+ * @property { number } canvasWidth - width of canvas in component graph
+ * @property { number } canvasHeight - width of canvas in component graph
+ * @property { string[] } scriptCandidates - filenames directly under selected component directory
  *
  */
 const state = {
@@ -59,6 +63,9 @@ const state = {
   waitingFile: false,
   waitingSave: false,
   pathSep: "/",
+  canvasWidth: null,
+  canvasHeight: null,
+  scriptCandidates: [],
 }
 
 const mutations = mutationFactory(Object.keys(state))
@@ -68,9 +75,22 @@ export default new Vuex.Store({
   mutations,
   actions: {
     selectedComponent: (context, payload)=>{
+      if (context.state.selectedComponent !== null && payload.ID === context.state.selectedComponent.ID) {
+        return
+      }
       context.commit("selectedComponent", payload)
       const dup = Object.assign({}, payload)
       context.commit("copySelectedComponent", dup)
+      SIO.emit("getFileList", context.getters.selectedComponentAbsPath, (fileList)=>{
+        const scriptCandidates = fileList
+          .filter((e)=>{
+            return e.type.startsWith("file")
+          })
+          .map((e)=>{
+            return e.name
+          })
+        context.commit("scriptCandidates", scriptCandidates)
+      })
     },
   },
   getters: {

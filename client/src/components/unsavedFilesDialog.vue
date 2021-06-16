@@ -52,9 +52,6 @@
         ],
       }
     },
-    updated () {
-      console.log("DEBUG: onUpdated", this.unsavedFiles)
-    },
     mounted () {
       SIO.on("unsavedFiles", (unsavedFiles, cb)=>{
         if (unsavedFiles.length === 0) {

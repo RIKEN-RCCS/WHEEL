@@ -92,6 +92,7 @@
       :items="items"
       :load-children="getChildren"
       activatable
+      :open="openItems"
     >
       <template v-slot:prepend="{item, open}">
         <v-icon v-if="item.children !== null">
@@ -136,7 +137,7 @@
   </div>
 </template>
 <script>
-  import { mapState, mapGetters } from "vuex"
+  import { mapState, mapGetters, mapMutations } from "vuex"
   import SIO from "@/lib/socketIOWrapper.js"
   import { removeFromArray } from "@/lib/clientUtility.js"
 
@@ -212,6 +213,7 @@
     data: function () {
       return {
         activeItems: [],
+        openItems: [],
         items: [],
         icons: {
           file: "mdi-file-outline",
@@ -241,6 +243,25 @@
       ...mapState(["selectedComponent", "pathSep"]),
       ...mapGetters(["selectedComponentAbsPath"]),
     },
+    watch: {
+      activeItems () {
+        const path = []
+        const activeItem = getActiveItem(this.items, this.activeItems[0], path)
+        if (activeItem.type.startsWith("file")) {
+          this.commitSelectedFile(activeItem.id)
+        }
+      },
+      items () {
+        const scriptCandidates = this.items
+          .filter((e)=>{
+            return e.type.startsWith("file")
+          })
+          .map((e)=>{
+            return e.name
+          })
+        this.commitScriptCandidates(scriptCandidates)
+      },
+    },
     mounted () {
       if (typeof this.selectedComponentAbsPath !== "string") {
         return
@@ -250,6 +271,10 @@
       })
     },
     methods: {
+      ...mapMutations({
+        commitScriptCandidates: "scriptCandidates",
+        commitSelectedFile: "selectedFile",
+      }),
       getChildren (item) {
         return new Promise((resolve, reject)=>{
           const path = [this.selectedComponentAbsPath]
@@ -287,7 +312,12 @@
           })
         } else if (this.dialog.submitEvent === "renameFile") {
           const newName = this.dialog.inputField
-          SIO.emit("renameFile", { path, oldName: this.dialog.activeItem.name, newName }, (rt)=>{
+          let parentPath = path
+          if (this.dialog.activeItem.type.startsWith("dir")) {
+            const lastPathSep = path.lastIndexOf(this.pathSep)
+            parentPath = path.slice(0, lastPathSep)
+          }
+          SIO.emit("renameFile", { path: parentPath, oldName: this.dialog.activeItem.name, newName }, (rt)=>{
             if (!rt) {
               return
             }
@@ -301,12 +331,16 @@
             if (!rt) {
               return
             }
-            this.dialog.activeItem.children.push({
-              id: fullPath,
-              name,
-              path,
-              type,
-            })
+            const container = this.dialog.activeItem ? this.dialog.activeItem.children : this.items
+            const newItem = { id: fullPath, name, path, type }
+            if (this.dialog.submitEvent === "createNewDir") {
+              newItem.children = []
+            }
+            container.push(newItem)
+
+            if (!this.openItems.includes(this.dialog.activeItem.id)) {
+              this.openItems.push(this.dialog.activeItem.id)
+            }
           })
         } else {
           console.log("unsupported event", this.dialog.submitEvent)
@@ -321,6 +355,10 @@
         if (event === "removeFile" || event === "renameFile") {
           if (!this.dialog.activeItem) {
             console.log("remove or rename without active item is not allowed")
+            return
+          }
+          if (this.dialog.activeItem.type.startsWith("snd")) {
+            console.log(`${event.replace("File", "")} SND or SNDD is not allowed`)
             return
           }
         }

@@ -6,7 +6,6 @@
 
 import * as svgNode from "./svgNodeUI"
 import SIO from "@/lib/socketIOWrapper.js"
-const { emit } = SIO
 
 let nodes = []
 let parentnode = []
@@ -90,7 +89,7 @@ function drawNodes (nodesInWF) {
         if (nodeType === "workflow" || nodeType === "parameterStudy" || nodeType === "for" || nodeType === "while" || nodeType === "foreach" || nodeType === "stepjob") {
           const currentWorkFlow = e.target.instance.parent(".node").data("ID")
           commit("currentComponent", currentWorkFlow)
-          emit("getWorkflow", currentWorkFlow)
+          SIO.emit("getWorkflow", currentWorkFlow)
         }
       })
     nodes.push(node)

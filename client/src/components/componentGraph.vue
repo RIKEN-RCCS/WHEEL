@@ -3,14 +3,11 @@
 </template>
 
 <script>
-  import { mapState } from "vuex"
+  import { mapState, mapMutations } from "vuex"
   import SVG from "svgjs/dist/svg.js"
   import "svg.draggable.js/dist/svg.draggable.js"
   import drawComponents from "@/lib/oldSVG/drawComponents.js"
-
-  const widthComponentLibrary = 56
-  const heightToolbar = 48
-  const heightFooter = 36
+  import { widthComponentLibrary, heightToolbar, heightDenseToolbar, heightFooter } from "@/lib/componentSizes.json"
   export default {
     name: "ComponentGraph",
     data: function () {
@@ -46,12 +43,19 @@
       window.removeEventListener("resize", this.fit.bind(this))
     },
     methods: {
+      ...mapMutations(
+        {
+          commitCanvasWidth: "canvasWidth",
+          commitCanvasHeight: "canvasHeight",
+        }),
       fit: function () {
         const baseWidth = window.innerWidth < this.$parent.$parent.$el.clientWidth ? window.innerWidth : this.$parent.$parent.$el.clientWidth
         const width = baseWidth - widthComponentLibrary - 1
-        const height = window.innerHeight - heightToolbar - heightFooter
+        const height = window.innerHeight - heightToolbar - heightDenseToolbar * 2 - heightFooter
 
         if (width > 0 && height > 0) {
+          this.commitCanvasWidth(width)
+          this.commitCanvasHeight(height)
           this.svg.size(width, height)
         }
       },

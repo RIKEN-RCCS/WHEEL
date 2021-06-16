@@ -8,7 +8,6 @@
   >
     <template slot:prepend>
       <v-toolbar
-        dense
         flat
         extended
       >
@@ -291,7 +290,7 @@
   import fileBrowser from "@/components/fileBrowser.vue"
   import { isValidName } from "@/lib/utility.js"
   import { glob2Array, addGlobPattern, removeGlobPattern, updateGlobPattern } from "@/lib/clientUtility.js"
-  import { mapState, mapGetters } from "vuex"
+  import { mapState, mapGetters, mapMutations } from "vuex"
   import SIO from "@/lib/socketIOWrapper.js"
 
   const zeroOrMore = (v)=>{
@@ -320,11 +319,10 @@
         openPanels: [0],
         retryByJS: false,
         conditionCheckByJS: false,
-        scriptCandidates: [],
       }
     },
     computed: {
-      ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent"]),
+      ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates"]),
       ...mapGetters(["selectedComponentAbsPath"]),
       disableRemoteSetting () {
         return this.copySelectedComponent.host === "localhost"
@@ -388,21 +386,8 @@
         },
       },
     },
-    mounted () {
-      const setCandidateFiles = (files)=>{
-        this.scriptCandidates = files
-          .filter((file)=>{
-            console.log(file)
-            return file.path === this.selectedComponentAbsPath && file.type === "file"
-          })
-          .map((file)=>{
-            return file.name
-          })
-      }
-      SIO.emit("getFileList", this.selectedComponentAbsPath, setCandidateFiles)
-      SIO.on("filelist", setCandidateFiles)
-    },
     methods: {
+      ...mapMutations({ commitScriptCandidates: "scriptCandidates" }),
       deleteComponent () {
         SIO.emit("removeNode", this.selectedComponent.ID)
       },

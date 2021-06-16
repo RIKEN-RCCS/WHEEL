@@ -45,6 +45,7 @@ See License.txt in the project root for the license information.
 <script>
 
   "use strict"
+  import { mapState } from "vuex"
   import unsavedFileDialog from "@/components/rapid/unsavedFileDialog.vue"
   import filterEditor from "@/components/rapid/filterEditor.vue"
   import tabEditor from "@/components/rapid/tabEditor.vue"
@@ -67,7 +68,7 @@ See License.txt in the project root for the license information.
     },
     data: ()=>{
       return {
-        openParamEditor: true, // TODO routingパラメータで変更?
+        openParamEditor: false,
         parameterSetting:
           {
             version: 2,
@@ -82,6 +83,7 @@ See License.txt in the project root for the license information.
       rotation: function () {
         return this.openParamEditor ? "mdi-rotate-90" : "mdi-rotate-270 "
       },
+      ...mapState(["selectedFile"]),
     },
     mounted () {
       SIO.on("parameterSettingFile", (file)=>{
@@ -98,7 +100,9 @@ See License.txt in the project root for the license information.
         })
         this.parameterSettingFilename = file.filename
         this.parameterSettingDirname = file.dirname
+        this.openParamEditor = true
       })
+      SIO.emit("openFile", this.selectedFile)
     },
     methods: {
       saveAllFiles () {

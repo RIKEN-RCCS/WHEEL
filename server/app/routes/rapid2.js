@@ -8,47 +8,42 @@ const path = require("path");
 const { getLogger } = require("../core/projectResource");
 const { openFile, saveFile } = require("../core/fileUtils");
 
-async function onOpenFile(emit, projectRootDir, filename, dirname, forceNormal, cb) {
-  getLogger(projectRootDir).debug("openFile event recieved:", filename, dirname, forceNormal);
-
-  if (typeof cb !== "function") {
-    cb = ()=>{};
-  }
-
-  try {
-    const files = await openFile(projectRootDir, path.resolve(dirname, filename), forceNormal);
-    for (const file of files) {
-      if (file.isParameterSettingFile) {
-        emit("parameterSettingFile", file);
-      } else {
-        emit("file", file);
-      }
-    }
-  } catch (err) {
-    getLogger(projectRootDir).warn("openFile event failed", err);
-    return cb(err);
-  }
-  cb(true);
-}
-
-async function onSaveFile(emit, projectRootDir, filename, dirname, content, cb) {
-  getLogger(projectRootDir).debug("saveFile event recieved:", filename, dirname);
-
-  if (typeof cb !== "function") {
-    cb = ()=>{};
-  }
-  try {
-    await saveFile(path.resolve(dirname, filename), content);
-  } catch (err) {
-    getLogger(projectRootDir).warn("saveFile event failed", err);
-    return cb(err);
-  }
-  cb(true);
-}
 
 function registerListeners(socket, projectRootDir) {
-  socket.on("openFile", onOpenFile.bind(null, socket.emit.bind(socket), projectRootDir));
-  socket.on("saveFile", onSaveFile.bind(null, socket.emit.bind(socket), projectRootDir));
+  //filename must be absolute path!!
+  socket.on("openFile", async(filename, forceNormal, cb)=>{
+    //these 2 lines should be placed in middleware
+    const callback = (typeof cb === "function") ? cb : ()=>{};
+    getLogger(projectRootDir).debug("openFile event recieved:", filename, forceNormal);
+
+    try {
+      const files = await openFile(filename, forceNormal);
+      for (const file of files) {
+        if (file.isParameterSettingFile) {
+          socket.emit("parameterSettingFile", file);
+        } else {
+          socket.emit("file", file);
+        }
+      }
+    } catch (err) {
+      getLogger(projectRootDir).warn("openFile event failed", err);
+      return callback(err);
+    }
+    return callback(true);
+  });
+
+  socket.on("saveFile", async(filename, dirname, content, cb)=>{
+    const callback = (typeof cb === "function") ? cb : ()=>{};
+    getLogger(projectRootDir).debug("saveFile event recieved:", filename, dirname);
+
+    try {
+      await saveFile(path.resolve(dirname, filename), content);
+    } catch (err) {
+      getLogger(projectRootDir).warn("saveFile event failed", err);
+      return callback(err);
+    }
+    return callback(true);
+  });
 }
 
 module.exports = registerListeners;

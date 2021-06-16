@@ -256,6 +256,26 @@
       />
     </v-overlay>
     <unsaved-files-dialog />
+    <v-snackbar
+      v-model="snackbar"
+      :vertical="true"
+      :multi-line="true"
+      :timeout="-1"
+      centered
+      text
+    >
+      {{ snackbarMessage }}
+      <template v-slot:action="{ attrs }">
+        <v-btn
+          color="indigo"
+          text
+          v-bind="attrs"
+          @click="snackbar = false;snackbarMessage=''"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -289,6 +309,8 @@
         projectJson: null,
         drawer: false,
         mode: 0,
+        snackbar: false,
+        snackbarMessage: "",
       }
     },
     computed: {
@@ -318,6 +340,10 @@
         this.commitCurrentComponent(wf)
         this.commitWaitingWorkflow(false)
       })
+      SIO.on("showMessage", (message)=>{
+        this.snackbarMessage = message
+        this.snackbar = true
+      })
       SIO.emit("getHostList", (rt)=>{
         debug("getHostList done", rt)
       })
@@ -333,6 +359,12 @@
         debug("getWorkflow done", rt)
       })
       this.$router.replace({ name: "graph" })
+        .catch((err)=>{
+          if (err.name === "NavigationDuplicated") {
+            return
+          }
+          throw err
+        })
     },
     methods: {
       ...mapMutations(
