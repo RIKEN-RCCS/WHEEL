@@ -39,6 +39,7 @@
         <v-breadcrumbs-item>
           <component-button
             :item="item"
+            @clicked="goto(item)"
           />
         </v-breadcrumbs-item>
       </template>
@@ -49,6 +50,7 @@
 <script>
   import { mapState } from "vuex"
   import getNodeAndPath from "@/lib/getNodeAndPath.js"
+  import { isContainer } from "@/lib/utility.js"
   import componentButton from "@/components/common/componentButton.vue"
   import SIO from "@/lib/socketIOWrapper.js"
 
@@ -66,7 +68,9 @@
       ...mapState({ tree: "componentTree", currentComponent: "currentComponent" }),
       pathToCurrentComponent: function () {
         const rt = []
-        getNodeAndPath(this.currentComponent, this.componentTree, rt)
+        if (this.currentComponent !== null) {
+          getNodeAndPath(this.currentComponent.ID, this.tree, rt)
+        }
         return rt
       },
       componentTree: function () {
@@ -75,9 +79,9 @@
     },
     methods: {
       goto: function (item) {
-        SIO.emit("getWorkflow", item.ID)
+        const requestID = isContainer(item) ? item.ID : item.parent
+        SIO.emit("getWorkflow", requestID)
         this.showComponentTree = false
-        console.log("DEBUG: showComponentTree=", this.showComponentTree)
       },
     },
   }

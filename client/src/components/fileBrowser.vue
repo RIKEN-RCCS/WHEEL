@@ -240,8 +240,8 @@
       }
     },
     computed: {
-      ...mapState(["selectedComponent", "pathSep"]),
-      ...mapGetters(["selectedComponentAbsPath"]),
+      ...mapState(["selectedComponent"]),
+      ...mapGetters(["selectedComponentAbsPath", "pathSep"]),
     },
     watch: {
       activeItems () {

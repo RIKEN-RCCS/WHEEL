@@ -110,7 +110,7 @@
                    "componentPath",
                    "selectedComponent",
       ]),
-      ...mapGetters(["selectedComponentAbsPath"]),
+      ...mapGetters(["selectedComponentAbsPath", "pathSep"]),
     },
     methods: {
       getComponentName (id) {
@@ -143,10 +143,10 @@
         this.closeAndResetDialog()
       },
       renameTargetFile (item) {
-        const dirnamePrefix = this.$root.$data.rootDir + this.$root.$data.pathSep
-        const oldAbsPath = targetFile2absPath(item, this.$root.$data.componentPath, this.$root.$data.pathSep, dirnamePrefix, this.$root.$data.node.ID)
+        const dirnamePrefix = this.$root.$data.rootDir + this.pathSep
+        const oldAbsPath = targetFile2absPath(item, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
         const targetInTargetFiles = this.targetFiles.find((e)=>{
-          return oldAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.$root.$data.pathSep, dirnamePrefix, this.$root.$data.node.ID)
+          return oldAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
         })
         targetInTargetFiles.targetName = this.newTargetFilename
 
@@ -160,10 +160,10 @@
         this.closeAndResetDialog()
       },
       addNewTargetFile () {
-        const dirnamePrefix = this.$root.$data.rootDir + this.$root.$data.pathSep
-        const newAbsPath = targetFile2absPath({ targetName: this.newTargetFilename }, this.$root.$data.componentPath, this.$root.$data.pathSep, dirnamePrefix, this.$root.$data.node.ID)
+        const dirnamePrefix = this.$root.$data.rootDir + this.pathSep
+        const newAbsPath = targetFile2absPath({ targetName: this.newTargetFilename }, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
         const targetInTargetFiles = this.targetFiles.findIndex((e)=>{
-          return newAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.$root.$data.pathSep, dirnamePrefix, this.$root.$data.node.ID)
+          return newAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
         })
 
         if (targetInTargetFiles !== -1) {

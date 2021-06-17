@@ -1,10 +1,6 @@
 <template>
-  <div
-    id="hoge"
-  >
-    <componentTreeComponent
-      :tree="componentTree"
-    />
+  <div>
+    <componentTreeComponent />
     <v-row
       no-gutters
     >
@@ -29,19 +25,5 @@
       componentProperty,
       componentTreeComponent,
     },
-    props: {
-      componentTree: Object,
-    },
-    data: ()=>{
-      return {
-        showComponentTree: false,
-      }
-    },
-    computed:
-      {
-        showProperty: function () {
-          return this.$store.state.selectedComponent !== null
-        },
-      },
   }
 </script>

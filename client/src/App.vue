@@ -314,7 +314,7 @@
       }
     },
     computed: {
-      ...mapState(["projectState", "rootComponentID", "pathSep"]),
+      ...mapState(["projectState", "rootComponentID"]),
       ...mapGetters(["waiting"]),
     },
     mounted: function () {
@@ -322,10 +322,6 @@
       const ID = readCookie("root")
       this.commitProjectRootDir(projectRootDir)
       this.commitRootComponentID(ID)
-
-      if (typeof projectRootDir === "string" && projectRootDir[0] !== "/") {
-        this.commitPathSep("\\")
-      }
 
       SIO.on("projectJson", (projectJson)=>{
         this.projectJson = projectJson
@@ -378,7 +374,6 @@
           commitRemoteHost: "remoteHost",
           commitWaitingProjectJson: "waitingProjectJson",
           commitWaitingWorkflow: "waitingWorkflow",
-          commitPathSep: "pathSep",
         },
       ),
       isDisabled (operation) {

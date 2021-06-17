@@ -88,7 +88,6 @@ function drawNodes (nodesInWF) {
         const nodeType = e.target.instance.parent(".node").data("type")
         if (nodeType === "workflow" || nodeType === "parameterStudy" || nodeType === "for" || nodeType === "while" || nodeType === "foreach" || nodeType === "stepjob") {
           const currentWorkFlow = e.target.instance.parent(".node").data("ID")
-          commit("currentComponent", currentWorkFlow)
           SIO.emit("getWorkflow", currentWorkFlow)
         }
       })

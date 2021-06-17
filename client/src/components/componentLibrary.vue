@@ -38,7 +38,7 @@
   </v-navigation-drawer>
 </template>
 <script>
-  import { mapState, mapGetters } from "vuex"
+  import { mapState, mapGetters, mapMutations } from "vuex"
   import SIO from "@/lib/socketIOWrapper.js"
   import loadComponentDefinition from "@/lib/componentDefinision.js"
   import { widthComponentLibrary, heightToolbar, heightDenseToolbar } from "@/lib/componentSizes.json"
@@ -59,7 +59,7 @@
       }
     },
     computed: {
-      ...mapState(["currentComponent", "canvasWidth", "canvasHeight"]),
+      ...mapState(["currentComponent", "canvasWidth", "canvasHeight", "projectRootDir"]),
       ...mapGetters(["currentComponentAbsPath"]),
       isStepJob: function () {
         if (this.currentComponent === null) return false
@@ -77,6 +77,7 @@
       },
     },
     methods: {
+      ...mapMutations({ commitComponentTree: "componentTree" }),
       onDragStart (event) {
         this.offsetX = event.offsetX
         this.offsetY = event.offsetY
@@ -99,6 +100,10 @@
           if (rt !== true) return
           // update component Map
           SIO.emit("getProjectJson")
+          // update componant Tree
+          SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
+            this.commitComponentTree(componentTree)
+          })
         })
       },
     },

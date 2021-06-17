@@ -322,7 +322,7 @@
       }
     },
     computed: {
-      ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates"]),
+      ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates", "projectRootDir"]),
       ...mapGetters(["selectedComponentAbsPath"]),
       disableRemoteSetting () {
         return this.copySelectedComponent.host === "localhost"
@@ -387,9 +387,20 @@
       },
     },
     methods: {
-      ...mapMutations({ commitScriptCandidates: "scriptCandidates" }),
+      ...mapMutations({
+        commitScriptCandidates: "scriptCandidates",
+        commitComponentTree: "componentTree",
+      }),
       deleteComponent () {
-        SIO.emit("removeNode", this.selectedComponent.ID)
+        SIO.emit("removeNode", this.selectedComponent.ID, (rt)=>{
+          if (!rt) {
+            return
+          }
+          // update componentTree
+          SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
+            this.commitComponentTree(componentTree)
+          })
+        })
       },
       changeInputOutputFiles (event, v, index) {
         if (!this.valid) return
@@ -413,7 +424,13 @@
         // 仕様を検討のうえ、ガードするなら何か方法を考える必要がある
         if (this.selectedComponent === null) return
 
-        SIO.emit("updateNode", ID, prop, newValue)
+        SIO.emit("updateNode", ID, prop, newValue, (rt)=>{
+          if (prop !== "name" || rt === false) {
+            SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
+              this.commitComponentTree(componentTree)
+            })
+          }
+        })
       },
       addToIncludeList (v) {
         this.copySelectedComponent.include = addGlobPattern(this.copySelectedComponent.include, v.name)

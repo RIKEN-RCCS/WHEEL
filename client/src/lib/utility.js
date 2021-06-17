@@ -91,7 +91,7 @@ function isValidOutputFilename (name) {
   return true
 }
 
-/*
+/**
  * get date as string
  * @param {boolean} humanReadable - option flag for using delimiters(/and:) or not
  * @param {boolean} withMiliseconds - option flag for time resolution
@@ -113,6 +113,16 @@ function getDateString (humanReadable = false, withMilliseconds = false) {
   return withMilliseconds ? `${yyyy}${mm}${dd}-${HH}${MM}${ss}${ms}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`
 }
 
+/**
+ * determine component can have children or not
+ * @param {componeyt || string} target - component type of component itself
+ * @return {boolean} - if true, specified component can have children
+ */
+function isContainer (target) {
+  const type = typeof target === "string" ? target : target.type
+  return ["workflow", "parameterStudy", "for", "while", "foreach", "stepjob"].includes(type)
+}
+
 module.exports = {
   escapeRegExp,
   isValidName,
@@ -122,4 +132,5 @@ module.exports = {
   pathseps,
   metaCharactors,
   getDateString,
+  isContainer,
 }

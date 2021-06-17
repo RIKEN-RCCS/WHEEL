@@ -40,7 +40,6 @@ const mutationFactory = (types)=>{
  * @property { Boolean } waitingWorkflow - flag for loading Worgflow data for graph component
  * @property { Boolean } waitingFile - flag for loading file data for rapid
  * @property { Boolean } waitingSave - flag for waiting save (=commit)
- * @property { string } pathSep - path separator
  * @property { number } canvasWidth - width of canvas in component graph
  * @property { number } canvasHeight - width of canvas in component graph
  * @property { string[] } scriptCandidates - filenames directly under selected component directory
@@ -62,7 +61,6 @@ const state = {
   waitingWorkflow: false,
   waitingFile: false,
   waitingSave: false,
-  pathSep: "/",
   canvasWidth: null,
   canvasHeight: null,
   scriptCandidates: [],
@@ -95,12 +93,12 @@ export default new Vuex.Store({
   },
   getters: {
     // get selected component's absolute path on server
-    selectedComponentAbsPath: (state)=>{
+    selectedComponentAbsPath: (state, getters)=>{
       if (state.selectedComponent === null || typeof state.selectedComponent.ID === "undefined") {
         return state.projectRootDir
       }
       const relativePath = state.componentPath[state.selectedComponent.ID]
-      return `${state.projectRootDir}${state.pathSep}${relativePath.slice(1)}`
+      return `${state.projectRootDir}${getters.pathSep}${relativePath.slice(1)}`
     },
     // get current component's absolute path on server
     currentComponentAbsPath: (state)=>{
@@ -108,11 +106,14 @@ export default new Vuex.Store({
         return state.projectRootDir
       }
       const relativePath = state.componentPath[state.currentComponent.ID]
-      return `${state.projectRootDir}${state.pathSep}${relativePath.slice(1)}`
+      return `${state.projectRootDir}${getters.pathSep}${relativePath.slice(1)}`
     },
     // flag to show loading screen
     waiting: (state)=>{
       return state.waitingProjectJson || state.waitingWorkflow || state.waitingFile || state.waitingSave
+    },
+    pathSep: (state)=>{
+      return typeof state.projectRootDir === "string" && state.projectRootDir[0] !== "/" ? "\\" : "/"
     },
   },
   modules: {

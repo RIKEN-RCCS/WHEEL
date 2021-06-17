@@ -14,6 +14,7 @@ const getNodeAndPath = (targetID, root, path)=>{
       path.unshift({
         name: root.name,
         type: root.type,
+        parent: root.parent,
         ID: root.ID,
       })
     }
@@ -30,6 +31,7 @@ const getNodeAndPath = (targetID, root, path)=>{
         path.unshift({
           name: root.name,
           type: root.type,
+          parent: root.parent,
           ID: root.ID,
         })
       }
