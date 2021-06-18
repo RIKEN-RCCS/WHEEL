@@ -245,9 +245,26 @@
       </v-container>
     </v-main>
     <v-footer app>
-      <v-spacer />
-      <log-screen />
-      <v-spacer />
+      <v-row
+        justify="center"
+        no-gutters
+      >
+        <v-btn
+          @click="showLogScreen=!showLogScreen"
+        >
+          <v-icon v-if="showLogScreen">
+            mdi-triangle-outline
+          </v-icon>
+          <v-icon v-if="!showLogScreen">
+            mdi-triangle-outline mdi-rotate-180
+          </v-icon>
+        </v-btn>
+        <v-col
+          cols="12"
+        >
+          <log-screen v-show="showLogScreen" />
+        </v-col>
+      </v-row>
     </v-footer>
     <v-overlay :value="waiting">
       <v-progress-circular
@@ -311,6 +328,7 @@
         mode: 0,
         snackbar: false,
         snackbarMessage: "",
+        showLogScreen: false,
       }
     },
     computed: {

@@ -1,64 +1,45 @@
 <template>
-  <div
+  <v-sheet
     class="text-center"
   >
-    <v-bottom-sheet
-      v-model="showLogScreen"
-      persistent
+    <v-toolbar
+      dense
     >
-      <template v-slot:activator="{ on, attrs }">
-        <v-btn
-          v-bind="attrs"
-          v-on="on"
-        >
-          <v-icon>mdi-triangle-outline</v-icon>
-        </v-btn>
-      </template>
-      <v-sheet
-        class="text-center"
+      <v-btn
+        @click="clearAllLog"
       >
-        <v-btn
-          icon
-          @click="showLogScreen=!showLogScreen"
+        clear all log
+      </v-btn>
+      <v-tabs
+        v-model="currentTab"
+        show-arrows
+        grow
+      >
+        <v-tab
+          v-for="item in items"
+          :key="item.id"
         >
-          <v-icon>mdi-triangle-outline mdi-rotate-180</v-icon>
-        </v-btn>
-        <v-toolbar>
-          <v-btn
-            @click="clearAllLog"
-          >
-            clear all log
-          </v-btn>
-          <v-tabs
-            v-model="currentTab"
-            show-arrows
-            grow
-          >
-            <v-tab
-              v-for="item in items"
-              :key="item.id"
-            >
-              {{ item.label }}
-            </v-tab>
-          </v-tabs>
-        </v-toolbar>
-        <v-tabs-items
-          v-model="currentTab"
-        >
-          <v-tab-item
-            v-for="item of items"
-            :key="item.id"
-            eager
-          >
-            <xterm
-              :clear="item.clear"
-              :event-names="item.eventNames"
-            />
-          </v-tab-item>
-        </v-tabs-items>
-      </v-sheet>
-    </v-bottom-sheet>
-  </div>
+          {{ item.label }}
+        </v-tab>
+      </v-tabs>
+    </v-toolbar>
+    <v-tabs-items
+      v-model="currentTab"
+    >
+      <v-tab-item
+        v-for="item of items"
+        :key="item.id"
+        eager
+        :transition="false"
+        :reverse-transition="false"
+      >
+        <xterm
+          :clear="item.clear"
+          :event-names="item.eventNames"
+        />
+      </v-tab-item>
+    </v-tabs-items>
+  </v-sheet>
 </template>
 
 <script>
@@ -70,10 +51,9 @@
     },
     data: ()=>{
       return {
-        showLogScreen: false,
         currentTab: 1,
         items: [
-          { label: "debug", id: "debug", clear: false, eventNames: [] },
+          { label: "debug", id: "debug", clear: false, eventNames: ["logDEBUG"] },
           { label: "info", id: "info", clear: false, eventNames: ["logINFO", "logWARN", "logERR"] },
           { label: "stdout", id: "stdout", clear: false, eventNames: ["logSTDOUT"] },
           { label: "stderr", id: "stderr", clear: false, eventNames: ["logSTDERR"] },
@@ -94,17 +74,3 @@
     },
   }
 </script>
-<style scoped>
-.v-tabs {
-  width: 100%;
-  height: 100%;
-}
-.v-window {
-  height: calc(100% - 48px);
-}
-.v-tab__items,
-.v-window-item,
-.v-window >>> div.v-window__container {
-  height: 100%;
-}
-</style>
