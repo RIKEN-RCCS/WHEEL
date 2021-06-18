@@ -19,13 +19,14 @@
             class="pt-16"
             :rules="[isValidName, isUniqueName]"
             @change="updateComponentProperty('name')"
+            @submit.prevent
           />
         </v-form>
         <v-spacer />
         <v-btn
           outlined
           tile
-          @click="open=null"
+          @click="open=false"
         >
           <v-icon>mdi-close</v-icon>
           close
@@ -48,7 +49,10 @@
         </v-btn>
       </v-toolbar>
     </template>
-    <v-form v-model="valid">
+    <v-form
+      v-model="valid"
+      @submit.prevent
+    >
       <v-expansion-panels
         v-model="openPanels"
         multiple
@@ -152,36 +156,38 @@
         <v-expansion-panel v-if="isFor">
           <v-expansion-panel-header>loop setting</v-expansion-panel-header>
           <v-expansion-panel-content>
-            <v-form>
+            <v-form @submit.prevent>
               <v-text-field
                 v-model="copySelectedComponent.start"
                 label="start"
                 type="number"
+                @change="updateComponentProperty('start')"
               />
               <v-text-field
                 v-model="copySelectedComponent.end"
                 label="end"
                 type="number"
+                @change="updateComponentProperty('end')"
               />
               <v-text-field
                 v-model="copySelectedComponent.step"
                 label="step"
                 type="number"
+                @change="updateComponentProperty('step')"
               />
-              <!-- TODO SIO.emitする -->
             </v-form>
           </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel v-if="isForeach">
           <v-expansion-panel-header>loop setting</v-expansion-panel-header>
           <v-expansion-panel-content>
-            <!-- TODO list formをつかう? -->
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-        <v-expansion-panel v-if="isForeach">
-          <v-expansion-panel-header>loop setting</v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <!-- TODO list formをつかう? -->
+            <list-form
+              :label="'foreach'"
+              :items="indexList"
+              @add=" (...args)=>{ updateIndexList('add', ...args)}"
+              @remove="(...args)=>{ updateIndexList('remove', ...args)}"
+              @update="(...args)=>{ updateIndexList('rename', ...args)}"
+            />
           </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel v-if="isSource">
@@ -274,10 +280,7 @@
         <v-expansion-panel>
           <v-expansion-panel-header>Files</v-expansion-panel-header>
           <v-expansion-panel-content>
-            <file-browser
-              ref="fileBrowser"
-              :readonly="false"
-            />
+            <file-browser :readonly="false" />
           </v-expansion-panel-content>
         </v-expansion-panel>
       </v-expansion-panels>
@@ -319,7 +322,29 @@
         openPanels: [0],
         retryByJS: false,
         conditionCheckByJS: false,
+        open: false,
+        reopening: false,
       }
+    },
+    watch: {
+      open () {
+        if (this.reopening || this.open) {
+          return
+        }
+        this.commitSelectedComponent(null)
+      },
+      selectedComponent () {
+        if (this.selectedComponent === null) {
+          return
+        }
+        this.reopening = true
+        this.openPanels = [0]
+        this.open = false
+        setTimeout(()=>{
+          this.open = true
+          this.reopening = false
+        }, 200)
+      },
     },
     computed: {
       ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates", "projectRootDir"]),
@@ -354,6 +379,12 @@
             return { name: e }
           })
       },
+      indexList: function () {
+        return this.copySelectedComponent.indexList
+          .map((e)=>{
+            return { name: e }
+          })
+      },
       excludeList: function () {
         if (typeof this.copySelectedComponent.exclude !== "string") {
           return []
@@ -375,21 +406,12 @@
         })
         return currentHostSetting ? currentHostSetting.queue.split(",") : []
       },
-      open: {
-        get: function () {
-          return this.selectedComponent !== null
-        },
-        set: function (e) {
-          if (e === null) {
-            this.$store.commit("selectedComponent", null)
-          }
-        },
-      },
     },
     methods: {
       ...mapMutations({
         commitScriptCandidates: "scriptCandidates",
         commitComponentTree: "componentTree",
+        commitSelectedComponent: "selectedComponent",
       }),
       deleteComponent () {
         SIO.emit("removeNode", this.selectedComponent.ID, (rt)=>{
@@ -411,6 +433,20 @@
           return
         }
         SIO.emit(event, ID, v.name)
+      },
+      updateIndexList (op, e, index) {
+        if (op === "add") {
+          this.copySelectedComponent.indexList.push(e.name)
+        } else if (op === "remove") {
+          this.copySelectedComponent.indexList.splice(index, 1)
+        } else if (op === "rename") {
+          this.copySelectedComponent.indexList[index] = e.name
+        } else {
+          return
+        }
+        const ID = this.selectedComponent.ID
+        const newValue = this.copySelectedComponent.indexList
+        SIO.emit("updateNode", ID, "indexList", newValue)
       },
       updateComponentProperty (prop) {
         if (prop === "name" && !this.validName) return

@@ -7,5 +7,4 @@ WHEELクライアントの古い実装から、compoenntGraph部分の描画に�
 - "svg.draggable.js"
 - "svgjs"
 - "jquery"
-- "jquery-contextmenu"
 - "jquery-ui"

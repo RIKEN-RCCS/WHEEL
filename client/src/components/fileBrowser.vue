@@ -4,88 +4,106 @@
       <v-spacer />
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-icon
-            v-bind="attrs"
-            v-on="on"
-            @click="openDialog('createNewDir')"
-          >
-            mdi-folder-plus-outline
-          </v-icon>
+          <v-btn>
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+              @click="openDialog('createNewDir')"
+            >
+              mdi-folder-plus-outline
+            </v-icon>
+          </v-btn>
         </template>
         new folder
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-icon
-            v-bind="attrs"
-            v-on="on"
-            @click="openDialog('createNewFile')"
-          >
-            mdi-file-plus-outline
-          </v-icon>
+          <v-btn>
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+              @click="openDialog('createNewFile')"
+            >
+              mdi-file-plus-outline
+            </v-icon>
+          </v-btn>
         </template>
         new file
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-icon
-            v-bind="attrs"
-            v-on="on"
-            @click="createNewJobScript('newJobscript')"
-          >
-            mdi-file-document-edit-outline
-          </v-icon>
+          <v-btn>
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+              @click="createNewJobScript('newJobscript')"
+            >
+              mdi-file-document-edit-outline
+            </v-icon>
+          </v-btn>
         </template>
         create job script file
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-icon
-            v-bind="attrs"
-            v-on="on"
-            @click="openDialog('renameFile')"
-          >
-            mdi-file-move-outline
-          </v-icon>
+          <v-btn>
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+              @click="openDialog('renameFile')"
+            >
+              mdi-file-move-outline
+            </v-icon>
+          </v-btn>
         </template>
         rename
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-icon
-            v-bind="attrs"
-            v-on="on"
-            @click="openDialog('removeFile')"
-          >
-            mdi-file-remove-outline
-          </v-icon>
+          <v-btn>
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+              @click="openDialog('removeFile')"
+            >
+              mdi-file-remove-outline
+            </v-icon>
+          </v-btn>
         </template>
         delete
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-icon
-            v-bind="attrs"
-            v-on="on"
-            @click="showUploadDialog"
-          >
-            mdi-upload
-          </v-icon>
+          <v-btn>
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+              @click="showUploadDialog"
+            >
+              mdi-upload
+            </v-icon>
+          </v-btn>
         </template>
         upload file
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-icon
-            v-bind="attrs"
-            v-on="on"
-            @click="callWebhook"
-          >
-            mdi-share-outline
-          </v-icon>
+          <v-btn>
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+              @click="shareFile"
+            >
+              mdi-share-outline
+            </v-icon>
+          </v-btn>
         </template>
-        call web hook
+        share file
       </v-tooltip>
+      <v-progress-linear
+        v-show="uploading"
+        value="percentUploaded"
+      />
     </div>
     <v-treeview
       :active.sync="activeItems"
@@ -136,6 +154,7 @@
     </v-dialog>
   </div>
 </template>
+<script src="/siofu/client.js"></script>
 <script>
   import { mapState, mapGetters, mapMutations } from "vuex"
   import SIO from "@/lib/socketIOWrapper.js"
@@ -180,9 +199,7 @@
         path.pop()
       }
       if (item.id === key) {
-        if (item.type === "snd") {
-          path.pop()
-        } else if (item.type === "dir" || item.type === "dir-link") {
+        if (item.type === "dir" || item.type === "dir-link") {
           path.push(item.name)
         }
         return item
@@ -212,6 +229,8 @@
     props: { readonly: { type: Boolean, default: true } },
     data: function () {
       return {
+        uploading:false,
+        percentUploaded: 0,
         activeItems: [],
         openItems: [],
         items: [],
@@ -262,15 +281,45 @@
         this.commitScriptCandidates(scriptCandidates)
       },
     },
-    mounted () {
-      if (typeof this.selectedComponentAbsPath !== "string") {
-        return
+    watch:{
+      selectedComponent(){
+      if (typeof this.selectedComponentAbsPath === "string") {
+        SIO.emit("getFileList", this.selectedComponentAbsPath, (fileList)=>{
+          this.items = fileList.map(fileListModifier.bind(null, this.pathSep))
+        })
       }
-      SIO.emit("getFileList", this.selectedComponentAbsPath, (fileList)=>{
-        this.items = fileList.map(fileListModifier.bind(null, this.pathSep))
-      })
+      },
+    },
+    mounted () {
+      if (typeof this.selectedComponentAbsPath === "string") {
+        SIO.emit("getFileList", this.selectedComponentAbsPath, (fileList)=>{
+          this.items = fileList.map(fileListModifier.bind(null, this.pathSep))
+        })
+      }
+      if(! this.readonly){
+        SIO.listenOnDrop(this.$el)
+        SIO.onUploaderEvent("choose", this.showProgressBar)
+        SIO.onUploaderEvent("complete", this.onUploadComplete)
+        SIO.onUploaderEvent("progress", this.updateProgressBar)
+      }
+    },
+    beforeDestroy(){
+      SIO.removeUploaderEvent("choose", this.showProgressBar)
+      SIO.removeUploaderEvent("complete", this.onUploadComplete)
+      SIO.removeUploaderEvent("progress", this.updateProgressBar)
     },
     methods: {
+      showProgressBar(){
+        console.log("upload started");
+        this.uploading=true;
+      },
+      onUploadComplete(){
+        console.log("upload done");
+        this.uploading=false;
+      },
+      updateProgressBar(event){
+        this.percentUploaded=(event.bytesLoaded / event.file.size)*100
+      },
       ...mapMutations({
         commitScriptCandidates: "scriptCandidates",
         commitSelectedFile: "selectedFile",
@@ -281,9 +330,7 @@
           getActiveItem(this.items, item.id, path)
           const currentDir = path.join(this.pathSep)
           const event = (item.type === "dir" || item.type === "dir-link") ? "getFileList" : "getSNDContents"
-          const args = (item.type === "dir" || item.type === "dir-link") ? [currentDir] : [
-            item.name, item.type.startsWith("sndd"),
-          ]
+          const args = (item.type === "dir" || item.type === "dir-link") ? [currentDir] : [currentDir, item.name, item.type.startsWith("sndd") ]
           SIO.emit(event, ...args, (fileList)=>{
             if (!Array.isArray(fileList)) {
               reject(fileList)
@@ -338,7 +385,7 @@
             }
             container.push(newItem)
 
-            if (!this.openItems.includes(this.dialog.activeItem.id)) {
+            if (this.dialog.activeItem && !this.openItems.includes(this.dialog.activeItem.id)) {
               this.openItems.push(this.dialog.activeItem.id)
             }
           })
@@ -374,13 +421,14 @@
       createNewJobScript (event) {
         console.log("not implemented!!")
       },
-      callWebhook () {
+      shareFile() {
         if (!hasWebhook) {
           // store経由でwebhookのコンフィグダイアログを表示する
         }
         // 実際にwebhookを呼び出す処理
       },
       showUploadDialog () {
+        SIO.prompt();
       },
     },
   }
