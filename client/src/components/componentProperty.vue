@@ -7,46 +7,60 @@
     :width="propWidth"
   >
     <template slot:prepend>
-      <v-toolbar
-        flat
-        extended
-      >
-        <v-form v-model="validName">
-          <v-text-field
-            v-model.lazy="copySelectedComponent.name"
-            label="name"
-            outlined
-            class="pt-16"
-            :rules="[isValidName, isUniqueName]"
-            @change="updateComponentProperty('name')"
-            @submit.prevent
-          />
-        </v-form>
+      <v-toolbar flat>
+        <v-toolbar-items>
+          <v-form v-model="validName">
+            <v-text-field
+              v-model.lazy="copySelectedComponent.name"
+              label="name"
+              outlined
+              class="pt-4"
+              dense
+              :rules="[isValidName, isUniqueName]"
+              @change="updateComponentProperty('name')"
+              @submit.prevent
+            />
+          </v-form>
+        </v-toolbar-items>
         <v-spacer />
-        <v-btn
-          outlined
-          tile
-          @click="open=false"
-        >
-          <v-icon>mdi-close</v-icon>
-          close
-        </v-btn>
-        <v-btn
-          :disabled="selectedComponent.state === 'not-started'"
-          outlined
-          tile
-        >
-          <v-icon>mdi-restore</v-icon>
-          clean
-        </v-btn>
-        <v-btn
-          outlined
-          tile
-          @click="deleteComponent"
-        >
-          <v-icon>mdi-trash-can-outline</v-icon>
-          delete
-        </v-btn>
+        <v-toolbar-items>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs"
+                v-on="on"
+                @click="open=false"
+              >
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </template>
+            close
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                :disabled="selectedComponent.state === 'not-started'"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon>mdi-restore</v-icon>
+              </v-btn>
+            </template>
+            clean
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs"
+                v-on="on"
+                @click="deleteComponent"
+              >
+                <v-icon>mdi-trash-can-outline</v-icon>
+              </v-btn>
+            </template>
+            delete
+          </v-tooltip>
+        </v-toolbar-items>
       </v-toolbar>
     </template>
     <v-form
@@ -406,6 +420,11 @@
         })
         return currentHostSetting ? currentHostSetting.queue.split(",") : []
       },
+    },
+    mounted () {
+      if (this.selectedComponent !== null) {
+        this.open = true
+      }
     },
     methods: {
       ...mapMutations({

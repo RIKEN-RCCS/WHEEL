@@ -111,6 +111,7 @@
       :load-children="getChildren"
       activatable
       :open="openItems"
+      @update:active="updateSelected"
     >
       <template v-slot:prepend="{item, open}">
         <v-icon v-if="item.children !== null">
@@ -264,11 +265,6 @@
     },
     watch: {
       activeItems () {
-        const path = []
-        const activeItem = getActiveItem(this.items, this.activeItems[0], path)
-        if (activeItem.type.startsWith("file")) {
-          this.commitSelectedFile(activeItem.id)
-        }
       },
       items () {
         const scriptCandidates = this.items
@@ -309,6 +305,22 @@
       SIO.removeUploaderEvent("progress", this.updateProgressBar)
     },
     methods: {
+      createNewJobScript (event) {
+        console.log("not implemented!!")
+      },
+      shareFile() {
+        if (!hasWebhook) {
+          // store経由でwebhookのコンフィグダイアログを表示する
+        }
+        // 実際にwebhookを呼び出す処理
+      },
+      updateSelected(activeItems){
+        const path = []
+        const activeItem = getActiveItem(this.items, activeItems[0], path)
+        if (activeItem.type.startsWith("file")) {
+          this.commitSelectedFile(activeItem.id)
+        }
+      },
       showProgressBar(){
         console.log("upload started");
         this.uploading=true;
@@ -417,15 +429,6 @@
         this.dialog.inputFieldLabel = getLabel(event)
         this.dialog.submitEvent = event
         this.dialog.open = true
-      },
-      createNewJobScript (event) {
-        console.log("not implemented!!")
-      },
-      shareFile() {
-        if (!hasWebhook) {
-          // store経由でwebhookのコンフィグダイアログを表示する
-        }
-        // 実際にwebhookを呼び出す処理
       },
       showUploadDialog () {
         SIO.prompt();
