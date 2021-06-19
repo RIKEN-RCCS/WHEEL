@@ -8,33 +8,38 @@ See License.txt in the project root for the license information.
     class="fill-height"
     fluid
   >
-    <v-fab-transition>
-      <v-btn
-        absolute
-        fab
-        right
-        bottom
-        elevation="5"
-        @click="openParamEditor = !openParamEditor"
-      >
-        <v-icon>mdi-triangle {{ rotation }}</v-icon>
-      </v-btn>
-    </v-fab-transition>
     <v-toolbar dense>
       <v-spacer />
-      <v-btn @click="saveAllFiles">
-        <v-icon>mdi-content-save-all</v-icon>save all files
-      </v-btn>
+      <v-toolbar-items>
+        <v-switch
+          v-model="readOnly"
+          label="read only"
+          class="pt-3"
+        />
+        <v-switch
+          v-model="openParamEditor"
+          label="parameter study setting"
+          class="pt-3"
+        />
+        <v-btn @click="saveAllFiles">
+          <v-icon>mdi-content-save-all</v-icon>
+          save all files
+        </v-btn>
+      </v-toolbar-items>
     </v-toolbar>
     <v-row no-gutters>
       <v-col>
         <tab-editor
-          :parameter-setting="parameterSetting"
+          ref="text"
+          :read-only="readOnly"
         />
       </v-col>
-      <v-col v-if="openParamEditor">
+      <v-col v-show="openParamEditor">
         <parameter-editor
-          :parameter-setting="parameterSetting"
+          ref="param"
+          :read-only="readOnly"
+          @openNewTab="openNewTab"
+          @insertBraces="insertBraces"
         />
       </v-col>
     </v-row>
@@ -45,7 +50,7 @@ See License.txt in the project root for the license information.
 <script>
 
   "use strict"
-  import { mapState } from "vuex"
+  import { mapState, mapActions } from "vuex"
   import unsavedFileDialog from "@/components/rapid/unsavedFileDialog.vue"
   import filterEditor from "@/components/rapid/filterEditor.vue"
   import tabEditor from "@/components/rapid/tabEditor.vue"
@@ -54,10 +59,32 @@ See License.txt in the project root for the license information.
 
   export default {
     beforeRouteLeave (to, from, next) {
-      // check unsaved files
-      // open save dialogue
-      // if keep editting, do not call next, just return
-      next()
+      if (!this.hasChange()) {
+        next()
+        return
+      }
+      const dialogContent = {
+        title: "unsaved files",
+        message: "do you want to save files",
+        withInputField: false,
+        buttons: [
+          {
+            icon: "mdi-content-save-all-outline",
+            label: "save",
+            cb: ()=>{ this.saveAllFiles(); next() },
+          },
+          {
+            icon: "mdi-alert-circle-outline",
+            label: "discard all unsaved files",
+            cb: next,
+          },
+          {
+            icon: "mdi-close",
+            label: "cancel",
+          },
+        ],
+      }
+      this.showDialog(dialogContent)
     },
     name: "Editor",
     components: {
@@ -69,47 +96,38 @@ See License.txt in the project root for the license information.
     data: ()=>{
       return {
         openParamEditor: false,
-        parameterSetting:
-          {
-            version: 2,
-            targetFiles: [],
-            params: [],
-            scatter: [],
-            gather: [],
-          },
+        readOnly: false,
       }
     },
     computed: {
-      rotation: function () {
-        return this.openParamEditor ? "mdi-rotate-90" : "mdi-rotate-270 "
-      },
       ...mapState(["selectedFile"]),
     },
     mounted () {
       SIO.on("parameterSettingFile", (file)=>{
-        if (!file.isParameterSettingFile) {
-          console.log("ERROR: illegal parameter setting file data", file)
-          return
-        }
-        this.parameterSetting = JSON.parse(file.content)
-        this.parameterSetting.targetFiles = this.parameterSetting.targetFiles.map((e)=>{
-          if (typeof e === "string") {
-            return { targetName: e }
-          }
-          return e
-        })
-        this.parameterSettingFilename = file.filename
-        this.parameterSettingDirname = file.dirname
-        this.openParamEditor = true
+        this.openParamEditor = file.isParameterSettingFile
       })
-      SIO.emit("openFile", this.selectedFile)
+
+      if (typeof this.selectedFile === "string") {
+        SIO.emit("openFile", this.selectedFile)
+      }
     },
     methods: {
+      ...mapActions(["showDialog"]),
+      openNewTab (filename) {
+        this.$refs.text.openNewTab(filename)
+      },
+      insertBraces () {
+        this.$refs.text.insertBraces()
+      },
+      hasChange () {
+        const fileChanged = this.$refs.text.hasChange()
+        const paramChanged = this.$refs.param.hasChange()
+        return fileChanged || paramChanged
+      },
       saveAllFiles () {
-        // tabEditorが開いているファイルを全部save
-        // パラメータエディタもsave
-
-        // refで各コンポーネントのメソッドを呼ぶ
+        const fileChanged = this.$refs.text.saveAll()
+        const paramChanged = this.$refs.param.save()
+        return fileChanged || paramChanged
       },
     },
   }

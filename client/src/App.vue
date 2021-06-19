@@ -274,7 +274,7 @@
     </v-overlay>
     <unsaved-files-dialog />
     <v-snackbar
-      v-model="snackbar"
+      v-model="openSnackbar"
       :vertical="true"
       :multi-line="true"
       :timeout="-1"
@@ -287,20 +287,22 @@
           color="indigo"
           text
           v-bind="attrs"
-          @click="snackbar = false;snackbarMessage=''"
+          @click="closeSnackbar"
         >
           Close
         </v-btn>
       </template>
     </v-snackbar>
+    <versatile-dialog />
   </v-app>
 </template>
 
 <script>
   "use strict"
-  import { mapState, mapMutations, mapGetters } from "vuex"
+  import { mapState, mapMutations, mapActions, mapGetters } from "vuex"
   import logScreen from "@/components/logScreen.vue"
   import unsavedFilesDialog from "@/components/unsavedFilesDialog.vue"
+  import versatileDialog from "@/components/versatileDialog.vue"
   import SIO from "@/lib/socketIOWrapper.js"
   import Debug from "debug"
   const debug = Debug("wheel:workflow:main")
@@ -320,19 +322,23 @@
     components: {
       logScreen,
       unsavedFilesDialog,
+      versatileDialog,
     },
     data: ()=>{
       return {
         projectJson: null,
         drawer: false,
         mode: 0,
-        snackbar: false,
-        snackbarMessage: "",
         showLogScreen: false,
       }
     },
     computed: {
-      ...mapState(["projectState", "rootComponentID"]),
+      ...mapState([
+        "projectState",
+        "rootComponentID",
+        "openSnackbar",
+        "snackbarMessage",
+      ]),
       ...mapGetters(["waiting"]),
     },
     mounted: function () {
@@ -354,10 +360,7 @@
         this.commitCurrentComponent(wf)
         this.commitWaitingWorkflow(false)
       })
-      SIO.on("showMessage", (message)=>{
-        this.snackbarMessage = message
-        this.snackbar = true
-      })
+      SIO.on("showMessage", this.showSnackbar)
       SIO.emit("getHostList", (rt)=>{
         debug("getHostList done", rt)
       })
@@ -381,6 +384,7 @@
         })
     },
     methods: {
+      ...mapActions(["showSnackbar", "closeSnackbar"]),
       ...mapMutations(
         {
           commitComponentTree: "componentTree",

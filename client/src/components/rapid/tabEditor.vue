@@ -1,12 +1,10 @@
-<!--
-Copyright (c) Center for Computational Science, RIKEN All rights reserved.
-Copyright (c) Research Institute for Information Technology(RIIT), Kyushu University. All rights reserved.
-See License.txt in the project root for the license information.
--->
+/*
+ * Copyright (c) Center for Computational Science, RIKEN All rights reserved.
+ * Copyright (c) Research Institute for Information Technology(RIIT), Kyushu University. All rights reserved.
+ * See License.txt in the project root for the license information.
+ */
 <template>
-  <v-container
-    class="grow align"
-  >
+  <div>
     <v-tabs
       v-model="activeTab"
       @change="changeTab"
@@ -16,12 +14,41 @@ See License.txt in the project root for the license information.
         :key="file.order"
         class="text-none"
       >
-        {{ file.filename }}
+        <v-menu
+          offset-y
+          close-on-content-click
+          close-on-click
+        >
+          <template v-slot:activator="{on: menu,attrs}">
+            <v-tooltip top>
+              <template v-slot:activator="{on: tooltip}">
+                <span
+                  v-bind="attrs"
+                  v-on="{...tooltip, ...menu}"
+                >
+                  {{ file.filename }}
+                </span>
+              </template>
+              <span> {{ file.absPath }} </span>
+            </v-tooltip>
+          </template>
+          <v-list>
+            <v-list-item
+              @click="save(index)"
+            >
+              save
+            </v-list-item>
+            <v-list-item
+              @click="closeTab(index)"
+            >
+              close without save
+            </v-list-item>
+          </v-list>
+        </v-menu>
         <v-btn
-          :disabled="isTargetFile(file)"
           small
           icon
-          @click.stop="saveAndCloseTab(index)"
+          @click.stop="save(index).then(()=>closeTab(index))"
         >
           <v-icon small>
             mdi-close
@@ -47,7 +74,7 @@ See License.txt in the project root for the license information.
               />
             </v-card-text>
             <v-card-actions>
-              <v-btn @click="openNewTab">
+              <v-btn @click="openNewTab(newFilename);closeNewFileDialog()">
                 <v-icon>mdi-pencil-outline</v-icon>open
               </v-btn>
               <v-btn @click="closeNewFileDialog">
@@ -62,7 +89,7 @@ See License.txt in the project root for the license information.
       id="editor"
       grow
     />
-  </v-container>
+  </div>
 </template>
 
 <script>
@@ -77,7 +104,10 @@ See License.txt in the project root for the license information.
   export default {
     name: "TabEditor",
     props: {
-      parameterSetting: Object,
+      readOnly: {
+        type: Boolean,
+        required: true,
+      },
     },
     data: function () {
       return {
@@ -85,7 +115,22 @@ See License.txt in the project root for the license information.
         newFilename: null,
         activeTab: 0,
         files: [],
+        editor: null,
       }
+    },
+    computed: {
+      ...mapState(["selectedFile",
+                   "selectedText",
+                   "projectRootDir",
+                   "componentPath",
+                   "selectedComponent",
+      ]),
+      ...mapGetters(["pathSep", "selectedComponentAbsPath"]),
+    },
+    watch: {
+      readOnly () {
+        this.editor.setReadOnly(this.readOnly)
+      },
     },
     mounted: function () {
       this.editor = ace.edit("editor")
@@ -94,13 +139,14 @@ See License.txt in the project root for the license information.
         autoScrollEditorIntoView: true,
         highlightSelectedWord: true,
         highlightActiveLine: true,
+        readOnly: this.readOnly,
       })
       this.editor.on("changeSession", this.editor.resize.bind(this.editor))
 
       SIO.on("file", (file)=>{
         // check arraived file is already opened or not
         const existingTab = this.files.findIndex((e)=>{
-          return e.filename === file.filename
+          return e.filename === file.filename && e.dirname === file.dirname
         })
         // just switch tab if arraived file is already opened
         if (existingTab !== -1) {
@@ -124,49 +170,23 @@ See License.txt in the project root for the license information.
           })
         })
       })
-      SIO.emit("openFile", this.selectedFile, this.currentDir, false)
-    },
-    computed: {
-      ...mapState(["selectedFile",
-                   "currentDir",
-                   "selectedText",
-                   "projectRootDir",
-                   "componentPath",
-                   "selectedComponent",
-      ]),
-      ...mapGetters(["pathSep", "selectedComponentAbsPath"]),
-      targetFiles () {
-        if (!this.parameterSetting || !this.parameterSetting.targetFiles) {
-          console.log(this.parameterSetting)
-          return []
-        }
-        if (typeof this.parameterSetting.targetFiles === "string") {
-          return [`${this.selectedComponentAbsPath}${this.pathSep}${this.parameterSetting.targetFiles}`]
-        }
-        return this.parameterSetting.targetFiles.map((e)=>{
-          const dirname = e.targetNode ? this.componentPath[e.targetNode].slice(1) : this.selectedComponentAbsPath
-          const filename = e.targetName || e
-          return `${this.projectRootDir}${dirname}${this.pathSep}${filename}`
-        })
-      },
+      SIO.emit("openFile", this.selectedFile, false)
     },
     methods: {
       ...mapMutations({ commitSelectedText: "selectedText" }),
       isValidName (v) {
         return isValidName(v) || "invalid filename"
       },
-      isTargetFile (file) {
-        return this.targetFiles.includes(file.absPath)
-      },
-      async openNewTab () {
-        if (!isValidName(this.newFilename)) {
+      async openNewTab (filename) {
+        if (!isValidName(filename)) {
           return this.closeNewFileDialog()
         }
         const existingTab = this.files.findIndex((e)=>{
-          return e.filename === this.newFilename && e.dirname === this.currentDir
+          return e.filename === this.newFilename && e.dirname === this.selectedComponentAbsPath
         })
         if (existingTab === -1) {
-          SIO.emit("openFile", this.newFilename, this.currentDir, false, (rt)=>{
+          const absFilename = `${this.selectedComponentAbsPath}${this.pathSep}${this.newFilename}`
+          SIO.emit("openFile", absFilename, false, (rt)=>{
             if (!rt) {
               console.log("file open error!", rt)
             }
@@ -182,21 +202,57 @@ See License.txt in the project root for the license information.
         this.newFilePrompt = false
       },
       insertBraces () {
+        // this function will be called from parent component
         const selectedRange = this.editor.getSelection().getRange()
         const session = this.editor.getSession()
         session.insert(selectedRange.end, " }}")
         session.insert(selectedRange.start, "{{ ")
+        this.editor.getSelection().clearSelection()
       },
-      saveAndCloseTab (index) {
-        const file = this.files[index]
-        const document = file.editorSession.getDocument()
-        const content = document.getValue()
-        SIO.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
-          if (!rt) {
-            console.log("ERROR: file save failed:", rt)
+      save (index) {
+        return new Promise((resolve, reject)=>{
+          const file = this.files[index]
+          const document = file.editorSession.getDocument()
+          const content = document.getValue()
+          if (file.content === content) {
+            console.log("do not call 'saveFile' API because file is not changed. index=", index)
           }
-          this.closeTab(index)
+          SIO.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+            if (!rt) {
+              console.log("ERROR: file save failed:", rt)
+              reject(rt)
+            }
+            resolve(rt)
+          })
         })
+      },
+      hasChange () {
+        for (const file of this.files) {
+          const document = file.editorSession.getDocument()
+          const content = document.getValue()
+          if (file.content !== content) {
+            return true
+          }
+        }
+        return false
+      },
+      saveAll () {
+        let changed = false
+        for (const file of this.files) {
+          const document = file.editorSession.getDocument()
+          const content = document.getValue()
+          if (file.content === content) {
+            console.log(`INFO: ${file.filename} is not changed.`)
+          } else {
+            changed = true
+            SIO.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
+              if (!rt) {
+                console.log("ERROR: file save failed:", rt)
+              }
+            })
+          }
+        }
+        return changed
       },
       closeTab (index) {
         console.log("DEBUG: close ", index, "th tab")

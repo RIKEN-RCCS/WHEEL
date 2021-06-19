@@ -43,6 +43,10 @@ const mutationFactory = (types)=>{
  * @property { number } canvasWidth - width of canvas in component graph
  * @property { number } canvasHeight - width of canvas in component graph
  * @property { string[] } scriptCandidates - filenames directly under selected component directory
+ * @property { Boolean } openSnackbar - flag to show snackbar message
+ * @property { string } snackbarMessage - message on snackbar
+ * @property { Boolean } openDialog - flag to show global dialog
+ * @property { Object } dialogContent - dialog's content
  *
  */
 const state = {
@@ -64,6 +68,12 @@ const state = {
   canvasWidth: null,
   canvasHeight: null,
   scriptCandidates: [],
+  openSnackbar: false,
+  snackbarMessage: "",
+  snackbarQueue: [],
+  openDialog: false,
+  dialogContent: null,
+  dialogQueue: [],
 }
 
 const mutations = mutationFactory(Object.keys(state))
@@ -90,6 +100,38 @@ export default new Vuex.Store({
         context.commit("scriptCandidates", scriptCandidates)
       })
     },
+    showSnackbar: (context, payload)=>{
+      if (typeof payload === "string") {
+        context.state.snackbarQueue.push(payload)
+      }
+      if (context.state.snackbarQueue.length === 0) {
+        return
+      }
+      const message = context.state.snackbarQueue.shift()
+      context.commit("snackbarMessage", message)
+      context.commit("openSnackbar", true)
+    },
+    closeSnackbar: (context)=>{
+      context.commit("snackbarMessage", "")
+      context.commit("openSnackbar", false)
+
+      if (context.state.snackbarQueue.length > 0) {
+        context.dispatch("showSnackbar")
+      }
+    },
+    showDialog: (context, payload)=>{
+      // ignore if dialog is already opend
+      // we have to use dialog queue for this case
+      if (context.state.openDialog) {
+        return
+      }
+      context.commit("dialogContent", payload)
+      context.commit("openDialog", true)
+    },
+    closeDialog: (context, payload)=>{
+      context.commit("dialogContent", null)
+      context.commit("openDialog", false)
+    },
   },
   getters: {
     // get selected component's absolute path on server
@@ -101,7 +143,7 @@ export default new Vuex.Store({
       return `${state.projectRootDir}${getters.pathSep}${relativePath.slice(1)}`
     },
     // get current component's absolute path on server
-    currentComponentAbsPath: (state)=>{
+    currentComponentAbsPath: (state, getters)=>{
       if (state.currentComponent.ID === state.rootComponentID) {
         return state.projectRootDir
       }

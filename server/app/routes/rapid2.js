@@ -17,7 +17,7 @@ function registerListeners(socket, projectRootDir) {
     getLogger(projectRootDir).debug("openFile event recieved:", filename, forceNormal);
 
     try {
-      const files = await openFile(filename, forceNormal);
+      const files = await openFile(projectRootDir, filename, forceNormal);
       for (const file of files) {
         if (file.isParameterSettingFile) {
           socket.emit("parameterSettingFile", file);

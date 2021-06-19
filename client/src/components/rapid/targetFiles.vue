@@ -16,6 +16,7 @@
         >
           <v-btn
             class="text-capitalize"
+            :disabled="readOnly"
             @click="openDialog"
           >
             <v-icon> mdi-plus</v-icon> add new target file
@@ -93,7 +94,16 @@
       actionRow,
       lowerComponentTree,
     },
-    props: ["files", "targetFiles"],
+    props: {
+      targetFiles: {
+        type: Array,
+        required: true,
+      },
+      readOnly: {
+        type: Boolean,
+        required: true,
+      },
+    },
     data () {
       return {
         targetFileDialog: false,
@@ -104,8 +114,7 @@
       }
     },
     computed: {
-      ...mapState(["currentDir",
-                   "selectedText",
+      ...mapState(["selectedText",
                    "projectRootDir",
                    "componentPath",
                    "selectedComponent",

@@ -2,6 +2,7 @@
   <div>
     <v-icon
       v-if="canEdit"
+      :disabled="disabled"
       small
       class="mr-2"
       @click="$emit('edit', item)"
@@ -10,6 +11,7 @@
     </v-icon>
     <v-icon
       v-if="canDelete"
+      :disabled="disabled"
       small
       @click="$emit('delete',item)"
     >
@@ -29,6 +31,10 @@
       canDelete: {
         type: Boolean,
         default: true,
+      },
+      disabled: {
+        type: Boolean,
+        default: false,
       },
     },
   }

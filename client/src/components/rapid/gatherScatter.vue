@@ -16,6 +16,7 @@
         >
           <v-btn
             class="text-capitalize"
+            :disabled="readOnly"
             @click="dialog=true"
           >
             <v-icon>mdi-plus</v-icon>
@@ -33,6 +34,7 @@
           <template v-slot:item.action="{ item }">
             <action-row
               :item="item"
+              :disabled="readOnly"
               @edit="openDialog(item)"
               @delete="deleteItem(item)"
             />
@@ -109,6 +111,10 @@
       },
       label: {
         type: String,
+        required: true,
+      },
+      readOnly: {
+        type: Boolean,
         required: true,
       },
     },

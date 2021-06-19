@@ -6,14 +6,14 @@ See License.txt in the project root for the license information.
 <template>
   <div>
     <target-files
-      :files="files"
       :target-files="parameterSetting.targetFiles"
+      :read-only="readOnly"
       @open-new-tab="$emit('openNewTab')"
     />
     <parameter
-      :keyword="selectedText"
       :params="parameterSetting.params"
-      @newParamAdded="$emit('insertBraces')"
+      :read-only="readOnly"
+      @newParamAdded="newParamAdded"
     />
     <gather-scatter
       :container="parameterSetting.scatter"
@@ -22,6 +22,7 @@ See License.txt in the project root for the license information.
                   { value: 'dstNode', text: 'dstNode', sortable: true},
                   { text: 'Actions', value: 'action', sortable: false }]"
       :label="'scatter'"
+      :read-only="readOnly"
     />
     <gather-scatter
       :container="parameterSetting.gather"
@@ -30,36 +31,93 @@ See License.txt in the project root for the license information.
                   { value: 'dstName', text: 'dstName', sortable: true },
                   { text: 'Actions', value: 'action', sortable: false }]"
       :label="'gather'"
+      :read-only="readOnly"
     />
   </div>
 </template>
 <script>
   "use strict"
   import { mapState } from "vuex"
+  import SIO from "@/lib/socketIOWrapper.js"
   import targetFiles from "@/components/rapid/targetFiles.vue"
   import gatherScatter from "@/components/rapid/gatherScatter.vue"
   import parameter from "@/components/rapid/parameter.vue"
+  const equal = require("fast-deep-equal")
 
   export default {
     name: "ParameterEditor",
+
     components: {
       targetFiles,
       gatherScatter,
       parameter,
     },
     props: {
-      files: Array,
-      parameterSetting: Object,
+      readOnly: {
+        type: Boolean,
+        required: true,
+      },
     },
-
     data: function () {
       return {
+        parameterSetting: {
+          version: 2,
+          targetFiles: [],
+          params: [],
+          scatter: [],
+          gather: [],
+        },
+        initialParameterSetting: {
+          version: 2,
+          targetFiles: [],
+          params: [],
+          scatter: [],
+          gather: [],
+        },
       }
     },
     computed: {
-      ...mapState(["currentDir", "selectedFile", "selectedText"]),
+      ...mapState(["currentDir", "selectedFile"]),
     },
     mounted () {
+      SIO.on("parameterSettingFile", (file)=>{
+        if (!file.isParameterSettingFile) {
+          console.log("ERROR: illegal parameter setting file data", file)
+          return
+        }
+        this.initialParameterSetting = JSON.parse(file.content)
+        this.parameterSetting = JSON.parse(file.content)
+        // convert raw string target file to object targetFile
+        this.parameterSetting.targetFiles = this.parameterSetting.targetFiles.map((e)=>{
+          if (typeof e === "string") {
+            return { targetName: e }
+          }
+          return e
+        })
+        this.filename = file.filename
+        this.dirname = file.dirname
+      })
+    },
+    methods: {
+      newParamAdded (param) {
+        this.parameterSetting.params.push(param)
+        this.$emit("insertBraces")
+      },
+      hasChange () {
+        return !equal(this.initialParameterSetting, this.parameterSetting)
+      },
+      save () {
+        if (equal(this.initialParameterSetting, this.parameterSetting)) {
+          console.log("paramter setting is not changed!")
+          return false
+        }
+        SIO.emit("saveFile", this.filename, this.dirname, JSON.stringify(this.parameterSetting), (rt)=>{
+          if (!rt) {
+            console.log("ERROR: parameter setting file save failed")
+          }
+        })
+        return true
+      },
     },
   }
 </script>
