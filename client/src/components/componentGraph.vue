@@ -49,9 +49,10 @@
           commitCanvasHeight: "canvasHeight",
         }),
       fit: function () {
+        const magicNumber = 17
         const baseWidth = window.innerWidth < this.$parent.$parent.$el.clientWidth ? window.innerWidth : this.$parent.$parent.$el.clientWidth
         const width = baseWidth - widthComponentLibrary - 1
-        const height = window.innerHeight - heightToolbar - heightDenseToolbar * 2 - heightFooter
+        const height = window.innerHeight - heightToolbar - heightDenseToolbar * 2 - heightFooter - magicNumber
 
         if (width > 0 && height > 0) {
           this.commitCanvasWidth(width)
