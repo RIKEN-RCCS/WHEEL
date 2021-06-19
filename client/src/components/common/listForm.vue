@@ -1,6 +1,6 @@
 <template>
   <v-data-table
-    :items="items"
+    :items="tableData"
     :headers="headersWithActions"
     disable-filterling
     disable-pagination
@@ -29,7 +29,7 @@
     </template>
     <template v-slot:item.actions="{ item }">
       <action-row
-        :can-edit="false"
+        :can-edit="allowEditButton"
         :item="item"
         @delete="deleteItem"
       />
@@ -39,7 +39,7 @@
       v-slot:footer
     >
       <v-text-field
-        v-model.lazy="inputField"
+        v-model="inputField"
         :rules="[newItemIsNotDuplicate]"
         :disabled="disabled"
         outlined
@@ -63,6 +63,13 @@
     },
     props: {
       label: String,
+      allowEditButton: {
+        type: Boolean,
+        default: false,
+      },
+      stringItems: {
+        type: Boolean, default: false,
+      },
       items: { type: Array, required: true },
       headers: {
         type: Array,
@@ -104,13 +111,21 @@
             return e.value
           })
       },
+      tableData () {
+        if (!this.stringItems) {
+          return this.items
+        }
+        return this.items.map((e)=>{
+          return { name: e }
+        })
+      },
     },
     methods: {
       isDuplicate (newItem) {
         if (typeof newItem !== "string") {
           return false
         }
-        return this.items.some((e)=>{
+        return this.tableData.some((e)=>{
           return e.name === newItem
         })
       },
@@ -125,21 +140,30 @@
         if (this.isDuplicate(this.edittingField) && this.editTarget !== this.edittingField) {
           return
         }
-        item.name = this.edittingField
+        console.log("DEBUG: edittingField=", this.edittingField)
+        console.log("DEBUG: editTarget=", this.editTarget)
+        console.log("DEBUG: index=", index)
+
+        if (this.stringItems) {
+          this.items.splice(index, 1, this.edittingField)
+        } else {
+          item.name = this.edittingField
+        }
+        console.log("DEBUG: items=", this.items)
         this.$emit("update", item, index)
       },
       addItem: function () {
-        if (this.isDuplicate(this.inputField)) {
+        if (this.isDuplicate(this.inputField) || typeof this.inputField !== "string") {
           return
         }
-        const newItem = Object.assign({}, this.newItemTemplate || {})
-        newItem.name = this.inputField
+        const newItem = this.stringItems ? this.inputField : Object.assign({}, this.newItemTemplate || {}, { name: this.inputField })
         this.items.push(newItem)
         this.$emit("add", newItem)
         this.inputField = null
       },
       deleteItem: function (v) {
-        const index = removeFromArray(this.items, v, "name")
+        const target = this.stringItems ? v.name : v
+        const index = removeFromArray(this.items, target, "name")
 
         if (index !== -1) {
           this.$emit("remove", v, index)

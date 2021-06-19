@@ -103,12 +103,14 @@
             <list-form
               :items="newItem.list"
               :headers="listHeaders"
+              :string-items="true"
             />
           </div>
           <div v-if="newItem.type==='files'">
             <list-form
               :items="newItem.files"
               :headers="filesHeaders"
+              :string-items="true"
             />
           </div>
         </v-card-text>
@@ -188,10 +190,10 @@
           step: 1,
         },
         listHeaders: [
-          { text: "value", value: "item", sortable: true },
+          { text: "value", value: "name", sortable: true },
         ],
-        fileHeaders: [
-          { text: "filename", value: "item", sortable: true },
+        filesHeaders: [
+          { text: "filename", value: "name", sortable: true },
         ],
       }
     },
