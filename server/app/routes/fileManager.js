@@ -53,7 +53,7 @@ async function sendDirectoryContents(target, request, withSND = true, sendDir = 
   return result;
 }
 
-async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
+async function onGetFileList(uploader, projectRootDir, requestDir, cb) {
   const modifiedRequestDir = path.normalize(convertPathSep(requestDir));
   getLogger(projectRootDir).debug(`current dir = ${modifiedRequestDir}`);
 
@@ -72,7 +72,7 @@ async function onGetFileList(uploader, emit, projectRootDir, requestDir, cb) {
   }
 }
 
-async function onGetSNDContents(emit, projectRootDir, requestDir, glob, isDir, cb) {
+async function onGetSNDContents(projectRootDir, requestDir, glob, isDir, cb) {
   const modifiedRequestDir = path.normalize(convertPathSep(requestDir));
   getLogger(projectRootDir).debug("getSNDContents event recieved:", modifiedRequestDir, glob, isDir);
 
@@ -237,8 +237,8 @@ function registerListeners(socket, projectRootDir) {
     getLogger(projectRootDir).error("file upload failed", event.file, event.error);
   });
 
-  socket.on("getFileList", onGetFileList.bind(null, uploader, socket.emit.bind(socket), projectRootDir));
-  socket.on("getSNDContents", onGetSNDContents.bind(null, socket.emit.bind(socket), projectRootDir));
+  socket.on("getFileList", onGetFileList.bind(null, uploader, projectRootDir));
+  socket.on("getSNDContents", onGetSNDContents.bind(null, projectRootDir));
   socket.on("removeFile", onRemoveFile.bind(null, socket.emit.bind(socket), projectRootDir));
   socket.on("renameFile", onRenameFile.bind(null, socket.emit.bind(socket), projectRootDir));
   socket.on("downloadFile", onDownloadFile.bind(null, socket.emit.bind(socket), projectRootDir));
