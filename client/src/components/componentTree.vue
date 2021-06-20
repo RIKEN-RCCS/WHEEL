@@ -19,6 +19,7 @@
 
       <v-treeview
         open-all
+        item-key="ID"
         :items="componentTree"
       >
         <template v-slot:label="{ item }">

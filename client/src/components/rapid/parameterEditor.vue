@@ -8,7 +8,7 @@ See License.txt in the project root for the license information.
     <target-files
       :target-files="parameterSetting.targetFiles"
       :read-only="readOnly"
-      @open-new-tab="$emit('openNewTab')"
+      @openNewTab="openNewTab"
     />
     <parameter
       :params="parameterSetting.params"
@@ -99,6 +99,9 @@ See License.txt in the project root for the license information.
       })
     },
     methods: {
+      openNewTab (...args) {
+        this.$emit("openNewTab", ...args)
+      },
       newParamAdded (param) {
         this.parameterSetting.params.push(param)
         this.$emit("insertBraces")

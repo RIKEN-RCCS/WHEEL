@@ -17,7 +17,7 @@
           <v-btn
             class="text-capitalize"
             :disabled="readOnly"
-            @click="openDialog"
+            @click="openDialog(null)"
           >
             <v-icon> mdi-plus</v-icon> add new target file
           </v-btn>
@@ -49,6 +49,7 @@
     </v-card>
     <v-dialog
       v-model="targetFileDialog"
+      width="auto "
       persistent
     >
       <v-card>
@@ -60,7 +61,7 @@
             v-model.trim.lazy="newTargetFilename"
             :label="'filename'"
           />
-          <lower-component-tree />
+          <lower-component-tree @selected="targetNodeSelected" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -108,8 +109,8 @@
       return {
         targetFileDialog: false,
         newTargetFilename: "",
+        newTargetNode: null,
         currentItem: null,
-        active: [],
         tableFooterProps,
       }
     },
@@ -128,16 +129,20 @@
         return tmp[tmp.length - 1]
       },
       openDialog (item) {
+        if (item !== null) {
+          this.newTargetFilename = item.targetName
+        }
+        this.currentItem = item || null
         this.targetFileDialog = true
       },
       deleteItem (item) {
-        removeFromArray(this.targetFiles, item)
+        removeFromArray(this.targetFiles, item, "targetName")
       },
       closeAndResetDialog () {
         this.currentItem = null
         this.targetFileDialog = false
         this.newTargetFilename = ""
-        this.active = []
+        this.newTargetNode = null
       },
       commitTargetFileChange () {
         if (this.newTargetFilename === "") {
@@ -151,48 +156,48 @@
         }
         this.closeAndResetDialog()
       },
-      renameTargetFile (item) {
-        const dirnamePrefix = this.$root.$data.rootDir + this.pathSep
-        const oldAbsPath = targetFile2absPath(item, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
-        const targetInTargetFiles = this.targetFiles.find((e)=>{
-          return oldAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
-        })
-        targetInTargetFiles.targetName = this.newTargetFilename
-
-        if (this.active[0]) {
-          targetInTargetFiles.targetNode = this.active[0]
-        } else {
-          delete targetInTargetFiles.targetNode
+      compareTargetFile (l, r) {
+        if (l.targetNode || r.targetNode) {
+          if (l.targetNode !== r.targetNode) {
+            return false
+          }
         }
+        return l.targetName === r.targetName
+      },
+      renameTargetFile (oldEntry) {
+        // check duplicated entry
+        const targetFileToBeModified = this.targetFiles.find((e)=>{
+          return this.compareTargetFile(oldEntry, e)
+        })
+        if (targetFileToBeModified) {
+          targetFileToBeModified.targetName = this.newTargetFilename
 
-        this.$emit("open-new-tab", this.newTargetFilename)
+          if (this.newTargetNode) {
+            targetFileToBeModified.targetNode = this.newTargetNode.ID
+          } else if (targetFileToBeModified.targetNode) {
+            delete targetFileToBeModified.targetNode
+          }
+          this.$emit("openNewTab", this.newTargetFilename, this.selectedComponentAbsPath)
+        }
         this.closeAndResetDialog()
       },
       addNewTargetFile () {
-        const dirnamePrefix = this.$root.$data.rootDir + this.pathSep
-        const newAbsPath = targetFile2absPath({ targetName: this.newTargetFilename }, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
-        const targetInTargetFiles = this.targetFiles.findIndex((e)=>{
-          return newAbsPath === targetFile2absPath(e, this.$root.$data.componentPath, this.pathSep, dirnamePrefix, this.$root.$data.node.ID)
-        })
-
-        if (targetInTargetFiles !== -1) {
-          // just ignore if already exists
-          if (this.active[0]) {
-            this.targetFiles[targetInTargetFiles].targetNode = this.active[0]
-          } else {
-            delete this.targetFiles[targetInTargetFiles].targetNode
-          }
-          return
-        }
         const newTarget = { targetName: this.newTargetFilename }
-        if (this.active[0]) {
-          newTarget.targetNode = this.active[0]
+        if (this.newTargetNode) {
+          newTarget.targetNode = this.newTargetNode.ID
         }
-        this.targetFiles.push(newTarget)
-
-        console.log("emit open-new-tab event", this.newTargetFilename)
-        this.$emit("open-new-tab", this.newTargetFilename)
+        // check duplicated entry
+        const index = this.targetFiles.findIndex((e)=>{
+          return this.compareTargetFile(e, newTarget)
+        })
+        if (index === -1) {
+          this.targetFiles.push(newTarget)
+          this.$emit("openNewTab", this.newTargetFilename, this.selectedComponentAbsPath)
+        }
         this.closeAndResetDialog()
+      },
+      targetNodeSelected (targetNode) {
+        this.newTargetNode = targetNode
       },
     },
   }

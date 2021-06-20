@@ -1,5 +1,8 @@
 <template>
   <v-treeview
+    v-if="lowerLevelComponents!==null"
+    open-all
+    item-key="ID"
     :items="[ lowerLevelComponents ]"
     :active.sync="active"
     dense
@@ -16,23 +19,8 @@
 <script>
   "use strict"
   import { mapState } from "vuex"
+  import getNodeAndPath from "@/lib/getNodeAndPath.js"
   import componentButton from "@/components/common/componentButton.vue"
-
-  const getSubComponentTree = (targetID, currentNode)=>{
-    if (targetID === currentNode.ID) {
-      return currentNode
-    }
-    if (typeof currentNode.children === "undefined" || !Array.isArray(currentNode.children)) {
-      return null
-    }
-    for (const e of currentNode.children) {
-      const rt = getSubComponentTree(targetID, e)
-      if (rt !== null) {
-        return rt
-      }
-    }
-    return null
-  }
 
   export default {
     name: "LowerComponentTree",
@@ -42,19 +30,21 @@
     data () {
       return {
         active: [],
+        lowerLevelComponents: null,
       }
     },
     computed: {
       ...mapState(["selectedComponent", "componentPath", "componentTree"]),
-      lowerLevelComponents () {
-        const targetID = this.selectedComponent.ID
-        return getSubComponentTree(targetID, this.componentTree)
-      },
+    },
+    mounted () {
+      const targetID = this.selectedComponent.ID
+      this.lowerLevelComponents = getNodeAndPath(targetID, this.componentTree)
     },
     methods: {
       onUpdateActive (actives) {
-        console.log(actives)
-        this.$emit("selected", actives[0])
+        const activeComponentID = actives[0]
+        const activeComponent = getNodeAndPath(activeComponentID, this.componentTree)
+        this.$emit("selected", activeComponent)
       },
     },
   }

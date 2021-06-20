@@ -113,8 +113,8 @@ See License.txt in the project root for the license information.
     },
     methods: {
       ...mapActions(["showDialog"]),
-      openNewTab (filename) {
-        this.$refs.text.openNewTab(filename)
+      openNewTab (...args) {
+        this.$refs.text.openNewTab(...args)
       },
       insertBraces () {
         this.$refs.text.insertBraces()

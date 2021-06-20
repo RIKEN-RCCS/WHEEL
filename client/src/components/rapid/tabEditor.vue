@@ -177,15 +177,17 @@
       isValidName (v) {
         return isValidName(v) || "invalid filename"
       },
-      async openNewTab (filename) {
+      async openNewTab (filename, argDirname) {
+        const dirname = argDirname || this.selectedComponentAbsPath
+
         if (!isValidName(filename)) {
           return this.closeNewFileDialog()
         }
         const existingTab = this.files.findIndex((e)=>{
-          return e.filename === this.newFilename && e.dirname === this.selectedComponentAbsPath
+          return e.filename === filename && e.dirname === dirname
         })
         if (existingTab === -1) {
-          const absFilename = `${this.selectedComponentAbsPath}${this.pathSep}${this.newFilename}`
+          const absFilename = `${dirname}${this.pathSep}${filename}`
           SIO.emit("openFile", absFilename, false, (rt)=>{
             if (!rt) {
               console.log("file open error!", rt)

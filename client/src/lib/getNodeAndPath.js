@@ -5,6 +5,13 @@
  */
 "use strict"
 
+/**
+ * serch component and its path from component tree
+ * @param { string } targetID - target component's ID
+ * @param { Object } root - search root component's ID
+ * @param { Array } path - output argument for path
+ * @return { Object } - target component
+ */
 const getNodeAndPath = (targetID, root, path)=>{
   if (typeof root === "undefined" || root === null || !Object.prototype.hasOwnProperty.call(root, "ID")) {
     return null
@@ -38,7 +45,7 @@ const getNodeAndPath = (targetID, root, path)=>{
       return found
     }
   }
-  // return undefined if target node not found
+  // implicitly return undefined if target node not found
 }
 
 export { getNodeAndPath as default }
