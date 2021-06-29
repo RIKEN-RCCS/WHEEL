@@ -10,8 +10,15 @@ const fs = require("fs-extra");
 const JsonArrayManager = require("./jsonArrayManager");
 
 function isExists(target, file) {
-  const stats = fs.statSync(target);
-  return file ? stats.isFile() : stats.isDirectory();
+  try {
+    const stats = fs.statSync(target);
+    return file ? stats.isFile() : stats.isDirectory();
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      return false;
+    }
+    throw e;
+  }
 }
 
 function getConfigFile(filename, failIfNotFound) {
