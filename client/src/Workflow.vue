@@ -318,7 +318,7 @@
   }
 
   export default {
-    name: "App",
+    name: "Workflow",
     components: {
       logScreen,
       unsavedFilesDialog,
