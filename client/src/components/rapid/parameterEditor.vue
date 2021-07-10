@@ -37,7 +37,7 @@ See License.txt in the project root for the license information.
 </template>
 <script>
   "use strict"
-  import { mapState } from "vuex"
+  import { mapState, mapGetters } from "vuex"
   import SIO from "@/lib/socketIOWrapper.js"
   import targetFiles from "@/components/rapid/targetFiles.vue"
   import gatherScatter from "@/components/rapid/gatherScatter.vue"
@@ -74,10 +74,12 @@ See License.txt in the project root for the license information.
           scatter: [],
           gather: [],
         },
+        filename: "parameterSetting.json",
       }
     },
     computed: {
-      ...mapState(["currentDir", "selectedFile"]),
+      ...mapState(["selectedFile"]),
+      ...mapGetters(["selectedComponentAbsPath"]),
     },
     mounted () {
       SIO.on("parameterSettingFile", (file)=>{
@@ -114,11 +116,12 @@ See License.txt in the project root for the license information.
           console.log("paramter setting is not changed!")
           return false
         }
-        SIO.emit("saveFile", this.filename, this.dirname, JSON.stringify(this.parameterSetting), (rt)=>{
-          if (!rt) {
-            console.log("ERROR: parameter setting file save failed")
-          }
-        })
+        SIO.emit("saveFile", this.filename, this.dirname || this.selectedComponentAbsPath,
+                 JSON.stringify(this.parameterSetting), (rt)=>{
+                   if (!rt) {
+                     console.log("ERROR: parameter setting file save failed")
+                   }
+                 })
         return true
       },
     },
