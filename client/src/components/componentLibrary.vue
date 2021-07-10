@@ -91,6 +91,9 @@
           },
           path: this.currentComponentAbsPath,
         }
+        if (payload.type === "parameterStudy") {
+          payload.type = "PS"
+        }
         if (payload.pos.x < 0 || this.canvasWidth + widthComponentLibrary < payload.pos.x ||
           payload.pos.y < 0 || this.canvasHeight + heightToolbar + heightDenseToolbar * 2 < payload.pos.y) {
           console.log("DEUBG: out of range drop!", payload.pos)

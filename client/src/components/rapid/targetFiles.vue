@@ -192,7 +192,9 @@
         })
         if (index === -1) {
           this.targetFiles.push(newTarget)
-          this.$emit("openNewTab", this.newTargetFilename, this.selectedComponentAbsPath)
+          const targetComponentID = newTarget.targetNode || this.selectedComponent.ID
+          const targetComponentDir = `${this.projectRootDir}${this.pathSep}${this.componentPath[targetComponentID]}`
+          this.$emit("openNewTab", this.newTargetFilename, targetComponentDir)
         }
         this.closeAndResetDialog()
       },
