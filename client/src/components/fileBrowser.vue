@@ -368,6 +368,7 @@
               return
             }
             removeItem(this.items, this.dialog.activeItem.id)
+            this.commitSelectedFile(null);
           })
         } else if (this.dialog.submitEvent === "renameFile") {
           const newName = this.dialog.inputField
