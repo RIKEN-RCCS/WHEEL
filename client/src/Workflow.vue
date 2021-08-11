@@ -54,14 +54,14 @@
       app
       extended
     >
-      <v-app-bar-title shrink-on-scroll>
-        <a
-          href="/home"
-          class="text-decoration-none text-h4 white--text"
-        > WHEEL </a>
-      </v-app-bar-title>
+      <a
+        href="/home"
+        class="text-uppercase text-decoration-none  text-h4 white--text"
+      > WHEEL </a>
       <v-spacer />
-      {{ projectJson !== null ? projectJson.name : "" }}
+      <p class="mb-0 text-h5">
+        {{ projectJson !== null ? projectJson.name : "" }}
+      </p>
       <v-spacer />
       <v-btn
         rounded
