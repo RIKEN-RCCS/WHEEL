@@ -303,16 +303,16 @@
 </template>
 
 <script>
-  import listForm from "@/components/common/listForm.vue"
-  import fileBrowser from "@/components/fileBrowser.vue"
-  import { isValidName } from "@/lib/utility.js"
-  import { glob2Array, addGlobPattern, removeGlobPattern, updateGlobPattern } from "@/lib/clientUtility.js"
-  import { mapState, mapGetters, mapMutations } from "vuex"
-  import SIO from "@/lib/socketIOWrapper.js"
+  import listForm from "@/components/common/listForm.vue";
+  import fileBrowser from "@/components/fileBrowser.vue";
+  import { isValidName } from "@/lib/utility.js";
+  import { glob2Array, addGlobPattern, removeGlobPattern, updateGlobPattern } from "@/lib/clientUtility.js";
+  import { mapState, mapGetters, mapMutations } from "vuex";
+  import SIO from "@/lib/socketIOWrapper.js";
 
   const zeroOrMore = (v)=>{
-    return v >= 0 ? true : "retry time must be positive value"
-  }
+    return v >= 0 ? true : "retry time must be positive value";
+  };
 
   export default {
     name: "ComponentProperty",
@@ -338,92 +338,92 @@
         conditionCheckByJS: false,
         open: false,
         reopening: false,
-      }
+      };
     },
     watch: {
       open () {
         if (this.reopening || this.open) {
-          return
+          return;
         }
-        this.commitSelectedComponent(null)
+        this.commitSelectedComponent(null);
       },
       selectedComponent () {
         if (this.selectedComponent === null) {
-          return
+          return;
         }
-        this.reopening = true
-        this.openPanels = [0]
-        this.open = false
+        this.reopening = true;
+        this.openPanels = [0];
+        this.open = false;
         setTimeout(()=>{
-          this.open = true
-          this.reopening = false
-        }, 200)
+          this.open = true;
+          this.reopening = false;
+        }, 200);
       },
     },
     computed: {
       ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates", "projectRootDir"]),
       ...mapGetters(["selectedComponentAbsPath"]),
       disableRemoteSetting () {
-        return this.copySelectedComponent.host === "localhost"
+        return this.copySelectedComponent.host === "localhost";
       },
       isTask () {
-        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "task"
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "task";
       },
       hasCondition () {
-        return typeof this.selectedComponent !== "undefined" && ["if", "while"].includes(this.selectedComponent.type)
+        return typeof this.selectedComponent !== "undefined" && ["if", "while"].includes(this.selectedComponent.type);
       },
       isFor () {
-        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "for"
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "for";
       },
       isForeach () {
-        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "foreach"
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "foreach";
       },
       isSource () {
-        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "source"
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "source";
       },
       isPS () {
-        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "parameterStudy"
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "parameterStudy";
       },
       includeList: function () {
         if (typeof this.copySelectedComponent.include !== "string") {
-          return []
+          return [];
         }
         return glob2Array(this.copySelectedComponent.include)
           .map((e)=>{
-            return { name: e }
-          })
+            return { name: e };
+          });
       },
       indexList: function () {
         return this.copySelectedComponent.indexList
           .map((e)=>{
-            return { name: e }
-          })
+            return { name: e };
+          });
       },
       excludeList: function () {
         if (typeof this.copySelectedComponent.exclude !== "string") {
-          return []
+          return [];
         }
         return glob2Array(this.copySelectedComponent.exclude)
           .map((e)=>{
-            return { name: e }
-          })
+            return { name: e };
+          });
       },
       hostCandidates () {
         const hostInRemoteHost = this.remoteHost.map((e)=>{
-          return e.name
-        })
-        return ["localhost", ...hostInRemoteHost]
+          return e.name;
+        });
+        return ["localhost", ...hostInRemoteHost];
       },
       queues () {
         const currentHostSetting = this.remoteHost.find((e)=>{
-          return e.name === this.copySelectedComponent.host
-        })
-        return currentHostSetting ? currentHostSetting.queue.split(",") : []
+          return e.name === this.copySelectedComponent.host;
+        });
+        return currentHostSetting ? currentHostSetting.queue.split(",") : [];
       },
     },
     mounted () {
       if (this.selectedComponent !== null) {
-        this.open = true
+        this.open = true;
       }
     },
     methods: {
@@ -435,102 +435,102 @@
       deleteComponent () {
         SIO.emit("removeNode", this.selectedComponent.ID, (rt)=>{
           if (!rt) {
-            return
+            return;
           }
           // update componentTree
           SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
-            this.commitComponentTree(componentTree)
-          })
-        })
+            this.commitComponentTree(componentTree);
+          });
+        });
       },
       changeInputOutputFiles (event, v, index) {
-        if (!this.valid) return
-        const ID = this.selectedComponent.ID
+        if (!this.valid) return;
+        const ID = this.selectedComponent.ID;
         // event がrenameInputFile, renameOutputFileの時だけindex引数をもってくれば良い
         if (event === "renameInputFile" || event === "renameOutputFile") {
-          SIO.emit(event, ID, index, v.name)
-          return
+          SIO.emit(event, ID, index, v.name);
+          return;
         }
-        SIO.emit(event, ID, v.name)
+        SIO.emit(event, ID, v.name);
       },
       updateIndexList (op, e, index) {
         if (op === "add") {
-          this.copySelectedComponent.indexList.push(e.name)
+          this.copySelectedComponent.indexList.push(e.name);
         } else if (op === "remove") {
-          this.copySelectedComponent.indexList.splice(index, 1)
+          this.copySelectedComponent.indexList.splice(index, 1);
         } else if (op === "rename") {
-          this.copySelectedComponent.indexList[index] = e.name
+          this.copySelectedComponent.indexList[index] = e.name;
         } else {
-          return
+          return;
         }
-        const ID = this.selectedComponent.ID
-        const newValue = this.copySelectedComponent.indexList
-        SIO.emit("updateNode", ID, "indexList", newValue)
+        const ID = this.selectedComponent.ID;
+        const newValue = this.copySelectedComponent.indexList;
+        SIO.emit("updateNode", ID, "indexList", newValue);
       },
       updateComponentProperty (prop) {
-        if (prop === "name" && !this.validName) return
-        if (prop !== "name" && !this.valid) return
-        const ID = this.selectedComponent.ID
-        const newValue = this.copySelectedComponent[prop]
+        if (prop === "name" && !this.validName) return;
+        if (prop !== "name" && !this.valid) return;
+        const ID = this.selectedComponent.ID;
+        const newValue = this.copySelectedComponent[prop];
 
         // closeボタン押下時に、selectedComponentをnullにするより先に
         // blurイベントが発生してこちらの処理が走ってしまうので
         // 次行のif文の条件は常に満たさない。
         // 仕様を検討のうえ、ガードするなら何か方法を考える必要がある
-        if (this.selectedComponent === null) return
+        if (this.selectedComponent === null) return;
 
         SIO.emit("updateNode", ID, prop, newValue, (rt)=>{
           if (prop !== "name" || rt === false) {
             SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
-              this.commitComponentTree(componentTree)
-            })
+              this.commitComponentTree(componentTree);
+            });
           }
-        })
+        });
       },
       addToIncludeList (v) {
-        this.copySelectedComponent.include = addGlobPattern(this.copySelectedComponent.include, v.name)
-        this.updateComponentProperty("include")
+        this.copySelectedComponent.include = addGlobPattern(this.copySelectedComponent.include, v.name);
+        this.updateComponentProperty("include");
       },
       addToExcludeList (v) {
-        this.copySelectedComponent.exclude = addGlobPattern(this.copySelectedComponent.exclude, v.name)
-        this.updateComponentProperty("exclude")
+        this.copySelectedComponent.exclude = addGlobPattern(this.copySelectedComponent.exclude, v.name);
+        this.updateComponentProperty("exclude");
       },
       removeFromIncludeList (v, index) {
-        this.copySelectedComponent.include = removeGlobPattern(this.copySelectedComponent.include, v.name, index)
-        this.updateComponentProperty("include")
+        this.copySelectedComponent.include = removeGlobPattern(this.copySelectedComponent.include, v.name, index);
+        this.updateComponentProperty("include");
       },
       removeFromExcludeList (v, index) {
-        this.copySelectedComponent.exclude = removeGlobPattern(this.copySelectedComponent.exclude, v.name, index)
-        this.updateComponentProperty("exclude")
+        this.copySelectedComponent.exclude = removeGlobPattern(this.copySelectedComponent.exclude, v.name, index);
+        this.updateComponentProperty("exclude");
       },
       updateIncludeList (v, index) {
-        this.copySelectedComponent.include = updateGlobPattern(this.copySelectedComponent.include, v.name, index)
-        this.updateComponentProperty("include")
+        this.copySelectedComponent.include = updateGlobPattern(this.copySelectedComponent.include, v.name, index);
+        this.updateComponentProperty("include");
       },
       updateExcludeList (v, index) {
-        this.copySelectedComponent.include = updateGlobPattern(this.copySelectedComponent.include, v.name, index)
-        this.updateComponentProperty("exclude")
+        this.copySelectedComponent.include = updateGlobPattern(this.copySelectedComponent.include, v.name, index);
+        this.updateComponentProperty("exclude");
       },
       isUniqueName (v) {
         const names = this.currentComponent.descendants
           .map((e)=>{
             if (e === null) {
-              return null
+              return null;
             }
             if (e.name === this.selectedComponent.name) {
-              return null
+              return null;
             }
-            return e.name
+            return e.name;
           })
           .filter((e)=>{
-            return e !== null
-          })
+            return e !== null;
+          });
         return !names.some((name)=>{
-          return name === this.copySelectedComponent.name
-        })
+          return name === this.copySelectedComponent.name;
+        });
       },
       isValidName,
       zeroOrMore,
     },
-  }
+  };
 </script>

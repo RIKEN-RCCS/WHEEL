@@ -12,16 +12,16 @@
   </v-btn>
 </template>
 <script>
-  "use strict"
-  import loadComponentDefinition from "@/lib/componentDefinision.js"
+  "use strict";
+  import loadComponentDefinition from "@/lib/componentDefinision.js";
   export default {
     name: "ComponentButton",
     props: { item: Object },
     data: ()=>{
       return {
         componentDefinition: loadComponentDefinition(),
-      }
+      };
     },
 
-  }
+  };
 </script>

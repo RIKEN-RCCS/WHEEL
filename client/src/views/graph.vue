@@ -12,10 +12,10 @@
 </template>
 
 <script>
-  import componentGraph from "@/components/componentGraph.vue"
-  import componentLibrary from "@/components/componentLibrary.vue"
-  import componentProperty from "@/components/componentProperty.vue"
-  import componentTreeComponent from "@/components/componentTree.vue"
+  import componentGraph from "@/components/componentGraph.vue";
+  import componentLibrary from "@/components/componentLibrary.vue";
+  import componentProperty from "@/components/componentProperty.vue";
+  import componentTreeComponent from "@/components/componentTree.vue";
 
   export default {
     name: "Graph",
@@ -25,5 +25,5 @@
       componentProperty,
       componentTreeComponent,
     },
-  }
+  };
 </script>

@@ -1,4 +1,4 @@
-const { config } = require("./wdio.shared.conf")
+const { config } = require("./wdio.shared.conf");
 
 exports.config = {
 
@@ -27,4 +27,4 @@ exports.config = {
       acceptInsecureCerts: true,
     },
   ],
-}
+};

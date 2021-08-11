@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 export default function () {
   return {
@@ -17,5 +17,5 @@ export default function () {
     stepjob: { color: "#803DB3", img: require("@/assets/img_stepjob.png") },
     stepjobTask: { color: "#3B55B3", img: require("@/assets/img_stepjobTask.png") },
     bulkjobTask: { color: "#3B55B3", img: require("@/assets/img_stepjobTask.png") },
-  }
+  };
 }

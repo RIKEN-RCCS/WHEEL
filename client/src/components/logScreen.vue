@@ -43,7 +43,7 @@
 </template>
 
 <script>
-  import xterm from "@/components/xterm.vue"
+  import xterm from "@/components/xterm.vue";
   export default {
     name: "LogScreen",
     components: {
@@ -60,7 +60,7 @@
           { label: "stdout(SSH)", id: "sshout", clear: false, eventNames: ["logSSHOUT"] },
           { label: "stderr(SSH)", id: "ssherr", clear: false, eventNames: ["logSSHERR"] },
         ],
-      }
+      };
     },
     methods: {
       clearAllLog: function () {
@@ -68,9 +68,9 @@
         // Vue2 -> Vue3の移行時に作業量が増えるため、workaroundとしてclear propに変更があったり
         // xtermコンポーネントでclearを実行するようにしている。
         for (const item of this.items) {
-          item.clear = !item.clear
+          item.clear = !item.clear;
         }
       },
     },
-  }
+  };
 </script>

@@ -152,11 +152,11 @@
   </div>
 </template>
 <script>
-  "use strict"
-  import { mapState } from "vuex"
-  import { removeFromArray } from "@/lib/clientUtility.js"
-  import actionRow from "@/components/common/actionRow.vue"
-  import listForm from "@/components/common/listForm.vue"
+  "use strict";
+  import { mapState } from "vuex";
+  import { removeFromArray } from "@/lib/clientUtility.js";
+  import actionRow from "@/components/common/actionRow.vue";
+  import listForm from "@/components/common/listForm.vue";
 
   export default {
     name: "Parameter",
@@ -195,27 +195,27 @@
         filesHeaders: [
           { text: "filename", value: "name", sortable: true },
         ],
-      }
+      };
     },
     computed: {
       ...mapState(["selectedText"]),
     },
     mounted: function () {
-      this.reset()
+      this.reset();
 
       if (this.currentItem === null || typeof this.currentItem === "undefined") {
-        return
+        return;
       }
-      this.newItem.type = this.currentItem.type
+      this.newItem.type = this.currentItem.type;
 
       if (this.currentItem.type === "min-max-step") {
-        this.newItem.min = this.currentItem.min
-        this.newItem.max = this.currentItem.max
-        this.newItem.step = this.currentItem.step
+        this.newItem.min = this.currentItem.min;
+        this.newItem.max = this.currentItem.max;
+        this.newItem.step = this.currentItem.step;
       } else if (this.curentItem.type === "list") {
-        this.newItem.list = this.currentItem.list
+        this.newItem.list = this.currentItem.list;
       } else if (this.currentItem.type === "files") {
-        this.newItem.files = this.currentItem.files
+        this.newItem.files = this.currentItem.files;
       }
     },
     methods: {
@@ -227,79 +227,79 @@
           min: 0,
           max: 0,
           step: 1,
-        }
+        };
       },
       required (v) {
-        return v !== "" || "must be number."
+        return v !== "" || "must be number.";
       },
       openFilterDialog (item) {
-        this.filterEdittingItem = item
-        this.filterDialog = true
-        console.log("DEBUG:", this.filterEdittingItem)
+        this.filterEdittingItem = item;
+        this.filterDialog = true;
+        console.log("DEBUG:", this.filterEdittingItem);
       },
       updateFilter () {
-        this.$emit("updateFilter", this.filterText)
-        this.closeFilterDialog()
+        this.$emit("updateFilter", this.filterText);
+        this.closeFilterDialog();
       },
       closeFilterDialog () {
-        this.filterEdittingItem = null
-        this.filterDialog = false
+        this.filterEdittingItem = null;
+        this.filterDialog = false;
       },
       openDialog (item) {
-        this.currentItem = item
-        this.dialog = true
+        this.currentItem = item;
+        this.dialog = true;
       },
       deleteItem (item) {
-        removeFromArray(this.params, item)
+        removeFromArray(this.params, item);
       },
       storeParam (target) {
         if (this.newItem.type === "min-max-step") {
-          const min = Number(this.newItem.min)
-          const max = Number(this.newItem.max)
-          const step = Number(this.newItem.step)
+          const min = Number(this.newItem.min);
+          const max = Number(this.newItem.max);
+          const step = Number(this.newItem.step);
           if (Number.isNaN(min) || Number.isNaN(max) || Number.isNaN(step)) {
-            console.log("min, max or step is Nan", min, max, step)
+            console.log("min, max or step is Nan", min, max, step);
             // TODO エラーメッセージをトーストあたりで出す
-            return
+            return;
           }
-          target.min = min
-          target.max = max
-          target.step = step
+          target.min = min;
+          target.max = max;
+          target.step = step;
         } else if (this.newItem.type === "list") {
-          target.list = this.newItem.list.map((e)=>{ return e.item })
+          target.list = this.newItem.list.map((e)=>{ return e.item; });
         } else if (this.newItem.type === "files") {
-          target.files = this.newItem.files.map((e)=>{ return e.item })
+          target.files = this.newItem.files.map((e)=>{ return e.item; });
         }
       },
       addItem () {
-        const newParam = { keyword: this.selectedText }
-        this.storeParam(newParam)
-        this.$emit("newParamAdded", newParam)
+        const newParam = { keyword: this.selectedText };
+        this.storeParam(newParam);
+        this.$emit("newParamAdded", newParam);
       },
       updateItem (item) {
         const targetIndex = this.params.findIndex((e)=>{
-          return e === item
-        })
+          return e === item;
+        });
         if (targetIndex === -1) {
-          return
+          return;
         }
-        this.storeParam(this.params[targetIndex])
+        this.storeParam(this.params[targetIndex]);
       },
       commitChange () {
         if (this.currentItem === null) {
-          this.addItem()
+          this.addItem();
         } else {
-          this.updateItem(this.currentItem)
+          this.updateItem(this.currentItem);
         }
         // clear all input value except for type prop
-        const tmp = this.newItem.type
-        this.closeAndResetDialog()
-        this.newItem.type = tmp
+        const tmp = this.newItem.type;
+        this.closeAndResetDialog();
+        this.newItem.type = tmp;
       },
       closeAndResetDialog () {
-        this.dialog = false
-        this.currentItem = null
+        this.dialog = false;
+        this.currentItem = null;
       },
     },
-  }
+  };
 </script>

@@ -1,69 +1,69 @@
-"use strict"
-import { io } from "socket.io-client"
-const SocketIOFileUpload = require("socketio-file-upload")
+"use strict";
+import { io } from "socket.io-client";
+const SocketIOFileUpload = require("socketio-file-upload");
 
-let socket = null
-let uploader = null
+let socket = null;
+let uploader = null;
 function init () {
-  socket = io("/workflow", { transposrts: ["websocket"] })
-  uploader = new SocketIOFileUpload(socket)
-  uploader.chunkSize = 1024 * 100
+  socket = io("/workflow", { transposrts: ["websocket"] });
+  uploader = new SocketIOFileUpload(socket);
+  uploader.chunkSize = 1024 * 100;
 }
 
 export default {
   close: ()=>{
     if (socket === null) {
-      return
+      return;
     }
-    socket.close()
-    socket = null
+    socket.close();
+    socket = null;
   },
   on: (event, callback)=>{
     if (socket === null) {
-      init()
+      init();
     }
-    socket.on(event, callback)
+    socket.on(event, callback);
   },
   once: (event, callback)=>{
     if (socket === null) {
-      init()
+      init();
     }
-    socket.once(event, callback)
+    socket.once(event, callback);
   },
   off: (event, callback)=>{
     if (socket === null) {
-      init()
+      init();
     }
-    socket.off(event, callback)
+    socket.off(event, callback);
   },
   emit: (event, ...args)=>{
     if (socket === null) {
-      init()
+      init();
     }
-    socket.emit(event, ...args)
+    socket.emit(event, ...args);
   },
   listenOnDrop: (...args)=>{
     if (socket === null) {
-      init()
+      init();
     }
-    uploader.listenOnDrop(...args)
+    uploader.listenOnDrop(...args);
   },
   prompt: ()=>{
     if (socket === null) {
-      init()
+      init();
     }
-    uploader.prompt()
+    uploader.prompt();
   },
   onUploaderEvent: (event, callback)=>{
     if (socket === null) {
-      init()
+      init();
     }
-    uploader.addEventListener(event, callback)
+    uploader.addEventListener(event, callback);
   },
   removeUploaderEvent: (event, callback)=>{
     if (socket === null) {
-      return
+      return;
     }
-    uploader.removeEventListener(event, callback)
+    uploader.removeEventListener(event, callback);
   },
-}
+};

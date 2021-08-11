@@ -93,13 +93,13 @@
 </template>
 
 <script>
-  "use strict"
-  import { mapState, mapGetters, mapMutations } from "vuex"
-  import SIO from "@/lib/socketIOWrapper.js"
-  import { isValidName } from "@/lib/utility.js"
-  import ace from "ace-builds"
-  import "ace-builds/webpack-resolver"
-  import "ace-builds/src-noconflict/theme-idle_fingers.js"
+  "use strict";
+  import { mapState, mapGetters, mapMutations } from "vuex";
+  import SIO from "@/lib/socketIOWrapper.js";
+  import { isValidName } from "@/lib/utility.js";
+  import ace from "ace-builds";
+  import "ace-builds/webpack-resolver";
+  import "ace-builds/src-noconflict/theme-idle_fingers.js";
 
   export default {
     name: "TabEditor",
@@ -116,7 +116,7 @@
         activeTab: 0,
         files: [],
         editor: null,
-      }
+      };
     },
     computed: {
       ...mapState(["selectedFile",
@@ -129,158 +129,158 @@
     },
     watch: {
       readOnly () {
-        this.editor.setReadOnly(this.readOnly)
+        this.editor.setReadOnly(this.readOnly);
       },
     },
     mounted: function () {
-      this.editor = ace.edit("editor")
+      this.editor = ace.edit("editor");
       this.editor.setOptions({
         theme: "ace/theme/idle_fingers",
         autoScrollEditorIntoView: true,
         highlightSelectedWord: true,
         highlightActiveLine: true,
         readOnly: this.readOnly,
-      })
-      this.editor.on("changeSession", this.editor.resize.bind(this.editor))
+      });
+      this.editor.on("changeSession", this.editor.resize.bind(this.editor));
 
       SIO.on("file", (file)=>{
         // check arraived file is already opened or not
         const existingTab = this.files.findIndex((e)=>{
-          return e.filename === file.filename && e.dirname === file.dirname
-        })
+          return e.filename === file.filename && e.dirname === file.dirname;
+        });
         // just switch tab if arraived file is already opened
         if (existingTab !== -1) {
-          this.activeTab = existingTab
-          return
+          this.activeTab = existingTab;
+          return;
         }
         // open new tab for arraived file
-        file.editorSession = ace.createEditSession(file.content)
-        file.absPath = `${file.dirname}${this.pathSep}${file.filename}`
-        this.files.push(file)
+        file.editorSession = ace.createEditSession(file.content);
+        file.absPath = `${file.dirname}${this.pathSep}${file.filename}`;
+        this.files.push(file);
 
         // select last tab after DOM is updated
         this.$nextTick(function () {
-          this.activeTab = this.files.length
-          const index = this.activeTab - 1
-          console.log("DEBUG: open files[", index, "]")
-          const session = this.files[index].editorSession
-          this.editor.setSession(session)
+          this.activeTab = this.files.length;
+          const index = this.activeTab - 1;
+          console.log("DEBUG: open files[", index, "]");
+          const session = this.files[index].editorSession;
+          this.editor.setSession(session);
           session.selection.on("changeSelection", ()=>{
-            this.commitSelectedText(this.editor.getSelectedText())
-          })
-        })
-      })
-      SIO.emit("openFile", this.selectedFile, false)
+            this.commitSelectedText(this.editor.getSelectedText());
+          });
+        });
+      });
+      SIO.emit("openFile", this.selectedFile, false);
     },
     methods: {
       ...mapMutations({ commitSelectedText: "selectedText" }),
       isValidName (v) {
-        return isValidName(v) || "invalid filename"
+        return isValidName(v) || "invalid filename";
       },
       async openNewTab (filename, argDirname) {
-        const dirname = argDirname || this.selectedComponentAbsPath
+        const dirname = argDirname || this.selectedComponentAbsPath;
 
         if (!isValidName(filename)) {
-          return this.closeNewFileDialog()
+          return this.closeNewFileDialog();
         }
         const existingTab = this.files.findIndex((e)=>{
-          return e.filename === filename && e.dirname === dirname
-        })
+          return e.filename === filename && e.dirname === dirname;
+        });
         if (existingTab === -1) {
-          const absFilename = `${dirname}${this.pathSep}${filename}`
+          const absFilename = `${dirname}${this.pathSep}${filename}`;
           SIO.emit("openFile", absFilename, false, (rt)=>{
             if (!rt) {
-              console.log("file open error!", rt)
+              console.log("file open error!", rt);
             }
-          })
+          });
         } else {
-          this.activeTab = existingTab + 1
-          this.changeTab(existingTab + 1)
+          this.activeTab = existingTab + 1;
+          this.changeTab(existingTab + 1);
         }
       },
       closeNewFileDialog () {
         // clear temporaly variables and close prompt
-        this.newFilename = null
-        this.newFilePrompt = false
+        this.newFilename = null;
+        this.newFilePrompt = false;
       },
       insertBraces () {
         // this function will be called from parent component
-        const selectedRange = this.editor.getSelection().getRange()
-        const session = this.editor.getSession()
-        session.insert(selectedRange.end, " }}")
-        session.insert(selectedRange.start, "{{ ")
-        this.editor.getSelection().clearSelection()
+        const selectedRange = this.editor.getSelection().getRange();
+        const session = this.editor.getSession();
+        session.insert(selectedRange.end, " }}");
+        session.insert(selectedRange.start, "{{ ");
+        this.editor.getSelection().clearSelection();
       },
       save (index) {
         return new Promise((resolve, reject)=>{
-          const file = this.files[index]
-          const document = file.editorSession.getDocument()
-          const content = document.getValue()
+          const file = this.files[index];
+          const document = file.editorSession.getDocument();
+          const content = document.getValue();
           if (file.content === content) {
-            console.log("do not call 'saveFile' API because file is not changed. index=", index)
+            console.log("do not call 'saveFile' API because file is not changed. index=", index);
           }
           SIO.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
             if (!rt) {
-              console.log("ERROR: file save failed:", rt)
-              reject(rt)
+              console.log("ERROR: file save failed:", rt);
+              reject(rt);
             }
-            resolve(rt)
-          })
-        })
+            resolve(rt);
+          });
+        });
       },
       hasChange () {
         for (const file of this.files) {
-          const document = file.editorSession.getDocument()
-          const content = document.getValue()
+          const document = file.editorSession.getDocument();
+          const content = document.getValue();
           if (file.content !== content) {
-            return true
+            return true;
           }
         }
-        return false
+        return false;
       },
       saveAll () {
-        let changed = false
+        let changed = false;
         for (const file of this.files) {
-          const document = file.editorSession.getDocument()
-          const content = document.getValue()
+          const document = file.editorSession.getDocument();
+          const content = document.getValue();
           if (file.content === content) {
-            console.log(`INFO: ${file.filename} is not changed.`)
+            console.log(`INFO: ${file.filename} is not changed.`);
           } else {
-            changed = true
+            changed = true;
             SIO.emit("saveFile", file.filename, file.dirname, content, (rt)=>{
               if (!rt) {
-                console.log("ERROR: file save failed:", rt)
+                console.log("ERROR: file save failed:", rt);
               }
-            })
+            });
           }
         }
-        return changed
+        return changed;
       },
       closeTab (index) {
-        console.log("DEBUG: close ", index, "th tab")
+        console.log("DEBUG: close ", index, "th tab");
 
         if (index === 0) {
-          const file = this.files[index]
-          const document = file.editorSession.getDocument()
-          document.setValue("")
+          const file = this.files[index];
+          const document = file.editorSession.getDocument();
+          document.setValue("");
         }
-        this.files.splice(index, 1)
+        this.files.splice(index, 1);
       },
       changeTab (argIndex) {
         if (argIndex === 0) {
           // just ignored
-          return
+          return;
         }
-        const index = argIndex - 1
+        const index = argIndex - 1;
         if (index < this.files.length) {
-          const session = this.files[index].editorSession
-          this.editor.setSession(session)
-          this.commitSelectedText("")
+          const session = this.files[index].editorSession;
+          this.editor.setSession(session);
+          this.commitSelectedText("");
           session.selection.on("changeSelection", ()=>{
-            this.commitSelectedText(this.editor.getSelectedText())
-          })
+            this.commitSelectedText(this.editor.getSelectedText());
+          });
         }
       },
     },
-  }
+  };
 </script>

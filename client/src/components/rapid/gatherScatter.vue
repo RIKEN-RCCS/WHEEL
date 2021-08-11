@@ -89,10 +89,10 @@
   </div>
 </template>
 <script>
-  "use strict"
-  import { removeFromArray } from "@/lib/clientUtility.js"
-  import actionRow from "@/components/common/actionRow.vue"
-  import lowerComponentTree from "@/components/lowerComponentTree.vue"
+  "use strict";
+  import { removeFromArray } from "@/lib/clientUtility.js";
+  import actionRow from "@/components/common/actionRow.vue";
+  import lowerComponentTree from "@/components/lowerComponentTree.vue";
 
   export default {
     name: "GatherScatter",
@@ -126,62 +126,62 @@
           dstName: "",
         },
         selectedItem: null,
-      }
+      };
     },
     computed: {
       label2 () {
-        return this.label === "scatter" ? "destination node" : "source node"
+        return this.label === "scatter" ? "destination node" : "source node";
       },
       isInValid () {
         if (this.newItem.srcName === "" || this.newItem.dstName === "") {
-          return true
+          return true;
         }
         const keys = ["srcName", "dstName", "srcNode", "dstNode"]
           .filter((e)=>{
-            return Object.keys(this.newItem).includes(e)
-          })
+            return Object.keys(this.newItem).includes(e);
+          });
         return this.container.some((e)=>{
           return keys.every((key)=>{
-            return this.newItem[key] === e[key]
-          })
-        })
+            return this.newItem[key] === e[key];
+          });
+        });
       },
     },
     methods: {
       openDialog (item) {
-        this.selectedItem = item
-        this.newItem.srcName = this.selectedItem.srcName
-        this.newItem.dstName = this.selectedItem.dstName
+        this.selectedItem = item;
+        this.newItem.srcName = this.selectedItem.srcName;
+        this.newItem.dstName = this.selectedItem.dstName;
 
         if (this.selectedItem.dstNode) {
-          this.newItem.dstNode = this.selectedItem.dstNode
+          this.newItem.dstNode = this.selectedItem.dstNode;
         }
-        this.dialog = true
+        this.dialog = true;
       },
       closeAndResetDialog () {
-        this.dialog = false
-        this.newItem.srcName = ""
-        this.newItem.dstName = ""
-        delete this.newItem.dstNode
-        this.selectedItem = null
+        this.dialog = false;
+        this.newItem.srcName = "";
+        this.newItem.dstName = "";
+        delete this.newItem.dstNode;
+        this.selectedItem = null;
       },
       commitChange () {
         if (this.selectedItem === null) {
-          this.container.push({ ...this.newItem })
+          this.container.push({ ...this.newItem });
         } else {
-          this.selectedItem.srcName = this.newItem.srcName
-          this.selectedItem.dstName = this.newItem.dstName
+          this.selectedItem.srcName = this.newItem.srcName;
+          this.selectedItem.dstName = this.newItem.dstName;
 
           if (this.newItem.dstNode) {
-            this.selectedItem.dstNode = this.newItem.dstNode
+            this.selectedItem.dstNode = this.newItem.dstNode;
           }
         }
-        this.closeAndResetDialog()
+        this.closeAndResetDialog();
       },
       deleteItem (item) {
-        removeFromArray(this.container, item)
+        removeFromArray(this.container, item);
       },
     },
-  }
+  };
 
 </script>

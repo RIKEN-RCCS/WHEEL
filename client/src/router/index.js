@@ -1,10 +1,10 @@
-import Vue from "vue"
-import VueRouter from "vue-router"
-import Graph from "@/views/graph.vue"
-import List from "@/views/taskList.vue"
-import Editor from "@/views/rapid.vue"
+import Vue from "vue";
+import VueRouter from "vue-router";
+import Graph from "@/views/graph.vue";
+import List from "@/views/taskList.vue";
+import Editor from "@/views/rapid.vue";
 
-Vue.use(VueRouter)
+Vue.use(VueRouter);
 
 const routes = [
   {
@@ -22,11 +22,11 @@ const routes = [
     name: "editor",
     component: Editor,
   },
-]
+];
 
 const router = new VueRouter({
   mode: "history",
   routes,
-})
+});
 
-export default router
+export default router;

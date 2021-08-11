@@ -3,7 +3,7 @@
  * Copyright (c) Research Institute for Information Technology(RIIT), Kyushu University. All rights reserved.
  * See License.txt in the project root for the license information.
  */
-"use strict"
+"use strict";
 
 /**
  * remove one entry from array
@@ -15,17 +15,17 @@
 export function removeFromArray (array, target, prop) {
   const targetIndex = array.findIndex((e)=>{
     if (typeof target === "string") {
-      return e === target
+      return e === target;
     }
     if (typeof prop === "string") {
-      return e[prop] === target[prop]
+      return e[prop] === target[prop];
     }
-    return false
-  })
+    return false;
+  });
   if (targetIndex !== -1) {
-    array.splice(targetIndex, 1)
+    array.splice(targetIndex, 1);
   }
-  return targetIndex
+  return targetIndex;
 }
 
 /**
@@ -34,7 +34,7 @@ export function removeFromArray (array, target, prop) {
  * @return {boolean}
  */
 export function isSurrounded (token) {
-  return token.startsWith("{") && token.endsWith("}")
+  return token.startsWith("{") && token.endsWith("}");
 }
 
 /**
@@ -44,10 +44,10 @@ export function isSurrounded (token) {
  */
 export function trimSurrounded (token) {
   if (!isSurrounded(token)) {
-    return token
+    return token;
   }
-  const rt = /{+(.*)}+/.exec(token)
-  return (Array.isArray(rt) && typeof rt[1] === "string") ? rt[1] : token
+  const rt = /{+(.*)}+/.exec(token);
+  return (Array.isArray(rt) && typeof rt[1] === "string") ? rt[1] : token;
 }
 
 /**
@@ -57,7 +57,7 @@ export function trimSurrounded (token) {
 export function glob2Array (token) {
   // TODO {}で囲われているものは1つのエントリにする必要がある!!
   // が、この制約に対処するよりは、include/excludeのエントリをglobパターンの配列とする変更をしたい。
-  return trimSurrounded(token).split(",")
+  return trimSurrounded(token).split(",");
 }
 
 /**
@@ -67,9 +67,9 @@ export function glob2Array (token) {
  */
 export function array2Glob (tokens) {
   const concatenatedString = tokens.reduce((a, c)=>{
-    return `${a},${c}`
-  })
-  return `{${concatenatedString}}`
+    return `${a},${c}`;
+  });
+  return `{${concatenatedString}}`;
 }
 
 /**
@@ -81,18 +81,18 @@ export function array2Glob (tokens) {
 export function addGlobPattern (old, added) {
   // for the first time
   if (typeof old !== "string" || old === "") {
-    return added
+    return added;
   }
 
   // only one entry in include
   if (!isSurrounded(old)) {
-    return `{${old},${added}}`
+    return `{${old},${added}}`;
   }
 
   // more than one entry in include
-  const tmp = glob2Array(old)
-  tmp.push(added)
-  return array2Glob(tmp)
+  const tmp = glob2Array(old);
+  tmp.push(added);
+  return array2Glob(tmp);
 }
 
 /**
@@ -103,12 +103,12 @@ export function addGlobPattern (old, added) {
  * @return {string} - new glob pattern
  */
 export function removeGlobPattern (glob, token, index) {
-  const globArray = glob2Array(glob)
+  const globArray = glob2Array(glob);
   if (globArray.length <= 1) {
-    return null
+    return null;
   }
-  globArray.splice(index, 1)
-  return globArray.length === 1 ? globArray[0] : array2Glob(globArray)
+  globArray.splice(index, 1);
+  return globArray.length === 1 ? globArray[0] : array2Glob(globArray);
 }
 
 /**
@@ -119,10 +119,10 @@ export function removeGlobPattern (glob, token, index) {
  * @return {string} - new glob pattern
  */
 export function updateGlobPattern (glob, token, index) {
-  const globArray = glob2Array(glob)
+  const globArray = glob2Array(glob);
   if (globArray.length <= 1) {
-    return null
+    return null;
   }
-  globArray[index] = token
-  return globArray.length === 1 ? globArray[0] : array2Glob(globArray)
+  globArray[index] = token;
+  return globArray.length === 1 ? globArray[0] : array2Glob(globArray);
 }

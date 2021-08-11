@@ -37,11 +37,11 @@
   </v-treeview>
 </template>
 <script>
-  import SIO from "@/lib/socketIOWrapper.js"
-  import { taskStateList2Tree } from "@/lib/taskStateList2Tree.js"
-  import componentButton from "@/components/common/componentButton.vue"
+  import SIO from "@/lib/socketIOWrapper.js";
+  import { taskStateList2Tree } from "@/lib/taskStateList2Tree.js";
+  import componentButton from "@/components/common/componentButton.vue";
 
-  const headers = { state: "state", startTime: "startTime", endTime: "endTime" }
+  const headers = { state: "state", startTime: "startTime", endTime: "endTime" };
 
   export default {
     name: "List",
@@ -52,20 +52,20 @@
       return {
         taskStateTree: { children: [], root: true, ...headers },
         headers: Object.keys(headers),
-      }
+      };
     },
     computed: {
       list: function () {
-        return [this.taskStateTree]
+        return [this.taskStateTree];
       },
     },
 
     mounted: function () {
       SIO.on("taskStateList", async (taskStateList)=>{
-        const isChanged = await taskStateList2Tree(taskStateList, this.taskStateTree)
-      })
+        const isChanged = await taskStateList2Tree(taskStateList, this.taskStateTree);
+      });
     },
-  }
+  };
 </script>
 <style>
 #append{

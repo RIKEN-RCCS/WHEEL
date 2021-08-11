@@ -1,27 +1,27 @@
-import Vue from "vue"
-import Vuex from "vuex"
-import Debug from "debug"
-import SIO from "@/lib/socketIOWrapper.js"
-const debug = Debug("wheel:vuex")
+import Vue from "vue";
+import Vuex from "vuex";
+import Debug from "debug";
+import SIO from "@/lib/socketIOWrapper.js";
+const debug = Debug("wheel:vuex");
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 const logger = (store)=>{
   store.subscribe((mutation)=>{
-    const { type, payload } = mutation
-    debug(`${type} set to`, payload)
-  })
-}
+    const { type, payload } = mutation;
+    debug(`${type} set to`, payload);
+  });
+};
 const simpleMutation = (type, state, payload)=>{
-  state[type] = payload
-}
+  state[type] = payload;
+};
 
 const mutationFactory = (types)=>{
   return types.reduce((a, c)=>{
-    a[c] = simpleMutation.bind(null, c)
-    return a
-  }, {})
-}
+    a[c] = simpleMutation.bind(null, c);
+    return a;
+  }, {});
+};
 
 /**
  * @typedef state
@@ -74,9 +74,9 @@ const state = {
   openDialog: false,
   dialogContent: null,
   dialogQueue: [],
-}
+};
 
-const mutations = mutationFactory(Object.keys(state))
+const mutations = mutationFactory(Object.keys(state));
 
 export default new Vuex.Store({
   state,
@@ -84,81 +84,81 @@ export default new Vuex.Store({
   actions: {
     selectedComponent: (context, payload)=>{
       if (context.state.selectedComponent !== null && payload.ID === context.state.selectedComponent.ID) {
-        return
+        return;
       }
-      context.commit("selectedComponent", payload)
-      const dup = Object.assign({}, payload)
-      context.commit("copySelectedComponent", dup)
+      context.commit("selectedComponent", payload);
+      const dup = Object.assign({}, payload);
+      context.commit("copySelectedComponent", dup);
       SIO.emit("getFileList", context.getters.selectedComponentAbsPath, (fileList)=>{
         const scriptCandidates = fileList
           .filter((e)=>{
-            return e.type.startsWith("file")
+            return e.type.startsWith("file");
           })
           .map((e)=>{
-            return e.name
-          })
-        context.commit("scriptCandidates", scriptCandidates)
-      })
+            return e.name;
+          });
+        context.commit("scriptCandidates", scriptCandidates);
+      });
     },
     showSnackbar: (context, payload)=>{
       if (typeof payload === "string") {
-        context.state.snackbarQueue.push(payload)
+        context.state.snackbarQueue.push(payload);
       }
       if (context.state.snackbarQueue.length === 0) {
-        return
+        return;
       }
-      const message = context.state.snackbarQueue.shift()
-      context.commit("snackbarMessage", message)
-      context.commit("openSnackbar", true)
+      const message = context.state.snackbarQueue.shift();
+      context.commit("snackbarMessage", message);
+      context.commit("openSnackbar", true);
     },
     closeSnackbar: (context)=>{
-      context.commit("snackbarMessage", "")
-      context.commit("openSnackbar", false)
+      context.commit("snackbarMessage", "");
+      context.commit("openSnackbar", false);
 
       if (context.state.snackbarQueue.length > 0) {
-        context.dispatch("showSnackbar")
+        context.dispatch("showSnackbar");
       }
     },
     showDialog: (context, payload)=>{
       // ignore if dialog is already opend
       // we have to use dialog queue for this case
       if (context.state.openDialog) {
-        return
+        return;
       }
-      context.commit("dialogContent", payload)
-      context.commit("openDialog", true)
+      context.commit("dialogContent", payload);
+      context.commit("openDialog", true);
     },
     closeDialog: (context, payload)=>{
-      context.commit("dialogContent", null)
-      context.commit("openDialog", false)
+      context.commit("dialogContent", null);
+      context.commit("openDialog", false);
     },
   },
   getters: {
     // get selected component's absolute path on server
     selectedComponentAbsPath: (state, getters)=>{
       if (state.selectedComponent === null || typeof state.selectedComponent.ID === "undefined") {
-        return state.projectRootDir
+        return state.projectRootDir;
       }
-      const relativePath = state.componentPath[state.selectedComponent.ID]
-      return `${state.projectRootDir}${getters.pathSep}${relativePath.slice(1)}`
+      const relativePath = state.componentPath[state.selectedComponent.ID];
+      return `${state.projectRootDir}${getters.pathSep}${relativePath.slice(1)}`;
     },
     // get current component's absolute path on server
     currentComponentAbsPath: (state, getters)=>{
       if (state.currentComponent.ID === state.rootComponentID) {
-        return state.projectRootDir
+        return state.projectRootDir;
       }
-      const relativePath = state.componentPath[state.currentComponent.ID]
-      return `${state.projectRootDir}${getters.pathSep}${relativePath.slice(1)}`
+      const relativePath = state.componentPath[state.currentComponent.ID];
+      return `${state.projectRootDir}${getters.pathSep}${relativePath.slice(1)}`;
     },
     // flag to show loading screen
     waiting: (state)=>{
-      return state.waitingProjectJson || state.waitingWorkflow || state.waitingFile || state.waitingSave
+      return state.waitingProjectJson || state.waitingWorkflow || state.waitingFile || state.waitingSave;
     },
     pathSep: (state)=>{
-      return typeof state.projectRootDir === "string" && state.projectRootDir[0] !== "/" ? "\\" : "/"
+      return typeof state.projectRootDir === "string" && state.projectRootDir[0] !== "/" ? "\\" : "/";
     },
   },
   modules: {
   },
   plugins: [logger],
-})
+});

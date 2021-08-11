@@ -83,11 +83,11 @@
   </div>
 </template>
 <script>
-  import { mapState, mapGetters } from "vuex"
-  import { tableFooterProps, targetFile2absPath } from "@/lib/rapid2Util.js"
-  import { removeFromArray } from "@/lib/clientUtility.js"
-  import actionRow from "@/components/common/actionRow.vue"
-  import lowerComponentTree from "@/components/lowerComponentTree.vue"
+  import { mapState, mapGetters } from "vuex";
+  import { tableFooterProps, targetFile2absPath } from "@/lib/rapid2Util.js";
+  import { removeFromArray } from "@/lib/clientUtility.js";
+  import actionRow from "@/components/common/actionRow.vue";
+  import lowerComponentTree from "@/components/lowerComponentTree.vue";
 
   export default {
     name: "TargetFiles",
@@ -112,7 +112,7 @@
         newTargetNode: null,
         currentItem: null,
         tableFooterProps,
-      }
+      };
     },
     computed: {
       ...mapState(["selectedText",
@@ -124,83 +124,83 @@
     },
     methods: {
       getComponentName (id) {
-        const name = this.componentPath[id]
-        const tmp = name.split("/")
-        return tmp[tmp.length - 1]
+        const name = this.componentPath[id];
+        const tmp = name.split("/");
+        return tmp[tmp.length - 1];
       },
       openDialog (item) {
         if (item !== null) {
-          this.newTargetFilename = item.targetName
+          this.newTargetFilename = item.targetName;
         }
-        this.currentItem = item || null
-        this.targetFileDialog = true
+        this.currentItem = item || null;
+        this.targetFileDialog = true;
       },
       deleteItem (item) {
-        removeFromArray(this.targetFiles, item, "targetName")
+        removeFromArray(this.targetFiles, item, "targetName");
       },
       closeAndResetDialog () {
-        this.currentItem = null
-        this.targetFileDialog = false
-        this.newTargetFilename = ""
-        this.newTargetNode = null
+        this.currentItem = null;
+        this.targetFileDialog = false;
+        this.newTargetFilename = "";
+        this.newTargetNode = null;
       },
       commitTargetFileChange () {
         if (this.newTargetFilename === "") {
           // regard as canceled
-          return this.closeAndResetDialog()
+          return this.closeAndResetDialog();
         }
         if (this.currentItem === null) {
-          this.addNewTargetFile()
+          this.addNewTargetFile();
         } else {
-          this.renameTargetFile(this.currentItem)
+          this.renameTargetFile(this.currentItem);
         }
-        this.closeAndResetDialog()
+        this.closeAndResetDialog();
       },
       compareTargetFile (l, r) {
         if (l.targetNode || r.targetNode) {
           if (l.targetNode !== r.targetNode) {
-            return false
+            return false;
           }
         }
-        return l.targetName === r.targetName
+        return l.targetName === r.targetName;
       },
       renameTargetFile (oldEntry) {
         // check duplicated entry
         const targetFileToBeModified = this.targetFiles.find((e)=>{
-          return this.compareTargetFile(oldEntry, e)
-        })
+          return this.compareTargetFile(oldEntry, e);
+        });
         if (targetFileToBeModified) {
-          targetFileToBeModified.targetName = this.newTargetFilename
+          targetFileToBeModified.targetName = this.newTargetFilename;
 
           if (this.newTargetNode) {
-            targetFileToBeModified.targetNode = this.newTargetNode.ID
+            targetFileToBeModified.targetNode = this.newTargetNode.ID;
           } else if (targetFileToBeModified.targetNode) {
-            delete targetFileToBeModified.targetNode
+            delete targetFileToBeModified.targetNode;
           }
-          this.$emit("openNewTab", this.newTargetFilename, this.selectedComponentAbsPath)
+          this.$emit("openNewTab", this.newTargetFilename, this.selectedComponentAbsPath);
         }
-        this.closeAndResetDialog()
+        this.closeAndResetDialog();
       },
       addNewTargetFile () {
-        const newTarget = { targetName: this.newTargetFilename }
+        const newTarget = { targetName: this.newTargetFilename };
         if (this.newTargetNode) {
-          newTarget.targetNode = this.newTargetNode.ID
+          newTarget.targetNode = this.newTargetNode.ID;
         }
         // check duplicated entry
         const index = this.targetFiles.findIndex((e)=>{
-          return this.compareTargetFile(e, newTarget)
-        })
+          return this.compareTargetFile(e, newTarget);
+        });
         if (index === -1) {
-          this.targetFiles.push(newTarget)
-          const targetComponentID = newTarget.targetNode || this.selectedComponent.ID
-          const targetComponentDir = `${this.projectRootDir}${this.pathSep}${this.componentPath[targetComponentID]}`
-          this.$emit("openNewTab", this.newTargetFilename, targetComponentDir)
+          this.targetFiles.push(newTarget);
+          const targetComponentID = newTarget.targetNode || this.selectedComponent.ID;
+          const targetComponentDir = `${this.projectRootDir}${this.pathSep}${this.componentPath[targetComponentID]}`;
+          this.$emit("openNewTab", this.newTargetFilename, targetComponentDir);
         }
-        this.closeAndResetDialog()
+        this.closeAndResetDialog();
       },
       targetNodeSelected (targetNode) {
-        this.newTargetNode = targetNode
+        this.newTargetNode = targetNode;
       },
     },
-  }
+  };
 </script>

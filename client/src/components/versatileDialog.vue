@@ -37,7 +37,7 @@
   </v-dialog>
 </template>
 <script>
-  import { mapState, mapActions } from "vuex"
+  import { mapState, mapActions } from "vuex";
   export default {
     name: "VersatileDialog",
     computed: {
@@ -47,11 +47,11 @@
       ...mapActions(["closeDialog"]),
       btnCallback (cb) {
         if (typeof cb === "function") {
-          cb()
+          cb();
         }
-        this.closeDialog()
+        this.closeDialog();
       },
     },
 
-  }
+  };
 </script>

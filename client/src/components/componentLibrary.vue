@@ -38,11 +38,11 @@
   </v-navigation-drawer>
 </template>
 <script>
-  import { mapState, mapGetters, mapMutations } from "vuex"
-  import SIO from "@/lib/socketIOWrapper.js"
-  import loadComponentDefinition from "@/lib/componentDefinision.js"
-  import { widthComponentLibrary, heightToolbar, heightDenseToolbar } from "@/lib/componentSizes.json"
-  const componentDefinitionObj = loadComponentDefinition()
+  import { mapState, mapGetters, mapMutations } from "vuex";
+  import SIO from "@/lib/socketIOWrapper.js";
+  import loadComponentDefinition from "@/lib/componentDefinision.js";
+  import { widthComponentLibrary, heightToolbar, heightDenseToolbar } from "@/lib/componentSizes.json";
+  const componentDefinitionObj = loadComponentDefinition();
 
   export default {
     name: "ComponentLibrary",
@@ -52,35 +52,35 @@
           return {
             type: e,
             ...componentDefinitionObj[e],
-          }
+          };
         }),
         offsetX: 0,
         offsetY: 0,
-      }
+      };
     },
     computed: {
       ...mapState(["currentComponent", "canvasWidth", "canvasHeight", "projectRootDir"]),
       ...mapGetters(["currentComponentAbsPath"]),
       isStepJob: function () {
-        if (this.currentComponent === null) return false
-        return this.currentComponent.type === "stepjob"
+        if (this.currentComponent === null) return false;
+        return this.currentComponent.type === "stepjob";
       },
       librarys: function () {
         if (this.isStepJob) {
           return this.componentDefinitions.filter((e)=>{
-            return e.type === "stepjobTask"
-          })
+            return e.type === "stepjobTask";
+          });
         }
         return this.componentDefinitions.filter((e)=>{
-          return ["task", "if", "for", "while", "foreach", "source", "viewer", "parameterStudy", "workflow", "stepjob", "bulkjobTask"].includes(e.type)
-        })
+          return ["task", "if", "for", "while", "foreach", "source", "viewer", "parameterStudy", "workflow", "stepjob", "bulkjobTask"].includes(e.type);
+        });
       },
     },
     methods: {
       ...mapMutations({ commitComponentTree: "componentTree" }),
       onDragStart (event) {
-        this.offsetX = event.offsetX
-        this.offsetY = event.offsetY
+        this.offsetX = event.offsetX;
+        this.offsetY = event.offsetY;
       },
       onDragEnd (event, item) {
         const payload = {
@@ -90,27 +90,27 @@
             y: event.clientY - heightToolbar - heightDenseToolbar * 2 - this.offsetY,
           },
           path: this.currentComponentAbsPath,
-        }
+        };
         if (payload.type === "parameterStudy") {
-          payload.type = "PS"
+          payload.type = "PS";
         }
         if (payload.pos.x < 0 || this.canvasWidth + widthComponentLibrary < payload.pos.x ||
           payload.pos.y < 0 || this.canvasHeight + heightToolbar + heightDenseToolbar * 2 < payload.pos.y) {
-          console.log("DEUBG: out of range drop!", payload.pos)
+          console.log("DEUBG: out of range drop!", payload.pos);
         }
 
         SIO.emit("createNode", payload, (rt)=>{
-          if (rt !== true) return
+          if (rt !== true) return;
           // update component Map
-          SIO.emit("getProjectJson")
+          SIO.emit("getProjectJson");
           // update componant Tree
           SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
-            this.commitComponentTree(componentTree)
-          })
-        })
+            this.commitComponentTree(componentTree);
+          });
+        });
       },
     },
-  }
+  };
 </script>
 <style scoped>
 #iconlist {

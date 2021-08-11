@@ -49,11 +49,11 @@
 </template>
 
 <script>
-  import { mapState } from "vuex"
-  import getNodeAndPath from "@/lib/getNodeAndPath.js"
-  import { isContainer } from "@/lib/utility.js"
-  import componentButton from "@/components/common/componentButton.vue"
-  import SIO from "@/lib/socketIOWrapper.js"
+  import { mapState } from "vuex";
+  import getNodeAndPath from "@/lib/getNodeAndPath.js";
+  import { isContainer } from "@/lib/utility.js";
+  import componentButton from "@/components/common/componentButton.vue";
+  import SIO from "@/lib/socketIOWrapper.js";
 
   export default {
     name: "ComponentTree",
@@ -63,27 +63,27 @@
     data: ()=>{
       return {
         showComponentTree: false,
-      }
+      };
     },
     computed: {
       ...mapState({ tree: "componentTree", currentComponent: "currentComponent" }),
       pathToCurrentComponent: function () {
-        const rt = []
+        const rt = [];
         if (this.currentComponent !== null) {
-          getNodeAndPath(this.currentComponent.ID, this.tree, rt)
+          getNodeAndPath(this.currentComponent.ID, this.tree, rt);
         }
-        return rt
+        return rt;
       },
       componentTree: function () {
-        return [this.tree]
+        return [this.tree];
       },
     },
     methods: {
       goto: function (item) {
-        const requestID = isContainer(item) ? item.ID : item.parent
-        SIO.emit("getWorkflow", requestID)
-        this.showComponentTree = false
+        const requestID = isContainer(item) ? item.ID : item.parent;
+        SIO.emit("getWorkflow", requestID);
+        this.showComponentTree = false;
       },
     },
-  }
+  };
 </script>

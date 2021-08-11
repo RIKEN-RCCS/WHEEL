@@ -1,6 +1,6 @@
-const { config } = require("./wdio.shared.conf")
+const { config } = require("./wdio.shared.conf");
 
-const BUILD_ID = Math.ceil(Date.now() / 1000)
+const BUILD_ID = Math.ceil(Date.now() / 1000);
 
 exports.config = {
 
@@ -40,4 +40,4 @@ exports.config = {
       build: `Build ${BUILD_ID}`,
     },
   }],
-}
+};

@@ -36,13 +36,13 @@ See License.txt in the project root for the license information.
   </div>
 </template>
 <script>
-  "use strict"
-  import { mapState, mapGetters } from "vuex"
-  import SIO from "@/lib/socketIOWrapper.js"
-  import targetFiles from "@/components/rapid/targetFiles.vue"
-  import gatherScatter from "@/components/rapid/gatherScatter.vue"
-  import parameter from "@/components/rapid/parameter.vue"
-  const equal = require("fast-deep-equal")
+  "use strict";
+  import { mapState, mapGetters } from "vuex";
+  import SIO from "@/lib/socketIOWrapper.js";
+  import targetFiles from "@/components/rapid/targetFiles.vue";
+  import gatherScatter from "@/components/rapid/gatherScatter.vue";
+  import parameter from "@/components/rapid/parameter.vue";
+  const equal = require("fast-deep-equal");
 
   export default {
     name: "ParameterEditor",
@@ -75,7 +75,7 @@ See License.txt in the project root for the license information.
           gather: [],
         },
         filename: "parameterSetting.json",
-      }
+      };
     },
     computed: {
       ...mapState(["selectedFile"]),
@@ -84,46 +84,46 @@ See License.txt in the project root for the license information.
     mounted () {
       SIO.on("parameterSettingFile", (file)=>{
         if (!file.isParameterSettingFile) {
-          console.log("ERROR: illegal parameter setting file data", file)
-          return
+          console.log("ERROR: illegal parameter setting file data", file);
+          return;
         }
-        this.initialParameterSetting = JSON.parse(file.content)
-        this.parameterSetting = JSON.parse(file.content)
+        this.initialParameterSetting = JSON.parse(file.content);
+        this.parameterSetting = JSON.parse(file.content);
         // convert raw string target file to object targetFile
         this.parameterSetting.targetFiles = this.parameterSetting.targetFiles.map((e)=>{
           if (typeof e === "string") {
-            return { targetName: e }
+            return { targetName: e };
           }
-          return e
-        })
-        this.filename = file.filename
-        this.dirname = file.dirname
-      })
+          return e;
+        });
+        this.filename = file.filename;
+        this.dirname = file.dirname;
+      });
     },
     methods: {
       openNewTab (...args) {
-        this.$emit("openNewTab", ...args)
+        this.$emit("openNewTab", ...args);
       },
       newParamAdded (param) {
-        this.parameterSetting.params.push(param)
-        this.$emit("insertBraces")
+        this.parameterSetting.params.push(param);
+        this.$emit("insertBraces");
       },
       hasChange () {
-        return !equal(this.initialParameterSetting, this.parameterSetting)
+        return !equal(this.initialParameterSetting, this.parameterSetting);
       },
       save () {
         if (equal(this.initialParameterSetting, this.parameterSetting)) {
-          console.log("paramter setting is not changed!")
-          return false
+          console.log("paramter setting is not changed!");
+          return false;
         }
         SIO.emit("saveFile", this.filename, this.dirname || this.selectedComponentAbsPath,
                  JSON.stringify(this.parameterSetting), (rt)=>{
                    if (!rt) {
-                     console.log("ERROR: parameter setting file save failed")
+                     console.log("ERROR: parameter setting file save failed");
                    }
-                 })
-        return true
+                 });
+        return true;
       },
     },
-  }
+  };
 </script>

@@ -3,18 +3,18 @@
  * Copyright (c) Research Institute for Information Technology(RIIT), Kyushu University. All rights reserved.
  * See License.txt in the project root for the license information.
  */
-"use strict"
+"use strict";
 
 // NG
-const reWin32ReservedNames = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i
-const reOnlyWhilteSpace = /^\s*$/
+const reWin32ReservedNames = /(CON|PRN|AUX|NUL|CLOCK$|COM[0-9]|LPT[0-9])\..*$/i;
+const reOnlyWhilteSpace = /^\s*$/;
 // OK
-const alphanumeric = "a-zA-Z0-9"
+const alphanumeric = "a-zA-Z0-9";
 // due to escapeRegExp's spec, bars must be added separately any other regexp strings
 // eslint-disable-next-line no-useless-escape
-const bars = "_\-"
-const pathseps = "/\\"
-const metaCharactors = "*?[]{}()!?+@."
+const bars = "_\-";
+const pathseps = "/\\";
+const metaCharactors = "*?[]{}()!?+@.";
 
 /**
  * escape meta character of regex (from MDN)
@@ -24,20 +24,20 @@ const metaCharactors = "*?[]{}()!?+@."
  */
 function escapeRegExp (target) {
   // eslint-disable-next-line no-useless-escape
-  return target.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1")
+  return target.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
 }
 
 function isSane (name) {
   if (typeof name !== "string") {
-    return false
+    return false;
   }
   if (reOnlyWhilteSpace.test(name)) {
-    return false
+    return false;
   }
   if (reWin32ReservedNames.test(name)) {
-    return false
+    return false;
   }
-  return true
+  return true;
 }
 
 /**
@@ -47,14 +47,14 @@ function isSane (name) {
  */
 function isValidName (name) {
   if (!isSane(name)) {
-    return false
+    return false;
   }
 
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric) + bars}]`)
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric) + bars}]`);
   if (forbidonChars.test(name)) {
-    return false
+    return false;
   }
-  return true
+  return true;
 }
 
 /**
@@ -64,14 +64,14 @@ function isValidName (name) {
  */
 function isValidInputFilename (name) {
   if (!isSane(name)) {
-    return false
+    return false;
   }
 
-  const forbidonChars = new RegExp(`[^${escapeRegExp(`${alphanumeric + pathseps}.`) + bars}]`)
+  const forbidonChars = new RegExp(`[^${escapeRegExp(`${alphanumeric + pathseps}.`) + bars}]`);
   if (forbidonChars.test(name)) {
-    return false
+    return false;
   }
-  return true
+  return true;
 }
 
 /**
@@ -81,14 +81,14 @@ function isValidInputFilename (name) {
  */
 function isValidOutputFilename (name) {
   if (!isSane(name)) {
-    return false
+    return false;
   }
 
-  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric + pathseps + metaCharactors) + bars}]`)
+  const forbidonChars = new RegExp(`[^${escapeRegExp(alphanumeric + pathseps + metaCharactors) + bars}]`);
   if (forbidonChars.test(name)) {
-    return false
+    return false;
   }
-  return true
+  return true;
 }
 
 /**
@@ -98,19 +98,19 @@ function isValidOutputFilename (name) {
  * return {string}
  */
 function getDateString (humanReadable = false, withMilliseconds = false) {
-  const now = new Date()
-  const yyyy = `0000${now.getFullYear()}`.slice(-4)
-  const month = now.getMonth() + 1
-  const mm = `00${month}`.slice(-2)
-  const dd = `00${now.getDate()}`.slice(-2)
-  const HH = `00${now.getHours()}`.slice(-2)
-  const MM = `00${now.getMinutes()}`.slice(-2)
-  const ss = `00${now.getSeconds()}`.slice(-2)
-  const ms = `000${now.getMilliseconds()}`.slice(-3)
+  const now = new Date();
+  const yyyy = `0000${now.getFullYear()}`.slice(-4);
+  const month = now.getMonth() + 1;
+  const mm = `00${month}`.slice(-2);
+  const dd = `00${now.getDate()}`.slice(-2);
+  const HH = `00${now.getHours()}`.slice(-2);
+  const MM = `00${now.getMinutes()}`.slice(-2);
+  const ss = `00${now.getSeconds()}`.slice(-2);
+  const ms = `000${now.getMilliseconds()}`.slice(-3);
   if (humanReadable) {
-    return withMilliseconds ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}.${ms}` : `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}`
+    return withMilliseconds ? `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}.${ms}` : `${yyyy}/${mm}/${dd}-${HH}:${MM}:${ss}`;
   }
-  return withMilliseconds ? `${yyyy}${mm}${dd}-${HH}${MM}${ss}${ms}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`
+  return withMilliseconds ? `${yyyy}${mm}${dd}-${HH}${MM}${ss}${ms}` : `${yyyy}${mm}${dd}-${HH}${MM}${ss}`;
 }
 
 /**
@@ -119,8 +119,8 @@ function getDateString (humanReadable = false, withMilliseconds = false) {
  * @return {boolean} - if true, specified component can have children
  */
 function isContainer (target) {
-  const type = typeof target === "string" ? target : target.type
-  return ["workflow", "parameterStudy", "for", "while", "foreach", "stepjob"].includes(type)
+  const type = typeof target === "string" ? target : target.type;
+  return ["workflow", "parameterStudy", "for", "while", "foreach", "stepjob"].includes(type);
 }
 
 module.exports = {
@@ -133,4 +133,4 @@ module.exports = {
   metaCharactors,
   getDateString,
   isContainer,
-}
+};

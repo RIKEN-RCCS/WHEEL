@@ -17,10 +17,10 @@
   </v-treeview>
 </template>
 <script>
-  "use strict"
-  import { mapState } from "vuex"
-  import getNodeAndPath from "@/lib/getNodeAndPath.js"
-  import componentButton from "@/components/common/componentButton.vue"
+  "use strict";
+  import { mapState } from "vuex";
+  import getNodeAndPath from "@/lib/getNodeAndPath.js";
+  import componentButton from "@/components/common/componentButton.vue";
 
   export default {
     name: "LowerComponentTree",
@@ -31,21 +31,21 @@
       return {
         active: [],
         lowerLevelComponents: null,
-      }
+      };
     },
     computed: {
       ...mapState(["selectedComponent", "componentPath", "componentTree"]),
     },
     mounted () {
-      const targetID = this.selectedComponent.ID
-      this.lowerLevelComponents = getNodeAndPath(targetID, this.componentTree)
+      const targetID = this.selectedComponent.ID;
+      this.lowerLevelComponents = getNodeAndPath(targetID, this.componentTree);
     },
     methods: {
       onUpdateActive (actives) {
-        const activeComponentID = actives[0]
-        const activeComponent = getNodeAndPath(activeComponentID, this.componentTree)
-        this.$emit("selected", activeComponent)
+        const activeComponentID = actives[0];
+        const activeComponent = getNodeAndPath(activeComponentID, this.componentTree);
+        this.$emit("selected", activeComponent);
       },
     },
-  }
+  };
 </script>

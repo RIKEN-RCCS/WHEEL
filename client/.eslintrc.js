@@ -1,13 +1,12 @@
 module.exports = {
   root: true,
-  ignorePatterns: ["**/*.json"],
+  ignorePatterns: ["**/*.json", "**/oldSVG/*"],
   plugins: [
     "vue",
     "chai-expect",
     "chai-friendly",
   ],
   env: {
-    node: true,
     es6: true,
   },
   extends: "vuetify",
@@ -15,6 +14,12 @@ module.exports = {
     ecmaVersion: 2020,
   },
   rules: {
+    semi: ["error", "always"],
+    "semi-spacing": ["error", { after: true, before: false }],
+    "semi-style": ["error", "last"],
+    "no-extra-semi": "error",
+    "no-unexpected-multiline": "error",
+    "no-unreachable": "error",
     quotes: ["error", "double"],
     "no-console": "off",
     "no-debugger": "off",
@@ -100,4 +105,4 @@ module.exports = {
       },
     },
   ],
-}
+};

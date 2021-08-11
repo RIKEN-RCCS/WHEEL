@@ -40,7 +40,7 @@
   </v-dialog>
 </template>
 <script>
-  import SIO from "@/lib/socketIOWrapper.js"
+  import SIO from "@/lib/socketIOWrapper.js";
   export default {
     data () {
       return {
@@ -50,33 +50,33 @@
           { text: "status", value: "status" },
           { text: "filename", value: "name" },
         ],
-      }
+      };
     },
     mounted () {
       SIO.on("unsavedFiles", (unsavedFiles, cb)=>{
         if (unsavedFiles.length === 0) {
-          return
+          return;
         }
-        this.cb = cb
-        this.unsavedFiles = unsavedFiles
+        this.cb = cb;
+        this.unsavedFiles = unsavedFiles;
         // this.unsavedFiles.splice();//force update DOM //現状では要らないっぽい?
-        this.dialog = true
-      })
+        this.dialog = true;
+      });
     },
     methods: {
       closeDialog () {
-        this.unsavedFiles.splice(0)
-        this.dialog = false
+        this.unsavedFiles.splice(0);
+        this.dialog = false;
       },
       discardChanges () {
-        this.cb(false)
-        this.closeDialog()
+        this.cb(false);
+        this.closeDialog();
       },
       saveAll () {
-        this.cb(true)
-        this.closeDialog()
+        this.cb(true);
+        this.closeDialog();
       },
     },
 
-  }
+  };
 </script>

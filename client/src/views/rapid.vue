@@ -49,19 +49,19 @@ See License.txt in the project root for the license information.
 </template>
 <script>
 
-  "use strict"
-  import { mapState, mapActions } from "vuex"
-  import unsavedFileDialog from "@/components/rapid/unsavedFileDialog.vue"
-  import filterEditor from "@/components/rapid/filterEditor.vue"
-  import tabEditor from "@/components/rapid/tabEditor.vue"
-  import parameterEditor from "@/components/rapid/parameterEditor.vue"
-  import SIO from "@/lib/socketIOWrapper.js"
+  "use strict";
+  import { mapState, mapActions } from "vuex";
+  import unsavedFileDialog from "@/components/rapid/unsavedFileDialog.vue";
+  import filterEditor from "@/components/rapid/filterEditor.vue";
+  import tabEditor from "@/components/rapid/tabEditor.vue";
+  import parameterEditor from "@/components/rapid/parameterEditor.vue";
+  import SIO from "@/lib/socketIOWrapper.js";
 
   export default {
     beforeRouteLeave (to, from, next) {
       if (!this.hasChange()) {
-        next()
-        return
+        next();
+        return;
       }
       const dialogContent = {
         title: "unsaved files",
@@ -71,7 +71,7 @@ See License.txt in the project root for the license information.
           {
             icon: "mdi-content-save-all-outline",
             label: "save",
-            cb: ()=>{ this.saveAllFiles(); next() },
+            cb: ()=>{ this.saveAllFiles(); next(); },
           },
           {
             icon: "mdi-alert-circle-outline",
@@ -83,8 +83,8 @@ See License.txt in the project root for the license information.
             label: "cancel",
           },
         ],
-      }
-      this.showDialog(dialogContent)
+      };
+      this.showDialog(dialogContent);
     },
     name: "Editor",
     components: {
@@ -97,38 +97,38 @@ See License.txt in the project root for the license information.
       return {
         openParamEditor: false,
         readOnly: false,
-      }
+      };
     },
     computed: {
       ...mapState(["selectedFile"]),
     },
     mounted () {
       SIO.on("parameterSettingFile", (file)=>{
-        this.openParamEditor = file.isParameterSettingFile
-      })
+        this.openParamEditor = file.isParameterSettingFile;
+      });
 
       if (typeof this.selectedFile === "string") {
-        SIO.emit("openFile", this.selectedFile)
+        SIO.emit("openFile", this.selectedFile);
       }
     },
     methods: {
       ...mapActions(["showDialog"]),
       openNewTab (...args) {
-        this.$refs.text.openNewTab(...args)
+        this.$refs.text.openNewTab(...args);
       },
       insertBraces () {
-        this.$refs.text.insertBraces()
+        this.$refs.text.insertBraces();
       },
       hasChange () {
-        const fileChanged = this.$refs.text.hasChange()
-        const paramChanged = this.$refs.param.hasChange()
-        return fileChanged || paramChanged
+        const fileChanged = this.$refs.text.hasChange();
+        const paramChanged = this.$refs.param.hasChange();
+        return fileChanged || paramChanged;
       },
       saveAllFiles () {
-        const fileChanged = this.$refs.text.saveAll()
-        const paramChanged = this.$refs.param.save()
-        return fileChanged || paramChanged
+        const fileChanged = this.$refs.text.saveAll();
+        const paramChanged = this.$refs.param.save();
+        return fileChanged || paramChanged;
       },
     },
-  }
+  };
 </script>

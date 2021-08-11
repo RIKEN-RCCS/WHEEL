@@ -298,23 +298,23 @@
 </template>
 
 <script>
-  "use strict"
-  import { mapState, mapMutations, mapActions, mapGetters } from "vuex"
-  import logScreen from "@/components/logScreen.vue"
-  import unsavedFilesDialog from "@/components/unsavedFilesDialog.vue"
-  import versatileDialog from "@/components/versatileDialog.vue"
-  import SIO from "@/lib/socketIOWrapper.js"
-  import Debug from "debug"
-  const debug = Debug("wheel:workflow:main")
+  "use strict";
+  import { mapState, mapMutations, mapActions, mapGetters } from "vuex";
+  import logScreen from "@/components/logScreen.vue";
+  import unsavedFilesDialog from "@/components/unsavedFilesDialog.vue";
+  import versatileDialog from "@/components/versatileDialog.vue";
+  import SIO from "@/lib/socketIOWrapper.js";
+  import Debug from "debug";
+  const debug = Debug("wheel:workflow:main");
 
   function readCookie (key) {
     const encodedValue = document.cookie
       .split(";")
       .find((row)=>{
-        return row.trim().startsWith(key)
+        return row.trim().startsWith(key);
       })
-      .split("=")[1]
-    return decodeURIComponent(encodedValue)
+      .split("=")[1];
+    return decodeURIComponent(encodedValue);
   }
 
   export default {
@@ -330,7 +330,7 @@
         drawer: false,
         mode: 0,
         showLogScreen: false,
-      }
+      };
     },
     computed: {
       ...mapState([
@@ -342,46 +342,46 @@
       ...mapGetters(["waiting"]),
     },
     mounted: function () {
-      const projectRootDir = readCookie("rootDir")
-      const ID = readCookie("root")
-      this.commitProjectRootDir(projectRootDir)
-      this.commitRootComponentID(ID)
+      const projectRootDir = readCookie("rootDir");
+      const ID = readCookie("root");
+      this.commitProjectRootDir(projectRootDir);
+      this.commitRootComponentID(ID);
 
       SIO.on("projectJson", (projectJson)=>{
-        this.projectJson = projectJson
-        this.commitProjectState(projectJson.state.toLowerCase())
-        this.commitComponentPath(projectJson.componentPath)
-        this.commitWaitingProjectJson(false)
-      })
+        this.projectJson = projectJson;
+        this.commitProjectState(projectJson.state.toLowerCase());
+        this.commitComponentPath(projectJson.componentPath);
+        this.commitWaitingProjectJson(false);
+      });
       SIO.on("hostList", (hostList)=>{
-        this.commitRemoteHost(hostList)
-      })
+        this.commitRemoteHost(hostList);
+      });
       SIO.on("workflow", (wf)=>{
-        this.commitCurrentComponent(wf)
-        this.commitWaitingWorkflow(false)
-      })
-      SIO.on("showMessage", this.showSnackbar)
+        this.commitCurrentComponent(wf);
+        this.commitWaitingWorkflow(false);
+      });
+      SIO.on("showMessage", this.showSnackbar);
       SIO.emit("getHostList", (rt)=>{
-        debug("getHostList done", rt)
-      })
+        debug("getHostList done", rt);
+      });
       SIO.emit("getComponentTree", projectRootDir, (componentTree)=>{
-        this.commitComponentTree(componentTree)
-      })
-      this.commitWaitingProjectJson(true)
+        this.commitComponentTree(componentTree);
+      });
+      this.commitWaitingProjectJson(true);
       SIO.emit("getProjectJson", (rt)=>{
-        debug("getProjectJson done", rt)
-      })
-      this.commitWaitingWorkflow(true)
+        debug("getProjectJson done", rt);
+      });
+      this.commitWaitingWorkflow(true);
       SIO.emit("getWorkflow", ID, (rt)=>{
-        debug("getWorkflow done", rt)
-      })
+        debug("getWorkflow done", rt);
+      });
       this.$router.replace({ name: "graph" })
         .catch((err)=>{
           if (err.name === "NavigationDuplicated") {
-            return
+            return;
           }
-          throw err
-        })
+          throw err;
+        });
     },
     methods: {
       ...mapActions(["showSnackbar", "closeSnackbar"]),
@@ -400,25 +400,25 @@
       ),
       isDisabled (operation) {
         if (operation === "runProject") {
-          return !["not-started", "paused"].includes(this.projectState)
+          return !["not-started", "paused"].includes(this.projectState);
         } else if (operation === "pauseProject") {
-          return this.projectState !== "running"
+          return this.projectState !== "running";
         } else if (operation === "stopProject") {
-          return ["not-started", "preparing"].includes(this.projectState)
+          return ["not-started", "preparing"].includes(this.projectState);
         } else if (operation === "cleanProject") {
-          return ["not-started", "preparing"].includes(this.projectState)
+          return ["not-started", "preparing"].includes(this.projectState);
         } else if (operation === "saveProject") {
-          return this.projectState !== "not-started"
+          return this.projectState !== "not-started";
         } else if (operation === "revertProject") {
-          return this.projectState !== "not-started"
+          return this.projectState !== "not-started";
         }
-        debug("upsupported operation", operation)
+        debug("upsupported operation", operation);
       },
       emitProjectOperation (operation) {
         SIO.emit(operation, (rt)=>{
-          debug(operation, "done", rt)
-        })
+          debug(operation, "done", rt);
+        });
       },
     },
-  }
+  };
 </script>

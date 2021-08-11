@@ -39,7 +39,7 @@ See License.txt in the project root for the license information.
   </v-dialog>
 </template>
 <script>
-  "use strict"
+  "use strict";
   export default {
     name: "UnsavedFileDialog",
     props: {
@@ -48,8 +48,8 @@ See License.txt in the project root for the license information.
     },
     data: function () {
       return {
-      }
+      };
     },
     methods: {},
-  }
+  };
 </script>

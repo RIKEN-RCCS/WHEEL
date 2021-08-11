@@ -54,8 +54,8 @@ See License.txt in the project root for the license information.
   </v-dialog>
 </template>
 <script>
-  "use strict"
-  import { tableFooterProps } from "@/lib/rapid2Util.js"
+  "use strict";
+  import { tableFooterProps } from "@/lib/rapid2Util.js";
 
   export default {
     name: "FilterEditor",
@@ -69,30 +69,30 @@ See License.txt in the project root for the license information.
         placeholders: [],
         selected: [],
         tableFooterProps,
-      }
+      };
     },
     methods: {
       applyFilter () {
-        const placeholders = Array.from(this.selected)
+        const placeholders = Array.from(this.selected);
         placeholders.sort((a, b)=>{
           if (a.filename === b.filename) {
-            return a.row_end - b.row_end !== 0 ? b.row_end - a.row_end : b.column_end - a.column_end
+            return a.row_end - b.row_end !== 0 ? b.row_end - a.row_end : b.column_end - a.column_end;
           }
-          return a.filename > b.filename ? 1 : -1
-        })
-        const filter = "| " + this.newFilter + " "
+          return a.filename > b.filename ? 1 : -1;
+        });
+        const filter = "| " + this.newFilter + " ";
         placeholders.forEach((ph)=>{
-          ph.editorSession.insert({ row: ph.row_end, column: ph.column_end - 2 }, filter)
-        })
-        console.log(placeholders) // DEBUG
-        this.updatePlaceholderList()
+          ph.editorSession.insert({ row: ph.row_end, column: ph.column_end - 2 }, filter);
+        });
+        console.log(placeholders); // DEBUG
+        this.updatePlaceholderList();
       },
 
       closeFilterEditor () {
-        this.filterEditor = false
-        this.params = null
+        this.filterEditor = false;
+        this.params = null;
       },
 
     },
-  }
+  };
 </script>
