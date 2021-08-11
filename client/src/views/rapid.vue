@@ -106,10 +106,6 @@ See License.txt in the project root for the license information.
       SIO.on("parameterSettingFile", (file)=>{
         this.openParamEditor = file.isParameterSettingFile;
       });
-
-      if (typeof this.selectedFile === "string") {
-        SIO.emit("openFile", this.selectedFile);
-      }
     },
     methods: {
       ...mapActions(["showDialog"]),

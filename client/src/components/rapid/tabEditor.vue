@@ -150,7 +150,7 @@
         });
         // just switch tab if arraived file is already opened
         if (existingTab !== -1) {
-          this.activeTab = existingTab;
+          this.activeTab = existingTab + 1;
           return;
         }
         // open new tab for arraived file
@@ -161,16 +161,17 @@
         // select last tab after DOM is updated
         this.$nextTick(function () {
           this.activeTab = this.files.length;
-          const index = this.activeTab - 1;
-          console.log("DEBUG: open files[", index, "]");
-          const session = this.files[index].editorSession;
+          const session = this.files[this.activeTab - 1].editorSession;
           this.editor.setSession(session);
           session.selection.on("changeSelection", ()=>{
             this.commitSelectedText(this.editor.getSelectedText());
           });
         });
       });
-      SIO.emit("openFile", this.selectedFile, false);
+
+      if (typeof this.selectedFile === "string") {
+        SIO.emit("openFile", this.selectedFile, false);
+      }
     },
     methods: {
       ...mapMutations({ commitSelectedText: "selectedText" }),
@@ -257,8 +258,6 @@
         return changed;
       },
       closeTab (index) {
-        console.log("DEBUG: close ", index, "th tab");
-
         if (index === 0) {
           const file = this.files[index];
           const document = file.editorSession.getDocument();
