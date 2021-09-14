@@ -113,7 +113,7 @@ async function isFinished(JS, task) {
     task.jobStatus = jobStatus;
   }
 
-  // status.wheel.txtの出力方法を検討する
+  //status.wheel.txtの出力方法を検討する
   if (task.jobStatus === null) {
     logger.warn("get job status code failed, code is overwrited by -2");
     task.jobStatus = -2;
@@ -137,7 +137,8 @@ async function isFinished(JS, task) {
   if (strRt === null) {
     logger.warn("get return code failed, code is overwrited by -2");
     return -2;
-  } else if (strRt === "6") {
+  }
+  if (strRt === "6") {
     logger.warn("get return code 6, this job was canceled by stepjob dependency");
     return 0;
   }

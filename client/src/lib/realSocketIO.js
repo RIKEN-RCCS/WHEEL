@@ -3,14 +3,51 @@ import { io } from "socket.io-client";
 const SocketIOFileUpload = require("socketio-file-upload");
 
 let socket = null;
+// following 2 socket will be removed after room integration
+let socketGlobal = null;
+let socketHome = null;
+let socketRemoteHost = null;
 let uploader = null;
 function init () {
+  socketGlobal = io("/", { transposrts: ["websocket"] });
   socket = io("/workflow", { transposrts: ["websocket"] });
+  socketHome = io("/home", { transposrts: ["websocket"] });
+  socketRemoteHost = io("/remotehost", { transposrts: ["websocket"] });
   uploader = new SocketIOFileUpload(socket);
   uploader.chunkSize = 1024 * 100;
 }
 
 export default {
+  onHome: (event, callback)=>{
+    if (socket === null) {
+      init();
+    }
+    socketHome.on(event, callback);
+  },
+  onRemotehost: (event, callback)=>{
+    if (socket === null) {
+      init();
+    }
+    socketRemoteHost.on(event, callback);
+  },
+  emitGlobal: (event, ...args)=>{
+    if (socket === null) {
+      init();
+    }
+    socketGlobal.emit(event, ...args);
+  },
+  emitHome: (event, ...args)=>{
+    if (socket === null) {
+      init();
+    }
+    socketHome.emit(event, ...args);
+  },
+  emitRemotehost: (event, ...args)=>{
+    if (socket === null) {
+      init();
+    }
+    socketRemoteHost.emit(event, ...args);
+  },
   close: ()=>{
     if (socket === null) {
       return;

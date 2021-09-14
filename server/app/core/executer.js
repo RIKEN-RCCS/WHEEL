@@ -81,7 +81,7 @@ function makeQueueOpt(task, JS, queues) {
     return "";
   }
 
-  let queue = queueList.find((e) => {
+  let queue = queueList.find((e)=>{
     return task.queue === e;
   });
   if (typeof queue === "undefined") {
@@ -155,7 +155,7 @@ class Executer {
     const hostname = hostinfo != null ? hostinfo.host : null;
     const execInterval = hostinfo != null ? hostinfo.execInterval : 1;
     this.batch = new SBS({
-      exec: async (task) => {
+      exec: async(task)=>{
         task.startTime = getDateString(true, true);
 
         try {
@@ -318,23 +318,23 @@ class RemoteTaskExecuter extends Executer {
 }
 
 function promisifiedSpawn(task, script, options) {
-  return new Promise((resolve, reject) => {
-    const cp = childProcess.spawn(script, options, (err) => {
+  return new Promise((resolve, reject)=>{
+    const cp = childProcess.spawn(script, options, (err)=>{
       if (err) {
         reject(err);
       }
     });
-    cp.stdout.on("data", (data) => {
+    cp.stdout.on("data", (data)=>{
       logger.stdout(data.toString());
     });
-    cp.stderr.on("data", (data) => {
+    cp.stderr.on("data", (data)=>{
       logger.stderr(data.toString());
     });
-    cp.on("error", (err) => {
+    cp.on("error", (err)=>{
       cp.removeAlllisteners("exit");
       reject(err);
     });
-    cp.on("exit", (rt) => {
+    cp.on("exit", (rt)=>{
       logger.debug(task.name, "done. rt =", rt);
       resolve(rt);
     });

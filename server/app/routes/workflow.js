@@ -12,7 +12,7 @@ const projectController = require("./projectController");
 const { jobScheduler, remoteHost, projectJsonFilename, componentJsonFilename, shutdownDelay, jobScript } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
-const { setProjectState, getProjectState, checkRunningJobs } = require("../core/projectFilesOperator");
+const { importProject, setProjectState, getProjectState, checkRunningJobs } = require("../core/projectFilesOperator");
 const { createSsh } = require("../core/sshManager");
 const { registerJob } = require("../core/jobManager");
 
@@ -112,6 +112,7 @@ module.exports = function(io) {
   });
   router.post("/", async(req, res)=>{
     projectRootDir = req.body.project;
+    await importProject(projectRootDir);
     await openProject(projectRootDir);
     const { ID } = await getComponent(projectRootDir, path.resolve(projectRootDir, componentJsonFilename));
     res.cookie("root", ID);

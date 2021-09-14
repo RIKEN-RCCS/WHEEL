@@ -11,5 +11,17 @@ module.exports = {
       title: "workflow",
       filename: "workflow.html",
     },
+    home:{
+      entry: "src/home.js",
+      template: "public/index.html",
+      title: "home",
+      filename: "home.html",
+    },
+    remotehost:{
+      entry: "src/remotehost.js",
+      template: "public/index.html",
+      title: "remotehost",
+      filename: "remotehost.html",
+    }
   },
 };

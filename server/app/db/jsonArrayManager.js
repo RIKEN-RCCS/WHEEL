@@ -41,17 +41,18 @@ class JsonArrayManager {
   /**
    * add new entry at the top of array
    */
-  unshift(entry) {
+  async unshift(entry) {
     entry.id = uuidv1();
     this.data.unshift(entry);
-    return this.write();
+    await this.write();
+    return entry.id;
   }
 
   /**
    * update entry
    * @param {Object} entry
    */
-  update(entry) {
+  async update(entry) {
     const targetIndex = this.data.findIndex((e)=>{
       return e.id === entry.id;
     });
@@ -63,7 +64,7 @@ class JsonArrayManager {
    * remove existing entry
    * @param {string} id - id of target entry
    */
-  remove(id) {
+  async remove(id) {
     this.data = this.data.filter((e)=>{
       return e.id !== id;
     });
@@ -74,13 +75,13 @@ class JsonArrayManager {
    * add duplicated entry
    * @param {string} id - id of src entry
    */
-  copy(id) {
+  async copy(id) {
     const target = this.data.find((e)=>{
       return e.id === id;
     });
     const duplicate = Object.assign({}, target);
     duplicate.id = uuidv1();
-    this.data.push(duplicate);
+    this.data.unshift(duplicate);
     return this.write();
   }
 
@@ -89,11 +90,10 @@ class JsonArrayManager {
    * @param {string} id - id of src entry
    */
   /**
-   *
-   *
-   * @param {*} id
-   * @param {*} newLabel
-   * @returns
+   * to be removed
+   * @param {*} id - to be removed
+   * @param {*} newLabel - to be removed
+   * @returns {Promise} - to be removed
    * @memberof JsonArrayManager
    */
   jobScriptcopy(id, newLabel) {
@@ -126,8 +126,8 @@ class JsonArrayManager {
 
   /**
    * return entry id with specific key:value pair
-   * @param {string} key
-   * @param {string} value
+   * @param {string} key - query target's property name
+   * @param {string} value - query criteria
    */
   getID(key, value) {
     const entry = this.query(key, value);
@@ -136,8 +136,8 @@ class JsonArrayManager {
 
   /**
    * return entry with specific key:value pair
-   * @param {string} key
-   * @param {string} value
+   * @param {string} key - query target's property name
+   * @param {string} value - query criteria
    */
   query(key, value) {
     return this.data.find((e)=>{

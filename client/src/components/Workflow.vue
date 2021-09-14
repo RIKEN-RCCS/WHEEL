@@ -1,62 +1,15 @@
 <template>
   <v-app>
-    <v-navigation-drawer
+    <nav-drawer
       v-model="drawer"
-      app
-      temporary
-      right
-      cliped
-    >
-      <v-list
-        nav
-        dense
-      >
-        <a
-          href="/remotehost"
-          target="_blank"
-        >
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-cog-outline</v-icon>
-            </v-list-item-icon>
-            <v-list-item-title>
-              Remotehost editor
-            </v-list-item-title>
-          </v-list-item>
-        </a>
-        <a
-          href="/jobScript"
-          target="_blank"
-        >
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-file-document-edit-outline</v-icon>
-            </v-list-item-icon>
-            <v-list-item-title>
-              Jobscript editor
-            </v-list-item-title>
-          </v-list-item>
-        </a>
-        <a
-          href="https://riken-rccs.github.io/WHEEL/"
-          target="_blank"
-        >
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-help-circle-outline</v-icon>
-            </v-list-item-icon>
-            <v-list-item-title>User guide</v-list-item-title>
-          </v-list-item>
-        </a>
-      </v-list>
-    </v-navigation-drawer>
+    />
     <v-app-bar
       app
       extended
     >
       <a
         href="/home"
-        class="text-uppercase text-decoration-none  text-h4 white--text"
+        class="text-uppercase text-decoration-none text-h4 white--text"
       > WHEEL </a>
       <v-spacer />
       <p class="mb-0 text-h5">
@@ -301,26 +254,19 @@
   "use strict";
   import { mapState, mapMutations, mapActions, mapGetters } from "vuex";
   import logScreen from "@/components/logScreen.vue";
+  import NavDrawer from "@/components/common/NavigationDrawer.vue";
   import unsavedFilesDialog from "@/components/unsavedFilesDialog.vue";
   import versatileDialog from "@/components/versatileDialog.vue";
   import SIO from "@/lib/socketIOWrapper.js";
+  import { readCookie } from "@/lib/utility.js";
   import Debug from "debug";
   const debug = Debug("wheel:workflow:main");
-
-  function readCookie (key) {
-    const encodedValue = document.cookie
-      .split(";")
-      .find((row)=>{
-        return row.trim().startsWith(key);
-      })
-      .split("=")[1];
-    return decodeURIComponent(encodedValue);
-  }
 
   export default {
     name: "Workflow",
     components: {
       logScreen,
+      NavDrawer,
       unsavedFilesDialog,
       versatileDialog,
     },

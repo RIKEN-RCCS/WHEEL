@@ -3,7 +3,7 @@
     v-if="openDialog"
     v-model="openDialog"
     persistent
-    width="auto "
+    width="auto"
   >
     <v-card>
       <v-card-title>

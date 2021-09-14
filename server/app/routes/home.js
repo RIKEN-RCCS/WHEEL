@@ -522,7 +522,9 @@ module.exports = function(io) {
   //eslint-disable-next-line new-cap
   const router = express.Router();
   router.get("/", (req, res)=>{
-    res.sendFile(path.join(__dirname, "../views/home.html"));
+    res.cookie("home", rootDir);
+    res.cookie("pathSep", path.sep);
+    res.sendFile(path.join(__dirname, "../public/home.html"));
   });
   return router;
 };

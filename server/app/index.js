@@ -21,8 +21,10 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const siofu = require("socketio-file-upload");
-const { port, keyFilename, certFilename, projectList } = require("./db/db");
+const { port, keyFilename, certFilename, projectList, remoteHost } = require("./db/db");
 const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
+const onGetFileList = require("./handlers/getFileList.js");
+const tryToConnect = require("./handlers/tryToConnect.js");
 const { getLogger } = require("./logSettings");
 
 /*
@@ -52,8 +54,48 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.resolve(__dirname, "viewer"), { index: false }));
 app.use(express.static(path.resolve(__dirname, "public"), { index: false }));
+
 app.use(siofu.router);
 
+//global socket IO handler
+sio.on("connection", (socket)=>{
+  socket.prependAny((eventName, ...args)=>{
+    args.pop();
+    logger.debug(`[socketIO API] ${eventName} recieved.`, args);
+  });
+  //
+  //filemanager
+  //
+  socket.on("getFileList", onGetFileList.bind(null, socket));
+
+  //
+  //remotehost
+  //
+  socket.on("getHostList", (cb)=>{
+    cb(remoteHost.getAll());
+  });
+  socket.on("addHost", async(newHost, cb)=>{
+    const id = await remoteHost.unshift(newHost);
+    cb(id);
+  });
+  socket.on("removeHost", async(id, cb)=>{
+    await remoteHost.remove(id);
+    cb(true);
+  });
+  socket.on("updateHost", async(updatedHost, cb)=>{
+    await remoteHost.update(updatedHost);
+    cb(true);
+  });
+  socket.on("copyHost", async(id, cb)=>{
+    await remoteHost.copy(id);
+    cb(remoteHost.get(id));
+  });
+  socket.on("tryToConnect", tryToConnect);
+  socket.on("tryToConnectById", async(id, password, cb)=>{
+    const hostInfo = remoteHost.get(id);
+    await tryToConnect(hostInfo, password, cb);
+  });
+});
 //routing
 const routes = {
   home: require(path.resolve(__dirname, "routes/home"))(sio),
@@ -70,21 +112,22 @@ app.use("/editor", routes.workflow);
 app.use("/remotehost", routes.remotehost);
 app.use("/jobScript", routes.jobScript);
 
+
 //port number
 const defaultPort = 443;
 let portNumber = parseInt(process.env.WHEEL_PORT, 10) || port || defaultPort;
 portNumber = portNumber > 0 ? portNumber : defaultPort;
 
+//handle 404 not found
+app.use((req, res, next)=>{
+  res.status(404).send("reqested page is not found");
+  next();
+});
 //error handler
 app.use((err, req, res, next)=>{
   //render the error page
   res.status(err.status || 500);
   res.send("something broken!");
-  next();
-});
-//handle 404 not found
-app.use((req, res, next)=>{
-  res.status(404).send("reqested page is not found");
   next();
 });
 

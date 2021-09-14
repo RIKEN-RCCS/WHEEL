@@ -123,6 +123,21 @@ function isContainer (target) {
   return ["workflow", "parameterStudy", "for", "while", "foreach", "stepjob"].includes(type);
 }
 
+/**
+ * get value from cookie
+ * @param { string } key - target cookie's property
+ * @return { string } - value
+ */
+function readCookie (key) {
+  const encodedValue = document.cookie
+    .split(";")
+    .find((row)=>{
+      return row.trim().startsWith(key);
+    })
+    .split("=")[1];
+  return decodeURIComponent(encodedValue);
+}
+
 module.exports = {
   escapeRegExp,
   isValidName,
@@ -133,4 +148,5 @@ module.exports = {
   metaCharactors,
   getDateString,
   isContainer,
+  readCookie,
 };

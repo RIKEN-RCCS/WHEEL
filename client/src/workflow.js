@@ -1,5 +1,5 @@
 import Vue from "vue";
-import Workflow from "./Workflow.vue";
+import Workflow from "./components/Workflow.vue";
 import router from "./router";
 import store from "./store";
 import vuetify from "./plugins/vuetify";

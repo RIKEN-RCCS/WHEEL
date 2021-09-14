@@ -80,7 +80,7 @@ module.exports = function(io) {
   //eslint-disable-next-line new-cap
   const router = express.Router();
   router.get("/", (req, res)=>{
-    res.sendFile(path.resolve(__dirname, "../views/remotehost.html"));
+    res.sendFile(path.resolve(__dirname, "../public/remotehost.html"));
   });
   return router;
 };

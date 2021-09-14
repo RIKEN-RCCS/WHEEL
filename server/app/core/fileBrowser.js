@@ -6,7 +6,7 @@
 "use strict";
 const fs = require("fs-extra");
 const path = require("path");
-const minimatch = require("minimatch");
+const { isComponentDir } = require("./componentFilesOperator");
 
 function getSNDs(fileList, isDir) {
   const reNumber = /\d+/g;
@@ -41,6 +41,7 @@ function getSNDs(fileList, isDir) {
 }
 
 /**
+ * bundle SND files
  * @param {Object[]} fileList - list of files to be bundled
  * @param {string} fileList.path - parent directories'path
  * @param {string} fileList.name - filename,  directory name or glob
@@ -82,8 +83,6 @@ function compare(a, b) {
 
 /**
  * send directory contents via socket.io
- * @param {Function} emit - function which is used to sed directory contents
- * @param {string} eventName - event name which is used sending directory contents
  * @param {string} targetDir - directory path to read
  * @param {Object} options -   dictionary contains following option value
  * @param {string}  [options.request] -      requested directory path
@@ -128,7 +127,7 @@ async function ls(targetDir, options = {}) {
       if (dirFilter && !dirFilter.test(name)) {
         return;
       }
-      dirList.push({ path: request, name, type: "dir", islink: false });
+      dirList.push({ path: request, name, type: "dir", islink: false, isComponentDir: isComponentDir(request) });
     } else if (stats.isFile() && sendFilename) {
       if (fileFilter && !fileFilter.test(name)) {
         return;
@@ -144,7 +143,7 @@ async function ls(targetDir, options = {}) {
           if (dirFilter && !dirFilter.test(name)) {
             return;
           }
-          dirList.push({ path: request, name, type: "dir", islink: true });
+          dirList.push({ path: request, name, type: "dir", islink: true, isComponentDir: isComponentDir(request) });
         }
 
         if (stats2.isFile() && sendFilename) {

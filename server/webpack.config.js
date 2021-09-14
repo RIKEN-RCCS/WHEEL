@@ -1,14 +1,11 @@
 "use strict";
 const path = require("path");
-const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = {
   entry: {
-    home: "./app/src/js/home",
-    remotehost: "./app/src/js/remotehost",
     viewer: "./app/src/js/viewer",
     jobScript: "./app/src/js/jobScript"
   },
@@ -52,8 +49,8 @@ module.exports = {
             options: {
               name: "[name].[ext]",
               outputPath: "image/",
-              publicPath: (path)=>{
-                return `../${path}`;
+              publicPath: (e)=>{
+                return `../${e}`;
               }
             }
           }
