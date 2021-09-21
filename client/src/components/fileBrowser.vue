@@ -135,6 +135,7 @@
           <v-text-field
             v-if="dialog.withInputField"
             v-model="dialog.inputField"
+            autofocus
             :label="dialog.inputFieldLabel"
           />
         </v-card-text>
