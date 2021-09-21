@@ -96,7 +96,7 @@
   "use strict";
   import { mapState, mapGetters, mapMutations } from "vuex";
   import SIO from "@/lib/socketIOWrapper.js";
-  import { isValidName } from "@/lib/utility.js";
+  import { isValidInputFilename } from "@/lib/utility.js";
   import ace from "ace-builds";
   import "ace-builds/webpack-resolver";
   import "ace-builds/src-noconflict/theme-idle_fingers.js";
@@ -176,12 +176,13 @@
     methods: {
       ...mapMutations({ commitSelectedText: "selectedText" }),
       isValidName (v) {
-        return isValidName(v) || "invalid filename";
+        // allow . / - and alphanumeric chars
+        return isValidInputFilename(v) || "invalid filename";
       },
       async openNewTab (filename, argDirname) {
         const dirname = argDirname || this.selectedComponentAbsPath;
 
-        if (!isValidName(filename)) {
+        if (!isValidInputFilename(filename)) {
           return this.closeNewFileDialog();
         }
         const existingTab = this.files.findIndex((e)=>{
