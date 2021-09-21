@@ -437,6 +437,7 @@
           if (!rt) {
             return;
           }
+          this.commitSelectedComponent(null);
           // update componentTree
           SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
             this.commitComponentTree(componentTree);
