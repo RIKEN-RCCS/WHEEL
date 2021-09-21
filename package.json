@@ -68,7 +68,7 @@
     "simple-batch-system": "^1.8.2",
     "socket.io": "^3.0.4",
     "socketio-file-upload": "^0.7.0",
-    "ssh2": "^0.8.7",
+    "ssh2": "^1.4.0",
     "stat-mode": "^1.0.0",
     "uuid": "^3.4.0"
   },
