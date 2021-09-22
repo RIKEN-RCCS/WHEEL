@@ -226,6 +226,7 @@
               console.log("ERROR: file save failed:", rt);
               reject(rt);
             }
+            file.content = content;
             resolve(rt);
           });
         });
@@ -253,6 +254,7 @@
               if (!rt) {
                 console.log("ERROR: file save failed:", rt);
               }
+              file.content = content;
             });
           }
         }

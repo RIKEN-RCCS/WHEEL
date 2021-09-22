@@ -43,6 +43,7 @@ See License.txt in the project root for the license information.
   import gatherScatter from "@/components/rapid/gatherScatter.vue";
   import parameter from "@/components/rapid/parameter.vue";
   const equal = require("fast-deep-equal");
+  const clone = require("rfdc")();
 
   export default {
     name: "ParameterEditor",
@@ -121,6 +122,8 @@ See License.txt in the project root for the license information.
                    if (!rt) {
                      console.log("ERROR: parameter setting file save failed");
                    }
+
+                   this.initialParameterSetting = clone(this.parameterSetting);
                  });
         return true;
       },
