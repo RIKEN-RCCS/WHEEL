@@ -226,6 +226,11 @@
       />
     </v-overlay>
     <unsaved-files-dialog />
+    <password-dialog
+      v-model="pwDialog"
+      :title="pwDialogTitle"
+      @password="pwCallback"
+    />
     <v-snackbar
       v-model="openSnackbar"
       :vertical="true"
@@ -255,6 +260,7 @@
   import { mapState, mapMutations, mapActions, mapGetters } from "vuex";
   import logScreen from "@/components/logScreen.vue";
   import NavDrawer from "@/components/common/NavigationDrawer.vue";
+  import passwordDialog from "@/components/common/passwordDialog.vue";
   import unsavedFilesDialog from "@/components/unsavedFilesDialog.vue";
   import versatileDialog from "@/components/versatileDialog.vue";
   import SIO from "@/lib/socketIOWrapper.js";
@@ -269,6 +275,7 @@
       NavDrawer,
       unsavedFilesDialog,
       versatileDialog,
+      passwordDialog,
     },
     data: ()=>{
       return {
@@ -276,6 +283,9 @@
         drawer: false,
         mode: 0,
         showLogScreen: false,
+        pwDialog: false,
+        pwDialogTitle: "",
+        pwCallback: ()=>{},
       };
     },
     computed: {
@@ -307,6 +317,16 @@
         this.commitWaitingWorkflow(false);
       });
       SIO.on("showMessage", this.showSnackbar);
+      SIO.on("askPassword", (hostname, cb)=>{
+        this.pwCallback = (pw)=>{
+          cb(pw);
+        };
+        this.pwDialogTitle = `input password or passphrase for ${hostname}`;
+        this.pwDialog = true;
+      });
+      SIO.on("taskStateList", (task)=>{
+        console.log("not implemented!");
+      });
       SIO.emit("getHostList", (rt)=>{
         debug("getHostList done", rt);
       });

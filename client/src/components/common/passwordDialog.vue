@@ -9,6 +9,7 @@
       </v-card-title>
       <v-text-field
         v-model="password"
+        autofocus
         :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
         :type="showPassword ? 'text' : 'password'"
         @click:append="showPassword = !showPassword"
@@ -58,6 +59,10 @@
     methods: {
       submitPassword () {
         this.$emit("password", this.password);
+        this.closeDialog();
+      },
+      cancel () {
+        this.$emit("cancel");
         this.closeDialog();
       },
       closeDialog () {
