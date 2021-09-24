@@ -141,6 +141,20 @@
                       :rules="[positiveNumber]"
                     />
                   </v-col>
+                  <v-col cols="6">
+                    <v-text-field
+                      v-model.number="host.readyTimeout"
+                      label="timeout during handshake phase (msec.)"
+                      :rules="[positiveNumber]"
+                    />
+                  </v-col>
+                  <v-col cols="6">
+                    <v-text-field
+                      v-model.number="host.keepaliveInterval"
+                      label="interval time between keep alive packet  (msec.)"
+                      :rules="[positiveNumber]"
+                    />
+                  </v-col>
                   <v-col cols="6" />
                 </v-row>
               </v-container>
