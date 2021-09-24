@@ -13,7 +13,7 @@ const EventEmitter = require("events");
  * @type {Object} - updated projectJson
  *
  * @event componentPathChanged
- * @trype {Object} - updated componentID-path map
+ * @type {Object} - updated componentID-path map
  *
  * @event taskStateChanged
  * @type {Object} - updated task object
