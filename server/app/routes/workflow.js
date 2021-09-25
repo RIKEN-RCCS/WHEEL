@@ -6,6 +6,7 @@
 "use strict";
 const path = require("path");
 const express = require("express");
+const cookie = require("cookie");
 const fileManager = require("./fileManager");
 const rapid2 = require("./rapid2");
 const projectController = require("./projectController");
@@ -24,10 +25,11 @@ module.exports = function(io) {
       socket.emit("showMessage", "please reload browser");
       return;
     }
+    const { rootDir } = cookie.parse(socket.handshake.headers.cookie);
+    getLogger(projectRootDir).debug("projectRootDir from cookie=", rootDir);
+    //TODO  join rootDir's room
+
     setSio(projectRootDir, socket);
-    socket.on("getHostList", ()=>{
-      socket.emit("hostList", remoteHost.getAll());
-    });
     socket.on("getJobScriptList", ()=>{
       socket.emit("jobScriptList", jobScript.getAll());
     });

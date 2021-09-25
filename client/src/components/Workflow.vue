@@ -309,9 +309,6 @@
         this.commitComponentPath(projectJson.componentPath);
         this.commitWaitingProjectJson(false);
       });
-      SIO.on("hostList", (hostList)=>{
-        this.commitRemoteHost(hostList);
-      });
       SIO.on("workflow", (wf)=>{
         this.commitCurrentComponent(wf);
         this.commitWaitingWorkflow(false);
@@ -324,11 +321,11 @@
         this.pwDialogTitle = `input password or passphrase for ${hostname}`;
         this.pwDialog = true;
       });
-      SIO.on("taskStateList", (task)=>{
-        console.log("not implemented!");
+      SIO.onGlobal("hostList", (hostList)=>{
+        this.commitRemoteHost(hostList);
       });
-      SIO.emit("getHostList", (rt)=>{
-        debug("getHostList done", rt);
+      SIO.emitGlobal("getHostList", (hostList)=>{
+        this.commitRemoteHost(hostList);
       });
       SIO.emit("getComponentTree", projectRootDir, (componentTree)=>{
         this.commitComponentTree(componentTree);

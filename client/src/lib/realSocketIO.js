@@ -30,6 +30,12 @@ export default {
     }
     socketRemoteHost.on(event, callback);
   },
+  onGlobal: (event, callback)=>{
+    if (socket === null) {
+      init();
+    }
+    socketGlobal.on(event, callback);
+  },
   emitGlobal: (event, ...args)=>{
     if (socket === null) {
       init();

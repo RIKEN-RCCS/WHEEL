@@ -173,6 +173,8 @@
   </v-dialog>
 </template>
 <script>
+  "use strict";
+  import SIO from "@/lib/socketIOWrapper.js";
   import buttons from "@/components/common/buttons.vue";
   export default {
     Name: "PasswordDialog",
@@ -190,7 +192,7 @@
         host: {},
         usePubkey: false,
         openPanel: [0],
-        availableJobSchedulers: ["ParallelNavi", "PBSPro", "SLURM"],
+        availableJobSchedulers: [],
         buttons: [
           { icon: "mdi-check", label: "ok" },
           { icon: "mdi-close", label: "cancel" },
@@ -206,6 +208,11 @@
           this.$emit("input", value);
         },
       },
+    },
+    mounted () {
+      SIO.emitGlobal("getJobSchedulerLabelList", (data)=>{
+        this.availableJobSchedulers.splice(0, this.availableJobSchedulers.length, ...data);
+      });
     },
     beforeUpdate () {
       this.host = Object.assign(this.host, this.initialValue);

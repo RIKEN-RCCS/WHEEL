@@ -12,7 +12,7 @@
           href="/home"
           class="text-uppercase text-decoration-none text-h4 white--text"
         > WHEEL </a>
-        <span class="text-decoration-none text-h5">
+        <span class="text-decoration-none text-h5 mb-0">
           remotehost
         </span>
       </v-app-bar-title>
@@ -121,6 +121,7 @@
     },
     mounted () {
       SIO.emitGlobal("getHostList", (data)=>{
+        console.log("hostlist", data);
         data.forEach((e)=>{
           e.icon = "mdi-lan-pending";
           e.connectionStatus = "test";
@@ -130,7 +131,6 @@
     },
     methods: {
       openEditDialog (item) {
-        console.log("DEBUG: edit", item);
         this.currentSetting = item;
 
         if (item.type === "aws") {

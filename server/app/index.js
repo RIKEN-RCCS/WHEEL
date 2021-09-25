@@ -20,8 +20,9 @@ const cors = require("cors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
+const cookie = require("cookie");
 const siofu = require("socketio-file-upload");
-const { port, keyFilename, certFilename, projectList, remoteHost } = require("./db/db");
+const { port, keyFilename, certFilename, projectList, remoteHost, jobScheduler } = require("./db/db");
 const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
 const onGetFileList = require("./handlers/getFileList.js");
 const tryToConnect = require("./handlers/tryToConnect.js");
@@ -59,37 +60,65 @@ app.use(siofu.router);
 
 //global socket IO handler
 sio.on("connection", (socket)=>{
+  logger.debug("global prependAny cookie =", cookie.parse(socket.handshake.headers.cookie));
   socket.prependAny((eventName, ...args)=>{
+    //remove callback function
     args.pop();
+    //this must go to trace level(file only, never go to console)
     logger.debug(`[socketIO API] ${eventName} recieved.`, args);
   });
   //
   //filemanager
   //
+  //create
+  //not yet implemented!!
+  //read
   socket.on("getFileList", onGetFileList.bind(null, socket));
+  //update
+  //not yet implemented!!
+  //delete
+  //not yet implemented!!
 
   //
   //remotehost
   //
-  socket.on("getHostList", (cb)=>{
-    cb(remoteHost.getAll());
-  });
+
+  //create
   socket.on("addHost", async(newHost, cb)=>{
     const id = await remoteHost.unshift(newHost);
+    socket.emit("hostList", remoteHost.getAll());//for workflow screen's handler
     cb(id);
-  });
-  socket.on("removeHost", async(id, cb)=>{
-    await remoteHost.remove(id);
-    cb(true);
-  });
-  socket.on("updateHost", async(updatedHost, cb)=>{
-    await remoteHost.update(updatedHost);
-    cb(true);
   });
   socket.on("copyHost", async(id, cb)=>{
     await remoteHost.copy(id);
+    socket.emit("hostList", remoteHost.getAll());//for workflow screen's handler
     cb(remoteHost.get(id));
   });
+
+  //read
+  socket.on("getHostList", (cb)=>{
+    cb(remoteHost.getAll());
+  });
+  socket.on("getJobSchedulerLabelList", (cb)=>{
+    const JSNames = Object.keys(jobScheduler);
+    cb(JSNames);
+  });
+
+  //update
+  socket.on("updateHost", async(updatedHost, cb)=>{
+    await remoteHost.update(updatedHost);
+    socket.emit("hostList", remoteHost.getAll());//for workflow screen's handler
+    cb(true);
+  });
+
+  //delete
+  socket.on("removeHost", async(id, cb)=>{
+    await remoteHost.remove(id);
+    socket.emit("hostList", remoteHost.getAll());//for workflow screen's handler
+    cb(true);
+  });
+
+  //auxiliary
   socket.on("tryToConnect", tryToConnect);
   socket.on("tryToConnectById", async(id, password, cb)=>{
     const hostInfo = remoteHost.get(id);
