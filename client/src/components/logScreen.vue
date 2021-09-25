@@ -53,12 +53,12 @@
       return {
         currentTab: 1,
         items: [
-          { label: "debug", id: "debug", clear: false, eventNames: ["logDEBUG"] },
+          { label: "debug", id: "debug", clear: false, eventNames: ["logDBG"] },
           { label: "info", id: "info", clear: false, eventNames: ["logINFO", "logWARN", "logERR"] },
-          { label: "stdout", id: "stdout", clear: false, eventNames: ["logSTDOUT"] },
-          { label: "stderr", id: "stderr", clear: false, eventNames: ["logSTDERR"] },
-          { label: "stdout(SSH)", id: "sshout", clear: false, eventNames: ["logSSHOUT"] },
-          { label: "stderr(SSH)", id: "ssherr", clear: false, eventNames: ["logSSHERR"] },
+          { label: "stdout", id: "stdout", clear: false, eventNames: ["logStdout"] },
+          { label: "stderr", id: "stderr", clear: false, eventNames: ["logStderr"] },
+          { label: "stdout(SSH)", id: "sshout", clear: false, eventNames: ["logSSHout"] },
+          { label: "stderr(SSH)", id: "ssherr", clear: false, eventNames: ["logSSHerr"] },
         ],
       };
     },
