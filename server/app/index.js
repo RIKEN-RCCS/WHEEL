@@ -26,6 +26,7 @@ const { port, keyFilename, certFilename, projectList, remoteHost, jobScheduler }
 const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
 const onGetFileList = require("./handlers/getFileList.js");
 const tryToConnect = require("./handlers/tryToConnect.js");
+const { onRemoveProjectsFromList, onRemoveProjects } = require("./handlers/projectListHanders.js");
 const { getLogger } = require("./logSettings");
 
 /*
@@ -67,6 +68,7 @@ sio.on("connection", (socket)=>{
     //this must go to trace level(file only, never go to console)
     logger.debug(`[socketIO API] ${eventName} recieved.`, args);
   });
+
   //
   //filemanager
   //
@@ -80,9 +82,22 @@ sio.on("connection", (socket)=>{
   //not yet implemented!!
 
   //
+  //projectList
+  //
+  //create
+  //not yet implemented!!
+  //read
+  //not yet implemented!!
+  //update
+  //not yet implemented!!
+  //delete
+  socket.on("removeProjectsFromList", onRemoveProjectsFromList);
+  socket.on("removeProjects", onRemoveProjects);
+
+
+  //
   //remotehost
   //
-
   //create
   socket.on("addHost", async(newHost, cb)=>{
     const id = await remoteHost.unshift(newHost);

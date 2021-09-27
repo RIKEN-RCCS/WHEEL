@@ -30,7 +30,7 @@ class JsonArrayManager {
   /**
    * add new entry
    * please note that if the entry has 'id' key, the value will be overwritten.
-   * @param {Object} entry
+   * @param {Object} entry - data to be added
    */
   add(entry) {
     entry.id = uuidv1();
@@ -40,6 +40,7 @@ class JsonArrayManager {
 
   /**
    * add new entry at the top of array
+   * @param {Object} entry - data to be added at the begining of array
    */
   async unshift(entry) {
     entry.id = uuidv1();
@@ -67,6 +68,18 @@ class JsonArrayManager {
   async remove(id) {
     this.data = this.data.filter((e)=>{
       return e.id !== id;
+    });
+    return this.write();
+  }
+
+
+  /**
+   * remove existing entries
+   * @param {string[]} ids - array of id to be removed
+   */
+  async removeMany(ids) {
+    this.data = this.data.filter((e)=>{
+      return !ids.includes(e.id);
     });
     return this.write();
   }

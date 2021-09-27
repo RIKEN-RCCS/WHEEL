@@ -21,19 +21,42 @@
     </v-app-bar>
     <v-main>
       <v-toolbar extended>
-        <v-btn @click="openProject">
+        <v-btn
+          :disabled="batchMode"
+          @click="openProject"
+        >
           <v-icon>mdi-pencil</v-icon>
           open
         </v-btn>
-        <v-btn @click="dialogMode='newProject'; dialog=true">
+        <v-btn
+          :disabled="batchMode"
+
+          @click="dialogMode='newProject';dialogTitle = 'create new project'; dialog=true"
+        >
           <v-icon>mdi-plus</v-icon>
           new
         </v-btn>
+        <v-btn
+          @click="openDeleteProjectDialog(true)"
+        >
+          <v-icon>mdi-text-box-remove-outline</v-icon>
+          remove from list
+        </v-btn>
+        <v-btn
+          @click="openDeleteProjectDialog(false)"
+        >
+          <v-icon>mdi-trash-can-outline</v-icon>
+          remove
+        </v-btn>
+        <v-switch
+          v-model="batchMode"
+          label="batch mode"
+        />
       </v-toolbar>
       <v-data-table
         v-model="selectedInTable"
         show-select
-        single-select
+        :single-select="!batchMode"
         :headers="headers"
         :items="projectList"
       >
@@ -64,20 +87,23 @@
             class="d-inline-block text-truncate trancated-row"
           >{{ props.item.path }} </span>
         </template>
-        <template v-slot:item.action="{ item }">
-          <action-row
-            :item="item"
-            :can-edit="false"
-            @delete="deleteProjectDialog(item)"
-          />
-        </template>
       </v-data-table>
       <v-dialog
         v-model="dialog"
-        max-width="50%"
+        max-width="70%"
+        scrollable
       >
         <v-card>
           <v-card-title> {{ dialogTitle }}</v-card-title>
+          <v-card-actions>
+            <v-spacer />
+            <buttons
+              :buttons="buttons"
+              @open="openProject"
+              @create="createProject"
+              @cancel="closeDialog"
+            />
+          </v-card-actions>
           <v-card-actions v-if="dialogMode === 'newProject'">
             <v-text-field
               v-model="newProjectName"
@@ -87,22 +113,13 @@
             <v-textarea
               v-model="newProjectDescription"
               label="project description"
+              rows="2"
+              auto-grow
               outlined
-            />
-          </v-card-actions>
-          <v-card-actions>
-            <v-spacer />
-            <buttons
-              :buttons="buttons"
-              @open="openProject"
-              @create="createProject"
-              @remove="removeProject"
-              @cancel="closeDialog"
             />
           </v-card-actions>
           <v-card-text>
             <file-browser
-              v-if="dialogMode !== 'removeProject'"
               :path-sep="pathSep"
               :root="home"
               @update="(a)=>{selectedInTree=a}"
@@ -111,13 +128,20 @@
         </v-card>
       </v-dialog>
     </v-main>
+    <remove-confirm-dialog
+      v-model="rmDialog"
+      title="remove project"
+      :message="removeProjectMessage"
+      :remove-candidates="removeCandidates"
+      @remove="commitRemoveProjects"
+    />
   </v-app>
 </template>
 <script>
   "use strict";
   import navDrawer from "@/components/common/NavigationDrawer.vue";
-  import actionRow from "@/components/common/actionRow.vue";
   import fileBrowser from "@/components/common/fileBrowserLite.vue";
+  import removeConfirmDialog from "@/components/common/removeConfirmDialog.vue";
   import buttons from "@/components/common/buttons.vue";
   import { readCookie } from "@/lib/utility.js";
   import SIO from "@/lib/socketIOWrapper.js";
@@ -130,14 +154,17 @@
     name: "Home",
     components: {
       navDrawer,
-      actionRow,
       fileBrowser,
       buttons,
+      removeConfirmDialog,
     },
     data: ()=>{
       return {
+        batchMode: false,
         drawer: false,
         dialog: false,
+        rmDialog: false,
+        removeFromList: false,
         dialogMode: "default",
         selectedInTree: null,
         selectedInTable: [],
@@ -149,12 +176,11 @@
           { text: "Create time", value: "ctime" },
           { text: "Last modified time", value: "mtime" },
           { text: "State", value: "state" },
-          { text: "delete", value: "action", sortable: false },
         ],
         dialogTitle: "",
         newProjectName: "",
         newProjectDescription: "",
-        removeCandidate: null,
+        removeCandidates: [],
         pathSep: "/",
         home: "/",
       };
@@ -162,10 +188,8 @@
     computed: {
       selected () {
         let rt = this.selectedInTable.length > 0 ? this.selectedInTable[0].path : this.home;
-        console.log(this.selectedInTable);
 
         if (this.selectedInTree) {
-          console.log(this.selectedInTree);
           rt = this.selectedInTree.replace(reProjectJsonFilename, "");
         }
         return rt;
@@ -174,20 +198,19 @@
         const open = { icon: "mdi-check", label: "open" };
         const create = { icon: "mdi-plus", label: "create" };
         const cancel = { icon: "mdi-close", label: "cancel" };
-        const remove = { icon: "mdi-delete", label: "remove" };
         const rt = [cancel];
         switch (this.dialogMode) {
           case "newProject":
             rt.unshift(create);
-            break;
-          case "removeProject":
-            rt.unshift(remove);
             break;
           default:
             rt.unshift(open);
             break;
         }
         return rt;
+      },
+      removeProjectMessage () {
+        return this.removeFromList ? "remove projects from list" : "remove project files";
       },
     },
     mounted: function () {
@@ -213,10 +236,10 @@
         this.closeDialog();
       },
       openProject () {
-        if (!this.selected) {
-          this.dialogMode = "newProject";
+        if (this.selected === this.home) {
+          this.dialogTitle = "select project path";
+          this.dialogMode = "default";
           this.dialog = true;
-          this.dialogTitle = "create new project";
           return;
         }
         const form = document.createElement("form");
@@ -234,17 +257,35 @@
       renameProject (item) {
         SIO.emitHome("renameProject", { id: item.id, newName: item.name, path: item.path });
       },
-      deleteProjectDialog (item) {
-        this.dialogMode = "removeProject";
-        this.dialog = true;
-        this.removeCandidate = { id: item.id, name: item.name, state: item.state };
-        this.dialogTitle = `remove ${item.name} project`;
+      openDeleteProjectDialog (fromListOnly) {
+        this.removeFromList = fromListOnly;
+        this.removeCandidates = this.selectedInTable.map((e)=>{ return e.name; });
+        this.rmDialog = true;
       },
-      removeProject () {
-        const item = this.removeCandidate;
-        SIO.emitHome("removeProject", item.id);
-        this.removeCandidate = null;
-        this.dialog = false;
+      commitRemoveProjects () {
+        const removeIDs = this.selectedInTable
+          .map((e)=>{
+            return e.id;
+          });
+        const eventName = this.removeFromList ? "removeProjectsFromList" : "removeProjects";
+        SIO.emitGlobal(eventName, removeIDs, (rt)=>{
+          if (!rt) {
+            console.log("remove failed", rt);
+            SIO.emitGlobal("getProjectList", (data)=>{
+              if (!Array.isArray(data)) {
+                console.log("illegal projectlist recieved", data);
+                return;
+              }
+              this.projectList.splice(0, this.projectList.length, ...data);
+            });
+            return;
+          }
+          const newProjectList = this.projectList.filter((e)=>{
+            return !removeIDs.includes(e.id);
+          });
+          this.projectList.splice(0, this.projectList.length, ...newProjectList);
+          this.selectedInTable = [];
+        });
       },
     },
   };
