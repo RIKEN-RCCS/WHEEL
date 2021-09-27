@@ -109,6 +109,7 @@
               v-model="newProjectName"
               label="project name"
               outlined
+              :rules="[required]"
             />
             <v-textarea
               v-model="newProjectDescription"
@@ -145,6 +146,7 @@
   import buttons from "@/components/common/buttons.vue";
   import { readCookie } from "@/lib/utility.js";
   import SIO from "@/lib/socketIOWrapper.js";
+  import { required } from "@/lib/validationRules.js";
 
   // it should be get from server
   const projectJsonFilename = "prj.wheel.json";
@@ -222,6 +224,7 @@
       });
     },
     methods: {
+      required,
       closeDialog () {
         this.dialog = false;
         this.dialogMode = "default";
@@ -231,6 +234,9 @@
         this.dialogTitle = "";
       },
       createProject () {
+        if (!this.newProjectName) {
+
+        }
         const path = `${this.selected}/${this.newProjectName}`;
         SIO.emitHome("addProject", path, this.newProjectDescription);
         this.closeDialog();

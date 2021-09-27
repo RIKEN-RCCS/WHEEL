@@ -184,6 +184,7 @@
 </template>
 <script>
   import buttons from "@/components/common/buttons.vue";
+  import { required } from "@/lib/validationRules.js";
   export default {
     Name: "PasswordDialog",
     components: {
@@ -221,9 +222,7 @@
       this.host = Object.assign(this.host, this.initialValue);
     },
     methods: {
-      required (v) {
-        return v === 0 || !!v || "Required.";
-      },
+      required,
       validPortNumber (v) {
         if (typeof v !== "number") {
           return false;
