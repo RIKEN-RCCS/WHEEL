@@ -172,19 +172,19 @@
           <v-expansion-panel-content>
             <v-form @submit.prevent>
               <v-text-field
-                v-model="copySelectedComponent.start"
+                v-model.number="copySelectedComponent.start"
                 label="start"
                 type="number"
                 @change="updateComponentProperty('start')"
               />
               <v-text-field
-                v-model="copySelectedComponent.end"
+                v-model.number="copySelectedComponent.end"
                 label="end"
                 type="number"
                 @change="updateComponentProperty('end')"
               />
               <v-text-field
-                v-model="copySelectedComponent.step"
+                v-model.number="copySelectedComponent.step"
                 label="step"
                 type="number"
                 @change="updateComponentProperty('step')"
