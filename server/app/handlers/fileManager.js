@@ -16,7 +16,7 @@ const projectJsonFileOnly = new RegExp(`^.*(?:${escapeRegExp(projectJsonFilename
 /*
  * mode is one of dir, dirWithProjectJson, underComponent, SND
  */
-const getFileListHandler = async(socket, msg, cb)=>{
+const onGetFileList = async(socket, msg, cb)=>{
   logger.debug("getFileList");
 
   if (typeof cb !== "function") {
@@ -54,4 +54,6 @@ const getFileListHandler = async(socket, msg, cb)=>{
   }
 };
 
-module.exports = getFileListHandler;
+module.exports = {
+  onGetFileList
+};

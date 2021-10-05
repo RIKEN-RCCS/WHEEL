@@ -280,11 +280,11 @@
     },
     watch:{
       selectedComponent(){
-      if (typeof this.selectedComponentAbsPath === "string") {
-        SIO.emit("getFileList", this.selectedComponentAbsPath, (fileList)=>{
-          this.items = fileList.map(fileListModifier.bind(null, this.pathSep))
-        })
-      }
+        if (typeof this.selectedComponentAbsPath === "string") {
+          SIO.emit("getFileList", this.selectedComponentAbsPath, (fileList)=>{
+            this.items = fileList.map(fileListModifier.bind(null, this.pathSep))
+          })
+        }
       },
     },
     mounted () {
@@ -327,8 +327,12 @@
         this.uploading=true;
       },
       onUploadComplete(){
-        console.log("upload done");
         this.uploading=false;
+        if (typeof this.selectedComponentAbsPath === "string") {
+          SIO.emit("getFileList", this.selectedComponentAbsPath, (fileList)=>{
+            this.items = fileList.map(fileListModifier.bind(null, this.pathSep))
+          })
+        }
       },
       updateProgressBar(event){
         this.percentUploaded=(event.bytesLoaded / event.file.size)*100

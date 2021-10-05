@@ -24,9 +24,9 @@ const cookie = require("cookie");
 const siofu = require("socketio-file-upload");
 const { port, keyFilename, certFilename, projectList, remoteHost, jobScheduler } = require("./db/db");
 const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
-const onGetFileList = require("./handlers/getFileList.js");
+const { onGetFileList } = require("./handlers/fileManager.js");
 const tryToConnect = require("./handlers/tryToConnect.js");
-const { onRemoveProjectsFromList, onRemoveProjects } = require("./handlers/projectListHanders.js");
+const { onRemoveProjectsFromList, onRemoveProjects } = require("./handlers/projectListHandlers.js");
 const { getLogger } = require("./logSettings");
 
 /*
