@@ -9,7 +9,7 @@
  * remove one entry from array
  * @param {Object[] | string[]} array - target array
  * @param {Object | string} target - element to be removed
- * @param {string} [prop]- element's property which to be used at compare time
+ * @param {string} [prop]- element's property which to be used at compare
  * @return {number} - removed element's index
  */
 export function removeFromArray (array, target, prop) {

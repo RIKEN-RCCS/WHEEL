@@ -3,7 +3,7 @@
     <div v-if="! readonly">
       <v-spacer />
       <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn>
             <v-icon
               v-bind="attrs"
@@ -17,7 +17,7 @@
         new folder
       </v-tooltip>
       <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn>
             <v-icon
               v-bind="attrs"
@@ -31,7 +31,7 @@
         new file
       </v-tooltip>
       <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn>
             <v-icon
               v-bind="attrs"
@@ -45,7 +45,7 @@
         create job script file
       </v-tooltip>
       <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn>
             <v-icon
               v-bind="attrs"
@@ -59,7 +59,7 @@
         rename
       </v-tooltip>
       <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn>
             <v-icon
               v-bind="attrs"
@@ -73,7 +73,7 @@
         delete
       </v-tooltip>
       <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn>
             <v-icon
               v-bind="attrs"
@@ -87,7 +87,7 @@
         upload file
       </v-tooltip>
       <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn>
             <v-icon
               v-bind="attrs"
@@ -113,7 +113,7 @@
       :open="openItems"
       @update:active="updateSelected"
     >
-      <template v-slot:prepend="{item, open}">
+      <template #prepend="{item, open}">
         <v-icon v-if="item.children !== null">
           {{ open ? openIcons[item.type] : icons[item.type] }}
         </v-icon>
@@ -137,6 +137,7 @@
             v-model="dialog.inputField"
             autofocus
             :label="dialog.inputFieldLabel"
+            :rules="[noDuplicate]"
           />
         </v-card-text>
         <v-card-actions>
@@ -228,7 +229,10 @@
   }
   export default {
     name: "FileBrowser",
-    props: { readonly: { type: Boolean, default: true } },
+    props: {
+      readonly: { type: Boolean, default: true },
+      projectRootDir: { type: String, default: null }
+    },
     data: function () {
       return {
         uploading:false,
@@ -277,8 +281,6 @@
           })
         this.commitScriptCandidates(scriptCandidates)
       },
-    },
-    watch:{
       selectedComponent(){
         if (typeof this.selectedComponentAbsPath === "string") {
           SIO.emit("getFileList", this.selectedComponentAbsPath, (fileList)=>{
@@ -306,6 +308,9 @@
       SIO.removeUploaderEvent("progress", this.updateProgressBar)
     },
     methods: {
+      noDuplicate(v){
+       return ! this.items.map((e)=>{ return e.name }).includes(v)
+      },
       createNewJobScript (event) {
         console.log("not implemented!!")
       },
@@ -346,6 +351,7 @@
           const path = [this.selectedComponentAbsPath]
           getActiveItem(this.items, item.id, path)
           const currentDir = path.join(this.pathSep)
+          //TODO to be fixed!
           const event = (item.type === "dir" || item.type === "dir-link") ? "getFileList" : "getSNDContents"
           const args = (item.type === "dir" || item.type === "dir-link") ? [currentDir] : [currentDir, item.name, item.type.startsWith("sndd") ]
           SIO.emit(event, ...args, (fileList)=>{
@@ -391,16 +397,21 @@
         } else if (this.dialog.submitEvent === "createNewFile" || this.dialog.submitEvent === "createNewDir") {
           const name = this.dialog.inputField
           const fullPath = `${path}${this.pathSep}${name}`
+          if(!this.noDuplicate(name)){
+            console.log("duplicated name is not allowed")
+            this.clearAndCloseDialog()
+            return
+          }
           const type = this.dialog.submitEvent === "createNewFile" ? "file" : "dir"
           SIO.emit(this.dialog.submitEvent, fullPath, (rt)=>{
             if (!rt) {
               return
             }
-            const container = this.dialog.activeItem ? this.dialog.activeItem.children : this.items
             const newItem = { id: fullPath, name, path, type }
             if (this.dialog.submitEvent === "createNewDir") {
               newItem.children = []
             }
+            const container = this.dialog.activeItem ? this.dialog.activeItem.children : this.items
             container.push(newItem)
 
             if (this.dialog.activeItem && !this.openItems.includes(this.dialog.activeItem.id)) {

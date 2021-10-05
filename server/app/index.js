@@ -24,7 +24,7 @@ const cookie = require("cookie");
 const siofu = require("socketio-file-upload");
 const { port, keyFilename, certFilename, projectList, remoteHost, jobScheduler } = require("./db/db");
 const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
-const { onGetFileList } = require("./handlers/fileManager.js");
+const { onCreateNewFile, onCreateNewDir, onGetFileList } = require("./handlers/fileManager.js");
 const tryToConnect = require("./handlers/tryToConnect.js");
 const { onRemoveProjectsFromList, onRemoveProjects } = require("./handlers/projectListHandlers.js");
 const { getLogger } = require("./logSettings");
@@ -73,9 +73,10 @@ sio.on("connection", (socket)=>{
   //filemanager
   //
   //create
-  //not yet implemented!!
+  socket.on("createNewFile", onCreateNewFile);
+  socket.on("createNewDir", onCreateNewDir);
   //read
-  socket.on("getFileList", onGetFileList.bind(null, socket));
+  socket.on("getFileList", onGetFileList);
   //update
   //not yet implemented!!
   //delete

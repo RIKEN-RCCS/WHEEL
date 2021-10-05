@@ -25,7 +25,7 @@
         <v-spacer />
         <v-toolbar-items>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 v-bind="attrs"
                 v-on="on"
@@ -37,7 +37,7 @@
             close
           </v-tooltip>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 :disabled="selectedComponent.state === 'not-started'"
                 v-bind="attrs"
@@ -49,7 +49,7 @@
             clean
           </v-tooltip>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 v-bind="attrs"
                 v-on="on"
@@ -294,7 +294,10 @@
         <v-expansion-panel>
           <v-expansion-panel-header>Files</v-expansion-panel-header>
           <v-expansion-panel-content>
-            <file-browser :readonly="false" />
+            <file-browser
+              :readonly="false"
+              :project-root-dir="projectRootDir"
+            />
           </v-expansion-panel-content>
         </v-expansion-panel>
       </v-expansion-panels>

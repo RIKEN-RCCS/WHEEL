@@ -9,7 +9,10 @@ module.exports = {
   env: {
     es6: true,
   },
-  extends: "vuetify",
+  extends: [
+    "plugin:vue/recommended",
+    "plugin:vuetify/recommended"
+  ],
   parserOptions: {
     ecmaVersion: 2020,
   },

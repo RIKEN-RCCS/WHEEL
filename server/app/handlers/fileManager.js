@@ -1,12 +1,13 @@
 "use strict";
 const path = require("path");
+const fs = require("fs-extra");
+const { gitAdd } = require("../core/gitOperator2");
 const { convertPathSep } = require("../core/pathUtils");
 const { escapeRegExp } = require("../lib/utility");
 const fileBrowser = require("../core/fileBrowser");
 const { getLogger } = require("../logSettings");
 const logger = getLogger();
 const { projectJsonFilename, componentJsonFilename, rootDir } = require("../db/db");
-
 const oldProjectJsonFilename = "swf.prj.json";
 const noDotFiles = /^[^.].*$/;
 const allFiles = /.*/;
@@ -16,7 +17,7 @@ const projectJsonFileOnly = new RegExp(`^.*(?:${escapeRegExp(projectJsonFilename
 /*
  * mode is one of dir, dirWithProjectJson, underComponent, SND
  */
-const onGetFileList = async(socket, msg, cb)=>{
+const onGetFileList = async(msg, cb)=>{
   logger.debug("getFileList");
 
   if (typeof cb !== "function") {
@@ -45,15 +46,47 @@ const onGetFileList = async(socket, msg, cb)=>{
         file: fileFilter,
         dir: null
       },
-      withParentDir: true
+      withParentDir: false
     });
     return cb(result);
   } catch (e) {
     logger.error("error occurred during reading directory", e);
-    return cb(false);
+    return cb(null);
   }
 };
 
+async function onCreateNewFile(projectRootDir, argFilename, cb) {
+  const filename = convertPathSep(argFilename);
+
+  try {
+    await fs.writeFile(filename, "");
+    await gitAdd(projectRootDir, filename);
+  } catch (e) {
+    logger.error("create new file failed", e);
+    cb(null);
+    return;
+  }
+  cb(filename);
+}
+
+async function onCreateNewDir(projectRootDir, argDirname, cb) {
+  const dirname = convertPathSep(argDirname);
+
+  try {
+    await fs.mkdir(dirname);
+    await fs.writeFile(path.resolve(dirname, ".gitkeep"), "");
+    await gitAdd(projectRootDir, path.resolve(dirname, ".gitkeep"));
+  } catch (e) {
+    logger.error("create new directory failed", e);
+    cb(null);
+    return;
+  }
+  cb(dirname);
+}
+
+
 module.exports = {
-  onGetFileList
+  onGetFileList,
+  onCreateNewFile,
+  onCreateNewDir
 };
