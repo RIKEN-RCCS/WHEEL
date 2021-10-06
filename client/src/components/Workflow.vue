@@ -40,13 +40,13 @@
         @click="drawer = true"
       />
 
-      <template v-slot:extension>
+      <template #extension>
         <v-btn-toggle
           v-model="mode"
           mandatory
         >
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 replace
@@ -60,7 +60,7 @@
             <span>graph view</span>
           </v-tooltip>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 replace
@@ -74,7 +74,7 @@
             <span>list view</span>
           </v-tooltip>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 replace
@@ -92,7 +92,7 @@
         <v-spacer />
         <v-card>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 icon
@@ -111,7 +111,7 @@
             v-if="false"
             bottom
           >
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 icon
@@ -127,7 +127,7 @@
           </v-tooltip>
 
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 icon
@@ -143,7 +143,7 @@
           </v-tooltip>
 
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 icon
@@ -162,7 +162,7 @@
         <v-spacer />
         <v-card>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 :disabled="isDisabled('saveProject')"
@@ -176,7 +176,7 @@
             <span>save project</span>
           </v-tooltip>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <v-btn
                 outlined
                 :disabled="isDisabled('revertProject')"
@@ -240,7 +240,7 @@
       text
     >
       {{ snackbarMessage }}
-      <template v-slot:action="{ attrs }">
+      <template #action="{ attrs }">
         <v-btn
           color="indigo"
           text
@@ -293,6 +293,7 @@
         "projectState",
         "rootComponentID",
         "openSnackbar",
+        "currentComponent",
         "snackbarMessage",
       ]),
       ...mapGetters(["waiting"]),
@@ -310,6 +311,9 @@
         this.commitWaitingProjectJson(false);
       });
       SIO.on("workflow", (wf)=>{
+        if(this.currentComponent!==null && wf.ID !== this.currentComponent.ID){
+          this.commitSelectedComponent(null);
+        }
         this.commitCurrentComponent(wf);
         this.commitWaitingWorkflow(false);
       });
@@ -354,6 +358,7 @@
           commitProjectState: "projectState",
           commitComponentPath: "componentPath",
           commitCurrentComponent: "currentComponent",
+          commitSelectedComponent: "selectedComponent",
           commitProjectRootDir: "projectRootDir",
           commitRootComponentID: "rootComponentID",
           commitRemoteHost: "remoteHost",
