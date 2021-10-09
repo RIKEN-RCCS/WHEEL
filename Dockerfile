@@ -1,26 +1,21 @@
 #build WHEEL client code
-FROM node:erbium-slim as builder
+FROM --platform=linux/amd64 node:fermium-slim as builder
 WORKDIR /usr/src/
 
 # to install phantomjs
-RUN apt-get update && apt -y install bzip2
+RUN apt-get update && apt -y install bzip2 python3 g++ build-essential
 
 # copy necessary files
 COPY client client
 COPY server server
+COPY build.sh build.sh
 
-RUN cd server && npm install && npm run prepare &&\
-    cd ../client && npm install && npm run build &&\
-    mv dist/*.html ../server/app/views/  &&\
-    cp -r dist/* ../server/app/public/  &&\
-    cp -r src/oldImgTmp/* ../server/app/public/image/
+RUN ./build.sh
 
 #build base image to run WHEEL
-FROM node:erbium-slim as runner
-RUN apt-get update && apt -y install curl &&\
+FROM --platform=linux/amd64 node:fermium-slim as runner
+RUN apt-get update && apt -y install curl git &&\
     curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash &&\
-    apt -y install python3-pip python3-dev libssl-dev libcurl4-openssl-dev git git-lfs&&\
-    pip3 install -U jupyter  &&\
     apt-get clean  &&\
     rm -rf /var/lib/apt/lists/*
 
