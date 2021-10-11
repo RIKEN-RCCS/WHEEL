@@ -15,7 +15,8 @@ RUN ./build.sh
 #build base image to run WHEEL
 FROM --platform=linux/amd64 node:fermium-slim as runner
 RUN apt-get update && apt -y install curl git &&\
-    curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash &&\
+    curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
+RUN apt -y install git-lfs &&\
     apt-get clean  &&\
     rm -rf /var/lib/apt/lists/*
 
