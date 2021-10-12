@@ -7,10 +7,7 @@
 ### ・ 本ユーザガイドの構成  
 本ユーザガイドは、以下の内容によって構成されています。  
 1. WHEELの手順書
-    1. [WHEELのインストール](WHEEL_introduction/1_install/install.md)
-    1. [WHEELの起動（サーバ、クライアント）](WHEEL_introduction/2_start/start.md)
-    1. [WHEELの終了（サーバ、クライアント）](WHEEL_introduction/3_finish/finish.md)
-    1. [WHEELのアンインストール](WHEEL_introduction/4_uninstall/uninstall.md)
+    1. [WHEELの起動方法(docker使用)](WHEEL_introduction/how_to_boot/boot.md)
 1. WHEELのマニュアル
     1. ホーム画面
         1. [新規プロジェクトの作成（ニュー、インポート）](WHEEL_manual/1_home_screen/create_project.md)
