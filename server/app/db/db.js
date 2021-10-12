@@ -22,14 +22,14 @@ function isExists(target, file) {
 }
 
 function getConfigFile(filename, failIfNotFound) {
-  const dotFile = path.resolve(os.homedir(), ".wheel", filename);
-  if (isExists(dotFile, true)) {
-    return dotFile;
-  }
   const envFile = typeof process.env.WHEEL_CONFIG_DIR === "string"
     ? path.resolve(process.env.WHEEL_CONFIG_DIR, filename) : null;
   if (envFile !== null && isExists(envFile, true)) {
     return envFile;
+  }
+  const dotFile = path.resolve(os.homedir(), ".wheel", filename);
+  if (isExists(dotFile, true)) {
+    return dotFile;
   }
   const defaultPath = path.resolve(__dirname, "../config", filename);
   if (isExists(defaultPath, true)) {
@@ -38,14 +38,14 @@ function getConfigFile(filename, failIfNotFound) {
   if (failIfNotFound) {
     throw new Error(filename, "not found");
   }
-  const dotFileDir = path.resolve(os.homedir(), ".wheel");
-  if (isExists(dotFileDir, false)) {
-    return path.resolve(dotFileDir, filename);
-  }
   const envFileDir = typeof process.env.WHEEL_CONFIG_DIR === "string"
     ? path.resolve(process.env.WHEEL_CONFIG_DIR) : null;
   if (envFileDir !== null && isExists(envFileDir, false)) {
     return path.resolve(envFileDir, filename);
+  }
+  const dotFileDir = path.resolve(os.homedir(), ".wheel");
+  if (isExists(dotFileDir, false)) {
+    return path.resolve(dotFileDir, filename);
   }
   const defaultDir = path.resolve(__dirname, "../config");
   if (isExists(defaultDir, false)) {
@@ -58,7 +58,7 @@ function getConfigFile(filename, failIfNotFound) {
 const config = require(getConfigFile("server.json", true));
 const jobScheduler = require(getConfigFile("jobScheduler.json", true));
 const remotehostFilename = getConfigFile(config.remotehostJsonFile);
-const jobScriptFilename = getConfigFile(config.jobScriptJsonFile, true);
+const jobScriptFilename = getConfigFile(config.jobScriptJsonFile);
 const projectListFilename = getConfigFile(config.projectListJsonFile);
 const keyFilename = getConfigFile("server.key", true);
 const certFilename = getConfigFile("server.crt", true);
