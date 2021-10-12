@@ -21,29 +21,16 @@ pushd $(dirname $0)
 
 # stop container
 docker stop ${TAG} >& /dev/null
-docker stop ${TAG_TEST_SERVER} >& /dev/null
 # remove container
 docker rm ${TAG} >& /dev/null
-docker rm ${TAG_TEST_SERVER} >& /dev/null
 # remove image
 docker rmi ${TAG} >& /dev/null
-docker rmi ${TAG_TEST_SERVER} >& /dev/null
 
 set -e -o pipefail
 trap cleanup EXIT
 
-#build test server container
-pushd testServer/docker_pbspro_sshd
-docker build --platform linux/amd64 -t ${TAG_TEST_SERVER} .
-rt=$?
-popd
-if [ ${rt} -ne 0 ];then
-  echo "ERROR: build test server failed ${rt}"
-  exit 1
-fi
-
 # start test server
-docker run --rm -d -p 4000:22 --name ${TAG_TEST_SERVER} ${TAG_TEST_SERVER}
+docker run --rm -d -p 4000:22 --name ${TAG_TEST_SERVER} naoso5/openpbs
 if [ $? -ne 0 ];then
   echo "ERROR: run test server failed $?"
   exit 2
@@ -53,7 +40,7 @@ IPAddress=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}
 
 # build WHEEL docker image
 pushd ../../
-DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --target=test -t ${TAG} .
+docker build --platform linux/amd64 --target=test -t ${TAG} .
 rt=$?
 popd
 if [ ${rt} -ne 0 ];then
@@ -80,7 +67,7 @@ openssl req -x509 -out ${CONFIG_DIR}/server.crt -keyout ${CONFIG_DIR}/server.key
 -nodes -sha256  -subj '/CN=localhost' -extensions EXT -config ${SSL_CONFIG}
 
 #copy default setting files
-cp ../app/config/{server,jobScheduler}.json ${CONFIG_DIR}
+cp ../app/config/{server,jobScheduler,jobScript}.json ${CONFIG_DIR}
 
 #create rmeotehost.json
 {
@@ -97,7 +84,8 @@ echo '  "jobScheduler": "PBSPro",'
 echo '  "renewInterval": 0,'
 echo '  "renewDelay": 0,'
 echo '  "statusCheckInterval": 10,'
-echo '  "maxStatusCheckError": 10'
+echo '  "maxStatusCheckError": 10,'
+echo '  "readyTimeout": 5000'
 echo '}]'
 } > ${CONFIG_DIR}/remotehost.json
 

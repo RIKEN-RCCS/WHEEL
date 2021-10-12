@@ -140,12 +140,12 @@ describe("home screen API test", function() {
       expect(emit).to.have.been.calledOnce;
       expect(emit.args[0][0]).to.be.equal("fileList");
       const dirList = emit.args[0][1];
-      expect(dirList).to.have.deep.members([
-        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz2", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "../", type: "dir", islink: false }
+      expect(dirList).to.have.deep.not.ordered.members([
+        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz2", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "../", type: "dir", islink: false, isComponentDir: false }
       ]);
     });
   });
@@ -157,7 +157,7 @@ describe("home screen API test", function() {
       expect(emit).to.have.been.calledOnce;
       expect(emit.args[0][0]).to.be.equal("fileList");
       const dirList = emit.args[0][1];
-      expect(dirList).to.have.deep.members([
+      expect(dirList).to.have.deep.not.ordered.members([
         { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
         { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
         { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },

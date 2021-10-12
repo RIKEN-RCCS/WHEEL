@@ -1,13 +1,10 @@
 "use strict";
 const path = require("path");
 const fs = require("fs-extra");
-const { projectJsonFilename, componentJsonFilename } = require("../../../app/db/db");
 
 //setup test framework
 const chai = require("chai");
 const expect = chai.expect;
-const sinon = require("sinon");
-chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 chai.use(require("chai-as-promised"));
 
@@ -109,7 +106,7 @@ describe("file utility functions", ()=>{
       expect(added).to.have.members(["huga"]);
     });
     it("should throw error while attempting to write directory", async()=>{
-      return expect(saveFile(path.resolve(testDirRoot, "hoge"))).to.be.rejectedWith("EISDIR");
+      return expect(saveFile(path.resolve(testDirRoot, "hoge"), "hoge")).to.be.rejectedWith("EISDIR");
     });
   });
 });

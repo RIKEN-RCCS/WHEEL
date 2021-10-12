@@ -75,14 +75,14 @@ describe("fileManager UT", ()=>{
       const uploader = {};
       await onGetFileList(uploader, "dummy", path.resolve(testDirRoot), cb);
       expect(cb).to.have.been.calledOnce;
-      expect(cb).to.have.been.calledWith([{ path: path.resolve(testDirRoot), name: ".git", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
+      expect(cb).to.have.been.calledWith([{ path: path.resolve(testDirRoot), name: ".git", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false, isComponentDir: false },
         { path: path.resolve(testDirRoot), name: "foo_*", type: "sndd", islink: false, pattern: "foo_\\d+" },
-        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true },
+        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true, isComponentDir: false },
         { path: path.resolve(testDirRoot), name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
         { path: path.resolve(testDirRoot), name: "huga_*_100", type: "snd", islink: false, pattern: "huga_\\d+_100" },
         { path: path.resolve(testDirRoot), name: "huga_*_200", type: "snd", islink: false, pattern: "huga_\\d+_200" },
@@ -137,9 +137,9 @@ describe("fileManager UT", ()=>{
     it("should send foo_* directories", async()=>{
       await onGetSNDContents("dummy", testDirRoot, "foo_*", true, cb);
       expect(cb).to.have.been.calledOnce;
-      expect(cb).to.have.been.calledWith([{ path: path.resolve(testDirRoot), name: "foo_00", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo_01", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo_02", type: "dir", islink: false }]);
+      expect(cb).to.have.been.calledWith([{ path: path.resolve(testDirRoot), name: "foo_00", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "foo_01", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "foo_02", type: "dir", islink: false, isComponentDir: false }]);
     });
   });
   describe("#removeFile", ()=>{

@@ -1,12 +1,10 @@
-const { promisify } = require("util");
+"use strict";
 const path = require("path");
 const fs = require("fs-extra");
 
 //setup test framework
 const chai = require("chai");
 const { expect } = require("chai");
-const sinon = require("sinon");
-chai.use(require("sinon-chai"));
 chai.use(require("chai-fs"));
 const rewire = require("rewire");
 
@@ -36,7 +34,7 @@ describe("file Browser UT", ()=>{
     "1_baz",
     "2_baz"
   ].map((e)=>{
-    return { path: testDirRoot, name: e, type: "file", islink: false };
+    return { path: testDirRoot, name: e, type: "file", islink: false, isComponentDir: false };
   });
   beforeEach(async()=>{
     await fs.remove(testDirRoot);
@@ -71,12 +69,12 @@ describe("file Browser UT", ()=>{
     it("should get all files and directories", async()=>{
       const rt = await getContents(testDirRoot);
       expect(rt).to.eql([
-        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true },
+        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true, isComponentDir: false },
         { path: path.resolve(testDirRoot), name: "foo_1", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "foo_2", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "foo_3", type: "file", islink: false },
@@ -95,12 +93,12 @@ describe("file Browser UT", ()=>{
     it("should get directories", async()=>{
       const rt = await getContents(testDirRoot, { sendFilename: false });
       expect(rt).to.eql([
-        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true }
+        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true, isComponentDir: false }
       ]);
     });
     it("should get files", async()=>{
@@ -124,12 +122,12 @@ describe("file Browser UT", ()=>{
     it("should get files, directories and SND files", async()=>{
       const rt = await getContents(testDirRoot, { SND: true });
       expect(rt).to.eql([
-        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true },
+        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true, isComponentDir: false },
         { path: path.resolve(testDirRoot), name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
         { path: path.resolve(testDirRoot), name: "huga_*_100", type: "snd", islink: false, pattern: "huga_\\d+_100" },
         { path: path.resolve(testDirRoot), name: "huga_*_200", type: "snd", islink: false, pattern: "huga_\\d+_200" },
@@ -144,8 +142,8 @@ describe("file Browser UT", ()=>{
     it("should get matched files and directories", async()=>{
       const rt = await getContents(testDirRoot, { filter: { all: /^[bh].*/ } });
       expect(rt).to.eql([
-        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
+        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false, isComponentDir: false },
         { path: path.resolve(testDirRoot), name: "huga_1_100", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "huga_1_200", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "huga_1_300", type: "file", islink: false },
@@ -158,12 +156,12 @@ describe("file Browser UT", ()=>{
     it("should get matched files", async()=>{
       const rt = await getContents(testDirRoot, { filter: { file: /[fl].*/ } });
       expect(rt).to.eql([
-        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true },
+        { path: path.resolve(testDirRoot), name: "bar", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "baz", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true, isComponentDir: false },
         { path: path.resolve(testDirRoot), name: "foo_1", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "foo_2", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "foo_3", type: "file", islink: false },
@@ -175,10 +173,10 @@ describe("file Browser UT", ()=>{
     it("should get matched directories", async()=>{
       const rt = await getContents(testDirRoot, { filter: { dir: /[fl].*/ } });
       expect(rt).to.eql([
-        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false },
-        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true },
-        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true },
+        { path: path.resolve(testDirRoot), name: "foo", type: "dir", islink: false, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbar", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkbaz", type: "dir", islink: true, isComponentDir: false },
+        { path: path.resolve(testDirRoot), name: "linkfoo", type: "dir", islink: true, isComponentDir: false },
         { path: path.resolve(testDirRoot), name: "foo_1", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "foo_2", type: "file", islink: false },
         { path: path.resolve(testDirRoot), name: "foo_3", type: "file", islink: false },
@@ -198,33 +196,33 @@ describe("file Browser UT", ()=>{
   describe("#getSNDs", ()=>{
     it("should return glob patterns", ()=>{
       const expected = [
-        { path: testDirRoot, name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
         { path: testDirRoot, name: "foo_1_*", type: "snd", islink: false, pattern: "foo_1_\\d+" },
+        { path: testDirRoot, name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
         { path: testDirRoot, name: "foo_*_10", type: "snd", islink: false, pattern: "foo_\\d+_10" },
         { path: testDirRoot, name: "foo_*_15", type: "snd", islink: false, pattern: "foo_\\d+_15" },
         { path: testDirRoot, name: "foo_2_*", type: "snd", islink: false, pattern: "foo_2_\\d+" },
         { path: testDirRoot, name: "foo_*_100", type: "snd", islink: false, pattern: "foo_\\d+_100" },
         { path: testDirRoot, name: "*_baz", type: "snd", islink: false, pattern: "\\d+_baz" }
       ];
-      expect(getSNDs(input)).to.have.deep.members(expected);
+      expect(getSNDs(input)).to.have.deep.not.ordered.members(expected);
     });
   });
   describe("#bundleSNDFiles", ()=>{
     it("should return files and SND", ()=>{
       const expected = [
-        { path: testDirRoot, name: "*_baz", type: "snd", islink: false, pattern: "\\d+_baz" },
-        { path: testDirRoot, name: "bar", type: "file", islink: false },
-        { path: testDirRoot, name: "bar_1_10", type: "file", islink: false },
-        { path: testDirRoot, name: "baz", type: "file", islink: false },
-        { path: testDirRoot, name: "foo", type: "file", islink: false },
+        { path: testDirRoot, name: "foo", type: "file", islink: false, isComponentDir: false },
+        { path: testDirRoot, name: "bar", type: "file", islink: false, isComponentDir: false },
+        { path: testDirRoot, name: "baz", type: "file", islink: false, isComponentDir: false },
+        { path: testDirRoot, name: "bar_1_10", type: "file", islink: false, isComponentDir: false },
         { path: testDirRoot, name: "foo_*", type: "snd", islink: false, pattern: "foo_\\d+" },
+        { path: testDirRoot, name: "foo_1_*", type: "snd", islink: false, pattern: "foo_1_\\d+" },
         { path: testDirRoot, name: "foo_*_10", type: "snd", islink: false, pattern: "foo_\\d+_10" },
+        { path: testDirRoot, name: "*_baz", type: "snd", islink: false, pattern: "\\d+_baz" },
         { path: testDirRoot, name: "foo_*_100", type: "snd", islink: false, pattern: "foo_\\d+_100" },
         { path: testDirRoot, name: "foo_*_15", type: "snd", islink: false, pattern: "foo_\\d+_15" },
-        { path: testDirRoot, name: "foo_1_*", type: "snd", islink: false, pattern: "foo_1_\\d+" },
         { path: testDirRoot, name: "foo_2_*", type: "snd", islink: false, pattern: "foo_2_\\d+" }
       ];
-      expect(bundleSNDFiles(input)).to.have.deep.members(expected);
+      expect(bundleSNDFiles(input)).to.have.deep.not.ordered.members(expected);
     });
   });
 });
