@@ -3,6 +3,7 @@ module.exports = {
   ignorePatterns: ["**/*.json", "**/oldSVG/*"],
   plugins: [
     "vue",
+    "jsdoc",
     "chai-expect",
     "chai-friendly",
   ],
