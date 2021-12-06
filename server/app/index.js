@@ -140,6 +140,13 @@ sio.on("connection", (socket)=>{
     const hostInfo = remoteHost.get(id);
     await tryToConnect(hostInfo, password, cb);
   });
+
+
+  //JobScheduler
+  //read
+  socket.on("getJobSchedulerList", (cb)=>{
+    cb(jobScheduler);
+  });
 });
 //routing
 const routes = {

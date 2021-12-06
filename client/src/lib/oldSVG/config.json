@@ -18,7 +18,8 @@
     "source": "#00bff0",
     "viewer": "#00b050",
     "stepjob": "#803DB3",
-    "stepjobTask": "#3B55B3"
+    "stepjobTask": "#3B55B3",
+    "bulkjobTask": "#3B55B3"
   },
   "box_appearance": {
     "titleHeight": 32,

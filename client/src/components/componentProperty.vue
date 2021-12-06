@@ -81,9 +81,9 @@
               outlined
               @change="updateComponentProperty('description')"
             />
-            <div v-if="isTask">
               <v-autocomplete
                 v-model.lazy="copySelectedComponent.script"
+                v-if="hasScript"
                 label="script"
                 :items="scriptCandidates"
                 clearable
@@ -92,6 +92,7 @@
               />
               <v-select
                 v-model.lazy="copySelectedComponent.host"
+                v-if="hasHost"
                 label="host"
                 :items="hostCandidates"
                 outlined
@@ -100,16 +101,34 @@
               <v-switch
                 v-model.lazy="copySelectedComponent.useJobScheduler"
                 label="use job scheduler"
+                v-if="hasJobScheduler"
                 @change="updateComponentProperty('useJobScheduler')"
               />
               <v-select
                 label="queue"
+                v-if="hasJobScheduler"
                 :items="queues"
                 :disabled="! copySelectedComponent.useJobScheduler"
                 outlined
                 @change="updateComponentProperty('useJobScheduler')"
               />
-            </div>
+                <v-text-field
+                    readonly
+                v-if="hasJobScheduler"
+                    v-model.lazy="submitCmd"
+                    label="submit command"
+                   :disabled="! copySelectedComponent.useJobScheduler"
+                    outlined
+                    />
+                <v-text-field
+                    v-model.lazy="copySelectedComponent.submitOption"
+                v-if="hasJobScheduler"
+                    label="submit option"
+                   :disabled="! copySelectedComponent.useJobScheduler"
+                    outlined
+                    @change="updateComponentProperty('submitOption')"
+                  >
+                </v-text-field>
           </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel v-if="isTask">
@@ -141,29 +160,6 @@
               v-if="retryByJS"
               v-model.lazy="copySelectedComponent.retryCondition"
               @change="updateComponentProperty('retryCondition')"
-            />
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-        <v-expansion-panel v-if="hasCondition">
-          <v-expansion-panel-header>condition setting</v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <v-switch
-              v-model.lazy="conditionCheckByJS"
-              label="use javascript expression for condition check"
-            />
-            <v-autocomplete
-              v-if="!conditionCheckByJS"
-              v-model.lazy="copySelectedComponent.condition"
-              label="script name for confition check"
-              :items="scriptCandidates"
-              clearable
-              outlined
-              @change="updateComponentProperty('condition')"
-            />
-            <v-textarea
-              v-if="conditionCheckByJS"
-              v-model.lazy="copySelectedComponent.condition"
-              @change="updateComponentProperty('condition')"
             />
           </v-expansion-panel-content>
         </v-expansion-panel>
@@ -225,6 +221,101 @@
               clearable
               outlined
               @change="updateComponentProperty('parameterFile')"
+            />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel v-if="isStepjobTask">
+          <v-expansion-panel-header>stepjobtask setting</v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-switch
+                label="use dependency"
+              v-model.lazy="copySelectedComponent.useDependency"
+                @change="updateComponentProperty('useDependency')"
+            />
+            <v-text-field
+                readonly
+                label="step number"
+                type="number"
+              v-model="copySelectedComponent.stepnum"
+                :disabled="! copySelectedComponent.useDependency"
+            />
+            <v-text-field
+                label="dependencyForm"
+              v-model.lazy="copySelectedComponent.dependencyForm"
+                :disabled="! copySelectedComponent.useDependency"
+                @change="updateComponentProperty('dependencyForm')"
+            />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel v-if="isBulkjobTask">
+          <v-expansion-panel-header>bulkjob setting</v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-switch
+                label="use parameter setting file for bulk number"
+                v-model.lazy="copySelectedComponent.usePSSettingFile"
+                @change="updateComponentProperty('usePSSettingFile')"
+            />
+            <v-form @submit.prevent v-if="! copySelectedComponent.usePSSettingFile">
+              <v-text-field
+                v-model.number="copySelectedComponent.startBulkNumber"
+                label="start"
+                type="number"
+                @change="updateComponentProperty('startBulkNumber')"
+              />
+              <v-text-field
+                v-model.number="copySelectedComponent.endBulkNumber"
+                label="end"
+                type="number"
+                @change="updateComponentProperty('endBulkNumber')"
+              />
+            </v-form>
+            <v-switch
+                label="manual finish condition"
+                v-model="copySelectedComponent.manualFinishCondition"
+                @change="updateComponentProperty('manualFinishCondition')"
+            />
+            <div v-if="copySelectedComponent.manualFinishCondition">
+            <v-switch
+              v-model.lazy="conditionCheckByJS"
+              label="use javascript expression for condition check"
+            />
+            <v-autocomplete
+              v-if="!conditionCheckByJS"
+              v-model.lazy="copySelectedComponent.condition"
+              label="script name for confition check"
+              :items="scriptCandidates"
+              clearable
+              outlined
+              @change="updateComponentProperty('condition')"
+            />
+            <v-textarea
+              v-if="conditionCheckByJS"
+              v-model.lazy="copySelectedComponent.condition"
+              @change="updateComponentProperty('condition')"
+            />
+            </div>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel v-if="hasCondition">
+          <v-expansion-panel-header>condition setting</v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-switch
+              v-model.lazy="conditionCheckByJS"
+              label="use javascript expression for condition check"
+            />
+            <v-autocomplete
+              v-if="!conditionCheckByJS"
+              v-model.lazy="copySelectedComponent.condition"
+              label="script name for confition check"
+              :items="scriptCandidates"
+              clearable
+              outlined
+              @change="updateComponentProperty('condition')"
+            />
+            <v-textarea
+              v-if="conditionCheckByJS"
+              v-model.lazy="copySelectedComponent.condition"
+              @change="updateComponentProperty('condition')"
             />
           </v-expansion-panel-content>
         </v-expansion-panel>
@@ -364,16 +455,25 @@
       },
     },
     computed: {
-      ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates", "projectRootDir"]),
+      ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates", "projectRootDir", "jobScheduler"]),
       ...mapGetters(["selectedComponentAbsPath"]),
       disableRemoteSetting () {
         return this.copySelectedComponent.host === "localhost";
       },
-      isTask () {
-        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "task";
+      hasHost(){
+        return typeof this.selectedComponent !== "undefined" && ["task", "stepjob", "bulkjobTask"].includes(this.selectedComponent.type);
+      },
+      hasJobScheduler(){
+        return typeof this.selectedComponent !== "undefined" && ["task", "stepjob", "bulkjobTask"].includes(this.selectedComponent.type);
+      },
+      hasScript(){
+        return typeof this.selectedComponent !== "undefined" && ["task", "stepjobTask", "bulkjobTask"].includes(this.selectedComponent.type);
       },
       hasCondition () {
         return typeof this.selectedComponent !== "undefined" && ["if", "while"].includes(this.selectedComponent.type);
+      },
+      isTask () {
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "task";
       },
       isFor () {
         return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "for";
@@ -386,6 +486,12 @@
       },
       isPS () {
         return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "parameterStudy";
+      },
+      isStepjobTask(){
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "stepjobTask";
+      },
+      isBulkjobTask(){
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "bulkjobTask";
       },
       includeList: function () {
         if (typeof this.copySelectedComponent.include !== "string") {
@@ -423,6 +529,16 @@
         });
         return currentHostSetting && typeof currentHostSetting.queue === "string" ? currentHostSetting.queue.split(",") : [];
       },
+      submitCmd(){
+        const currentHostSetting = this.remoteHost.find((e)=>{
+          return e.name === this.copySelectedComponent.host;
+        });
+        if(!currentHostSetting){
+          return null
+        }
+        const JS=currentHostSetting.jobScheduler
+        return JS?this.jobScheduler[JS].submit : null
+      }
     },
     mounted () {
       if (this.selectedComponent !== null) {

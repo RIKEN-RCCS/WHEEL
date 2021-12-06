@@ -36,6 +36,7 @@ const mutationFactory = (types)=>{
  * @property { string } selectedFile - selected file in fileBrowser component
  * @property { string } selectedText - selected text in editor component (pass to parameter editor from tab editor)
  * @property { Object} remoteHost - remoteHost JSON
+ * @property { Object} jobScheduler - jobScheduler JSON
  * @property { Boolean } waitingProjectJson - flag for loading projectJson data
  * @property { Boolean } waitingWorkflow - flag for loading Worgflow data for graph component
  * @property { Boolean } waitingFile - flag for loading file data for rapid
@@ -61,6 +62,7 @@ const state = {
   selectedFile: null,
   selectedText: null,
   remoteHost: null,
+  jobScheduler: null,
   waitingProjectJson: false,
   waitingWorkflow: false,
   waitingFile: false,

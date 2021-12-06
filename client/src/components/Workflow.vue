@@ -331,6 +331,9 @@
       SIO.emitGlobal("getHostList", (hostList)=>{
         this.commitRemoteHost(hostList);
       });
+      SIO.emitGlobal("getJobSchedulerList", (JSList)=>{
+        this.commitJobScheduler(JSList);
+      });
       SIO.emit("getComponentTree", projectRootDir, (componentTree)=>{
         this.commitComponentTree(componentTree);
       });
@@ -362,6 +365,7 @@
           commitProjectRootDir: "projectRootDir",
           commitRootComponentID: "rootComponentID",
           commitRemoteHost: "remoteHost",
+          commitJobScheduler: "jobScheduler",
           commitWaitingProjectJson: "waitingProjectJson",
           commitWaitingWorkflow: "waitingWorkflow",
         },
