@@ -24,10 +24,10 @@
     </v-app-bar>
     <v-main>
       <v-toolbar>
-        <v-btn @click="newHostDialog=true">
+        <v-btn @click="openEditDialog()">
           new remote host setting
         </v-btn>
-        <v-btn @click="newCloudDialog=true">
+        <v-btn @click="openEditDialog({type:'aws'})">
           new cloud setting
         </v-btn>
       </v-toolbar>
@@ -67,12 +67,14 @@
         max-width="80vw"
         :initial-value="currentSetting"
         @newHost="addNewSetting"
+        @cancel="currentSetting={}"
       />
       <add-new-cloud-dialog
         v-model="newCloudDialog"
         max-width="80vw"
         :initial-value="currentSetting"
         @newHost="addNewSetting"
+        @cancel="currentSetting={}"
       />
     </v-main>
   </v-app>
@@ -131,15 +133,16 @@
     },
     methods: {
       openEditDialog (item) {
-        this.currentSetting = item;
+        this.currentSetting = item || {};
 
-        if (item.type === "aws") {
+        if (this.currentSetting.type === "aws") {
           this.newCloudDialog = true;
           return;
         }
         this.newHostDialog = true;
       },
       addNewSetting (updated) {
+        this.currentSetting={}
         if (updated.id) {
           // update
           delete (updated.icon);

@@ -185,6 +185,12 @@
                 type="number"
                 @change="updateComponentProperty('step')"
               />
+              <v-text-field
+                v-model.number="copySelectedComponent.keep"
+                label="number of instances to keep"
+                type="number"
+                @change="updateComponentProperty('keep')"
+              />
             </v-form>
           </v-expansion-panel-content>
         </v-expansion-panel>
@@ -198,6 +204,12 @@
               @remove="(...args)=>{ updateIndexList('remove', ...args)}"
               @update="(...args)=>{ updateIndexList('rename', ...args)}"
             />
+              <v-text-field
+                v-model.number="copySelectedComponent.keep"
+                label="number of instances to keep"
+                type="number"
+                @change="updateComponentProperty('keep')"
+              />
           </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel v-if="isSource">
@@ -205,9 +217,30 @@
           <v-expansion-panel-content>
             <v-switch
               v-model.lazy="copySelectedComponent.uploadOnDemand"
-              v-expansion-panel-content
               label="upload on demand"
               @change="updateComponentProperty('uploadOnDemand')"
+            />
+            <v-autocomplete
+              v-if="!copySelectedComponent.uploadOnDemand"
+              v-model="sourceOutputFile"
+              label="source file name"
+              :items="scriptCandidates"
+              clearable
+              outlined
+              @change="updateSourceOutputFile(sourceOutputFile)"
+            />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel v-if="isViewer">
+          <v-expansion-panel-header>input file setting</v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <list-form
+              :label="'input files'"
+              :items="copySelectedComponent.inputFiles"
+              :new-item-template="inputFileTemplate"
+              @add=" (...args)=>{ changeInputOutputFiles('addInputFile', ...args)}"
+              @remove="(...args)=>{ changeInputOutputFiles('removeInputFile', ...args)}"
+              @update="(...args)=>{ changeInputOutputFiles('renameInputFile', ...args)}"
             />
           </v-expansion-panel-content>
         </v-expansion-panel>
@@ -221,6 +254,16 @@
               clearable
               outlined
               @change="updateComponentProperty('parameterFile')"
+            />
+            <v-switch
+              v-model.lazy="copySelectedComponent.forceOverwrite"
+              label="force overwrite"
+              @change="updateComponentProperty('forceOverwrite')"
+            />
+            <v-switch
+              v-model.lazy="copySelectedComponent.deleteLoopInstance"
+              label="delete all instances"
+              @change="updateComponentProperty('deleteLoopInstance')"
             />
           </v-expansion-panel-content>
         </v-expansion-panel>
@@ -254,6 +297,15 @@
                 label="use parameter setting file for bulk number"
                 v-model.lazy="copySelectedComponent.usePSSettingFile"
                 @change="updateComponentProperty('usePSSettingFile')"
+            />
+            <v-autocomplete
+              v-if="copySelectedComponent.usePSSettingFile"
+              v-model.lazy="copySelectedComponent.parameterFile"
+              label="parameter file"
+              :items="scriptCandidates"
+              clearable
+              outlined
+              @change="updateComponentProperty('parameterFile')"
             />
             <v-form @submit.prevent v-if="! copySelectedComponent.usePSSettingFile">
               <v-text-field
@@ -317,9 +369,16 @@
               v-model.lazy="copySelectedComponent.condition"
               @change="updateComponentProperty('condition')"
             />
+              <v-text-field
+                  v-if="isWhile"
+                v-model.number="copySelectedComponent.keep"
+                label="number of instances to keep"
+                type="number"
+                @change="updateComponentProperty('keep')"
+              />
           </v-expansion-panel-content>
         </v-expansion-panel>
-        <v-expansion-panel>
+        <v-expansion-panel v-if="! isSource && !isViewer">
           <v-expansion-panel-header>input/output files</v-expansion-panel-header>
           <v-expansion-panel-content>
             <list-form
@@ -341,7 +400,7 @@
           </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel
-          v-if="isTask"
+          v-if="hasRemote"
           :disabled="disableRemoteSetting"
         >
           <v-expansion-panel-header>remote file setting</v-expansion-panel-header>
@@ -426,6 +485,7 @@
           name: "",
           dst: [],
         },
+        sourceOutputFile: null,
         propWidth: "512",
         openPanels: [0],
         retryByJS: false,
@@ -472,6 +532,9 @@
       hasCondition () {
         return typeof this.selectedComponent !== "undefined" && ["if", "while"].includes(this.selectedComponent.type);
       },
+      hasRemote(){
+        return typeof this.selectedComponent !== "undefined" && ["task", "stepjobTask", "bulkjobTask"].includes(this.selectedComponent.type);
+      },
       isTask () {
         return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "task";
       },
@@ -481,8 +544,14 @@
       isForeach () {
         return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "foreach";
       },
+      isWhile () {
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "while";
+      },
       isSource () {
         return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "source";
+      },
+      isViewer() {
+        return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "viewer";
       },
       isPS () {
         return typeof this.selectedComponent !== "undefined" && this.selectedComponent.type === "parameterStudy";
@@ -562,6 +631,17 @@
             this.commitComponentTree(componentTree);
           });
         });
+      },
+      updateSourceOutputFile(name){
+        if(name===null){
+          return
+        }
+        const outputFile={name, dst: []}
+        const event = typeof this.selectedComponent.outputFiles[0] === "undefined"
+          || typeof this.selectedComponent.outputFiles[0].name === "undefined"
+          ? "addOutputFile" :"renameOutputFile"
+        this.changeInputOutputFiles(event , outputFile, 0)
+        this.selectedComponent.outputFiles[0] = outputFile
       },
       changeInputOutputFiles (event, v, index) {
         if (!this.valid) return;

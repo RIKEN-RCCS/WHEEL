@@ -387,12 +387,10 @@ describe("workflow editor UT", function() {
       await addOutputFile(projectRootDir, components.viewer0.ID, "piyo").catch(()=>{});
       expect(filename).to.be.a.file().with.json.using.schema(viewer0Schema);
     });
-    it("should be rejected while attempting to add outputFile entry to source component", ()=>{
-      return expect(addOutputFile(projectRootDir, components.source0.ID, "piyo")).to.be.eventually.rejected;
-    });
-    it("should not affect source component", async()=>{
+    it("should work with source component", async()=>{
       const filename = path.join(projectRootDir, "source0", componentJsonFilename);
       await addOutputFile(projectRootDir, components.source0.ID, "piyo").catch(()=>{});
+      source0Schema.addOutputFile("piyo");
       expect(filename).to.be.a.file().with.json.using.schema(source0Schema);
     });
   });

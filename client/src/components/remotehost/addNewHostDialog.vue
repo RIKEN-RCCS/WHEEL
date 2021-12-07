@@ -2,6 +2,7 @@
   <v-dialog
     v-model="openDialog"
     :max-width="maxWidth"
+    :persistent=true
   >
     <v-card>
       <v-card-title>
@@ -239,6 +240,7 @@
       },
       closeDialog () {
         this.host = {};
+        this.$emit("cancel");
         this.openDialog = false;
       },
     },

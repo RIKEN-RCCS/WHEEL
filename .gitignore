@@ -14,4 +14,4 @@ logs
 server.crt
 server.key
 _user_guide
-server/app/views/workflow.html
+*.swp

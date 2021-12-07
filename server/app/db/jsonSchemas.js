@@ -239,6 +239,14 @@ class SourceSchema extends BaseWorkflowComponentSchema {
     this.properties.outputFiles.items[0].properties.name = { enum: [newName] };
   }
 
+  addOutputFile(name, dstNode, dstName) {
+    const tmp = new OutputFileSchema(name, dstNode, dstName);
+    this.properties.outputFiles.items.push(tmp);
+    const size = this.properties.outputFiles.items.length;
+    this.properties.outputFiles.minItems = size;
+    this.properties.outputFiles.maxItems = size;
+  }
+
   addOutputFileLink(dstNode, dstName) {
     const tmp = new DstSchema(dstNode, dstName);
     this.properties.outputFiles.items[0].properties.dst.items.push(tmp);

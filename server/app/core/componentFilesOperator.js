@@ -350,8 +350,7 @@ async function validateTask(projectRootDir, component) {
   if (component.useJobScheduler) {
     const hostinfo = remoteHost.query("name", component.host);
     if (typeof hostinfo === "undefined") {
-      //assume local job
-      //TODO add jobScheduler setting to server.json and read it
+      //local job is not implemented
     } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
       return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
     }
@@ -388,7 +387,7 @@ async function validateStepjobTask(projectRootDir, component) {
     return Promise.reject(new Error("initial stepjobTask cannot specified the Dependency form"));
   }
 
-  if (!(component.hasOwnProperty("script") && typeof component.script === "string")) {
+  if (!(Object.prototype.hasOwnProperty.call(component, "script") && typeof component.script === "string")) {
     return Promise.reject(new Error(`script is not specified ${component.name}`));
   }
   const componentDir = await getComponentDir(projectRootDir, component.ID, true);
@@ -404,15 +403,14 @@ async function validateStepjob(projectRootDir, component) {
     const hostinfo = remoteHost.query("name", component.host);
     if (typeof hostinfo === "undefined") {
       //assume local job
-      //TODO add jobScheduler setting to server.json and read it
     } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
       return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
     }
     const setJobScheduler = jobScheduler[hostinfo.jobScheduler];
-    if (!(setJobScheduler.hasOwnProperty("stepjob") && setJobScheduler.stepjob === true)) {
+    if (!(Object.prototype.hasOwnProperty.call(setJobScheduler, "stepjob") && setJobScheduler.stepjob === true)) {
       return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler does not support stepjob`));
     }
-    if (!(hostinfo.hasOwnProperty("useStepjob") && hostinfo.useStepjob === true)) {
+    if (!(Object.prototype.hasOwnProperty.call(hostinfo, "useStepjob") && hostinfo.useStepjob === true)) {
       return Promise.reject(new Error(`${hostinfo.name} does not support stepjob`));
     }
   }
@@ -441,15 +439,14 @@ async function validateBulkjobTask(projectRootDir, component) {
     const hostinfo = remoteHost.query("name", component.host);
     if (typeof hostinfo === "undefined") {
       //assume local job
-      //TODO add jobScheduler setting to server.json and read it
     } else if (!Object.keys(jobScheduler).includes(hostinfo.jobScheduler)) {
       return Promise.reject(new Error(`job scheduler for ${hostinfo.name} (${hostinfo.jobScheduler}) is not supported`));
     }
     const setJobScheduler = jobScheduler[hostinfo.jobScheduler];
-    if (!(setJobScheduler.hasOwnProperty("bulkjob") && setJobScheduler.bulkjob === true)) {
+    if (!(Object.prototype.hasOwnProperty.call(setJobScheduler, "bulkjob") && setJobScheduler.bulkjob === true)) {
       return Promise.reject(new Error(`${hostinfo.jobScheduler} jobSheduler does not support bulkjob`));
     }
-    if (!(hostinfo.hasOwnProperty("useBulkjob") && hostinfo.useBulkjob === true)) {
+    if (!(Object.prototype.hasOwnProperty.call(hostinfo, "useBulkjob") && hostinfo.useBulkjob === true)) {
       return Promise.reject(new Error(`${hostinfo.name} does not support bulkjob`));
     }
   }
@@ -819,11 +816,6 @@ async function addOutputFile(projectRootDir, ID, name) {
   const componentJson = await readComponentJson(componentDir);
   if (!Object.prototype.hasOwnProperty.call(componentJson, "outputFiles")) {
     const err = new Error(`${componentJson.name} does not have outputFiles`);
-    err.component = componentJson;
-    return Promise.reject(err);
-  }
-  if (componentJson.type === "source") {
-    const err = new Error("source component can not have more than 2 outputFiles");
     err.component = componentJson;
     return Promise.reject(err);
   }
