@@ -418,6 +418,12 @@ async function importProject(projectRootDir) {
   }
   projectList.unshift({ path: newProjectRootDir });
 }
+async function updateProjectDescription(projectRootDir, description) {
+  const filename = path.resolve(projectRootDir, projectJsonFilename);
+  const projectJson = await readJsonGreedy(filename);
+  projectJson.description = description;
+  await fs.writeJson(filename, projectJson);
+}
 
 module.exports = {
   createNewProject,
@@ -429,5 +435,6 @@ module.exports = {
   setProjectState,
   getProjectState,
   checkRunningJobs,
-  importProject
+  importProject,
+  updateProjectDescription
 };

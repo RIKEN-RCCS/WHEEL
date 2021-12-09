@@ -12,7 +12,9 @@
         class="text-uppercase text-decoration-none text-h4 white--text"
       > WHEEL </a>
       <v-spacer />
-      <p class="mb-0 text-h5">
+      <p class="text-uppercase text-decoration-none text-h5 white--text"
+        @click="projectDescription=projectJson.description;descriptionDialog=true"
+      >
         {{ projectJson !== null ? projectJson.name : "" }}
       </p>
       <v-spacer />
@@ -251,7 +253,19 @@
         </v-btn>
       </template>
     </v-snackbar>
-    <versatile-dialog />
+    <versatile-dialog
+      v-model="descriptionDialog"
+      title="project description"
+      @ok="updateDescription"
+      @cancel="descriptionDialog=false"
+    >
+    <template>
+      <v-textarea
+          outlined
+          v-model="projectDescription"
+        />
+    </template>
+    </versatile-dialog>
   </v-app>
 </template>
 
@@ -286,6 +300,8 @@
         pwDialog: false,
         pwDialogTitle: "",
         pwCallback: ()=>{},
+        descriptionDialog: false,
+        projectDescription: ""
       };
     },
     computed: {
@@ -295,6 +311,7 @@
         "openSnackbar",
         "currentComponent",
         "snackbarMessage",
+        "projectRootDir"
       ]),
       ...mapGetters(["waiting"]),
     },
@@ -317,6 +334,9 @@
         this.commitCurrentComponent(wf);
         this.commitWaitingWorkflow(false);
       });
+      SIO.on("componentTree", (componentTree)=>{
+        this.commitComponentTree(componentTree);
+      })
       SIO.on("showMessage", this.showSnackbar);
       SIO.on("askPassword", (hostname, cb)=>{
         this.pwCallback = (pw)=>{
@@ -391,6 +411,15 @@
           debug(operation, "done", rt);
         });
       },
+      updateDescription(){
+        SIO.emitGlobal("updateProjectDescription", this.projectRootDir,  this.projectDescription,(rt)=>{
+          if(rt){
+            this.projectJson.description=this.projectDescription
+            this.projectDescription=""
+          }
+        });
+        this.descriptionDialog=false
+      }
     },
   };
 </script>

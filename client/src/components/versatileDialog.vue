@@ -1,30 +1,26 @@
 <template>
   <v-dialog
-    v-if="openDialog"
-    v-model="openDialog"
+    v-model="value"
     persistent
     width="auto"
   >
     <v-card>
       <v-card-title>
-        {{ dialogContent.title }}
+        {{ title }}
       </v-card-title>
       <v-card-text>
-        {{ dialogContent.message }}
-        <v-text-field
-          v-if="dialogContent.withInputField"
-          v-model="dialogContent.inputField"
-          :label="dialogContent.inputFieldLabel"
-        />
+        <slot>
+        {{ message }}
+        </slot>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <div
-          v-for="(item, index) in dialogContent.buttons"
-          :key="index"
+          v-for="item in buttons"
+          :key="item.label"
         >
           <v-btn
-            @click="btnCallback(item.cb)"
+            @click="$emit(item.label)"
           >
             <v-icon>
               {{ item.icon }}
@@ -37,21 +33,29 @@
   </v-dialog>
 </template>
 <script>
-  import { mapState, mapActions } from "vuex";
   export default {
     name: "VersatileDialog",
-    computed: {
-      ...mapState(["openDialog", "dialogContent"]),
-    },
-    methods: {
-      ...mapActions(["closeDialog"]),
-      btnCallback (cb) {
-        if (typeof cb === "function") {
-          cb();
-        }
-        this.closeDialog();
+    props:{
+      value: Boolean,
+      persistent: {
+        type: Boolean,
+        default: true
       },
+      buttons: {
+        type: Array,
+        default: function(){
+          return [
+            { icon: "mdi-check", label: "ok" },
+            { icon: "mdi-close", label: "cancel" },
+          ]
+        }
+      },
+      title:{
+        type: String
+      },
+      message:{
+        type: String
+      }
     },
-
   };
 </script>

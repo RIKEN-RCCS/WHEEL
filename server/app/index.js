@@ -23,7 +23,7 @@ const bodyParser = require("body-parser");
 const cookie = require("cookie");
 const siofu = require("socketio-file-upload");
 const { port, keyFilename, certFilename, projectList, remoteHost, jobScheduler } = require("./db/db");
-const { setProjectState, checkRunningJobs } = require("./core/projectFilesOperator");
+const { setProjectState, checkRunningJobs, updateProjectDescription } = require("./core/projectFilesOperator");
 const { onCreateNewFile, onCreateNewDir, onGetFileList } = require("./handlers/fileManager.js");
 const tryToConnect = require("./handlers/tryToConnect.js");
 const { onRemoveProjectsFromList, onRemoveProjects } = require("./handlers/projectListHandlers.js");
@@ -65,6 +65,12 @@ sio.on("connection", (socket)=>{
   socket.prependAny((eventName, ...args)=>{
     //remove callback function
     args.pop();
+
+    //cut sensitive values
+    if (eventName === "tryToConnect") {
+      args.pop();
+    }
+
     //this must go to trace level(file only, never go to console)
     logger.debug(`[socketIO API] ${eventName} recieved.`, args);
   });
@@ -95,6 +101,13 @@ sio.on("connection", (socket)=>{
   socket.on("removeProjectsFromList", onRemoveProjectsFromList);
   socket.on("removeProjects", onRemoveProjects);
 
+  //
+  //projectJson
+  //update
+  socket.on("updateProjectDescription", async(projectRootDir, description, cb)=>{
+    await updateProjectDescription(projectRootDir, description);
+    cb(true);
+  });
 
   //
   //remotehost

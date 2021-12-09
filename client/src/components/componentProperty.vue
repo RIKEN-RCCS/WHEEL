@@ -22,6 +22,19 @@
             />
           </v-form>
         </v-toolbar-items>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+          <v-switch
+              hide-details
+              v-model="copySelectedComponent.disable"
+              color="red darken-3"
+              label="disable"
+              @click="updateComponentProperty('disable')"
+            >
+          </v-switch>
+            </template>
+            disable
+          </v-tooltip>
         <v-spacer />
         <v-toolbar-items>
           <v-tooltip bottom>
@@ -680,10 +693,8 @@
         if (this.selectedComponent === null) return;
 
         SIO.emit("updateNode", ID, prop, newValue, (rt)=>{
-          if (prop !== "name" || rt === false) {
-            SIO.emit("getComponentTree", this.projectRootDir, (componentTree)=>{
-              this.commitComponentTree(componentTree);
-            });
+          if(rt === false){
+            return
           }
         });
       },

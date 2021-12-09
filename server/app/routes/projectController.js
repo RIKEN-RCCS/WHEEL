@@ -95,6 +95,12 @@ async function sendWorkflow(emit, projectRootDir, cwd) {
   emit("workflow", rt);
 }
 
+async function sendComponentTree(emit, projectRootDir, rootDir) {
+  const targetDir = path.isAbsolute(rootDir) ? rootDir : path.resolve(projectRootDir, rootDir);
+  const rt = await getComponentTree(projectRootDir, targetDir);
+  emit("componentTree", rt);
+}
+
 //read and send projectJson
 async function sendProjectJson(emit, projectRootDir) {
   getLogger(projectRootDir).trace("projectState: sendProjectJson", projectRootDir);
@@ -544,6 +550,11 @@ async function onUpdateNode(emit, projectRootDir, ID, prop, value, cb) {
   try {
     await updateComponent(projectRootDir, ID, prop, value);
     await sendWorkflow(emit, projectRootDir);
+
+    if (prop === "name") {
+      await sendProjectJson(emit, projectRootDir); //to update componentPath
+      await sendComponentTree(emit, projectRootDir, projectRootDir);
+    }
   } catch (e) {
     e.projectRootDir = projectRootDir;
     e.ID = ID;
