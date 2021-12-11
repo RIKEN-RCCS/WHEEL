@@ -4,7 +4,7 @@
     persistent
   >
     <v-card>
-      <v-card-title class="headline">
+      <v-card-title class="text-h5">
         unsaved files
       </v-card-title>
       <v-card-text>

@@ -35,7 +35,7 @@
         :items="hosts"
         :headers="headers"
       >
-        <template v-slot:item.connectionTest="{ item }">
+        <template #item.connectionTest="{ item }">
           <v-btn
             :color="item.testResult"
             :loading="item.loading"
@@ -45,7 +45,7 @@
             {{ item.connectionStatus }}
           </v-btn>
         </template>
-        <template v-slot:item.action="{ item }">
+        <template #item.action="{ item }">
           <action-row
             :item="item"
             @delete="openRemoveConfirmDialog(item)"
@@ -142,7 +142,8 @@
         this.newHostDialog = true;
       },
       addNewSetting (updated) {
-        this.currentSetting={}
+        this.currentSetting={};
+
         if (updated.id) {
           // update
           delete (updated.icon);

@@ -6,7 +6,7 @@
     activatable
     @update:active="onUpdateActive"
   >
-    <template v-slot:prepend="{item, open}">
+    <template #prepend="{item, open}">
       <v-icon v-if="item.children !== null">
         {{ open ? openIcons[item.type] : icons[item.type] }}
       </v-icon>

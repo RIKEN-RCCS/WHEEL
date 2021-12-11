@@ -9,7 +9,7 @@
     activatable
     @update:active="onUpdateActive"
   >
-    <template v-slot:label="{ item }">
+    <template #label="{ item }">
       <component-button
         :item="item"
       />

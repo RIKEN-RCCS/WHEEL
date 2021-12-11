@@ -60,14 +60,14 @@
         :headers="headers"
         :items="projectList"
       >
-        <template v-slot:item.name="props">
+        <template #item.name="props">
           <v-edit-dialog
             class="trancated-row"
             :return-value.sync="props.item.name"
             @save="renameProject(props.item)"
           >
             {{ props.item.name }}
-            <template v-slot:input>
+            <template #input>
               <v-text-field
                 v-model="props.item.name"
                 label="rename"
@@ -77,12 +77,12 @@
             </template>
           </v-edit-dialog>
         </template>
-        <template v-slot:item.description="props">
+        <template #item.description="props">
           <span
             class="d-inline-block text-truncate trancated-row"
           >{{ props.item.description }} </span>
         </template>
-        <template v-slot:item.path="props">
+        <template #item.path="props">
           <span
             class="d-inline-block text-truncate trancated-row"
           >{{ props.item.path }} </span>

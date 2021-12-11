@@ -32,14 +32,14 @@
           :items="targetFiles"
           hide-default-footer
         >
-          <template v-slot:item.action="{ item }">
+          <template #item.action="{ item }">
             <action-row
               :item="item"
               @edit="openDialog(item)"
               @delete="deleteItem(item)"
             />
           </template>
-          <template v-slot:item.targetNode="{ item }">
+          <template #item.targetNode="{ item }">
             <div v-if="item.hasOwnProperty('targetNode')">
               {{ getComponentName(item.targetNode) }}
             </div>
@@ -54,7 +54,7 @@
     >
       <v-card>
         <v-card-title>
-          <span class="headline">target filename</span>
+          <span class="text-h5">target filename</span>
         </v-card-title>
         <v-card-text>
           <v-text-field

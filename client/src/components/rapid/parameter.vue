@@ -47,7 +47,7 @@
           :items="params"
           hide-default-footer
         >
-          <template v-slot:item.action="{ item }">
+          <template #item.action="{ item }">
             <action-row
               :item="item"
               :disabled="readOnly"
@@ -65,7 +65,7 @@
     >
       <v-card>
         <v-card-title>
-          <span class="headline"> parameter setting </span>
+          <span class="text-h5"> parameter setting </span>
         </v-card-title>
         <v-card-text>
           <v-select

@@ -19,9 +19,9 @@
           close-on-content-click
           close-on-click
         >
-          <template v-slot:activator="{on: menu,attrs}">
+          <template #activator="{on: menu,attrs}">
             <v-tooltip top>
-              <template v-slot:activator="{on: tooltip}">
+              <template #activator="{on: tooltip}">
                 <span
                   v-bind="attrs"
                   v-on="{...tooltip, ...menu}"
@@ -57,7 +57,7 @@
       </v-tab>
       <v-tab @click.stop>
         <v-dialog v-model="newFilePrompt">
-          <template v-slot:activator="{ on }">
+          <template #activator="{ on }">
             <v-btn
               icon
               v-on="on"

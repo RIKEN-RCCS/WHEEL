@@ -5,7 +5,7 @@
     dense
     open-all
   >
-    <template v-slot:label="{ item }">
+    <template #label="{ item }">
       <div v-if=" ! item.root ">
         <component-button
           :item="item"
@@ -15,7 +15,7 @@
         name
       </div>
     </template>
-    <template v-slot:append="{item, leaf}">
+    <template #append="{item, leaf}">
       <div
         v-if="leaf || item.root"
         id="append"

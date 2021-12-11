@@ -22,7 +22,7 @@
             right
             :color="item.color"
           >
-            <template v-slot:activator="{ on, attrs }">
+            <template #activator="{ on, attrs }">
               <img
                 :src="item.img"
                 :alt="item.type"

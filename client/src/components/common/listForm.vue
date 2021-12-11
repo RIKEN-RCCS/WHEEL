@@ -7,10 +7,10 @@
     hide-default-header
     hide-default-footer
   >
-    <template v-slot:header>
+    <template #header>
       {{ label }}
     </template>
-    <template v-slot:item.name="props">
+    <template #item.name="props">
       <v-edit-dialog
         large
         persistent
@@ -18,7 +18,7 @@
         @save="onSaveEditDialog(props.item, props)"
       >
         {{ props.item.name }}
-        <template v-slot:input>
+        <template #input>
           <v-text-field
             v-model="edittingField"
             :rules="[editingItemIsNotDuplicate]"
@@ -27,7 +27,7 @@
         </template>
       </v-edit-dialog>
     </template>
-    <template v-slot:item.actions="{ item }">
+    <template #item.actions="{ item }">
       <action-row
         :can-edit="allowEditButton"
         :item="item"
@@ -36,7 +36,7 @@
     </template>
     <template
       v-if="inputColumn"
-      v-slot:footer
+      #footer
     >
       <v-text-field
         v-model="inputField"

@@ -12,7 +12,8 @@
         class="text-uppercase text-decoration-none text-h4 white--text"
       > WHEEL </a>
       <v-spacer />
-      <p class="text-uppercase text-decoration-none text-h5 white--text"
+      <p
+        class="text-uppercase text-decoration-none text-h5 white--text"
         @click="projectDescription=projectJson.description;descriptionDialog=true"
       >
         {{ projectJson !== null ? projectJson.name : "" }}
@@ -259,12 +260,12 @@
       @ok="updateDescription"
       @cancel="descriptionDialog=false"
     >
-    <template>
-      <v-textarea
-          outlined
+      <template>
+        <v-textarea
           v-model="projectDescription"
+          outlined
         />
-    </template>
+      </template>
     </versatile-dialog>
   </v-app>
 </template>
@@ -336,7 +337,7 @@
       });
       SIO.on("componentTree", (componentTree)=>{
         this.commitComponentTree(componentTree);
-      })
+      });
       SIO.on("showMessage", this.showSnackbar);
       SIO.on("askPassword", (hostname, cb)=>{
         this.pwCallback = (pw)=>{
@@ -414,11 +415,11 @@
       updateDescription(){
         SIO.emitGlobal("updateProjectDescription", this.projectRootDir,  this.projectDescription,(rt)=>{
           if(rt){
-            this.projectJson.description=this.projectDescription
-            this.projectDescription=""
+            this.projectJson.description=this.projectDescription;
+            this.projectDescription="";
           }
         });
-        this.descriptionDialog=false
+        this.descriptionDialog=false;
       }
     },
   };

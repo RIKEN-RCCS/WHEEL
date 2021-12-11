@@ -2,7 +2,7 @@
   <v-dialog
     v-model="openDialog"
     :max-width="maxWidth"
-    :persistent=true
+    :persistent="true"
   >
     <v-card>
       <v-card-title>

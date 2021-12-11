@@ -58,6 +58,13 @@ See License.txt in the project root for the license information.
   import SIO from "@/lib/socketIOWrapper.js";
 
   export default {
+    name: "Editor",
+    components: {
+      unsavedFileDialog,
+      filterEditor,
+      tabEditor,
+      parameterEditor,
+    },
     beforeRouteLeave (to, from, next) {
       if (!this.hasChange()) {
         next();
@@ -85,13 +92,6 @@ See License.txt in the project root for the license information.
         ],
       };
       this.showDialog(dialogContent);
-    },
-    name: "Editor",
-    components: {
-      unsavedFileDialog,
-      filterEditor,
-      tabEditor,
-      parameterEditor,
     },
     data: ()=>{
       return {

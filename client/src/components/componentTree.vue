@@ -6,7 +6,7 @@
       v-model="showComponentTree"
       overlay-opacity="0.9"
     >
-      <template v-slot:activator="{ on, attrs }">
+      <template #activator="{ on, attrs }">
         <v-btn
           icon
           v-bind="attrs"
@@ -22,7 +22,7 @@
         item-key="ID"
         :items="componentTree"
       >
-        <template v-slot:label="{ item }">
+        <template #label="{ item }">
           <component-button
             :item="item"
             @clicked="goto(item)"
@@ -33,10 +33,10 @@
     <v-breadcrumbs
       :items="pathToCurrentComponent"
     >
-      <template v-slot:divider>
+      <template #divider>
         <v-icon>mdi-forward</v-icon>
       </template>
-      <template v-slot:item="{ item }">
+      <template #item="{ item }">
         <v-breadcrumbs-item>
           <component-button
             :item="item"

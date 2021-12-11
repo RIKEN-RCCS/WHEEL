@@ -10,7 +10,7 @@
       </v-card-title>
       <v-card-text>
         <slot>
-        {{ message }}
+          {{ message }}
         </slot>
       </v-card-text>
       <v-card-actions>
@@ -47,7 +47,7 @@
           return [
             { icon: "mdi-check", label: "ok" },
             { icon: "mdi-close", label: "cancel" },
-          ]
+          ];
         }
       },
       title:{
