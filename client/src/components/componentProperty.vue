@@ -527,6 +527,9 @@
       ...mapState(["selectedComponent", "copySelectedComponent", "remoteHost", "currentComponent", "scriptCandidates", "projectRootDir", "jobScheduler"]),
       ...mapGetters(["selectedComponentAbsPath"]),
       disableRemoteSetting () {
+        if(this.isStepjobTask){
+          return false;
+        }
         return this.copySelectedComponent.host === "localhost";
       },
       hasHost(){
