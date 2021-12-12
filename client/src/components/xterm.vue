@@ -3,27 +3,31 @@
 </template>
 <script>
   import { Terminal } from "xterm";
+  import {FitAddon } from "xterm-addon-fit";
   import "@/../node_modules/xterm/css/xterm.css";
   import SIO from "@/lib/socketIOWrapper.js";
-  const MINIMUM_COLUMNS = 2;
-  const MINIMUM_ROWS = 2;
   export default {
     name: "Xterm",
     props: {
-      clear: Boolean,
-      eventNames: Array,
+      clear: {
+        type: Number,
+        default: 0
+      },
+      eventNames: {
+        type: Array,
+        default: ()=>{return [];}
+      },
     },
     data: ()=>{
       return {
-        term: null,
-        buff: "",
+        term: new Terminal({
+        bellStyle: "none",
+        convertEol: true,
+        disableStdin: true,
+        logLevel: "info",
+      }),
+        fitAddon:  new FitAddon(),
       };
-    },
-    computed: {
-      screenSize: function () {
-        return {
-        };
-      },
     },
     watch: {
       clear: function () {
@@ -31,57 +35,40 @@
       },
     },
     mounted: function () {
-      this.term = new Terminal({
-        bellStyle: "none",
-        convertEol: true,
-        disableStdin: true,
-        logLevel: "info",
-      });
+      this.term.loadAddon(this.fitAddon);
       this.term.open(this.$el);
+      window.addEventListener("resize", this.fit2);
 
       for (const event of this.eventNames) {
-        SIO.on(event, this.writeln.bind(this));
+        SIO.on(event, (data)=>{
+          this.term.writeln(data);
+          this.$emit("newlog");
+        });
       }
-      const unwatch = this.$watch(
-        ()=>{
-          return {
-            width: this.$parent.$parent.$el ? this.$parent.$parent.$el.clientWidth : 0,
-            height: this.$parent.$parent.$el ? this.$parent.$parent.$el.clientHeight : 0,
-            actualCellWidth: this.term && this.term._core && this.term._core._renderService && this.term._core._renderService.dimensions ? this.term._core._renderService.dimensions.actualCellWidth : 0,
-            actualCellHeight: this.term && this.term._core && this.term._core._renderService && this.term._core._renderService.dimensions ? this.term._core._renderService.dimensions.actualCellHeight : 0,
-          };
-        },
+      const unwatch=this.$watch(()=>{
+        return this.term._core._renderService.dimensions;
+      },
         (newVal, oldVal)=>{
-          if (newVal.width > 0 && newVal.height > 0 && newVal.actualCellWidth > 0 && newVal.actualCellHeight > 0) {
-            this.fit();
+          this.fit2();
 
-            if (unwatch) {
-              unwatch();
-            }
+          if(unwatch){
+            unwatch();
           }
         },
-        { deep: true },
-      );
-      window.addEventListener("resize", this.fit.bind(this));
+        {deep:true});
     },
     beforeDestroy: function () {
-      window.removeEventListener("resize", this.fit.bind(this));
+      window.removeEventListener("resize", this.fit2);
     },
     methods: {
-      fit: function () {
-        const width = this.$parent.$parent.$el.clientWidth;
-        const height = this.$parent.$parent.$el.clientHeight;
-        const actualCellWidth = this.term._core._renderService.dimensions.actualCellWidth; // is 0 when 1st access
-        const actualCellHeight = this.term._core._renderService.dimensions.actualCellHeight; // is 0 when 1st access
-        const columns = Math.max(MINIMUM_COLUMNS, Math.floor(width / actualCellWidth)) - 1;
-        const rows = Math.max(MINIMUM_ROWS, Math.floor(height / actualCellHeight));
-
-        if (Number.isInteger(columns) && Number.isInteger(rows)) {
-          this.term.resize(columns, rows);
+      fit2: function(){
+        try{
+          this.fitAddon.fit();
+        } catch(err) {
+          if(err.message !== "This API only accepts integers"){
+            throw err;
+          }
         }
-      },
-      writeln: function (data) {
-        this.term.writeln(data);
       },
     },
   };

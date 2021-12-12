@@ -8,6 +8,13 @@ import showMessage from "./showMessage"
 import "./workflow.css"
 import componentDefinition from "@/lib/componentDefinision.js"
 const node_icon = componentDefinition()
+const state_icon={
+    "not-started": require("@/assets/img_stateQue.png"),
+    "running": require("@/assets/img_statePlay.png"),
+    "finished": require("@/assets/img_stateDone.png"),
+    "failed": require("@/assets/img_error.png"),
+    "unknown": require("@/assets/img_error.png")
+}
 
 const UPlug = [[0, 0], [20, 0], [20, 8], [0, 8]]
 const DPlug = [[0, 0], [20, 0], [10, 12]]
@@ -706,7 +713,7 @@ class SvgBox {
     if (state === "stage-in" || state === "waiting" || state === "queued" || state === "stage-out") {
       state = "running"
     }
-    const nodeStatePath = config.state_icon[state]
+    const nodeStatePath = state_icon[state]
     return this.draw
       .image(nodeStatePath)
       .fill("#FFFFFF")
@@ -721,7 +728,7 @@ class SvgBox {
     if (state === "stage-in" || state === "waiting" || state === "queued" || state === "stage-out") {
       state = "running"
     }
-    const nodeStatePath = config.state_icon[state]
+    const nodeStatePath = state_icon[state]
     if (state === "running" && !isNaN(numTotal)) {
       const calcProgress = numFinished / numTotal * 100
       const calcProgress2 = numFailed / numTotal * 100
@@ -788,7 +795,7 @@ class SvgBox {
     if (state === "stage-in" || state === "waiting" || state === "queued" || state === "stage-out") {
       state = "running"
     }
-    const nodeStatePath = config.state_icon[state]
+    const nodeStatePath = state_icon[state]
     if (state === "running" && !isNaN(numFinished)) {
       if (isNaN(numFailed)) {
         numFailed = 0

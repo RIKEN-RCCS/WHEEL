@@ -218,7 +218,10 @@
         <v-col
           cols="12"
         >
-          <log-screen v-show="showLogScreen" />
+          <log-screen 
+            v-show="showLogScreen"
+            :show="showLogScreen"
+          />
         </v-col>
       </v-row>
     </v-footer>
