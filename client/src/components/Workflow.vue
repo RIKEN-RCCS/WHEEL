@@ -13,7 +13,7 @@
       > WHEEL </a>
       <v-spacer />
       <p
-        class="text-uppercase text-decoration-none text-h5 white--text"
+        class="text-decoration-none text-h5 white--text"
         @click="projectDescription=projectJson.description;descriptionDialog=true"
       >
         {{ projectJson !== null ? projectJson.name : "" }}

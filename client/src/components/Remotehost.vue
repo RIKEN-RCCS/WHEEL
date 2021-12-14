@@ -7,15 +7,15 @@
       app
       extended
     >
-      <v-app-bar-title>
-        <a
-          href="/home"
-          class="text-uppercase text-decoration-none text-h4 white--text"
-        > WHEEL </a>
-        <span class="text-decoration-none text-h5 mb-0">
-          remotehost
-        </span>
-      </v-app-bar-title>
+      <a
+        href="/home"
+        class="text-uppercase text-decoration-none text-h4 white--text"
+      > WHEEL </a>
+      <span
+        class="text-lowercase text-decoration-none text-h5 white--text ml-4"
+      >
+        remotehost
+      </span>
       <v-spacer />
       <v-app-bar-nav-icon
         app
@@ -123,7 +123,6 @@
     },
     mounted () {
       SIO.emitGlobal("getHostList", (data)=>{
-        console.log("hostlist", data);
         data.forEach((e)=>{
           e.icon = "mdi-lan-pending";
           e.connectionStatus = "test";
@@ -211,10 +210,12 @@
         });
         item.loading = true;
         SIO.emitGlobal("tryToConnect", item, pw, (rt)=>{
+          console.log("DEBUG: ack with", rt);
           item.loading = false;
           item.testResult = rt;
           item.connectionStatus = rt === "success" ? "OK" : "failed";
           item.icon = rt === "success" ? "mdi-lan-connect" : "mdi-lan-disconnect";
+          // TODO ボタンをアップデートせにゃならん
           this.$forceUpdate();
         });
         this.testTargetID = null;

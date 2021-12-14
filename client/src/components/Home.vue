@@ -4,15 +4,15 @@
       v-model="drawer"
     />
     <v-app-bar app>
-      <v-app-bar-title>
-        <a
-          href="/home"
-          class="text-uppercase text-decoration-none text-h4 white--text"
-        > WHEEL </a>
-        <span class="text-decoration-none text-h5">
-          home
-        </span>
-      </v-app-bar-title>
+      <a
+        href="/home"
+        class="text-uppercase text-decoration-none text-h4 white--text"
+      > WHEEL </a>
+      <span
+        class="text-lowercase text-decoration-none text-h5 white--text ml-4"
+      >
+        home
+      </span>
       <v-spacer />
       <v-app-bar-nav-icon
         app
