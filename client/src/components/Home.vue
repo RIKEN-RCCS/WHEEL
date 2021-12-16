@@ -121,8 +121,6 @@
           </v-card-actions>
           <v-card-text>
             <file-browser
-              :path-sep="pathSep"
-              :root="home"
               @update="(a)=>{selectedInTree=a}"
             />
           </v-card-text>

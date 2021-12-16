@@ -56,12 +56,13 @@
   export default {
     name: "FileBrowserLite",
     props: {
-      pathSep: { type: String, default: "/" },
-      root: { type: String, default: "/" },
+      requestRoot: { type: String, default: undefined },
       mode: { type: String, default: "dirWithProjectJson" },
     },
     data: function () {
       return {
+        root:null,
+        pathSep:null,
         items: [],
         icons: {
           file: "mdi-file-outline",
@@ -80,8 +81,10 @@
       };
     },
     mounted () {
-      SIO.emitGlobal("getFileList", { mode: this.mode, path: this.root }, (fileList)=>{
+      SIO.emitGlobal("getFileList", { mode: this.mode, path: this.requestRoot}, (fileList)=>{
         this.items = fileList.map(fileListModifier.bind(null, this.pathSep));
+        this.root=this.requestRoot || fileList[0].path || "/";
+        this.pathSep=this.root[0] === "/" ? "/" : "\\";
       });
     },
     methods: {

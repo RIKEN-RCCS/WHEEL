@@ -137,7 +137,7 @@ sio.on("connection", (socket)=>{
   socket.on("updateHost", async(updatedHost, cb)=>{
     await remoteHost.update(updatedHost);
     socket.emit("hostList", remoteHost.getAll());//for workflow screen's handler
-    cb(true);
+    cb(updatedHost.id);
   });
 
   //delete

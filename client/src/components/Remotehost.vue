@@ -66,6 +66,8 @@
         v-model="newHostDialog"
         max-width="80vw"
         :initial-value="currentSetting"
+        :host-names="hostList"
+        :available-job-schedulers="jobSchedulerNames"
         @newHost="addNewSetting"
         @cancel="currentSetting={}"
       />
@@ -73,6 +75,7 @@
         v-model="newCloudDialog"
         max-width="80vw"
         :initial-value="currentSetting"
+        :host-names="hostList"
         @newHost="addNewSetting"
         @cancel="currentSetting={}"
       />
@@ -116,12 +119,23 @@
           { text: "delete", value: "action", sortable: false },
         ],
         hosts: [],
+        jobSchedulerNames: [],
         testTargetID: null,
         removeConfirmMessage: "",
         currentSetting: {},
       };
     },
+    computed:{
+      hostList(){
+        return this.hosts.map((host)=>{
+          return host.name;
+        });
+      }
+    },
     mounted () {
+      SIO.emitGlobal("getJobSchedulerLabelList", (data)=>{
+        this.jobSchedulerNames.splice(0,this.jobSchedulerNames.length, ...data);
+      });
       SIO.emitGlobal("getHostList", (data)=>{
         data.forEach((e)=>{
           e.icon = "mdi-lan-pending";
@@ -140,44 +154,35 @@
         }
         this.newHostDialog = true;
       },
+      initializeConnectionTestIcon(item){
+        item.loading = false;
+        delete (item.testResult);
+        item.icon = "mdi-lan-pending";
+        item.connectionStatus = "test";
+      },
       addNewSetting (updated) {
         this.currentSetting={};
+        delete (updated.icon);
+        delete (updated.connectionStatus);
+        delete (updated.testResult);
+        delete (updated.loading);
 
-        if (updated.id) {
-          // update
-          delete (updated.icon);
-          delete (updated.connectionStatus);
-          delete (updated.testResult);
-          delete (updated.loading);
-          SIO.emitGlobal("updateHost", updated, (rt)=>{
-            if (!rt) {
-              console.log("updateHost API failed", rt);
-              return;
-            }
-            // initialize conection status
-            updated.loading = false;
-            delete (updated.testResult);
-            updated.icon = "mdi-lan-pending";
-            updated.connectionStatus = "test";
-            const index = this.hosts.findIndex((e)=>{
-              return updated.id === e.id;
-            });
-            if (index >= 0) {
-              this.hosts.splice(index, 1, updated);
-            }
-          });
-          return;
+        if(!usePubkey){
+          delete(updated.keyFile);
         }
-        SIO.emitGlobal("addHost", updated, (id)=>{
+        const eventName = updated.id ? "updateHost" : "addHost";
+        const index = updated.id ?this.hosts.findIndex((e)=>{
+          return updated.id === e.id;
+        }):0;
+        const numDelete = updated.id? 1:0;
+        SIO.emitGlobal(eventName, updated, (id)=>{
           if (!id) {
-            console.log("addHost API failed", id);
+            console.log(`${eventName} API failed`, id);
             return;
           }
           updated.id = id;
-          // these props never sent to server
-          updated.icon = "mdi-lan-pending";
-          updated.connectionStatus = "test";
-          this.hosts.unshift(updated);
+          initializeConnectionTestIcon(updated);
+          this.hosts.splice(index, numDelete, updated);
         });
       },
       openRemoveConfirmDialog (item) {
@@ -205,18 +210,16 @@
         this.pwDialog = true;
       },
       testConnection (pw) {
-        const item = this.hosts.find((e)=>{
+        const index = this.hosts.findIndex((e)=>{
           return e.id === this.testTargetID;
         });
-        item.loading = true;
-        SIO.emitGlobal("tryToConnect", item, pw, (rt)=>{
-          console.log("DEBUG: ack with", rt);
-          item.loading = false;
-          item.testResult = rt;
-          item.connectionStatus = rt === "success" ? "OK" : "failed";
-          item.icon = rt === "success" ? "mdi-lan-connect" : "mdi-lan-disconnect";
-          // TODO ボタンをアップデートせにゃならん
-          this.$forceUpdate();
+        this.$set(this.hosts[index], "loading", true);
+        SIO.emitGlobal("tryToConnect", this.hosts[index], pw, (rt)=>{
+          console.log("get ack",rt);
+          this.$set(this.hosts[index],"loading", false);
+          this.$set(this.hosts[index],"testResult",rt);
+          this.$set(this.hosts[index],"connectionStatus", rt === "success" ? "OK" : "failed");
+          this.$set(this.hosts[index],"icon",  rt === "success" ? "mdi-lan-connect" : "mdi-lan-disconnect");
         });
         this.testTargetID = null;
       },
