@@ -29,6 +29,7 @@
       <v-tab-item
         v-for="item of items"
         :key="item.id"
+        eager
         :transition="false"
         :reverse-transition="false"
       >
