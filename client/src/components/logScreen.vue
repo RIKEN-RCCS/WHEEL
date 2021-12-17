@@ -86,6 +86,7 @@
         // Vue2 -> Vue3の移行時に作業量が増えるため、workaroundとしてclear propに変更があったり
         // xtermコンポーネントでclearを実行するようにしている。
         for (const item of this.items) {
+          item.unread=false;
           item.clear = (item.clear+1)%2;
         }
       },
