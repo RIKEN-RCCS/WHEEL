@@ -709,6 +709,7 @@
         if (prop !== "name" && !this.valid) return;
         const ID = this.selectedComponent.ID;
         const newValue = this.copySelectedComponent[prop];
+        if(newValue === null && (prop === "script" || (!this.conditionCheckByJS && prop === "condition"))) return;
 
         // closeボタン押下時に、selectedComponentをnullにするより先に
         // blurイベントが発生してこちらの処理が走ってしまうので
