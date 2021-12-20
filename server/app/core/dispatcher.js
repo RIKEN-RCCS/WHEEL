@@ -595,10 +595,10 @@ class Dispatcher extends EventEmitter {
     task.ancestorsName = replacePathsep(path.relative(task.projectRootDir, path.dirname(task.workingDir)));
     task.ancestorsType = this.ancestorsType;
 
-    if (task.cleanupFlag === "2") {
+    if (task.cleanupFlag === 2) {
       task.doCleanup = this.doCleanup;
     } else {
-      task.doCleanup = task.cleanupFlag === "0";
+      task.doCleanup = task.cleanupFlag === 0;
     }
 
     if (task.usePSSettingFile === "1") {
