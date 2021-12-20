@@ -14,13 +14,10 @@
  */
 export function removeFromArray (array, target, prop) {
   const targetIndex = array.findIndex((e)=>{
-    if (typeof target === "string") {
-      return e === target;
-    }
     if (typeof prop === "string") {
       return e[prop] === target[prop];
     }
-    return false;
+    return e === target;
   });
   if (targetIndex !== -1) {
     array.splice(targetIndex, 1);
