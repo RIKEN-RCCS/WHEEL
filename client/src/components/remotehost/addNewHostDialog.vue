@@ -10,181 +10,185 @@
           add new host
         </v-card-title>
         <v-card-text>
-          <v-expansion-panels
-            v-model="openPanel"
-            multiple
+          <v-form
+            ref="form"
           >
-            <v-expansion-panel>
-              <v-expansion-panel-header>Basic settings</v-expansion-panel-header>
-              <v-expansion-panel-content>
-                <v-container>
-                  <v-row>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model="host.name"
-                        label="label"
-                        :rules="[required, notDupulicatedLabel]"
-                        placeholder="required"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model="host.host"
-                        label="Hostname"
-                        :rules="[required]"
-                        placeholder="required"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.port"
-                        label="Port number"
-                        :rules="[validPortNumber]"
-                        placeholder="required"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model="host.username"
-                        label="User ID"
-                        :rules="[required]"
-                        placeholder="required"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model="host.path"
-                        label="Host work dir"
-                        :rules="[required]"
-                        placeholder="required"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-switch
-                        v-model="usePubkey"
-                        label="use public key authentication"
-                      />
-                    </v-col>
-                    <v-col cols="4">
-                      <v-text-field
-                        v-if="usePubkey"
-                        v-model="host.keyFile"
-                        label="private key path"
-                      />
-                    </v-col>
-                    <v-col cols="2">
-                      <v-btn
-                        v-if="usePubkey"
-                        @click="openFileBrowser=!openFileBrowser"
-                      >
-                        browse
-                      </v-btn>
-                    </v-col>
-                    <v-col cols="6">
-                      <v-select
-                        v-model="host.jobScheduler"
-                        :items="availableJobSchedulers"
-                        label="job scheduler"
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.numJob"
-                        label="max number of jobs"
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model="host.queue"
-                        label="available queues"
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-checkbox
-                        v-model="host.useBulkjob"
-                        label="use bulkjob"
-                      />
-                      <v-checkbox
-                        v-model="host.useStepjob"
-                        label="use stepjob"
-                      />
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-expansion-panel-content>
-            </v-expansion-panel>
-            <v-expansion-panel>
-              <v-expansion-panel-header>Advanced settings</v-expansion-panel-header>
-              <v-expansion-panel-content>
-                <v-container>
-                  <v-row>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.renewInterval"
-                        label="connection renewal interval (min.)"
-                        :rules="[positiveNumber]"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.renewDelay"
-                        label="connection renewal delay (sec.)"
-                        :rules="[positiveNumber]"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.statusCheckInterval"
-                        label="status check interval (sec.)"
-                        :rules="[positiveNumber]"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.maxStatusCheckError"
-                        label="max number of status check error allowed"
-                        :rules="[positiveNumber]"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.execInterval"
-                        label="interval time between each executions"
-                        :rules="[positiveNumber]"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.readyTimeout"
-                        label="timeout during handshake phase (msec.)"
-                        :rules="[positiveNumber]"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6">
-                      <v-text-field
-                        v-model.number="host.keepaliveInterval"
-                        label="interval time between keep alive packet  (msec.)"
-                        :rules="[positiveNumber]"
-                        validate-on-blur
-                      />
-                    </v-col>
-                    <v-col cols="6" />
-                  </v-row>
-                </v-container>
-              </v-expansion-panel-content>
-            </v-expansion-panel>
-          </v-expansion-panels>
+            <v-expansion-panels
+              v-model="openPanel"
+              multiple
+            >
+              <v-expansion-panel>
+                <v-expansion-panel-header>Basic settings</v-expansion-panel-header>
+                <v-expansion-panel-content>
+                  <v-container>
+                    <v-row>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model="host.name"
+                          label="label"
+                          :rules="[required, notDupulicatedLabel]"
+                          placeholder="required"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model="host.host"
+                          label="Hostname"
+                          :rules="[required]"
+                          placeholder="required"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.port"
+                          label="Port number"
+                          :rules="[validPortNumber]"
+                          placeholder="required"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model="host.username"
+                          label="User ID"
+                          :rules="[required]"
+                          placeholder="required"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model="host.path"
+                          label="Host work dir"
+                          :rules="[required]"
+                          placeholder="required"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-switch
+                          v-model="usePubkey"
+                          label="use public key authentication"
+                        />
+                      </v-col>
+                      <v-col cols="4">
+                        <v-text-field
+                          v-if="usePubkey"
+                          v-model="host.keyFile"
+                          label="private key path"
+                        />
+                      </v-col>
+                      <v-col cols="2">
+                        <v-btn
+                          v-if="usePubkey"
+                          @click="openFileBrowser=!openFileBrowser"
+                        >
+                          browse
+                        </v-btn>
+                      </v-col>
+                      <v-col cols="6">
+                        <v-select
+                          v-model="host.jobScheduler"
+                          :items="availableJobSchedulers"
+                          label="job scheduler"
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.numJob"
+                          label="max number of jobs"
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model="host.queue"
+                          label="available queues"
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-checkbox
+                          v-model="host.useBulkjob"
+                          label="use bulkjob"
+                        />
+                        <v-checkbox
+                          v-model="host.useStepjob"
+                          label="use stepjob"
+                        />
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-expansion-panel-content>
+              </v-expansion-panel>
+              <v-expansion-panel>
+                <v-expansion-panel-header>Advanced settings</v-expansion-panel-header>
+                <v-expansion-panel-content>
+                  <v-container>
+                    <v-row>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.renewInterval"
+                          label="connection renewal interval (min.)"
+                          :rules="[positiveNumber]"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.renewDelay"
+                          label="connection renewal delay (sec.)"
+                          :rules="[positiveNumber]"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.statusCheckInterval"
+                          label="status check interval (sec.)"
+                          :rules="[positiveNumber]"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.maxStatusCheckError"
+                          label="max number of status check error allowed"
+                          :rules="[positiveNumber]"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.execInterval"
+                          label="interval time between each executions"
+                          :rules="[positiveNumber]"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.readyTimeout"
+                          label="timeout during handshake phase (msec.)"
+                          :rules="[positiveNumber]"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6">
+                        <v-text-field
+                          v-model.number="host.keepaliveInterval"
+                          label="interval time between keep alive packet  (msec.)"
+                          :rules="[positiveNumber]"
+                          validate-on-blur
+                        />
+                      </v-col>
+                      <v-col cols="6" />
+                    </v-row>
+                  </v-container>
+                </v-expansion-panel-content>
+              </v-expansion-panel>
+            </v-expansion-panels>
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-btn
@@ -311,6 +315,7 @@
       },
       closeDialog () {
         this.host = {};
+        this.$refs.form.reset();
         this.$emit("cancel");
         this.openDialog = false;
       },

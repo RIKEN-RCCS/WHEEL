@@ -129,6 +129,8 @@
       hostList(){
         return this.hosts.map((host)=>{
           return host.name;
+        }).filter((hostname)=>{
+          return hostname !== this.currentSetting.name;
         });
       }
     },
@@ -167,9 +169,6 @@
         delete (updated.testResult);
         delete (updated.loading);
 
-        if(!usePubkey){
-          delete(updated.keyFile);
-        }
         const eventName = updated.id ? "updateHost" : "addHost";
         const index = updated.id ?this.hosts.findIndex((e)=>{
           return updated.id === e.id;
@@ -181,7 +180,7 @@
             return;
           }
           updated.id = id;
-          initializeConnectionTestIcon(updated);
+          this.initializeConnectionTestIcon(updated);
           this.hosts.splice(index, numDelete, updated);
         });
       },
