@@ -65,7 +65,7 @@ function taskStateFilter(task) {
   return {
     name: task.name,
     ID: task.ID,
-    subID: task.subID,
+    workingDir: task.workingDir,
     description: task.description ? task.description : "",
     state: task.state,
     parent: task.parent,

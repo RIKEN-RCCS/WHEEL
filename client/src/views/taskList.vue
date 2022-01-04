@@ -1,6 +1,6 @@
 <template>
   <v-treeview
-    item-key="subID"
+    ref="tree"
     :items="list"
     dense
     open-all
@@ -52,6 +52,7 @@
       return {
         taskStateTree: { children: [], root: true, ...headers },
         headers: Object.keys(headers),
+        firstTime: true
       };
     },
     computed: {
@@ -59,10 +60,13 @@
         return [this.taskStateTree];
       },
     },
-
     mounted: function () {
       SIO.on("taskStateList", async (taskStateList)=>{
         const isChanged = await taskStateList2Tree(taskStateList, this.taskStateTree);
+        if(this.firstTime){
+          this.firstTime=false;
+          this.$refs.tree.updateAll(true);
+        }
       });
     },
   };

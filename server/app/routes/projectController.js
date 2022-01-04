@@ -56,7 +56,6 @@ const {
 } = require("../core/componentFilesOperator");
 const { getProjectState, setProjectState } = require("../core/projectFilesOperator");
 const { taskStateFilter } = require("../core/taskUtil");
-const { bufferdEmit } = require("../core/emitArbitorator");
 const blockSize = 100; //max number of elements which will be sent via taskStateList at one time
 
 /**
@@ -318,7 +317,7 @@ async function onRunProject(sio, projectRootDir, cb) {
     //directly send last status just in case
     await sendProjectJson(emit, projectRootDir);
     await sendWorkflow(emit, projectRootDir);
-    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
+    await sendTaskStateList(emit, projectRootDir);
   } catch (e) {
     getLogger(projectRootDir).warn("project execution is successfully finished but error occurred in cleanup process", e);
     cb(false);
@@ -338,7 +337,7 @@ async function onPauseProject(emit, projectRootDir, cb) {
     await pauseProject(projectRootDir);
     await sendProjectJson(emit, projectRootDir);
     await sendWorkflow(emit, projectRootDir);
-    await emitLongArray(emit, "taskStateList", getUpdatedTaskStateList(projectRootDir), blockSize);
+    await sendTaskStateList(emit, projectRootDir);
   } catch (e) {
     cb(false);
     return;
@@ -387,7 +386,7 @@ async function onCleanProject(emit, projectRootDir, withPause, cb) {
     await cleanProject(projectRootDir);
     await sendProjectJson(emit, projectRootDir);
     await sendWorkflow(emit, projectRootDir, projectRootDir);
-    await emitLongArray(emit, "taskStateList", [], blockSize);
+    await sendTaskStateList(emit, projectRootDir);
   } catch (e) {
     cb(false);
     return;
@@ -832,7 +831,10 @@ function registerListeners(socket, projectRootDir) {
 
   //event listener for task state changed
   async function onTaskStateChanged(task) {
-    bufferdEmit(socket, "taskStateList", task, interval, blockSize);
+    await sendTaskStateList(emit, projectRootDir);
+    setTimeout(()=>{
+      once(projectRootDir, "taskStateChanged", onTaskStateChanged);
+    }, interval);
   }
 
   //event listener for component state changed
