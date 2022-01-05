@@ -565,6 +565,9 @@ class Dispatcher extends EventEmitter {
     for (const outputFile of component.outputFiles) {
       for (const e of outputFile.dst) {
         const outputCmp = await this._getComponent(e.dstNode);
+        if (outputCmp.type === "viewer") {
+          continue;
+        }
         const prviousCmp = await Promise.all(outputCmp.previous.map((id)=>{
           return this._getComponent(id);
         }));
