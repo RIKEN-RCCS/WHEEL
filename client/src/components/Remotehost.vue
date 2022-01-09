@@ -24,10 +24,10 @@
     </v-app-bar>
     <v-main>
       <v-toolbar>
-        <v-btn @click="openEditDialog()">
+        <v-btn @click.stop="openEditDialog()">
           new remote host setting
         </v-btn>
-        <v-btn @click="openEditDialog({type:'aws'})">
+        <v-btn @click.stop="openEditDialog({type:'aws'})">
           new cloud setting
         </v-btn>
       </v-toolbar>

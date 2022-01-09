@@ -200,7 +200,7 @@
             </v-icon>
             OK
           </v-btn>
-          <v-btn @click="closeDialog">
+          <v-btn @click="cancelDialog">
             <v-icon>
               mdi-close
             </v-icon>
@@ -295,8 +295,10 @@
         },
       },
     },
-    beforeUpdate () {
+    watch:{
+      openDialog(v){
       this.host = Object.assign(this.host, this.initialValue);
+      }
     },
     methods: {
       closeFileBrowser(){
@@ -313,10 +315,13 @@
         this.$emit("newHost", this.host);
         this.closeDialog();
       },
+      cancelDialog(){
+        this.$emit("cancel");
+        this.closeDialog();
+      },
       closeDialog () {
         this.host = {};
         this.$refs.form.reset();
-        this.$emit("cancel");
         this.openDialog = false;
       },
     },
