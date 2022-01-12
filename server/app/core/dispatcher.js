@@ -604,7 +604,7 @@ class Dispatcher extends EventEmitter {
       task.doCleanup = task.cleanupFlag === 0;
     }
 
-    if (task.usePSSettingFile === "1") {
+    if (task.usePSSettingFile === true) {
       await this._bulkjobHandler(task);
     }
 

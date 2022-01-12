@@ -451,7 +451,7 @@ async function validateBulkjobTask(projectRootDir, component) {
     }
   }
 
-  if (component.usePSSettingFile === "0") {
+  if (component.usePSSettingFile === false) {
     if (!(Object.prototype.hasOwnProperty.call(component, "startBulkNumber") && typeof component.startBulkNumber === "number")) {
       return Promise.reject(new Error(`startBulkNumber is not specified ${component.name}`));
     }

@@ -263,7 +263,7 @@ class BulkjobTask extends Task {
     this.useJobScheduler = true;
 
     /*bulkjob parameter */
-    this.usePSSettingFile = "0";
+    this.usePSSettingFile = true;
     this.parameterFile = null;
     this.startBulkNumber = null;
     this.endBulkNumber = null;
