@@ -9,7 +9,9 @@
         cloud service setting
       </v-card-title>
       <v-card-text>
-        <v-form>
+        <v-form
+          ref="form"
+        >
           <v-expansion-panels
             v-model="openPanel"
             multiple
@@ -203,7 +205,7 @@
           </v-icon>
           OK
         </v-btn>
-        <v-btn @click="closeDialog">
+        <v-btn @click="cancelDialog">
           <v-icon>
             mdi-close
           </v-icon>
@@ -251,8 +253,10 @@
         },
       },
     },
-    beforeUpdate () {
+    watch:{
+      openDialog(v){
       this.host = Object.assign(this.host, this.initialValue);
+      }
     },
     methods: {
       notDupulicatedLabel (v){
@@ -265,9 +269,13 @@
         this.$emit("newHost", this.host);
         this.closeDialog();
       },
+      cancelDialog(){
+        this.$emit("cancel");
+        this.closeDialog();
+      },
       closeDialog () {
         this.host = {};
-        this.$emit("cancel");
+        this.$refs.form.reset();
         this.openDialog = false;
       },
     },
