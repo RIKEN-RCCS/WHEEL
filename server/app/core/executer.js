@@ -105,7 +105,7 @@ function makeStepOpt(task) {
   const jobName = `jnam=${task.parentName}`;
   const stepNum = `sn=${task.stepnum}`;
   const dependencyForm = `${task.dependencyForm}`;
-  return task.useDependency ? `${stepjob} "${jobName}, ${stepNum}, ${dependencyForm}"` : `${stepjob} "${jobName}, ${stepNum}"`;
+  return task.useDependency ? `${stepjob} "${jobName},${stepNum},${dependencyForm}"` : `${stepjob} "${jobName},${stepNum}"`;
 }
 
 /**
