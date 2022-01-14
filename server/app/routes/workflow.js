@@ -13,7 +13,7 @@ const projectController = require("./projectController");
 const { jobScheduler, remoteHost, projectJsonFilename, componentJsonFilename, shutdownDelay, jobScript } = require("../db/db");
 const { getComponent } = require("../core/workflowUtil");
 const { openProject, setSio, getLogger } = require("../core/projectResource");
-const { importProject, setProjectState, getProjectState, checkRunningJobs } = require("../core/projectFilesOperator");
+const { importProject, getProjectState, checkRunningJobs } = require("../core/projectFilesOperator");
 const { createSsh } = require("../core/sshManager");
 const { registerJob } = require("../core/jobManager");
 
@@ -27,7 +27,6 @@ module.exports = function(io) {
     }
     const { rootDir } = cookie.parse(socket.handshake.headers.cookie);
     getLogger(projectRootDir).debug("projectRootDir from cookie=", rootDir);
-    //TODO  join rootDir's room
 
     setSio(projectRootDir, socket);
     socket.on("getJobScriptList", ()=>{
@@ -87,16 +86,15 @@ module.exports = function(io) {
       const { tasks } = await checkRunningJobs(projectRootDir);
       if (tasks.length > 0) {
         getLogger(projectRootDir).info(`${tasks.length} jobs remaining. job check restarted`);
+        const p = [];
+        for (const task of tasks) {
+          const { remotehostID, name } = task;
+          const hostinfo = remoteHost.get(remotehostID);
+          await createSsh(projectRootDir, name, hostinfo, socket);
+          p.push(registerJob(hostinfo, task));
+        }
+        await Promise.all(p);
       }
-      const p = [];
-      for (const task of tasks) {
-        const { remotehostID, name } = task;
-        const hostinfo = remoteHost.get(remotehostID);
-        await createSsh(projectRootDir, name, hostinfo, socket);
-        p.push(registerJob(hostinfo, task));
-      }
-      await Promise.all(p);
-      setProjectState(projectRootDir, "unknown");
     })().catch((e)=>{
       getLogger(projectRootDir).error("restart job check process failed", e);
     });
