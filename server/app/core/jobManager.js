@@ -88,6 +88,7 @@ async function isFinished(JS, task) {
     const error = new Error("job stat command failed!");
     error.cmd = statCmd;
     error.rt = statCmdRt;
+    error.output = outputText;
     return Promise.reject(error);
   }
 
