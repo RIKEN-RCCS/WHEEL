@@ -118,11 +118,12 @@
             />
             <v-select
               v-if="hasJobScheduler"
+              v-model.lazy="copySelectedComponent.queue"
               label="queue"
               :items="queues"
               :disabled="! copySelectedComponent.useJobScheduler"
               outlined
-              @change="updateComponentProperty('useJobScheduler')"
+              @change="updateComponentProperty('queue')"
             />
             <v-text-field
               v-if="hasJobScheduler"
