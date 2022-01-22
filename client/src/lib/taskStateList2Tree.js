@@ -6,7 +6,7 @@
 "use strict";
 
 export function path2Array (pathString) {
-  if (pathString === "") {
+  if (typeof PathString !== "string" || pathString === "") {
     return null;
   }
   const splitedPath = pathString.split("/");
@@ -31,6 +31,15 @@ export function taskStateList2Tree (taskStatelist, tree) {
     const ancestorsNames = path2Array(task.ancestorsName);
     const ancestorsTypes = path2Array(task.ancestorsType);
     let poi = tree.children; // candidate nodes
+    if(ancestorsNames === null){
+      const tmp = Object.assign({}, task);
+      delete tmp.ancestorsName;
+      delete tmp.ancestorsType;
+      tmp.type = "task";
+      poi.push(tmp);
+      treeIsChanged = true;
+      return;
+    }
     let entry; // current operating node
     ancestorsNames.forEach((name, index)=>{
       entry = poi.find((e)=>{
