@@ -36,7 +36,12 @@ export function taskStateList2Tree (taskStatelist, tree) {
       delete tmp.ancestorsName;
       delete tmp.ancestorsType;
       tmp.type = "task";
-      poi.push(tmp);
+      const existingNode=poi.find((e)=>{return e.ID=== task.ID;});
+      if(existingNode){
+        Object.assign(existingNode, task);
+      }else{
+        poi.push(tmp);
+      }
       treeIsChanged = true;
       return;
     }
