@@ -64,7 +64,7 @@
       SIO.on("taskStateList", async (taskStateList)=>{
         const isChanged = await taskStateList2Tree(taskStateList, this.taskStateTree);
 
-        if(this.firstTime){
+        if(this.$refs.tree && (this.firstTime || isChanged)){
           this.firstTime=false;
           this.$refs.tree.updateAll(true);
         }

@@ -6,7 +6,7 @@
 "use strict";
 
 export function path2Array (pathString) {
-  if (typeof PathString !== "string" || pathString === "") {
+  if (typeof pathString !== "string" || pathString === "") {
     return null;
   }
   const splitedPath = pathString.split("/");
