@@ -140,16 +140,12 @@
         if (this.isDuplicate(this.edittingField) && this.editTarget !== this.edittingField) {
           return;
         }
-        console.log("DEBUG: edittingField=", this.edittingField);
-        console.log("DEBUG: editTarget=", this.editTarget);
-        console.log("DEBUG: index=", index);
 
         if (this.stringItems) {
           this.items.splice(index, 1, this.edittingField);
         } else {
           item.name = this.edittingField;
         }
-        console.log("DEBUG: items=", this.items);
         this.$emit("update", item, index);
       },
       addItem: function () {

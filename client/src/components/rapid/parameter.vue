@@ -219,6 +219,24 @@
       }
     },
     methods: {
+      addList(item){
+        this.newItem.list.push(item);
+      },
+      updateList(item, index){
+        this.newItem.list.splice(index, 1, item);
+      },
+      removeList(item, index){
+        removeFromArray(this.newItem.files, item);
+      },
+      addFiles(item){
+        this.newItem.files.push(item);
+      },
+      updateFiles(item, index){
+        this.newItem.files.splice(index, 1, item);
+      },
+      removeFiles(item, index){
+        removeFromArray(this.newItem.files, item);
+      },
       reset () {
         this.newItem = {
           type: this.newItem ? this.newItem.type : "min-max-step",
@@ -235,7 +253,6 @@
       openFilterDialog (item) {
         this.filterEdittingItem = item;
         this.filterDialog = true;
-        console.log("DEBUG:", this.filterEdittingItem);
       },
       updateFilter () {
         this.$emit("updateFilter", this.filterText);
@@ -253,6 +270,8 @@
         removeFromArray(this.params, item);
       },
       storeParam (target) {
+        target.type=this.newItem.type;
+
         if (this.newItem.type === "min-max-step") {
           const min = Number(this.newItem.min);
           const max = Number(this.newItem.max);
@@ -266,9 +285,9 @@
           target.max = max;
           target.step = step;
         } else if (this.newItem.type === "list") {
-          target.list = this.newItem.list.map((e)=>{ return e.item; });
+          target.list = this.newItem.list;
         } else if (this.newItem.type === "files") {
-          target.files = this.newItem.files.map((e)=>{ return e.item; });
+          target.files = this.newItem.files;
         }
       },
       addItem () {
@@ -299,6 +318,7 @@
       closeAndResetDialog () {
         this.dialog = false;
         this.currentItem = null;
+        this.reset();
       },
     },
   };
