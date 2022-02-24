@@ -131,10 +131,12 @@ function isContainer (target) {
 function readCookie (key) {
   const encodedValue = document.cookie
     .split(";")
-    .find((row)=>{
-      return row.trim().startsWith(key);
+    .map((kv)=>{
+      return kv.split("=");
     })
-    .split("=")[1];
+    .find((kv)=>{
+      return kv[0].trim() === key;
+    })[1];
   return decodeURIComponent(encodedValue);
 }
 
