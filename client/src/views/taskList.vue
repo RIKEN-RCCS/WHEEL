@@ -62,7 +62,16 @@
     },
     mounted: function () {
       SIO.on("taskStateList", async (taskStateList)=>{
-        const isChanged = await taskStateList2Tree(taskStateList, this.taskStateTree);
+        let isChanged=false;
+        if(taskStateList.length===0){
+          this.taskStateTree = { children: [], root: true, ...headers };
+          isChanged=true;
+        }else{
+          isChanged = await taskStateList2Tree(taskStateList, this.taskStateTree);
+        }
+        console.log(isChanged);
+        console.log(this.firstTime);
+        console.log(this.taskStateTree);
 
         if(this.$refs.tree && (this.firstTime || isChanged)){
           this.firstTime=false;
