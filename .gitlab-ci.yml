@@ -1,14 +1,14 @@
 workflow:
   rules:
     - if: $CI_COMMIT_BRANCH != "master"
-image: docker:19.03.11
+image: docker:19.03.13
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
 services:
-  - docker:19.03.11-dind
+  - docker:19.03.13-dind
 before_script:
-  - apk add bash openssl nodejs npm git
   - docker info
+  - apk add bash openssl nodejs npm git git-lfs
 
 test:
   script:
@@ -16,6 +16,7 @@ test:
 
 makedoc:
   script:
+    - cd server
     - npm install
     - npm run convertDoc
     - rm -fr docs
