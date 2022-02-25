@@ -32,7 +32,7 @@
     "prepare": "webpack",
     "watch": "webpack -w",
     "node-dev": "node-dev --inspect app/index",
-    "dev": "run-p watch node-dev",
+    "dev": "run-p watch node-dev"
   },
   "husky": {
     "hooks": {
