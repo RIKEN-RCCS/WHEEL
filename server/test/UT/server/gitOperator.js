@@ -43,7 +43,7 @@ const {
 //test data
 const testDirRoot = path.resolve("./", "WHEEL_TEST_TMP");
 
-const gitLFSInstallMessage = "Updated git hooks.\nGit LFS initialized.\n";
+const gitLFSInstallMessage = /Updated [gG]it hooks.\nGit LFS initialized.\n/;
 
 describe("git operator UT", ()=>{
   after(async()=>{
@@ -55,18 +55,18 @@ describe("git operator UT", ()=>{
       await asyncExecFile("git", ["init", testDirRoot]);
     });
     it("should re-initialize repo and return undefined when attempting to init again", async()=>{
-      expect(await gitInit(testDirRoot, "testUser", "testUser@example.com")).to.equal(gitLFSInstallMessage);
+      expect(await gitInit(testDirRoot, "testUser", "testUser@example.com")).to.match(gitLFSInstallMessage);
       await checkLFSenabled(testDirRoot);
     });
     it("should initialize git repo on nonExisting directory", async()=>{
       const newRepoDir = path.resolve(testDirRoot, "hoge");
-      expect(await gitInit(newRepoDir, "testUser", "testUser@example.com")).to.equal(gitLFSInstallMessage);
+      expect(await gitInit(newRepoDir, "testUser", "testUser@example.com")).to.match(gitLFSInstallMessage);
       expect(newRepoDir).to.be.a.directory().with.contents([".git"]);
       await checkLFSenabled(newRepoDir);
     });
     it("should initialize git repo on nonExisting directory in nonExisting directory", async()=>{
       const newRepoDir = path.resolve(testDirRoot, "hoge", "huga");
-      expect(await gitInit(newRepoDir, "testUser", "testUser@example.com")).to.equal(gitLFSInstallMessage);
+      expect(await gitInit(newRepoDir, "testUser", "testUser@example.com")).to.match(gitLFSInstallMessage);
       expect(newRepoDir).to.be.a.directory().with.contents([".git"]);
       await checkLFSenabled(newRepoDir);
     });
@@ -74,7 +74,7 @@ describe("git operator UT", ()=>{
       const newRepoDir = path.resolve(testDirRoot, "hoge");
       await fs.mkdir(newRepoDir);
       expect(newRepoDir).to.be.a.directory().and.empty;
-      expect(await gitInit(newRepoDir, "testUser", "testUser@example.com")).to.equal(gitLFSInstallMessage);
+      expect(await gitInit(newRepoDir, "testUser", "testUser@example.com")).to.match(gitLFSInstallMessage);
       expect(newRepoDir).to.be.a.directory().with.contents([".git"]);
       await checkLFSenabled(newRepoDir);
     });
