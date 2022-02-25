@@ -12,16 +12,14 @@ before_script:
 
 test:
   script:
-    - ./server/test/release_test.sh
+    - cd server
+    - npm install
+    - ./test/release_test.sh
 
 makedoc:
   script:
-    - cd server
     - npm install
-    - npm run convertDoc
-    - rm -fr docs
-    - mv documentMD/_user_guide docs
-    - mv docs/readme.html docs/index.html
+    - npm run build
   artifacts:
     paths:
       - docs/

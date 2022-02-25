@@ -33,8 +33,7 @@
     "watch": "webpack -w",
     "node-dev": "node-dev --inspect app/index",
     "dev": "run-p watch node-dev",
-    "license-report": "license-report --output=csv --csvHeaders |awk  'BEGIN{FS=\",\";OFS=\",\"}{print $3,$6,$7,$8}'",
-    "convertDoc": "markdown-folder-to-html documentMD/user_guide"
+    "license-report": "license-report --output=csv --csvHeaders |awk  'BEGIN{FS=\",\";OFS=\",\"}{print $3,$6,$7,$8}'"
   },
   "husky": {
     "hooks": {
@@ -113,7 +112,6 @@
     "json-loader": "^0.5.7",
     "license-report": "^3.0.0",
     "lint-staged": "^10.4.0",
-    "markdown-folder-to-html": "^2.4.0",
     "markdown-pdf": "^10.0.0",
     "marked": "^0.8.0",
     "material-design-icons-iconfont": "^5.0.1",
