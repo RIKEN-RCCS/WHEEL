@@ -16,13 +16,18 @@
     "node": ">=12"
   },
   "scripts": {
-    "build": "run-s convertDoc removeDoc replaceDoc renameHtml",
+    "buildDoc": "run-s convertDoc removeDoc replaceDoc renameHtml",
+    "licenseReport": "run-s licenseReport-doc licenseReport-server licenseReport-client",
     "convertDoc": "markdown-folder-to-html documentMD/user_guide",
     "removeDoc": "shx rm -fr docs",
     "replaceDoc": "shx mv documentMD/_user_guide ./docs",
-    "renameHtml": "shx mv docs/readme.html docs/index.html"
+    "renameHtml": "shx mv docs/readme.html docs/index.html",
+    "licenseReport-doc": "license-report --output=csv --csvHeaders --config license-report-config.json",
+    "licenseReport-server": "license-report --package=server/package.json --output=csv --csvHeaders --config license-report-config.json",
+    "licenseReport-client": "license-report --package=client/package.json --output=csv --csvHeaders --config license-report-config.json"
   },
   "devDependencies": {
+    "license-report": "^5.0.1",
     "markdown-folder-to-html": "^2.4.0",
     "npm-run-all": "^4.1.5",
     "shx": "^0.3.4"

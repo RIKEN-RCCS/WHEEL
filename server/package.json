@@ -33,7 +33,6 @@
     "watch": "webpack -w",
     "node-dev": "node-dev --inspect app/index",
     "dev": "run-p watch node-dev",
-    "license-report": "license-report --output=csv --csvHeaders |awk  'BEGIN{FS=\",\";OFS=\",\"}{print $3,$6,$7,$8}'"
   },
   "husky": {
     "hooks": {
@@ -110,7 +109,6 @@
     "js-cookie": "^2.2.1",
     "jsdoc-to-markdown": "^5.0.3",
     "json-loader": "^0.5.7",
-    "license-report": "^3.0.0",
     "lint-staged": "^10.4.0",
     "markdown-pdf": "^10.0.0",
     "marked": "^0.8.0",
