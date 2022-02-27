@@ -720,10 +720,15 @@
 
         SIO.emit("updateNode", ID, prop, newValue, (rt)=>{
           if(rt === false){
+            console.log("update node failed", rt);
             return;
           }
           if (prop === "name" ){
-            SIO.emit("getFileList", this.selectedComponentAbsPath);
+            SIO.emit("getFileList", this.selectedComponentAbsPath, (rt2)=>{
+              if(rt2 === false){
+                console.log("getFileList failed", rt2);
+              }
+            });
           }
         });
       },
