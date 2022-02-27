@@ -722,6 +722,9 @@
           if(rt === false){
             return;
           }
+          if (prop === "name" ){
+            SIO.emit("getFileList", this.selectedComponentAbsPath);
+          }
         });
       },
       addToIncludeList (v) {
