@@ -37,18 +37,17 @@ WHEELはhttpsおよびwssにて通信を行なうため、起動する前にサ�
 
 ## 起動方法
 ```
-> docker run -d -v PROJECT_ROOT:/root -v CONFIG_DIR:/usr/src/app/config -p 8089:8089 -p 8090:8090 tmkawanabe/wheel:latest
+> docker run -d -v PROJECT_ROOT:/root -v CONFIG_DIR:/usr/src/app/config -p 8089:8089 tmkawanabe/wheel:latest
 ```
 この時、`PROJECT_ROOT`と`CONFIG_DIR`は絶対パスで指定する必要があります。
 
-ポート番号として、8089および8090をexposeしていますが、前者はWHEEL自身が後者はWHEELからjupyter notebookを起動した時に使うポート番号です。
-これらのdockerコンテナ内でのポート番号の設定は後述のserver.json内で変更することもできますので、
-変更している場合はその番号に合わせて起動時のオプションを指定してください。
-server.jsonの設定は変更せずに、ホスト側のポート番号のみを変えることも可能です。
-例えば、wheelの待ち受けポートを3000, jupyterの待ち受けポートを3001とする場合、2箇所あった-pオプションを次のように変更してください。
+8089ポートへの転送を指定していますが、このポート番号は後述のserver.json内で変更することもできますので、
+変更した場合は起動時のオプショも合わせって変更してください。
+また、server.jsonの設定は変更せずに、ホスト側のポート番号のみを変えることで待受ポートを変更することもできます。
+例えば、server.jsonはデフォルトのままでwheelの待ち受けポートを3000とする場合、-pオプションを次のように変更してください。
 
 ```
--p 3000:8089 -p 3001:8090
+-p 3000:8089
 ```
 
 ### server setting
@@ -64,8 +63,6 @@ server.jsonの既定値
     "jobScriptJsonFile": "jobScript.json",
     "interval": 1000,
     "defaultCleanupRemoteRoot": true,
-    "jupyter": true,
-    "jupyterPort": "auto",
     "logFilename": "wheel.log",
     "numLogFiles": 5,
     "maxLogSize": 8388608,
@@ -98,13 +95,6 @@ app/configディレクトリからの相対パスで指定します。
 
 プロジェクトのルートコンポーネントでリモート環境に作成した一時ファイルを削除するかどうかの設定が
 "上位コンポーネントを参照"となっていた時に、削除する(True)として扱うか、削除しない(False)として扱うかの設定です。
-
-#### jupyter(文字列 | 真偽値)
-jupyter notebookの実行ファイル名を指定します。PATHが通っていれば絶対PATHではなくコマンド名のみの記載で構いません。
-文字列以外の値が設定された時は、truethyな値であれば"jupyter"を呼び出し、それ以外の時はjupyter notebook機能は無効になります。
-
-#### jupyterPort (整数 | "auto")
-jupyter notebookを起動する時のポート番号を指定します。無効なポート番号(0以下や65536以上、数値以外の値)が指定された場合はWHEEL自身が待ち受けているポート番号+1の値を使います。
 
 #### logFilename (文字列)
 ログファイルのファイル名を指定します。
@@ -141,8 +131,8 @@ workflow画面に接続するクライアントが0になってからWHEEL自身
 WHEELが動作中に参照するユーザデータの保存先として、以下の2ファイルが使われます。
 (ファイル名は、前述のserver.jsonで変更することもできます。)
 
-- app/config/remotehost.json
-- app/config/projectList.json
+- remotehost.json
+- projectList.json
 
 remotehost.jsonには、ユーザが接続する外部サーバのホスト名、IDなどの情報が平文で保存されています。
 定期的にバックアップを取るなど障害への準備を行なうとともに、取り扱いに注意してください。
@@ -151,9 +141,20 @@ remotehost.jsonには、ユーザが接続する外部サーバのホスト名�
 projectList.jsonには、ユーザが使用するワークフロープロジェクトディレクトリのパスとそれを識別するためのID文字列が保存されています。
 本ファイルも定期的にバックアップをとるなどして障害発生時に備えてください。
 
+## 設定ファイル探索ポリシー
+WHEELは起動時に、これまでに説明したserver.json, remotehost.json, projectList.jsonファイルの他に
+ジョブスケジューラ設定ファイル(jobScheduler.json)、SSL鍵ファイル(server.key)、SSL証明書ファイル(server.crt)
+を読み込みます。
+これらのファイルは、
 
+1. 起動したユーザの`${HOME}/.wheel` 以下
+2. 環境変数 `WHEEL_CONFIG_DIR` で指定されたディレクトリ
+3. WHEELのインストール先以下のapp/configディレクトリ
 
+の順に探索され、最初に見つかったファイルのみが読み込まれます。
 
+また、ログファイルの出力も同様のポリシーでディレクトリを探索し、最初に見つかったディレクトリ以下に
+wheel.log(server.jsonの設定で変更可能)という名前のファイルに出力します。
 
 ## Docker imageのビルド方法
 dockerhubで配布されているイメージよりも新しいバージョンを使う場合など、ソースからdocker イメージをビルドする時には
@@ -177,7 +178,6 @@ dockerhubで配布されているイメージよりも新しいバージョン�
 - git lfs
 - bash
 - python3(option)
-- jupyter(option)
 
 
 ### インストール方法

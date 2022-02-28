@@ -1,0 +1,623 @@
+{
+  "projectJson": {
+    "version": 2,
+    "name": "PS_v2",
+    "description": "This is new project.",
+    "state": "finished",
+    "root": "/home/ubuntu/environment/Workflow/PS_v2.wheel",
+    "ctime": "2019/12/04-08:43:46",
+    "mtime": "2021/03/29-15:15:36",
+    "componentPath": {
+      "2f899510-1672-11ea-9702-db00aa43aa0a": "./",
+      "3291cc00-1672-11ea-9702-db00aa43aa0a": "./PS0",
+      "d0d12510-52e4-11ea-b20f-119ccc13e883": "./PS0/task0",
+      "e854e920-9059-11eb-b881-5d29e28aeaa0": "./task0",
+      "ed0e5280-9059-11eb-b881-5d29e28aeaa0": "./if0",
+      "ef60f510-9059-11eb-b881-5d29e28aeaa0": "./for0",
+      "f1b174c0-9059-11eb-b881-5d29e28aeaa0": "./while0",
+      "f3d7b020-9059-11eb-b881-5d29e28aeaa0": "./foreach0",
+      "f626d040-9059-11eb-b881-5d29e28aeaa0": "./source0",
+      "f846ca10-9059-11eb-b881-5d29e28aeaa0": "./viewer0",
+      "fb107160-9059-11eb-b881-5d29e28aeaa0": "./workflow0",
+      "fda10750-9059-11eb-b881-5d29e28aeaa0": "./stepjob0"
+    }
+  },
+  "componentTree": {
+    "parent": "this is root",
+    "pos": {
+      "x": 0,
+      "y": 0
+    },
+    "ID": "2f899510-1672-11ea-9702-db00aa43aa0a",
+    "type": "workflow",
+    "name": "PS_v2",
+    "description": null,
+    "state": "finished",
+    "previous": [],
+    "next": [],
+    "inputFiles": [],
+    "outputFiles": [],
+    "cleanupFlag": 1,
+    "children": [
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 302,
+          "y": 266
+        },
+        "ID": "fda10750-9059-11eb-b881-5d29e28aeaa0",
+        "type": "stepjob",
+        "name": "stepjob0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "host": "localhost",
+        "useJobScheduler": true,
+        "queue": null
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 432,
+          "y": 468
+        },
+        "ID": "fb107160-9059-11eb-b881-5d29e28aeaa0",
+        "type": "workflow",
+        "name": "workflow0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 815,
+          "y": 471
+        },
+        "ID": "f846ca10-9059-11eb-b881-5d29e28aeaa0",
+        "type": "viewer",
+        "name": "viewer0",
+        "description": null,
+        "state": "not-started",
+        "inputFiles": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 548,
+          "y": 306
+        },
+        "ID": "f626d040-9059-11eb-b881-5d29e28aeaa0",
+        "type": "source",
+        "name": "source0",
+        "description": null,
+        "state": "not-started",
+        "uploadOnDemand": false,
+        "outputFiles": [
+          {
+            "name": "",
+            "dst": []
+          }
+        ]
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 407,
+          "y": 528
+        },
+        "ID": "f3d7b020-9059-11eb-b881-5d29e28aeaa0",
+        "type": "foreach",
+        "name": "foreach0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "indexList": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 740,
+          "y": 306
+        },
+        "ID": "f1b174c0-9059-11eb-b881-5d29e28aeaa0",
+        "type": "while",
+        "name": "while0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "condition": null
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 696,
+          "y": 177
+        },
+        "ID": "ef60f510-9059-11eb-b881-5d29e28aeaa0",
+        "type": "for",
+        "name": "for0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "start": null,
+        "end": null,
+        "step": null
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 634,
+          "y": 54
+        },
+        "ID": "ed0e5280-9059-11eb-b881-5d29e28aeaa0",
+        "type": "if",
+        "name": "if0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "condition": null,
+        "else": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 470,
+          "y": 384
+        },
+        "ID": "e854e920-9059-11eb-b881-5d29e28aeaa0",
+        "type": "task",
+        "name": "task0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "script": null,
+        "host": "localhost",
+        "useJobScheduler": false,
+        "queue": null,
+        "include": null,
+        "exclude": null
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 355,
+          "y": 124
+        },
+        "ID": "3291cc00-1672-11ea-9702-db00aa43aa0a",
+        "type": "parameterStudy",
+        "name": "PS0",
+        "description": null,
+        "state": "finished",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "parameterFile": "parameterSetting.json",
+        "numTotal": 4,
+        "numFinished": 4,
+        "numFailed": 0,
+        "forceOverwrite": false,
+        "children": [
+          {
+            "parent": "3291cc00-1672-11ea-9702-db00aa43aa0a",
+            "pos": {
+              "x": 434,
+              "y": 170
+            },
+            "ID": "d0d12510-52e4-11ea-b20f-119ccc13e883",
+            "type": "task",
+            "name": "task0",
+            "description": null,
+            "state": "not-started",
+            "previous": [],
+            "next": [],
+            "inputFiles": [],
+            "outputFiles": [],
+            "cleanupFlag": 2,
+            "script": "run.sh",
+            "host": "localhost",
+            "useJobScheduler": false,
+            "queue": null,
+            "include": null,
+            "exclude": null
+          }
+        ]
+      }
+    ]
+  },
+  "wf": {
+    "parent": "this is root",
+    "pos": {
+      "x": 0,
+      "y": 0
+    },
+    "ID": "2f899510-1672-11ea-9702-db00aa43aa0a",
+    "type": "workflow",
+    "name": "PS_v2",
+    "description": null,
+    "state": "finished",
+    "previous": [],
+    "next": [],
+    "inputFiles": [],
+    "outputFiles": [],
+    "cleanupFlag": 1,
+    "descendants": [
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 696,
+          "y": 177
+        },
+        "ID": "ef60f510-9059-11eb-b881-5d29e28aeaa0",
+        "type": "for",
+        "name": "for0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "start": null,
+        "end": null,
+        "step": null,
+        "descendants": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 407,
+          "y": 528
+        },
+        "ID": "f3d7b020-9059-11eb-b881-5d29e28aeaa0",
+        "type": "foreach",
+        "name": "foreach0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "indexList": [],
+        "descendants": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 634,
+          "y": 54
+        },
+        "ID": "ed0e5280-9059-11eb-b881-5d29e28aeaa0",
+        "type": "if",
+        "name": "if0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "condition": null,
+        "else": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 355,
+          "y": 124
+        },
+        "ID": "3291cc00-1672-11ea-9702-db00aa43aa0a",
+        "type": "parameterStudy",
+        "name": "PS0",
+        "description": null,
+        "state": "finished",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "parameterFile": "parameterSetting.json",
+        "numTotal": 4,
+        "numFinished": 4,
+        "numFailed": 0,
+        "forceOverwrite": false,
+        "descendants": [
+          {
+            "type": "task",
+            "pos": {
+              "x": 434,
+              "y": 170
+            },
+            "host": "localhost",
+            "useJobScheduler": false
+          }
+        ]
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 548,
+          "y": 306
+        },
+        "ID": "f626d040-9059-11eb-b881-5d29e28aeaa0",
+        "type": "source",
+        "name": "source0",
+        "description": null,
+        "state": "not-started",
+        "uploadOnDemand": false,
+        "outputFiles": [
+          {
+            "name": "",
+            "dst": []
+          }
+        ]
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 302,
+          "y": 266
+        },
+        "ID": "fda10750-9059-11eb-b881-5d29e28aeaa0",
+        "type": "stepjob",
+        "name": "stepjob0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "host": "localhost",
+        "useJobScheduler": true,
+        "queue": null,
+        "descendants": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 470,
+          "y": 384
+        },
+        "ID": "e854e920-9059-11eb-b881-5d29e28aeaa0",
+        "type": "task",
+        "name": "task0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "script": null,
+        "host": "localhost",
+        "useJobScheduler": false,
+        "queue": null,
+        "include": null,
+        "exclude": null
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 815,
+          "y": 471
+        },
+        "ID": "f846ca10-9059-11eb-b881-5d29e28aeaa0",
+        "type": "viewer",
+        "name": "viewer0",
+        "description": null,
+        "state": "not-started",
+        "inputFiles": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 740,
+          "y": 306
+        },
+        "ID": "f1b174c0-9059-11eb-b881-5d29e28aeaa0",
+        "type": "while",
+        "name": "while0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "condition": null,
+        "descendants": []
+      },
+      {
+        "parent": "2f899510-1672-11ea-9702-db00aa43aa0a",
+        "pos": {
+          "x": 432,
+          "y": 468
+        },
+        "ID": "fb107160-9059-11eb-b881-5d29e28aeaa0",
+        "type": "workflow",
+        "name": "workflow0",
+        "description": null,
+        "state": "not-started",
+        "previous": [],
+        "next": [],
+        "inputFiles": [],
+        "outputFiles": [],
+        "cleanupFlag": 2,
+        "descendants": []
+      }
+    ]
+  },
+  "taskStatelist": [
+    {
+      "name": "task0",
+      "ID": "d0d12510-52e4-11ea-b20f-119ccc13e883",
+      "description": "",
+      "state": "finished",
+      "parent": "3291cc00-1672-11ea-9702-db00aa43aa0a",
+      "parentType": "parameterStudy",
+      "ancestorsName": "PS0_hoge_0",
+      "ancestorsType": "parameterStudy",
+      "dispatchedTime": "2021/03/29-15:15:33.857",
+      "startTime": "2021/03/29-15:15:34.865",
+      "endTime": "2021/03/29-15:15:34.936",
+      "preparedTime": null,
+      "jobSubmittedTime": null,
+      "jobStartTime": null,
+      "jobEndTime": null
+    },
+    {
+      "name": "task0",
+      "ID": "d0d12510-52e4-11ea-b20f-119ccc13e883",
+      "description": "",
+      "state": "finished",
+      "parent": "3291cc00-1672-11ea-9702-db00aa43aa0a",
+      "parentType": "parameterStudy",
+      "ancestorsName": "PS0_hoge_0_40",
+      "ancestorsType": "parameterStudy",
+      "dispatchedTime": "2021/03/29-15:15:33.868",
+      "startTime": "2021/03/29-15:15:34.871",
+      "endTime": "2021/03/29-15:15:34.942",
+      "preparedTime": null,
+      "jobSubmittedTime": null,
+      "jobStartTime": null,
+      "jobEndTime": null
+    },
+    {
+      "name": "task0",
+      "ID": "d0d12510-52e4-11ea-b20f-119ccc13e883",
+      "description": "",
+      "state": "finished",
+      "parent": "3291cc00-1672-11ea-9702-db00aa43aa0a",
+      "parentType": "parameterStudy",
+      "ancestorsName": "PS0_hoge_0_80",
+      "ancestorsType": "parameterStudy",
+      "dispatchedTime": "2021/03/29-15:15:33.871",
+      "startTime": "2021/03/29-15:15:35.871",
+      "endTime": "2021/03/29-15:15:35.934",
+      "preparedTime": null,
+      "jobSubmittedTime": null,
+      "jobStartTime": null,
+      "jobEndTime": null
+    },
+    {
+      "name": "task0",
+      "ID": "d0d12510-52e4-11ea-b20f-119ccc13e883",
+      "description": "",
+      "state": "finished",
+      "parent": "3291cc00-1672-11ea-9702-db00aa43aa0a",
+      "parentType": "parameterStudy",
+      "ancestorsName": "PS0_hoge_1_20",
+      "ancestorsType": "parameterStudy",
+      "dispatchedTime": "2021/03/29-15:15:33.873",
+      "startTime": "2021/03/29-15:15:35.873",
+      "endTime": "2021/03/29-15:15:35.947",
+      "preparedTime": null,
+      "jobSubmittedTime": null,
+      "jobStartTime": null,
+      "jobEndTime": null
+    }
+  ],
+  "parameterSettingFile": {
+    "content": "{\n    \"version\": 2,\n    \"targetFiles\": [\n        {\n            \"targetName\": \"test.json\"\n        }\n    ],\n    \"params\": [\n        {\n            \"keyword\": \"hoge\",\n            \"min\": 0,\n            \"max\": 1.41,\n            \"step\": 0.4\n        }\n    ],\n    \"scatter\": [],\n    \"gather\": []\n}",
+    "filename": "parameterSetting.json",
+    "dirname": "/Users/sogo/WORK/WHEEL/Workflow/PS_v2.wheel/PS0",
+    "isParameterSettingFile": true
+  },
+  "file": {
+    "content": "{{ hoge }}",
+    "dirname": "/Users/sogo/WORK/WHEEL/Workflow/PS_v2.wheel/PS0",
+    "filename": "test.json"
+  },
+  "hostList": [
+    {
+      "name": "testServer-password",
+      "host": "127.0.0.1",
+      "path": "/home/pbsuser",
+      "username": "pbsuser",
+      "keyFile": null,
+      "numJob": 5,
+      "queue": "queueA,queueB,queueC",
+      "grpName": "",
+      "port": 4000,
+      "id": "59b41070-c024-11ea-9c74-dba18778c8c4",
+      "jobScheduler": "PBSPro",
+      "renewInterval": 0,
+      "renewDelay": 0,
+      "statusCheckInterval": 10,
+      "maxStatusCheckError": 10,
+      "type": "",
+      "os": "ubuntu16",
+      "region": "",
+      "numNodes": "",
+      "InstanceType": "",
+      "rootVolume": 8,
+      "shareStorage": true,
+      "playbook": "",
+      "mpi": "",
+      "compiler": "",
+      "additionalParams": "",
+      "additionalParamsForHead": ""
+    },
+    {
+      "name": "testServer2",
+      "host": "127.0.0.1",
+      "path": "/home/pbsuser",
+      "username": "pbsuser",
+      "keyFile": null,
+      "numJob": 5,
+      "queue": "queueA2,queueB2,queueC2",
+      "grpName": "",
+      "port": 4000,
+      "id": "59b41070-c024-11va-9c74-dba11278c8c4",
+      "jobScheduler": "PBSPro",
+      "renewInterval": 0,
+      "renewDelay": 0,
+      "statusCheckInterval": 10,
+      "maxStatusCheckError": 10,
+      "type": "",
+      "os": "ubuntu16",
+      "region": "",
+      "numNodes": "",
+      "InstanceType": "",
+      "rootVolume": 8,
+      "shareStorage": true,
+      "playbook": "",
+      "mpi": "",
+      "compiler": "",
+      "additionalParams": "",
+      "additionalParamsForHead": ""
+    }
+  ]
+}

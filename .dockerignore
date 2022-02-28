@@ -1,5 +1,5 @@
-*.log
-*.log.*
-app/viewer
-app/public/css
-app/public/js
+docs
+documentMD
+*/node_modules
+client/bin
+client/dist
