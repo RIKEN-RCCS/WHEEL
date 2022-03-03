@@ -22,7 +22,7 @@ https://riken-rccs.github.io/WHEEL/
 4. type following command
 
 ```
-> docker run -d -v ${HOME}:/root -v CONFIG_DIR:/usr/src/app/config -p 8089:8089 -p 8090:8090 tmkawanabe/wheel:latest
+> docker run -d -v ${HOME}:/root -v CONFIG_DIR:/usr/src/app/config -p 8089:8089 tmkawanabe/wheel:latest
 ```
 
 `CONFIG_DIR` must be absolute path in host machine.
@@ -30,7 +30,7 @@ https://riken-rccs.github.io/WHEEL/
 above command line, we specify following options
 
 - project files will be create under ${HOME}
-- port 8089 and 8090 is used for WHEEL itself and jupyter notebook respectively
+- port 8089 is used for WHEEL
 
 for detailed information about configuration, see [administrator's guide](./documentMD/AdminGuide.md)
 
@@ -61,33 +61,15 @@ to outside of user\_guide directory
 client and server has client and server code respectively.
 
 ### how to run without docker
-1. install dependent pacages
+1. install and build
 ```
-> for i in client server; do pushd ${i}; npm install; popd; done
+> ./build.sh
 ```
-2. build old client-code
-```
-> cd server
-> npm run prepare
-```
-some old version client-code (e.g. home, jobScript) is still in use for now. you have to build them in this step
-
-3. build client code and store into server-side package
-```
-> cd client
-> npm run build
-> mv dist/js/* ../server/app/public/js/
-> mv dist/css/* ../server/app/public/css
-> mv dist/*.html ../server/app/views/
-```
-
-4. start serever
+2. start serever
 ```
 > cd server
 > npm start
 ```
-
-### tests
 
 ### CI/CD process
 if you push new commit which includes user guide update,
