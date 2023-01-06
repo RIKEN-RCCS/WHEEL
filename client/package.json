@@ -34,7 +34,7 @@
     "@vue/cli-plugin-router": "^4.5.13",
     "@vue/cli-plugin-unit-mocha": "^4.5.13",
     "@vue/cli-plugin-vuex": "^4.5.13",
-    "@vue/cli-service": "^4.5.13",
+    "@vue/cli-service": "^5.0.8",
     "@vue/test-utils": "^1.0.3",
     "canvas": "^2.8.0",
     "chai": "^4.1.2",
